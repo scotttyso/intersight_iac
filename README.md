@@ -8,7 +8,9 @@ TBD
 
 ## Synopsis
 
-The purpose of these Terraform and Python scripts are to deploy Policy/Profiles to Intersight using Infastructure as Code.  The goal of the Wizard is to help customers create and better understand how to utilize Terraform for managing infrastrudture.
+The purpose of these Terraform and Python scripts are to deploy Policy/Profiles to Intersight using Infastructure as Code.  The Wizard is to help customers create and better understand how to utilize Terraform for managing infrastrudture.
+
+The goal of this module is to begin to familiarize you with Terraform.  So that over time you can begin to write code to consume Easy IMM directly.  Transition towards writing your own modules to consume the IMM Module.  And lastly build your confidence to write your own code as well.  The wizard will show after each section what the Terraform code being generated will look like.  Point you to the directly where the code will be stored.  And lastly, publish the code to Terraform Cloud and when you are ready.
 
 ## Contents
 
@@ -109,11 +111,11 @@ Youtube Video's to follow.  This is still a work in progress
 
 ### Python Requirements
 
-- Need Python 3.6 or Greater
+- Python 3.6 or Greater
 
 [python](https://www.python.org/downloads/release/python-360/)
 
-- Python 3.6+.  Refer to requirements.txt for modules needed to be installed
+- Refer to requirements.txt for modules needed to be installed
 
 ```bash
 pip install -r requirements.txt
@@ -121,11 +123,19 @@ pip install -r requirements.txt
 
 ### Terraform Requirements
 
-The script utilizes features introduced in 0.14 of Terraform so need 0.14 or preferrably greater
+The script utilizes features introduced in 0.14 of Terraform.  So we need 0.14 or preferrably greater
 
 [terraform](https://www.terraform.io/downloads.html)
 
-## Run the Wizard
+### Terraform Modules and Providers
+
+This script will utilize the Intersight Terraform Provider and two modules built off of the Intersight Provider.
+
+- [Intersight Provider](https://registry.terraform.io/providers/CiscoDevNet/intersight/latest)
+- [IMM Module](https://registry.terraform.io/modules/terraform-cisco-modules/imm/intersight/latest)
+- [Easy IMM](https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm)
+
+## Running the Wizard
 
 - Running the wizard to use a configuration migrated from UCS Manager using the IMM Transition Tool
 
@@ -141,4 +151,4 @@ The script utilizes features introduced in 0.14 of Terraform so need 0.14 or pre
 
 ## Disclaimer
 
-This code is provided as is.  No warranty, support, or guarantee is provided with this.
+This code is provided as is.  No warranty, support, or guarantee is provided with this.  But in typical github fashion there is the opportunity to collaborate and share Bug's/Feedback/PR Requests.
