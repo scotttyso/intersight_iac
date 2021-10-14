@@ -1,8 +1,6 @@
-# Infrastructure as Code
+# Intersight Infrastructure as Code Wizard
 
-- Terraform ACI Provider
 - Terraform Intersight Provider
-- Terraform MSO Provider
 
 ## Updates/News
 
@@ -10,47 +8,92 @@ TBD
 
 ## Synopsis
 
-The purpose of these Terraform and Python scripts are to deploy Infrastructure.  Much of the automation is written to simplify the procedures for customers when doing infrastructure as code.  The naming convention is very generic and should work for most customers
+The purpose of these Terraform and Python scripts are to deploy Policy/Profiles to Intersight using Infastructure as Code.  The goal of the Wizard is to help customers create and better understand how to utilize Terraform for managing infrastrudture.
 
-## Overview
+## Contents
 
-ACI
+- Use Cases
+- Create Pools
+- Create Policies
+- Deploy UCS Domains in IMM Mode
+- Create UCS Service Profiles and Templates
 
-Cisco Application Centric Infrastructure is a widely adopted technology.  The biggest challenge in adopting is the shift from the traditional CLI based management of the traditional Cisco networking technologies.  The purpose of these scripts/tools is to ease that transition and to help customers more quickly adopt/transition to Cisco ACI.
+### Use Cases
 
-Intersight
+- Create Pools: IP, IQN, MAC, WWNN, WWPN, and UUID.
+- Create Policies: Domain Policies, Mgmt Policies, Server Policies
+- Create UCS Domain Profiles and attach Fabric Interconnect clusters to the profiles.
+- Create Service Profiles and Templates and deploy physical infrastructure.
 
-Intersight is the management platform of the future for Compute Infrastructure.  The Automation herein will automate deployments of infrastructure through intersight.
+### Intersight Pools
 
-## Deployment Features - What this will build
+This set of modules support creating the following Pool Types:
 
-The Startup Scripts will Deploy the following
+- FC Pools
+- IP Pools
+- IQN Pools
+- MAC Pools
+- UUID Pools
 
-ACI
+### Intersight Policies
 
-- Register ACI Leaf and Spine devices for Fabric Membership
-- Configure DNS Servers and Search Domains
-- Configure NTP Servers
-- Configure BGP Autonomous System and register Spines as Route-Reflectors
-- Create Fabric Access Policies
-    - Interface Policies
-        - CDP Policies
-        - LACP Policies
-        - Link Speed Policies
-        - LLDP Policies
-        - MCP Policies
-    - Fibre-Channel Policies
-        - Link Speed Policies
-        - NP and F port Policies
-    - AAEP Policies
-    - Layer 3 Domain Policies
-    - Physical Domain Policies
-- Vlan Pools
-- Create Leaf Profiles
-    - Associate Leaf Interface Profiles
-    - create default interface selectors
+This set of modules support creating the following Policy Types:
 
-To sum this up... the goal is to make the ACI Fabric ready to go out of the box.
+- Adapter Configuration
+- BIOS
+- Boot Order
+- Certificate Management
+- Device Connector
+- Ethernet Adapter
+- Ethernet Network
+- Ethernet Network Control
+- Ethernet Network Group
+- Ethernet QoS
+- Fibre Channel Adapter
+- Fibre Channel Network
+- Fibre Channel QoS
+- IMC Access
+- Flow Control
+- IPMI Over LAN
+- iSCSI Adapter
+- iSCSI Boot
+- iSCSI Static Target
+- LAN Connectivity
+- LDAP
+- Link Aggregation
+- Link Control
+- Local User
+- Multicast
+- Network Connectivity
+- NTP
+- Persistent Memory
+- Port
+- Power
+- SAN Connectivity
+- SD Card
+- Serial over LAN
+- SMTP
+- SNMP
+- SSH
+- Storage
+- Switch Control
+- Syslog
+- System QoS
+- Thermal
+- Virtual KVM
+- Virtual Media
+- VLAN
+- VSAN
+
+### Intersight Profiles and Templates
+
+- Kubernetes Cluster Profile
+- UCS Chassis Profile
+- UCS Domain Profile
+- UCS Server Profile
+- UCS Server Template - Important Note.  The script only uses Server Templates for holding policies.  This allows for flexibility around allowing the script to override policies by assigning unique policies to servers that is not supported by standard templates.
+
+To sum this up... the goal is to deploy the infrastructure using infrastructure as code through an easy to consume wizard.
 
 ## Resources
 
@@ -58,16 +101,41 @@ Youtube Video's to follow.  This is still a work in progress
 
 ## Getting Started
 
-Terraform Requirements
+### Install json2hcl
 
-- terraform must be installed with the following providers:
+[json2hcl](https://github.com/kvz/json2hcl)
 
-- ACI: Providers/CiscoDevNet/aci/ Version 0.5.3+ in place
-- Intersight: Providers/CiscoDevNet/intersight Version 0.1.2+ in place
+### Python Requirements
 
-Python Requirements
+- We need Python 3.6 or Greater
 
-- Python 3.6+.  Refer to requirements.txt for modules
+[python](https://www.python.org/downloads/release/python-360/)
+
+- Python 3.6+.  Refer to requirements.txt for modules needed to be installed
+
+```bash
+pip install -r requirements.txt
+```
+
+### Terraform Requirements
+
+The script utilizes features introduced in 0.14 of Terraform so need 0.14 or preferrably greater
+
+[terraform](https://www.terraform.io/downloads.html)
+
+## Run the Wizard
+
+- Running the wizard to use a configuration migrated from UCS Manager using the IMM Transition Tool
+
+```bash
+./main.py {json_file_name.json}
+```
+
+- Running the Wizard to generate IaC through a Question and Answer Wizard
+
+```bash
+./main.py
+```
 
 ## Disclaimer
 
