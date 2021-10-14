@@ -1,0 +1,38 @@
+
+  "{{ name }}" = {
+    description        = "{{ descr }}"
+    local_min_severity = "{{ local_logging['file']['min_severity'] }}"
+    organization       = "{{ org }}"
+    remote_clients    = [
+{%- if not remote_logging['server1']['hostname'] == 'none' %}
+      {
+        enabled      = {{ remote_logging['server1']['enable']|lower }}
+        hostname     = "{{ remote_logging['server1']['hostname'] }}"
+        min_severity = "{{ remote_logging['server1']['min_severity'] }}"
+        port         = 514
+        protocol     = "udp"
+      },
+{%- elif not remote_logging['server2']['hostname'] == 'none' %}
+      {
+        enabled      = {{ remote_logging['server2']['enable']|lower }}
+        hostname     = "{{ remote_logging['server2']['hostname'] }}"
+        min_severity = "{{ remote_logging['server2']['min_severity'] }}"
+        port         = 514
+        protocol     = "udp"
+      }
+{%- endif %}
+    ]
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags         = []
+{%- endif %}
+  }

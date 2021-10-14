@@ -1,0 +1,68 @@
+
+  "{{ name }}" = {
+{%- if assignment_order %}
+    assignment_order = "{{ assignment_order }}"
+{%- endif %}
+{%- if ipv4_blocks %}
+    ipv4_block       = [
+  {%- for item in ipv4_blocks %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    ipv4_block       = []
+{%- endif %}
+{%- if ipv4_configuration %}
+    ipv4_config      = {
+      config = {
+  {%- for k, v in ipv4_configuration.items() %}
+        {{ k }} = "{{ v }}",
+  {%- endfor %}
+      }
+    }
+{%- else %}
+    ipv4_config      = {}
+{%- endif %}
+{%- if ipv6_blocks %}
+    ipv6_block       = [
+  {%- for item in ipv6_blocks %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    ipv6_block       = []
+{%- endif %}
+{%- if ipv6_configuration %}
+    ipv6_config      = {
+      config = {
+  {%- for k, v in ipv6_configuration.items() %}
+        {{ k }} = "{{ v }}",
+  {%- endfor %}
+      }
+    }
+{%- else %}
+    ipv6_config      = {}
+{%- endif %}
+    organization     = "{{ org }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags             = []
+{%- endif %}
+  }

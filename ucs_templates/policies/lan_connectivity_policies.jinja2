@@ -1,0 +1,125 @@
+
+  "{{ name }}" = {
+    description                 = "{{ descr }}"
+{%- if enable_azure_stack_host_qos %}
+    enable_azure_stack_host_qos = {{ enable_azure_stack_host_qos|lower }}
+{%- else %}
+    enable_azure_stack_host_qos = false
+{%- endif %}
+{%- if iqn_allocation_type %}
+    iqn_allocation_type         = "{{ iqn_allocation_type|capitalize }}"
+{%- else %}
+    iqn_allocation_type         = "None"
+{%- endif %}
+    iqn_pool                    = "{{ iqn_pool }}"
+    iqn_static_identifier       = "{{ iqn_identifier }}"
+    organization                = "{{ org }}"
+{%- if vnic_placement_mode %}
+    vnic_placement_mode         = "{{ vnic_placement_mode }}"
+{%- else %}
+    vnic_placement_mode         = "custom"
+{%- endif %}
+{%- if target_platform == 'FI-Attached' %}
+    target_platform             = "FIAttached"
+{%- else %}
+    target_platform             = "{{ target_platform }}"
+{%- endif %}
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags                        = []
+{%- endif %}
+{%- if vnics %}
+    vnics = {
+  {%- for item in vnics %}
+    {%- for k, v in item.items() %}
+      {%- if k == 'name' %}
+      "{{ v }}" = {
+      {%- endif %}
+    {%- endfor %}
+    {%- for k, v in item.items() %}
+      {%- if k == 'cdn_source' %}
+        cdn_source                      = "{{ v }}"
+      {%- elif k == 'cdn_value' %}
+        cdn_value                       = "{{ v }}"
+      {%- elif k == 'enable_failover' %}
+        enable_failover                 = {{ v|lower }}
+      {%- elif k == 'ethernet_adapter_policy' %}
+        ethernet_adapter_policy         = "{{ v }}"
+      {%- elif k == 'ethernet_network_control_policy' %}
+        ethernet_network_control_policy = "{{ v }}"
+      {%- elif k == 'ethernet_network_group_policy' %}
+        ethernet_network_group_policy   = "{{ v }}"
+      {%- elif k == 'ethernet_network_policy' %}
+        ethernet_network_policy         = "{{ v }}"
+      {%- elif k == 'ethernet_qos_policy' %}
+        ethernet_qos_policy             = "{{ v }}"
+      {%- elif k == 'iscsi_boot_policy' %}
+        iscsi_boot_policy               = "{{ v }}"
+      {%- elif k == 'mac_address_allocation_type' %}
+        mac_address_allocation_type     = "{{ v|upper }}"
+      {%- elif k == 'mac_address_pool' %}
+        mac_address_pool                = "{{ v }}"
+      {%- elif k == 'mac_address_static' %}
+        mac_address_static              = "{{ v }}"
+      {%- elif k == 'name' %}
+        name                            = "{{ v }}"
+      {%- elif k == 'pci_link' %}
+        placement_pci_link              = {{ v }}
+      {%- elif k == 'pci_order' %}
+        placement_pci_order             = {{ v }}
+      {%- elif k == 'slot_id' %}
+        placement_slot_id               = "{{ v }}"
+      {%- elif k == 'switch_id' %}
+        placement_switch_id             = "{{ v }}"
+      {%- elif k == 'uplink_port' %}
+        placement_uplink_port           = "{{ v }}"
+      {%- elif k == 'usnic_settings' %}
+        usnic_settings = [
+        {%- for i in k %}
+          {%- for key, value in i.items() %}
+            {%- if key == 'class_of_service' %}
+          cos                  = {{ value }}
+            {%- elif key == 'number_of_usnics' %}
+          number_of_usnics     = {{ value }}
+            {%- elif key == 'usnic_adapter_policy' %}
+          usnic_adapter_policy = "{{ value }}"
+            {%- endif %}
+          {%- endfor %}
+            },
+        {%- endfor %}
+      {%- elif k == 'vmq_settings' %}
+        vmq_settings = [
+        {%- for i in k %}
+          {%- for key, value in i.items() %}
+            {%- if key == 'enable_virtual_machine_multi_queue' %}
+          enable_virtual_machine_multi_queue = {{ value|lower }}
+            {%- elif key == 'number_of_interrupts' %}
+          number_of_interrupts               = {{ value }}
+            {%- elif key == 'number_of_sub_vnics' %}
+          number_of_sub_vnics                = {{ value }}
+            {%- elif key == 'number_of_virtual_machine_queues' %}
+          number_of_virtual_machine_queues   = {{ value }}
+            {%- elif key == 'vmmq_adapter_policy' %}
+          vmmq_adapter_policy = "{{ value }}"
+            {%- endif %}
+          {%- endfor %}
+            },
+        {%- endfor %}
+      {%- endif %}
+    {%- endfor %}
+      },
+  {%- endfor %}
+    }
+{%- else %}
+    vnics                       = {}
+{%- endif %}
+  }

@@ -1,0 +1,2 @@
+configured-from-intersight
+configured-from-operating-system

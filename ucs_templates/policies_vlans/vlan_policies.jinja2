@@ -1,0 +1,40 @@
+
+  "{{ name }}" = {
+    description  = "{{ descr }}"
+    organization = "{{ org }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags            = []
+{%- endif %}
+{%- if vlans %}
+    vlans = {
+  {%- for item in vlans %}
+      "{{ loop.index }}" = {
+        auto_allow_on_uplinks = true
+    {%- for k, v in item.items() %}
+      {%- if k == 'id' %}
+        vlan_list             = "{{ v }}",
+      {%- elif k == 'multicast_policy' %}
+        multicast_policy      = "{{ v }}",
+      {%- elif k == 'name' %}
+        name                  = "{{ v }}",
+      {%- elif k == 'native_vlan' %}
+        native_vlan           = {{ v|lower }}
+      {%- endif %}
+    {%- endfor %}
+      },
+  {%- endfor %}
+    }
+{%- else %}
+    vlans        = {}
+{%- endif %}
+  }

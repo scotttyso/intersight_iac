@@ -1,0 +1,89 @@
+
+  "{{ name }}" = {
+    completion_queue_count                   = {{ completion_queue_count }}
+    completion_ring_size                     = 1
+    enable_advanced_filter                   = {{ enable_advanced_filter|lower }}
+    enable_accelerated_receive_flow_steering = {{ enable_accelerated_receive_flow_steering|lower }}
+    enable_interrupt_scaling                 = {{ enable_interrupt_scaling|lower }}
+    enable_geneve_offload                    = {{ enable_geneve_offload|lower }}
+    enable_nvgre_offload                     = {{ enable_nvgre_offload|lower }}
+    enable_vxlan_offload                     = {{ enable_vxlan_offload|lower }}
+    description                              = "{{ descr }}"
+{%- for k, v in interrupt_settings.items() %}
+  {%- if k == 'interrupt_coalescing_type' %}
+    interrupt_coalescing_type                = "{{ v|upper }}"
+  {%- elif k == 'interrupt_mode' %}
+    interrupt_mode                           = "{{ v }}"
+  {%- elif k == 'interrupt_timer' %}
+    interrupt_timer                          = {{ v }}
+  {%- elif k == 'interrupts' %}
+    interrupts                               = {{ v }}
+  {%- endif %}
+{%- endfor %}
+    organization                             = "{{ org }}"
+{%- for k, v in roce_settings.items() %}
+  {%- if roce_settings['enable_rdma_over_converged_ethernet'] == True and k == 'class_of_service' %}
+    roce_cos                                 = {{ v }}
+  {%- elif roce_settings['enable_rdma_over_converged_ethernet'] == False and k == 'class_of_service' %}
+    roce_cos                                 = 5
+  {%- elif k == 'enable_rdma_over_converged_ethernet' %}
+    roce_enable                              = {{ v|lower }}
+  {%- elif roce_settings['enable_rdma_over_converged_ethernet'] == True and k == 'memory_regions' %}
+    roce_memory_regions                      = {{ v }}
+  {%- elif roce_settings['enable_rdma_over_converged_ethernet'] == False and k == 'memory_regions' %}
+    roce_memory_regions                      = 0
+  {%- elif roce_settings['enable_rdma_over_converged_ethernet'] == True and k == 'queue_pairs' %}
+    roce_queue_pairs                         = {{ v }}
+  {%- elif roce_settings['enable_rdma_over_converged_ethernet'] == False and k == 'queue_pairs' %}
+    roce_queue_pairs                         = 0
+  {%- elif roce_settings['enable_rdma_over_converged_ethernet'] == True and k == 'resource_groups' %}
+    roce_resource_groups                     = {{ v }}
+  {%- elif roce_settings['enable_rdma_over_converged_ethernet'] == False and k == 'resource_groups' %}
+    roce_resource_groups                     = 0
+  {%- elif k == version %}
+    roce_version                             = {{ v }}
+  {%- endif %}
+{%- endfor %}
+{%- for k, v in rss_settings.items() %}
+  {%- if k == 'enable_receive_side_scaling' %}
+    receive_side_scaling_enable              = {{ v|lower }}
+  {%- endif %}
+{%- endfor %}
+    rss_enable_ipv4_hash                     = true
+    rss_enable_ipv6_extensions_hash          = false
+    rss_enable_ipv6_hash                     = true
+    rss_enable_tcp_and_ipv4_hash             = true
+    rss_enable_tcp_and_ipv6_extensions_hash  = false
+    rss_enable_tcp_and_ipv6_hash             = true
+    rss_enable_udp_and_ipv4_hash             = false
+    rss_enable_udp_and_ipv6_hash             = false
+    receive_queue_count                      = {{ receive_queue_count }}
+    receive_ring_size                        = {{ receive_ring_size }}
+{%- for k, v in tcp_offload_settings.items() %}
+  {%- if k == 'enable_large_receive_offload' %}
+    tcp_offload_large_recieve                = {{ v|lower }}
+  {%- elif k == 'enable_large_send_offload' %}
+    tcp_offload_large_send                   = {{ v|lower }}
+  {%- elif k == 'enable_rx_checksum_offload' %}
+    tcp_offload_rx_checksum                  = {{ v|lower }}
+  {%- elif k == 'enable_tx_checksum_offload' %}
+    tcp_offload_tx_checksum                  = {{ v|lower }}
+  {%- endif %}
+{%- endfor %}
+    transmit_queue_count                     = {{ transmit_queue_count }}
+    transmit_ring_size                       = {{ transmit_ring_size }}
+    uplink_failback_timeout                  = {{ uplink_failback_timeout }}
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags                                     = []
+{%- endif %}
+  }

@@ -1,0 +1,45 @@
+
+  "{{ name }}" = {
+    classes = {
+{%- for r in range(0,6) %}
+  {%- for k, v in classes[r].items()|sort %}
+    {%- if k == 'priority' %}
+      "{{ v }}" = {
+    {%- endif %}
+  {%- endfor %}
+  {%- for k, v in classes[r].items()|sort %}
+    {%- if k == 'bandwidth_percent' %}
+        bandwidth_percent  = {{ v }}
+    {%- elif k == 'cos' %}
+        cos                = {{ v }}
+    {%- elif k == 'mtu' %}
+        mtu                = {{ v }}
+    {%- elif k == 'multicast_optimized' %}
+        multicast_optimize = {{ v|lower }}
+    {%- elif k == 'packet_drop' %}
+        packet_drop        = {{ v|lower }}
+    {%- elif k == 'state' %}
+        state              = "{{ v }}"
+    {%- elif k == 'weight' %}
+        weight             = {{ v }}
+    {%- endif %}
+  {%- endfor %}
+      },
+{%- endfor %}
+    }
+    description  = ""
+    organization = "{{ org }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags         = []
+{%- endif %}
+  }

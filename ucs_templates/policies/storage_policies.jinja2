@@ -1,0 +1,202 @@
+
+  "{{ name }}" = {
+    description              = "{{ descr }}"
+    global_hot_spares        = "{{ global_hot_spares }}"
+    organization             = "{{ org }}"
+{%- if unused_disks_state == 'JBOD' %}
+    unused_disks_state       = "Jbod"
+{%- elif unused_disks_state == 'No Change' %}
+    unused_disks_state       = "NoChange"
+{%- elif unused_disks_state == 'Unconfigured Good' %}
+    unused_disks_state       = "UnconfiguredGood"
+{%- endif %}
+{%- if use_jbod_for_vd_creation %}
+    use_jbod_for_vd_creation = {{ use_jbod_for_vd_creation|lower }}
+{%- endif %}
+{%- if drive_group %}
+    drive_group = {
+  {%- for item in drive_group %}
+      {{ item['drive_group_name'] }} = {
+    {%- for k, v in item.items() %}
+      {%- if k == 'manual_drive_selection' %}
+        manual_drive_group = {
+        {%- for i in manual_drive_selection %}
+          "{{ loop.index }}" = {
+          {%- for key, value in i.items() %}
+            {%- if key == 'dedicated_hot_spares' %}
+              dedicated_hot_spares = "{{ value }}",
+            {%- elif key == 'drive_array_spans' %}
+              drive_array_spans    = {{ value }}
+            {%- endif %}
+          {%- endfor %}
+          }
+        {%- endfor %}
+        }
+      {%- elif k == 'raid_level' %}
+        raid_level = "{{ v|capitalize }}"
+      {%- elif k == 'virtual_drives' %}
+        virtual_drives = {
+        {%- for i in v %}
+          "{{ i['vd_name'] }}" = {
+          {%- for key, value in i.items()|sort %}
+            {%- if key == 'access_policy' %}
+              {%- if value == 'Default' %}
+              access_policy       = "Default"
+              {%- elif value == 'Blocked' %}
+              access_policy       = "Blocked"
+              {%- elif value == 'Read Only' %}
+              access_policy       = "ReadOnly"
+              {%- elif value == 'Read Write' %}
+              access_policy       = "ReadWrite"
+              {%- endif %}
+            {%- elif key == 'boot_drive' %}
+              boot_drive          = {{ value|lower }}
+            {%- elif key == 'disk_cache' %}
+              {%- if value == 'Default' %}
+              disk_cache          = "Default"
+              {%- elif value == 'Disabled' %}
+              disk_cache          = "Disable"
+              {%- elif value == 'Enabled' %}
+              disk_cache          = "Enable"
+              {%- elif value == 'Unchanged' %}
+              disk_cache          = "NoChange"
+              {%- endif %}
+            {%- elif key == 'expand_to_available' %}
+              expand_to_available = {{ value|lower }}
+            {%- elif key == 'read_policy' %}
+              {%- if value == 'Default' %}
+              read_policy         = "Default"
+              {%- elif value == 'Always Read Ahead' %}
+              read_policy         = "ReadAhead"
+              {%- elif value == 'No Read Ahead' %}
+              read_policy         = "NoReadAhead"
+              {%- endif %}
+            {%- elif key == 'size' %}
+              size                = {{ value }}
+            {%- elif key == 'strip_size' %}
+              {%- if value == '64KiB' %}
+              strip_size          = 64
+              {%- elif value == '128KiB' %}
+              strip_size          = 128
+              {%- elif value == '256KiB' %}
+              strip_size          = 256
+              {%- elif value == '512KiB' %}
+              strip_size          = 512
+              {%- elif value == '1MiB' %}
+              strip_size          = 1024
+              {%- endif %}
+            {%- elif key == 'write_policy' %}
+              {%- if value == 'Default' %}
+              write_policy        = "Default"
+              {%- elif value == 'Always Write Back' %}
+              write_policy        = "AlwaysWriteBack"
+              {%- elif value == 'Write Back Good BBU' %}
+              write_policy        = "WriteBackGoodBbu"
+              {%- elif value == 'Write Through' %}
+              write_policy        = "WriteThrough"
+              {%- endif %}
+            {%- endif %}
+          {%- endfor %}
+          }
+        {%- endfor %}
+        }
+      {%- endif %}
+    {%- endfor %}
+      },
+  {%- endfor %}
+    }
+{%- else %}
+    drive_group = {}
+{%- endif %}
+{%- if m2_configuration %}
+    m2_configuration = {
+  {%- for item in m2_configuration %}
+      "{{ loop.index }}" = {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}"
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    m2_configuration         = {}
+{%- endif %}
+{%- if single_drive_raid_configuration %}
+    single_drive_raid_configuration = {
+  {%- for item in single_drive_raid_configuration %}
+      "{{ loop.index }}" = {
+    {%- for k, v in item.items()|sort %}
+      {%- if k == 'access_policy' %}
+        {%- if value == 'Default' %}
+        access_policy = "Default"
+        {%- elif value == 'Blocked' %}
+        access_policy = "Blocked"
+        {%- elif value == 'Read Only' %}
+        access_policy = "ReadOnly"
+        {%- elif value == 'Read Write' %}
+        access_policy = "ReadWrite"
+        {%- endif %}
+      {%- elif k == 'disk_cache' %}
+        {%- if value == 'Default' %}
+        disk_cache    = "Default"
+        {%- elif value == 'Disabled' %}
+        disk_cache    = "Disable"
+        {%- elif value == 'Enabled' %}
+        disk_cache    = "Enable"
+        {%- elif value == 'Unchanged' %}
+        disk_cache    = "NoChange"
+        {%- endif %}
+      {%- elif k == 'enable' %}
+        enable = {{ v|lower }}
+      {%- elif key == 'read_policy' %}
+        {%- if value == 'Default' %}
+        read_policy   = "Default"
+        {%- elif value == 'Always Read Ahead' %}
+        read_policy   = "ReadAhead"
+        {%- elif value == 'No Read Ahead' %}
+        read_policy   = "NoReadAhead"
+        {%- endif %}
+      {%- elif key == 'strip_size' %}
+        {%- if value == '64KiB' %}
+        strip_size  = 64
+        {%- elif value == '128KiB' %}
+        strip_size    = 128
+        {%- elif value == '256KiB' %}
+        strip_size    = 256
+        {%- elif value == '512KiB' %}
+        strip_size    = 512
+        {%- elif value == '1MiB' %}
+        strip_size    = 1024
+        {%- endif %}
+      {%- elif key == 'write_policy' %}
+        {%- if value == 'Default' %}
+        write_policy  = "Default"
+        {%- elif value == 'Always Write Back' %}
+        write_policy  = "AlwaysWriteBack"
+        {%- elif value == 'Write Back Good BBU' %}
+        write_policy  = "WriteBackGoodBbu"
+        {%- elif value == 'Write Through' %}
+        write_policy  = "WriteThrough"
+        {%- endif %}
+      {%- endif %}
+    {%- endfor %}
+      },
+  {%- endfor %}
+    }
+{%- else %}
+    single_drive_raid_configuration = {}
+{%- endif %}
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags         = []
+{%- endif %}
+  }

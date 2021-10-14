@@ -1,0 +1,22 @@
+
+  "{{ name }}" = {
+{%- if default_vlan %}
+    default_vlan   = {{ default_vlan }}
+{%- endif %}
+    description   = "{{ descr }}"
+    organization  = "{{ org }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags          = []
+{%- endif %}
+    vlan_mode     = "{{ vlan_mode }}"
+  }

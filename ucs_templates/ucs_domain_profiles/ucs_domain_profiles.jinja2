@@ -1,0 +1,47 @@
+
+  "{{ name }}" = {
+{%- if action %}
+    action                      = "{{ action }}"
+{%- else %}
+    action                      = "No-op"
+{%- endif %}
+{%- if serial_number_fabric_a and serial_number_fabric_b %}
+  {%- if not (serial_number_fabric_a == '' and serial_number_fabric_b == '') %}
+    assign_switches             = true
+  {%- else %}
+    assign_switches             = false
+  {%- endif %}
+{%- else %}
+    assign_switches             = false
+{%- endif %}
+    description                 = "{{ descr }}"
+    device_model                = "{{ device_model }}"
+    network_connectivity_policy = "{{ network_connectivity_policy }}"
+    ntp_policy                  = "{{ ntp_policy }}"
+    organization                = "{{ org }}"
+    port_policy_fabric_a        = "{{ port_policies['fabric_a'] }}"
+    port_policy_fabric_b        = "{{ port_policies['fabric_b'] }}"
+    snmp_policy                 = "{{ snmp_policy }}"
+    serial_number_fabric_a      = "{{ serial_number_fabric_a }}"
+    serial_number_fabric_b      = "{{ serial_number_fabric_b }}"
+    switch_control_policy       = "{{ switch_control_policy }}"
+    syslog_policy               = "{{ syslog_policy }}"
+    system_qos_policy           = "{{ system_qos_policy }}"
+    vlan_policy_fabric_a        = "{{ vlan_policies['fabric_a'] }}"
+    vlan_policy_fabric_b        = "{{ vlan_policies['fabric_b'] }}"
+    vsan_policy_fabric_a        = "{{ vsan_policies['fabric_a'] }}"
+    vsan_policy_fabric_b        = "{{ vsan_policies['fabric_b'] }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags         = []
+{%- endif %}
+  }

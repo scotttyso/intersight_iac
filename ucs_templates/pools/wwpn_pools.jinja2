@@ -1,0 +1,34 @@
+
+  "{{ name }}" = {
+{%- if assignment_order %}
+    assignment_order = "{{ assignment_order }}"
+{%- endif %}
+{%- if wwpn_blocks %}
+    id_blocks        = [
+  {%- for item in wwpn_blocks %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}"
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    id_blocks        = []
+{%- endif %}
+    organization     = "{{ org }}"
+    pool_purpose     = "WWPN"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags             = []
+{%- endif %}
+  }

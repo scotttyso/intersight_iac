@@ -1,0 +1,25 @@
+
+  "{{ name }}" = {
+    bios_template = "{{ policy_template }}"
+    description   = "{{ descr }}"
+    organization  = "{{ org }}"
+{%- if tags %}
+    tags         = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags = []
+{%- endif %}
+    # BIOS Customization Settings
+{%- if bios_settings %}
+  {%- for k, v in bios_settings.items() %}
+    {{ k }} = "{{ v }}",
+  {%- endfor %}
+{%- endif %}
+  }

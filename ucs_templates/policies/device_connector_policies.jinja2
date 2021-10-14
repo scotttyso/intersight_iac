@@ -1,0 +1,23 @@
+
+  "{{ name }}" = {
+{%- if configuration_lockout %}
+    configuration_lockout = {{ configuration_lockout|lower }}
+{%- else %}
+    configuration_lockout = true
+{%- endif %}
+    description           = "{{ descr }}"
+    organization          = "{{ org }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags                = []
+{%- endif %}
+  }

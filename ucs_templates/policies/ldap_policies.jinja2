@@ -1,0 +1,103 @@
+
+  "{{ name }}" = {
+    base_settings = {
+      base_dn = "{{ base_settings["base_dn"] }}"
+      domain  = "{{ base_settings["domain"] }}"
+      timeout = {{ base_settings["timeout"] }}
+    }
+{%- if binding_parameters %}
+    binding_parameters = {
+      bind_dn     = "{{ binding_parameters["bind_dn"] }}"
+      bind_method = "{{ binding_parameters["bind_method"] }}"
+    }
+{%- else %}
+    binding_parameters = {}
+{%- endif %}
+    description                = "{{ descr }}"
+{%- if enable_encryption %}
+    enable_encryption          = {{ enable_encryption|lower }}
+{%- else %}
+    enable_encryption          = false
+{%- endif %}
+{%- if enable_group_authorization %}
+    enable_group_authorization = {{ enable_group_authorization|lower }}
+{%- else %}
+    enable_group_authorization = false
+{%- endif %}
+{%- if enable_ldap %}
+    enable_ldap                = {{ enable_ldap|lower }}
+{%- else %}
+    enable_ldap                = true
+{%- endif %}
+{%- if ldap_groups %}
+    ldap_groups = {
+  {%- for item in ldap_groups %}
+    {%- for k, v in item.items() %}
+      {%- if k ==  'group' %}
+      "{{ v }}" = {
+      {%- endif %}
+    {%- endfor %}
+    {%- for k, v in item.items() %}
+      {%- if k == 'role' %}
+        {{ k }} = "{{ v }}"
+      {%- endif %}
+    {%- endfor %}
+      },
+  {%- endfor %}
+    }
+{%- else %}
+    ldap_groups = {}
+{%- endif %}
+{%- if ldap_servers %}
+    ldap_servers = {
+  {%- for item in ldap_servers %}
+    {%- for k, v in item.items() %}
+      {%- if k ==  'server' %}
+      "{{ v }}" = {
+      {%- endif %}
+    {%- endfor %}
+    {%- for k, v in item.items() %}
+      {%- if k == 'port' %}
+        {{ k }} = {{ v }}
+      {%- endif %}
+    {%- endfor %}
+      },
+  {%- endfor %}
+    }
+{%- else %}
+    ldap_servers = {}
+{%- endif %}
+{%- if nested_group_search_depth %}
+    nested_group_search_depth = {{ nested_group_search_depth }}
+{%- else %}
+    nested_group_search_depth = 128
+{%- endif %}
+    organization              = "{{ org }}"
+{%- if search_parameters %}
+    search_parameters = {
+      attribute       = "{{ search_parameters["attribute"] }}"
+      filter          = "{{ search_parameters["filter"] }}"
+      group_attribute = "{{ search_parameters["group_attribute"] }}"
+    }
+{%- else %}
+    search_parameters = {}
+{%- endif %}
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags         = []
+{%- endif %}
+{%- if user_search_precedence %}
+    user_search_precedence = "{{ user_search_precedence }}"
+{%- else %}
+    user_search_precedence = "LocalUserDb"
+{%- endif %}
+  }

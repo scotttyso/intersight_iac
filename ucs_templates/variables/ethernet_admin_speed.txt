@@ -1,0 +1,6 @@
+Auto
+1Gbps
+10Gbps
+25Gbps
+40Gbps
+100Gbps

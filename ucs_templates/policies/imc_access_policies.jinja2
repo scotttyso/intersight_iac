@@ -1,0 +1,24 @@
+
+  "{{ name }}" = {
+    description                = "{{ descr }}"
+    inband_ip_pool             = "{{ inband_ip_pool }}"
+{%- if inband_vlan_id %}
+    inband_vlan_id             = {{ inband_vlan_id }}
+{%- endif %}
+    ipv4_address_configuration = {{ ipv4_address_configuration|lower }}
+    ipv6_address_configuration = {{ ipv6_address_configuration|lower }}
+    organization               = "{{ org }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags                       = []
+{%- endif %}
+  }

@@ -1,0 +1,70 @@
+
+  "{{ name }}" = {
+{%- if chap %}
+  {%- for item in chap %}
+    {%- for k, v in item.items() %}
+      {%- if k == 'password' %}
+    chap_password                    = 1,
+      {%- elif k == 'user_id' %}
+    chap_user_id                     = "{{ v }}",
+      {%- endif %}
+    {%- endfor %}
+  {%- endfor %}
+{%- endif %}
+    description                      = "{{ descr }}"
+    dhcp_vendor_id_iqn               = "{{ dhcp_vendor_id_iqn }}"
+    initiator_ip_pool                = "{{ ip_pool }}"
+{%- if target_source_type == 'Auto' %}
+    initiator_ip_source              = "DHCP"
+{%- else %}
+    initiator_ip_source              = "{{ initiator_ip_source }}"
+{%- endif %}
+{%- if initiator_static_ip_v4_config %}
+  {%- for item in initiator_static_ip_v4_config %}
+      {
+    {%- for k, v in item.items() %}
+      {%- if k == 'default_gateway' %}
+    initiator_static_default_gateway = "{{ v }}",
+      {%- elif k == 'primary_dns' %}
+    initiator_static_primary_dns     = "{{ v }}",
+      {%- elif k == 'secondary_dns' %}
+    initiator_static_secondary_dns   = "{{ v }}",
+      {%- elif k == 'subnet_mask' %}
+    initiator_static_subnet_mask     = "{{ v }}",
+      {%- endif %}
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- endif %}
+    initiator_static_ip_address      = "{{ ip_address }}"
+    iscsi_adapter_policy             = "{{ iscsi_adapter_policy }}"
+{%- if mutual_chap %}
+  {%- for item in mutual_chap %}
+    {%- for k, v in item.items() %}
+      {%- if k == 'password' %}
+    mschap_password                  = 1,
+      {%- elif k == 'user_id' %}
+    mschap_user_id                   = "{{ v }}",
+      {%- endif %}
+    {%- endfor %}
+  {%- endfor %}
+{%- endif %}
+    organization                     = "{{ org }}"
+    primary_target_policy            = "{{ primary_target_policy }}"
+    secondary_target_policy          = "{{ secondary_target_policy }}"
+    target_source_type               = "{{ target_source_type }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags                             = []
+{%- endif %}
+  }

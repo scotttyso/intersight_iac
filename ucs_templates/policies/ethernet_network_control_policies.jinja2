@@ -1,0 +1,24 @@
+
+  "{{ name }}" = {
+    action_on_uplink_fail = "{{ action_on_uplink_fail }}"
+    cdp_enable            = {{ cdp_enable|lower }}
+    description           = "{{ descr }}"
+    lldp_enable_receive   = {{ lldp_receive_enable|lower }}
+    lldp_enable_transmit  = {{ lldp_transmit_enable|lower }}
+    mac_register_mode     = "{{ mac_register_mode }}"
+    mac_security_forge    = "{{ mac_security_forge }}"
+    organization          = "{{ org }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags                  = []
+{%- endif %}
+  }

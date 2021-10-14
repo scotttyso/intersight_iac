@@ -1,0 +1,37 @@
+
+  "{{ name }}" = {
+    description         = "{{ descr }}"
+{%- if enable_fip %}
+    enable_fip          = {{ enable_fip|lower }}
+{%- else %}
+    enable_fip = true
+{%- endif %}
+{%- if enable_lldp %}
+    enable_lldp         = {{ enable_lldp|lower }}
+{%- else %}
+    enable_lldp         = true
+{%- endif %}
+{%- if enable_port_channel %}
+    enable_port_channel = {{ enable_port_channel|lower }}
+{%- else %}
+    enable_port_channel = true
+{%- endif %}
+    fec_mode_1          = "{{ fec_mode_1 }}"
+    fec_mode_2          = "{{ fec_mode_2 }}"
+    fec_mode_3          = "{{ fec_mode_3 }}"
+    fec_mode_4          = "{{ fec_mode_4 }}"
+    organization        = "{{ org }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags                = []
+{%- endif %}
+  }

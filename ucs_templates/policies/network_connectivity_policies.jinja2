@@ -1,0 +1,47 @@
+
+  "{{ name }}" = {
+    description               = "{{ descr }}"
+{%- if enable_dynamic_dns %}
+    enable_dynamic_dns        = {{ enable_dynamic_dns|lower }}
+{%- endif %}
+    enable_ipv6               = {{ enable_ipv6|lower }}
+{%- if obtain_ipv4_dns_from_dhcp %}
+    obtain_ipv4_dns_from_dhcp = {{ obtain_ipv4_dns_from_dhcp|lower }}
+{%- endif %}
+{%- if obtain_ipv6_dns_from_dhcp %}
+    obtain_ipv6_dns_from_dhcp = {{ obtain_ipv6_dns_from_dhcp|lower }}
+{%- endif %}
+    organization              = "{{ org }}"
+    update_domain             = "{{ update_domain }}"
+{%- if preferred_ipv4_dns_server %}
+    dns_servers_v4 = [
+      "{{ preferred_ipv4_dns_server }}",
+  {%- if alternate_ipv4_dns_server %}
+      "{{ alternate_ipv4_dns_server }}"
+  {%- endif %}
+    ]
+{%- endif %}
+{%- if preferred_ipv6_dns_server %}
+    dns_servers_v6 = [
+      "{{ preferred_ipv6_dns_server }}",
+  {%- if alternate_ipv6_dns_server %}
+      "{{ alternate_ipv6_dns_server }}"
+  {%- else %}
+      "::"
+  {%- endif %}
+    ]
+{%- endif %}
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags = []
+{%- endif %}
+  }

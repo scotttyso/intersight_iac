@@ -1,0 +1,12 @@
+nolock
+noexec
+port
+retry
+ro
+rsize
+rw
+soft
+timeou
+wsize
+vers=4.0
+vers=3.0

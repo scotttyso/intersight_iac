@@ -1,0 +1,31 @@
+
+  "{{ name }}" = {
+    description  = "{{ descr }}"
+    ip_address   = "{{ ip_address }}"
+    port         = {{ port }}
+{%- if lun %}
+    lun = [
+      {
+        bootable = true
+        lun_id   = {{ lun['lun_id'] }}
+      }
+    ]
+{%- else %}
+    lun          = []
+{%- endif %}
+    organization = "{{ org }}"
+    target_name  = "{{ target_name }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags         = []
+{%- endif %}
+  }

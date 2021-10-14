@@ -1,0 +1,3 @@
+AlwaysOff
+AlwaysOn
+LastState

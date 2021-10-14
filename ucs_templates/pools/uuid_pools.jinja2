@@ -1,0 +1,33 @@
+
+  "{{ name }}" = {
+{%- if assignment_order %}
+    assignment_order = "{{ assignment_order }}"
+{%- endif %}
+{%- if uuid_blocks %}
+    uuid_blocks = [
+  {%- for item in uuid_blocks %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    uuid_blocks = []
+{%- endif %}
+    organization     = "{{ org }}"
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags             = []
+{%- endif %}
+  }

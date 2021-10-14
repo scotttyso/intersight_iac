@@ -1,0 +1,2 @@
+allVlans
+nativeVlanOnly

@@ -1,0 +1,36 @@
+
+  "{{ name }}" = {
+{%- if assignment_order %}
+    assignment_order = "{{ assignment_order }}"
+{%- else %}
+    assignment_order = "default"
+{%- endif %}
+    organization     = "{{ org }}"
+    prefix           = "{{ prefix }}"
+{%- if iqn_blocks %}
+    iqn_blocks = [
+  {%- for item in iqn_blocks %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    iqn_blocks = []
+{%- endif %}
+{%- if tags %}
+    tags = [
+  {%- for item in tags %}
+      {
+    {%- for k, v in item.items() %}
+        {{ k }} = "{{ v }}",
+    {%- endfor %}
+      },
+  {%- endfor %}
+    ]
+{%- else %}
+    tags             = []
+{%- endif %}
+  }
