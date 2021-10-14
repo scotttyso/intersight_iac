@@ -87,6 +87,8 @@ This set of modules support creating the following Policy Types:
 
 ### Intersight Profiles and Templates
 
+This set of modules support creating the following Profile Types:
+
 - Kubernetes Cluster Profile
 - UCS Chassis Profile
 - UCS Domain Profile
@@ -107,7 +109,7 @@ Youtube Video's to follow.  This is still a work in progress
 
 ### Python Requirements
 
-- We need Python 3.6 or Greater
+- Need Python 3.6 or Greater
 
 [python](https://www.python.org/downloads/release/python-360/)
 
