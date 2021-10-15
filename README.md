@@ -4,7 +4,7 @@
 
 ## Updates/News
 
-TBD
+No New Items at this time.
 
 ## Synopsis
 
