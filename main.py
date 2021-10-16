@@ -344,8 +344,6 @@ def process_wizard():
         # lan_connectivity_policies
         # sd_card_policies
         # storage_policies
-        # ucs_server_profiles
-        # virtual_media_policies
         #================================
         # Policies needed for 2nd release
         #================================

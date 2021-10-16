@@ -40,12 +40,12 @@
 {%- endif %}
 {%- if local_user_policy %}
     local_user_policy             = "{{ local_user_policy }}"
+{%- endif %}
 {%- if network_connectivity_policies %}
     network_connectivity_policies = "{{ network_connectivity_policies }}"
 {%- endif %}
 {%- if ntp_policies %}
     ntp_policies                  = "{{ ntp_policies }}"
-{%- endif %}
 {%- endif %}
     organization                  = "{{ org }}"
 {%- if persistent_memory_policies %}
@@ -60,6 +60,7 @@
     serial_number                 = ""
 {%- if serial_over_lan_policy %}
     serial_over_lan_policy        = "{{ serial_over_lan_policy }}"
+{%- endif %}
 {%- if smtp_policies %}
     smtp_policies                 = "{{ smtp_policies }}"
 {%- endif %}
@@ -85,7 +86,7 @@
     virtual_media_policy          = "{{ virtual_media_policy }}"
 {%- endif %}
 {%- if ucs_server_profile_template %}
-    ucs_server_profile_template = "{{ ucs_server_profile_template }}"
+    ucs_server_profile_template   = "{{ ucs_server_profile_template }}"
 {%- endif %}
 {%- if tags %}
     tags = [

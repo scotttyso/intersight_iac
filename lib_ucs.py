@@ -12,7 +12,7 @@ import subprocess
 import sys
 import validating_ucs
 
-ucs_template_path = pkg_resources.resource_filename('lib_ucs', 'ucs_templates/')
+ucs_template_path = pkg_resources.resource_filename('lib_ucs', 'Templates/')
 
 class config_conversion(object):
     def __init__(self, json_data, type):
@@ -9583,7 +9583,7 @@ class easy_imm_wizard(object):
             while policy_loop == False:
 
                 if not name_prefix == '':
-                    name = '%s' % (name_prefix)
+                    name = '%s_%s' % (name_prefix, name_suffix)
                 else:
                     name = '%s_%s' % (org, name_suffix)
 
@@ -9645,6 +9645,11 @@ class easy_imm_wizard(object):
                     target_platform = variable_loop(**templateVars)
                     templateVars["target_platform"] = target_platform
 
+                    #___________________________________________________________________________
+                    #
+                    # Policies On Hold for Right Now
+                    # 'policies.certificate_management_policies.certificate_management_policy',
+                    #___________________________________________________________________________
                     if templateVars["target_platform"] == 'FIAttached':
                         policy_list = [
                             #___________________________
@@ -9653,32 +9658,31 @@ class easy_imm_wizard(object):
                             #___________________________
                             'policies.bios_policies.bios_policy',
                             'policies.boot_order_policies.boot_order_policy',
-                            'policies.power_policies.certificate_management_policy',
-                            'policies.virtual_media_policies.certificate_management_policy'
+                            'policies.power_policies.power_policy',
+                            'policies.virtual_media_policies.virtual_media_policy',
                             #___________________________
                             #
                             # Management Configuration
                             #___________________________
-                            'policies.certificate_management_policies.certificate_management_policy',
-                            'policies.imc_access_policies.certificate_management_policy',
-                            'policies.ipmi_over_lan_policies.certificate_management_policy',
-                            'policies.local_user_policies.certificate_management_policy',
-                            'policies.serial_over_lan_policies.certificate_management_policy',
-                            'policies.snmp_policies.certificate_management_policy',
-                            'policies.syslog_policies.certificate_management_policy',
-                            'policies.virtual_kvm_policies.certificate_management_policy',
+                            'policies.imc_access_policies.imc_access_policy',
+                            'policies.ipmi_over_lan_policies.ipmi_over_lan_policy',
+                            'policies.local_user_policies.local_user_policy',
+                            'policies.serial_over_lan_policies.serial_over_lan_policy',
+                            'policies.snmp_policies.snmp_policy',
+                            'policies.syslog_policies.syslog_policy',
+                            'policies.virtual_kvm_policies.virtual_kvm_policy',
                             #___________________________
                             #
                             # Storage Configuration
                             #___________________________
-                            'policies.sd_card_policies.certificate_management_policy',
-                            'policies.storage_policies.certificate_management_policy',
+                            'policies.sd_card_policies.sd_card_policy',
+                            'policies.storage_policies.storage_policy',
                             #___________________________
                             #
                             # Network Configuration
                             #___________________________
-                            'policies.lan_connectivity_policies.certificate_management_policy',
-                            'policies.san_connectivity_policies.certificate_management_policy',
+                            'policies.lan_connectivity_policies.lan_connectivity_policy',
+                            'policies.san_connectivity_policies.san_connectivity_policy',
                         ]
                     elif templateVars["target_platform"] == 'Standalone':
                         policy_list = [
@@ -9688,37 +9692,37 @@ class easy_imm_wizard(object):
                             #___________________________
                             'policies.bios_policies.bios_policy',
                             'policies.boot_order_policies.boot_order_policy',
-                            'policies.persistent_memory_policies.certificate_management_policy',
-                            'policies.virtual_media_policies.certificate_management_policy'
+                            'policies.persistent_memory_policies.persistent_memory_policy',
+                            'policies.virtual_media_policies.virtual_media_policy',
                             #___________________________
                             #
                             # Management Configuration
                             #___________________________
-                            'policies.device_connector_policies.certificate_management_policy',
-                            'policies.ipmi_over_lan_policies.certificate_management_policy',
-                            'policies.ldap_policies_policies.certificate_management_policy',
-                            'policies.local_user_policies.certificate_management_policy',
-                            'policies.network_connectivity_policies.certificate_management_policy',
-                            'policies.ntp_policies.certificate_management_policy',
-                            'policies.serial_over_lan_policies.certificate_management_policy',
-                            'policies.smtp_policies.certificate_management_policy',
-                            'policies.snmp_policies.certificate_management_policy',
-                            'policies.ssh_policies.certificate_management_policy',
-                            'policies.syslog_policies.certificate_management_policy',
-                            'policies.virtual_kvm_policies.certificate_management_policy',
+                            'policies.device_connector_policies.device_connector_policy',
+                            'policies.ipmi_over_lan_policies.ipmi_over_lan_policy',
+                            'policies.ldap_policies_policies.ldap_policy',
+                            'policies.local_user_policies.local_user_policy',
+                            'policies.network_connectivity_policies.network_connectivity_policy',
+                            'policies.ntp_policies.ntp_policy',
+                            'policies.serial_over_lan_policies.serial_over_lan_policy',
+                            'policies.smtp_policies.smtp_policy',
+                            'policies.snmp_policies.snmp_policy',
+                            'policies.ssh_policies.ssh_policy',
+                            'policies.syslog_policies.syslog_policy',
+                            'policies.virtual_kvm_policies.virtual_kvm_policy',
                             #___________________________
                             #
                             # Storage Configuration
                             #___________________________
-                            'policies.sd_card_policies.certificate_management_policy',
-                            'policies.storage_policies.certificate_management_policy',
+                            'policies.sd_card_policies.sd_card_policy',
+                            'policies.storage_policies.storage_policy',
                             #___________________________
                             #
                             # Network Configuration
                             #___________________________
                             'policies.adapter_configuration_policies.adapter_configuration_policy',
-                            'policies.lan_connectivity_policies.certificate_management_policy',
-                            'policies.san_connectivity_policies.certificate_management_policy',
+                            'policies.lan_connectivity_policies.lan_connectivity_policy',
+                            'policies.san_connectivity_policies.san_connectivity_policy',
                         ]
                     templateVars["allow_opt_out"] = True
                     for policy in policy_list:
@@ -9736,14 +9740,10 @@ class easy_imm_wizard(object):
                 print(f'    description     = "{templateVars["descr"]}"')
                 print(f'    name            = "{templateVars["name"]}"')
                 print(f'    serial_number   = "{templateVars["serial_number"]}"')
+                if server_template == True:
+                    print(f'    ucs_server_profile_template = "{templateVars["ucs_server_profile_template"]}"')
                 if server_template == False:
                     print(f'    target_platform = "{templateVars["target_platform"]}"')
-                if server_template == True:
-                    print(f'    #___________________________"')
-                    print(f'    #')
-                    print(f'    # Server Template')
-                    print(f'    #___________________________"')
-                    print(f'    ucs_server_profile_template = "{templateVars["ucs_server_profile_template"]}"')
                 if server_template == False:
                     print(f'    #___________________________"')
                     print(f'    #')
@@ -9760,8 +9760,8 @@ class easy_imm_wizard(object):
                     print(f'    #')
                     print(f'    # Management Configuration')
                     print(f'    #___________________________"')
-                    if target_platform == 'FIAttached':
-                        print(f'    certificate_management_policy = "{templateVars["pcertificate_management_policy"]}"')
+                    # if target_platform == 'FIAttached':
+                    #     print(f'    certificate_management_policy = "{templateVars["pcertificate_management_policy"]}"')
                     if target_platform == 'Standalone':
                         print(f'    device_connector_policies     = "{templateVars["device_connector_policies"]}"')
                     if target_platform == 'FIAttached':
@@ -9868,6 +9868,11 @@ class easy_imm_wizard(object):
                     target_platform = variable_loop(**templateVars)
                     templateVars["target_platform"] = target_platform
 
+                    #___________________________________________________________________________
+                    #
+                    # Policies On Hold for Right Now
+                    # 'policies.certificate_management_policies.certificate_management_policy',
+                    #___________________________________________________________________________
                     if templateVars["target_platform"] == 'FIAttached':
                         policy_list = [
                             #___________________________
@@ -9876,32 +9881,31 @@ class easy_imm_wizard(object):
                             #___________________________
                             'policies.bios_policies.bios_policy',
                             'policies.boot_order_policies.boot_order_policy',
-                            'policies.power_policies.certificate_management_policy',
-                            'policies.virtual_media_policies.certificate_management_policy'
+                            'policies.power_policies.power_policy',
+                            'policies.virtual_media_policies.virtual_media_policy',
                             #___________________________
                             #
                             # Management Configuration
                             #___________________________
-                            'policies.certificate_management_policies.certificate_management_policy',
-                            'policies.imc_access_policies.certificate_management_policy',
-                            'policies.ipmi_over_lan_policies.certificate_management_policy',
-                            'policies.local_user_policies.certificate_management_policy',
-                            'policies.serial_over_lan_policies.certificate_management_policy',
-                            'policies.snmp_policies.certificate_management_policy',
-                            'policies.syslog_policies.certificate_management_policy',
-                            'policies.virtual_kvm_policies.certificate_management_policy',
+                            'policies.imc_access_policies.imc_access_policy',
+                            'policies.ipmi_over_lan_policies.ipmi_over_lan_policy',
+                            'policies.local_user_policies.local_user_policy',
+                            'policies.serial_over_lan_policies.serial_over_lan_policy',
+                            'policies.snmp_policies.snmp_policy',
+                            'policies.syslog_policies.syslog_policy',
+                            'policies.virtual_kvm_policies.virtual_kvm_policy',
                             #___________________________
                             #
                             # Storage Configuration
                             #___________________________
-                            'policies.sd_card_policies.certificate_management_policy',
-                            'policies.storage_policies.certificate_management_policy',
+                            'policies.sd_card_policies.sd_card_policy',
+                            'policies.storage_policies.storage_policy',
                             #___________________________
                             #
                             # Network Configuration
                             #___________________________
-                            'policies.lan_connectivity_policies.certificate_management_policy',
-                            'policies.san_connectivity_policies.certificate_management_policy',
+                            'policies.lan_connectivity_policies.lan_connectivity_policy',
+                            'policies.san_connectivity_policies.san_connectivity_policy',
                         ]
                     elif templateVars["target_platform"] == 'Standalone':
                         policy_list = [
@@ -9911,37 +9915,37 @@ class easy_imm_wizard(object):
                             #___________________________
                             'policies.bios_policies.bios_policy',
                             'policies.boot_order_policies.boot_order_policy',
-                            'policies.persistent_memory_policies.certificate_management_policy',
-                            'policies.virtual_media_policies.certificate_management_policy'
+                            'policies.persistent_memory_policies.persistent_memory_policy',
+                            'policies.virtual_media_policies.virtual_media_policy',
                             #___________________________
                             #
                             # Management Configuration
                             #___________________________
-                            'policies.device_connector_policies.certificate_management_policy',
-                            'policies.ipmi_over_lan_policies.certificate_management_policy',
-                            'policies.ldap_policies_policies.certificate_management_policy',
-                            'policies.local_user_policies.certificate_management_policy',
-                            'policies.network_connectivity_policies.certificate_management_policy',
-                            'policies.ntp_policies.certificate_management_policy',
-                            'policies.serial_over_lan_policies.certificate_management_policy',
-                            'policies.smtp_policies.certificate_management_policy',
-                            'policies.snmp_policies.certificate_management_policy',
-                            'policies.ssh_policies.certificate_management_policy',
-                            'policies.syslog_policies.certificate_management_policy',
-                            'policies.virtual_kvm_policies.certificate_management_policy',
+                            'policies.device_connector_policies.device_connector_policy',
+                            'policies.ipmi_over_lan_policies.ipmi_over_lan_policy',
+                            'policies.ldap_policies_policies.ldap_policy',
+                            'policies.local_user_policies.local_user_policy',
+                            'policies.network_connectivity_policies.network_connectivity_policy',
+                            'policies.ntp_policies.ntp_policy',
+                            'policies.serial_over_lan_policies.serial_over_lan_policy',
+                            'policies.smtp_policies.smtp_policy',
+                            'policies.snmp_policies.snmp_policy',
+                            'policies.ssh_policies.ssh_policy',
+                            'policies.syslog_policies.syslog_policy',
+                            'policies.virtual_kvm_policies.virtual_kvm_policy',
                             #___________________________
                             #
                             # Storage Configuration
                             #___________________________
-                            'policies.sd_card_policies.certificate_management_policy',
-                            'policies.storage_policies.certificate_management_policy',
+                            'policies.sd_card_policies.sd_card_policy',
+                            'policies.storage_policies.storage_policy',
                             #___________________________
                             #
                             # Network Configuration
                             #___________________________
                             'policies.adapter_configuration_policies.adapter_configuration_policy',
-                            'policies.lan_connectivity_policies.certificate_management_policy',
-                            'policies.san_connectivity_policies.certificate_management_policy',
+                            'policies.lan_connectivity_policies.lan_connectivity_policy',
+                            'policies.san_connectivity_policies.san_connectivity_policy',
                         ]
                     templateVars["allow_opt_out"] = True
                     for policy in policy_list:
@@ -9949,7 +9953,6 @@ class easy_imm_wizard(object):
                         templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
                         templateVars.update(policyData)
 
-                    print(templateVars)
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    description     = "{templateVars["descr"]}"')
                     print(f'    name            = "{templateVars["name"]}"')
@@ -9969,8 +9972,8 @@ class easy_imm_wizard(object):
                     print(f'    #')
                     print(f'    # Management Configuration')
                     print(f'    #___________________________"')
-                    if target_platform == 'FIAttached':
-                        print(f'    certificate_management_policy = "{templateVars["pcertificate_management_policy"]}"')
+                    # if target_platform == 'FIAttached':
+                    #     print(f'    certificate_management_policy = "{templateVars["certificate_management_policy"]}"')
                     if target_platform == 'Standalone':
                         print(f'    device_connector_policies     = "{templateVars["device_connector_policies"]}"')
                     if target_platform == 'FIAttached':
@@ -11455,6 +11458,8 @@ def choose_policy(policy, **templateVars):
         policy_short = policy.replace('policies', 'policy')
     elif 'pools' in policy:
         policy_short = policy.replace('pools', 'pool')
+    elif 'templates' in policy:
+        policy_short = policy.replace('templates', 'template')
     x = policy_short.split('_')
     policy_description = []
     for y in x:
@@ -11636,6 +11641,16 @@ def policies_parse(org, policy_type, policy):
         jsonData = {}
         return policies,jsonData
 
+def policy_descr(name, policy_type):
+    valid = False
+    while valid == False:
+        descr = input(f'What is the Description for the {policy_type}?  [{name} {policy_type}]: ')
+        if descr == '':
+            descr = '%s %s' % (name, policy_type)
+        valid = validating_ucs.description(f'{policy_type} Description', descr, 1, 62)
+        if valid == True:
+            return descr
+
 def policy_loop_standard(self, header, initial_policy, template_type):
     # Set the org_count to 0 for the First Organization
     org_count = 0
@@ -11698,6 +11713,16 @@ def policy_loop_standard(self, header, initial_policy, template_type):
 
         # Increment the org_count for the next Organization Loop
         org_count += 1
+
+def policy_name(namex, policy_type):
+    valid = False
+    while valid == False:
+        name = input(f'What is the Name for the {policy_type}?  [{namex}]: ')
+        if name == '':
+            name = '%s' % (namex)
+        valid = validating_ucs.name_rule(f'{policy_type} Name', name, 1, 62)
+        if valid == True:
+            return name
 
 def policy_select_loop(name_prefix, policy, **templateVars):
     loop_valid = False
@@ -11857,26 +11882,6 @@ def policy_select_loop(name_prefix, policy, **templateVars):
             elif inner_policy == 'vsan_policies':
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).vsan_policies()
 
-def policy_descr(name, policy_type):
-    valid = False
-    while valid == False:
-        descr = input(f'What is the Description for the {policy_type}?  [{name} {policy_type}]: ')
-        if descr == '':
-            descr = '%s %s' % (name, policy_type)
-        valid = validating_ucs.description(f'{policy_type} Description', descr, 1, 62)
-        if valid == True:
-            return descr
-
-def policy_name(namex, policy_type):
-    valid = False
-    while valid == False:
-        name = input(f'What is the Name for the {policy_type}?  [{namex}]: ')
-        if name == '':
-            name = '%s' % (namex)
-        valid = validating_ucs.name_rule(f'{policy_type} Name', name, 1, 62)
-        if valid == True:
-            return name
-
 def policy_template(self, **templateVars):
     configure_loop = False
     while configure_loop == False:
@@ -11885,7 +11890,7 @@ def policy_template(self, **templateVars):
 
             valid = False
             while valid == False:
-                policy_file = 'ucs_templates/variables/%s' % (templateVars["policy_file"])
+                policy_file = 'Templates/variables/%s' % (templateVars["policy_file"])
                 if os.path.isfile(policy_file):
                     template_file = open(policy_file, 'r')
                     template_file.seek(0)
@@ -11955,6 +11960,79 @@ def policy_template(self, **templateVars):
                     print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                     print(f'\n------------------------------------------------------\n')
 
+def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
+    dest_dir = './Intersight/%s/%s' % (templateVars["org"], dest_dir)
+    if not os.path.isdir(dest_dir):
+        mk_dir = 'mkdir -p %s' % (dest_dir)
+        os.system(mk_dir)
+    dest_file_path = '%s/%s' % (dest_dir, dest_file)
+    if not os.path.isfile(dest_file_path):
+        create_file = 'touch %s' % (dest_file_path)
+        os.system(create_file)
+    tf_file = dest_file_path
+    wr_file = open(tf_file, wr_method)
+
+    # Render Payload and Write to File
+    payload = template.render(templateVars)
+    wr_file.write(payload)
+    wr_file.close()
+
+def variable_loop(**templateVars):
+    valid = False
+    while valid == False:
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'{templateVars["var_description"]}')
+        policy_file = 'Templates/variables/%s' % (templateVars["policy_file"])
+        if os.path.isfile(policy_file):
+            variable_file = open(policy_file, 'r')
+            varsx = []
+            for line in variable_file:
+                varsx.append(line.strip())
+            for index, value in enumerate(varsx):
+                index += 1
+                if index < 10:
+                    print(f'     {index}. {value}')
+                else:
+                    print(f'    {index}. {value}')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        if templateVars["multi_select"] == True:
+            var_selection = input(f'Please Enter the Option Number(s) to Select for {templateVars["var_type"]}: ')
+        else:
+            var_selection = input(f'Please Enter the Option Number to Select for {templateVars["var_type"]}: ')
+        if not var_selection == '':
+            if templateVars["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
+                for index, value in enumerate(varsx):
+                    index += 1
+                    if int(var_selection) == index:
+                        selection = value
+                        valid = True
+            elif templateVars["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
+                var_list = vlan_list_full(var_selection)
+                var_length = int(len(var_list))
+                var_count = 0
+                selection = []
+                for index, value in enumerate(varsx):
+                    index += 1
+                    for vars in var_list:
+                        if int(vars) == index:
+                            var_count += 1
+                            selection.append(value)
+                if var_count == var_length:
+                    valid = True
+                else:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  The list of Vars {var_list} did not match the available list.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return selection
+
 def vars_from_list(var_options, **templateVars):
     selection = []
     selection_count = 0
@@ -12013,79 +12091,6 @@ def vars_from_list(var_options, **templateVars):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-    return selection
-
-def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
-    dest_dir = './Intersight/%s/%s' % (templateVars["org"], dest_dir)
-    if not os.path.isdir(dest_dir):
-        mk_dir = 'mkdir -p %s' % (dest_dir)
-        os.system(mk_dir)
-    dest_file_path = '%s/%s' % (dest_dir, dest_file)
-    if not os.path.isfile(dest_file_path):
-        create_file = 'touch %s' % (dest_file_path)
-        os.system(create_file)
-    tf_file = dest_file_path
-    wr_file = open(tf_file, wr_method)
-
-    # Render Payload and Write to File
-    payload = template.render(templateVars)
-    wr_file.write(payload)
-    wr_file.close()
-
-def variable_loop(**templateVars):
-    valid = False
-    while valid == False:
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'{templateVars["var_description"]}')
-        policy_file = 'ucs_templates/variables/%s' % (templateVars["policy_file"])
-        if os.path.isfile(policy_file):
-            variable_file = open(policy_file, 'r')
-            varsx = []
-            for line in variable_file:
-                varsx.append(line.strip())
-            for index, value in enumerate(varsx):
-                index += 1
-                if index < 10:
-                    print(f'     {index}. {value}')
-                else:
-                    print(f'    {index}. {value}')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        if templateVars["multi_select"] == True:
-            var_selection = input(f'Please Enter the Option Number(s) to Select for {templateVars["var_type"]}: ')
-        else:
-            var_selection = input(f'Please Enter the Option Number to Select for {templateVars["var_type"]}: ')
-        if not var_selection == '':
-            if templateVars["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
-                for index, value in enumerate(varsx):
-                    index += 1
-                    if int(var_selection) == index:
-                        selection = value
-                        valid = True
-            elif templateVars["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
-                var_list = vlan_list_full(var_selection)
-                var_length = int(len(var_list))
-                var_count = 0
-                selection = []
-                for index, value in enumerate(varsx):
-                    index += 1
-                    for vars in var_list:
-                        if int(vars) == index:
-                            var_count += 1
-                            selection.append(value)
-                if var_count == var_length:
-                    valid = True
-                else:
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  The list of Vars {var_list} did not match the available list.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-        else:
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
     return selection
 
 def vlan_list_full(vlan_list):
