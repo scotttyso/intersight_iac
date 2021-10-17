@@ -1,0 +1,292 @@
+{
+    "policies":{
+        "bios.Policy":{
+            "templates":{
+                "description": "Pre-Defined BIOS Templates with recommended policy parameters.",
+                "enum":[
+                    "DSS",
+                    "HPC",
+                    "Java",
+                    "OLTP",
+                    "Virtualization",
+                    "Windows"
+                ],
+                "default": "Virtualization"
+            }
+        },
+        "vnic.EthNetworkPolicy":{
+            "templates":{
+                "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
+                "enum":[
+                    "Linux",
+                    "Linux-NVMe-RoCE",
+                    "MQ",
+                    "MQ-SMBd",
+                    "SMBServer",
+                    "SMBClient",
+                    "Solaris",
+                    "SRIOV",
+                    "usNIC",
+                    "usNICOracleRAC",
+                    "VMWare",
+                    "VMWarePassThru",
+                    "WIN-AzureStack",
+                    "Win-HPN",
+                    "Win-HPN-SMBd",
+                    "Windows"
+                ],
+                "default": "VMWare"
+            }
+        },
+        "vnic.FcNetworkPolicy":{
+            "templates":{
+                "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
+                "enum":[
+                    "FCNVMeInitiator",
+                    "FCNVMeTarget",
+                    "Initiator",
+                    "Linux",
+                    "Solaris",
+                    "Target",
+                    "VMWare",
+                    "WindowsBoot",
+                    "Windows"
+                ],
+                "default": "VMWare"
+            }
+        },
+        "iam.LdapPolicy":{
+            "role":{
+                "description": "The Role to Assign to the LDAP Group.",
+                "enum":[
+                    "admin",
+                    "readonly",
+                    "user"
+                ],
+                "default": "admin"
+            }
+        },
+        "iam.LocalUserPasswordPolicy":{
+            "role":{
+                "description": "The Role to Assign to the Local User.",
+                "enum":[
+                    "admin",
+                    "readonly",
+                    "user"
+                ],
+                "default": "admin"
+            }
+        },
+        "fabric.PortPolicy":{
+            "unifiedPorts":{
+                "description": "The Port Range to convert to Fibre-Channel Mode.",
+                "enum":[
+                    "1-4",
+                    "1-8",
+                    "1-12",
+                    "1-16"
+                ],
+                "default": "1-4"
+            },
+            "vnic.PlacementSettings": {
+                "description": "PCIe Slot where the VIC adapter is installed. Supported values are (1-15) and MLOM.",
+                "enum":[
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    "10",
+                    "11",
+                    "12",
+                    "13",
+                    "14",
+                    "15",
+                    "MLOM"
+                ],
+                "default": "MLOM"
+            }
+        },
+        "power.Policy":{
+            "systemType": {
+                "description": "The Type of System to Apply this Power Policy to.",
+                "enum":[
+                    "5108",
+                    "9508",
+                    "Server"
+                ],
+                "default": "9508"
+            }
+        },
+        "thermal.Policy":{
+            "chassisType": {
+                "description": "The Type of Chassis to Apply this Thermal Policy to.",
+                "enum":[
+                    "5108",
+                    "9508"
+                ],
+                "default": "9508"
+            }
+        },
+        "vmedia.Mapping":{
+            "cifs.mountOptions": {
+                "description": "Mount Options you would like to assign to the Mapping Policy.",
+                "enum":[
+                    "guest",
+                    "noserverino",
+                    "nounix",
+                    "soft",
+                    "vers=2.0",
+                    "vers=3.0"
+                ],
+                "default": ""
+            },
+            "http.mountOptions": {
+                "description": "Mount Options you would like to assign to the Mapping Policy.",
+                "enum":[
+                    "guest",
+                    "noserverino",
+                    "nounix",
+                    "soft",
+                    "vers=2.0",
+                    "vers=3.0"
+                ],
+                "default": ""
+            },
+            "nfs.mountOptions": {
+                "description": "Mount Options you would like to assign to the Mapping Policy.",
+                "enum":[
+                    "nolock",
+                    "noexec",
+                    "port",
+                    "retry",
+                    "ro",
+                    "rsize",
+                    "rw",
+                    "soft",
+                    "timeou",
+                    "wsize",
+                    "vers=4.0",
+                    "vers=3.0"
+                ],
+                "default": ""
+            }
+        }
+    },
+    "profiles":{
+        "action":{
+            "description": "Please Choose the Action to Perform on this Profile:\n* Deploy - will deploy the profile.\n* No-op - will not deploy the profile.\n* Unassign - will detach the profile from the hardware.\n",
+            "enum": [
+                "Deploy",
+                "No-op",
+                "Unassign"
+            ],
+            "default":"No-op"
+        }
+    },
+    "wizard":{
+        "Individual":{
+            "description": "Select what type to Deploy:",
+            "enum": [
+                "Policies",
+                "Pools",
+                "Profiles"
+            ],
+            "default":"Policies"
+        },
+        "mainMenu":{
+            "description": "Select the Deployment type you would like to do with the wizard:",
+            "enum": [
+                "Deploy Domain Wizard",
+                "Deploy Domain Chassis Wizard",
+                "Deploy Domain Fabric Interconnects Wizard",
+                "Deploy Domain Servers Wizard",
+                "Deploy Standalone Servers Wizard",
+                "Deploy Individual Policies"
+            ],
+            "default":"Deploy Domain Wizard"
+        },
+        "Policies":{
+            "description": "Select what type to Deploy:",
+            "enum": [
+                "Adapter Configuration Policies",
+                "BIOS Policies",
+                "Boot Order Policies",
+                "Device Connector Policies",
+                "Ethernet Adapter Policies",
+                "Ethernet Network Policies",
+                "Ethernet Network Control Policies",
+                "Ethernet Network Group Policies",
+                "Ethernet QoS Policies",
+                "Fibre-Channel Adapter Policies",
+                "Fibre-Channel Network Policies",
+                "Fibre-Channel QoS Policies",
+                "Flow Control Policies",
+                "IMC Access Policies",
+                "IPMI over LAN Policies",
+                "LAN Connectivity Policies",
+                "LDAP Policies",
+                "Link Aggregation Policies",
+                "Link Control Policies",
+                "Local User Policies",
+                "Multicast Policies",
+                "Network Connectivity Policies",
+                "NTP Policies",
+                "Persistent Memory Policies",
+                "Port Policies",
+                "Power Policies",
+                "SAN Connectivity Policies",
+                "SD Card Policies",
+                "Serial over LAN Policies",
+                "SMTP Policies",
+                "SNMP Policies",
+                "SSH Policies",
+                "Storage Policies",
+                "Switch Control Policies",
+                "Syslog Policies",
+                "Thermal Policies",
+                "Virtual KVM Policies",
+                "Virtual Media Policies",
+                "VLAN Policies",
+                "VSAN Policies"
+            ],
+            "default":"Adapter Configuration Policies"
+        },
+        "Pools":{
+            "description": "Select what type to Deploy:",
+            "enum": [
+                "IP Pools",
+                "IQN Pools",
+                "MAC Pools",
+                "UUID Pools",
+                "WWNN Pools",
+                "WWPN Pools"
+            ],
+            "default":"IP Pools"
+        },
+        "Profiles":{
+            "description": "Select what type to Deploy:",
+            "enum": [
+                "UCS Chassis Profiles",
+                "UCS Domain Profiles",
+                "UCS Server Profiles",
+                "UCS Server Profile Templates"
+            ],
+            "default":"UCS Server Profiles"
+        },
+        "underConstruction":{
+            "description": "These are being worked on.",
+            "enum": [
+                "Certificate Management Policies",
+                "iSCSI Adapter Policies",
+                "iSCSI Boot Policies",
+                "iSCSI Static Target Policies"
+            ],
+            "default":""
+        }
+    }
+}

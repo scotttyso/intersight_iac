@@ -74,12 +74,24 @@ def process_wizard():
     print(f'  Starting the Easy IMM Initial Configuration Wizard!')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
+    jsonFile = 'Templates/variables/intersight_openapi.json'
+    jsonOpen = open(jsonFile, 'r')
+    jsonData = json.load(jsonOpen)
+    jsonOpen.close()
+
+    jsonFile = 'Templates/variables/easy_variables.json'
+    jsonOpen = open(jsonFile, 'r')
+    easy_jsonData = json.load(jsonOpen)
+    jsonOpen.close()
+
     templateVars = {}
     templateVars["multi_select"] = False
-    templateVars["policy_file"] = 'wizard_menu.txt'
-    templateVars["var_description"] = '    Select the Deployment type you would like to do with the wizard:\n\n'
-    templateVars["var_type"] = 'Menu Option'
-    main_menu = lib_ucs.variable_loop(**templateVars)
+    jsonVars = easy_jsonData['wizard']
+    templateVars["var_description"] = jsonVars['mainMenu']['description']
+    templateVars["jsonVars"] = jsonVars['mainMenu']['enum']
+    templateVars["defaultVar"] = jsonVars['mainMenu']['default']
+    templateVars["varType"] = 'Main Menu'
+    main_menu = lib_ucs.variablesFromAPI(**templateVars)
     main_menu = main_menu.replace(' ', '_')
     main_menu = main_menu.lower()
 
@@ -238,47 +250,43 @@ def process_wizard():
 
     policy_list = []
     if main_menu == 'deploy_individual_policies':
-        templateVars["policy_file"] = 'select_type_menu.txt'
-        templateVars["var_description"] = '    Select the Module Type:\n\n'
-        templateVars["var_type"] = 'Configuration Type'
-        type_menu = lib_ucs.variable_loop(**templateVars)
+        templateVars["var_description"] = jsonVars['Individual']['description']
+        templateVars["jsonVars"] = sorted(jsonVars['Individual']['enum'])
+        templateVars["defaultVar"] = jsonVars['Individual']['default']
+        templateVars["varType"] = 'Configuration Type'
+        type_menu = lib_ucs.variablesFromAPI(**templateVars)
+        multi_select_descr = '\n    - Single policy: 1 or 5\n'\
+            '    - List of Policies: 1,2,3\n'\
+            '    - Range of Policies: 1-3,5-6\n'
+        templateVars["multi_select"] = True
         if type_menu == 'Policies':
-            templateVars["multi_select"] = True
-            templateVars["policy_file"] = 'policies.txt'
-            templateVars["var_description"] = '    Select the Policies to Create:\n'\
-                '    - Single policy: 1 or 5\n'\
-                '    - List of Policies: 1,2,3\n'\
-                '    - Range of Policies: 1-3,5-6\n'
-            templateVars["var_type"] = 'Configuration Type'
-            policies_list = lib_ucs.variable_loop(**templateVars)
+            templateVars["var_description"] = jsonVars['Policies']['description'] + multi_select_descr
+            templateVars["jsonVars"] = sorted(jsonVars['Policies']['enum'])
+            templateVars["defaultVar"] = jsonVars['Policies']['default']
+            templateVars["varType"] = 'Policies'
+            policies_list = lib_ucs.variablesFromAPI(**templateVars)
             for line in policies_list:
                 line = line.replace(' ', '_')
                 line = line.replace('-', '_')
                 line = line.lower()
                 policy_list.append(line)
         elif type_menu == 'Pools':
-            templateVars["multi_select"] = True
-            templateVars["policy_file"] = 'pools.txt'
-            templateVars["var_description"] = '    Select the Pools to Create:\n'\
-                '    - Single Pool: 1 or 5\n'\
-                '    - List of Pools: 1,2,3\n'\
-                '    - Range of Pools: 1-3,5-6\n'
-            templateVars["var_type"] = 'Configuration Type'
-            policies_list = lib_ucs.variable_loop(**templateVars)
+            templateVars["var_description"] = jsonVars['Pools']['description'] + multi_select_descr
+            templateVars["jsonVars"] = sorted(jsonVars['Pools']['enum'])
+            templateVars["defaultVar"] = jsonVars['Pools']['default']
+            templateVars["varType"] = 'Pools'
+            policies_list = lib_ucs.variablesFromAPI(**templateVars)
             for line in policies_list:
                 line = line.replace(' ', '_')
                 line = line.replace('-', '_')
                 line = line.lower()
                 policy_list.append(line)
         elif type_menu == 'Profiles':
-            templateVars["multi_select"] = True
-            templateVars["policy_file"] = 'profiles.txt'
-            templateVars["var_description"] = '    Select the Profiles to Create:\n'\
-                '    - Single Profile: 1 or 5\n'\
-                '    - List of Profiles: 1,2,3\n'\
-                '    - Range of Profiles: 1-3,5-6\n'
-            templateVars["var_type"] = 'Configuration Type'
-            policies_list = lib_ucs.variable_loop(**templateVars)
+            templateVars["var_description"] = jsonVars['Profiles']['description'] + multi_select_descr
+            templateVars["jsonVars"] = sorted(jsonVars['Profiles']['enum'])
+            templateVars["defaultVar"] = jsonVars['Profiles']['default']
+            templateVars["varType"] = 'Profiles'
+            policies_list = lib_ucs.variablesFromAPI(**templateVars)
             for line in policies_list:
                 line = line.replace(' ', '_')
                 line = line.replace('-', '_')
@@ -318,23 +326,23 @@ def process_wizard():
         pci_order_consumed = [{0:[]},{1:[]}]
         type = 'pools'
         if policy == 'ip_pools':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ip_pools()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ip_pools(jsonData, easy_jsonData)
         elif policy == 'iqn_pools':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).iqn_pools()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).iqn_pools(jsonData, easy_jsonData)
         elif policy == 'mac_pools':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).mac_pools()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).mac_pools(jsonData, easy_jsonData)
         elif policy == 'wwnn_pools':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).wwnn_pools()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).wwnn_pools(jsonData, easy_jsonData)
         elif policy == 'wwpn_pools':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).wwpn_pools()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).wwpn_pools(jsonData, easy_jsonData)
         elif policy == 'uuid_pools':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).uuid_pools()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).uuid_pools(jsonData, easy_jsonData)
 
         type = 'policies_vlans'
         if policy == 'multicast_policies':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).multicast_policies()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).multicast_policies(jsonData, easy_jsonData)
         elif policy == 'vlan_policies':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).vlan_policies()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).vlan_policies(jsonData, easy_jsonData)
 
         type = 'policies'
         #================================
@@ -352,120 +360,116 @@ def process_wizard():
         # iscsi_boot_policies
         # iscsi_static_target_policies
         if policy == 'adapter_configuration_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).adapter_configuration_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData)
         if policy == 'bios_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).bios_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).bios_policies(jsonData, easy_jsonData)
         if policy == 'boot_order_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).boot_order_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).boot_order_policies(jsonData, easy_jsonData)
         #========================================================
         # Certificate Management Policies doesn't work
         #========================================================
         # elif policy == 'certificate_management_policies':
         #     lib_ucs.easy_imm_wizard(name_prefix, org, type).certificate_management_policies()
         elif policy == 'device_connector_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).device_connector_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).device_connector_policies(jsonData, easy_jsonData)
         elif policy == 'ethernet_adapter_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_adapter_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_adapter_policies(jsonData, easy_jsonData)
         elif policy == 'ethernet_network_control_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_network_control_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_network_control_policies(jsonData, easy_jsonData)
         elif policy == 'ethernet_network_group_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_network_group_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_network_group_policies(jsonData, easy_jsonData)
         elif policy == 'ethernet_network_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_network_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_network_policies(jsonData, easy_jsonData)
         elif policy == 'ethernet_qos_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_qos_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ethernet_qos_policies(jsonData, easy_jsonData)
         elif policy == 'fibre_channel_adapter_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).fibre_channel_adapter_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).fibre_channel_adapter_policies(jsonData, easy_jsonData)
         elif policy == 'fibre_channel_network_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).fibre_channel_network_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).fibre_channel_network_policies(jsonData, easy_jsonData)
         elif policy == 'fibre_channel_qos_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).fibre_channel_qos_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).fibre_channel_qos_policies(jsonData, easy_jsonData)
         elif policy == 'flow_control_policies':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).flow_control_policies()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).flow_control_policies(jsonData, easy_jsonData)
         elif policy == 'imc_access_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).imc_access_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).imc_access_policies(jsonData, easy_jsonData)
         elif policy == 'ipmi_over_lan_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ipmi_over_lan_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ipmi_over_lan_policies(jsonData, easy_jsonData)
         #========================================================
         # Policies that Will not be Supported at initial Release
         #========================================================
         # elif policy == 'iscsi_adapter_policies':
-        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_adapter_policies()
+        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_adapter_policies(jsonData, easy_jsonData)
         # elif policy == 'iscsi_boot_policies':
-        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_boot_policies()
+        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_boot_policies(jsonData, easy_jsonData)
         # elif policy == 'iscsi_static_target_policies':
-        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_static_target_policies()
+        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_static_target_policies(jsonData, easy_jsonData)
         elif policy == 'lan_connectivity_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).lan_connectivity_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ldap_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ldap_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ldap_policies(jsonData, easy_jsonData)
         elif policy == 'link_aggregation_policies':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).link_aggregation_policies()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).link_aggregation_policies(jsonData, easy_jsonData)
         elif policy == 'link_control_policies':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).link_control_policies()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).link_control_policies(jsonData, easy_jsonData)
         elif policy == 'local_user_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).local_user_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).local_user_policies(jsonData, easy_jsonData)
         elif policy == 'network_connectivity_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).network_connectivity_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).network_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ntp_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ntp_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ntp_policies(jsonData, easy_jsonData)
         elif policy == 'persistent_memory_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).persistent_memory_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).persistent_memory_policies(jsonData, easy_jsonData)
         elif policy == 'port_policies':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).port_policies()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).port_policies(jsonData, easy_jsonData)
         elif policy == 'power_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).power_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).power_policies(jsonData, easy_jsonData)
         #========================================================
         # Work in Progress
         # Need to finish LAN Policies for pci_order_consumed
         #========================================================
         elif policy == 'san_connectivity_policies':
             pci_order_consumed = [{0:[0, 1, 2, 3, 4, 5, 6, 7]},{1:[0, 1, 2, 3, 4, 5, 6, 7]}]
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).san_connectivity_policies(pci_order_consumed)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).san_connectivity_policies(jsonData, pci_order_consumed)
         elif policy == 'sd_card_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).sd_card_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData)
         elif policy == 'serial_over_lan_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).serial_over_lan_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).serial_over_lan_policies(jsonData, easy_jsonData)
         elif policy == 'smtp_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).smtp_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).smtp_policies(jsonData, easy_jsonData)
         elif policy == 'snmp_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).snmp_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).snmp_policies(jsonData, easy_jsonData)
         elif policy ==  'ssh_policies':
-             lib_ucs.easy_imm_wizard(name_prefix, org, type).ssh_policies()
+             lib_ucs.easy_imm_wizard(name_prefix, org, type).ssh_policies(jsonData, easy_jsonData)
         elif policy == 'storage_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).storage_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).storage_policies(jsonData, easy_jsonData)
         elif policy == 'switch_control_policies':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).switch_control_policies()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).switch_control_policies(jsonData, easy_jsonData)
         elif policy == 'syslog_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).syslog_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).syslog_policies(jsonData, easy_jsonData)
         elif policy == 'system_qos_policies':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).system_qos_policies()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).system_qos_policies(jsonData, easy_jsonData)
         elif policy == 'thermal_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).thermal_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).thermal_policies(jsonData, easy_jsonData)
         elif policy == 'virtual_kvm_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).virtual_kvm_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).virtual_kvm_policies(jsonData, easy_jsonData)
         elif policy == 'virtual_media_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).virtual_media_policies()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).virtual_media_policies(jsonData, easy_jsonData)
         elif policy == 'vsan_policies':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).vsan_policies()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).vsan_policies(jsonData, easy_jsonData)
 
         type = 'ucs_chassis_profiles'
         if policy == 'ucs_chassis_profiles':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).ucs_chassis_profiles()
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).ucs_chassis_profiles(jsonData, easy_jsonData)
 
         type = 'ucs_domain_profiles'
         if policy == 'ucs_domain_profiles':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).ucs_domain_profiles(name_prefix)
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).ucs_domain_profiles(jsonData, name_prefix)
 
         type = 'ucs_server_profiles'
         if policy == 'ucs_server_profile_templates':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ucs_server_profile_templates()
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ucs_server_profile_templates(jsonData, easy_jsonData)
         elif policy == 'ucs_server_profiles':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).ucs_server_profiles()
-
-    # 35 Complete 7 to go
-
-
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).ucs_server_profiles(jsonData, easy_jsonData)
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')

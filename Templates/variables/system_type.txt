@@ -1,3 +1,29 @@
 5108
 9508
 Server
+
+                    templateVars["multi_select"] = False
+                    jsonVars = easy_jsonData['policies']['fabric.PortPolicy']
+                    templateVars["var_description"] = jsonVars['vnic.PlacementSettings']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['vnic.PlacementSettings']['enum'])
+                    templateVars["defaultVar"] = jsonVars['vnic.PlacementSettings']['default']
+                    templateVars["varType"] = 'Slot Id'
+                    templateVars["slot_id"] = variablesFromAPI(**templateVars)
+
+                    templateVars["multi_select"] = False
+                    jsonVars = jsonData['components']['schemas']['thermal.Policy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['FanControlMode']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['FanControlMode']['enum'])
+                    templateVars["defaultVar"] = jsonVars['FanControlMode']['default']
+                    templateVars["varType"] = 'Fan Control Mode'
+                    templateVars["fan_control_mode"] = variablesFromAPI(**templateVars)
+
+                    [x for x in jsonVars['SocketMemoryId']['enum']]
+
+                    templateVars["multi_select"] = False
+                    jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['TargetPlatform']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
+                    templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                    templateVars["varType"] = 'Target Platform'
+                    templateVars["target_platform"] = variablesFromAPI(**templateVars)

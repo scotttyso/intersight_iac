@@ -1,8 +1,0 @@
-emergency
-alert
-critical
-error
-warning
-notice
-informational
-debug

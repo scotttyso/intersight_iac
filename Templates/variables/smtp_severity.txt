@@ -1,5 +1,0 @@
-critical
-condition
-warning
-major
-minor

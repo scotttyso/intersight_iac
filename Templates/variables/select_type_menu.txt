@@ -1,3 +1,0 @@
-Policies
-Pools
-Profiles

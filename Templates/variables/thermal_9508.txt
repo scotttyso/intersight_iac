@@ -1,5 +1,0 @@
-Acoustic
-Balanced
-LowPower
-HighPower
-MaximumPower

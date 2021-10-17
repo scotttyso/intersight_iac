@@ -1,3 +1,0 @@
-admin
-read-only
-user

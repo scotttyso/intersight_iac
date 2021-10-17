@@ -828,7 +828,7 @@ class easy_imm_wizard(object):
     #========================================
     # Adapter Configuration Policy Module
     #========================================
-    def adapter_configuration_policies(self):
+    def adapter_configuration_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'adapter'
         org = self.org
@@ -848,12 +848,12 @@ class easy_imm_wizard(object):
         configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  A {policy_type} configures the Ethernet and Fibre-Channel settings for the ')
-            print(f'  Virtual Interface Card (VIC) adapter.\n\n')
+            print(f'  An {policy_type} configures the Ethernet and Fibre-Channel settings for the ')
+            print(f'  Virtual Interface Card (VIC) adapter.\n')
             print(f'  This wizard will save the configuraton for this section to the following file:')
             print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
+            configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
@@ -926,19 +926,13 @@ class easy_imm_wizard(object):
                     intList = [1, 2, 3, 4]
                     for x in intList:
                         templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'fec_mode.txt'
-                        templateVars["var_description"] = '  DCE Interface [1-4] Forward Error Correction (FEC) mode setting for the DCE \n'\
-                            '  interfaces of the adapter.  FEC mode settings are supported on Cisco VIC 14xx adapters.\n'\
-                            '  FEC mode "cl74" is unsupported for Cisco VIC 1495/1497.\n'\
-                            '    * cl74 - Use cl74 standard as FEC mode setting. "Clause 74" aka FC-FEC ("FireCode" FEC) offers simple,\n'\
-                            '      low-latency protection against 1 burst/sparse bit error, but it is not good for random errors.\n'\
-                            '    * cl91 - (Default) Use cl91 standard as FEC mode setting. "Clause 91" aka RS-FEC\n'\
-                            '      ("ReedSolomon" FEC) offers better error protection against bursty and random errors\n'\
-                            '      but adds latency.\n'\
-                            '    * Off - Disable FEC mode on the DCE Interface.\n'
-                        templateVars["var_type"] = f'DCE Interface {x} FEC Mode'
+                        jsonVars = jsonData['components']['schemas']['adapter.DceInterfaceSettings']['allOf'][1]['properties']
+                        templateVars["var_description"] = jsonVars['FecMode']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['FecMode']['enum'])
+                        templateVars["defaultVar"] = jsonVars['FecMode']['default']
+                        templateVars["varType"] = f'DCE Interface {x} FEC Mode'
                         intFec = f'fec_mode_{x}'
-                        templateVars[intFec] = variable_loop(**templateVars)
+                        templateVars[intFec] = variablesFromAPI(**templateVars)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    description         = "{templateVars["descr"]}"')
@@ -989,7 +983,7 @@ class easy_imm_wizard(object):
     #========================================
     # BIOS Policy Module
     #========================================
-    def bios_policies(self):
+    def bios_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         policy_type = 'BIOS Policy'
@@ -999,7 +993,6 @@ class easy_imm_wizard(object):
         templateVars["initial_write"] = True
         templateVars["name_prefix"] = name_prefix
         templateVars["org"] = org
-        templateVars["policy_file"] = 'bios_templates.txt'
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'bios_policies'
@@ -1008,17 +1001,72 @@ class easy_imm_wizard(object):
         write_to_template(self, **templateVars)
         templateVars["initial_write"] = False
 
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'  {policy_x} Policies:  To simplify your work, this wizard will use {policy_x}')
-        print(f'  Templates that are pre-configured.  You can add custom {policy_x} policy')
-        print(f'  configuration to the {templateVars["template_type"]}.auto.tfvars file at your descretion.')
-        print(f'  That will not be covered by this wizard as the focus of the wizard is on simplicity.\n')
-        print(f'  This wizard will save the configuraton for this section to the following file:')
-        print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  {policy_x} Policies:  To simplify your work, this wizard will use {policy_x}')
+            print(f'  Templates that are pre-configured.  You can add custom {policy_x} policy')
+            print(f'  configuration to the {templateVars["template_type"]}.auto.tfvars file at your descretion.')
+            print(f'  That will not be covered by this wizard as the focus of the wizard is on simplicity.\n')
+            print(f'  This wizard will save the configuraton for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                policy_loop = False
+                while policy_loop == False:
 
-        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-        policy_names = policy_template(self, **templateVars)
+                    templateVars["multi_select"] = False
+                    jsonVars = easy_jsonData['policies']['bios.Policy']
+                    templateVars["var_description"] = jsonVars['templates']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['templates']['enum'])
+                    templateVars["defaultVar"] = jsonVars['templates']['default']
+                    templateVars["varType"] = 'BIOS Template'
+                    templateVars["policy_template"] = variablesFromAPI(**templateVars)
+
+                    if not templateVars["name_prefix"] == '':
+                        name = '%s_%s' % (templateVars["name_prefix"], templateVars["policy_template"])
+                    else:
+                        name = '%s_%s' % (templateVars["org"], templateVars["policy_template"])
+
+                    templateVars["name"] = policy_name(name, templateVars["policy_type"])
+                    templateVars["descr"] = policy_descr(templateVars["name"], templateVars["policy_type"])
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'   bios_template = "{templateVars["policy_template"]}"')
+                    print(f'   description   = "{templateVars["descr"]}"')
+                    print(f'   name          = "{templateVars["name"]}"')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_yes(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
+            elif configure == 'N':
+                configure_loop = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
         templateVars["template_file"] = 'template_close.jinja2'
@@ -1027,7 +1075,7 @@ class easy_imm_wizard(object):
     #========================================
     # Boot Order Policy Module
     #========================================
-    def boot_order_policies(self):
+    def boot_order_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'boot_order'
         org = self.org
@@ -1101,7 +1149,7 @@ class easy_imm_wizard(object):
     #========================================
     # Device Connector Policy Module
     #========================================
-    def device_connector_policies(self):
+    def device_connector_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'devcon'
         org = self.org
@@ -1208,7 +1256,7 @@ class easy_imm_wizard(object):
     #========================================
     # Ethernet Adapter Policy Module
     #========================================
-    def ethernet_adapter_policies(self):
+    def ethernet_adapter_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         policy_type = 'Ethernet Adapter Policy'
@@ -1218,7 +1266,6 @@ class easy_imm_wizard(object):
         templateVars["initial_write"] = True
         templateVars["name_prefix"] = name_prefix
         templateVars["org"] = org
-        templateVars["policy_file"] = 'ethernet_adapter_templates.txt'
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ethernet_adapter_policies'
@@ -1227,17 +1274,72 @@ class easy_imm_wizard(object):
         write_to_template(self, **templateVars)
         templateVars["initial_write"] = False
 
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'  {policy_x} Policies:  To simplify your work, this wizard will use {policy_x}')
-        print(f'  Templates that are pre-configured.  You can add custom {policy_x} policy')
-        print(f'  configuration to the {templateVars["template_type"]}.auto.tfvars file at your descretion.')
-        print(f'  That will not be covered by this wizard as the focus of the wizard is on simplicity.\n')
-        print(f'  This wizard will save the configuraton for this section to the following file:')
-        print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  {policy_x} Policies:  To simplify your work, this wizard will use {policy_x}')
+            print(f'  Templates that are pre-configured.  You can add custom {policy_x} policy')
+            print(f'  configuration to the {templateVars["template_type"]}.auto.tfvars file at your descretion.')
+            print(f'  That will not be covered by this wizard as the focus of the wizard is on simplicity.\n')
+            print(f'  This wizard will save the configuraton for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                policy_loop = False
+                while policy_loop == False:
 
-        templateVars["template_file"] = 'ethernet_adapter_templates.jinja2'
-        policy_names = policy_template(self, **templateVars)
+                    templateVars["multi_select"] = False
+                    jsonVars = easy_jsonData['policies']['vnic.EthNetworkPolicy']
+                    templateVars["var_description"] = jsonVars['templates']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['templates']['enum'])
+                    templateVars["defaultVar"] = jsonVars['templates']['default']
+                    templateVars["varType"] = 'Ethernet Adapter Template'
+                    templateVars["policy_template"] = variablesFromAPI(**templateVars)
+
+                    if not templateVars["name_prefix"] == '':
+                        name = '%s_%s' % (templateVars["name_prefix"], templateVars["policy_template"])
+                    else:
+                        name = '%s_%s' % (templateVars["org"], templateVars["policy_template"])
+
+                    templateVars["name"] = policy_name(name, templateVars["policy_type"])
+                    templateVars["descr"] = policy_descr(templateVars["name"], templateVars["policy_type"])
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'   adapter_template = "{templateVars["policy_template"]}"')
+                    print(f'   description      = "{templateVars["descr"]}"')
+                    print(f'   name             = "{templateVars["name"]}"')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % ('ethernet_adapter_templates')
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_yes(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
+            elif configure == 'N':
+                configure_loop = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
         templateVars["template_file"] = 'template_close.jinja2'
@@ -1246,7 +1348,7 @@ class easy_imm_wizard(object):
     #========================================
     # Ethernet Network Control Policy Module
     #========================================
-    def ethernet_network_control_policies(self):
+    def ethernet_network_control_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'netwk_ctrl'
         org = self.org
@@ -1314,16 +1416,18 @@ class easy_imm_wizard(object):
                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                 templateVars["multi_select"] = False
-                templateVars["policy_file"] = 'mac_register_mode.txt'
-                templateVars["var_description"] = '   MAC Registration Mode:  Default is "nativeVlanOnly".\n   Determines the MAC addresses that have to be registered with the switch.'
-                templateVars["var_type"] = 'MAC Registration Mode'
-                templateVars["mac_register_mode"] = variable_loop(**templateVars)
+                jsonVars = jsonData['components']['schemas']['fabric.EthNetworkControlPolicy']['allOf'][1]['properties']
+                templateVars["var_description"] = jsonVars['MacRegistrationMode']['description']
+                templateVars["jsonVars"] = sorted(jsonVars['MacRegistrationMode']['enum'])
+                templateVars["defaultVar"] = jsonVars['MacRegistrationMode']['default']
+                templateVars["varType"] = 'MAC Registration Mode'
+                templateVars["mac_register_mode"] = variablesFromAPI(**templateVars)
 
-                templateVars["multi_select"] = False
-                templateVars["policy_file"] = 'mac_security_forge.txt'
-                templateVars["var_description"] = '   MAC Security Forge:  Default is "allow".\n   Determines if the MAC forging is allowed or denied on an interface.'
-                templateVars["var_type"] = 'MAC Security Forge'
-                templateVars["mac_security_forge"] = variable_loop(**templateVars)
+                templateVars["var_description"] = jsonVars['ForgeMac']['description']
+                templateVars["jsonVars"] = sorted(jsonVars['ForgeMac']['enum'])
+                templateVars["defaultVar"] = jsonVars['ForgeMac']['default']
+                templateVars["varType"] = 'MAC Security Forge'
+                templateVars["mac_security_forge"] = variablesFromAPI(**templateVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'    action_on_uplink_fail = "{templateVars["action_on_uplink_fail"]}"')
@@ -1366,7 +1470,7 @@ class easy_imm_wizard(object):
     #========================================
     # Ethernet Network Group Policy Module
     #========================================
-    def ethernet_network_group_policies(self):
+    def ethernet_network_group_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'VMs']
         org = self.org
@@ -1560,7 +1664,7 @@ class easy_imm_wizard(object):
     #========================================
     # Ethernet Network Policy Module
     #========================================
-    def ethernet_network_policies(self):
+    def ethernet_network_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'network'
         org = self.org
@@ -1600,14 +1704,12 @@ class easy_imm_wizard(object):
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'vlan_mode.txt'
-                    templateVars["var_description"] = '  Option to determine if the port can carry single VLAN (Access) or multiple \n'\
-                        '  VLANs (Trunk) traffic.\n'\
-                        '  * ACCESS - (Default) An access port carries traffic only for a single VLAN on the\n'\
-                        '             interface.\n'\
-                        '  * TRUNK - A trunk port can have two or more VLANs configured on the interface. It can \n'\
-                        '            carry traffic for several VLANs simultaneously.\n\n'
-                    templateVars["vlan_mode"] = variable_loop(**templateVars)
+                    jsonVars = jsonData['components']['schemas']['vnic.VlanSettings']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['Mode']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['Mode']['enum'])
+                    templateVars["defaultVar"] = jsonVars['Mode']['default']
+                    templateVars["varType"] = 'VLAN Mode'
+                    templateVars["vlan_mode"] = variablesFromAPI(**templateVars)
 
                     valid = False
                     while valid == False:
@@ -1659,7 +1761,7 @@ class easy_imm_wizard(object):
     #========================================
     # Ethernet QoS Policy Module
     #========================================
-    def ethernet_qos_policies(self):
+    def ethernet_qos_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'VMs']
         org = self.org
@@ -1697,11 +1799,12 @@ class easy_imm_wizard(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
             templateVars["multi_select"] = False
-            templateVars["policy_file"] = 'target_platform.txt'
-            templateVars["var_description"] = '    The platform for which the server profile is applicable. It can either be:\n'
-            templateVars["var_type"] = 'Target Platform'
-            target_platform = variable_loop(**templateVars)
-            templateVars["target_platform"] = target_platform
+            jsonVars = jsonData['components']['schemas']['vnic.EthNetworkPolicy']['allOf'][1]['properties']
+            templateVars["var_description"] = jsonVars['TargetPlatform']['description']
+            templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
+            templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+            templateVars["varType"] = 'Target Platform'
+            templateVars["target_platform"] = variablesFromAPI(**templateVars)
 
             loop_count = 0
             policy_loop = False
@@ -1840,12 +1943,12 @@ class easy_imm_wizard(object):
                     templateVars["burst"] = Question
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'qos_priority.txt'
-                    templateVars["var_description"] = '   Priority - Default is "Best Effort".\n'\
-                        '   The Priority Queue to Assign to this QoS Policy:\n'
-                    templateVars["var_type"] = 'Priority'
-                    templateVars["priority"] = variable_loop(**templateVars)
-                    priority = templateVars["priority"]
+                    jsonVars = jsonData['components']['schemas']['vnic.EthQosPolicy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['Priority']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['Priority']['enum'])
+                    templateVars["defaultVar"] = jsonVars['Priority']['default']
+                    templateVars["varType"] = '%s QoS Priority' % (templateVars["name"])
+                    templateVars["priority"] = variablesFromAPI(**templateVars)
 
                     if loop_count == 0:
                         if templateVars["target_platform"] == 'FIAttached':
@@ -1856,7 +1959,7 @@ class easy_imm_wizard(object):
                             for policy in policy_list:
                                 system_qos_policy,policyData = policy_select_loop(name_prefix, policy, **templateVars)
 
-                    mtu = policyData['system_qos_policies'][0][system_qos_policy][0]['classes'][0][priority][0]['mtu']
+                    mtu = policyData['system_qos_policies'][0][system_qos_policy][0]['classes'][0][templateVars["priority"]][0]['mtu']
                     templateVars["mtu"] = mtu
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -1922,7 +2025,7 @@ class easy_imm_wizard(object):
     #========================================
     # Fibre-Channel Adapter Policy Module
     #========================================
-    def fibre_channel_adapter_policies(self):
+    def fibre_channel_adapter_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         policy_type = 'Fibre-Channel Adapter Policy'
@@ -1954,10 +2057,53 @@ class easy_imm_wizard(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
+                policy_loop = False
+                while policy_loop == False:
 
-                templateVars["template_file"] = 'ethernet_adapter_templates.jinja2'
-                policy_names = policy_template(self, **templateVars)
-                configure_loop = True
+                    templateVars["multi_select"] = False
+                    jsonVars = easy_jsonData['policies']['vnic.FcNetworkPolicy']
+                    templateVars["var_description"] = jsonVars['templates']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['templates']['enum'])
+                    templateVars["defaultVar"] = jsonVars['templates']['default']
+                    templateVars["varType"] = 'Fibre Channel Adapter Template'
+                    templateVars["policy_template"] = variablesFromAPI(**templateVars)
+
+                    if not templateVars["name_prefix"] == '':
+                        name = '%s_%s' % (templateVars["name_prefix"], templateVars["policy_template"])
+                    else:
+                        name = '%s_%s' % (templateVars["org"], templateVars["policy_template"])
+
+                    templateVars["name"] = policy_name(name, templateVars["policy_type"])
+                    templateVars["descr"] = policy_descr(templateVars["name"], templateVars["policy_type"])
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'   adapter_template = "{templateVars["policy_template"]}"')
+                    print(f'   description      = "{templateVars["descr"]}"')
+                    print(f'   name             = "{templateVars["name"]}"')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % ('ethernet_adapter_templates')
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_yes(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
 
             elif configure == 'N':
                 configure_loop = True
@@ -1973,7 +2119,7 @@ class easy_imm_wizard(object):
     #========================================
     # Fibre-Channel Network Policy Module
     #========================================
-    def fibre_channel_network_policies(self):
+    def fibre_channel_network_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         policy_type = 'Fibre-Channel Network Policy'
@@ -2010,11 +2156,12 @@ class easy_imm_wizard(object):
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'target_platform.txt'
-                    templateVars["var_description"] = '    The platform for which the server profile is applicable. It can either be:\n'
-                    templateVars["var_type"] = 'Target Platform'
-                    target_platform = variable_loop(**templateVars)
-                    templateVars["target_platform"] = target_platform
+                    jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['TargetPlatform']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
+                    templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                    templateVars["varType"] = 'Target Platform'
+                    templateVars["target_platform"] = variablesFromAPI(**templateVars)
 
                     if templateVars["target_platform"] == 'Standalone':
                         valid = False
@@ -2037,7 +2184,7 @@ class easy_imm_wizard(object):
                                 templateVars["vsan_id"] = 200
                         vsan_valid = validating_ucs.number_in_range('VSAN ID', templateVars["vsan_id"], 1, 4094)
                         if vsan_valid == True:
-                            if target_platform == 'FIAttached':
+                            if templateVars["target_platform"] == 'FIAttached':
                                 policy_list = [
                                     'policies.vsan_policies.vsan_policy',
                                 ]
@@ -2116,7 +2263,7 @@ class easy_imm_wizard(object):
     #========================================
     # Fibre-Channel QoS Policy Module
     #========================================
-    def fibre_channel_qos_policies(self):
+    def fibre_channel_qos_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'qos'
         org = self.org
@@ -2204,7 +2351,7 @@ class easy_imm_wizard(object):
     #========================================
     # Firmware - UCS Domain Module
     #========================================
-    def firmware_ucs_domain(self):
+    def firmware_ucs_domain(self, jsonData, easy_jsonData):
         templateVars = {}
         templateVars["header"] = 'UCS Domain Profile Variables'
         templateVars["initial_write"] = True
@@ -2244,7 +2391,7 @@ class easy_imm_wizard(object):
     #========================================
     # Flow Control Policy Module
     #========================================
-    def flow_control_policies(self):
+    def flow_control_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'flow_ctrl'
         org = self.org
@@ -2324,7 +2471,7 @@ class easy_imm_wizard(object):
     #========================================
     # IMC Access Policy Module
     #========================================
-    def imc_access_policies(self):
+    def imc_access_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'imc_access'
         org = self.org
@@ -2362,11 +2509,12 @@ class easy_imm_wizard(object):
                 templateVars["default_vlan"] = 0
 
                 templateVars["multi_select"] = False
-                templateVars["policy_file"] = 'target_platform.txt'
-                templateVars["var_description"] = '    The platform for which the server profile is applicable. It can either be:\n'
-                templateVars["var_type"] = 'Target Platform'
-                target_platform = variable_loop(**templateVars)
-                templateVars["target_platform"] = target_platform
+                jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
+                templateVars["var_description"] = jsonVars['TargetPlatform']['description']
+                templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
+                templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                templateVars["varType"] = 'Target Platform'
+                templateVars["target_platform"] = variablesFromAPI(**templateVars)
 
                 policy_list = [
                     'pools.ip_pools.inband_ip_pool'
@@ -2380,7 +2528,7 @@ class easy_imm_wizard(object):
                     templateVars["inband_vlan_id"] = input('What VLAN Do you want to Assign to this Policy? ')
                     valid_vlan = validating_ucs.number_in_range('VLAN ID', templateVars["inband_vlan_id"], 1, 4094)
                     if valid_vlan == True:
-                        if target_platform == 'FIAttached':
+                        if templateVars["target_platform"] == 'FIAttached':
                             policy_list = [
                                 'policies_vlans.vlan_policies.vlan_policy',
                             ]
@@ -2473,7 +2621,7 @@ class easy_imm_wizard(object):
     #========================================
     # IP Pools Module
     #========================================
-    def ip_pools(self):
+    def ip_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ip_pool'
         org = self.org
@@ -2784,7 +2932,7 @@ class easy_imm_wizard(object):
     #========================================
     # IPMI over LAN Policy Module
     #========================================
-    def ipmi_over_lan_policies(self):
+    def ipmi_over_lan_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ipmi'
         org = self.org
@@ -2843,10 +2991,12 @@ class easy_imm_wizard(object):
                             valid = True
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'ipmi_privileges.txt'
-                    templateVars["var_description"] = '   Privilege - The highest privilege level that can be assigned to an IPMI session on a server.'
-                    templateVars["var_type"] = 'Privilege'
-                    templateVars["privilege"] = variable_loop(**templateVars)
+                    jsonVars = jsonData['components']['schemas']['ipmioverlan.Policy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['Privilege']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['Privilege']['enum'])
+                    templateVars["defaultVar"] = jsonVars['Privilege']['default']
+                    templateVars["varType"] = 'Privilege'
+                    templateVars["privilege"] = variablesFromAPI(**templateVars)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'   description = "{templateVars["descr"]}"')
@@ -2894,7 +3044,7 @@ class easy_imm_wizard(object):
     #========================================
     # IQN Pools Module
     #========================================
-    def iqn_pools(self):
+    def iqn_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'iqn_pool'
         org = self.org
@@ -3045,7 +3195,7 @@ class easy_imm_wizard(object):
     #========================================
     # iSCSI Adapter Policy Module
     #========================================
-    def iscsi_adapter_policies(self):
+    def iscsi_adapter_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'adapter'
         org = self.org
@@ -3119,7 +3269,7 @@ class easy_imm_wizard(object):
     #========================================
     # iSCSI Boot Policy Module
     #========================================
-    def iscsi_boot_policies(self):
+    def iscsi_boot_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'boot'
         org = self.org
@@ -3193,7 +3343,7 @@ class easy_imm_wizard(object):
     #========================================
     # iSCSI Static Target Policy Module
     #========================================
-    def iscsi_static_target_policies(self):
+    def iscsi_static_target_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'target'
         org = self.org
@@ -3252,7 +3402,7 @@ class easy_imm_wizard(object):
     #========================================
     # LAN Connectivity Policy Module
     #========================================
-    def lan_connectivity_policies(self, policies):
+    def lan_connectivity_policies(self, jsonData, easy_jsonData, policies):
         name_prefix = self.name_prefix
         name_suffix = 'lan'
         org = self.org
@@ -3320,10 +3470,12 @@ class easy_imm_wizard(object):
 
                 if iscsi_policies == True:
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'iqn_allocation_type.txt'
-                    templateVars["var_description"] = '    Allocation Type of iSCSI Qualified Name.  Options are:\n'
-                    templateVars["var_type"] = 'IQN Allocation Type'
-                    templateVars["iqn_allocation_type"] = variable_loop(**templateVars)
+                    jsonVars = jsonData['components']['schemas']['vnic.LanConnectivityPolicy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['IqnAllocationType']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['IqnAllocationType']['enum'])
+                    templateVars["defaultVar"] = jsonVars['IqnAllocationType']['default']
+                    templateVars["varType"] = 'IQN Allocation Type'
+                    templateVars["iqn_allocation_type"] = variablesFromAPI(**templateVars)
                     if templateVars["iqn_allocation_type"] == 'Pool':
                         templateVars["iqn_static_identifier"] = ''
 
@@ -3375,7 +3527,7 @@ class easy_imm_wizard(object):
     #========================================
     # LDAP Policy Module
     #========================================
-    def ldap_policies(self):
+    def ldap_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ldap'
         org = self.org
@@ -3477,18 +3629,12 @@ class easy_imm_wizard(object):
                     }
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'ldap_bind_method.txt'
-                    templateVars["var_description"] = '    Authentication method to access LDAP servers.\n'\
-                        '    - Anonymous - Requires no username and password. If this option is selected and the \n'\
-                        '        LDAP server is configured for Anonymous logins, then the user gains access.\n'\
-                        '    - ConfiguredCredentials - Requires a known set of credentials to be specified for \n'\
-                        '        the initial bind process. If the initial bind process succeeds, then the \n'\
-                        '        distinguished name (DN) of the user name is queried and re-used for the re-binding  \n'\
-                        '        process. If the re-binding process fails, then the user is denied access.\n'\
-                        '    - LoginCredentials - (Default) Requires the user credentials. If the bind process \n'\
-                        '        fails, then user is denied access.\n'
-                    templateVars["var_type"] = 'LDAP Binding Method'
-                    bind_method = variable_loop(**templateVars)
+                    jsonVars = jsonData['components']['schemas']['iam.LdapBaseProperties']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['BindMethod']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['BindMethod']['enum'])
+                    templateVars["defaultVar"] = jsonVars['BindMethod']['default']
+                    templateVars["varType"] = 'LDAP Bind Method'
+                    bind_method = variablesFromAPI(**templateVars)
 
                     if not bind_method == 'LoginCredentials':
                         valid = False
@@ -3583,15 +3729,12 @@ class easy_imm_wizard(object):
 
                     if ldap_from_dns == True:
                         templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'ldap_source.txt'
-                        templateVars["var_description"] = '    Specifies how to obtain the domain name used for the \n'\
-                            '    DNS SRV request. It can be one of the following:\n'\
-                            '    - Configured - specifies using the configured-search domain.\n'\
-                            '    - ConfiguredExtracted - specifies using the domain name extracted from the login ID \n'\
-                            '        than the configured-search domain.\n'\
-                            '    - Extracted - (Default) specifies using domain name extracted-domain from the login ID.\n'
-                        templateVars["var_type"] = 'LDAP Domain Source'
-                        varSource = variable_loop(**templateVars)
+                        jsonVars = jsonData['components']['schemas']['iam.LdapDnsParameters']['allOf'][1]['properties']
+                        templateVars["var_description"] = jsonVars['Source']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['Source']['enum'])
+                        templateVars["defaultVar"] = jsonVars['Source']['default']
+                        templateVars["varType"] = 'LDAP Domain Source'
+                        varSource = variablesFromAPI(**templateVars)
 
                         if not varSource == 'Extracted':
                             valid = False
@@ -3677,14 +3820,14 @@ class easy_imm_wizard(object):
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     templateVars["nested_group_search_depth"] = varNested
+
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'ldap_search_precedence.txt'
-                    templateVars["var_description"] = '    Search precedence between local user database and LDAP \n'\
-                        '    user database.\n'\
-                        '    - LocalUserDb - (Default) Precedence is given to local user database while searching.\n'\
-                        '    - LDAPUserDb - Precedence is given to LADP user database while searching.\n'
-                    templateVars["var_type"] = 'User Search Precedence'
-                    templateVars["user_search_precedence"] = variable_loop(**templateVars)
+                    jsonVars = jsonData['components']['schemas']['iam.LdapPolicy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['UserSearchPrecedence']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['UserSearchPrecedence']['enum'])
+                    templateVars["defaultVar"] = jsonVars['UserSearchPrecedence']['default']
+                    templateVars["varType"] = 'User Search Precedence'
+                    templateVars["user_search_precedence"] = variablesFromAPI(**templateVars)
 
                     templateVars["ldap_groups"] = []
                     inner_loop_count = 1
@@ -3710,10 +3853,12 @@ class easy_imm_wizard(object):
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                                 templateVars["multi_select"] = False
-                                templateVars["policy_file"] = 'local_role.txt'
-                                templateVars["var_description"] = '    What Role would you like to assign to this LDAP Group?\n'
-                                templateVars["var_type"] = 'Group Role'
-                                role = variable_loop(**templateVars)
+                                jsonVars = easy_jsonData['policies']['iam.LdapPolicy']
+                                templateVars["var_description"] = jsonVars['iam.LdapPolicy']['description']
+                                templateVars["jsonVars"] = sorted(jsonVars['iam.LdapPolicy']['enum'])
+                                templateVars["defaultVar"] = jsonVars['iam.LdapPolicy']['default']
+                                templateVars["varType"] = 'Group Role'
+                                role = variablesFromAPI(**templateVars)
 
                                 ldap_group = {
                                     'group':varGroup,
@@ -3936,7 +4081,7 @@ class easy_imm_wizard(object):
     #========================================
     # Link Aggregation Policy Module
     #========================================
-    def link_aggregation_policies(self):
+    def link_aggregation_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'link_agg'
         org = self.org
@@ -4014,7 +4159,7 @@ class easy_imm_wizard(object):
     #========================================
     # Link Control Policy Module
     #========================================
-    def link_control_policies(self):
+    def link_control_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'link_ctrl'
         org = self.org
@@ -4093,7 +4238,7 @@ class easy_imm_wizard(object):
     #========================================
     # Local User Policy Module
     #========================================
-    def local_user_policies(self):
+    def local_user_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'local_users'
         org = self.org
@@ -4277,10 +4422,12 @@ class easy_imm_wizard(object):
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                                 templateVars["multi_select"] = False
-                                templateVars["policy_file"] = 'local_role.txt'
-                                templateVars["var_description"] = '    What Role would you like to assign to this user?\n'
-                                templateVars["var_type"] = 'User Role'
-                                role = variable_loop(**templateVars)
+                                jsonVars = easy_jsonData['policies']
+                                templateVars["var_description"] = jsonVars['iam.LocalUserPasswordPolicy']['description']
+                                templateVars["jsonVars"] = sorted(jsonVars['iam.LocalUserPasswordPolicy']['enum'])
+                                templateVars["defaultVar"] = jsonVars['iam.LocalUserPasswordPolicy']['default']
+                                templateVars["varType"] = 'User Role'
+                                role = variablesFromAPI(**templateVars)
 
                                 if templateVars["enforce_strong_password"] == True:
                                     print('Enforce Strong Password is enabled so the following rules must be followed:')
@@ -4433,7 +4580,7 @@ class easy_imm_wizard(object):
     #========================================
     # MAC Pools Module
     #========================================
-    def mac_pools(self):
+    def mac_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         policy_type = 'MAC Pool'
@@ -4564,7 +4711,7 @@ class easy_imm_wizard(object):
     #========================================
     # Multicast Policy Module
     #========================================
-    def multicast_policies(self):
+    def multicast_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'multicast'
         org = self.org
@@ -4667,7 +4814,7 @@ class easy_imm_wizard(object):
     #========================================
     # Network Connectivity Policy Module
     #========================================
-    def network_connectivity_policies(self):
+    def network_connectivity_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'dns'
         org = self.org
@@ -4807,7 +4954,7 @@ class easy_imm_wizard(object):
     #========================================
     # NTP Policy Module
     #========================================
-    def ntp_policies(self):
+    def ntp_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ntp'
         org = self.org
@@ -4816,7 +4963,6 @@ class easy_imm_wizard(object):
         templateVars["header"] = '%s Variables' % (policy_type)
         templateVars["initial_write"] = True
         templateVars["org"] = org
-        templateVars["policy_file"] = 'timezones.txt'
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ntp_policies'
@@ -4881,67 +5027,30 @@ class easy_imm_wizard(object):
                 if alternate_true == 'Y' or alternate_true == '':
                     templateVars["ntp_servers"].append(alternate_ntp)
 
-                valid = False
-                while valid == False:
-                    print(f'\n---------------------------------------------------------------------------------------')
-                    print(f'   Timezone Regions...')
-                    policy_file = 'ucs_templates/variables/%s' % (templateVars["policy_file"])
-                    if os.path.isfile(policy_file):
-                        template_file = open(policy_file, 'r')
-                        tz_regions = []
-                        for line in template_file:
-                            tz_region = line.split('/')[0]
-                            if not tz_region in tz_regions:
-                                tz_regions.append(tz_region)
-                        for index, value in enumerate(tz_regions):
-                            index += 1
-                            if index < 10:
-                                print(f'     {index}. {value}')
-                            else:
-                                print(f'    {index}. {value}')
-                    print(f'---------------------------------------------------------------------------------------\n')
-                    time_region = input('Please Enter the Index for the Time Region for the Domain: ')
-                    for index, value in enumerate(tz_regions):
-                        index += 1
-                        if int(time_region) == index:
-                            valid = True
-                    if valid == False:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Selection.  Please Select a valid Index from the List.')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                templateVars["multi_select"] = False
+                jsonVars = jsonData['components']['schemas']['appliance.SystemInfo']['allOf'][1]['properties']['TimeZone']['enum']
+                tz_regions = []
+                for i in jsonVars:
+                    tz_region = i.split('/')[0]
+                    if not tz_region in tz_regions:
+                        tz_regions.append(tz_region)
+                tz_regions = sorted(tz_regions)
+                templateVars["var_description"] = 'Timezone Regions...'
+                templateVars["jsonVars"] = tz_regions
+                templateVars["defaultVar"] = 'America'
+                templateVars["varType"] = 'Time Region'
+                time_region = variablesFromAPI(**templateVars)
 
-                valid = False
-                while valid == False:
-                    print(f'\n---------------------------------------------------------------------------------------')
-                    print(f'   Region Timezones...')
-                    for index, value in enumerate(tz_regions):
-                        index += 1
-                        if int(time_region) == index:
-                            tz_region = value
-                            region_tzs = []
-                            template_file.seek(0)
-                            for line in template_file:
-                                if tz_region in line:
-                                    line = line.strip()
-                                    region_tzs.append(line)
-                            for i, v in enumerate(region_tzs):
-                                i += 1
-                                if i < 10:
-                                    print(f'     {i}. {v}')
-                                else:
-                                    print(f'    {i}. {v}')
-                    print(f'---------------------------------------------------------------------------------------\n')
-                    timezone_index = input('Please Enter the Index for the Region Timezone to assign to the Domain: ')
-                    for i, v in enumerate(region_tzs):
-                        i += 1
-                        if int(timezone_index) == i:
-                            templateVars["timezone"] = v
-                            valid = True
-                    if valid == False:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Selection.  Please Select a valid Index from the List.')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                    template_file.close()
+                region_tzs = []
+                for item in jsonVars:
+                    if time_region in item:
+                        region_tzs.append(item)
+
+                templateVars["var_description"] = 'Timezone Regions...'
+                templateVars["jsonVars"] = sorted(region_tzs)
+                templateVars["defaultVar"] = ''
+                templateVars["varType"] = 'Time Region'
+                templateVars["timezone"] = variablesFromAPI(**templateVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'    description = "{templateVars["descr"]}"')
@@ -4984,7 +5093,7 @@ class easy_imm_wizard(object):
     #========================================
     # Persistent Memory Policy Module
     #========================================
-    def persistent_memory_policies(self):
+    def persistent_memory_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'persistent_memory'
         org = self.org
@@ -5040,14 +5149,13 @@ class easy_imm_wizard(object):
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'persistent_management_mode.txt'
-                    templateVars["var_description"] = '    Management Mode of the policy.\n'\
-                        '    - configured-from-intersight - (Default) The Persistent Memory Modules are configured \n'\
-                        '      from Intersight thorugh Persistent Memory policy.\n'\
-                        '    - configured-from-operating-system - The Persistent Memory Modules are configured \n'\
-                        '      from operating system thorugh OS tools.\n'
-                    templateVars["var_type"] = 'Management Mode'
-                    templateVars["management_mode"] = variable_loop(**templateVars)
+                    jsonVars = jsonData['components']['schemas']['memory.PersistentMemoryPolicy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['ManagementMode']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['ManagementMode']['enum'])
+                    templateVars["defaultVar"] = jsonVars['ManagementMode']['default']
+                    templateVars["varType"] = 'Management Mode'
+                    templateVars["management_mode"] = variablesFromAPI(**templateVars)
+
                     if templateVars["management_mode"] == 'configured-from-intersight':
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  A Secure passphrase will enable the protection of data on the persistent memory modules. ')
@@ -5092,14 +5200,12 @@ class easy_imm_wizard(object):
                                 print(f'  "{templateVars["memory_mode_percentage"]}" is not a valid number.')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                        templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'persistent_memory_type.txt'
-                        templateVars["var_description"] = '   Type of the Persistent Memory configuration where the Persistent Memory Modules\n'\
-                            '    are combined in an interleaved set or not.\n'\
-                            '    - app-direct - (Default) The App Direct interleaved Persistent Memory type.\n'\
-                            '    - app-direct-non-interleaved - The App Direct non-interleaved Persistent Memory type.\n\n'
-                        templateVars["var_type"] = 'Persistent Memory Type'
-                        templateVars["persistent_memory_type"] = variable_loop(**templateVars)
+                        jsonVars = jsonData['components']['schemas']['memory.PersistentMemoryGoal']['allOf'][1]['properties']
+                        templateVars["var_description"] = jsonVars['PersistentMemoryType']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['PersistentMemoryType']['enum'])
+                        templateVars["defaultVar"] = jsonVars['PersistentMemoryType']['default']
+                        templateVars["varType"] = 'Persistent Memory Type'
+                        templateVars["persistent_memory_type"] = variablesFromAPI(**templateVars)
 
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  This Flag will enable or Disable the retention of Namespaces between Server Profile')
@@ -5147,47 +5253,37 @@ class easy_imm_wizard(object):
                                 valid = False
                                 while valid == False:
                                     capacity = input('What is the Capacity to assign to this Namespace? ')
-                                    minLength = 1
-                                    maxLength = 9223372036854775807
+                                    minNum = 1
+                                    maxNum = 9223372036854775807
                                     varName = 'Namespace Capacity'
-                                    varValue = capacity
-                                    if re.search(r'[\d]+',str(varName)):
-                                        valid = validating_ucs.number_in_range(varName, varValue, minLength, maxLength)
+                                    varValue = int(capacity)
+                                    if re.search(r'[\d]+',str(varValue)):
+                                        valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  "{varValue}" is not a valid number.')
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                                templateVars["multi_select"] = False
-                                templateVars["policy_file"] = 'persistent_namespace_mode.txt'
-                                templateVars["var_description"] = '   Mode of this Namespace.\n'\
-                                    '    - block - A Namespace created in Block mode is seen as a sector mode Namespace in the host OS.\n'\
-                                    '    - raw - (Default) A Namespace created in Raw mode is seen as a raw mode Namespace in the host OS.\n\n'
-                                templateVars["var_type"] = 'Mode'
-                                mode = variable_loop(**templateVars)
+                                jsonVars = jsonData['components']['schemas']['memory.PersistentMemoryLogicalNamespace']['allOf'][1]['properties']
+                                templateVars["var_description"] = jsonVars['Mode']['description']
+                                templateVars["jsonVars"] = sorted(jsonVars['Mode']['enum'])
+                                templateVars["defaultVar"] = jsonVars['Mode']['default']
+                                templateVars["varType"] = 'Mode'
+                                mode = variablesFromAPI(**templateVars)
 
-                                templateVars["multi_select"] = False
-                                templateVars["policy_file"] = 'persistent_namespace_socket_id.txt'
-                                templateVars["var_description"] = '   Socket ID of the region on which this Namespace will apply.\n'\
-                                    '    - 1 - The first CPU socket in a server.\n'\
-                                    '    - 2 - The second CPU socket in a server.\n'\
-                                    '    - 3 - The third CPU socket in a server.\n'\
-                                    '    - 4 - The fourth CPU socket in a server.\n\n'
-                                templateVars["var_type"] = 'Mode'
-                                socket_id = variable_loop(**templateVars)
+                                templateVars["var_description"] = jsonVars['SocketId']['description']
+                                templateVars["jsonVars"] = sorted(jsonVars['SocketId']['enum'])
+                                templateVars["defaultVar"] = jsonVars['SocketId']['default']
+                                templateVars["varType"] = 'Socket Id'
+                                socket_id = variablesFromAPI(**templateVars)
 
                                 if templateVars["persistent_memory_type"] == 'app-direct-non-interleaved':
-                                    templateVars["multi_select"] = False
-                                    templateVars["policy_file"] = 'persistent_namespace_socket_memory_id.txt'
-                                    templateVars["var_description"] = '   Socket Memory ID of the region on which this Namespace will apply.\n'\
-                                        '    - 2 - The second socket memory ID within a socket in a server.\n'\
-                                        '    - 4 - The fourth socket memory ID within a socket in a server.\n'\
-                                        '    - 6 - The sixth socket memory ID within a socket in a server.\n'\
-                                        '    - 8 - The eight socket memory ID within a socket in a server.\n'\
-                                        '    - 10 - The tenth socket memory ID within a socket in a server.\n'\
-                                        '    - 12 - The twelfth socket memory ID within a socket in a server.\n\n'
-                                    templateVars["var_type"] = 'Mode'
-                                    socket_memory_id = variable_loop(**templateVars)
+                                    templateVars["var_description"] = jsonVars['SocketMemoryId']['description']
+                                    templateVars["jsonVars"] = [x for x in jsonVars['SocketMemoryId']['enum']]
+                                    templateVars["defaultVar"] = '2'
+                                    templateVars["popList"] = ['Not Applicable']
+                                    templateVars["varType"] = 'Socket Memory Id'
+                                    socket_memory_id = variablesFromAPI(**templateVars)
                                 else:
                                     socket_memory_id = 'Not Applicable'
 
@@ -5302,7 +5398,7 @@ class easy_imm_wizard(object):
     #========================================
     # Port Policy Module
     #========================================
-    def port_policies(self):
+    def port_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         policy_type = 'Port Policy'
@@ -5354,11 +5450,12 @@ class easy_imm_wizard(object):
                 templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                 templateVars["multi_select"] = False
-                templateVars["policy_file"] = 'device_model.txt'
-                templateVars["var_description"] = '    Please Choose the model of Fabric Interconnect to configure:\n'
-                templateVars["var_type"] = 'Model'
-                model = variable_loop(**templateVars)
-                templateVars["device_model"] = model
+                jsonVars = jsonData['components']['schemas']['fabric.PortPolicy']['allOf'][1]['properties']
+                templateVars["var_description"] = jsonVars['DeviceModel']['description']
+                templateVars["jsonVars"] = sorted(jsonVars['DeviceModel']['enum'])
+                templateVars["defaultVar"] = jsonVars['DeviceModel']['default']
+                templateVars["varType"] = 'Device Model'
+                templateVars["device_model"] = variablesFromAPI(**templateVars)
 
                 fc_mode = ''
                 ports_in_use = []
@@ -5367,11 +5464,12 @@ class easy_imm_wizard(object):
                 while valid == False:
                     fc_mode = input('Do you want to convert ports to Fibre Channel Mode?  Enter "Y" or "N" [Y]: ')
                     if fc_mode == '' or fc_mode == 'Y':
-                        templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'unified_ports.txt'
-                        templateVars["var_description"] = '    Please Select the Port Range to convert to Fibre-Channel Mode:\n'
-                        templateVars["var_type"] = 'Unified Ports'
-                        fc_ports = variable_loop(**templateVars)
+                        jsonVars = easy_jsonData['policies']['fabric.PortPolicy']
+                        templateVars["var_description"] = jsonVars['unifiedPorts']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['unifiedPorts']['enum'])
+                        templateVars["defaultVar"] = jsonVars['unifiedPorts']['default']
+                        templateVars["varType"] = 'Unified Port Ranges'
+                        fc_ports = variablesFromAPI(**templateVars)
                         x = fc_ports.split('-')
                         fc_ports = [int(x[0]),int(x[1])]
                         for i in range(int(x[0]), int(x[1]) + 1):
@@ -5400,11 +5498,11 @@ class easy_imm_wizard(object):
                             print(f'     5 - Single Port')
                             print(f'     5,11,12,13,14,15 - List of Ports')
                             print(f'\n------------------------------------------------------\n')
-                            if model == 'UCS-FI-64108':
+                            if templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [95,96]: ')
                             else:
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [47,48]: ')
-                            if port_list == '' and model == 'UCS-FI-64108':
+                            if port_list == '' and templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = '95,96'
                             elif port_list == '':
                                 port_list = '47,48'
@@ -5426,7 +5524,7 @@ class easy_imm_wizard(object):
                                             port_overlap_count += 1
                                             port_overlap.append(x)
                                 if port_overlap_count == 0:
-                                    if model == 'UCS-FI-64108':
+                                    if templateVars["device_model"] == 'UCS-FI-64108':
                                         max_port = 108
                                     else:
                                         max_port = 54
@@ -5441,23 +5539,26 @@ class easy_imm_wizard(object):
                                     if valid_ports == True:
                                         # Prompt User for the Admin Speed of the Port
                                         templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'ethernet_admin_speed.txt'
-                                        templateVars["var_description"] = '    Please Select the Admin Speed for the Port-Channel:\n'
-                                        templateVars["var_type"] = 'Admin Speed'
-                                        admin_speed = variable_loop(**templateVars)
+                                        jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
+                                        templateVars["var_description"] = jsonVars['AdminSpeed']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
+                                        templateVars["varType"] = 'Admin Speed'
+                                        templateVars["admin_speed"] = variablesFromAPI(**templateVars)
 
                                         # Prompt User for the Admin Speed of the Port
-                                        templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'port_mode.txt'
-                                        templateVars["var_description"] = '    Please Select the Port Mode:\n'
-                                        templateVars["var_type"] = 'Port Mode'
-                                        templateVars["mode"] = variable_loop(**templateVars)
+                                        jsonVars = jsonData['components']['schemas']['fabric.AppliancePcRole']['allOf'][1]['properties']
+                                        templateVars["var_description"] = jsonVars['Mode']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['Mode']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['Mode']['default']
+                                        templateVars["varType"] = 'Mode'
+                                        templateVars["mode"] = variablesFromAPI(**templateVars)
 
-                                        templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'qos_priority.txt'
-                                        templateVars["var_description"] = '   Priority:  Default is "Best Effort".\n   The Priority Queue to Assign to this Port:\n'
-                                        templateVars["var_type"] = 'Priority'
-                                        templateVars["priority"] = variable_loop(**templateVars)
+                                        templateVars["var_description"] = jsonVars['Priority']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['Priority']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['Priority']['default']
+                                        templateVars["varType"] = 'Priority'
+                                        templateVars["priority"] = variablesFromAPI(**templateVars)
 
                                         # Prompt User for the
                                         policy_list = [
@@ -5476,7 +5577,7 @@ class easy_imm_wizard(object):
 
                                         pc_id = port_list[0]
                                         port_channel = {
-                                            'admin_speed':admin_speed,
+                                            'admin_speed':templateVars["admin_speed"],
                                             'ethernet_network_control_policy':templateVars["ethernet_network_control_policy"],
                                             'ethernet_network_group_policy':templateVars["ethernet_network_group_policy"],
                                             'interfaces':interfaces,
@@ -5486,7 +5587,7 @@ class easy_imm_wizard(object):
                                             'slot_id':1
                                         }
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'    admin_speed                     = "{admin_speed}"')
+                                        print(f'    admin_speed                     = "{templateVars["admin_speed"]}"')
                                         print(f'    ethernet_network_control_policy = "{templateVars["ethernet_network_control_policy"]}"')
                                         print(f'    ethernet_network_group_policy   = "{templateVars["ethernet_network_group_policy"]}"')
                                         print(f'    interfaces = [')
@@ -5567,11 +5668,11 @@ class easy_imm_wizard(object):
                             print(f'     5 - Single Port')
                             print(f'     5,11,12,13,14,15 - List of Ports')
                             print(f'\n------------------------------------------------------\n')
-                            if model == 'UCS-FI-64108':
+                            if templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [97,98]: ')
                             else:
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [49,50]: ')
-                            if port_list == '' and model == 'UCS-FI-64108':
+                            if port_list == '' and templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = '97,98'
                             elif port_list == '':
                                 port_list = '49,50'
@@ -5593,7 +5694,7 @@ class easy_imm_wizard(object):
                                             port_overlap_count += 1
                                             port_overlap.append(x)
                                 if port_overlap_count == 0:
-                                    if model == 'UCS-FI-64108':
+                                    if templateVars["device_model"] == 'UCS-FI-64108':
                                         max_port = 108
                                     else:
                                         max_port = 54
@@ -5608,10 +5709,12 @@ class easy_imm_wizard(object):
                                     if valid_ports == True:
                                         # Prompt User for the Admin Speed of the Port
                                         templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'ethernet_admin_speed.txt'
-                                        templateVars["var_description"] = '    Please Select the Admin Speed for the Port-Channel:\n'
-                                        templateVars["var_type"] = 'Admin Speed'
-                                        admin_speed = variable_loop(**templateVars)
+                                        jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
+                                        templateVars["var_description"] = jsonVars['AdminSpeed']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
+                                        templateVars["varType"] = 'Admin Speed'
+                                        templateVars["admin_speed"] = variablesFromAPI(**templateVars)
 
                                         # Prompt User for the
                                         policy_list = [
@@ -5631,7 +5734,7 @@ class easy_imm_wizard(object):
 
                                         pc_id = port_list[0]
                                         port_channel = {
-                                            'admin_speed':admin_speed,
+                                            'admin_speed':templateVars["admin_speed"],
                                             'flow_control_policy':templateVars["flow_control_policy"],
                                             'interfaces':interfaces,
                                             'link_aggregation_policy':templateVars["link_aggregation_policy"],
@@ -5640,7 +5743,7 @@ class easy_imm_wizard(object):
                                             'slot_id':1
                                         }
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'    admin_speed             = "{admin_speed}"')
+                                        print(f'    admin_speed             = "{templateVars["admin_speed"]}"')
                                         print(f'    flow_control_policy     = "{templateVars["flow_control_policy"]}"')
                                         print(f'    interfaces = [')
                                         for item in interfaces:
@@ -5706,6 +5809,19 @@ class easy_imm_wizard(object):
                         print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                         print(f'\n------------------------------------------------------\n')
 
+                fill_pattern_descr = 'For Cisco UCS 6400 Series fabric interconnect, if the FC uplink speed is 8 Gbps, set the '\
+                    'fill pattern as IDLE on the uplink switch. If the fill pattern is not set as IDLE, FC '\
+                    'uplinks operating at 8 Gbps might go to an errDisabled state, lose SYNC intermittently, or '\
+                    'notice errors or bad packets.  For speeds greater than 8 Gbps we recommend Arbff.  Below'\
+                    'is a configuration example on MDS to match this setting:\n\n'\
+                    'mds-a(config-if)# switchport fill-pattern IDLE speed 8000\n'\
+                    'mds-a(config-if)# show port internal inf interface fc1/1 | grep FILL\n'\
+                    '  FC_PORT_CAP_FILL_PATTERN_8G_CHANGE_CAPABLE (1)\n'\
+                    'mds-a(config-if)# show run int fc1/16 | incl fill\n\n'\
+                    'interface fc1/16\n'\
+                    '  switchport fill-pattern IDLE speed 8000\n\n'\
+                    'mds-a(config-if)#\n'
+
                 fc_ports_in_use = []
                 Fabric_A_fc_port_channels = []
                 Fabric_B_fc_port_channels = []
@@ -5727,30 +5843,20 @@ class easy_imm_wizard(object):
                             port_list = vars_from_list(fc_converted_ports, **templateVars)
 
                             # Prompt User for the Admin Speed of the Port
-                            templateVars["multi_select"] = False
-                            templateVars["policy_file"] = 'fc_admin_speed.txt'
-                            templateVars["var_description"] = '    Please Select the Admin Speed for the Port-Channel:\n'
-                            templateVars["var_type"] = 'Admin Speed'
-                            admin_speed = variable_loop(**templateVars)
+                            jsonVars = jsonData['components']['schemas']['fabric.FcUplinkPcRole']['allOf'][1]['properties']
+                            templateVars["var_description"] = jsonVars['AdminSpeed']['description']
+                            templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                            templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
+                            templateVars["varType"] = 'Admin Speed'
+                            templateVars["admin_speed"] = variablesFromAPI(**templateVars)
 
-                            # Prompt User for the Admin Speed of the Port
-                            templateVars["multi_select"] = False
-                            templateVars["policy_file"] = 'fill_pattern.txt'
-                            templateVars["var_description"] = '    Please Select the Fill Pattern for the Uplink:\n'\
-                                'For Cisco UCS 6400 Series fabric interconnect, if the FC uplink speed is 8 Gbps, set the \n'\
-                                'fill pattern as IDLE on the uplink switch. If the fill pattern is not set as IDLE, FC \n'\
-                                'uplinks operating at 8 Gbps might go to an errDisabled state, lose SYNC intermittently, or \n'\
-                                'notice errors or bad packets.  For speeds greater than 8 Gbps we recommend Arbff.  Below\n'\
-                                'is a configuration example on MDS to match this setting:\n\n'\
-                                'mds-a(config-if)# switchport fill-pattern IDLE speed 8000\n'\
-                                'mds-a(config-if)# show port internal inf interface fc1/1 | grep FILL\n'\
-                                '  FC_PORT_CAP_FILL_PATTERN_8G_CHANGE_CAPABLE (1)\n'\
-                                'mds-a(config-if)# show run int fc1/16 | incl fill\n\n'\
-                                'interface fc1/16\n'\
-                                '  switchport fill-pattern IDLE speed 8000\n\n'\
-                                'mds-a(config-if)#\n'
-                            templateVars["var_type"] = 'Fill Pattern'
-                            fill_pattern = variable_loop(**templateVars)
+                            # Prompt User for the Fill Pattern of the Port
+                            templateVars["var_description"] = jsonVars['FillPattern']['description']
+                            templateVars["var_description"] = '%s\n%s' % (templateVars["var_description"], fill_pattern_descr)
+                            templateVars["jsonVars"] = sorted(jsonVars['FillPattern']['enum'])
+                            templateVars["defaultVar"] = jsonVars['FillPattern']['default']
+                            templateVars["varType"] = 'Fill Pattern'
+                            templateVars["fill_pattern"] = variablesFromAPI(**templateVars)
 
                             vsans = {}
                             fabrics = ['Fabric_A', 'Fabric_B']
@@ -5798,24 +5904,24 @@ class easy_imm_wizard(object):
 
                             pc_id = port_list[0]
                             port_channel_a = {
-                                'admin_speed':admin_speed,
-                                'fill_pattern':fill_pattern,
+                                'admin_speed':templateVars["admin_speed"],
+                                'fill_pattern':templateVars["fill_pattern"],
                                 'interfaces':interfaces,
                                 'pc_id':pc_id,
                                 'slot_id':1,
                                 'vsan_id':vsans.get("Fabric_A")
                             }
                             port_channel_b = {
-                                'admin_speed':admin_speed,
-                                'fill_pattern':fill_pattern,
+                                'admin_speed':templateVars["admin_speed"],
+                                'fill_pattern':templateVars["fill_pattern"],
                                 'interfaces':interfaces,
                                 'pc_id':pc_id,
                                 'slot_id':1,
                                 'vsan_id':vsans.get("Fabric_B")
                             }
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'    admin_speed  = "{admin_speed}"')
-                            print(f'    fill_pattern = "{fill_pattern}"')
+                            print(f'    admin_speed  = "{templateVars["admin_speed"]}"')
+                            print(f'    fill_pattern = "{templateVars["fill_pattern"]}"')
                             print(f'    interfaces = [')
                             for item in interfaces:
                                 print('      {')
@@ -5883,11 +5989,11 @@ class easy_imm_wizard(object):
                             print(f'     5 - Single Port')
                             print(f'     5,11,12,13,14,15 - List of Ports')
                             print(f'\n------------------------------------------------------\n')
-                            if model == 'UCS-FI-64108':
+                            if templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [97,98]: ')
                             else:
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [49,50]: ')
-                            if port_list == '' and model == 'UCS-FI-64108':
+                            if port_list == '' and templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = '97,98'
                             elif port_list == '':
                                 port_list = '49,50'
@@ -5909,7 +6015,7 @@ class easy_imm_wizard(object):
                                             port_overlap_count += 1
                                             port_overlap.append(x)
                                 if port_overlap_count == 0:
-                                    if model == 'UCS-FI-64108':
+                                    if templateVars["device_model"] == 'UCS-FI-64108':
                                         max_port = 108
                                     else:
                                         max_port = 54
@@ -5924,10 +6030,12 @@ class easy_imm_wizard(object):
                                     if valid_ports == True:
                                         # Prompt User for the Admin Speed of the Port
                                         templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'ethernet_admin_speed.txt'
-                                        templateVars["var_description"] = '    Please Select the Admin Speed for the Port-Channel:\n'
-                                        templateVars["var_type"] = 'Admin Speed'
-                                        admin_speed = variable_loop(**templateVars)
+                                        jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
+                                        templateVars["var_description"] = jsonVars['AdminSpeed']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
+                                        templateVars["varType"] = 'Admin Speed'
+                                        templateVars["admin_speed"] = variablesFromAPI(**templateVars)
 
                                         # Prompt User for the
                                         policy_list = [
@@ -5946,7 +6054,7 @@ class easy_imm_wizard(object):
 
                                         pc_id = port_list[0]
                                         port_channel = {
-                                            'admin_speed':admin_speed,
+                                            'admin_speed':templateVars["admin_speed"],
                                             'interfaces':interfaces,
                                             'link_aggregation_policy':templateVars["link_aggregation_policy"],
                                             'link_control_policy':templateVars["link_control_policy"],
@@ -5954,7 +6062,7 @@ class easy_imm_wizard(object):
                                             'slot_id':1
                                         }
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'    admin_speed             = "{admin_speed}"')
+                                        print(f'    admin_speed             = "{templateVars["admin_speed"]}"')
                                         print(f'    interfaces = [')
                                         for item in interfaces:
                                             print('      {')
@@ -6035,11 +6143,11 @@ class easy_imm_wizard(object):
                             print(f'     5,11,12,13,14,15 - List of Ports')
                             print(f'     5-10,20-30 - Ranges and Lists of Ports')
                             print(f'\n------------------------------------------------------\n')
-                            if model == 'UCS-FI-64108':
+                            if templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = input(f'Please enter the ports you want to add to the {port_type}?  [94]: ')
                             else:
                                 port_list = input(f'Please enter the ports you want to add to the {port_type}?  [46]: ')
-                            if port_list == '' and model == 'UCS-FI-64108':
+                            if port_list == '' and templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = '94'
                             elif port_list == '':
                                 port_list = '46'
@@ -6055,7 +6163,7 @@ class easy_imm_wizard(object):
                                             port_overlap_count += 1
                                             port_overlap.append(x)
                                 if port_overlap_count == 0:
-                                    if model == 'UCS-FI-64108':
+                                    if templateVars["device_model"] == 'UCS-FI-64108':
                                         max_port = 108
                                     else:
                                         max_port = 54
@@ -6070,35 +6178,35 @@ class easy_imm_wizard(object):
                                     if valid_ports == True:
                                         # Prompt User for the Admin Speed of the Port
                                         templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'ethernet_admin_speed.txt'
-                                        templateVars["var_description"] = '    Please Select the Admin Speed for the Port:\n'
-                                        templateVars["var_type"] = 'Admin Speed'
-                                        admin_speed = variable_loop(**templateVars)
+                                        jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
+                                        templateVars["var_description"] = jsonVars['AdminSpeed']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
+                                        templateVars["varType"] = 'Admin Speed'
+                                        templateVars["admin_speed"] = variablesFromAPI(**templateVars)
 
-                                        # Prompt User for the Admin Speed of the Port
-                                        templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'fec.txt'
-                                        templateVars["var_description"] = '    Forward error correction configuration for the port:\n'\
-                                            '    - Auto - (Default).  Forward error correction option Auto.\n'\
-                                            '    - Cl91 - Forward error correction option cl91\n'\
-                                            '    - Cl74 - Forward error correction option cl74.\n'
-                                        templateVars["var_type"] = 'FEC'
-                                        fec = variable_loop(**templateVars)
+                                        # Prompt User for the FEC Mode of the Port
+                                        templateVars["var_description"] = jsonVars['Fec']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['Fec']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['Fec']['default']
+                                        templateVars["varType"] = 'Fec Mode'
+                                        templateVars["fec"] = variablesFromAPI(**templateVars)
 
-                                        # Prompt User for the Admin Speed of the Port
-                                        templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'port_mode.txt'
-                                        templateVars["var_description"] = '    Please Select the Port Mode:\n'
-                                        templateVars["var_type"] = 'Port Mode'
-                                        templateVars["mode"] = variable_loop(**templateVars)
+                                        # Prompt User for the Port Mode and Priority
+                                        jsonVars = jsonData['components']['schemas']['fabric.AppliancePcRole']['allOf'][1]['properties']
+                                        templateVars["var_description"] = jsonVars['Mode']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['Mode']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['Mode']['default']
+                                        templateVars["varType"] = 'Mode'
+                                        templateVars["mode"] = variablesFromAPI(**templateVars)
 
-                                        templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'qos_priority.txt'
-                                        templateVars["var_description"] = '   Priority:  Default is "Best Effort".\n   The Priority Queue to Assign to this Port:\n'
-                                        templateVars["var_type"] = 'Priority'
-                                        templateVars["priority"] = variable_loop(**templateVars)
+                                        templateVars["var_description"] = jsonVars['Priority']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['Priority']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['Priority']['default']
+                                        templateVars["varType"] = 'Priority'
+                                        templateVars["priority"] = variablesFromAPI(**templateVars)
 
-                                        # Prompt User for the
+                                        # Prompt User for the Ethernet Network Control and Group Policies
                                         policy_list = [
                                             'policies.ethernet_network_control_policies.ethernet_network_control_policy',
                                             'policies.ethernet_network_group_policies.ethernet_network_group_policy',
@@ -6111,20 +6219,20 @@ class easy_imm_wizard(object):
                                             templateVars.update(policyData)
 
                                         port_role = {
-                                            'admin_speed':admin_speed,
+                                            'admin_speed':templateVars["admin_speed"],
                                             'ethernet_network_control_policy':templateVars["ethernet_network_control_policy"],
                                             'ethernet_network_group_policy':templateVars["ethernet_network_group_policy"],
-                                            'fec':fec,
+                                            'fec':templateVars["fec"],
                                             'mode':templateVars["mode"],
                                             'port_id':original_port_list,
                                             'priority':templateVars["priority"],
                                             'slot_id':1
                                         }
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'    admin_speed                     = "{admin_speed}"')
+                                        print(f'    admin_speed                     = "{templateVars["admin_speed"]}"')
                                         print(f'    ethernet_network_control_policy = "{templateVars["ethernet_network_control_policy"]}"')
                                         print(f'    ethernet_network_group_policy   = "{templateVars["ethernet_network_group_policy"]}"')
-                                        print(f'    fec                             = "{fec}"')
+                                        print(f'    fec                             = "{templateVars["fec"]}"')
                                         print(f'    mode                            = "{templateVars["mode"]}"')
                                         print(f'    port_list                       = "{original_port_list}"')
                                         print(f'    priority                        = "{templateVars["priority"]}"')
@@ -6198,11 +6306,11 @@ class easy_imm_wizard(object):
                             print(f'     5,11,12,13,14,15 - List of Ports')
                             print(f'     5-10,20-30 - Ranges and Lists of Ports')
                             print(f'\n------------------------------------------------------\n')
-                            if model == 'UCS-FI-64108':
+                            if templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [97]: ')
                             else:
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [49]: ')
-                            if port_list == '' and model == 'UCS-FI-64108':
+                            if port_list == '' and templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = '97'
                             elif port_list == '':
                                 port_list = '49'
@@ -6218,7 +6326,7 @@ class easy_imm_wizard(object):
                                             port_overlap_count += 1
                                             port_overlap.append(x)
                                 if port_overlap_count == 0:
-                                    if model == 'UCS-FI-64108':
+                                    if templateVars["device_model"] == 'UCS-FI-64108':
                                         max_port = 108
                                     else:
                                         max_port = 54
@@ -6233,20 +6341,19 @@ class easy_imm_wizard(object):
                                     if valid_ports == True:
                                         # Prompt User for the Admin Speed of the Port
                                         templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'ethernet_admin_speed.txt'
-                                        templateVars["var_description"] = '    Please Select the Admin Speed for the Port:\n'
-                                        templateVars["var_type"] = 'Admin Speed'
-                                        admin_speed = variable_loop(**templateVars)
+                                        jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
+                                        templateVars["var_description"] = jsonVars['AdminSpeed']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
+                                        templateVars["varType"] = 'Admin Speed'
+                                        templateVars["admin_speed"] = variablesFromAPI(**templateVars)
 
-                                        # Prompt User for the Admin Speed of the Port
-                                        templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'fec.txt'
-                                        templateVars["var_description"] = '    Forward error correction configuration for the port:\n'\
-                                            '    - Auto - (Default).  Forward error correction option Auto.\n'\
-                                            '    - Cl91 - Forward error correction option cl91\n'\
-                                            '    - Cl74 - Forward error correction option cl74.\n'
-                                        templateVars["var_type"] = 'FEC'
-                                        fec = variable_loop(**templateVars)
+                                        # Prompt User for the FEC Mode of the Port
+                                        templateVars["var_description"] = jsonVars['Fec']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['Fec']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['Fec']['default']
+                                        templateVars["varType"] = 'Fec Mode'
+                                        templateVars["fec"] = variablesFromAPI(**templateVars)
 
                                         # Prompt User for the
                                         policy_list = [
@@ -6261,16 +6368,16 @@ class easy_imm_wizard(object):
                                             templateVars.update(policyData)
 
                                         port_role = {
-                                            'admin_speed':admin_speed,
-                                            'fec':fec,
+                                            'admin_speed':templateVars["admin_speed"],
+                                            'fec':templateVars["fec"],
                                             'flow_control_policy':templateVars["flow_control_policy"],
                                             'link_control_policy':templateVars["link_control_policy"],
                                             'port_id':original_port_list,
                                             'slot_id':1
                                         }
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'    admin_speed         = "{admin_speed}"')
-                                        print(f'    fec                 = "{fec}"')
+                                        print(f'    admin_speed         = "{templateVars["admin_speed"]}"')
+                                        print(f'    fec                 = "{templateVars["fec"]}"')
                                         print(f'    flow_control_policy = "{templateVars["flow_control_policy"]}"')
                                         print(f'    link_control_policy = "{templateVars["link_control_policy"]}"')
                                         print(f'    port_list           = "{original_port_list}"')
@@ -6348,30 +6455,20 @@ class easy_imm_wizard(object):
                             port_list = vars_from_list(fc_converted_ports, **templateVars)
 
                             # Prompt User for the Admin Speed of the Port
-                            templateVars["multi_select"] = False
-                            templateVars["policy_file"] = 'fc_admin_speed.txt'
-                            templateVars["var_description"] = '    Please Select the Admin Speed for the Uplink:\n'
-                            templateVars["var_type"] = 'Admin Speed'
-                            admin_speed = variable_loop(**templateVars)
+                            jsonVars = jsonData['components']['schemas']['fabric.FcUplinkPcRole']['allOf'][1]['properties']
+                            templateVars["var_description"] = jsonVars['AdminSpeed']['description']
+                            templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                            templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
+                            templateVars["varType"] = 'Admin Speed'
+                            templateVars["admin_speed"] = variablesFromAPI(**templateVars)
 
-                            # Prompt User for the Admin Speed of the Port
-                            templateVars["multi_select"] = False
-                            templateVars["policy_file"] = 'fill_pattern.txt'
-                            templateVars["var_description"] = '    Please Select the Fill Pattern for the Uplink:\n'\
-                                'For Cisco UCS 6400 Series fabric interconnect, if the FC uplink speed is 8 Gbps, set the \n'\
-                                'fill pattern as IDLE on the uplink switch. If the fill pattern is not set as IDLE, FC \n'\
-                                'uplinks operating at 8 Gbps might go to an errDisabled state, lose SYNC intermittently, or \n'\
-                                'notice errors or bad packets.  For speeds greater than 8 Gbps we recommend Arbff.  Below\n'\
-                                'is a configuration example on MDS to match this setting:\n\n'\
-                                'mds-a(config-if)# switchport fill-pattern IDLE speed 8000\n'\
-                                'mds-a(config-if)# show port internal inf interface fc1/1 | grep FILL\n'\
-                                '  FC_PORT_CAP_FILL_PATTERN_8G_CHANGE_CAPABLE (1)\n'\
-                                'mds-a(config-if)# show run int fc1/16 | incl fill\n\n'\
-                                'interface fc1/16\n'\
-                                '  switchport fill-pattern IDLE speed 8000\n\n'\
-                                'mds-a(config-if)#\n'
-                            templateVars["var_type"] = 'Fill Pattern'
-                            fill_pattern = variable_loop(**templateVars)
+                            # Prompt User for the Fill Pattern of the Port
+                            templateVars["var_description"] = jsonVars['FillPattern']['description']
+                            templateVars["var_description"] = '%s\n%s' % (templateVars["var_description"], fill_pattern_descr)
+                            templateVars["jsonVars"] = sorted(jsonVars['FillPattern']['enum'])
+                            templateVars["defaultVar"] = jsonVars['FillPattern']['default']
+                            templateVars["varType"] = 'Fill Pattern'
+                            templateVars["fill_pattern"] = variablesFromAPI(**templateVars)
 
                             vsans = {}
                             fabrics = ['Fabric_A', 'Fabric_B']
@@ -6410,22 +6507,22 @@ class easy_imm_wizard(object):
 
                             port_list = '%s' % (port_list[0])
                             fc_port_role_a = {
-                                'admin_speed':admin_speed,
-                                'fill_pattern':fill_pattern,
+                                'admin_speed':templateVars["admin_speed"],
+                                'fill_pattern':templateVars["fill_pattern"],
                                 'port_id':port_list,
                                 'slot_id':1,
                                 'vsan_id':vsans.get("Fabric_A")
                             }
                             fc_port_role_b = {
-                                'admin_speed':admin_speed,
-                                'fill_pattern':fill_pattern,
+                                'admin_speed':templateVars["admin_speed"],
+                                'fill_pattern':templateVars["fill_pattern"],
                                 'port_id':port_list,
                                 'slot_id':1,
                                 'vsan_id':vsans.get("Fabric_B")
                             }
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'    admin_speed      = "{admin_speed}"')
-                            print(f'    fill_pattern     = "{fill_pattern}"')
+                            print(f'    admin_speed      = "{templateVars["admin_speed"]}"')
+                            print(f'    fill_pattern     = "{templateVars["fill_pattern"]}"')
                             print(f'    port_list        = "{port_list}"')
                             print(f'    vsan_id_fabric_a = {vsans.get("Fabric_A")}')
                             print(f'    vsan_id_fabric_b = {vsans.get("Fabric_B")}')
@@ -6489,11 +6586,11 @@ class easy_imm_wizard(object):
                             print(f'     5,11,12,13,14,15 - List of Ports')
                             print(f'     5-10,20-30 - Ranges and Lists of Ports')
                             print(f'\n------------------------------------------------------\n')
-                            if model == 'UCS-FI-64108':
+                            if templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [97]: ')
                             else:
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [49]: ')
-                            if port_list == '' and model == 'UCS-FI-64108':
+                            if port_list == '' and templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = '97'
                             elif port_list == '':
                                 port_list = '49'
@@ -6509,7 +6606,7 @@ class easy_imm_wizard(object):
                                             port_overlap_count += 1
                                             port_overlap.append(x)
                                 if port_overlap_count == 0:
-                                    if model == 'UCS-FI-64108':
+                                    if templateVars["device_model"] == 'UCS-FI-64108':
                                         max_port = 108
                                     else:
                                         max_port = 54
@@ -6523,21 +6620,21 @@ class easy_imm_wizard(object):
                                             break
                                     if valid_ports == True:
                                         # Prompt User for the Admin Speed of the Port
-                                        templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'ethernet_admin_speed.txt'
-                                        templateVars["var_description"] = '    Please Select the Admin Speed for the Port:\n'
-                                        templateVars["var_type"] = 'Admin Speed'
-                                        admin_speed = variable_loop(**templateVars)
-
                                         # Prompt User for the Admin Speed of the Port
                                         templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'fec.txt'
-                                        templateVars["var_description"] = '    Forward error correction configuration for the port:\n'\
-                                            '    - Auto - (Default).  Forward error correction option Auto.\n'\
-                                            '    - Cl91 - Forward error correction option cl91\n'\
-                                            '    - Cl74 - Forward error correction option cl74.\n'
-                                        templateVars["var_type"] = 'FEC'
-                                        fec = variable_loop(**templateVars)
+                                        jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
+                                        templateVars["var_description"] = jsonVars['AdminSpeed']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
+                                        templateVars["varType"] = 'Admin Speed'
+                                        templateVars["admin_speed"] = variablesFromAPI(**templateVars)
+
+                                        # Prompt User for the FEC Mode of the Port
+                                        templateVars["var_description"] = jsonVars['Fec']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['Fec']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['Fec']['default']
+                                        templateVars["varType"] = 'Fec Mode'
+                                        templateVars["fec"] = variablesFromAPI(**templateVars)
 
                                         # Prompt User for the
                                         policy_list = [
@@ -6551,15 +6648,15 @@ class easy_imm_wizard(object):
                                             templateVars.update(policyData)
 
                                         port_role = {
-                                            'admin_speed':admin_speed,
-                                            'fec':fec,
+                                            'admin_speed':templateVars["admin_speed"],
+                                            'fec':templateVars["fec"],
                                             'link_control_policy':templateVars["link_control_policy"],
                                             'port_id':original_port_list,
                                             'slot_id':1
                                         }
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'    admin_speed         = "{admin_speed}"')
-                                        print(f'    fec                 = "{fec}"')
+                                        print(f'    admin_speed         = "{templateVars["admin_speed"]}"')
+                                        print(f'    fec                 = "{templateVars["fec"]}"')
                                         print(f'    link_control_policy = "{templateVars["link_control_policy"]}"')
                                         print(f'    port_list           = "{original_port_list}"')
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -6632,11 +6729,11 @@ class easy_imm_wizard(object):
                             print(f'     5,11,12,13,14,15 - List of Ports')
                             print(f'     5-10,20-30 - Ranges and Lists of Ports')
                             print(f'\n------------------------------------------------------\n')
-                            if model == 'UCS-FI-64108':
+                            if templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [5-36]: ')
                             else:
                                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [5-18]: ')
-                            if port_list == '' and model == 'UCS-FI-64108':
+                            if port_list == '' and templateVars["device_model"] == 'UCS-FI-64108':
                                 port_list = '5-36'
                             elif port_list == '':
                                 port_list = '5-18'
@@ -6652,7 +6749,7 @@ class easy_imm_wizard(object):
                                             port_overlap_count += 1
                                             port_overlap.append(x)
                                 if port_overlap_count == 0:
-                                    if model == 'UCS-FI-64108':
+                                    if templateVars["device_model"] == 'UCS-FI-64108':
                                         max_port = 108
                                     else:
                                         max_port = 54
@@ -6989,7 +7086,7 @@ class easy_imm_wizard(object):
     #========================================
     # Power Policy Module
     #========================================
-    def power_policies(self):
+    def power_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         policy_type = 'Power Policy'
@@ -7017,13 +7114,14 @@ class easy_imm_wizard(object):
             policy_loop = False
             while policy_loop == False:
 
+                print('staring loop again')
                 templateVars["multi_select"] = False
-                templateVars["policy_file"] = 'system_type.txt'
-                templateVars["var_description"] = '   Please Select the Type of System this Power Policy is for.'
-                templateVars["var_type"] = 'System Type'
-                system_type = variable_loop(**templateVars)
+                templateVars["var_description"] = easy_jsonData['policies']['power.Policy']['systemType']['description']
+                templateVars["jsonVars"] = sorted(easy_jsonData['policies']['power.Policy']['systemType']['enum'])
+                templateVars["defaultVar"] = easy_jsonData['policies']['power.Policy']['systemType']['default']
+                templateVars["varType"] = 'System Type'
+                system_type = variablesFromAPI(**templateVars)
 
-                print(system_type)
                 if not name_prefix == '':
                     name = '%s_%s' % (name_prefix, system_type)
                 else:
@@ -7043,39 +7141,25 @@ class easy_imm_wizard(object):
                 else:
                     templateVars["allocated_budget"] = 0
 
+                templateVars["multi_select"] = False
+                jsonVars = jsonData['components']['schemas']['power.Policy']['allOf'][1]['properties']
+
                 if system_type == 'Server':
-                    templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'power_restore.txt'
-                    templateVars["var_description"] = '   Sets the Power Restore State of the Server.\n'\
-                        '      - AlwaysOff - Set the Power Restore Mode to Off.\n'\
-                        '      - AlwaysOn - Set the Power Restore Mode to On.\n'\
-                        '      - LastState - Set the Power Restore Mode to LastState.\n'
-                    templateVars["var_type"] = 'Power Restore State'
-                    templateVars["power_restore_state"] = variable_loop(**templateVars)
+                    templateVars["var_description"] = jsonVars['PowerRestoreState']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['PowerRestoreState']['enum'])
+                    templateVars["defaultVar"] = jsonVars['PowerRestoreState']['default']
+                    templateVars["varType"] = 'Power Restore State'
+                    templateVars["power_restore_state"] = variablesFromAPI(**templateVars)
 
                 if system_type == '5108':
-                    templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'power_5108.txt'
-                    templateVars["var_description"] = '    Please Select the Power Redundancy Policy to apply to the system\n'\
-                        '      - Grid - Grid Mode requires two power sources. If one source fails, the surviving PSUs connected to the other source provides power to the chassis.\n'\
-                        '      - NotRedundant - Power Manager turns on the minimum number of PSUs required to support chassis power requirements. No Redundant PSUs are maintained.\n'\
-                        '      - N+1 - Power Manager turns on the minimum number of PSUs required to support chassis power requirements plus one additional PSU for redundancy.\n'
-                elif system_type == '9508':
-                    templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'power_9508.txt'
-                    templateVars["var_description"] = '   Please Select the Power Redundancy Policy to apply to the system\n'\
-                        '      - Grid - Grid Mode requires two power sources. If one source fails, the surviving PSUs connected to the other source provides power to the chassis.\n'\
-                        '      - NotRedundant - Power Manager turns on the minimum number of PSUs required to support chassis power requirements. No Redundant PSUs are maintained.\n'\
-                        '      - N+1 - Power Manager turns on the minimum number of PSUs required to support chassis power requirements plus one additional PSU for redundancy.\n'\
-                        '      - N+2 - Power Manager turns on the minimum number of PSUs required to support chassis power requirements plus two additional PSU for redundancy.\n'
+                    templateVars["popList"] = ['N+2']
                 elif system_type == 'Server':
-                    templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'power_server.txt'
-                    templateVars["var_description"] = '   Please Select the Power Redundancy Policy to apply to the system\n'\
-                        '      - Grid - Grid Mode requires two power sources. If one source fails, the surviving PSUs connected to the other source provides power to the chassis.\n'\
-                        '      - NotRedundant - Power Manager turns on the minimum number of PSUs required to support chassis power requirements. No Redundant PSUs are maintained.\n'
-                templateVars["var_type"] = 'Power Redundancy Mode'
-                templateVars["redundancy_mode"] = variable_loop(**templateVars)
+                    templateVars["popList"] = ['N+1','N+2']
+                templateVars["var_description"] = jsonVars['RedundancyMode']['description']
+                templateVars["jsonVars"] = sorted(jsonVars['RedundancyMode']['enum'])
+                templateVars["defaultVar"] = jsonVars['RedundancyMode']['default']
+                templateVars["varType"] = 'Power Redundancy Mode'
+                templateVars["redundancy_mode"] = variablesFromAPI(**templateVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 if system_type == '9508':
@@ -7096,7 +7180,11 @@ class easy_imm_wizard(object):
                         templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
                         write_to_template(self, **templateVars)
 
-                        configure_loop, policy_loop = exit_default_yes(templateVars["policy_type"])
+                        if loop_count < 3:
+                            configure_loop, policy_loop = exit_default_yes(templateVars["policy_type"])
+                        else:
+                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                        loop_count += 1
                         valid_confirm = True
 
                     elif confirm_policy == 'N':
@@ -7117,7 +7205,7 @@ class easy_imm_wizard(object):
     #========================================
     # SAN Connectivity Policy Module
     #========================================
-    def san_connectivity_policies(self, pci_order_consumed):
+    def san_connectivity_policies(self, jsonData, easy_jsonData, pci_order_consumed):
         name_prefix = self.name_prefix
         name_suffix = 'san'
         org = self.org
@@ -7156,25 +7244,25 @@ class easy_imm_wizard(object):
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'target_platform.txt'
-                    templateVars["var_description"] = '    The platform for which the server profile is applicable. It can either be:\n'
-                    templateVars["var_type"] = 'Target Platform'
-                    target_platform = variable_loop(**templateVars)
-                    templateVars["target_platform"] = target_platform
+                    jsonVars = jsonData['components']['schemas']['vnic.SanConnectivityPolicy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['TargetPlatform']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
+                    templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                    templateVars["varType"] = 'Target Platform'
+                    templateVars["target_platform"] = variablesFromAPI(**templateVars)
 
-                    if target_platform == 'FIAttached':
-                        templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'placement_mode.txt'
-                        templateVars["var_description"] = '    The most common implementation is custom.\n'\
-                            '    The mode used for placement of vHBAs on network adapters. Options are:\n'
-                        templateVars["var_type"] = 'vHBA Placement Mode'
-                        templateVars["vhba_placement_mode"] = variable_loop(**templateVars)
+                    if templateVars["target_platform"] == 'FIAttached':
+                        templateVars["var_description"] = jsonVars['PlacementMode']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['PlacementMode']['enum'])
+                        templateVars["defaultVar"] = jsonVars['PlacementMode']['default']
+                        templateVars["varType"] = 'Placement Mode'
+                        templateVars["vhba_placement_mode"] = variablesFromAPI(**templateVars)
 
-                        templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'allocation_type.txt'
-                        templateVars["var_description"] = '    Allocation method to assign a WWNN address for consumers of the san policy.\n'
-                        templateVars["var_type"] = 'WWNN Allocation Type'
-                        templateVars["wwnn_allocation_type"] = variable_loop(**templateVars)
+                        templateVars["var_description"] = jsonVars['WwnnAddressType']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['WwnnAddressType']['enum'])
+                        templateVars["defaultVar"] = jsonVars['WwnnAddressType']['default']
+                        templateVars["varType"] = 'WWNN Allocation Type'
+                        templateVars["wwnn_allocation_type"] = variablesFromAPI(**templateVars)
 
                         templateVars["wwnn_pool"] = ''
                         templateVars["wwnn_static"] = ''
@@ -7323,12 +7411,14 @@ class easy_imm_wizard(object):
                                     valid = True
 
                         templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'slot_id.txt'
-                        templateVars["var_description"] = '  PCIe Slot where the VIC adapter is installed. Supported values are (1-15) and MLOM.\n\n'
-                        templateVars["var_type"] = 'Slot ID'
-                        templateVars["slot_id"] = variable_loop(**templateVars)
+                        jsonVars = easy_jsonData['policies']['fabric.PortPolicy']
+                        templateVars["var_description"] = jsonVars['vnic.PlacementSettings']['description']
+                        templateVars["jsonVars"] = [x for x in jsonVars['vnic.PlacementSettings']['enum']]
+                        templateVars["defaultVar"] = jsonVars['vnic.PlacementSettings']['default']
+                        templateVars["varType"] = 'Slot Id'
+                        templateVars["slot_id"] = variablesFromAPI(**templateVars)
 
-                        if not target_platform == 'FIAttached':
+                        if not templateVars["target_platform"] == 'FIAttached':
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'    The Uplink Port is the Adapter port on which the virtual interface will be created.')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -7346,32 +7436,20 @@ class easy_imm_wizard(object):
                                         print(f'  Error!! Invalid Value.  Please enter 0 or 1.')
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                        templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'vhba_type.txt'
-                        templateVars["var_description"] = '    vhba_type - VHBA Type for the vHBA Policy.\n'\
-                            '    - fc-initiator (Default) - The default value set for vHBA Type Configuration. \n'\
-                            '         Fc-initiator specifies vHBA as a consumer of storage. Enables SCSI commands to\n'\
-                            '         transfer data and status information between host and target storage systems.\n'\
-                            '    - fc-nvme-initiator - Fc-nvme-initiator specifies vHBA as a consumer of storage. \n'\
-                            '         Enables NVMe-based message commands to transfer data and status information \n'\
-                            '         between host and target storage systems.\n'\
-                            '    - fc-nvme-target - Fc-nvme-target specifies vHBA as a provider of storage volumes to\n'\
-                            '         initiators.  Enables NVMe-based message commands to transfer data and status \n'\
-                            '         information between host and target storage systems.  Currently tech-preview, \n'\
-                            '         only enabled with an asynchronous driver.\n'\
-                            '    - fc-target - Fc-target specifies vHBA as a provider of storage volumes to initiators. \n'\
-                            '         Enables SCSI commands to transfer data and status information between host and \n'\
-                            '         target storage systems.  fc-target is enabled only with an asynchronous driver.\n\n'
-                        templateVars["var_type"] = 'vHBA Type'
-                        templateVars["vhba_type"] = variable_loop(**templateVars)
+                        jsonVars = jsonData['components']['schemas']['vnic.FcIf']['allOf'][1]['properties']
+                        templateVars["var_description"] = jsonVars['Type']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['Type']['enum'])
+                        templateVars["defaultVar"] = jsonVars['Type']['default']
+                        templateVars["varType"] = 'vHBA Type'
+                        templateVars["vhba_type"] = variablesFromAPI(**templateVars)
 
-                        templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'allocation_type.txt'
-                        templateVars["var_description"] = '    Type of allocation to assign a WWPN address to each vHBA for this SAN policy.\n'
-                        templateVars["var_type"] = 'WWPN Allocation Type'
-                        templateVars["wwpn_allocation_type"] = variable_loop(**templateVars)
+                        templateVars["var_description"] = jsonVars['WwpnAddressType']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['WwpnAddressType']['enum'])
+                        templateVars["defaultVar"] = jsonVars['WwpnAddressType']['default']
+                        templateVars["varType"] = 'WWPN Allocation Type'
+                        templateVars["wwpn_allocation_type"] = variablesFromAPI(**templateVars)
 
-                        if target_platform == 'FIAttached':
+                        if templateVars["target_platform"] == 'FIAttached':
                             templateVars[f'wwpn_pool_A'] = ''
                             templateVars[f'wwpn_pool_B'] = ''
                             templateVars[f'wwpn_static_A'] = ''
@@ -7400,7 +7478,7 @@ class easy_imm_wizard(object):
                                         templateVars[f"wwpn_static_{x}"]
                                         valid = validating_ucs.wwxn_address(f'Fabric {x} WWPN Static', templateVars["wwpn_static"])
 
-                        if target_platform == 'FIAttached':
+                        if templateVars["target_platform"] == 'FIAttached':
                             vhba_fabric_a = {
                                 'fibre_channel_adapter_policy':templateVars["fibre_channel_adapter_policy"],
                                 'fibre_channel_network_policy':templateVars["fibre_channel_network_policy_A"],
@@ -7466,7 +7544,7 @@ class easy_imm_wizard(object):
                         print(f'   placement_pci_link           = {templateVars["pci_link_A"]}')
                         print(f'   placement_pci_order          = {templateVars["pci_order_A"]}')
                         print(f'   placement_slot_id            = "{templateVars["slot_id"]}"')
-                        if target_platform == 'FIAttached':
+                        if templateVars["target_platform"] == 'FIAttached':
                             print(f'   placement_switch_id          = "A"')
                         else:
                             print(f'   placement_uplink_port        = "{templateVars["uplink_port_A"]}"')
@@ -7485,12 +7563,12 @@ class easy_imm_wizard(object):
                         print(f'   placement_pci_link           = {templateVars["pci_link_B"]}')
                         print(f'   placement_pci_order          = {templateVars["pci_order_B"]}')
                         print(f'   placement_slot_id            = "{templateVars["slot_id"]}"')
-                        if target_platform == 'FIAttached':
+                        if templateVars["target_platform"] == 'FIAttached':
                             print(f'   placement_switch_id          = "B"')
                         else:
                             print(f'   placement_uplink_port        = "{templateVars["uplink_port_B"]}"')
                         print(f'   vhba_type                    = "{templateVars["vhba_type"]}"')
-                        if target_platform == 'FIAttached':
+                        if templateVars["target_platform"] == 'FIAttached':
                             print(f'   wwpn_allocation_type         = "{templateVars["wwpn_allocation_type"]}"')
                             if templateVars["wwpn_allocation_type"] == 'Pool':
                                 print(f'   wwpn_pool                    = "{templateVars["wwpn_pool_B"]}"')
@@ -7533,8 +7611,8 @@ class easy_imm_wizard(object):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    description          = "{templateVars["descr"]}"')
                     print(f'    name                 = "{templateVars["name"]}"')
-                    print(f'    target_platform      = "{target_platform}"')
-                    if target_platform == 'FIAttached':
+                    print(f'    target_platform      = "{templateVars["target_platform"]}"')
+                    if templateVars["target_platform"] == 'FIAttached':
                         print(f'    vhba_placement_mode  = "{templateVars["vhba_placement_mode"]}"')
                         print(f'    wwnn_allocation_type = "{templateVars["wwnn_allocation_type"]}"')
                         print(f'    wwnn_pool            = "{templateVars["wwnn_pool"]}"')
@@ -7613,7 +7691,7 @@ class easy_imm_wizard(object):
     #========================================
     # SD Card Policy Module
     #========================================
-    def sd_card_policies(self):
+    def sd_card_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'sdcard'
         org = self.org
@@ -7672,7 +7750,7 @@ class easy_imm_wizard(object):
     #========================================
     # Serial over LAN Policy Module
     #========================================
-    def serial_over_lan_policies(self):
+    def serial_over_lan_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'sol'
         org = self.org
@@ -7716,17 +7794,18 @@ class easy_imm_wizard(object):
                     templateVars["enabled"] = True
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'baud_rate.txt'
-                    templateVars["var_description"] = '    Please Select the Baud Rate for this Policy.\n'\
-                        '    - 115200 - Recommended for best throughput\n'
-                    templateVars["var_type"] = 'Baude Rate'
-                    templateVars["baud_rate"] = variable_loop(**templateVars)
+                    jsonVars = jsonData['components']['schemas']['sol.Policy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['BaudRate']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['BaudRate']['enum'])
+                    templateVars["defaultVar"] = jsonVars['BaudRate']['default']
+                    templateVars["varType"] = 'Baud Rate'
+                    templateVars["baud_rate"] = variablesFromAPI(**templateVars)
 
-                    templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'com_port.txt'
-                    templateVars["var_description"] = '    Please Select the COM Port for this Policy.\n'
-                    templateVars["var_type"] = 'COM Port'
-                    templateVars["com_port"] = variable_loop(**templateVars)
+                    templateVars["var_description"] = jsonVars['ComPort']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['ComPort']['enum'])
+                    templateVars["defaultVar"] = jsonVars['ComPort']['default']
+                    templateVars["varType"] = 'Com Port'
+                    templateVars["com_port"] = variablesFromAPI(**templateVars)
 
                     valid = False
                     while valid == False:
@@ -7782,7 +7861,7 @@ class easy_imm_wizard(object):
     #========================================
     # SMTP Policy Module
     #========================================
-    def smtp_policies(self):
+    def smtp_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'smtp'
         org = self.org
@@ -7856,12 +7935,12 @@ class easy_imm_wizard(object):
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'smtp_severity.txt'
-                    templateVars["var_description"] = '   Minimum fault severity level to receive email notifications. Email notifications\n'\
-                        '   are sent for all faults whose severity is equal to or greater than the chosen level.\n'\
-                        '   Default is Critical\n'
-                    templateVars["var_type"] = 'Minimum Severity'
-                    templateVars["minimum_severity"] = variable_loop(**templateVars)
+                    jsonVars = jsonData['components']['schemas']['smtp.Policy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['MinSeverity']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+                    templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
+                    templateVars["varType"] = 'Minimum Severity'
+                    templateVars["minimum_severity"] = variablesFromAPI(**templateVars)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  The email address entered here will be displayed as the from address (mail received from ')
@@ -7952,7 +8031,7 @@ class easy_imm_wizard(object):
     #========================================
     # SNMP Policy Module
     #========================================
-    def snmp_policies(self):
+    def snmp_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'snmp'
         org = self.org
@@ -8048,13 +8127,12 @@ class easy_imm_wizard(object):
 
                     if not templateVars["access_community_string"] == '':
                         templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'snmp_community_access.txt'
-                        templateVars["var_description"] = '    Controls access to the information in the inventory tables. Applicable only for SNMPv1 and SNMPv2c.\n'\
-                            '    - Disabled - (Defualt) - Blocks access to the information in the inventory tables.\n'\
-                            '    - Full - Full access to read the information in the inventory tables.\n'\
-                            '    - Limited - Partial access to read the information in the inventory tables.\n'
-                        templateVars["var_type"] = 'SNMP Community Access'
-                        templateVars["community_access"] = variable_loop(**templateVars)
+                        jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
+                        templateVars["var_description"] = jsonVars['CommunityAccess']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['CommunityAccess']['enum'])
+                        templateVars["defaultVar"] = jsonVars['CommunityAccess']['default']
+                        templateVars["varType"] = 'Community Access'
+                        templateVars["community_access"] = variablesFromAPI(**templateVars)
                     else:
                         templateVars["community_access"] = 'Disabled'
 
@@ -8126,22 +8204,20 @@ class easy_imm_wizard(object):
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                                 templateVars["multi_select"] = False
-                                templateVars["policy_file"] = 'snmp_privacy_type.txt'
-                                templateVars["var_description"] = '    Security mechanism used for communication between agent and manager:\n'\
-                                    '    - AuthNoPriv - The user requires an authorization password but not a privacy password.\n'\
-                                    '    - AuthPriv - (Default) - The user requires both an authorization password and a privacy\n'\
-                                    '               password.\n'
-                                templateVars["var_type"] = 'SNMP Privacy Level'
-                                security_level = variable_loop(**templateVars)
+                                jsonVars = jsonData['components']['schemas']['snmp.User']['allOf'][1]['properties']
+                                templateVars["var_description"] = jsonVars['SecurityLevel']['description']
+                                templateVars["jsonVars"] = sorted(jsonVars['SecurityLevel']['enum'])
+                                templateVars["defaultVar"] = jsonVars['SecurityLevel']['default']
+                                templateVars["varType"] = 'SNMP Security Level'
+                                security_level = variablesFromAPI(**templateVars)
 
                                 if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
-                                    templateVars["multi_select"] = False
-                                    templateVars["policy_file"] = 'snmp_authorization_protocol.txt'
-                                    templateVars["var_description"] = '    Authorization protocol for authenticating the user.  Currently Options are:\n'\
-                                        '    - MD5\n'\
-                                        '    - SHA - (Default)\n'
-                                    templateVars["var_type"] = 'SNMP Authorization Protocol'
-                                    auth_type = variable_loop(**templateVars)
+                                    templateVars["var_description"] = jsonVars['AuthType']['description']
+                                    templateVars["jsonVars"] = sorted(jsonVars['AuthType']['enum'])
+                                    templateVars["defaultVar"] = 'SHA'
+                                    templateVars["popList"] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
+                                    templateVars["varType"] = 'SNMP Auth Type'
+                                    auth_type = variablesFromAPI(**templateVars)
 
                                 if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
                                     valid = False
@@ -8158,15 +8234,13 @@ class easy_imm_wizard(object):
                                     auth_password = inner_loop_count
 
                                 if security_level == 'AuthPriv':
-                                    templateVars["multi_select"] = False
-                                    templateVars["policy_file"] = 'snmp_privacy_protocol.txt'
-                                    templateVars["var_description"] = '    Privacy protocol for the user.  Options are:\n'\
-                                        '    - AES - (Default)\n'\
-                                        '    - DES\n'
-                                    templateVars["var_type"] = 'SNMP Privacy Protocol'
-                                    privacy_type = variable_loop(**templateVars)
+                                    templateVars["var_description"] = jsonVars['PrivacyType']['description']
+                                    templateVars["jsonVars"] = sorted(jsonVars['PrivacyType']['enum'])
+                                    templateVars["defaultVar"] = 'AES'
+                                    templateVars["popList"] = ['NA']
+                                    templateVars["varType"] = 'SNMP Auth Type'
+                                    privacy_type = variablesFromAPI(**templateVars)
 
-                                if security_level == 'AuthPriv':
                                     valid = False
                                     while valid == False:
                                         privacy_password = getpass.getpass(f'What is the privacy password for {snmp_user}? ')
@@ -8263,19 +8337,19 @@ class easy_imm_wizard(object):
                         if question == '' or question == 'Y':
                             valid_traps = False
                             while valid_traps == False:
+                                templateVars["multi_select"] = False
+                                jsonVars = jsonData['components']['schemas']['snmp.Trap']['allOf'][1]['properties']
                                 if len(snmp_user_list) == 0:
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     print(f'  There are no valid SNMP Users so Trap Destinations can only be set to SNMPv2.')
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     snmp_version = 'V2'
                                 else:
-                                    templateVars["multi_select"] = False
-                                    templateVars["policy_file"] = 'snmp_version.txt'
-                                    templateVars["var_description"] = '    What Version of SNMP will be used for this Trap Destination?\n'\
-                                        '    - V2 - SNMPv2c.\n'\
-                                        '    - V3 - (Defualt) - SNMPv3\n'
-                                    templateVars["var_type"] = 'SNMP Version'
-                                    snmp_version = variable_loop(**templateVars)
+                                    templateVars["var_description"] = jsonVars['Version']['description']
+                                    templateVars["jsonVars"] = sorted(jsonVars['Version']['enum'])
+                                    templateVars["defaultVar"] = jsonVars['Version']['default']
+                                    templateVars["varType"] = 'SNMP Version'
+                                    snmp_version = variablesFromAPI(**templateVars)
 
                                 if snmp_version == 'V2':
                                     valid = False
@@ -8299,13 +8373,11 @@ class easy_imm_wizard(object):
                                     snmp_user = snmp_user[0]
 
                                 if snmp_version == 'V2':
-                                    templateVars["multi_select"] = False
-                                    templateVars["policy_file"] = 'snmp_trap_type.txt'
-                                    templateVars["var_description"] = '    Type of trap which decides whether to receive a notification when a trap is received at the destination.\n'\
-                                        '    - Inform - Receive notifications when trap is sent to the destination. This option is valid only for SNMPv2.\n'\
-                                        '    - Trap - Do not receive notifications when trap is sent to the destination.\n'
-                                    templateVars["var_type"] = 'Trap Type'
-                                    trap_type = variable_loop(**templateVars)
+                                    templateVars["var_description"] = jsonVars['Type']['description']
+                                    templateVars["jsonVars"] = sorted(jsonVars['Type']['enum'])
+                                    templateVars["defaultVar"] = jsonVars['Type']['default']
+                                    templateVars["varType"] = 'SNMP Trap Type'
+                                    trap_type = variablesFromAPI(**templateVars)
                                 else:
                                     trap_type = 'Trap'
 
@@ -8494,7 +8566,7 @@ class easy_imm_wizard(object):
     #========================================
     # SSH Policy Module
     #========================================
-    def ssh_policies(self):
+    def ssh_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ssh'
         org = self.org
@@ -8610,7 +8682,7 @@ class easy_imm_wizard(object):
     #========================================
     # Storage Policy Module
     #========================================
-    def storage_policies(self):
+    def storage_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'storage'
         org = self.org
@@ -8669,7 +8741,7 @@ class easy_imm_wizard(object):
     #========================================
     # Switch Control Policy Module
     #========================================
-    def switch_control_policies(self):
+    def switch_control_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'sw_ctrl'
         org = self.org
@@ -8754,7 +8826,7 @@ class easy_imm_wizard(object):
     #========================================
     # Syslog Policy Module
     #========================================
-    def syslog_policies(self):
+    def syslog_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'syslog'
         org = self.org
@@ -8794,20 +8866,14 @@ class easy_imm_wizard(object):
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'syslog_severity.txt'
-                    templateVars["var_description"] = '    Please Select the Local Minimum Severity.\n'\
-                        '    - emergency\n'\
-                        '    - alert\n'\
-                        '    - critical (Intersight Critical)\n'\
-                        '    - error (Intersight Major)\n'\
-                        '    - warning (Defualt) - (Intersight Minor)\n'\
-                        '    - notice (Intersight Warning)\n'\
-                        '    - informational\n'\
-                        '    - debug\n'
-                    templateVars["var_type"] = 'Local Severity'
-                    min_severity = variable_loop(**templateVars)
+                    jsonVars = jsonData['components']['schemas']['syslog.LocalClientBase']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['MinSeverity']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+                    templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
+                    templateVars["varType"] = 'Syslog Local Minimum Severity'
+                    templateVars["min_severity"] = variablesFromAPI(**templateVars)
 
-                    templateVars["local_logging"] = {'file':{'min_severity':min_severity}}
+                    templateVars["local_logging"] = {'file':{'min_severity':templateVars["min_severity"]}}
 
                     templateVars["remote_logging"] = {}
                     syslog_count = 1
@@ -8817,29 +8883,22 @@ class easy_imm_wizard(object):
                         while valid == False:
                             hostname = input(f'Enter the Hostname/IP Address of the Remote Server: ')
                             if re.search(r'[a-zA-Z]+', hostname):
-                                valid = validating_ucs.dns_name('Primary NTP Server', hostname)
+                                valid = validating_ucs.dns_name('Remote Logging Server', hostname)
                             else:
-                                valid = validating_ucs.ip_address('Primary NTP Server', hostname)
+                                valid = validating_ucs.ip_address('Remote Logging Server', hostname)
 
-                        templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'syslog_severity.txt'
-                        templateVars["var_description"] = '    Please Select the Minimum Severity to Report.\n'\
-                            '    - emergency\n'\
-                            '    - alert\n'\
-                            '    - critical (Intersight Critical)\n'\
-                            '    - error (Intersight Major)\n'\
-                            '    - warning (Defualt) - (Intersight Minor)\n'\
-                            '    - notice (Intersight Warning)\n'\
-                            '    - informational\n'\
-                            '    - debug\n'
-                        templateVars["var_type"] = 'Remote Severity'
-                        min_severity = variable_loop(**templateVars)
+                        jsonVars = jsonData['components']['schemas']['syslog.RemoteClientBase']['allOf'][1]['properties']
+                        templateVars["var_description"] = jsonVars['MinSeverity']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+                        templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
+                        templateVars["varType"] = 'Syslog Remote Minimum Severity'
+                        min_severity = variablesFromAPI(**templateVars)
 
-                        templateVars["multi_select"] = False
-                        templateVars["policy_file"] = 'protocol.txt'
-                        templateVars["var_description"] = '    Please Select the Protocol for the Remote Server.\n'
-                        templateVars["var_type"] = 'Protocol'
-                        protocol = variable_loop(**templateVars)
+                        templateVars["var_description"] = jsonVars['Protocol']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['Protocol']['enum'])
+                        templateVars["defaultVar"] = jsonVars['Protocol']['default']
+                        templateVars["varType"] = 'Syslog Protocol'
+                        templateVars["protocol"] = variablesFromAPI(**templateVars)
 
                         valid = False
                         while valid == False:
@@ -8858,13 +8917,13 @@ class easy_imm_wizard(object):
                             'hostname':hostname,
                             'min_severity':min_severity,
                             'port':port,
-                            'protocol':protocol
+                            'protocol':templateVars["protocol"]
                         }
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'   hostname     = "{hostname}"')
                         print(f'   min_severity = "{min_severity}"')
                         print(f'   port         = {port}')
-                        print(f'   protocol     = "{protocol}"')
+                        print(f'   protocol     = "{templateVars["protocol"]}"')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         valid_confirm = False
                         while valid_confirm == False:
@@ -8907,7 +8966,7 @@ class easy_imm_wizard(object):
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    description        = "{templateVars["descr"]}"')
-                    print(f'    local_min_severity = "{min_severity}"')
+                    print(f'    local_min_severity = "{templateVars["min_severity"]}"')
                     print(f'    name               = "{templateVars["name"]}"')
                     print(f'    remote_clients = [')
                     item_count = 1
@@ -8966,7 +9025,7 @@ class easy_imm_wizard(object):
     #========================================
     # System QoS Policy Module
     #========================================
-    def system_qos_policies(self):
+    def system_qos_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'qos'
         org = self.org
@@ -9152,7 +9211,7 @@ class easy_imm_wizard(object):
     #========================================
     # Thermal Policy Module
     #========================================
-    def thermal_policies(self):
+    def thermal_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         policy_type = 'Thermal Policy'
@@ -9180,36 +9239,29 @@ class easy_imm_wizard(object):
             while policy_loop == False:
 
                 templateVars["multi_select"] = False
-                templateVars["policy_file"] = 'chassis_type.txt'
-                templateVars["var_description"] = '   Please Select the Type of Chassis this Thermal Policy is for.'
-                templateVars["var_type"] = 'Chassis Type'
-                chassis_type = variable_loop(**templateVars)
+                jsonVars = easy_jsonData['policies']['thermal.Policy']
+                templateVars["var_description"] = jsonVars['chassisType']['description']
+                templateVars["jsonVars"] = sorted(jsonVars['chassisType']['enum'])
+                templateVars["defaultVar"] = jsonVars['chassisType']['default']
+                templateVars["varType"] = 'Chassis Type'
+                templateVars["chassis_type"] = variablesFromAPI(**templateVars)
 
                 if not name_prefix == '':
-                    name = '%s_%s' % (name_prefix, chassis_type)
+                    name = '%s_%s' % (name_prefix, templateVars["chassis_type"])
                 else:
-                    name = '%s_%s' % (org, chassis_type)
+                    name = '%s_%s' % (org, templateVars["chassis_type"])
 
                 templateVars["name"] = policy_name(name, policy_type)
                 templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
-                if chassis_type == '5108':
-                    templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'thermal_5108.txt'
-                    templateVars["var_description"] = '    Please Select the Thermal Policy to apply to the system\n'\
-                        '      - Balanced - The fans run faster when needed based on the heat generated by the chassis. When possible, the fans returns to the minimum required speed.\n'\
-                        '      - LowPower - The Fans run at the minimum speed required to keep the chassis cool.\n'
-                else:
-                    templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'thermal_9508.txt'
-                    templateVars["var_description"] = '   Please Select the Thermal Policy to apply to the system\n'\
-                        '      - Acoustic - The fan speed is reduced to reduce noise levels in acoustic-sensitive environments.\n'\
-                        '      - Balanced - The fans run faster when needed based on the heat generated by the chassis. When possible, the fans returns to the minimum required speed.\n'\
-                        '      - LowPower - The Fans run at the minimum speed required to keep the chassis cool.\n'\
-                        '      - HighPower - The fans are kept at higher speed to emphasizes performance over power consumption.\n'\
-                        '      - MaximumPower - The fans are always kept at maximum speed. This option provides the most cooling and consumes the most power.\n'
-                templateVars["var_type"] = 'Chassis Type'
-                templateVars["fan_control_mode"] = variable_loop(**templateVars)
+                if templateVars["chassis_type"] == '5108':
+                    templateVars["popList"] = ['Acoustic', 'HighPower', 'MaximumPower']
+                jsonVars = jsonData['components']['schemas']['thermal.Policy']['allOf'][1]['properties']
+                templateVars["var_description"] = jsonVars['FanControlMode']['description']
+                templateVars["jsonVars"] = sorted(jsonVars['FanControlMode']['enum'])
+                templateVars["defaultVar"] = jsonVars['FanControlMode']['default']
+                templateVars["varType"] = 'Fan Control Mode'
+                templateVars["fan_control_mode"] = variablesFromAPI(**templateVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'   description      = "{templateVars["descr"]}"')
@@ -9247,7 +9299,7 @@ class easy_imm_wizard(object):
     #========================================
     # UCS Chassis Profile Module
     #========================================
-    def ucs_chassis_profiles(self):
+    def ucs_chassis_profiles(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'chassis'
         org = self.org
@@ -9281,13 +9333,12 @@ class easy_imm_wizard(object):
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'action.txt'
-                    templateVars["var_description"] = '    Please Choose the Action to Perform on the Chassis with this Profile:\n'\
-                        '    - Deploy - will deploy the profile.\n'\
-                        '    - No-op - will not deploy the profile.\n'\
-                        '    - Unassign - will detach the profile from the hardware.\n\n'
-                    templateVars["var_type"] = 'Action'
-                    templateVars["action"] = variable_loop(**templateVars)
+                    jsonVars = easy_jsonData['profiles']
+                    templateVars["var_description"] = jsonVars['action']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['action']['enum'])
+                    templateVars["defaultVar"] = jsonVars['action']['default']
+                    templateVars["varType"] = 'Action'
+                    templateVars["action"] = variablesFromAPI(**templateVars)
 
                     valid = False
                     while valid == False:
@@ -9368,7 +9419,7 @@ class easy_imm_wizard(object):
     #========================================
     # UCS Domain Profile Module
     #========================================
-    def ucs_domain_profiles(self, policy_prefix):
+    def ucs_domain_profiles(self, jsonData, easy_jsonData, policy_prefix):
         name_prefix = self.name_prefix
         name_suffix = 'ucs'
         org = self.org
@@ -9402,13 +9453,12 @@ class easy_imm_wizard(object):
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'action.txt'
-                    templateVars["var_description"] = '    Please Choose the Action to Perform on the Domain with this Profile:\n'\
-                        '    - Deploy - will deploy the profile.\n'\
-                        '    - No-op - will not deploy the profile.\n'\
-                        '    - Unassign - will detach the profile from the hardware.\n\n'
-                    templateVars["var_type"] = 'Action'
-                    templateVars["action"] = variable_loop(**templateVars)
+                    jsonVars = easy_jsonData['profiles']
+                    templateVars["var_description"] = jsonVars['action']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['action']['enum'])
+                    templateVars["defaultVar"] = jsonVars['action']['default']
+                    templateVars["varType"] = 'Action'
+                    templateVars["action"] = variablesFromAPI(**templateVars)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Note: If you do not have the Serial Number at this time you can manually add it to the:')
@@ -9559,7 +9609,7 @@ class easy_imm_wizard(object):
     #========================================
     # UCS Server Profile Module
     #========================================
-    def ucs_server_profiles(self):
+    def ucs_server_profiles(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'server'
         org = self.org
@@ -9591,13 +9641,12 @@ class easy_imm_wizard(object):
                 templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                 templateVars["multi_select"] = False
-                templateVars["policy_file"] = 'action.txt'
-                templateVars["var_description"] = '    Please Choose the Action to Perform on the Server with this Profile:\n'\
-                    '    - Deploy - will deploy the profile.\n'\
-                    '    - No-op - will not deploy the profile.\n'\
-                    '    - Unassign - will detach the profile from the hardware.\n\n'
-                templateVars["var_type"] = 'Action'
-                templateVars["action"] = variable_loop(**templateVars)
+                jsonVars = easy_jsonData['profiles']
+                templateVars["var_description"] = jsonVars['action']['description']
+                templateVars["jsonVars"] = sorted(jsonVars['action']['enum'])
+                templateVars["defaultVar"] = jsonVars['action']['default']
+                templateVars["varType"] = 'Action'
+                templateVars["action"] = variablesFromAPI(**templateVars)
 
                 valid = False
                 while valid == False:
@@ -9639,11 +9688,12 @@ class easy_imm_wizard(object):
 
                 if server_template == False:
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'target_platform.txt'
-                    templateVars["var_description"] = '    The platform for which the server profile is applicable. It can either be:\n'
-                    templateVars["var_type"] = 'Target Platform'
-                    target_platform = variable_loop(**templateVars)
-                    templateVars["target_platform"] = target_platform
+                    jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['TargetPlatform']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
+                    templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                    templateVars["varType"] = 'Target Platform'
+                    templateVars["target_platform"] = variablesFromAPI(**templateVars)
 
                     #___________________________________________________________________________
                     #
@@ -9751,9 +9801,9 @@ class easy_imm_wizard(object):
                     print(f'    #___________________________"')
                     print(f'    bios_policy                = "{templateVars["bios_policy"]}"')
                     print(f'    boot_order_policy          = "{templateVars["boot_order_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    persistent_memory_policies = "{templateVars["persistent_memory_policies"]}"')
-                    if target_platform == 'FIAttached':
+                    if templateVars["target_platform"] == 'FIAttached':
                         print(f'    power_policy               = "{templateVars["power_policy"]}"')
                     print(f'    virtual_media_policy       = "{templateVars["virtual_media_policy"]}"')
                     print(f'    #___________________________"')
@@ -9762,23 +9812,23 @@ class easy_imm_wizard(object):
                     print(f'    #___________________________"')
                     # if target_platform == 'FIAttached':
                     #     print(f'    certificate_management_policy = "{templateVars["pcertificate_management_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    device_connector_policies     = "{templateVars["device_connector_policies"]}"')
-                    if target_platform == 'FIAttached':
+                    if templateVars["target_platform"] == 'FIAttached':
                         print(f'    imc_access_policy             = "{templateVars["imc_access_policy"]}"')
                     print(f'    ipmi_over_lan_policy          = "{templateVars["ipmi_over_lan_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    ldap_policies                 = "{templateVars["ldap_policies"]}"')
                     print(f'    local_user_policy             = "{templateVars["local_user_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    network_connectivity_policy   = "{templateVars["network_connectivity_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    ntp_policy                    = "{templateVars["ntp_policy"]}"')
                     print(f'    serial_over_lan_policy        = "{templateVars["serial_over_lan_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    smtp_policy                   = "{templateVars["smtp_policy"]}"')
                     print(f'    snmp_policy                   = "{templateVars["snmp_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    ssh_policy                    = "{templateVars["ssh_policy"]}"')
                     print(f'    syslog_policy                 = "{templateVars["syslog_policy"]}"')
                     print(f'    virtual_kvm_policy            = "{templateVars["virtual_kvm_policy"]}"')
@@ -9792,7 +9842,7 @@ class easy_imm_wizard(object):
                     print(f'    #')
                     print(f'    # Network Configuration')
                     print(f'    #___________________________"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    adapter_configuration_policy = "{templateVars["adapter_configuration_policy"]}"')
                     print(f'    lan_connectivity_policy      = "{templateVars["lan_connectivity_policy"]}"')
                     print(f'    san_connectivity_policy      = "{templateVars["san_connectivity_policy"]}"')
@@ -9828,7 +9878,7 @@ class easy_imm_wizard(object):
     #========================================
     # UCS Server Profile Template Module
     #========================================
-    def ucs_server_profile_templates(self):
+    def ucs_server_profile_templates(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'template'
         org = self.org
@@ -9862,11 +9912,12 @@ class easy_imm_wizard(object):
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                     templateVars["multi_select"] = False
-                    templateVars["policy_file"] = 'target_platform.txt'
-                    templateVars["var_description"] = '    The platform for which the server profile is applicable. It can either be:\n'
-                    templateVars["var_type"] = 'Target Platform'
-                    target_platform = variable_loop(**templateVars)
-                    templateVars["target_platform"] = target_platform
+                    jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['TargetPlatform']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
+                    templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                    templateVars["varType"] = 'Target Platform'
+                    templateVars["target_platform"] = variablesFromAPI(**templateVars)
 
                     #___________________________________________________________________________
                     #
@@ -9963,9 +10014,9 @@ class easy_imm_wizard(object):
                     print(f'    #___________________________"')
                     print(f'    bios_policy                = "{templateVars["bios_policy"]}"')
                     print(f'    boot_order_policy          = "{templateVars["boot_order_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    persistent_memory_policies = "{templateVars["persistent_memory_policies"]}"')
-                    if target_platform == 'FIAttached':
+                    if templateVars["target_platform"] == 'FIAttached':
                         print(f'    power_policy               = "{templateVars["power_policy"]}"')
                     print(f'    virtual_media_policy       = "{templateVars["virtual_media_policy"]}"')
                     print(f'    #___________________________"')
@@ -9974,23 +10025,23 @@ class easy_imm_wizard(object):
                     print(f'    #___________________________"')
                     # if target_platform == 'FIAttached':
                     #     print(f'    certificate_management_policy = "{templateVars["certificate_management_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    device_connector_policies     = "{templateVars["device_connector_policies"]}"')
-                    if target_platform == 'FIAttached':
+                    if templateVars["target_platform"] == 'FIAttached':
                         print(f'    imc_access_policy             = "{templateVars["imc_access_policy"]}"')
                     print(f'    ipmi_over_lan_policy          = "{templateVars["ipmi_over_lan_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    ldap_policies                 = "{templateVars["ldap_policies"]}"')
                     print(f'    local_user_policy             = "{templateVars["local_user_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    network_connectivity_policy   = "{templateVars["network_connectivity_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    ntp_policy                    = "{templateVars["ntp_policy"]}"')
                     print(f'    serial_over_lan_policy        = "{templateVars["serial_over_lan_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    smtp_policy                   = "{templateVars["smtp_policy"]}"')
                     print(f'    snmp_policy                   = "{templateVars["snmp_policy"]}"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    ssh_policy                    = "{templateVars["ssh_policy"]}"')
                     print(f'    syslog_policy                 = "{templateVars["syslog_policy"]}"')
                     print(f'    virtual_kvm_policy            = "{templateVars["virtual_kvm_policy"]}"')
@@ -10004,7 +10055,7 @@ class easy_imm_wizard(object):
                     print(f'    #')
                     print(f'    # Network Configuration')
                     print(f'    #___________________________"')
-                    if target_platform == 'Standalone':
+                    if templateVars["target_platform"] == 'Standalone':
                         print(f'    adapter_configuration_policy = "{templateVars["adapter_configuration_policy"]}"')
                     print(f'    lan_connectivity_policy      = "{templateVars["lan_connectivity_policy"]}"')
                     print(f'    san_connectivity_policy      = "{templateVars["san_connectivity_policy"]}"')
@@ -10047,7 +10098,7 @@ class easy_imm_wizard(object):
     #========================================
     # UUID Pools Module
     #========================================
-    def uuid_pools(self):
+    def uuid_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'uuid_pool'
         org = self.org
@@ -10183,7 +10234,7 @@ class easy_imm_wizard(object):
     #========================================
     # Virtual KVM Policy Module
     #========================================
-    def virtual_kvm_policies(self):
+    def virtual_kvm_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'vkvm'
         org = self.org
@@ -10299,7 +10350,7 @@ class easy_imm_wizard(object):
     #========================================
     # Virtual Media Policy Policy Module
     #========================================
-    def virtual_media_policies(self):
+    def virtual_media_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'vmedia'
         org = self.org
@@ -10391,52 +10442,42 @@ class easy_imm_wizard(object):
                             valid_sub = False
                             while valid_sub == False:
                                 templateVars["multi_select"] = False
-                                templateVars["policy_file"] = 'vmedia_protocol.txt'
-                                templateVars["var_description"] = '    Select the protocol this vMedia will use:\n'
-                                templateVars["var_type"] = 'Protocol'
-                                Protocol = variable_loop(**templateVars)
+                                jsonVars = jsonData['components']['schemas']['vmedia.Mapping']['allOf'][1]['properties']
+                                templateVars["var_description"] = jsonVars['MountProtocol']['description']
+                                templateVars["jsonVars"] = sorted(jsonVars['MountProtocol']['enum'])
+                                templateVars["defaultVar"] = jsonVars['MountProtocol']['default']
+                                templateVars["varType"] = 'vMedia Mount Protocol'
+                                Protocol = variablesFromAPI(**templateVars)
 
-                                templateVars["multi_select"] = False
-                                templateVars["policy_file"] = 'vmedia_device_type.txt'
-                                templateVars["var_description"] = '    Select the remote virtual media type:\n'
-                                templateVars["var_type"] = 'vMedia Type'
-                                device_type = variable_loop(**templateVars)
+                                templateVars["var_description"] = jsonVars['MountProtocol']['description']
+                                templateVars["jsonVars"] = sorted(jsonVars['MountProtocol']['enum'])
+                                templateVars["defaultVar"] = jsonVars['MountProtocol']['default']
+                                templateVars["varType"] = 'vMedia Mount Protocol'
+                                deviceType = variablesFromAPI(**templateVars)
 
                                 if Protocol == 'cifs':
-                                    templateVars["multi_select"] = False
-                                    templateVars["policy_file"] = 'vmedia_authentication.txt'
-                                    templateVars["var_description"] = '    Select the authentication protocol when CIFS is used for communication with the remote\n'\
-                                        '    server. This field is displayed on selecting CIFS.\n'\
-                                        '    * None — No authentication is used\n'\
-                                        '    * ntlm — NT LAN Manager (NTLM) security protocol. Use this option only with Windows\n'\
-                                        '             2008 R2 and Windows 2012 R2.\n'\
-                                        '    * ntlmi — NTLMi security protocol. Use this option only when you enable Digital\n'\
-                                        '              Signing in the CIFS Windows server.\n'\
-                                        '    * ntlmv2 — NTLMv2 security protocol. Use this option only with Samba Linux.\n'\
-                                        '    * ntlmv2i — NTLMv2i security protocol. Use this option only with Samba Linux.\n'\
-                                        '    * ntlmssp — NT LAN Manager Security Support Provider (NTLMSSP) protocol. Use this\n'\
-                                        '                option only with Windows 2008 R2 and Windows 2012 R2.\n'\
-                                        '    * ntlmsspi — NT LAN Manager Security Support Provider (NTLMSSPI) protocol. Use this\n'\
-                                        '                 option only when you enable Digital Signing in the CIFS Windows server.\n'
-                                    templateVars["var_type"] = 'Authentication Protocol'
-                                    authentication_protocol = variable_loop(**templateVars)
+                                    templateVars["var_description"] = jsonVars['AuthenticationProtocol']['description']
+                                    templateVars["jsonVars"] = sorted(jsonVars['AuthenticationProtocol']['enum'])
+                                    templateVars["defaultVar"] = jsonVars['AuthenticationProtocol']['default']
+                                    templateVars["varType"] = 'CIFS Authentication Protocol'
+                                    authProtocol = variablesFromAPI(**templateVars)
 
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Provide the remote file location path: Host Name or IP address/file path/file name')
                                 print(f'  * IP Address—The IP address or the hostname of the remote server.')
                                 print(f'  * File Path—The path to the location of the image on the remote server.')
                                 print(f'  The format of the File Location should be:')
-                                if device_type == 'cdd' and re.search('(cifs|nfs)', Protocol):
+                                if deviceType == 'cdd' and re.search('(cifs|nfs)', Protocol):
                                     print(f'  * hostname-or-ip-address/filePath/fileName.iso')
-                                elif device_type == 'hdd' and re.search('(cifs|nfs)', Protocol):
+                                elif deviceType == 'hdd' and re.search('(cifs|nfs)', Protocol):
                                     print(f'  * hostname-or-ip-address/filePath/fileName.img')
-                                elif device_type == 'cdd' and Protocol == 'http':
+                                elif deviceType == 'cdd' and Protocol == 'http':
                                     print(f'  * http://hostname-or-ip-address/filePath/fileName.iso')
-                                elif device_type == 'hdd' and Protocol == 'http':
+                                elif deviceType == 'hdd' and Protocol == 'http':
                                     print(f'  * http://hostname-or-ip-address/filePath/fileName.img')
-                                elif device_type == 'cdd' and Protocol == 'https':
+                                elif deviceType == 'cdd' and Protocol == 'https':
                                     print(f'  * https://hostname-or-ip-address/filePath/fileName.iso')
-                                elif device_type == 'hdd' and Protocol == 'https':
+                                elif deviceType == 'hdd' and Protocol == 'https':
                                     print(f'  * https://hostname-or-ip-address/filePath/fileName.img')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 valid = False
@@ -10520,16 +10561,23 @@ class easy_imm_wizard(object):
 
                                 if assignOptions == True:
                                     templateVars["multi_select"] = True
+                                    jsonVars = easy_jsonData['policies']['vmedia.Mapping']
                                     if Protocol == 'cifs':
-                                        templateVars["policy_file"] = 'vmedia_mount_options_cifs.txt'
+                                        templateVars["var_description"] = jsonVars['cifs.mountOptions']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['cifs.mountOptions']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['cifs.mountOptions']['default']
                                     elif Protocol == 'nfs':
-                                        templateVars["policy_file"] = 'vmedia_mount_options_nfs.txt'
+                                        templateVars["var_description"] = jsonVars['nfs.mountOptions']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['nfs.mountOptions']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['nfs.mountOptions']['default']
                                     else:
                                         templateVars["multi_select"] = False
-                                        templateVars["policy_file"] = 'vmedia_mount_options_http.txt'
-                                    templateVars["var_description"] = 'Please Select the Mount Options you would like to assign:\n'
-                                    templateVars["var_type"] = 'Mount Options'
-                                    mount_loop = variable_loop(**templateVars)
+                                        templateVars["var_description"] = jsonVars['http.mountOptions']['description']
+                                        templateVars["jsonVars"] = sorted(jsonVars['http.mountOptions']['enum'])
+                                        templateVars["defaultVar"] = jsonVars['http.mountOptions']['default']
+                                    templateVars["varType"] = 'Mount Options'
+                                    mount_loop = variablesFromAPI(**templateVars)
+
                                     mount_output = []
                                     for x in mount_loop:
                                         mount_output.append(x)
@@ -10614,8 +10662,8 @@ class easy_imm_wizard(object):
 
                                 if Protocol == 'cifs':
                                     vmedia_map = {
-                                        'authentication_protocol':authentication_protocol,
-                                        'device_type':device_type,
+                                        'authentication_protocol':authProtocol,
+                                        'device_type':deviceType,
                                         'file_location':file_location,
                                         'mount_options':mount_options,
                                         'name':name,
@@ -10625,7 +10673,7 @@ class easy_imm_wizard(object):
                                     }
                                 else:
                                     vmedia_map = {
-                                        'device_type':device_type,
+                                        'device_type':deviceType,
                                         'file_location':file_location,
                                         'mount_options':mount_options,
                                         'name':name,
@@ -10636,8 +10684,8 @@ class easy_imm_wizard(object):
 
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 if Protocol == 'cifs':
-                                    print(f'   authentication_protocol = "{authentication_protocol}"')
-                                print(f'   device_type             = "{device_type}"')
+                                    print(f'   authentication_protocol = "{authProtocol}"')
+                                print(f'   device_type             = "{deviceType}"')
                                 print(f'   file_location           = "{file_location}"')
                                 if not mount_options == '':
                                     print(f'   mount_options           = "{mount_options}"')
@@ -10755,7 +10803,7 @@ class easy_imm_wizard(object):
     #========================================
     # VLAN Policy Module
     #========================================
-    def vlan_policies(self):
+    def vlan_policies(self, jsonData, easy_jsonData):
         vlan_policies_vlans = []
         name_prefix = self.name_prefix
         name_suffix = 'vlans'
@@ -10944,7 +10992,7 @@ class easy_imm_wizard(object):
     #========================================
     # VSAN Policy Module
     #========================================
-    def vsan_policies(self):
+    def vsan_policies(self, jsonData, easy_jsonData):
         vsan_policies_vsans = []
         name_prefix = self.name_prefix
         org = self.org
@@ -11181,7 +11229,7 @@ class easy_imm_wizard(object):
     #========================================
     # WWNN Pools Module
     #========================================
-    def wwnn_pools(self):
+    def wwnn_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'wwnn_pool'
         org = self.org
@@ -11316,7 +11364,7 @@ class easy_imm_wizard(object):
     #========================================
     # WWPN Pools Module
     #========================================
-    def wwpn_pools(self):
+    def wwpn_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         policy_type = 'WWPN Pool'
@@ -11629,17 +11677,17 @@ def policies_parse(org, policy_type, policy):
                 print(f'  Error was:')
                 print(f'  - {p.stdout.decode("utf-8")}')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                jsonData = {}
-                return policies,jsonData
+                json_data = {}
+                return policies,json_data
             else:
-                jsonData = json.loads(p.stdout.decode('utf-8'))
-                for i in jsonData[policy]:
+                json_data = json.loads(p.stdout.decode('utf-8'))
+                for i in json_data[policy]:
                     for k, v in i.items():
                         policies.append(k)
-                return policies,jsonData
+                return policies,json_data
     else:
-        jsonData = {}
-        return policies,jsonData
+        json_data = {}
+        return policies,json_data
 
 def policy_descr(name, policy_type):
     valid = False
@@ -11882,84 +11930,6 @@ def policy_select_loop(name_prefix, policy, **templateVars):
             elif inner_policy == 'vsan_policies':
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).vsan_policies()
 
-def policy_template(self, **templateVars):
-    configure_loop = False
-    while configure_loop == False:
-        policy_loop = False
-        while policy_loop == False:
-
-            valid = False
-            while valid == False:
-                policy_file = 'Templates/variables/%s' % (templateVars["policy_file"])
-                if os.path.isfile(policy_file):
-                    template_file = open(policy_file, 'r')
-                    template_file.seek(0)
-                    policy_templates = []
-                    for line in template_file:
-                        line = line.strip()
-                        policy_templates.append(line)
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  {templateVars["policy_type"]} Templates:')
-                    for i, v in enumerate(policy_templates):
-                        i += 1
-                        if i < 10:
-                            print(f'     {i}. {v}')
-                        else:
-                            print(f'    {i}. {v}')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                policy_temp = input(f'Enter the Index Number for the {templateVars["policy_type"]} Template to Create: ')
-                for i, v in enumerate(policy_templates):
-                    i += 1
-                    if int(policy_temp) == i:
-                        templateVars["policy_template"] = v
-                        valid = True
-                if valid == False:
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Error!! Invalid Selection.  Please Select a valid Index from the List.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                template_file.close()
-
-            if not templateVars["name_prefix"] == '':
-                name = '%s_%s' % (templateVars["name_prefix"], templateVars["policy_template"])
-            else:
-                name = '%s_%s' % (templateVars["org"], templateVars["policy_template"])
-
-            templateVars["name"] = policy_name(name, templateVars["policy_type"])
-            templateVars["descr"] = policy_descr(templateVars["name"], templateVars["policy_type"])
-
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            if templateVars["template_type"] == 'bios_policies':
-                print(f'   bios_template = "{templateVars["policy_template"]}"')
-                print(f'   description   = "{templateVars["descr"]}"')
-                print(f'   name          = "{templateVars["name"]}"')
-            else:
-                print(f'   adapter_template = "{templateVars["policy_template"]}"')
-                print(f'   description      = "{templateVars["descr"]}"')
-                print(f'   name             = "{templateVars["name"]}"')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            valid_confirm = False
-            while valid_confirm == False:
-                confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
-                if confirm_policy == 'Y' or confirm_policy == '':
-                    confirm_policy = 'Y'
-
-                    # Write Policies to Template File
-                    write_to_template(self, **templateVars)
-
-                    configure_loop, policy_loop = exit_default_yes(templateVars["policy_type"])
-                    valid_confirm = True
-
-                elif confirm_policy == 'N':
-                    print(f'\n------------------------------------------------------\n')
-                    print(f'  Starting {templateVars["policy_type"]} Section over.')
-                    print(f'\n------------------------------------------------------\n')
-                    valid_confirm = True
-
-                else:
-                    print(f'\n------------------------------------------------------\n')
-                    print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                    print(f'\n------------------------------------------------------\n')
-
 def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
     dest_dir = './Intersight/%s/%s' % (templateVars["org"], dest_dir)
     if not os.path.isdir(dest_dir):
@@ -11977,55 +11947,64 @@ def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
     wr_file.write(payload)
     wr_file.close()
 
-def variable_loop(**templateVars):
+def variablesFromAPI(**templateVars):
     valid = False
     while valid == False:
+        json_vars = templateVars["jsonVars"]
+        if 'popList' in templateVars:
+            if len(templateVars["popList"]) > 0:
+                for x in templateVars["popList"]:
+                    varsCount = len(json_vars)
+                    for r in range(0, varsCount):
+                        if json_vars[r] == x:
+                            json_vars.pop(r)
+                            break
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'{templateVars["var_description"]}')
-        policy_file = 'Templates/variables/%s' % (templateVars["policy_file"])
-        if os.path.isfile(policy_file):
-            variable_file = open(policy_file, 'r')
-            varsx = []
-            for line in variable_file:
-                varsx.append(line.strip())
-            for index, value in enumerate(varsx):
-                index += 1
-                if index < 10:
-                    print(f'     {index}. {value}')
-                else:
-                    print(f'    {index}. {value}')
+        print(f'\n     Select an Option Below:')
+        for index, value in enumerate(json_vars):
+            index += 1
+            if value == templateVars["defaultVar"]:
+                defaultIndex = index
+            if index < 10:
+                print(f'     {index}. {value}')
+            else:
+                print(f'    {index}. {value}')
         print(f'\n-------------------------------------------------------------------------------------------\n')
         if templateVars["multi_select"] == True:
-            var_selection = input(f'Please Enter the Option Number(s) to Select for {templateVars["var_type"]}: ')
+            if not templateVars["defaultVar"] == '':
+                var_selection = input(f'Please Enter the Option Number(s) to Select for {templateVars["varType"]}.  [{defaultIndex}]: ')
+            else:
+                var_selection = input(f'Please Enter the Option Number(s) to Select for {templateVars["varType"]}: ')
         else:
-            var_selection = input(f'Please Enter the Option Number to Select for {templateVars["var_type"]}: ')
-        if not var_selection == '':
-            if templateVars["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
-                for index, value in enumerate(varsx):
-                    index += 1
-                    if int(var_selection) == index:
-                        selection = value
-                        valid = True
-            elif templateVars["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
-                var_list = vlan_list_full(var_selection)
-                var_length = int(len(var_list))
-                var_count = 0
-                selection = []
-                for index, value in enumerate(varsx):
-                    index += 1
-                    for vars in var_list:
-                        if int(vars) == index:
-                            var_count += 1
-                            selection.append(value)
-                if var_count == var_length:
+            if not templateVars["defaultVar"] == '':
+                var_selection = input(f'Please Enter the Option Number to Select for {templateVars["varType"]}.  [{defaultIndex}]: ')
+            else:
+                var_selection = input(f'Please Enter the Option Number to Select for {templateVars["varType"]}: ')
+        if var_selection == '':
+            var_selection = defaultIndex
+        if templateVars["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
+            for index, value in enumerate(json_vars):
+                index += 1
+                if int(var_selection) == index:
+                    selection = value
                     valid = True
-                else:
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  The list of Vars {var_list} did not match the available list.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+        elif templateVars["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
+            var_list = vlan_list_full(var_selection)
+            var_length = int(len(var_list))
+            var_count = 0
+            selection = []
+            for index, value in enumerate(json_vars):
+                index += 1
+                for vars in var_list:
+                    if int(vars) == index:
+                        var_count += 1
+                        selection.append(value)
+            if var_count == var_length:
+                valid = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
+                print(f'  The list of Vars {var_list} did not match the available list.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')

@@ -1,6 +1,0 @@
-guest
-noserverino
-nounix
-soft
-vers=2.0
-vers=3.0

@@ -1,2 +1,0 @@
-app-direct
-app-direct-non-interleaved

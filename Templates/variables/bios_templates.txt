@@ -1,6 +1,0 @@
-DSS
-HPC
-Java
-OLTP
-Virtualization
-Windows
