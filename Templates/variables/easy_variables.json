@@ -14,69 +14,6 @@
                 "default": "Virtualization"
             }
         },
-        "vnic.EthNetworkPolicy":{
-            "templates":{
-                "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
-                "enum":[
-                    "Linux",
-                    "Linux-NVMe-RoCE",
-                    "MQ",
-                    "MQ-SMBd",
-                    "SMBServer",
-                    "SMBClient",
-                    "Solaris",
-                    "SRIOV",
-                    "usNIC",
-                    "usNICOracleRAC",
-                    "VMWare",
-                    "VMWarePassThru",
-                    "WIN-AzureStack",
-                    "Win-HPN",
-                    "Win-HPN-SMBd",
-                    "Windows"
-                ],
-                "default": "VMWare"
-            }
-        },
-        "vnic.FcNetworkPolicy":{
-            "templates":{
-                "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
-                "enum":[
-                    "FCNVMeInitiator",
-                    "FCNVMeTarget",
-                    "Initiator",
-                    "Linux",
-                    "Solaris",
-                    "Target",
-                    "VMWare",
-                    "WindowsBoot",
-                    "Windows"
-                ],
-                "default": "VMWare"
-            }
-        },
-        "iam.LdapPolicy":{
-            "role":{
-                "description": "The Role to Assign to the LDAP Group.",
-                "enum":[
-                    "admin",
-                    "readonly",
-                    "user"
-                ],
-                "default": "admin"
-            }
-        },
-        "iam.LocalUserPasswordPolicy":{
-            "role":{
-                "description": "The Role to Assign to the Local User.",
-                "enum":[
-                    "admin",
-                    "readonly",
-                    "user"
-                ],
-                "default": "admin"
-            }
-        },
         "fabric.PortPolicy":{
             "unifiedPorts":{
                 "description": "The Port Range to convert to Fibre-Channel Mode.",
@@ -109,6 +46,28 @@
                     "MLOM"
                 ],
                 "default": "MLOM"
+            }
+        },
+        "iam.LdapPolicy":{
+            "role":{
+                "description": "The Role to Assign to the LDAP Group.",
+                "enum":[
+                    "admin",
+                    "readonly",
+                    "user"
+                ],
+                "default": "admin"
+            }
+        },
+        "iam.LocalUserPasswordPolicy":{
+            "role":{
+                "description": "The Role to Assign to the Local User.",
+                "enum":[
+                    "admin",
+                    "readonly",
+                    "user"
+                ],
+                "default": "admin"
             }
         },
         "power.Policy":{
@@ -174,6 +133,47 @@
                     "vers=3.0"
                 ],
                 "default": ""
+            }
+        },
+        "vnic.EthNetworkPolicy":{
+            "templates":{
+                "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
+                "enum":[
+                    "Linux",
+                    "Linux-NVMe-RoCE",
+                    "MQ",
+                    "MQ-SMBd",
+                    "SMBServer",
+                    "SMBClient",
+                    "Solaris",
+                    "SRIOV",
+                    "usNIC",
+                    "usNICOracleRAC",
+                    "VMWare",
+                    "VMWarePassThru",
+                    "WIN-AzureStack",
+                    "Win-HPN",
+                    "Win-HPN-SMBd",
+                    "Windows"
+                ],
+                "default": "VMWare"
+            }
+        },
+        "vnic.FcNetworkPolicy":{
+            "templates":{
+                "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
+                "enum":[
+                    "FCNVMeInitiator",
+                    "FCNVMeTarget",
+                    "Initiator",
+                    "Linux",
+                    "Solaris",
+                    "Target",
+                    "VMWare",
+                    "WindowsBoot",
+                    "Windows"
+                ],
+                "default": "VMWare"
             }
         }
     },
