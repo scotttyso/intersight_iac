@@ -251,7 +251,7 @@ def process_wizard():
     policy_list = []
     if main_menu == 'deploy_individual_policies':
         templateVars["var_description"] = jsonVars['Individual']['description']
-        templateVars["jsonVars"] = sorted(jsonVars['Individual']['enum'])
+        templateVars["jsonVars"] = jsonVars['Individual']['enum']
         templateVars["defaultVar"] = jsonVars['Individual']['default']
         templateVars["varType"] = 'Configuration Type'
         type_menu = lib_ucs.variablesFromAPI(**templateVars)
@@ -261,7 +261,7 @@ def process_wizard():
         templateVars["multi_select"] = True
         if type_menu == 'Policies':
             templateVars["var_description"] = jsonVars['Policies']['description'] + multi_select_descr
-            templateVars["jsonVars"] = sorted(jsonVars['Policies']['enum'])
+            templateVars["jsonVars"] = jsonVars['Policies']['enum']
             templateVars["defaultVar"] = jsonVars['Policies']['default']
             templateVars["varType"] = 'Policies'
             policies_list = lib_ucs.variablesFromAPI(**templateVars)
@@ -272,7 +272,7 @@ def process_wizard():
                 policy_list.append(line)
         elif type_menu == 'Pools':
             templateVars["var_description"] = jsonVars['Pools']['description'] + multi_select_descr
-            templateVars["jsonVars"] = sorted(jsonVars['Pools']['enum'])
+            templateVars["jsonVars"] = jsonVars['Pools']['enum']
             templateVars["defaultVar"] = jsonVars['Pools']['default']
             templateVars["varType"] = 'Pools'
             policies_list = lib_ucs.variablesFromAPI(**templateVars)
@@ -356,9 +356,6 @@ def process_wizard():
         # Policies needed for 2nd release
         #================================
         # certificate_management_policies
-        # iscsi_adapter_policies
-        # iscsi_boot_policies
-        # iscsi_static_target_policies
         if policy == 'adapter_configuration_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData)
         if policy == 'bios_policies':
@@ -394,15 +391,12 @@ def process_wizard():
             lib_ucs.easy_imm_wizard(name_prefix, org, type).imc_access_policies(jsonData, easy_jsonData)
         elif policy == 'ipmi_over_lan_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).ipmi_over_lan_policies(jsonData, easy_jsonData)
-        #========================================================
-        # Policies that Will not be Supported at initial Release
-        #========================================================
-        # elif policy == 'iscsi_adapter_policies':
-        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_adapter_policies(jsonData, easy_jsonData)
-        # elif policy == 'iscsi_boot_policies':
-        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_boot_policies(jsonData, easy_jsonData)
-        # elif policy == 'iscsi_static_target_policies':
-        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_static_target_policies(jsonData, easy_jsonData)
+        elif policy == 'iscsi_adapter_policies':
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_adapter_policies(jsonData, easy_jsonData)
+        elif policy == 'iscsi_boot_policies':
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_boot_policies(jsonData, easy_jsonData)
+        elif policy == 'iscsi_static_target_policies':
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_static_target_policies(jsonData, easy_jsonData)
         elif policy == 'lan_connectivity_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ldap_policies':

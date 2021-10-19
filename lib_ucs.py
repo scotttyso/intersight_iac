@@ -3215,7 +3215,12 @@ class easy_imm_wizard(object):
         configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            configure = input(f'Do You Want to Configure a {policy_type}.  Enter "Y" or "N" [Y]: ')
+            print(f'  The {policy_type} allows you to configure values for TCP Connection Timeout, ')
+            print(f'  DHCP Timeout, and the Retry Count if the specified LUN ID is busy.\n')
+            print(f'  This wizard will save the configuraton for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
@@ -3228,33 +3233,67 @@ class easy_imm_wizard(object):
                     templateVars["name"] = policy_name(name, policy_type)
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
+                    # Pull in the Policies for iSCSI Adapter
+                    jsonVars = jsonData['components']['schemas']['vnic.IscsiAdapterPolicy']['allOf'][1]['properties']
+
+                    # DHCP Timeout
+                    Description = jsonVars['DhcpTimeout']['description']
+                    varInput = 'Enter the number of seconds after which the DHCP times out.'
+                    varDefault = 60
+                    varName = 'DHCP Timeout'
+                    minNum = jsonVars['DhcpTimeout']['minimum']
+                    maxNum = jsonVars['DhcpTimeout']['maximum']
+                    templateVars["dhcp_timeout"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+
+                    # LUN Busy Retry Count
+                    Description = jsonVars['LunBusyRetryCount']['description']
+                    varInput = 'Enter the number of times connection is to be attempted when the LUN ID is busy.'
+                    varDefault = 15
+                    varName = 'LUN Busy Retry Count'
+                    minNum = jsonVars['LunBusyRetryCount']['minimum']
+                    maxNum = jsonVars['LunBusyRetryCount']['maximum']
+                    templateVars["lun_busy_retry_count"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+
+                    # TCP Connection Timeout
+                    Description = jsonVars['ConnectionTimeOut']['description']
+                    varInput = 'Enter the number of seconds after which the TCP connection times out.'
+                    varDefault = 15
+                    varName = 'TCP Connection Timeout'
+                    minNum = jsonVars['ConnectionTimeOut']['minimum']
+                    maxNum = jsonVars['ConnectionTimeOut']['maximum']
+                    templateVars["tcp_connection_timeout"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Assignment order decides the order in which the next identifier is allocated.')
-                    print(f'    1. default - (Intersight Default) Assignment order is decided by the system.')
-                    print(f'    2. sequential - (Recommended) Identifiers are assigned in a sequential order.')
+                    print(f'   dhcp_timeout           = {templateVars["dhcp_timeout"]}')
+                    print(f'   description            = "{templateVars["descr"]}"')
+                    print(f'   lun_busy_retry_count   = "{templateVars["lun_busy_retry_count"]}"')
+                    print(f'   name                   = "{templateVars["name"]}"')
+                    print(f'   tcp_connection_timeout = "{templateVars["tcp_connection_timeout"]}"')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        templateVars["assignment_order"] = input('Specify the Index for the value to select [2]: ')
-                        if templateVars["assignment_order"] == '' or templateVars["assignment_order"] == '2':
-                            templateVars["assignment_order"] = 'sequential'
-                            valid = True
-                        elif templateVars["assignment_order"] == '1':
-                            templateVars["assignment_order"] = 'default'
-                            valid = True
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
                         else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Option.  Please Select a valid option from the List.')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
 
-                    # Write Policies to Template File
-                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                    write_to_template(self, **templateVars)
-
-                    exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [N]: ')
-                    if exit_answer == 'N' or exit_answer == '':
-                        policy_loop = True
-                        configure_loop = True
             elif configure == 'N':
                 configure_loop = True
             else:
@@ -3289,7 +3328,13 @@ class easy_imm_wizard(object):
         configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            configure = input(f'Do You Want to Configure a {policy_type}.  Enter "Y" or "N" [Y]: ')
+            print(f'  The {policy_type} allows you to initialize the Operating System on FI-attached ')
+            print(f'  blade and rack servers from a remote disk across a Storage Area Network. The remote disk, ')
+            print(f'  known as the target, is accessed using TCP/IP and iSCSI boot firmware.\n')
+            print(f'  This wizard will save the configuraton for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
@@ -3302,33 +3347,225 @@ class easy_imm_wizard(object):
                     templateVars["name"] = policy_name(name, policy_type)
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
+                    # Pull in the Policies for iSCSI Boot
+                    jsonVars = jsonData['components']['schemas']['vnic.IscsiBootPolicy']['allOf'][1]['properties']
+                    templateVars["multi_select"] = False
+
+                    # Target Source Type
+                    templateVars["var_description"] = jsonVars['TargetSourceType']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['TargetSourceType']['enum'])
+                    templateVars["defaultVar"] = jsonVars['TargetSourceType']['default']
+                    templateVars["varType"] = 'Target Source Type'
+                    templateVars["target_source_type"] = variablesFromAPI(**templateVars)
+
+                    if templateVars["target_source_type"] == 'Auto':
+                        Authentication = 'none'
+                        templateVars["initiator_ip_source"] = 'DHCP'
+                        templateVars["primary_target_policy"] = ''
+                        templateVars["secondary_target_policy"] = ''
+
+                        Description = jsonVars['AutoTargetvendorName']['description']
+                        varInput = 'DHCP Vendor ID or IQN:'
+                        varName = 'DHCP Vendor ID or IQN'
+                        varRegex = '^[\\S]+$'
+                        minLength = 1
+                        maxLength = 32
+                        templateVars["dhcp_vendor_id_iqn"] = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+
+                    elif templateVars["target_source_type"] == 'Static':
+                        templateVars["optional_message"] = '  !!! Select the Primary Static Target !!!\n'
+                        policy_list = [
+                            'policies.iscsi_static_target_policies.iscsi_static_target_policy'
+                        ]
+                        templateVars["allow_opt_out"] = False
+                        for policy in policy_list:
+                            policy_short = policy.split('.')[2]
+                            templateVars["primary_target_policy"],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                            templateVars.update(policyData)
+
+                        templateVars["optional_message"] = '  !!! Optionally Select the Secondary Static Target or enter 100 for no Secondary !!!\n'
+                        policy_list = [
+                            'policies.iscsi_static_target_policies.iscsi_static_target_policy'
+                        ]
+                        templateVars["allow_opt_out"] = True
+                        for policy in policy_list:
+                            policy_short = policy.split('.')[2]
+                            templateVars["secondary_target_policy"],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                            templateVars.update(policyData)
+
+                        templateVars.pop("optional_message")
+                        # Initiator IP Source
+                        templateVars["var_description"] = jsonVars['InitiatorIpSource']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['InitiatorIpSource']['enum'])
+                        templateVars["defaultVar"] = jsonVars['InitiatorIpSource']['default']
+                        templateVars["varType"] = 'Initiator IP Source'
+                        templateVars["initiator_ip_source"] = variablesFromAPI(**templateVars)
+
+                        if templateVars["initiator_ip_source"] == 'Pool':
+                            templateVars["optional_message"] = '  !!! Initiator IP Pool !!!\n'
+                            # Prompt User for the IP Pool
+                            policy_list = [
+                                'pools.ip_pools.ip_pool'
+                            ]
+                            templateVars["allow_opt_out"] = False
+                            for policy in policy_list:
+                                policy_short = policy.split('.')[2]
+                                templateVars['ip_pool'],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                templateVars.update(policyData)
+                            templateVars.pop("optional_message")
+
+                        elif templateVars["initiator_ip_source"] == 'Static':
+                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            print(jsonVars['InitiatorStaticIpV4Config']['description'])
+                            print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                            jsonVars = jsonData['components']['schemas']['ippool.IpV4Config']['allOf'][1]['properties']
+                            Description = 'Static IP address provided for iSCSI Initiator.'
+                            varInput = f'IP Address:'
+                            varName = f'IP Address'
+                            varRegex = jsonVars['Gateway']['pattern']
+                            minLength = 5
+                            maxLength = 15
+                            ipAddress = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+
+                            Description = jsonVars['Netmask']['description']
+                            varInput = f'Subnet Mask:'
+                            varName = f'Subnet Mask'
+                            varRegex = jsonVars['Netmask']['pattern']
+                            minLength = 5
+                            maxLength = 15
+                            subnetMask = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+
+                            Description = jsonVars['Gateway']['description']
+                            varInput = f'Default Gateway:'
+                            varName = f'Default Gateway'
+                            varRegex = jsonVars['Gateway']['pattern']
+                            minLength = 5
+                            maxLength = 15
+                            defaultGateway = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+
+                            Description = jsonVars['PrimaryDns']['description']
+                            varInput = f'Primary DNS Server.  [press enter to skip]:'
+                            varName = f'Primary DNS Server'
+                            varRegex = jsonVars['PrimaryDns']['pattern']
+                            minLength = 5
+                            maxLength = 15
+                            primaryDns = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+
+                            Description = jsonVars['SecondaryDns']['description']
+                            varInput = f'Secondary DNS Server.  [press enter to skip]:'
+                            varName = f'Secondary DNS Server'
+                            varRegex = jsonVars['SecondaryDns']['pattern']
+                            minLength = 5
+                            maxLength = 15
+                            secondaryDns = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+
+                            templateVars["initiator_static_ip_v4_config"] = {
+                                'ip_address':ipAddress,
+                                'subnet_mask':subnetMask,
+                                'default_gateway':defaultGateway,
+                                'primary_dns':primaryDns,
+                                'secondary_dns':secondaryDns,
+                            }
+
+                        # Type of Authentication
+                        templateVars["var_description"] = 'Select Which Type of Authentication you want to Perform.'
+                        templateVars["jsonVars"] = ['chap', 'mutual_chap', 'none']
+                        templateVars["defaultVar"] = 'none'
+                        templateVars["varType"] = 'Authentication Type'
+                        Authentication = variablesFromAPI(**templateVars)
+
+                        if re.search('chap', Authentication):
+                            jsonVars = jsonData['components']['schemas']['vnic.IscsiAuthProfile']['allOf'][1]['properties']
+                            auth_type = Authentication.replace('_', ' ')
+                            auth_type = auth_type.capitalize()
+
+                            Description = jsonVars['UserId']['description']
+                            varInput = f'{auth_type} Username:'
+                            varName = f'{auth_type} Username'
+                            varRegex = jsonVars['UserId']['pattern']
+                            minLength = 1
+                            maxLength = 128
+                            user_id = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+
+                            Description = jsonVars['Password']['description']
+                            varInput = f'{auth_type} Password:'
+                            varName = f'{auth_type} Password'
+                            varRegex = jsonVars['Password']['pattern']
+                            minLength = 12
+                            maxLength = 16
+                            iscsi_boot_password = varSensitiveStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                            os.environ['TF_VAR_iscsi_boot_password'] = '%s' % (iscsi_boot_password)
+                            password = 1
+
+                            templateVars[Authentication] = {
+                                'password':password,
+                                'user_id':user_id
+                            }
+
+                    # Prompt User for the iSCSI Adapter Policy
+                    policy_list = [
+                        'policies.iscsi_adapter_policies.iscsi_adapter_policy'
+                    ]
+                    templateVars["allow_opt_out"] = True
+                    for policy in policy_list:
+                        policy_short = policy.split('.')[2]
+                        templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                        templateVars.update(policyData)
+
+
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Assignment order decides the order in which the next identifier is allocated.')
-                    print(f'    1. default - (Intersight Default) Assignment order is decided by the system.')
-                    print(f'    2. sequential - (Recommended) Identifiers are assigned in a sequential order.')
+                    if 'chap' in Authentication:
+                        print(f'   authentication      = "Authentication"')
+                    print(f'   description         = "{templateVars["descr"]}"')
+                    if templateVars["target_source_type"] == 'Auto':
+                        print(f'   dhcp_vendor_id_iqn  = "{templateVars["dhcp_vendor_id_iqn"]}"')
+                    print(f'   description         = "{templateVars["descr"]}"')
+                    if templateVars["initiator_ip_source"] == 'Pool':
+                        print(f'   initiator_ip_pool   = "{templateVars["ip_pool"]}"')
+                    print(f'   initiator_ip_source = "{templateVars["initiator_ip_source"]}"')
+                    if templateVars.get('initiator_static_ip_v4_config'):
+                        print(f'   initiator_static_ip_v4_config = ''{')
+                        print(f'     default_gateway = "{templateVars["initiator_static_ip_v4_config"]["default_gateway"]}"')
+                        print(f'     ip_address      = "{templateVars["initiator_static_ip_v4_config"]["ip_address"]}"')
+                        print(f'     primary_dns     = "{templateVars["initiator_static_ip_v4_config"]["primary_dns"]}"')
+                        print(f'     secondary_dns   = "{templateVars["initiator_static_ip_v4_config"]["secondary_dns"]}"')
+                        print(f'     subnet_mask     = "{templateVars["initiator_static_ip_v4_config"]["subnet_mask"]}"')
+                        print(f'   ''}')
+                    print(f'   iscsi_adapter_policy    = "{templateVars["iscsi_adapter_policy"]}"')
+                    print(f'   name                    = "{templateVars["name"]}"')
+                    if 'chap' in Authentication:
+                        print(f'   password                = {password}')
+                    print(f'   primary_target_policy   = "{templateVars["primary_target_policy"]}"')
+                    print(f'   secondary_target_policy = "{templateVars["secondary_target_policy"]}"')
+                    print(f'   target_source_type      = "{templateVars["target_source_type"]}"')
+                    if 'chap' in Authentication:
+                        print(f'   username                = {user_id}')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        templateVars["assignment_order"] = input('Specify the Index for the value to select [2]: ')
-                        if templateVars["assignment_order"] == '' or templateVars["assignment_order"] == '2':
-                            templateVars["assignment_order"] = 'sequential'
-                            valid = True
-                        elif templateVars["assignment_order"] == '1':
-                            templateVars["assignment_order"] = 'default'
-                            valid = True
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
                         else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Option.  Please Select a valid option from the List.')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
 
-                    # Write Policies to Template File
-                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                    write_to_template(self, **templateVars)
-
-                    exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [N]: ')
-                    if exit_answer == 'N' or exit_answer == '':
-                        policy_loop = True
-                        configure_loop = True
             elif configure == 'N':
                 configure_loop = True
             else:
@@ -3363,6 +3600,12 @@ class easy_imm_wizard(object):
         configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  The {policy_type} allows you to specify the name, IP address, port, and ')
+            print(f'  logical unit number of the primary target for iSCSI boot. You can optionally specify these ')
+            print(f'  details for a secondary target as well.\n')
+            print(f'  This wizard will save the configuraton for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
@@ -3376,18 +3619,94 @@ class easy_imm_wizard(object):
                     templateVars["name"] = policy_name(name, policy_type)
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
-                    templateVars["priority"] = 'auto'
-                    templateVars["receive"] = 'Disabled'
-                    templateVars["send"] = 'Disabled'
+                    # Pull in the Policies for iSCSI Static Target
+                    jsonVars = jsonData['components']['schemas']['vnic.IscsiStaticTargetPolicy']['allOf'][1]['properties']
 
-                    # Write Policies to Template File
-                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                    write_to_template(self, **templateVars)
+                    desc_add = '\n  such as:\n  * iqn.1984-12.com.cisco:lnx1\n  * iqn.1984-12.com.cisco:win-server1'
+                    # Target Name
+                    Description = jsonVars['TargetName']['description'] + desc_add
+                    varInput = 'Enter the name of the target:'
+                    varName = 'Target Name'
+                    varRegex = jsonVars['TargetName']['pattern']
+                    minLength = 1
+                    maxLength = 255
+                    templateVars["target_name"] = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
 
-                    exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [N]: ')
-                    if exit_answer == 'N' or exit_answer == '':
-                        policy_loop = True
-                        configure_loop = True
+                    # IP Address
+                    Description = jsonVars['IpAddress']['description']
+                    varInput = 'Enter the target IP address:'
+                    varName = 'IP Address'
+                    varRegex = jsonVars['IpAddress']['pattern']
+                    minLength = 5
+                    maxLength = 15
+                    templateVars["ip_address"] = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+
+                    # Port
+                    Description = jsonVars['Port']['description']
+                    varInput = 'Enter the port number of the target.'
+                    varDefault = 3260
+                    varName = 'Port'
+                    minNum = jsonVars['Port']['minimum']
+                    maxNum = jsonVars['Port']['maximum']
+                    templateVars["port"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+
+                    # LUN Identifier
+                    Description = jsonVars['Lun']['description']
+                    varInput = 'Enter the ID of the boot logical unit number.'
+                    varDefault = 0
+                    varName = 'LUN Identifier'
+                    minNum = 0
+                    maxNum = 1024
+                    templateVars["lun_id"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+
+                    # LUN Bootable
+                    Description = jsonVars['Lun']['description']
+                    varInput = f'Should LUN {templateVars["lun_id"]} be bootable?'
+                    varDefault = 'Y'
+                    varName = 'LUN Identifier'
+                    templateVars["bootable"] = varBoolLoop(Description, varDefault, varInput, varName)
+
+                    templateVars["lun"] = {
+                        'bootable':templateVars["bootable"],
+                        'lun_id':templateVars["lun_id"]
+                    }
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'   description = "{templateVars["descr"]}"')
+                    print(f'   ip_address  = "{templateVars["ip_address"]}"')
+                    print(f'   name        = "{templateVars["name"]}"')
+                    print(f'   port        = {templateVars["port"]}')
+                    print(f'   target_name = "{templateVars["target_name"]}"')
+                    print(f'   lun = [')
+                    print(f'     ''{')
+                    print(f'       bootable = {templateVars["lun"]["bootable"]}')
+                    print(f'       lun_id   = {templateVars["lun"]["lun_id"]}')
+                    print(f'     ''}')
+                    print(f'   ]')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
             elif configure == 'N':
                 configure_loop = True
             else:
@@ -11617,6 +11936,8 @@ def policies_list(policies_list, **templateVars):
     valid = False
     while valid == False:
         print(f'\n-------------------------------------------------------------------------------------------\n')
+        if templateVars.get('optional_message'):
+            print(templateVars["optional_message"])
         print(f'  {templateVars["policy"]} Options:')
         for i, v in enumerate(policies_list):
             i += 1
@@ -12011,6 +12332,81 @@ def variablesFromAPI(**templateVars):
             print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return selection
+
+def varBoolLoop(Description, varDefault, varInput, varName):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  {Description}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    valid = False
+    while valid == False:
+        varValue = input(f'{varInput}  [{varDefault}]: ')
+        if varValue == '':
+            if varDefault == 'Y':
+                varValue = True
+            elif varDefault == 'N':
+                varValue = False
+            valid = True
+        elif varValue == 'N':
+            varValue = False
+            valid = True
+        elif varValue == 'Y':
+            varValue = True
+            valid = True
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'   {varName} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return varValue
+
+def varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  {Description}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    valid = False
+    while valid == False:
+        varValue = input(f'{varInput}  [{varDefault}]: ')
+        if varValue == '':
+            varValue = varDefault
+        if re.fullmatch(r'^[0-9]+$', str(varValue)):
+            valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'   {varName} value of "{varValue}" is Invalid!!! ')
+            print(f'   Valid range is {minNum} to {maxNum}.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return varValue
+
+def varSensitiveStringLoop(Description, varInput, varName, varRegex, minLength, maxLength):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  {Description}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    valid = False
+    while valid == False:
+        varValue = getpass.getpass(f'{varInput} ')
+        if not varValue == '':
+            valid = validating_ucs.length_and_regex_sensitive(varRegex, varName, varValue, minLength, maxLength)
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'   {varName} value is Invalid!!! ')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return varValue
+
+def varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  {Description}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    valid = False
+    while valid == False:
+        varValue = input(f'{varInput} ')
+        if 'press enter to skip' in varInput and varValue == '':
+            valid = True
+        elif not varValue == '':
+            valid = validating_ucs.length_and_regex(varRegex, varName, varValue, minLength, maxLength)
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'   {varName} value of "{varValue}" is Invalid!!! ')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return varValue
 
 def vars_from_list(var_options, **templateVars):
     selection = []

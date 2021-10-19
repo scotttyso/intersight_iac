@@ -6,7 +6,11 @@
 {%- if lun %}
     lun = [
       {
+  {%- if lun['bootable'] %}
+        bootable = {{ lun['bootable']|lower }}
+  {%- else %}
         bootable = true
+  {%- endif %}
         lun_id   = {{ lun['lun_id'] }}
       }
     ]

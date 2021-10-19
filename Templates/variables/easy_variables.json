@@ -228,6 +228,9 @@
                 "Flow Control Policies",
                 "IMC Access Policies",
                 "IPMI over LAN Policies",
+                "iSCSI Adapter Policies",
+                "iSCSI Boot Policies",
+                "iSCSI Static Target Policies",
                 "LAN Connectivity Policies",
                 "LDAP Policies",
                 "Link Aggregation Policies",
@@ -281,10 +284,7 @@
         "underConstruction":{
             "description": "These are being worked on.",
             "enum": [
-                "Certificate Management Policies",
-                "iSCSI Adapter Policies",
-                "iSCSI Boot Policies",
-                "iSCSI Static Target Policies"
+                "Certificate Management Policies"
             ],
             "default":""
         }

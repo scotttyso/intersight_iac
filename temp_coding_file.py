@@ -1149,6 +1149,146 @@ def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
     wr_file.write(payload)
     wr_file.close()
 
+def variablesFromAPI(**templateVars):
+    valid = False
+    while valid == False:
+        json_vars = templateVars["jsonVars"]
+        if 'popList' in templateVars:
+            if len(templateVars["popList"]) > 0:
+                for x in templateVars["popList"]:
+                    varsCount = len(json_vars)
+                    for r in range(0, varsCount):
+                        if json_vars[r] == x:
+                            json_vars.pop(r)
+                            break
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'{templateVars["var_description"]}')
+        print(f'\n     Select an Option Below:')
+        for index, value in enumerate(json_vars):
+            index += 1
+            if value == templateVars["defaultVar"]:
+                defaultIndex = index
+            if index < 10:
+                print(f'     {index}. {value}')
+            else:
+                print(f'    {index}. {value}')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        if templateVars["multi_select"] == True:
+            if not templateVars["defaultVar"] == '':
+                var_selection = input(f'Please Enter the Option Number(s) to Select for {templateVars["varType"]}.  [{defaultIndex}]: ')
+            else:
+                var_selection = input(f'Please Enter the Option Number(s) to Select for {templateVars["varType"]}: ')
+        else:
+            if not templateVars["defaultVar"] == '':
+                var_selection = input(f'Please Enter the Option Number to Select for {templateVars["varType"]}.  [{defaultIndex}]: ')
+            else:
+                var_selection = input(f'Please Enter the Option Number to Select for {templateVars["varType"]}: ')
+        if var_selection == '':
+            var_selection = defaultIndex
+        if templateVars["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
+            for index, value in enumerate(json_vars):
+                index += 1
+                if int(var_selection) == index:
+                    selection = value
+                    valid = True
+        elif templateVars["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
+            var_list = vlan_list_full(var_selection)
+            var_length = int(len(var_list))
+            var_count = 0
+            selection = []
+            for index, value in enumerate(json_vars):
+                index += 1
+                for vars in var_list:
+                    if int(vars) == index:
+                        var_count += 1
+                        selection.append(value)
+            if var_count == var_length:
+                valid = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  The list of Vars {var_list} did not match the available list.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return selection
+
+def varBoolLoop(Description, varDefault, varInput, varName):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  {Description}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    valid = False
+    while valid == False:
+        varValue = input(f'{varInput}  [{varDefault}]: ')
+        if varValue == '':
+            if varDefault == 'Y':
+                varValue = True
+            elif varDefault == 'N':
+                varValue = False
+            valid = True
+        elif varValue == 'N':
+            varValue = False
+            valid = True
+        elif varValue == 'Y':
+            varValue = True
+            valid = True
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'   {varName} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return varValue
+
+def varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  {Description}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    valid = False
+    while valid == False:
+        varValue = input(f'{varInput}  [{varDefault}]: ')
+        if varValue == '':
+            varValue = varDefault
+        if re.fullmatch(r'^[0-9]+$', str(varValue)):
+            valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'   {varName} value of "{varValue}" is Invalid!!! ')
+            print(f'   Valid range is {minNum} to {maxNum}.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return varValue
+
+def varSensitiveStringLoop(Description, varInput, varName, varRegex, minLength, maxLength):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  {Description}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    valid = False
+    while valid == False:
+        varValue = getpass.getpass(f'{varInput} ')
+        if not varValue == '':
+            valid = validating_ucs.length_and_regex_sensitive(varRegex, varName, varValue, minLength, maxLength)
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'   {varName} value is Invalid!!! ')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return varValue
+
+def varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  {Description}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    valid = False
+    while valid == False:
+        varValue = input(f'{varInput} ')
+        if 'press enter to skip' in varInput and varValue == '':
+            valid = True
+        elif not varValue == '':
+            valid = validating_ucs.length_and_regex(varRegex, varName, varValue, minLength, maxLength)
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'   {varName} value of "{varValue}" is Invalid!!! ')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return varValue
+
 def variable_loop(**templateVars):
     valid = False
     while valid == False:
