@@ -8,9 +8,15 @@ No New Items at this time.
 
 ## Synopsis
 
-The purpose of these Terraform and Python scripts are to deploy Policy/Profiles to Intersight using Infastructure as Code.  The Wizard is to help customers create and better understand how to utilize Terraform for managing infrastrudture.
+The purpose of this Python Tool is to deploy Policy/Profiles to Intersight using Infastructure as Code with Terraform.  The Wizard is a step for users to create and better understand how to utilize Terraform for managing infrastrudture.
 
-The goal of this module is to begin to familiarize you with Terraform.  So that over time you can begin to write code to consume Easy IMM directly.  Transition towards writing your own modules to consume the IMM Module.  And lastly build your confidence to write your own code as well.  The wizard will show after each section what the Terraform code being generated will look like.  Point you to the directly where the code will be stored.  And lastly, publish the code to Terraform Cloud and when you are ready.
+The goal of this module is to begin to familiarize you with Terraform through the following steps:  
+
+1. Begin to familiarize users with Terraform format and variable creation.  
+2. Once a user feels conformatable with auto generated files, Transition towards writing your own modules to consume the IMM Modules.
+3. And lastly build your confidence to write your own code as well.  
+
+The wizard will show after each section what the Terraform code being generated will look like.  Point you to the directly where the code will be stored.  And lastly, publish the code to Terraform Cloud and when you are ready.
 
 ## Contents
 
@@ -22,9 +28,9 @@ The goal of this module is to begin to familiarize you with Terraform.  So that 
 
 ### Use Cases
 
-- Create Pools: IP, IQN, MAC, WWNN, WWPN, and UUID.
-- Create Policies: Domain Policies, Mgmt Policies, Server Policies
-- Create UCS Domain Profiles and attach Fabric Interconnect clusters to the profiles.
+- Create Pools.
+- Create Policies.
+- Create UCS Domain Profiles and attach Fabric Interconnects to the profiles.
 - Create Service Profiles and Templates and deploy physical infrastructure.
 
 ### Intersight Pools
@@ -97,7 +103,7 @@ This set of modules support creating the following Profile Types:
 - UCS Server Profile
 - UCS Server Template - Important Note.  The script only uses Server Templates for holding policies.  This allows for flexibility around allowing the script to override policies by assigning unique policies to servers that is not supported by standard templates.
 
-To sum this up... the goal is to deploy the infrastructure using infrastructure as code through an easy to consume wizard.
+To sum this up... the goal is to deploy the infrastructure using Terraform through an easy to consume wizard.
 
 ## Resources
 
