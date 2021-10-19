@@ -2,8 +2,6 @@
 
 [![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/scotttyso/intersight_iac)
 
-- Terraform Intersight Provider
-
 ## Updates/News
 
 No New Items at this time.
