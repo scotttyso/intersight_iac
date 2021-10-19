@@ -28,10 +28,10 @@ The wizard will show after each section what the Terraform code being generated 
 
 ### Use Cases
 
-- Create Pools.
-- Create Policies.
-- Create UCS Domain Profiles and attach Fabric Interconnects to the profiles.
-- Create Service Profiles and Templates and deploy physical infrastructure.
+- Create Pools
+- Create Policies
+- Create UCS Domain Profiles and attach Fabric Interconnects to the profiles
+- Create Service Profiles and Templates and deploy physical infrastructure
 
 ### Intersight Pools
 
