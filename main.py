@@ -350,12 +350,12 @@ def process_wizard():
         #================================
         # boot_order_policies
         # lan_connectivity_policies
-        # sd_card_policies
         # storage_policies
         #================================
         # Policies needed for 2nd release
         #================================
         # certificate_management_policies
+        # sd_card_policies
         if policy == 'adapter_configuration_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData)
         if policy == 'bios_policies':

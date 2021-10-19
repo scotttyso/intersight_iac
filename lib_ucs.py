@@ -3520,7 +3520,6 @@ class easy_imm_wizard(object):
                     print(f'   description         = "{templateVars["descr"]}"')
                     if templateVars["target_source_type"] == 'Auto':
                         print(f'   dhcp_vendor_id_iqn  = "{templateVars["dhcp_vendor_id_iqn"]}"')
-                    print(f'   description         = "{templateVars["descr"]}"')
                     if templateVars["initiator_ip_source"] == 'Pool':
                         print(f'   initiator_ip_pool   = "{templateVars["ip_pool"]}"')
                     print(f'   initiator_ip_source = "{templateVars["initiator_ip_source"]}"')
