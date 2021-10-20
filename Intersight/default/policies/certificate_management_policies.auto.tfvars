@@ -1,7 +1,7 @@
 #______________________________________________
 #
-# Multicast Policy Variables
+# Certificate Management Policy Variables
 #______________________________________________
 
-multicast_policies = {
+certificate_management_policies = {
 }

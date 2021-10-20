@@ -1,7 +1,7 @@
 #______________________________________________
 #
-# Multicast Policy Variables
+# Boot Order Policy Variables
 #______________________________________________
 
-multicast_policies = {
+boot_order_policies = {
 }

@@ -1,0 +1,26 @@
+{
+    "data": {
+{%- if varId %}
+        "id":"{{ varId }}",
+{%- endif %}
+        "attributes": {
+            "key":"{{ varKey }}",
+            "value":"{{ varValue }}",
+{%- if Description %}
+            "description":"{{ Description }}",
+{%- endif %}
+            "category":"terraform",
+{%- if HCL %}
+            "hcl":{{ HCL }},
+{%- else %}
+            "hcl":false,
+{%- endif %}
+{%- if Sensitive %}
+            "sensitive":{{ Sensitive|lower }}
+{%- else %}
+            "sensitive":false
+{%- endif %}
+        },
+        "type":"vars"
+    }
+}

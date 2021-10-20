@@ -1,7 +1,7 @@
 #______________________________________________
 #
-# Multicast Policy Variables
+# Sd Card Policy Variables
 #______________________________________________
 
-multicast_policies = {
+sd_card_policies = {
 }

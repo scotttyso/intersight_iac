@@ -6,6 +6,56 @@
 
 No New Items at this time.
 
+## Getting Started
+
+### Install json2hcl
+
+[json2hcl](https://github.com/kvz/json2hcl)
+
+### Python Requirements
+
+- Python 3.6 or Greater
+
+[python](https://www.python.org/downloads/release/python-360/)
+
+- Refer to requirements.txt for libraries needed to be installed or simply install the requirements file as shown below:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Terraform Requirements
+
+The script utilizes features introduced in 0.14 of Terraform.  So we need 0.14 or preferrably >1.0
+
+[terraform](https://www.terraform.io/downloads.html)
+
+### Terraform Modules and Providers
+
+This script will utilize the Intersight Terraform Provider and two modules built off of the Intersight Provider.
+
+- [Intersight Provider](https://registry.terraform.io/providers/CiscoDevNet/intersight/latest)
+- [IMM Module](https://registry.terraform.io/modules/terraform-cisco-modules/imm/intersight/latest)
+- [Easy IMM](https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm)
+
+## Running the Wizard
+
+- Running the wizard to use a configuration migrated from UCS Manager using the IMM Transition Tool
+
+```bash
+./main.py {json_file_name.json}
+```
+
+- Running the Wizard to generate IaC through a Question and Answer Wizard
+
+```bash
+./main.py
+```
+
+## Disclaimer
+
+This code is provided as is.  No warranty, support, or guarantee is provided with this.  But in typical github fashion there is the opportunity to collaborate and share Bug's/Feedback/PR Requests.
+
 ## Synopsis
 
 The purpose of this Python Tool is to deploy Policy/Profiles to Intersight using Infastructure as Code with Terraform.  The Wizard is a step for users to create and better understand how to utilize Terraform for managing infrastrudture.
@@ -108,53 +158,3 @@ To sum this up... the goal is to deploy the infrastructure using Terraform throu
 ## Resources
 
 Youtube Video's to follow.  This is still a work in progress
-
-## Getting Started
-
-### Install json2hcl
-
-[json2hcl](https://github.com/kvz/json2hcl)
-
-### Python Requirements
-
-- Python 3.6 or Greater
-
-[python](https://www.python.org/downloads/release/python-360/)
-
-- Refer to requirements.txt for modules needed to be installed
-
-```bash
-pip install -r requirements.txt
-```
-
-### Terraform Requirements
-
-The script utilizes features introduced in 0.14 of Terraform.  So we need 0.14 or preferrably greater
-
-[terraform](https://www.terraform.io/downloads.html)
-
-### Terraform Modules and Providers
-
-This script will utilize the Intersight Terraform Provider and two modules built off of the Intersight Provider.
-
-- [Intersight Provider](https://registry.terraform.io/providers/CiscoDevNet/intersight/latest)
-- [IMM Module](https://registry.terraform.io/modules/terraform-cisco-modules/imm/intersight/latest)
-- [Easy IMM](https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm)
-
-## Running the Wizard
-
-- Running the wizard to use a configuration migrated from UCS Manager using the IMM Transition Tool
-
-```bash
-./main.py {json_file_name.json}
-```
-
-- Running the Wizard to generate IaC through a Question and Answer Wizard
-
-```bash
-./main.py
-```
-
-## Disclaimer
-
-This code is provided as is.  No warranty, support, or guarantee is provided with this.  But in typical github fashion there is the opportunity to collaborate and share Bug's/Feedback/PR Requests.

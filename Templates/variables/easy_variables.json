@@ -188,7 +188,123 @@
             "default":"No-op"
         }
     },
+    "terraformVersion":{
+        "description":"Supported Terraform Versions",
+        "enum":[
+            "1.0.0",
+            "1.0.1",
+            "1.0.2",
+            "1.0.3",
+            "1.0.4",
+            "1.0.5",
+            "1.0.6",
+            "1.0.7",
+            "1.0.8",
+            "1.0.9"
+        ]
+    },
     "wizard":{
+        "files":{
+            "description": "Files to Pull down from the Easy Projects.",
+            "policies": [
+                "README.md",
+                "adapter_configuration_policies.tf",
+                "bios_policies.tf",
+                "boot_order_policies.tf",
+                "certificate_management_policies.tf",
+                "data_sources.tf",
+                "device_connector_policies.tf",
+                "ethernet_adapter_policies.tf",
+                "ethernet_network_control_policies.tf",
+                "ethernet_network_group_policies.tf",
+                "ethernet_network_policies.tf",
+                "ethernet_qos_policies.tf",
+                "fibre_channel_adapter_policies.tf",
+                "fibre_channel_network_policies.tf",
+                "fibre_channel_qos_policies.tf",
+                "flow_control_policies.tf",
+                "imc_access_policies.tf",
+                "ipmi_over_lan_policies.tf",
+                "iscsi_adapter_policies.tf",
+                "iscsi_boot_policies.tf",
+                "iscsi_static_target_policies.tf",
+                "lan_connectivity_policies.tf",
+                "ldap_policies.tf",
+                "link_aggregation_policies.tf",
+                "link_control_policies.tf",
+                "local_user_policies.tf",
+                "locals.tf",
+                "network_connectivity_policies.tf",
+                "ntp_policies.tf",
+                "output.tf",
+                "persistent_memory_policies.tf",
+                "port_policies.tf",
+                "power_policies.tf",
+                "provider.tf",
+                "san_connectivity_policies.tf",
+                "sd_card_policies.tf",
+                "serial_over_lan_policies.tf",
+                "smtp_policies.tf",
+                "snmp_policies.tf",
+                "ssh_policies.tf",
+                "storage_policies.tf",
+                "switch_control_policies.tf",
+                "syslog_policies.tf",
+                "system_qos_policies.tf",
+                "thermal_policies.tf",
+                "variables.tf",
+                "virtual_kvm_policies.tf",
+                "virtual_media_policies.tf",
+                "vsan_policies.tf"
+            ],
+            "policies_vlans": [
+                "README.md",
+                "data_sources.tf",
+                "locals.tf",
+                "multicast_policies.tf",
+                "output.tf",
+                "provider.tf",
+                "variables.tf",
+                "vlan_policies.tf"
+            ],
+            "pools": [
+                "README.md",
+                "data_sources.tf",
+                "locals.tf",
+                "main.tf",
+                "outputs.tf",
+                "provider.tf",
+                "variables.tf"
+            ],
+            "ucs_chassis_profiles": [
+                "README.md",
+                "data_sources.tf",
+                "locals.tf",
+                "output.tf",
+                "provider.tf",
+                "ucs_chassis_profiles.tf",
+                "variables.tf"
+            ],
+            "ucs_domain_profiles": [
+                "README.md",
+                "data_sources.tf",
+                "locals.tf",
+                "outputs.tf",
+                "provider.tf",
+                "ucs_domain_profiles.tf",
+                "variables.tf"
+            ],
+            "ucs_server_profiles": [
+                "README.md",
+                "data_sources.tf",
+                "locals.tf",
+                "output.tf",
+                "provider.tf",
+                "ucs_server_profile_templates.tf",
+                "ucs_server_profiles.tf",
+                "variables.tf"
+            ]
+        },
         "Individual":{
             "description": "Select what type to Deploy:",
             "enum": [

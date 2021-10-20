@@ -1,7 +1,7 @@
 #______________________________________________
 #
-# Multicast Policy Variables
+# Ethernet Network Policy Variables
 #______________________________________________
 
-multicast_policies = {
+ethernet_network_policies = {
 }

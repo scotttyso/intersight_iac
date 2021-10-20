@@ -1,7 +1,7 @@
 #______________________________________________
 #
-# Multicast Policy Variables
+# Storage Policy Variables
 #______________________________________________
 
-multicast_policies = {
+storage_policies = {
 }

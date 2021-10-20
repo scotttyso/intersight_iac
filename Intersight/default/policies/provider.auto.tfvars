@@ -1,7 +1,7 @@
 #______________________________________________
 #
-# Multicast Policy Variables
+# Provider Variables
 #______________________________________________
 
-multicast_policies = {
+provider = {
 }

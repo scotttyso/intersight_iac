@@ -1,11 +1,91 @@
 #!/usr/bin/env python3
 import json
+import lib_terraform
 import lib_ucs
+import os
+import re
+import requests
 import sys
-import validating_ucs
+import validating
+from io import StringIO
+from lxml import etree
 from pathlib import Path
 
 home = Path.home()
+
+def merge_easy_imm_repository(easy_jsonData, org):
+    folder_list = [
+        f'./Intersight/{org}/policies',
+        f'./Intersight/{org}/policies_vlans',
+        f'./Intersight/{org}/pools',
+        f'./Intersight/{org}/ucs_chassis_profiles',
+        f'./Intersight/{org}/ucs_domain_profiles',
+        f'./Intersight/{org}/ucs_server_profiles'
+    ]
+    for folder in folder_list:
+        if os.path.isdir(folder):
+            folder_type = folder.split('/')[3]
+            files = easy_jsonData['wizard']['files'][folder_type]
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'\n  Beginning Easy IMM Module Downloads for "{folder}"\n')
+            for file in files:
+                dest_file = f'{folder}/{file}'
+                if not os.path.isfile(dest_file):
+                    print(f'  Downloading "{file}" to "{folder}"')
+                    url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
+                    r = requests.get(url)
+                    open(dest_file, 'wb').write(r.content)
+                    print(f'  Download Complete!\n')
+
+            print(f'\n  Completed Easy IMM Module Downloads for "{folder}"')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+
+    for folder in folder_list:
+        if os.path.isdir(folder):
+            folder_type = folder.split('/')[3]
+            files = easy_jsonData['wizard']['files'][folder_type]
+            removeList = [
+                'data_sources.tf',
+                'locals.tf',
+                'main.tf',
+                'output.tf',
+                'outputs.tf',
+                'provider.tf',
+                'README.md',
+                'variables.tf',
+            ]
+            for xRemove in removeList:
+                if xRemove in files:
+                    files.remove(xRemove)
+            for file in files:
+                varFiles = f"{file.split('.')[0]}.auto.tfvars"
+                dest_file = f'{folder}/{varFiles}'
+                if not os.path.isfile(dest_file):
+                    wr_file = open(dest_file, 'w')
+                    x = file.split('.')
+                    x2 = x[0].split('_')
+                    varList = []
+                    for var in x2:
+                        var = var.capitalize()
+                        if var == 'Policies':
+                            var = 'Policy'
+                        elif var == 'Pools':
+                            var = 'Pool'
+                        elif var == 'Profiles':
+                            var = 'Profile'
+                        varList.append(var)
+                    varDescr = ' '.join(varList)
+                    varDescr = varDescr + ' Variables'
+
+                    wrString = f'#______________________________________________\n#\n# {varDescr}\n'\
+                        '#______________________________________________\n'\
+                        '\n%s = {\n}\n' % (file.split('.')[0])
+                    wr_file.write(wrString)
+                    wr_file.close()
+
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def process_config_conversion(json_data):
     print(f'\n---------------------------------------------------------------------------------------\n')
@@ -13,6 +93,7 @@ def process_config_conversion(json_data):
     print(f'\n---------------------------------------------------------------------------------------\n')
 
     type = 'pools'
+    orgs = lib_ucs.config_conversion(json_data, type).return_orgs()
     lib_ucs.config_conversion(json_data, type).ip_pools()
     lib_ucs.config_conversion(json_data, type).iqn_pools()
     lib_ucs.config_conversion(json_data, type).mac_pools()
@@ -64,25 +145,13 @@ def process_config_conversion(json_data):
     lib_ucs.config_conversion(json_data, type).ucs_server_profile_templates()
     lib_ucs.config_conversion(json_data, type).ucs_server_profiles()
 
-    print(f'\n---------------------------------------------------------------------------------------\n')
-    print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
-    print(f'\n---------------------------------------------------------------------------------------\n')
-    exit()
+    # Return Organizations found in jsonData
+    return orgs
 
-def process_wizard():
+def process_wizard(easy_jsonData, jsonData):
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Starting the Easy IMM Initial Configuration Wizard!')
     print(f'\n-------------------------------------------------------------------------------------------\n')
-
-    jsonFile = 'Templates/variables/intersight_openapi.json'
-    jsonOpen = open(jsonFile, 'r')
-    jsonData = json.load(jsonOpen)
-    jsonOpen.close()
-
-    jsonFile = 'Templates/variables/easy_variables.json'
-    jsonOpen = open(jsonFile, 'r')
-    easy_jsonData = json.load(jsonOpen)
-    jsonOpen.close()
 
     templateVars = {}
     templateVars["multi_select"] = False
@@ -298,7 +367,7 @@ def process_wizard():
         org = input('What is your Intersight Organization Name?  [default]: ')
         if org == '':
             org = 'default'
-        valid = validating_ucs.org_rule('Intersight Organization', org, 1, 62)
+        valid = validating.org_rule('Intersight Organization', org, 1, 62)
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  By Default, the Intersight Organization will be used as the Name Prefix for Pools ')
@@ -313,14 +382,14 @@ def process_wizard():
         if domain_prefix == '':
             valid = True
         else:
-            valid = validating_ucs.name_rule(f"Name Prefix", domain_prefix, 1, 62)
+            valid = validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
     valid = False
     while valid == False:
         name_prefix = input('Enter a Name Prefix for Pools and Server Policies.  [press enter to skip]: ')
         if name_prefix == '':
             valid = True
         else:
-            valid = validating_ucs.name_rule(f"Name Prefix", name_prefix, 1, 62)
+            valid = validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
 
     for policy in policy_list:
         pci_order_consumed = [{0:[]},{1:[]}]
@@ -465,19 +534,153 @@ def process_wizard():
         elif policy == 'ucs_server_profiles':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).ucs_server_profiles(jsonData, easy_jsonData)
 
-    print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
-    print(f'\n-------------------------------------------------------------------------------------------\n')
-    exit()
+    return org
+
 
 def main():
+    jsonFile = 'Templates/variables/intersight_openapi.json'
+    jsonOpen = open(jsonFile, 'r')
+    jsonData = json.load(jsonOpen)
+    jsonOpen.close()
+
+    jsonFile = 'Templates/variables/easy_variables.json'
+    jsonOpen = open(jsonFile, 'r')
+    easy_jsonData = json.load(jsonOpen)
+    jsonOpen.close()
+
     if len(sys.argv) > 1:
         json_file = sys.argv[1]
         json_open = open(json_file, 'r')
         json_data = json.load(json_open)
-        process_config_conversion(json_data)
+        orgs = process_config_conversion(json_data)
     else:
-        process_wizard()
+        # process_wizard(easy_jsonData, jsonData)
+        org = 'default'
+        orgs = []
+        orgs.append(org)
+    for org in orgs:
+        # merge_easy_imm_repository(easy_jsonData, org)
+        # runTFCB = True
+        # if runTFCB == True:
+        templateVars = {}
+        templateVars["terraform_cloud_token"] = lib_terraform.Terraform_Cloud().terraform_token()
+        # templateVars["tfc_organization"] = lib_terraform.Terraform_Cloud().tfc_organization(**templateVars)
+        templateVars["tfc_organization"] = 'Cisco-Richfield-Lab'
+        tfc_vcs_provider,templateVars["tfc_oath_token"] = lib_terraform.Terraform_Cloud().tfc_vcs_providers(**templateVars)
+        templateVars["tfc_vcs_provider"] = tfc_vcs_provider
+        # templateVars["vcsBaseRepo"] = lib_terraform.Terraform_Cloud().tfc_vcs_repository(**templateVars)
+        templateVars["vcsBaseRepo"] = 'scotttyso/intersight_iac'
+
+        templateVars["agentPoolId"] = ''
+        templateVars["allowDestroyPlan"] = False
+        templateVars["executionMode"] = 'remote'
+        templateVars["queueAllRuns"] = False
+        templateVars["speculativeEnabled"] = True
+        templateVars["triggerPrefixes"] = []
+
+        terraform_versions = []
+        url = f'https://releases.hashicorp.com/terraform/'
+        r = requests.get(url)
+        html = r.content.decode("utf-8")
+        # print(html)
+        parser = etree.HTMLParser()
+        tree = etree.parse(StringIO(html), parser=parser)
+        # This will get the anchor tags <a href...>
+        refs = tree.xpath("//a")
+        links = [link.get('href', '') for link in refs]
+        for i in links:
+            # tf_version = re.search(r'/terraform/(1\.[0-9]+\.[0-9]+)/', str(i)).group(1)
+            if re.search(r'/terraform/[1-2]\.[0-9]+\.[0-9]+/', i):
+                tf_version = re.search(r'/terraform/([1-2]\.[0-9]+\.[0-9]+)/', i).group(1)
+                terraform_versions.append(tf_version)
+
+        templateVars["multi_select"] = False
+        templateVars["var_description"] = "Terraform Version for Workspaces:"
+        templateVars["jsonVars"] = sorted(terraform_versions)
+        templateVars["varType"] = 'Terraform Version'
+        templateVars["defaultVar"] = ''
+        # templateVars["terraformVersion"] = lib_ucs.variablesFromAPI(**templateVars)
+        templateVars["terraformVersion"] = '1.0.9'
+
+        folder_list = [
+            f'./Intersight/{org}/policies',
+            f'./Intersight/{org}/policies_vlans',
+            f'./Intersight/{org}/pools',
+            f'./Intersight/{org}/ucs_chassis_profiles',
+            f'./Intersight/{org}/ucs_domain_profiles',
+            f'./Intersight/{org}/ucs_server_profiles'
+        ]
+        for folder in folder_list:
+            templateVars["autoApply"] = False
+            templateVars["description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[3])
+            if re.search('(pools|profiles)', folder.split('/')[3]):
+                templateVars["globalRemoteState"] = True
+            else:
+                templateVars["globalRemoteState"] = False
+            templateVars["workingDirectory"] = folder
+
+            templateVars["Description"] = 'Name of the Workspace to Create in Terraform Cloud'
+            templateVars["varDefault"] = f'{org}_{folder.split("/")[3]}'
+            templateVars["varInput"] = f'Terraform Cloud Workspace Name. [{org}_{folder.split("/")[3]}]: '
+            templateVars["varName"] = f'Workspace Name'
+            templateVars["varRegex"] = '^[a-zA-Z0-9\\-\\_]+$'
+            templateVars["minLength"] = 1
+            templateVars["maxLength"] = 90
+            # templateVars["workspaceName"] = lib_ucs.varStringLoop(**templateVars)
+            templateVars["workspaceName"] = 'tyscott_policies'
+
+            templateVars['workspace_id'] = lib_terraform.Terraform_Cloud().tfcWorkspace(**templateVars)
+            vars = [
+                'apikey.Intersight API Key',
+                'secretkey.Intersight Secret Key'
+            ]
+            for var in vars:
+                templateVars["Variable"] = var.split('.')[0]
+                if 'secret' in var:
+                    templateVars["Multi_Line_Input"] = True
+                templateVars["varValue"] = lib_terraform.Terraform_Cloud().sensitive_var_value(**templateVars)
+                templateVars["varId"] = var.split('.')[0]
+                templateVars["varKey"] = var.split('.')[0]
+                templateVars["Description"] = var.split('.')[1]
+                templateVars["Sensitive"] = True
+                if 'secret' in var:
+                    templateVars["Sensitive"] = False
+                lib_terraform.Terraform_Cloud().tfcVariables(**templateVars)
+                exit()
+            if folder.split("/")[3] == 'policies':
+                vars = [
+                    'ipmi_over_lan_policies.ipmi_key_1',
+                    'iscsi_boot_policies.iscsi_boot_password',
+                    'ldap_policies.binding_parameters_password',
+                    'local_user_policies.local_user_password_1',
+                    'local_user_policies.local_user_password_2',
+                    'local_user_policies.local_user_password_3',
+                    'local_user_policies.local_user_password_4',
+                    'local_user_policies.local_user_password_5',
+                    'snmp_policies.access_community_string',
+                    'snmp_policies.snmp_auth_password_1',
+                    'snmp_policies.snmp_auth_password_2',
+                    'snmp_policies.snmp_auth_password_3',
+                    'snmp_policies.snmp_auth_password_4',
+                    'snmp_policies.snmp_auth_password_5',
+                    'snmp_policies.snmp_privacy_password_1',
+                    'snmp_policies.snmp_privacy_password_2',
+                    'snmp_policies.snmp_privacy_password_3',
+                    'snmp_policies.snmp_privacy_password_4',
+                    'snmp_policies.snmp_privacy_password_5',
+                    'snmp_policies.trap_community_string',
+                    'virtual_media_policies.vmedia_password_1',
+                    'virtual_media_policies.vmedia_password_2',
+                    'virtual_media_policies.vmedia_password_3',
+                    'virtual_media_policies.vmedia_password_4',
+                    'virtual_media_policies.vmedia_password_5'
+                ]
+                templateVars["Variable"] = 'ipmi_key_1'
+                templateVars["ipmi_key_1"] = lib_terraform.Terraform_Cloud().sensitive_var_value(**templateVars)
+            templateVars["vcsBranch"] = ''
+
+        lib_terraform.Terraform_Cloud().tfcVariables(**templateVars)
+
 
 if __name__ == '__main__':
     main()

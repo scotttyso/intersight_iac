@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import copy
-import getpass
 import ipaddress
 import jinja2
 import json
@@ -9,8 +8,9 @@ import os
 import pkg_resources
 import re
 import subprocess
+import stdiomask
 import sys
-import validating_ucs
+import validating
 
 ucs_template_path = pkg_resources.resource_filename('lib_ucs', 'Templates/')
 
@@ -27,6 +27,10 @@ class config_conversion(object):
             for k, v in item.items():
                 if k == 'name':
                     self.orgs.append(v)
+
+    def return_orgs(self):
+        orgs = self.orgs
+        return orgs
 
     def bios_policies(self):
         header = 'BIOS Policy Variables'
@@ -1197,24 +1201,16 @@ class easy_imm_wizard(object):
                     templateVars["name"] = policy_name(name, policy_type)
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Device Connector policy in Intersight:')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        varLock = input('Do you want to lock down Configuration to Intersight only?  Enter "Y" or "N" [Y]: ')
-                        if varLock == '' or varLock == 'Y':
-                            templateVars["configuration_lockout"] = True
-                        elif varLock == 'N':
-                            templateVars["configuration_lockout"] = False
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                    jsonVars = jsonData['components']['schemas']['deviceconnector.Policy']['allOf'][1]['properties']
+                    templateVars["Description"] = jsonVars['LockoutEnabled']['description']
+                    templateVars["varInput"] = f'Do you want to lock down Configuration to Intersight only?'
+                    templateVars["varDefault"] = 'N'
+                    templateVars["varName"] = 'Lockout Enabled'
+                    templateVars["configuration_lockout"] = varBoolLoop(**templateVars)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  ')
-                    print(f'   configuration_lockout = "{templateVars["configuration_lockout"]}"')
+                    print(f'   configuration_lockout = {templateVars["configuration_lockout"]}')
                     print(f'   description           = "{templateVars["descr"]}"')
                     print(f'   name                  = "{templateVars["name"]}"')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -1552,7 +1548,7 @@ class easy_imm_wizard(object):
                         valid_vlan = True
                         vlans_not_in_domain_policy = []
                         for vlan in vlanListExpanded:
-                            valid_vlan = validating_ucs.number_in_range('VLAN ID', vlan, 1, 4094)
+                            valid_vlan = validating.number_in_range('VLAN ID', vlan, 1, 4094)
                             if valid_vlan == False:
                                 break
                             else:
@@ -1715,7 +1711,7 @@ class easy_imm_wizard(object):
                     while valid == False:
                         templateVars["default_vlan"] = input('What is the default vlan to assign to this Policy.  Range is 0 to 4094: ')
                         if re.fullmatch(r'[0-9]{1,4}', templateVars["default_vlan"]):
-                            valid = validating_ucs.number_in_range('VLAN ID', templateVars["default_vlan"], 0, 4094)
+                            valid = validating.number_in_range('VLAN ID', templateVars["default_vlan"], 0, 4094)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    default_vlan  = {templateVars["default_vlan"]}')
@@ -1857,9 +1853,9 @@ class easy_imm_wizard(object):
                     if re.fullmatch(r'^[0-9]{1,6}$', str(Question)):
                         minValue = 0
                         maxValue = 100000
-                        varName = 'Rate Limit'
+                        templateVars["varName"] = 'Rate Limit'
                         varValue = Question
-                        valid = validating_ucs.number_in_range(varName, varValue, minValue, maxValue)
+                        valid = validating.number_in_range(templateVars["varName"], varValue, minValue, maxValue)
                     else:
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'    Invalid Rate Limit value "{Question}"!!!')
@@ -1883,9 +1879,9 @@ class easy_imm_wizard(object):
                         if re.fullmatch(r'^[0-6]$', str(Question)):
                             minValue = 0
                             maxValue = 6
-                            varName = 'Class of Service'
+                            templateVars["varName"] = 'Class of Service'
                             varValue = Question
-                            valid = validating_ucs.number_in_range(varName, varValue, minValue, maxValue)
+                            valid = validating.number_in_range(templateVars["varName"], varValue, minValue, maxValue)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'    Invalid Class of Service value "{Question}"!!!')
@@ -1906,9 +1902,9 @@ class easy_imm_wizard(object):
                         if re.fullmatch(r'^[0-9]{4}$', str(Question)):
                             minValue = 1500
                             maxValue = 9000
-                            varName = 'MTU'
+                            templateVars["varName"] = 'MTU'
                             varValue = Question
-                            valid = validating_ucs.number_in_range(varName, varValue, minValue, maxValue)
+                            valid = validating.number_in_range(templateVars["varName"], varValue, minValue, maxValue)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'    Invalid MTU value "{Question}"!!!')
@@ -1931,9 +1927,9 @@ class easy_imm_wizard(object):
                         if re.fullmatch(r'^[0-9]{4,7}$', str(Question)):
                             minValue = 1024
                             maxValue = 1000000
-                            varName = 'Burst'
+                            templateVars["varName"] = 'Burst'
                             varValue = Question
-                            valid = validating_ucs.number_in_range(varName, varValue, minValue, maxValue)
+                            valid = validating.number_in_range(templateVars["varName"], varValue, minValue, maxValue)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'    Invalid Burst value "{Question}"!!!')
@@ -2167,7 +2163,7 @@ class easy_imm_wizard(object):
                         valid = False
                         while valid == False:
                             templateVars["default_vlan"] = input('What is the Default VLAN you want to Assign to this Policy? ')
-                            valid = validating_ucs.number_in_range('Default VLAN', templateVars["default_vlan"], 1, 4094)
+                            valid = validating.number_in_range('Default VLAN', templateVars["default_vlan"], 1, 4094)
                     else:
                         templateVars["default_vlan"] = 0
 
@@ -2182,7 +2178,7 @@ class easy_imm_wizard(object):
                                 templateVars["vsan_id"] = 100
                             else:
                                 templateVars["vsan_id"] = 200
-                        vsan_valid = validating_ucs.number_in_range('VSAN ID', templateVars["vsan_id"], 1, 4094)
+                        vsan_valid = validating.number_in_range('VSAN ID', templateVars["vsan_id"], 1, 4094)
                         if vsan_valid == True:
                             if templateVars["target_platform"] == 'FIAttached':
                                 policy_list = [
@@ -2526,7 +2522,7 @@ class easy_imm_wizard(object):
                 valid = False
                 while valid == False:
                     templateVars["inband_vlan_id"] = input('What VLAN Do you want to Assign to this Policy? ')
-                    valid_vlan = validating_ucs.number_in_range('VLAN ID', templateVars["inband_vlan_id"], 1, 4094)
+                    valid_vlan = validating.number_in_range('VLAN ID', templateVars["inband_vlan_id"], 1, 4094)
                     if valid_vlan == True:
                         if templateVars["target_platform"] == 'FIAttached':
                             policy_list = [
@@ -2695,8 +2691,8 @@ class easy_imm_wizard(object):
                         network_prefix = input('What is the Gateway/Mask to Assign to the Pool?  [198.18.0.1/24]: ')
                         if network_prefix == '':
                             network_prefix = '198.18.0.1/24'
-                        gateway_valid = validating_ucs.ip_address('Gateway Address', network_prefix)
-                        mask_valid = validating_ucs.number_in_range('Mask Length', network_prefix.split('/')[1], 1, 30)
+                        gateway_valid = validating.ip_address('Gateway Address', network_prefix)
+                        mask_valid = validating.number_in_range('Mask Length', network_prefix.split('/')[1], 1, 30)
                         if gateway_valid == True and mask_valid == True:
                             valid = True
                         else:
@@ -2714,7 +2710,7 @@ class easy_imm_wizard(object):
                         starting = input('What is the Starting IP Address to Assign to the Pool?  [198.18.0.10]: ')
                         if starting == '':
                             starting = '198.18.0.10'
-                        valid_ip = validating_ucs.ip_address('Starting IP Address', starting)
+                        valid_ip = validating.ip_address('Starting IP Address', starting)
                         if valid_ip == True:
                             if network == str(ipaddress.IPv4Interface('/'.join([starting, prefix])).network):
                                 valid = True
@@ -2729,14 +2725,14 @@ class easy_imm_wizard(object):
                         pool_size = input('How Many IP Addresses should be added to the Pool?  Range is 1-1000 [160]: ')
                         if pool_size == '':
                             pool_size = '160'
-                        valid = validating_ucs.number_in_range('Pool Size', pool_size, 1, 1000)
+                        valid = validating.number_in_range('Pool Size', pool_size, 1, 1000)
 
                     valid = False
                     while valid == False:
                         primary_dns = input('What is your Primary DNS Server [208.67.220.220]? ')
                         if primary_dns == '':
                             primary_dns = '208.67.220.220'
-                        valid = validating_ucs.ip_address('Primary DNS Server', primary_dns)
+                        valid = validating.ip_address('Primary DNS Server', primary_dns)
 
                     valid = False
                     while valid == False:
@@ -2745,7 +2741,7 @@ class easy_imm_wizard(object):
                             secondary_dns = input('What is your Alternate DNS Server [208.67.222.222]? ')
                             if secondary_dns == '':
                                 secondary_dns = '208.67.222.222'
-                            valid = validating_ucs.ip_address('Alternate DNS Server', secondary_dns)
+                            valid = validating.ip_address('Alternate DNS Server', secondary_dns)
                         elif alternate_true == 'N':
                             secondary_dns = ''
                             valid = True
@@ -2780,8 +2776,8 @@ class easy_imm_wizard(object):
                         network_prefix = input('What is the Gateway/Mask to Assign to the Pool?  [2001:0002::1/64]: ')
                         if network_prefix == '':
                             network_prefix = '2001:0002::1/64'
-                        gateway_valid = validating_ucs.ip_address('Gateway Address', network_prefix)
-                        mask_valid = validating_ucs.number_in_range('Mask Length', network_prefix.split('/')[1], 48, 127)
+                        gateway_valid = validating.ip_address('Gateway Address', network_prefix)
+                        mask_valid = validating.number_in_range('Mask Length', network_prefix.split('/')[1], 48, 127)
                         if gateway_valid == True and mask_valid == True:
                             valid = True
                         else:
@@ -2799,7 +2795,7 @@ class easy_imm_wizard(object):
                         starting = input('What is the Starting IP Address to Assign to the Pool?  [2001:0002::10]: ')
                         if starting == '':
                             starting = '2001:0002::10'
-                        valid_ip = validating_ucs.ip_address('Starting IP Address', starting)
+                        valid_ip = validating.ip_address('Starting IP Address', starting)
                         if valid_ip == True:
                             if network == str(ipaddress.IPv6Interface('/'.join([starting, prefix])).network):
                                 valid = True
@@ -2815,14 +2811,14 @@ class easy_imm_wizard(object):
                         pool_size = input('How Many IP Addresses should be added to the Pool?  Range is 1-1000 [160]: ')
                         if pool_size == '':
                             pool_size = '160'
-                        valid = validating_ucs.number_in_range('Pool Size', pool_size, 1, 1000)
+                        valid = validating.number_in_range('Pool Size', pool_size, 1, 1000)
 
                     valid = False
                     while valid == False:
                         primary_dns = input('What is your Primary DNS Server [2620:119:35::35]? ')
                         if primary_dns == '':
                             primary_dns = '2620:119:35::35'
-                        valid = validating_ucs.ip_address('Primary DNS Server', primary_dns)
+                        valid = validating.ip_address('Primary DNS Server', primary_dns)
 
                     valid = False
                     while valid == False:
@@ -2831,7 +2827,7 @@ class easy_imm_wizard(object):
                             secondary_dns = input('What is your Alternate DNS Server [2620:119:53::53]? ')
                             if secondary_dns == '':
                                 secondary_dns = '2620:119:53::53'
-                            valid = validating_ucs.ip_address('Alternate DNS Server', secondary_dns)
+                            valid = validating.ip_address('Alternate DNS Server', secondary_dns)
                         elif alternate_true == 'N':
                             secondary_dns = ''
                             valid = True
@@ -2981,8 +2977,8 @@ class easy_imm_wizard(object):
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             valid_password = False
                             while valid_password == False:
-                                ipmi_key = getpass.getpass(prompt='Enter ipmi_key: ')
-                                valid_password = validating_ucs.ipmi_key_check(ipmi_key)
+                                ipmi_key = stdiomask.getpass(prompt='Enter ipmi_key: ')
+                                valid_password = validating.ipmi_key_check(ipmi_key)
 
                             templateVars["ipmi_key"] = 1
                             os.environ['TF_VAR_ipmi_key_1'] = '%s' % (ipmi_key)
@@ -3120,15 +3116,15 @@ class easy_imm_wizard(object):
                         pool_from = input(f'\nWhat is the first Suffix Number in the Block?  [1]: ')
                         if pool_from == '':
                             pool_from = '1'
-                        valid_from = validating_ucs.number_in_range('IQN Pool From', pool_from, 1, 1000)
+                        valid_from = validating.number_in_range('IQN Pool From', pool_from, 1, 1000)
 
                         pool_size = input(f'\nWhat is the size of the Block?  [512]: ')
                         if pool_size == '':
                             pool_size = '512'
-                        valid_size = validating_ucs.number_in_range('IQN Pool Size', pool_size, 1, 1000)
+                        valid_size = validating.number_in_range('IQN Pool Size', pool_size, 1, 1000)
 
                         from_iqn = '%s:%s%s' % (templateVars['prefix'], suffix, pool_from)
-                        valid_iqn = validating_ucs.iqn_address('IQN Staring Address', from_iqn)
+                        valid_iqn = validating.iqn_address('IQN Staring Address', from_iqn)
 
                         if valid_from == True and valid_size == True and valid_iqn == True:
                             valid = True
@@ -3237,31 +3233,31 @@ class easy_imm_wizard(object):
                     jsonVars = jsonData['components']['schemas']['vnic.IscsiAdapterPolicy']['allOf'][1]['properties']
 
                     # DHCP Timeout
-                    Description = jsonVars['DhcpTimeout']['description']
-                    varInput = 'Enter the number of seconds after which the DHCP times out.'
-                    varDefault = 60
-                    varName = 'DHCP Timeout'
-                    minNum = jsonVars['DhcpTimeout']['minimum']
-                    maxNum = jsonVars['DhcpTimeout']['maximum']
-                    templateVars["dhcp_timeout"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+                    templateVars["Description"] = jsonVars['DhcpTimeout']['description']
+                    templateVars["varInput"] = 'Enter the number of seconds after which the DHCP times out.'
+                    templateVars["varDefault"] = 60
+                    templateVars["varName"] = 'DHCP Timeout'
+                    templateVars["minNum"] = jsonVars['DhcpTimeout']['minimum']
+                    templateVars["maxNum"] = jsonVars['DhcpTimeout']['maximum']
+                    templateVars["dhcp_timeout"] = varNumberLoop(**templateVars)
 
                     # LUN Busy Retry Count
-                    Description = jsonVars['LunBusyRetryCount']['description']
-                    varInput = 'Enter the number of times connection is to be attempted when the LUN ID is busy.'
-                    varDefault = 15
-                    varName = 'LUN Busy Retry Count'
-                    minNum = jsonVars['LunBusyRetryCount']['minimum']
-                    maxNum = jsonVars['LunBusyRetryCount']['maximum']
-                    templateVars["lun_busy_retry_count"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+                    templateVars["Description"] = jsonVars['LunBusyRetryCount']['description']
+                    templateVars["varInput"] = 'Enter the number of times connection is to be attempted when the LUN ID is busy.'
+                    templateVars["varDefault"] = 15
+                    templateVars["varName"] = 'LUN Busy Retry Count'
+                    templateVars["minNum"] = jsonVars['LunBusyRetryCount']['minimum']
+                    templateVars["maxNum"] = jsonVars['LunBusyRetryCount']['maximum']
+                    templateVars["lun_busy_retry_count"] = varNumberLoop(**templateVars)
 
                     # TCP Connection Timeout
-                    Description = jsonVars['ConnectionTimeOut']['description']
-                    varInput = 'Enter the number of seconds after which the TCP connection times out.'
-                    varDefault = 15
-                    varName = 'TCP Connection Timeout'
-                    minNum = jsonVars['ConnectionTimeOut']['minimum']
-                    maxNum = jsonVars['ConnectionTimeOut']['maximum']
-                    templateVars["tcp_connection_timeout"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+                    templateVars["Description"] = jsonVars['ConnectionTimeOut']['description']
+                    templateVars["varInput"] = 'Enter the number of seconds after which the TCP connection times out.'
+                    templateVars["varDefault"] = 15
+                    templateVars["varName"] = 'TCP Connection Timeout'
+                    templateVars["minNum"] = jsonVars['ConnectionTimeOut']['minimum']
+                    templateVars["maxNum"] = jsonVars['ConnectionTimeOut']['maximum']
+                    templateVars["tcp_connection_timeout"] = varNumberLoop(**templateVars)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'   dhcp_timeout           = {templateVars["dhcp_timeout"]}')
@@ -3364,13 +3360,14 @@ class easy_imm_wizard(object):
                         templateVars["primary_target_policy"] = ''
                         templateVars["secondary_target_policy"] = ''
 
-                        Description = jsonVars['AutoTargetvendorName']['description']
-                        varInput = 'DHCP Vendor ID or IQN:'
-                        varName = 'DHCP Vendor ID or IQN'
-                        varRegex = '^[\\S]+$'
-                        minLength = 1
-                        maxLength = 32
-                        templateVars["dhcp_vendor_id_iqn"] = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                        templateVars["Description"] = jsonVars['AutoTargetvendorName']['description']
+                        templateVars["varDefault"] = ''
+                        templateVars["varInput"] = 'DHCP Vendor ID or IQN:'
+                        templateVars["varName"] = 'DHCP Vendor ID or IQN'
+                        templateVars["varRegex"] = '^[\\S]+$'
+                        templateVars["minLength"] = 1
+                        templateVars["maxLength"] = 32
+                        templateVars["dhcp_vendor_id_iqn"] = varStringLoop(**templateVars)
 
                     elif templateVars["target_source_type"] == 'Static':
                         templateVars["optional_message"] = '  !!! Select the Primary Static Target !!!\n'
@@ -3420,45 +3417,50 @@ class easy_imm_wizard(object):
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                             jsonVars = jsonData['components']['schemas']['ippool.IpV4Config']['allOf'][1]['properties']
-                            Description = 'Static IP address provided for iSCSI Initiator.'
-                            varInput = f'IP Address:'
-                            varName = f'IP Address'
-                            varRegex = jsonVars['Gateway']['pattern']
-                            minLength = 5
-                            maxLength = 15
-                            ipAddress = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                            templateVars["Description"] = 'Static IP address provided for iSCSI Initiator.'
+                            templateVars["varDefault"] = ''
+                            templateVars["varInput"] = f'IP Address:'
+                            templateVars["varName"] = f'IP Address'
+                            templateVars["varRegex"] = jsonVars['Gateway']['pattern']
+                            templateVars["minLength"] = 5
+                            templateVars["maxLength"] = 15
+                            ipAddress = varStringLoop(**templateVars)
 
-                            Description = jsonVars['Netmask']['description']
-                            varInput = f'Subnet Mask:'
-                            varName = f'Subnet Mask'
-                            varRegex = jsonVars['Netmask']['pattern']
-                            minLength = 5
-                            maxLength = 15
-                            subnetMask = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                            templateVars["Description"] = jsonVars['Netmask']['description']
+                            templateVars["varDefault"] = ''
+                            templateVars["varInput"] = f'Subnet Mask:'
+                            templateVars["varName"] = f'Subnet Mask'
+                            templateVars["varRegex"] = jsonVars['Netmask']['pattern']
+                            templateVars["minLength"] = 5
+                            templateVars["maxLength"] = 15
+                            subnetMask = varStringLoop(**templateVars)
 
-                            Description = jsonVars['Gateway']['description']
-                            varInput = f'Default Gateway:'
-                            varName = f'Default Gateway'
-                            varRegex = jsonVars['Gateway']['pattern']
-                            minLength = 5
-                            maxLength = 15
-                            defaultGateway = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                            templateVars["Description"] = jsonVars['Gateway']['description']
+                            templateVars["varDefault"] = ''
+                            templateVars["varInput"] = f'Default Gateway:'
+                            templateVars["varName"] = f'Default Gateway'
+                            templateVars["varRegex"] = jsonVars['Gateway']['pattern']
+                            templateVars["minLength"] = 5
+                            templateVars["maxLength"] = 15
+                            defaultGateway = varStringLoop(**templateVars)
 
-                            Description = jsonVars['PrimaryDns']['description']
-                            varInput = f'Primary DNS Server.  [press enter to skip]:'
-                            varName = f'Primary DNS Server'
-                            varRegex = jsonVars['PrimaryDns']['pattern']
-                            minLength = 5
-                            maxLength = 15
-                            primaryDns = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                            templateVars["Description"] = jsonVars['PrimaryDns']['description']
+                            templateVars["varDefault"] = ''
+                            templateVars["varInput"] = f'Primary DNS Server.  [press enter to skip]:'
+                            templateVars["varName"] = f'Primary DNS Server'
+                            templateVars["varRegex"] = jsonVars['PrimaryDns']['pattern']
+                            templateVars["minLength"] = 5
+                            templateVars["maxLength"] = 15
+                            primaryDns = varStringLoop(**templateVars)
 
-                            Description = jsonVars['SecondaryDns']['description']
-                            varInput = f'Secondary DNS Server.  [press enter to skip]:'
-                            varName = f'Secondary DNS Server'
-                            varRegex = jsonVars['SecondaryDns']['pattern']
-                            minLength = 5
-                            maxLength = 15
-                            secondaryDns = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                            templateVars["Description"] = jsonVars['SecondaryDns']['description']
+                            templateVars["varDefault"] = ''
+                            templateVars["varInput"] = f'Secondary DNS Server.  [press enter to skip]:'
+                            templateVars["varName"] = f'Secondary DNS Server'
+                            templateVars["varRegex"] = jsonVars['SecondaryDns']['pattern']
+                            templateVars["minLength"] = 5
+                            templateVars["maxLength"] = 15
+                            secondaryDns = varStringLoop(**templateVars)
 
                             templateVars["initiator_static_ip_v4_config"] = {
                                 'ip_address':ipAddress,
@@ -3480,21 +3482,23 @@ class easy_imm_wizard(object):
                             auth_type = Authentication.replace('_', ' ')
                             auth_type = auth_type.capitalize()
 
-                            Description = jsonVars['UserId']['description']
-                            varInput = f'{auth_type} Username:'
-                            varName = f'{auth_type} Username'
-                            varRegex = jsonVars['UserId']['pattern']
-                            minLength = 1
-                            maxLength = 128
-                            user_id = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                            templateVars["Description"] = jsonVars['UserId']['description']
+                            templateVars["varDefault"] = ''
+                            templateVars["varInput"] = f'{auth_type} Username:'
+                            templateVars["varName"] = f'{auth_type} Username'
+                            templateVars["varRegex"] = jsonVars['UserId']['pattern']
+                            templateVars["minLength"] = 1
+                            templateVars["maxLength"] = 128
+                            user_id = varStringLoop(**templateVars)
 
-                            Description = jsonVars['Password']['description']
-                            varInput = f'{auth_type} Password:'
-                            varName = f'{auth_type} Password'
-                            varRegex = jsonVars['Password']['pattern']
-                            minLength = 12
-                            maxLength = 16
-                            iscsi_boot_password = varSensitiveStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                            templateVars["Description"] = jsonVars['Password']['description']
+                            templateVars["varDefault"] = ''
+                            templateVars["varInput"] = f'{auth_type} Password:'
+                            templateVars["varName"] = f'{auth_type} Password'
+                            templateVars["varRegex"] = jsonVars['Password']['pattern']
+                            templateVars["minLength"] = 12
+                            templateVars["maxLength"] = 16
+                            iscsi_boot_password = varSensitiveStringLoop(**templateVars)
                             os.environ['TF_VAR_iscsi_boot_password'] = '%s' % (iscsi_boot_password)
                             password = 1
 
@@ -3623,47 +3627,49 @@ class easy_imm_wizard(object):
 
                     desc_add = '\n  such as:\n  * iqn.1984-12.com.cisco:lnx1\n  * iqn.1984-12.com.cisco:win-server1'
                     # Target Name
-                    Description = jsonVars['TargetName']['description'] + desc_add
-                    varInput = 'Enter the name of the target:'
-                    varName = 'Target Name'
-                    varRegex = jsonVars['TargetName']['pattern']
-                    minLength = 1
-                    maxLength = 255
-                    templateVars["target_name"] = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                    templateVars["Description"] = jsonVars['TargetName']['description'] + desc_add
+                    templateVars["varDefault"] = ''
+                    templateVars["varInput"] = 'Enter the name of the target:'
+                    templateVars["varName"] = 'Target Name'
+                    templateVars["varRegex"] = jsonVars['TargetName']['pattern']
+                    templateVars["minLength"] = 1
+                    templateVars["maxLength"] = 255
+                    templateVars["target_name"] = varStringLoop(**templateVars)
 
                     # IP Address
-                    Description = jsonVars['IpAddress']['description']
-                    varInput = 'Enter the target IP address:'
-                    varName = 'IP Address'
-                    varRegex = jsonVars['IpAddress']['pattern']
-                    minLength = 5
-                    maxLength = 15
-                    templateVars["ip_address"] = varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength)
+                    templateVars["Description"] = jsonVars['IpAddress']['description']
+                    templateVars["varDefault"] = ''
+                    templateVars["varInput"] = 'Enter the target IP address:'
+                    templateVars["varName"] = 'IP Address'
+                    templateVars["varRegex"] = jsonVars['IpAddress']['pattern']
+                    templateVars["minLength"] = 5
+                    templateVars["maxLength"] = 15
+                    templateVars["ip_address"] = varStringLoop(**templateVars)
 
                     # Port
-                    Description = jsonVars['Port']['description']
-                    varInput = 'Enter the port number of the target.'
-                    varDefault = 3260
-                    varName = 'Port'
-                    minNum = jsonVars['Port']['minimum']
-                    maxNum = jsonVars['Port']['maximum']
-                    templateVars["port"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+                    templateVars["Description"] = jsonVars['Port']['description']
+                    templateVars["varInput"] = 'Enter the port number of the target.'
+                    templateVars["varDefault"] = 3260
+                    templateVars["varName"] = 'Port'
+                    templateVars["minNum"] = jsonVars['Port']['minimum']
+                    templateVars["maxNum"] = jsonVars['Port']['maximum']
+                    templateVars["port"] = varNumberLoop(**templateVars)
 
                     # LUN Identifier
-                    Description = jsonVars['Lun']['description']
-                    varInput = 'Enter the ID of the boot logical unit number.'
-                    varDefault = 0
-                    varName = 'LUN Identifier'
-                    minNum = 0
-                    maxNum = 1024
-                    templateVars["lun_id"] = varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum)
+                    templateVars["Description"] = jsonVars['Lun']['description']
+                    templateVars["varInput"] = 'Enter the ID of the boot logical unit number.'
+                    templateVars["varDefault"] = 0
+                    templateVars["varName"] = 'LUN Identifier'
+                    templateVars["minNum"] = 0
+                    templateVars["maxNum"] = 1024
+                    templateVars["lun_id"] = varNumberLoop(**templateVars)
 
                     # LUN Bootable
-                    Description = jsonVars['Lun']['description']
-                    varInput = f'Should LUN {templateVars["lun_id"]} be bootable?'
-                    varDefault = 'Y'
-                    varName = 'LUN Identifier'
-                    templateVars["bootable"] = varBoolLoop(Description, varDefault, varInput, varName)
+                    templateVars["Description"] = jsonVars['Lun']['description']
+                    templateVars["varInput"] = f'Should LUN {templateVars["lun_id"]} be bootable?'
+                    templateVars["varDefault"] = 'Y'
+                    templateVars["varName"] = 'LUN Identifier'
+                    templateVars["bootable"] = varBoolLoop(**templateVars)
 
                     templateVars["lun"] = {
                         'bootable':templateVars["bootable"],
@@ -3835,7 +3841,7 @@ class easy_imm_wizard(object):
                             elif question == 'N':
                                 templateVars["iqn_static_identifier"] = input(f'What is the Static IQN you would like to assign to this LAN Policy?  ')
                                 if not templateVars["iqn_static_identifier"] == '':
-                                    valid = validating_ucs.iqn_address('IQN Static Identifier', templateVars["iqn_static_identifier"])
+                                    valid = validating.iqn_address('IQN Static Identifier', templateVars["iqn_static_identifier"])
 
                 else:
                     templateVars["iqn_allocation_type"] = 'None'
@@ -3895,7 +3901,7 @@ class easy_imm_wizard(object):
                         domain = input(f'What is your LDAP Base Domain? [example.com]: ')
                         if domain == '':
                             domain = 'example.com'
-                        valid = validating_ucs.domain('LDAP Domain', domain)
+                        valid = validating.domain('LDAP Domain', domain)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Base Distinguished Name (DN). Starting point from where the server will search for users')
@@ -3930,11 +3936,11 @@ class easy_imm_wizard(object):
                         if base_timeout == '':
                             base_timeout = 0
                         if re.fullmatch(r'[0-9]+', str(base_timeout)):
-                            minNum = 0
-                            maxNum = 180
-                            varName = 'LDAP Timeout'
+                            templateVars["minNum"] = 0
+                            templateVars["maxNum"] = 180
+                            templateVars["varName"] = 'LDAP Timeout'
                             varValue = base_timeout
-                            valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+                            valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter a number in the range of 0 to 180.')
@@ -3966,21 +3972,21 @@ class easy_imm_wizard(object):
                             # bind_split = bind_dn.split(',')
                             # for x in bind_split:
                             #     reg_test = (regex, bind_dn, re.IGNORECASE)
-                            minLength = 1
-                            maxLength = 254
-                            varName = 'LDAP Bind DN'
+                            templateVars["minLength"] = 1
+                            templateVars["maxLength"] = 254
+                            templateVars["varName"] = 'LDAP Bind DN'
                             varValue = bind_dn
-                            valid = validating_ucs.string_length(varName, varValue, minLength, maxLength)
+                            valid = validating.string_length(templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
 
                         valid = False
                         while valid == False:
-                            secure_passphrase = getpass.getpass(prompt='What is the password of the user for initial bind process? ')
-                            minLength = 1
-                            maxLength = 254
+                            secure_passphrase = stdiomask.getpass(prompt='What is the password of the user for initial bind process? ')
+                            templateVars["minLength"] = 1
+                            templateVars["maxLength"] = 254
                             rePattern = '^[\\S]+$'
-                            varName = 'LDAP Password'
+                            templateVars["varName"] = 'LDAP Password'
                             varValue = secure_passphrase
-                            valid_passphrase = validating_ucs.length_and_regex_sensitive(rePattern, varName, varValue, minLength, maxLength)
+                            valid_passphrase = validating.length_and_regex_sensitive(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
                             if valid_passphrase == True:
                                 os.environ['TF_VAR_binding_parameters_password'] = '%s' % (secure_passphrase)
                                 valid = True
@@ -4059,13 +4065,13 @@ class easy_imm_wizard(object):
                             while valid == False:
                                 searchDomain = input(f'\nNote: Domain that acts as a source for a DNS query.\n'\
                                     'What is the Search Domain? ')
-                                valid = validating_ucs.domain('Search Domain', searchDomain)
+                                valid = validating.domain('Search Domain', searchDomain)
 
                             valid = False
                             while valid == False:
                                 searchForest = input(f'\nNote: Forst that acts as a source for a DNS query.\n'\
                                     'What is the Search Forest? ')
-                                valid = validating_ucs.domain('Search Forest', searchForest)
+                                valid = validating.domain('Search Forest', searchForest)
                             templateVars["ldap_From_dns"] = {
                                 'enable':True,
                                 'search_domain':searchDomain,
@@ -4127,14 +4133,14 @@ class easy_imm_wizard(object):
                         if varNested == '':
                             varNested = 128
                         if re.fullmatch(r'^[0-9]+', str(varNested)):
-                            minNum = 1
-                            maxNum = 128
-                            varName = 'Nested Group Search Depth'
+                            templateVars["minNum"] = 1
+                            templateVars["maxNum"] = 128
+                            templateVars["varName"] = 'Nested Group Search Depth'
                             varValue = varNested
-                            valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+                            valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter a port in the range of {minNum} and {maxNum}.')
+                            print(f'  Error!! Invalid Value.  Please enter a port in the range of {templateVars["minNum"]} and {templateVars["maxNum"]}.')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     templateVars["nested_group_search_depth"] = varNested
@@ -4159,12 +4165,12 @@ class easy_imm_wizard(object):
                                 while valid == False:
                                     varGroup = input(f'What is Group you would like to add from LDAP? ')
                                     if not varGroup == '':
-                                        minLength = 1
-                                        maxLength = 127
+                                        templateVars["minLength"] = 1
+                                        templateVars["maxLength"] = 127
                                         rePattern = '^([^+\\-][a-zA-Z0-9\\=\\!\\#\\$\\%\\(\\)\\+,\\-\\.\\:\\;\\@ \\_\\{\\|\\}\\~\\?\\&]+)$'
-                                        varName = 'LDAP Group'
+                                        templateVars["varName"] = 'LDAP Group'
                                         varValue = varGroup
-                                        valid = validating_ucs.length_and_regex(rePattern, varName, varValue, minLength, maxLength)
+                                        valid = validating.length_and_regex(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  Error!! Invalid Value.  Please Re-enter the LDAP Group.')
@@ -4237,12 +4243,12 @@ class easy_imm_wizard(object):
                                 valid = False
                                 while valid == False:
                                     varServer = input(f'What is Hostname/IP of the LDAP Server? ')
-                                    varName = 'LDAP Server'
+                                    templateVars["varName"] = 'LDAP Server'
                                     varValue = varServer
                                     if re.fullmatch(r'^([0-9]{1,3}\.){3}[0-9]{1,3}$', varServer):
-                                        valid = validating_ucs.ip_address(varName, varValue)
+                                        valid = validating.ip_address(templateVars["varName"], varValue)
                                     else:
-                                        valid = validating_ucs.dns_name(varName, varValue)
+                                        valid = validating.dns_name(templateVars["varName"], varValue)
 
                                 valid = False
                                 while valid == False:
@@ -4254,14 +4260,14 @@ class easy_imm_wizard(object):
                                     if varPort == '':
                                         varPort = xPort
                                     if re.fullmatch(r'^[0-9]+', str(varPort)):
-                                        minNum = 1
-                                        maxNum = 65535
-                                        varName = 'Server Port'
+                                        templateVars["minNum"] = 1
+                                        templateVars["maxNum"] = 65535
+                                        templateVars["varName"] = 'Server Port'
                                         varValue = varPort
-                                        valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+                                        valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please enter a port in the range of {minNum} and {maxNum}.')
+                                        print(f'  Error!! Invalid Value.  Please enter a port in the range of {templateVars["minNum"]} and {templateVars["maxNum"]}.')
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                                 ldap_server = {
@@ -4657,7 +4663,7 @@ class easy_imm_wizard(object):
                             if templateVars["grace_period"] == '':
                                 templateVars["grace_period"] = 0
                             if re.fullmatch(r'[0-5]', str(templateVars["grace_period"])):
-                                valid = validating_ucs.number_in_range('Grace Period', templateVars["grace_period"], 0, 5)
+                                valid = validating.number_in_range('Grace Period', templateVars["grace_period"], 0, 5)
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Error!! Invalid Value.  Please enter a number in the range of 0 to 5.')
@@ -4671,7 +4677,7 @@ class easy_imm_wizard(object):
                             if templateVars["notification_period"] == '':
                                 templateVars["notification_period"] = 15
                             if re.search(r'^[0-9]+$', str(templateVars["notification_period"])):
-                                valid = validating_ucs.number_in_range('Notification Period', templateVars["notification_period"], 0, 15)
+                                valid = validating.number_in_range('Notification Period', templateVars["notification_period"], 0, 15)
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Error!! Invalid Value.  Please enter a number in the range of 0 to 15.')
@@ -4686,7 +4692,7 @@ class easy_imm_wizard(object):
                             if templateVars["password_expiry_duration"] == '':
                                 templateVars["password_expiry_duration"] = 90
                             if re.search(r'^[0-9]+$', str(templateVars["password_expiry_duration"])):
-                                first_check = validating_ucs.number_in_range('Password Expiry Duration', templateVars["password_expiry_duration"], 1, 3650)
+                                first_check = validating.number_in_range('Password Expiry Duration', templateVars["password_expiry_duration"], 1, 3650)
                                 if first_check == True:
                                     x = int(templateVars["grace_period"])
                                     y = int(templateVars["notification_period"])
@@ -4705,7 +4711,7 @@ class easy_imm_wizard(object):
                             if templateVars["password_history"] == '':
                                 templateVars["password_history"] = 5
                             if re.fullmatch(r'[0-5]', str(templateVars["password_history"])):
-                                valid = validating_ucs.number_in_range('Password History', templateVars["password_history"], 0, 5)
+                                valid = validating.number_in_range('Password History', templateVars["password_history"], 0, 5)
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Error!! Invalid Value.  Please enter a number in the range of 0 to 5.')
@@ -4733,7 +4739,7 @@ class easy_imm_wizard(object):
                                         '  - It cannot be more than 16 characters.\n\n'\
                                         'What is your Local username? ')
                                     if not username == '':
-                                        valid = validating_ucs.username('Local User', username, 1, 16)
+                                        valid = validating.username('Local User', username, 1, 16)
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  Error!! Invalid Value.  Please Re-enter the Local Username.')
@@ -4758,15 +4764,15 @@ class easy_imm_wizard(object):
                                     print('    * Non-alphabetic characters (! , @, #, $, %, ^, &, *, -, _, +, =)\n\n')
                                 valid = False
                                 while valid == False:
-                                    password1 = getpass.getpass(f'What is the password for {username}? ')
-                                    password2 = getpass.getpass(f'Please re-enter the password for {username}? ')
+                                    password1 = stdiomask.getpass(f'What is the password for {username}? ')
+                                    password2 = stdiomask.getpass(f'Please re-enter the password for {username}? ')
                                     if not password1 == '':
                                         if password1 == password2:
                                             if templateVars["enforce_strong_password"] == True:
-                                                valid = validating_ucs.strong_password(f"{username}'s password", password1, 8, 20)
+                                                valid = validating.strong_password(f"{username}'s password", password1, 8, 20)
 
                                             else:
-                                                valid = validating_ucs.string_length(f'{username} password', password1, 1, 127)
+                                                valid = validating.string_length(f'{username} password', password1, 1, 127)
 
                                         else:
                                             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -4964,14 +4970,14 @@ class easy_imm_wizard(object):
                             begin = '00:25:B5:0A:00:00'
                         else:
                             begin = '00:25:B5:0B:00:00'
-                    valid = validating_ucs.mac_address('MAC Pool Address', begin)
+                    valid = validating.mac_address('MAC Pool Address', begin)
 
                 valid = False
                 while valid == False:
                     pool_size = input('How Many Mac Addresses should be added to the Pool?  Range is 1-1000 [512]: ')
                     if pool_size == '':
                         pool_size = '512'
-                    valid = validating_ucs.number_in_range('Pool Size', pool_size, 1, 1000)
+                    valid = validating.number_in_range('Pool Size', pool_size, 1, 1000)
 
                 begin = begin.upper()
                 beginx = int(begin.replace(':', ''), 16)
@@ -5076,7 +5082,7 @@ class easy_imm_wizard(object):
                     if templateVars["querier_ip_address"] == '':
                         valid = True
                     if not templateVars["querier_ip_address"] == '':
-                        valid = validating_ucs.ip_address('Fabric A IGMP Querier IP', templateVars["querier_ip_address"])
+                        valid = validating.ip_address('Fabric A IGMP Querier IP', templateVars["querier_ip_address"])
 
                     if not templateVars["querier_ip_address"] == '':
                         templateVars["igmp_snooping_querier_state"] == 'Enabled'
@@ -5087,7 +5093,7 @@ class easy_imm_wizard(object):
                             if templateVars["querier_ip_address_peer"] == '':
                                 valid = True
                             if not templateVars["querier_ip_address_peer"] == '':
-                                valid = validating_ucs.ip_address('Fabric B IGMP Querier IP', templateVars["querier_ip_address"])
+                                valid = validating.ip_address('Fabric B IGMP Querier IP', templateVars["querier_ip_address"])
                     else:
                         templateVars["igmp_snooping_querier_state"] = 'Disabled'
                         templateVars["querier_ip_address_peer"] = ''
@@ -5173,7 +5179,7 @@ class easy_imm_wizard(object):
                     templateVars["preferred_ipv4_dns_server"] = input('What is your Primary IPv4 DNS Server?  [208.67.220.220]: ')
                     if templateVars["preferred_ipv4_dns_server"] == '':
                         templateVars["preferred_ipv4_dns_server"] = '208.67.220.220'
-                    valid = validating_ucs.ip_address('Primary IPv4 DNS Server', templateVars["preferred_ipv4_dns_server"])
+                    valid = validating.ip_address('Primary IPv4 DNS Server', templateVars["preferred_ipv4_dns_server"])
 
                 valid = False
                 while valid == False:
@@ -5182,7 +5188,7 @@ class easy_imm_wizard(object):
                         templateVars["alternate_ipv4_dns_server"] = input('What is your Alternate IPv4 DNS Server?  [208.67.222.222]: ')
                         if templateVars["alternate_ipv4_dns_server"] == '':
                             templateVars["alternate_ipv4_dns_server"] = '208.67.222.222'
-                        valid = validating_ucs.ip_address('Alternate IPv4 DNS Server', templateVars["alternate_ipv4_dns_server"])
+                        valid = validating.ip_address('Alternate IPv4 DNS Server', templateVars["alternate_ipv4_dns_server"])
                     elif alternate_true == 'N':
                         templateVars["alternate_ipv4_dns_server"] = ''
                         valid = True
@@ -5199,7 +5205,7 @@ class easy_imm_wizard(object):
                         templateVars["preferred_ipv6_dns_server"] = input('What is your Primary IPv6 DNS Server?  [2620:119:35::35]: ')
                         if templateVars["preferred_ipv6_dns_server"] == '':
                             templateVars["preferred_ipv6_dns_server"] = '2620:119:35::35'
-                        valid = validating_ucs.ip_address('Primary IPv6 DNS Server', templateVars["preferred_ipv6_dns_server"])
+                        valid = validating.ip_address('Primary IPv6 DNS Server', templateVars["preferred_ipv6_dns_server"])
                     if enable_ipv6 == 'N' or enable_ipv6 == '':
                         templateVars["enable_ipv6"] = False
                         templateVars["preferred_ipv6_dns_server"] = ''
@@ -5213,7 +5219,7 @@ class easy_imm_wizard(object):
                             templateVars["alternate_ipv6_dns_server"] = input('What is your Alternate IPv6 DNS Server?  [2620:119:53::53]: ')
                             if templateVars["alternate_ipv6_dns_server"] == '':
                                 templateVars["alternate_ipv6_dns_server"] = '2620:119:53::53'
-                            valid = validating_ucs.ip_address('Alternate IPv6 DNS Server', templateVars["alternate_ipv6_dns_server"])
+                            valid = validating.ip_address('Alternate IPv6 DNS Server', templateVars["alternate_ipv6_dns_server"])
                         elif alternate_true == 'N':
                             templateVars["alternate_ipv6_dns_server"] = ''
                             valid = True
@@ -5316,9 +5322,9 @@ class easy_imm_wizard(object):
                     if primary_ntp == "":
                         primary_ntp = '0.north-america.pool.ntp.org'
                     if re.search(r'[a-zA-Z]+', primary_ntp):
-                        valid = validating_ucs.dns_name('Primary NTP Server', primary_ntp)
+                        valid = validating.dns_name('Primary NTP Server', primary_ntp)
                     else:
-                        valid = validating_ucs.ip_address('Primary NTP Server', primary_ntp)
+                        valid = validating.ip_address('Primary NTP Server', primary_ntp)
 
                 valid = False
                 while valid == False:
@@ -5328,9 +5334,9 @@ class easy_imm_wizard(object):
                         if alternate_ntp == '':
                             alternate_ntp = '1.north-america.pool.ntp.org'
                         if re.search(r'[a-zA-Z]+', alternate_ntp):
-                            valid = validating_ucs.dns_name('Alternate NTP Server', alternate_ntp)
+                            valid = validating.dns_name('Alternate NTP Server', alternate_ntp)
                         else:
-                            valid = validating_ucs.ip_address('Alternate NTP Server', alternate_ntp)
+                            valid = validating.ip_address('Alternate NTP Server', alternate_ntp)
                     elif alternate_true == 'N':
                         alternate_ntp = ''
                         valid = True
@@ -5488,13 +5494,13 @@ class easy_imm_wizard(object):
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 valid_passphrase = False
                                 while valid_passphrase == False:
-                                    secure_passphrase = getpass.getpass(prompt='Enter the Secure Passphrase: ')
-                                    minLength = 8
-                                    maxLength = 32
+                                    secure_passphrase = stdiomask.getpass(prompt='Enter the Secure Passphrase: ')
+                                    templateVars["minLength"] = 8
+                                    templateVars["maxLength"] = 32
                                     rePattern = '^[a-zA-Z0-9\\u0021\\&\\#\\$\\%\\+\\%\\@\\_\\*\\-\\.]+$'
-                                    varName = 'Secure Passphrase'
+                                    templateVars["varName"] = 'Secure Passphrase'
                                     varValue = secure_passphrase
-                                    valid_passphrase = validating_ucs.length_and_regex_sensitive(rePattern, varName, varValue, minLength, maxLength)
+                                    valid_passphrase = validating.length_and_regex_sensitive(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
 
                                 os.environ['TF_VAR_secure_passphrase'] = '%s' % (secure_passphrase)
                                 valid = True
@@ -5512,7 +5518,7 @@ class easy_imm_wizard(object):
                             if templateVars["memory_mode_percentage"] == '':
                                 templateVars["memory_mode_percentage"] = 0
                             if re.search(r'[\d]+', str(templateVars["memory_mode_percentage"])):
-                                valid = validating_ucs.number_in_range('Memory Mode Percentage', templateVars["memory_mode_percentage"], 1, 100)
+                                valid = validating.number_in_range('Memory Mode Percentage', templateVars["memory_mode_percentage"], 1, 100)
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  "{templateVars["memory_mode_percentage"]}" is not a valid number.')
@@ -5558,12 +5564,12 @@ class easy_imm_wizard(object):
                                 valid = False
                                 while valid == False:
                                     namespace_name = input('What is the Name for this Namespace? ')
-                                    minLength = 1
-                                    maxLength = 63
+                                    templateVars["minLength"] = 1
+                                    templateVars["maxLength"] = 63
                                     rePattern = '^[a-zA-Z0-9\\#\\_\\-]+$'
-                                    varName = 'Name for the Namespace'
+                                    templateVars["varName"] = 'Name for the Namespace'
                                     varValue = namespace_name
-                                    valid = validating_ucs.length_and_regex(rePattern, varName, varValue, minLength, maxLength)
+                                    valid = validating.length_and_regex(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
 
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Capacity of this Namespace in gibibytes (GiB).  Range is 1-9223372036854775807')
@@ -5571,12 +5577,12 @@ class easy_imm_wizard(object):
                                 valid = False
                                 while valid == False:
                                     capacity = input('What is the Capacity to assign to this Namespace? ')
-                                    minNum = 1
-                                    maxNum = 9223372036854775807
-                                    varName = 'Namespace Capacity'
+                                    templateVars["minNum"] = 1
+                                    templateVars["maxNum"] = 9223372036854775807
+                                    templateVars["varName"] = 'Namespace Capacity'
                                     varValue = int(capacity)
                                     if re.search(r'[\d]+',str(varValue)):
-                                        valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+                                        valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  "{varValue}" is not a valid number.')
@@ -5851,7 +5857,7 @@ class easy_imm_wizard(object):
                                     else:
                                         min_port = 1
                                     for port in port_list:
-                                        valid_ports = validating_ucs.number_in_range('Port Range', port, min_port, max_port)
+                                        valid_ports = validating.number_in_range('Port Range', port, min_port, max_port)
                                         if valid_ports == False:
                                             break
                                     if valid_ports == True:
@@ -6021,7 +6027,7 @@ class easy_imm_wizard(object):
                                     else:
                                         min_port = 1
                                     for port in port_list:
-                                        valid_ports = validating_ucs.number_in_range('Port Range', port, min_port, max_port)
+                                        valid_ports = validating.number_in_range('Port Range', port, min_port, max_port)
                                         if valid_ports == False:
                                             break
                                     if valid_ports == True:
@@ -6342,7 +6348,7 @@ class easy_imm_wizard(object):
                                     else:
                                         min_port = 1
                                     for port in port_list:
-                                        valid_ports = validating_ucs.number_in_range('Port Range', port, min_port, max_port)
+                                        valid_ports = validating.number_in_range('Port Range', port, min_port, max_port)
                                         if valid_ports == False:
                                             break
                                     if valid_ports == True:
@@ -6490,7 +6496,7 @@ class easy_imm_wizard(object):
                                     else:
                                         min_port = 1
                                     for port in port_list:
-                                        valid_ports = validating_ucs.number_in_range('Port Range', port, min_port, max_port)
+                                        valid_ports = validating.number_in_range('Port Range', port, min_port, max_port)
                                         if valid_ports == False:
                                             break
                                     if valid_ports == True:
@@ -6653,7 +6659,7 @@ class easy_imm_wizard(object):
                                     else:
                                         min_port = 1
                                     for port in port_list:
-                                        valid_ports = validating_ucs.number_in_range('Port Range', port, min_port, max_port)
+                                        valid_ports = validating.number_in_range('Port Range', port, min_port, max_port)
                                         if valid_ports == False:
                                             break
                                     if valid_ports == True:
@@ -6933,7 +6939,7 @@ class easy_imm_wizard(object):
                                     else:
                                         min_port = 1
                                     for port in port_list:
-                                        valid_ports = validating_ucs.number_in_range('Port Range', port, min_port, max_port)
+                                        valid_ports = validating.number_in_range('Port Range', port, min_port, max_port)
                                         if valid_ports == False:
                                             break
                                     if valid_ports == True:
@@ -7076,7 +7082,7 @@ class easy_imm_wizard(object):
                                     else:
                                         min_port = 1
                                     for port in port_list:
-                                        valid_ports = validating_ucs.number_in_range('Port Range', port, min_port, max_port)
+                                        valid_ports = validating.number_in_range('Port Range', port, min_port, max_port)
                                         if valid_ports == False:
                                             break
                                     if valid_ports == True:
@@ -7455,7 +7461,7 @@ class easy_imm_wizard(object):
                             'This should be a value between 2800 Watts and 16800 Watts. [5600]: ')
                         if templateVars["allocated_budget"] == '':
                             templateVars["allocated_budget"] = 5600
-                        valid = validating_ucs.number_in_range('Chassis Power Budget', templateVars["allocated_budget"], 2800, 16800)
+                        valid = validating.number_in_range('Chassis Power Budget', templateVars["allocated_budget"], 2800, 16800)
                 else:
                     templateVars["allocated_budget"] = 0
 
@@ -7598,7 +7604,7 @@ class easy_imm_wizard(object):
                             while valid == False:
                                 templateVars["wwnn_static"] = input(f'What is the Static WWNN you would like to assign to this SAN Policy?  ')
                                 if not templateVars["wwnn_static"] == '':
-                                    valid = validating_ucs.wwxn_address('WWNN Static', templateVars["wwnn_static"])
+                                    valid = validating.wwxn_address('WWNN Static', templateVars["wwnn_static"])
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'   BEGINNING vHBA Creation Process')
@@ -7640,7 +7646,7 @@ class easy_imm_wizard(object):
                                 templateVars[f'name_{x}'] = input(f'What is the name for Fabric {x} vHBA?  [HBA-{x}]: ')
                                 if templateVars[f'name_{x}'] == '':
                                     templateVars[f'name_{x}'] = 'HBA-%s' % (x)
-                                valid = validating_ucs.vname('vNIC Name', templateVars[f'name_{x}'])
+                                valid = validating.vname('vNIC Name', templateVars[f'name_{x}'])
 
                         valid = False
                         while valid == False:
@@ -7748,7 +7754,7 @@ class easy_imm_wizard(object):
                                         templateVars[f"uplink_port_{x}"] = 0
                                     if re.fullmatch(r'^[0-3]', str(question)):
                                         templateVars[f"uplink_port_{x}"] = question
-                                        valid = validating_ucs.number_in_range(f'Fabric {x} PCI Uplink', templateVars[f"uplink_port_{x}"], 0, 3)
+                                        valid = validating.number_in_range(f'Fabric {x} PCI Uplink', templateVars[f"uplink_port_{x}"], 0, 3)
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  Error!! Invalid Value.  Please enter 0 or 1.')
@@ -7794,7 +7800,7 @@ class easy_imm_wizard(object):
                                         templateVars["wwpn_static"] = input(f'What is the Static WWPN you would like to assign to Fabric {x}?  ')
                                     if not templateVars["wwpn_static"] == '':
                                         templateVars[f"wwpn_static_{x}"]
-                                        valid = validating_ucs.wwxn_address(f'Fabric {x} WWPN Static', templateVars["wwpn_static"])
+                                        valid = validating.wwxn_address(f'Fabric {x} WWPN Static', templateVars["wwpn_static"])
 
                         if templateVars["target_platform"] == 'FIAttached':
                             vhba_fabric_a = {
@@ -8131,7 +8137,7 @@ class easy_imm_wizard(object):
                             'This should be a value between 1024-65535. [2400]: ')
                         if templateVars["ssh_port"] == '':
                             templateVars["ssh_port"] = 2400
-                        valid = validating_ucs.number_in_range('SSH Port', templateVars["ssh_port"], 1024, 65535)
+                        valid = validating.number_in_range('SSH Port', templateVars["ssh_port"], 1024, 65535)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'   baud_rate   = "{templateVars["baud_rate"]}"')
@@ -8227,11 +8233,11 @@ class easy_imm_wizard(object):
                     while valid == False:
                         templateVars["smtp_server_address"] = input('What is the SMTP Server Address? ')
                         if re.search(r'^[a-zA-Z0-9]:', templateVars["smtp_server_address"]):
-                            valid = validating_ucs.ip_address('SMTP Server Address', templateVars["smtp_server_address"])
+                            valid = validating.ip_address('SMTP Server Address', templateVars["smtp_server_address"])
                         if re.search(r'[a-zA-Z]', templateVars["smtp_server_address"]):
-                            valid = validating_ucs.dns_name('SMTP Server Address', templateVars["smtp_server_address"])
+                            valid = validating.dns_name('SMTP Server Address', templateVars["smtp_server_address"])
                         elif re.search (r'^([0-9]{1,3}\.){3}[0-9]{1,3}$'):
-                            valid = validating_ucs.ip_address('SMTP Server Address', templateVars["smtp_server_address"])
+                            valid = validating.ip_address('SMTP Server Address', templateVars["smtp_server_address"])
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  "{templateVars["smtp_server_address"]}" is not a valid address.')
@@ -8246,7 +8252,7 @@ class easy_imm_wizard(object):
                         if templateVars["smtp_port"] == '':
                             templateVars["smtp_port"] = 25
                         if re.search(r'[\d]+', str(templateVars["smtp_port"])):
-                            valid = validating_ucs.number_in_range('SMTP Port', templateVars["smtp_port"], 1, 65535)
+                            valid = validating.number_in_range('SMTP Port', templateVars["smtp_port"], 1, 65535)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  "{templateVars["smtp_port"]}" is not a valid port.')
@@ -8273,7 +8279,7 @@ class easy_imm_wizard(object):
                             templateVars["smtp_alert_sender_address"] = ''
                             valid = True
                         else:
-                            valid = validating_ucs.email('SMTP Alert Sender Address', templateVars["smtp_alert_sender_address"])
+                            valid = validating.email('SMTP Alert Sender Address', templateVars["smtp_alert_sender_address"])
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  List of email addresses that will receive notifications for faults.')
@@ -8282,7 +8288,7 @@ class easy_imm_wizard(object):
                     valid = False
                     while valid == False:
                         mail_recipient = input(f'What is address you would like to send these notifications to?  ')
-                        valid_email = validating_ucs.email('Mail Alert Recipient', mail_recipient)
+                        valid_email = validating.email('Mail Alert Recipient', mail_recipient)
                         if valid_email == True:
                             templateVars["mail_alert_recipients"].append(mail_recipient)
                             valid_answer = False
@@ -8396,7 +8402,7 @@ class easy_imm_wizard(object):
                         if templateVars["port"] == '':
                             templateVars["port"] = 161
                         if re.search(r'[0-9]{1,4}', str(templateVars["port"])):
-                            valid = validating_ucs.snmp_port('SNMP Port', templateVars["port"], 1, 65535)
+                            valid = validating.snmp_port('SNMP Port', templateVars["port"], 1, 65535)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
@@ -8409,14 +8415,14 @@ class easy_imm_wizard(object):
                             'What is the Contact person responsible for the SNMP implementation?  [UCS Admins]: ')
                         if templateVars["system_contact"] == '':
                             templateVars["system_contact"] = 'UCS Admins'
-                        valid = validating_ucs.string_length('System Contact', templateVars["system_contact"], 1, 64)
+                        valid = validating.string_length('System Contact', templateVars["system_contact"], 1, 64)
 
                     valid = False
                     while valid == False:
                         templateVars["system_location"] = input(f'What is the Location of the host on which the SNMP agent (server) runs?  [Data Center]: ')
                         if templateVars["system_location"] == '':
                             templateVars["system_location"] = 'Data Center'
-                        valid = validating_ucs.string_length('System Location', templateVars["system_location"], 1, 64)
+                        valid = validating.string_length('System Location', templateVars["system_location"], 1, 64)
 
                     templateVars["access_community_string"] = ''
                     valid = False
@@ -8425,9 +8431,9 @@ class easy_imm_wizard(object):
                         if question == 'Y':
                             input_valid = False
                             while input_valid == False:
-                                input_string = getpass.getpass(f'What is your SNMP Access Community String? ')
+                                input_string = stdiomask.getpass(f'What is your SNMP Access Community String? ')
                                 if not input_string == '':
-                                    input_valid = validating_ucs.snmp_string('SNMP Access Community String', input_string)
+                                    input_valid = validating.snmp_string('SNMP Access Community String', input_string)
                                 else:
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Access Community String.')
@@ -8461,9 +8467,9 @@ class easy_imm_wizard(object):
                         if question == 'Y':
                             input_valid = False
                             while input_valid == False:
-                                input_string = getpass.getpass(f'What is your SNMP Trap Community String? ')
+                                input_string = stdiomask.getpass(f'What is your SNMP Trap Community String? ')
                                 if not input_string == '':
-                                    input_valid = validating_ucs.snmp_string('SNMP Trap Community String', input_string)
+                                    input_valid = validating.snmp_string('SNMP Trap Community String', input_string)
                                 else:
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Trap Community String.')
@@ -8489,7 +8495,7 @@ class easy_imm_wizard(object):
                             while input_valid == False:
                                 input_string = input(f'What is the SNMP Engine Input ID? ')
                                 if not input_string == '':
-                                    input_valid = validating_ucs.string_length('SNMP Engine Input ID', input_string, 1, 27)
+                                    input_valid = validating.string_length('SNMP Engine Input ID', input_string, 1, 27)
                                 else:
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Engine Input ID.')
@@ -8515,7 +8521,7 @@ class easy_imm_wizard(object):
                                 while valid == False:
                                     snmp_user = input(f'What is your SNMPv3 username? ')
                                     if not snmp_user == '':
-                                        valid = validating_ucs.snmp_string('SNMPv3 User', snmp_user)
+                                        valid = validating.snmp_string('SNMPv3 User', snmp_user)
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
@@ -8540,9 +8546,9 @@ class easy_imm_wizard(object):
                                 if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
                                     valid = False
                                     while valid == False:
-                                        auth_password = getpass.getpass(f'What is the authorization password for {snmp_user}? ')
+                                        auth_password = stdiomask.getpass(f'What is the authorization password for {snmp_user}? ')
                                         if not auth_password == '':
-                                            valid = validating_ucs.snmp_string('SNMPv3 Authorization Password', auth_password)
+                                            valid = validating.snmp_string('SNMPv3 Authorization Password', auth_password)
                                         else:
                                             print(f'\n-------------------------------------------------------------------------------------------\n')
                                             print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
@@ -8561,9 +8567,9 @@ class easy_imm_wizard(object):
 
                                     valid = False
                                     while valid == False:
-                                        privacy_password = getpass.getpass(f'What is the privacy password for {snmp_user}? ')
+                                        privacy_password = stdiomask.getpass(f'What is the privacy password for {snmp_user}? ')
                                         if not privacy_password == '':
-                                            valid = validating_ucs.snmp_string('SNMPv3 Privacy Password', privacy_password)
+                                            valid = validating.snmp_string('SNMPv3 Privacy Password', privacy_password)
                                         else:
                                             print(f'\n-------------------------------------------------------------------------------------------\n')
                                             print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
@@ -8672,9 +8678,9 @@ class easy_imm_wizard(object):
                                 if snmp_version == 'V2':
                                     valid = False
                                     while valid == False:
-                                        community_string = getpass.getpass(f'What is the Community String for the Destination? ')
+                                        community_string = stdiomask.getpass(f'What is the Community String for the Destination? ')
                                         if not community_string == '':
-                                            valid = validating_ucs.snmp_string('SNMP Community String', community_string)
+                                            valid = validating.snmp_string('SNMP Community String', community_string)
                                         else:
                                             print(f'\n-------------------------------------------------------------------------------------------\n')
                                             print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Community String.')
@@ -8705,9 +8711,9 @@ class easy_imm_wizard(object):
                                     if not destination_address == '':
                                         if re.search(r'^[0-9a-fA-F]+[:]+[0-9a-fA-F]$', destination_address) or \
                                             re.search(r'^(\d{1,3}\.){3}\d{1,3}$', destination_address):
-                                            valid = validating_ucs.ip_address('SNMP Trap Destination', destination_address)
+                                            valid = validating.ip_address('SNMP Trap Destination', destination_address)
                                         else:
-                                            valid = validating_ucs.dns_name('SNMP Trap Destination', destination_address)
+                                            valid = validating.dns_name('SNMP Trap Destination', destination_address)
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Trap Destination Hostname/Address.')
@@ -8719,7 +8725,7 @@ class easy_imm_wizard(object):
                                     if port == '':
                                         port = 162
                                     if re.search(r'[0-9]{1,4}', str(port)):
-                                        valid = validating_ucs.snmp_port('SNMP Port', port, 1, 65535)
+                                        valid = validating.snmp_port('SNMP Port', port, 1, 65535)
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
@@ -8933,7 +8939,7 @@ class easy_imm_wizard(object):
                         if templateVars["ssh_port"] == '':
                             templateVars["ssh_port"] = 22
                         if re.search(r'[\d]+', str(templateVars["ssh_port"])):
-                            valid = validating_ucs.number_in_range('SSH Port', templateVars["ssh_port"], 1, 65535)
+                            valid = validating.number_in_range('SSH Port', templateVars["ssh_port"], 1, 65535)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  "{templateVars["ssh_port"]}" is not a valid port.')
@@ -8948,7 +8954,7 @@ class easy_imm_wizard(object):
                         if templateVars["ssh_timeout"] == '':
                             templateVars["ssh_timeout"] = 1800
                         if re.search(r'[\d]+', str(templateVars["ssh_timeout"])):
-                            valid = validating_ucs.number_in_range('SSH Timeout', templateVars["ssh_timeout"], 60, 10800)
+                            valid = validating.number_in_range('SSH Timeout', templateVars["ssh_timeout"], 60, 10800)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  "{templateVars["ssh_timeout"]}" is not a valid value.  Must be between 60 and 10800')
@@ -9201,9 +9207,9 @@ class easy_imm_wizard(object):
                         while valid == False:
                             hostname = input(f'Enter the Hostname/IP Address of the Remote Server: ')
                             if re.search(r'[a-zA-Z]+', hostname):
-                                valid = validating_ucs.dns_name('Remote Logging Server', hostname)
+                                valid = validating.dns_name('Remote Logging Server', hostname)
                             else:
-                                valid = validating_ucs.ip_address('Remote Logging Server', hostname)
+                                valid = validating.ip_address('Remote Logging Server', hostname)
 
                         jsonVars = jsonData['components']['schemas']['syslog.RemoteClientBase']['allOf'][1]['properties']
                         templateVars["var_description"] = jsonVars['MinSeverity']['description']
@@ -9224,7 +9230,7 @@ class easy_imm_wizard(object):
                             if port == '':
                                 port = 514
                             if re.search(r'[0-9]{1,4}', str(port)):
-                                valid = validating_ucs.number_in_range('Port', port, 1, 65535)
+                                valid = validating.number_in_range('Port', port, 1, 65535)
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
@@ -10476,21 +10482,21 @@ class easy_imm_wizard(object):
                         templateVars['prefix'] = input(f'\nWhat is the UUID Prefix you would like to assign to the Pool?  [000025B5-0000-0000]: ')
                         if templateVars['prefix'] == '':
                             templateVars['prefix'] = '000025B5-0000-0000'
-                        valid = validating_ucs.uuid_suffix('UUID Pool From', templateVars['prefix'])
+                        valid = validating.uuid_suffix('UUID Pool From', templateVars['prefix'])
 
                     valid = False
                     while valid == False:
                         pool_from = input(f'\nWhat is the first Suffix in the Block?  [0000-000000000000]: ')
                         if pool_from == '':
                             pool_from = '0000-000000000000'
-                        valid = validating_ucs.uuid_suffix('UUID Pool From', pool_from)
+                        valid = validating.uuid_suffix('UUID Pool From', pool_from)
 
                     valid = False
                     while valid == False:
                         pool_size = input(f'\nWhat is the size of the Block?  [512]: ')
                         if pool_size == '':
                             pool_size = '512'
-                        valid_size = validating_ucs.number_in_range('UUID Pool Size', pool_size, 1, 1000)
+                        valid_size = validating.number_in_range('UUID Pool Size', pool_size, 1, 1000)
 
                     templateVars["uuid_blocks"] = [
                         {
@@ -10626,7 +10632,7 @@ class easy_imm_wizard(object):
                         'This should be a value between 1024-65535. [2068]: ')
                     if templateVars["remote_port"] == '':
                         templateVars["remote_port"] = 2068
-                    valid = validating_ucs.number_in_range('Remote Port', templateVars["remote_port"], 1, 65535)
+                    valid = validating.number_in_range('Remote Port', templateVars["remote_port"], 1, 65535)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'   description               = "{templateVars["descr"]}"')
@@ -10802,13 +10808,13 @@ class easy_imm_wizard(object):
                                 while valid == False:
                                     Question = input(f'What is the file Location? ')
                                     if not Question == '':
-                                        varName = 'File Location'
+                                        templateVars["varName"] = 'File Location'
                                         varValue = Question
                                         if re.search('(http|https)', Protocol):
-                                            valid = validating_ucs.url(varName, varValue)
+                                            valid = validating.url(templateVars["varName"], varValue)
                                         else:
                                             varValue = 'http://%s' % (Question)
-                                            valid = validating_ucs.url(varName, varValue)
+                                            valid = validating.url(templateVars["varName"], varValue)
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  Error!! Invalid Value.  Please Re-enter the LDAP Group.')
@@ -10821,11 +10827,11 @@ class easy_imm_wizard(object):
                                 while valid == False:
                                     Question = input(f'What is the Username you would like to configure for Authentication? [press enter for no username]: ')
                                     if not Question == '':
-                                        minLength = 1
-                                        maxLength = 255
-                                        varName = 'Username'
+                                        templateVars["minLength"] = 1
+                                        templateVars["maxLength"] = 255
+                                        templateVars["varName"] = 'Username'
                                         varValue = Question
-                                        valid = validating_ucs.string_length(varName, varValue, minLength, maxLength)
+                                        valid = validating.string_length(templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
                                     if Question == '':
                                         valid = True
                                     else:
@@ -10839,13 +10845,13 @@ class easy_imm_wizard(object):
                                 if not Username == '':
                                     valid = False
                                     while valid == False:
-                                        Password = getpass.getpass(prompt='What is the password for authentication? ')
-                                        minLength = 1
-                                        maxLength = 255
+                                        Password = stdiomask.getpass(prompt='What is the password for authentication? ')
+                                        templateVars["minLength"] = 1
+                                        templateVars["maxLength"] = 255
                                         rePattern = '^[\\S]+$'
-                                        varName = 'Password'
+                                        templateVars["varName"] = 'Password'
                                         varValue = Password
-                                        valid_passphrase = validating_ucs.length_and_regex_sensitive(rePattern, varName, varValue, minLength, maxLength)
+                                        valid_passphrase = validating.length_and_regex_sensitive(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
                                         if valid_passphrase == True:
                                             env_password = 'TF_VAR_vmedia_password_%s' % (inner_loop_count)
                                             os.environ[env_password] = '%s' % (Password)
@@ -10908,11 +10914,11 @@ class easy_imm_wizard(object):
                                                 if Question == '':
                                                     Question = 2049
                                                 if re.fullmatch(r'^[0-9]{1,4}$', str(Question)):
-                                                    minNum = 1
-                                                    maxNum = 65535
-                                                    varName = 'NFS Port'
+                                                    templateVars["minNum"] = 1
+                                                    templateVars["maxNum"] = 65535
+                                                    templateVars["varName"] = 'NFS Port'
                                                     varValue = Question
-                                                    valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+                                                    valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
                                             port = 'port=%s' % (Question)
                                             mount_output.remove(x)
                                             mount_output.append(port)
@@ -10923,11 +10929,11 @@ class easy_imm_wizard(object):
                                                 if Question == '':
                                                     Question = 2
                                                 if re.fullmatch(r'^[0-9]{1,4}$', str(Question)):
-                                                    minNum = 1
-                                                    maxNum = 65535
-                                                    varName = 'NFS Port'
+                                                    templateVars["minNum"] = 1
+                                                    templateVars["maxNum"] = 65535
+                                                    templateVars["varName"] = 'NFS Port'
                                                     varValue = Question
-                                                    valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+                                                    valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
                                             retry = 'retry=%s' % (Question)
                                             mount_output.remove(x)
                                             mount_output.append(retry)
@@ -10938,11 +10944,11 @@ class easy_imm_wizard(object):
                                                 if Question == '':
                                                     Question = 600
                                                 if re.fullmatch(r'^[0-9]{1,4}$', str(Question)):
-                                                    minNum = 60
-                                                    maxNum = 600
-                                                    varName = 'NFS timeo'
+                                                    templateVars["minNum"] = 60
+                                                    templateVars["maxNum"] = 600
+                                                    templateVars["varName"] = 'NFS timeo'
                                                     varValue = Question
-                                                    valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+                                                    valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
                                             timeo = 'timeo=%s' % (Question)
                                             mount_output.remove(x)
                                             mount_output.append(timeo)
@@ -10953,12 +10959,12 @@ class easy_imm_wizard(object):
                                                 if Question == '':
                                                     Question = 1024
                                                 if re.fullmatch(r'^[0-9]{4,7}$', str(Question)):
-                                                    minNum = 1024
-                                                    maxNum = 1048576
-                                                    varName = 'NFS timeo'
+                                                    templateVars["minNum"] = 1024
+                                                    templateVars["maxNum"] = 1048576
+                                                    templateVars["varName"] = 'NFS timeo'
                                                     varValue = Question
                                                     validCount = 0
-                                                    validNum = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+                                                    validNum = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
                                                     if validNum == True:
                                                         validCount += 1
                                                     if int(Question) % 1024 == 0:
@@ -11175,7 +11181,7 @@ class easy_imm_wizard(object):
                         vlan_list_expanded = vlan_list_full(vlan_list)
                         valid_vlan = True
                         for vlan in vlan_list_expanded:
-                            valid_vlan = validating_ucs.number_in_range('VLAN ID', vlan, 1, 4094)
+                            valid_vlan = validating.number_in_range('VLAN ID', vlan, 1, 4094)
                             if valid_vlan == False:
                                 break
                         native_count = 0
@@ -11186,10 +11192,10 @@ class easy_imm_wizard(object):
                             while valid_name == False:
                                 if len(vlan_list_expanded) == 1:
                                     vlan_name = '%s' % (input(f'Enter the Name you want to assign to "{vlan_list}": '))
-                                    valid_name = validating_ucs.name_rule('VLAN Name', vlan_name, 1, 62)
+                                    valid_name = validating.name_rule('VLAN Name', vlan_name, 1, 62)
                                 else:
                                     vlan_name = '%s' % (input(f'Enter the Prefix Name you want to assign to "{vlan_list}": '))
-                                    valid_name = validating_ucs.name_rule('VLAN Name', vlan_name, 1, 55)
+                                    valid_name = validating.name_rule('VLAN Name', vlan_name, 1, 55)
                             native_vlan = input('Do you want to configure one of the VLANs as a Native VLAN? [press enter to skip]:')
                         if not native_vlan == '' and valid_vlan == True:
                             for vlan in vlan_list_expanded:
@@ -11201,7 +11207,7 @@ class easy_imm_wizard(object):
                                     native_name = '%s' % (input(f'Enter the Name to assign to the Native VLAN {native_vlan}.  [default]: '))
                                     if native_name == '':
                                         native_name = 'default'
-                                    valid_name = validating_ucs.name_rule('VLAN Name', vlan_name, 1, 62)
+                                    valid_name = validating.name_rule('VLAN Name', vlan_name, 1, 62)
                                 valid = True
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -11380,7 +11386,7 @@ class easy_imm_wizard(object):
                             elif vsan_id == '':
                                 vsan_id = 200
                             if re.search(r'[0-9]{1,4}', str(vsan_id)):
-                                valid = validating_ucs.number_in_range('VSAN ID', vsan_id, 1, 4094)
+                                valid = validating.number_in_range('VSAN ID', vsan_id, 1, 4094)
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Invalid Entry!  Please Enter a VSAN ID in the range of 1-4094.')
@@ -11392,7 +11398,7 @@ class easy_imm_wizard(object):
                             if fcoe_id == '':
                                 fcoe_id = vsan_id
                             if re.search(r'[0-9]{1,4}', str(fcoe_id)):
-                                valid_vlan = validating_ucs.number_in_range('VSAN ID', fcoe_id, 1, 4094)
+                                valid_vlan = validating.number_in_range('VSAN ID', fcoe_id, 1, 4094)
                                 if valid_vlan == True:
                                     policy_list = [
                                         'policies_vlans.vlan_policies.vlan_policy',
@@ -11444,7 +11450,7 @@ class easy_imm_wizard(object):
                                 vsan_name = 'VSAN-A'
                             elif vsan_name == '':
                                 vsan_name = 'VSAN-B'
-                            valid = validating_ucs.name_rule('VSAN Name', vsan_name, 1, 62)
+                            valid = validating.name_rule('VSAN Name', vsan_name, 1, 62)
 
                         vsan = {
                             'fcoe_vlan_id':fcoe_id,
@@ -11611,14 +11617,14 @@ class easy_imm_wizard(object):
                         begin = input('What is the Beginning WWNN Address to Assign to the Pool?  [20:00:00:25:B5:00:00:00]: ')
                         if begin == '':
                             begin = '20:00:00:25:B5:00:00:00'
-                        valid = validating_ucs.wwxn_address('WWNN Pool Address', begin)
+                        valid = validating.wwxn_address('WWNN Pool Address', begin)
 
                     valid = False
                     while valid == False:
                         pool_size = input('How Many WWNN Addresses should be added to the Pool?  Range is 1-1000 [512]: ')
                         if pool_size == '':
                             pool_size = '512'
-                        valid = validating_ucs.number_in_range('Pool Size', pool_size, 1, 1000)
+                        valid = validating.number_in_range('Pool Size', pool_size, 1, 1000)
 
                     begin = begin.upper()
                     beginx = int(begin.replace(':', ''), 16)
@@ -11750,14 +11756,14 @@ class easy_imm_wizard(object):
                                 begin = '20:00:00:25:B5:0A:00:00'
                             else:
                                 begin = '20:00:00:25:B5:0B:00:00'
-                        valid = validating_ucs.wwxn_address('WWPN Pool Address', begin)
+                        valid = validating.wwxn_address('WWPN Pool Address', begin)
 
                     valid = False
                     while valid == False:
                         pool_size = input('How Many WWPN Addresses should be added to the Pool?  Range is 1-1000 [512]: ')
                         if pool_size == '':
                             pool_size = '512'
-                        valid = validating_ucs.number_in_range('Pool Size', pool_size, 1, 1000)
+                        valid = validating.number_in_range('Pool Size', pool_size, 1, 1000)
 
                     begin = begin.upper()
                     beginx = int(begin.replace(':', ''), 16)
@@ -12012,10 +12018,10 @@ def policies_parse(org, policy_type, policy):
 def policy_descr(name, policy_type):
     valid = False
     while valid == False:
-        descr = input(f'What is the Description for the {policy_type}?  [{name} {policy_type}]: ')
+        descr = input(f'What is the templateVars["Description"] for the {policy_type}?  [{name} {policy_type}]: ')
         if descr == '':
             descr = '%s %s' % (name, policy_type)
-        valid = validating_ucs.description(f'{policy_type} Description', descr, 1, 62)
+        valid = validating.description(f'{policy_type} templateVars["Description"]', descr, 1, 62)
         if valid == True:
             return descr
 
@@ -12088,7 +12094,7 @@ def policy_name(namex, policy_type):
         name = input(f'What is the Name for the {policy_type}?  [{namex}]: ')
         if name == '':
             name = '%s' % (namex)
-        valid = validating_ucs.name_rule(f'{policy_type} Name', name, 1, 62)
+        valid = validating.name_rule(f'{policy_type} Name', name, 1, 62)
         if valid == True:
             return name
 
@@ -12281,7 +12287,7 @@ def variablesFromAPI(**templateVars):
                             break
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'{templateVars["var_description"]}')
-        print(f'\n     Select an Option Below:')
+        print(f'\n    Select an Option Below:')
         for index, value in enumerate(json_vars):
             index += 1
             if value == templateVars["defaultVar"]:
@@ -12332,17 +12338,17 @@ def variablesFromAPI(**templateVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return selection
 
-def varBoolLoop(Description, varDefault, varInput, varName):
+def varBoolLoop(**templateVars):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  {Description}')
+    print(f'  {templateVars["Description"]}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{varInput}  [{varDefault}]: ')
+        varValue = input(f'{templateVars["varInput"]}  [{templateVars["varDefault"]}]: ')
         if varValue == '':
-            if varDefault == 'Y':
+            if templateVars["varDefault"] == 'Y':
                 varValue = True
-            elif varDefault == 'N':
+            elif templateVars["varDefault"] == 'N':
                 varValue = False
             valid = True
         elif varValue == 'N':
@@ -12353,57 +12359,60 @@ def varBoolLoop(Description, varDefault, varInput, varName):
             valid = True
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {varName} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
+            print(f'   {templateVars["varName"]} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def varNumberLoop(Description, varDefault, varInput, varName, minNum, maxNum):
+def varNumberLoop(**templateVars):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  {Description}')
+    print(f'  {templateVars["Description"]}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{varInput}  [{varDefault}]: ')
+        varValue = input(f'{templateVars["varInput"]}  [{templateVars["varDefault"]}]: ')
         if varValue == '':
-            varValue = varDefault
+            varValue = templateVars["varDefault"]
         if re.fullmatch(r'^[0-9]+$', str(varValue)):
-            valid = validating_ucs.number_in_range(varName, varValue, minNum, maxNum)
+            valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {varName} value of "{varValue}" is Invalid!!! ')
-            print(f'   Valid range is {minNum} to {maxNum}.')
+            print(f'   {templateVars["varName"]} value of "{varValue}" is Invalid!!! ')
+            print(f'   Valid range is {templateVars["minNum"]} to {templateVars["maxNum"]}.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def varSensitiveStringLoop(Description, varInput, varName, varRegex, minLength, maxLength):
+def varSensitiveStringLoop(**templateVars):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  {Description}')
+    print(f'  {templateVars["Description"]}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = getpass.getpass(f'{varInput} ')
+        varValue = stdiomask.getpass(f'{templateVars["varInput"]} ')
         if not varValue == '':
-            valid = validating_ucs.length_and_regex_sensitive(varRegex, varName, varValue, minLength, maxLength)
+            valid = validating.length_and_regex_sensitive(templateVars["varRegex"], templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {varName} value is Invalid!!! ')
+            print(f'   {templateVars["varName"]} value is Invalid!!! ')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def varStringLoop(Description, varInput, varName, varRegex, minLength, maxLength):
+def varStringLoop(**templateVars):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  {Description}')
+    print(f'  {templateVars["Description"]}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{varInput} ')
-        if 'press enter to skip' in varInput and varValue == '':
+        varValue = input(f'{templateVars["varInput"]} ')
+        if 'press enter to skip' in templateVars["varInput"] and varValue == '':
+            valid = True
+        elif not templateVars["varDefault"] == '' and varValue == '':
+            varValue = templateVars["varDefault"]
             valid = True
         elif not varValue == '':
-            valid = validating_ucs.length_and_regex(varRegex, varName, varValue, minLength, maxLength)
+            valid = validating.length_and_regex(templateVars["varRegex"], templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {varName} value of "{varValue}" is Invalid!!! ')
+            print(f'   {templateVars["varName"]} value of "{varValue}" is Invalid!!! ')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
