@@ -1530,7 +1530,7 @@ class easy_imm_wizard(object):
                         ]
                         templateVars["allow_opt_out"] = False
                         for policy in policy_list:
-                            vlan_policy,policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                            vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         vlan_list = []
                         for item in policyData['vlan_policies']:
                             for key, value in item.items():
@@ -1953,7 +1953,7 @@ class easy_imm_wizard(object):
                             ]
                             templateVars["allow_opt_out"] = False
                             for policy in policy_list:
-                                system_qos_policy,policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                system_qos_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
 
                     mtu = policyData['system_qos_policies'][0][system_qos_policy][0]['classes'][0][templateVars["priority"]][0]['mtu']
                     templateVars["mtu"] = mtu
@@ -2186,7 +2186,7 @@ class easy_imm_wizard(object):
                                 ]
                                 templateVars["allow_opt_out"] = False
                                 for policy in policy_list:
-                                    vsan_policy,policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                    vsan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
 
                                 vsan_list = []
                                 for item in policyData['vsan_policies']:
@@ -2517,7 +2517,7 @@ class easy_imm_wizard(object):
                 ]
                 templateVars["allow_opt_out"] = False
                 for policy in policy_list:
-                    templateVars["inband_ip_pool"],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                    templateVars["inband_ip_pool"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
 
                 valid = False
                 while valid == False:
@@ -2530,7 +2530,7 @@ class easy_imm_wizard(object):
                             ]
                             templateVars["allow_opt_out"] = False
                             for policy in policy_list:
-                                vlan_policy,policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                             vlan_list = []
                             for item in policyData['vlan_policies']:
                                 for key, value in item.items():
@@ -3038,6 +3038,40 @@ class easy_imm_wizard(object):
         write_to_template(self, **templateVars)
 
     #========================================
+    # Intersight Module
+    #========================================
+    def intersight(self, jsonData, easy_jsonData, tfcb_config):
+        name_prefix = self.name_prefix
+        name_suffix = 'intersight'
+        org = self.org
+        policy_type = 'Intersight'
+        templateVars = {}
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'intersight'
+        policyVar = self.type
+
+        templateVars["tfc_organization"] = tfcb_config[0]['tfc_organization']
+        templateVars["org"] = org
+
+        if policyVar == 'policies':
+            templateVars["ws_pools"] = tfcb_config[0]['pools']
+            templateVars["ws_ucs_chassis_profiles"] = tfcb_config[0]['ucs_chassis_profiles']
+            templateVars["ws_ucs_domain_profiles"] = tfcb_config[0]['ucs_domain_profiles']
+            templateVars["ws_ucs_server_profiles"] = tfcb_config[0]['ucs_server_profiles']
+        elif policyVar == 'policies_vlans':
+            templateVars["ws_ucs_domain_profiles"] = tfcb_config[0]['ucs_domain_profiles']
+
+        templateVars["tags"] = '[{ key = "Module", value = "terraform-intersight-easy-imm" }, { key = "Version", value = "'f'{easy_jsonData["version"]}''" }]'
+
+        # Write Policies to Template File
+        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+        write_to_template(self, **templateVars)
+
+    #========================================
     # IQN Pools Module
     #========================================
     def iqn_pools(self, jsonData, easy_jsonData):
@@ -3377,7 +3411,7 @@ class easy_imm_wizard(object):
                         templateVars["allow_opt_out"] = False
                         for policy in policy_list:
                             policy_short = policy.split('.')[2]
-                            templateVars["primary_target_policy"],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                            templateVars["primary_target_policy"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                             templateVars.update(policyData)
 
                         templateVars["optional_message"] = '  !!! Optionally Select the Secondary Static Target or enter 100 for no Secondary !!!\n'
@@ -3387,7 +3421,7 @@ class easy_imm_wizard(object):
                         templateVars["allow_opt_out"] = True
                         for policy in policy_list:
                             policy_short = policy.split('.')[2]
-                            templateVars["secondary_target_policy"],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                            templateVars["secondary_target_policy"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                             templateVars.update(policyData)
 
                         templateVars.pop("optional_message")
@@ -3407,7 +3441,7 @@ class easy_imm_wizard(object):
                             templateVars["allow_opt_out"] = False
                             for policy in policy_list:
                                 policy_short = policy.split('.')[2]
-                                templateVars['ip_pool'],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                templateVars['ip_pool'],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                 templateVars.update(policyData)
                             templateVars.pop("optional_message")
 
@@ -3514,7 +3548,7 @@ class easy_imm_wizard(object):
                     templateVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                        templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         templateVars.update(policyData)
 
 
@@ -5897,7 +5931,7 @@ class easy_imm_wizard(object):
                                         templateVars["allow_opt_out"] = False
                                         for policy in policy_list:
                                             policy_short = policy.split('.')[2]
-                                            templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                            templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                             templateVars.update(policyData)
 
                                         interfaces = []
@@ -6054,7 +6088,7 @@ class easy_imm_wizard(object):
                                         templateVars["allow_opt_out"] = True
                                         for policy in policy_list:
                                             policy_short = policy.split('.')[2]
-                                            templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                            templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                             templateVars.update(policyData)
 
                                         interfaces = []
@@ -6197,7 +6231,7 @@ class easy_imm_wizard(object):
                                 ]
                                 templateVars["allow_opt_out"] = False
                                 for policy in policy_list:
-                                    vsan_policy,policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                    vsan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
 
                                 vsan_list = []
                                 for item in policyData['vsan_policies']:
@@ -6374,7 +6408,7 @@ class easy_imm_wizard(object):
                                         templateVars["allow_opt_out"] = True
                                         for policy in policy_list:
                                             policy_short = policy.split('.')[2]
-                                            templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                            templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                             templateVars.update(policyData)
 
                                         interfaces = []
@@ -6544,7 +6578,7 @@ class easy_imm_wizard(object):
                                         for policy in policy_list:
                                             policy_short = policy.split('.')[2]
                                             templateVars[policy_short],
-                                            policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                            policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                             templateVars.update(policyData)
 
                                         port_role = {
@@ -6693,7 +6727,7 @@ class easy_imm_wizard(object):
                                         for policy in policy_list:
                                             policy_short = policy.split('.')[2]
                                             templateVars[policy_short],
-                                            policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                            policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                             templateVars.update(policyData)
 
                                         port_role = {
@@ -6809,7 +6843,7 @@ class easy_imm_wizard(object):
                                 ]
                                 templateVars["allow_opt_out"] = False
                                 for policy in policy_list:
-                                    vsan_policy,policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                    vsan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
 
                                 vsan_list = []
                                 for item in policyData['vsan_policies']:
@@ -6973,7 +7007,7 @@ class easy_imm_wizard(object):
                                         for policy in policy_list:
                                             policy_short = policy.split('.')[2]
                                             templateVars[policy_short],
-                                            policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                            policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                             templateVars.update(policyData)
 
                                         port_role = {
@@ -7601,7 +7635,7 @@ class easy_imm_wizard(object):
                             ]
                             templateVars["allow_opt_out"] = False
                             for policy in policy_list:
-                                templateVars["wwnn_pool"],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                templateVars["wwnn_pool"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                 templateVars.update(policyData)
 
                         else:
@@ -7628,7 +7662,7 @@ class easy_imm_wizard(object):
                         templateVars["allow_opt_out"] = False
                         for policy in policy_list:
                             policy_short = policy.split('.')[2]
-                            templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                            templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                             templateVars.update(policyData)
 
                         for x in fabrics:
@@ -7640,7 +7674,7 @@ class easy_imm_wizard(object):
                             for policy in policy_list:
                                 policy_short = item.split('.')[2]
                                 templateVars[f"{policy_short}_{x}"],
-                                policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                 templateVars.update(policyData)
 
                         templateVars["name"] = temp_policy_name
@@ -7795,7 +7829,7 @@ class easy_imm_wizard(object):
                                     for policy in policy_list:
                                         policy_short = policy.split('.')[2]
                                         templateVars[f'{policy_short}_{x}'],
-                                        policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                        policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                         templateVars.update(policyData)
 
                             else:
@@ -9694,7 +9728,7 @@ class easy_imm_wizard(object):
                     templateVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                        templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         templateVars.update(policyData)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -9828,7 +9862,7 @@ class easy_imm_wizard(object):
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
                         if re.search(r'(switch_control|system_qos)', policy):
-                            templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                            templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         else:
                             templateVars[policy_short],policyData = policy_select_loop(policy_prefix, policy, **templateVars)
                         templateVars.update(policyData)
@@ -9853,11 +9887,11 @@ class easy_imm_wizard(object):
                         # templateVars["policy"] = '%s Fabric A' % (policy_description)
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  !!! Select the {policy_description} for Fabric A !!!')
-                        fabric_a,policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                        fabric_a,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         # templateVars["policy"] = '%s Fabric B' % (policy_description)
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  !!! Select the {policy_description} for Fabric B !!!')
-                        fabric_b,policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                        fabric_b,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         templateVars[policy_long].update({'fabric_a':fabric_a})
                         templateVars[policy_long].update({'fabric_b':fabric_b})
                         if policy_long == 'port_policies':
@@ -10003,7 +10037,7 @@ class easy_imm_wizard(object):
                         templateVars["allow_opt_out"] = False
                         for policy in policy_list:
                             policy_short = policy.split('.')[2]
-                            templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                            templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                             templateVars.update(policyData)
                             server_template = True
                             valid = True
@@ -10106,7 +10140,7 @@ class easy_imm_wizard(object):
                     templateVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                        templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         templateVars.update(policyData)
 
                 if templateVars["serial_number"] == '':
@@ -10330,7 +10364,7 @@ class easy_imm_wizard(object):
                     templateVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                        templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         templateVars.update(policyData)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -11236,7 +11270,7 @@ class easy_imm_wizard(object):
                 templateVars["allow_opt_out"] = False
                 for policy in policy_list:
                     policy_short = policy.split('.')[2]
-                    templateVars[policy_short],policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                    templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                     templateVars.update(policyData)
 
                 if not native_vlan == '' and len(vlan_list) > 1:
@@ -11410,7 +11444,7 @@ class easy_imm_wizard(object):
                                     ]
                                     templateVars["allow_opt_out"] = False
                                     for policy in policy_list:
-                                        vlan_policy,policyData = policy_select_loop(name_prefix, policy, **templateVars)
+                                        vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                     vlan_list = []
                                     for item in policyData['vlan_policies']:
                                         for key, value in item.items():
@@ -12103,7 +12137,7 @@ def policy_name(namex, policy_type):
         if valid == True:
             return name
 
-def policy_select_loop(name_prefix, policy, **templateVars):
+def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars):
     loop_valid = False
     while loop_valid == False:
         create_policy = True
@@ -12162,104 +12196,104 @@ def policy_select_loop(name_prefix, policy, **templateVars):
             print(f'  Starting module to create {inner_policy}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             if inner_policy == 'ip_pools':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ip_pools()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ip_pools(jsonData, easy_jsonData)
             elif inner_policy == 'iqn_pools':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).iqn_pools()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).iqn_pools(jsonData, easy_jsonData)
             elif inner_policy == 'mac_pools':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).mac_pools()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).mac_pools(jsonData, easy_jsonData)
             elif inner_policy == 'uuid_pools':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).uuid_pools()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).uuid_pools(jsonData, easy_jsonData)
             elif inner_policy == 'wwnn_pools':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).wwnn_pools()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).wwnn_pools(jsonData, easy_jsonData)
             elif inner_policy == 'wwpn_pools':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).wwpn_pools()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).wwpn_pools(jsonData, easy_jsonData)
             elif inner_policy == 'adapter_configuration_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).adapter_configuration_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).adapter_configuration_policies(jsonData, easy_jsonData)
             elif inner_policy == 'bios_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).bios_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).bios_policies(jsonData, easy_jsonData)
             elif inner_policy == 'boot_order_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).boot_order_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).boot_order_policies(jsonData, easy_jsonData)
             elif inner_policy == 'certificate_management_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).certificate_management_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).certificate_management_policies(jsonData, easy_jsonData)
             elif inner_policy == 'device_connector_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).device_connector_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).device_connector_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ethernet_adapter_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_adapter_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_adapter_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ethernet_network_control_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_network_control_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ethernet_network_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_network_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_network_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ethernet_qos_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_qos_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_qos_policies(jsonData, easy_jsonData)
             elif inner_policy == 'fibre_channel_adapter_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).fibre_channel_adapter_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).fibre_channel_adapter_policies(jsonData, easy_jsonData)
             elif inner_policy == 'fibre_channel_network_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).fibre_channel_network_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).fibre_channel_network_policies(jsonData, easy_jsonData)
             elif inner_policy == 'fibre_channel_qos_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).fibre_channel_qos_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).fibre_channel_qos_policies(jsonData, easy_jsonData)
             elif inner_policy == 'flow_control_policies':
                 print('creating policy')
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).flow_control_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).flow_control_policies(jsonData, easy_jsonData)
             elif inner_policy == 'imc_access_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).imc_access_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).imc_access_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ipmi_over_lan_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ipmi_over_lan_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ipmi_over_lan_policies(jsonData, easy_jsonData)
             elif inner_policy == 'iscsi_adapter_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).iscsi_adapter_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).iscsi_adapter_policies(jsonData, easy_jsonData)
             elif inner_policy == 'iscsi_boot_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).iscsi_boot_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).iscsi_boot_policies(jsonData, easy_jsonData)
             elif inner_policy == 'iscsi_static_target_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).iscsi_static_target_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).iscsi_static_target_policies(jsonData, easy_jsonData)
             elif inner_policy == 'lan_connectivity_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).lan_connectivity_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).lan_connectivity_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ldap_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ldap_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ldap_policies(jsonData, easy_jsonData)
             elif inner_policy == 'link_aggregation_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).link_aggregation_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).link_aggregation_policies(jsonData, easy_jsonData)
             elif inner_policy == 'link_control_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).link_control_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).link_control_policies(jsonData, easy_jsonData)
             elif inner_policy == 'local_user_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).local_user_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).local_user_policies(jsonData, easy_jsonData)
             elif inner_policy == 'multicast_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).multicast_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).multicast_policies(jsonData, easy_jsonData)
             elif inner_policy == 'network_connectivity_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).network_connectivity_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).network_connectivity_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ntp_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ntp_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ntp_policies(jsonData, easy_jsonData)
             elif inner_policy == 'persistent_memory_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).persistent_memory_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).persistent_memory_policies(jsonData, easy_jsonData)
             elif inner_policy == 'port_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).port_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).port_policies(jsonData, easy_jsonData)
             elif inner_policy == 'san_connectivity_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).san_connectivity_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).san_connectivity_policies(jsonData, easy_jsonData)
             elif inner_policy == 'sd_card_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).sd_card_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).sd_card_policies(jsonData, easy_jsonData)
             elif inner_policy == 'serial_over_lan_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).serial_over_lan_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).serial_over_lan_policies(jsonData, easy_jsonData)
             elif inner_policy == 'smtp_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).smtp_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).smtp_policies(jsonData, easy_jsonData)
             elif inner_policy == 'snmp_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).snmp_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).snmp_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ssh_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ssh_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ssh_policies(jsonData, easy_jsonData)
             elif inner_policy == 'storage_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).storage_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).storage_policies(jsonData, easy_jsonData)
             elif inner_policy == 'switch_control_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).switch_control_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).switch_control_policies(jsonData, easy_jsonData)
             elif inner_policy == 'syslog_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).syslog_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).syslog_policies(jsonData, easy_jsonData)
             elif inner_policy == 'system_qos_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).system_qos_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData)
             elif inner_policy == 'thermal_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).thermal_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).thermal_policies(jsonData, easy_jsonData)
             elif inner_policy == 'virtual_kvm_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).virtual_kvm_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).virtual_kvm_policies(jsonData, easy_jsonData)
             elif inner_policy == 'virtual_media_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).virtual_media_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).virtual_media_policies(jsonData, easy_jsonData)
             elif inner_policy == 'vlan_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).vlan_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData)
             elif inner_policy == 'vsan_policies':
-                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).vsan_policies()
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData)
 
 def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
     dest_dir = './Intersight/%s/%s' % (templateVars["org"], dest_dir)

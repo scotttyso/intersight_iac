@@ -13,7 +13,8 @@ from pathlib import Path
 
 home = Path.home()
 
-def create_terraform_workspaces(jsonData, org):
+def create_terraform_workspaces(jsonData, easy_jsonData, org):
+    tfcb_config = []
     valid = False
     while valid == False:
         templateVars = {}
@@ -22,10 +23,12 @@ def create_terraform_workspaces(jsonData, org):
         templateVars["varDefault"] = 'Y'
         templateVars["varName"] = 'Terraform Cloud Workspaces'
         runTFCB = lib_ucs.varBoolLoop(**templateVars)
+        valid = True
     if runTFCB == True:
         templateVars = {}
         templateVars["terraform_cloud_token"] = lib_terraform.Terraform_Cloud().terraform_token()
         templateVars["tfc_organization"] = lib_terraform.Terraform_Cloud().tfc_organization(**templateVars)
+        tfcb_config.append({'tfc_organization':templateVars["tfc_organization"]})
         tfc_vcs_provider,templateVars["tfc_oath_token"] = lib_terraform.Terraform_Cloud().tfc_vcs_providers(**templateVars)
         templateVars["tfc_vcs_provider"] = tfc_vcs_provider
         templateVars["vcsBaseRepo"] = lib_terraform.Terraform_Cloud().tfc_vcs_repository(**templateVars)
@@ -84,6 +87,7 @@ def create_terraform_workspaces(jsonData, org):
             templateVars["minLength"] = 1
             templateVars["maxLength"] = 90
             templateVars["workspaceName"] = lib_ucs.varStringLoop(**templateVars)
+            tfcb_config.append({folder.split('/')[3]:templateVars["workspaceName"]})
             # templateVars["vcsBranch"] = ''
 
             templateVars['workspace_id'] = lib_terraform.Terraform_Cloud().tfcWorkspace(**templateVars)
@@ -185,10 +189,26 @@ def create_terraform_workspaces(jsonData, org):
                     templateVars["Sensitive"] = True
                     lib_terraform.Terraform_Cloud().tfcVariables(**templateVars)
 
+        tfcb_config.update({'org':org})
+        for folder in folder_list:
+            name_prefix = 'dummy'
+            type = 'pools'
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            type = 'policies'
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            type = 'policies_vlans'
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            type = 'ucs_chassis_profiles'
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            type = 'ucs_domain_profiles'
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            type = 'ucs_server_profiles'
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+
+
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
     print(f'\n-------------------------------------------------------------------------------------------\n')
-
 
 def merge_easy_imm_repository(easy_jsonData, org):
     folder_list = [
@@ -733,7 +753,7 @@ def main():
         orgs.append(org)
     for org in orgs:
         merge_easy_imm_repository(easy_jsonData, org)
-        create_terraform_workspaces(jsonData, org)
+        create_terraform_workspaces(jsonData, easy_jsonData, org)
 
 if __name__ == '__main__':
     main()
