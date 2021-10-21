@@ -3983,10 +3983,10 @@ class easy_imm_wizard(object):
                             secure_passphrase = stdiomask.getpass(prompt='What is the password of the user for initial bind process? ')
                             templateVars["minLength"] = 1
                             templateVars["maxLength"] = 254
-                            rePattern = '^[\\S]+$'
+                            templateVars["rePattern"] = '^[\\S]+$'
                             templateVars["varName"] = 'LDAP Password'
                             varValue = secure_passphrase
-                            valid_passphrase = validating.length_and_regex_sensitive(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
+                            valid_passphrase = validating.length_and_regex_sensitive(templateVars["rePattern"], templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
                             if valid_passphrase == True:
                                 os.environ['TF_VAR_binding_parameters_password'] = '%s' % (secure_passphrase)
                                 valid = True
@@ -4167,10 +4167,10 @@ class easy_imm_wizard(object):
                                     if not varGroup == '':
                                         templateVars["minLength"] = 1
                                         templateVars["maxLength"] = 127
-                                        rePattern = '^([^+\\-][a-zA-Z0-9\\=\\!\\#\\$\\%\\(\\)\\+,\\-\\.\\:\\;\\@ \\_\\{\\|\\}\\~\\?\\&]+)$'
+                                        templateVars["rePattern"] = '^([^+\\-][a-zA-Z0-9\\=\\!\\#\\$\\%\\(\\)\\+,\\-\\.\\:\\;\\@ \\_\\{\\|\\}\\~\\?\\&]+)$'
                                         templateVars["varName"] = 'LDAP Group'
                                         varValue = varGroup
-                                        valid = validating.length_and_regex(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
+                                        valid = validating.length_and_regex(templateVars["rePattern"], templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  Error!! Invalid Value.  Please Re-enter the LDAP Group.')
@@ -5497,10 +5497,15 @@ class easy_imm_wizard(object):
                                     secure_passphrase = stdiomask.getpass(prompt='Enter the Secure Passphrase: ')
                                     templateVars["minLength"] = 8
                                     templateVars["maxLength"] = 32
-                                    rePattern = '^[a-zA-Z0-9\\u0021\\&\\#\\$\\%\\+\\%\\@\\_\\*\\-\\.]+$'
+                                    templateVars["rePattern"] = '^[a-zA-Z0-9\\u0021\\&\\#\\$\\%\\+\\%\\@\\_\\*\\-\\.]+$'
                                     templateVars["varName"] = 'Secure Passphrase'
                                     varValue = secure_passphrase
-                                    valid_passphrase = validating.length_and_regex_sensitive(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
+                                    valid_passphrase = validating.length_and_regex_sensitive(templateVars["rePattern"],
+                                        templateVars["varName"],
+                                        varValue,
+                                        templateVars["minLength"],
+                                        templateVars["maxLength"]
+                                    )
 
                                 os.environ['TF_VAR_secure_passphrase'] = '%s' % (secure_passphrase)
                                 valid = True
@@ -5566,10 +5571,10 @@ class easy_imm_wizard(object):
                                     namespace_name = input('What is the Name for this Namespace? ')
                                     templateVars["minLength"] = 1
                                     templateVars["maxLength"] = 63
-                                    rePattern = '^[a-zA-Z0-9\\#\\_\\-]+$'
+                                    templateVars["rePattern"] = '^[a-zA-Z0-9\\#\\_\\-]+$'
                                     templateVars["varName"] = 'Name for the Namespace'
                                     varValue = namespace_name
-                                    valid = validating.length_and_regex(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
+                                    valid = validating.length_and_regex(templateVars["rePattern"], templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
 
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Capacity of this Namespace in gibibytes (GiB).  Range is 1-9223372036854775807')
@@ -10848,10 +10853,10 @@ class easy_imm_wizard(object):
                                         Password = stdiomask.getpass(prompt='What is the password for authentication? ')
                                         templateVars["minLength"] = 1
                                         templateVars["maxLength"] = 255
-                                        rePattern = '^[\\S]+$'
+                                        templateVars["rePattern"] = '^[\\S]+$'
                                         templateVars["varName"] = 'Password'
                                         varValue = Password
-                                        valid_passphrase = validating.length_and_regex_sensitive(rePattern, templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
+                                        valid_passphrase = validating.length_and_regex_sensitive(templateVars["rePattern"], templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
                                         if valid_passphrase == True:
                                             env_password = 'TF_VAR_vmedia_password_%s' % (inner_loop_count)
                                             os.environ[env_password] = '%s' % (Password)
@@ -12364,6 +12369,10 @@ def varBoolLoop(**templateVars):
     return varValue
 
 def varNumberLoop(**templateVars):
+    maxNum = templateVars["maxNum"]
+    minNum = templateVars["minNum"]
+    varName = templateVars["varName"]
+
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  {templateVars["Description"]}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -12373,15 +12382,20 @@ def varNumberLoop(**templateVars):
         if varValue == '':
             varValue = templateVars["varDefault"]
         if re.fullmatch(r'^[0-9]+$', str(varValue)):
-            valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
+            valid = validating.number_in_range(varName, varValue, minNum, maxNum)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {templateVars["varName"]} value of "{varValue}" is Invalid!!! ')
-            print(f'   Valid range is {templateVars["minNum"]} to {templateVars["maxNum"]}.')
+            print(f'   {varName} value of "{varValue}" is Invalid!!! ')
+            print(f'   Valid range is {minNum} to {maxNum}.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
 def varSensitiveStringLoop(**templateVars):
+    maxLength = templateVars["maxLength"]
+    minLength = templateVars["minLength"]
+    varName = templateVars["varName"]
+    varRegex = templateVars["varRegex"]
+
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  {templateVars["Description"]}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -12389,14 +12403,19 @@ def varSensitiveStringLoop(**templateVars):
     while valid == False:
         varValue = stdiomask.getpass(f'{templateVars["varInput"]} ')
         if not varValue == '':
-            valid = validating.length_and_regex_sensitive(templateVars["varRegex"], templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
+            valid = validating.length_and_regex_sensitive(varRegex, varName, varValue, minLength, maxLength)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {templateVars["varName"]} value is Invalid!!! ')
+            print(f'   {varName} value is Invalid!!! ')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
 def varStringLoop(**templateVars):
+    maxLength = templateVars["maxLength"]
+    minLength = templateVars["minLength"]
+    varName = templateVars["varName"]
+    varRegex = templateVars["varRegex"]
+
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  {templateVars["Description"]}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -12409,10 +12428,10 @@ def varStringLoop(**templateVars):
             varValue = templateVars["varDefault"]
             valid = True
         elif not varValue == '':
-            valid = validating.length_and_regex(templateVars["varRegex"], templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
+            valid = validating.length_and_regex(varRegex, varName, varValue, minLength, maxLength)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {templateVars["varName"]} value of "{varValue}" is Invalid!!! ')
+            print(f'   {varName} value of "{varValue}" is Invalid!!! ')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 

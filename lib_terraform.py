@@ -42,6 +42,119 @@ class Terraform_Cloud(object):
             searchpath=(tf_template_path + 'Terraform_Cloud/'))
         self.templateEnv = jinja2.Environment(loader=self.templateLoader)
 
+    def sensitive_var_value(self, jsonData, **templateVars):
+        sensitive_var = 'TF_VAR_%s' % (templateVars['Variable'])
+        # -------------------------------------------------------------------------------------------------------------------------
+        # Check to see if the Variable is already set in the Environment, and if not prompt the user for Input.
+        #--------------------------------------------------------------------------------------------------------------------------
+        if os.environ.get(sensitive_var) is None:
+            print(f"\n----------------------------------------------------------------------------------\n")
+            print(f"  The Script did not find {sensitive_var} as an 'environment' variable.")
+            print(f"  To not be prompted for the value of {templateVars['Variable']} each time")
+            print(f"  add the following to your local environemnt:\n")
+            print(f"   - export {sensitive_var}='{templateVars['Variable']}_value'")
+            print(f"\n----------------------------------------------------------------------------------\n")
+
+        if os.environ.get(sensitive_var) is None:
+            valid = False
+            while valid == False:
+                varValue = input('press enter to continue: ')
+                if varValue == '':
+                    valid = True
+
+            valid = False
+            while valid == False:
+                if templateVars.get('Multi_Line_Input'):
+                    print(f'Enter the value for {templateVars["Variable"]}:')
+                    lines = []
+                    while True:
+                        # line = input('')
+                        line = stdiomask.getpass(prompt='')
+                        if line:
+                            lines.append(line)
+                        else:
+                            break
+                    secure_value = '\\n'.join(lines)
+                else:
+                    secure_value = stdiomask.getpass(prompt=f'Enter the value for {templateVars["Variable"]}: ')
+
+                # Validate Sensitive Passwords
+                if re.search('(apikey|secretkey)', sensitive_var):
+                    valid = True
+                if 'bind' in sensitive_var:
+                    jsonVars = jsonData['components']['schemas']['iam.LdapBaseProperties']['allOf'][1]['properties']
+                    minLength = 1
+                    maxLength = 254
+                    rePattern = jsonVars['Password']['pattern']
+                    varName = 'SNMP Community'
+                    valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                elif 'community' in sensitive_var:
+                    jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
+                    minLength = 1
+                    maxLength = jsonVars['TrapCommunity']['maxLength']
+                    rePattern = '^[\\S]+$'
+                    varName = 'SNMP Community'
+                    valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                elif 'ipmi_key' in sensitive_var:
+                    jsonVars = jsonData['components']['schemas']['ipmioverlan.Policy']['allOf'][1]['properties']
+                    minLength = 2
+                    maxLength = jsonVars['EncryptionKey']['maxLength']
+                    rePattern = jsonVars['EncryptionKey']['pattern']
+                    varName = 'IPMI Encryption Key'
+                    valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                elif 'iscsi_boot' in sensitive_var:
+                    jsonVars = jsonData['components']['schemas']['vnic.IscsiAuthProfile']['allOf'][1]['properties']
+                    minLength = 12
+                    maxLength = 16
+                    rePattern = jsonVars['Password']['pattern']
+                    varName = 'iSCSI Boot Password'
+                    valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                elif 'local' in sensitive_var:
+                    jsonVars = jsonData['components']['schemas']['iam.EndPointUserRole']['allOf'][1]['properties']
+                    minLength = jsonVars['Password']['minLength']
+                    maxLength = jsonVars['Password']['maxLength']
+                    rePattern = jsonVars['Password']['pattern']
+                    varName = 'Local User Password'
+                    valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                elif 'secure_passphrase' in sensitive_var:
+                    jsonVars = jsonData['components']['schemas']['memory.PersistentMemoryLocalSecurity']['allOf'][1]['properties']
+                    minLength = jsonVars['SecurePassphrase']['minLength']
+                    maxLength = jsonVars['SecurePassphrase']['maxLength']
+                    rePattern = jsonVars['SecurePassphrase']['pattern']
+                    varName = 'Persistent Memory Secure Passphrase'
+                    valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                elif 'snmp' in sensitive_var:
+                    jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
+                    minLength = 1
+                    maxLength = jsonVars['TrapCommunity']['maxLength']
+                    rePattern = '^[\\S]+$'
+                    if 'auth' in sensitive_var:
+                        varName = 'SNMP Authorization Password'
+                    else:
+                        varName = 'SNMP Privacy Password'
+                    valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                elif 'vmedia' in sensitive_var:
+                    jsonVars = jsonData['components']['schemas']['vmedia.Mapping']['allOf'][1]['properties']
+                    minLength = 1
+                    maxLength = jsonVars['Password']['maxLength']
+                    rePattern = '^[\\S]+$'
+                    varName = 'vMedia Mapping Password'
+                    valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+
+            # Add the Variable to the Environment
+            os.environ[sensitive_var] = '%s' % (secure_value)
+            var_value = secure_value
+
+        else:
+            # Add the Variable to the Environment
+            if templateVars.get('Multi_Line_Input'):
+                var_value = os.environ.get(sensitive_var)
+                var_value = var_value.replace('\n', '\\n')
+            else:
+                var_value = os.environ.get(sensitive_var)
+
+        return var_value
+
     def terraform_token(self):
         # -------------------------------------------------------------------------------------------------------------------------
         # Check to see if the TF_VAR_terraform_cloud_token is already set in the Environment, and if not prompt the user for Input
@@ -51,25 +164,18 @@ class Terraform_Cloud(object):
             print(f'  The Run or State Location was set to Terraform Cloud.  To Store the Data in Terraform')
             print(f'  Cloud we will need a User or Org Token to authenticate to Terraform Cloud.  If you ')
             print(f'  have not already obtained a token see instructions in how to obtain a token Here:\n')
-            print(f'   - https://www.terraform.io/docs/cloud/users-teams-organizations/api-tokens.html\n')
-            print(f'  Please Select "C" to Continue or "Q" to Exit:')
+            print(f'   - https://www.terraform.io/docs/cloud/users-teams-organizations/api-tokens.html')
             print(f'\n----------------------------------------------------------------------------------------\n')
 
             while True:
-                user_response = input('  Please Enter ["C" or "Q"]: ')
-                if user_response == 'C':
+                user_response = input('press enter to continue: ')
+                if user_response == '':
                     break
-                elif user_response == 'Q':
-                    exit()
-                else:
-                    print(f'\n-----------------------------------------------------------------------------\n')
-                    print(f'  A Valid Response is either "C" or "Q"...')
-                    print(f'\n-----------------------------------------------------------------------------\n')
 
             # Request the TF_VAR_terraform_cloud_token Value from the User
             while True:
                 try:
-                    secure_value = getpass.getpass(prompt=f'Enter the value for the Terraform Cloud Token: ')
+                    secure_value = stdiomask.getpass(prompt=f'Enter the value for the Terraform Cloud Token: ')
                     break
                 except Exception as e:
                     print('Something went wrong. Error received: {}'.format(e))
@@ -403,54 +509,6 @@ class Terraform_Cloud(object):
         # print(json.dumps(json_data, indent = 4))
         return var_id
 
-    def sensitive_var_value(self, **templateVars):
-        sensitive_var = 'TF_VAR_%s' % (templateVars['Variable'])
-
-        # -------------------------------------------------------------------------------------------------------------------------
-        # Check to see if the Variable is already set in the Environment, and if not prompt the user for Input.
-        #--------------------------------------------------------------------------------------------------------------------------
-        if os.environ.get(sensitive_var) is None:
-            print(f"\n----------------------------------------------------------------------------------\n")
-            print(f"  The Script did not find {sensitive_var} as an 'environment' variable.")
-            print(f"  To not be prompted for the value of {templateVars['Variable']} each time")
-            print(f"  add the following to your local environemnt:\n")
-            print(f"   - export {sensitive_var}='{templateVars['Variable']}_value'")
-            print(f"\n----------------------------------------------------------------------------------\n")
-
-        if os.environ.get(sensitive_var) is None:
-            while True:
-                try:
-                    if templateVars.get('Multi_Line_Input'):
-                        print(f'Enter the value for {templateVars["Variable"]}:')
-                        lines = []
-                        while True:
-                            # line = input('')
-                            line = stdiomask.getpass(prompt='')
-                            if line:
-                                lines.append(line)
-                            else:
-                                break
-                        secure_value = '\\n'.join(lines)
-                    else:
-                        secure_value = stdiomask.getpass(prompt=f'Enter the value for {templateVars["Variable"]}: ')
-                    break
-                except Exception as e:
-                    print('Something went wrong. Error received: {}'.format(e))
-
-            # Add the Variable to the Environment
-            os.environ[sensitive_var] = '%s' % (secure_value)
-            var_value = secure_value
-
-        else:
-            # Add the Variable to the Environment
-            if templateVars.get('Multi_Line_Input'):
-                var_value = os.environ.get(sensitive_var)
-                var_value = var_value.replace('\n', '\\n')
-            else:
-                var_value = os.environ.get(sensitive_var)
-
-        return var_value
-
 # Function to get contents from URL
 def get(url, site_header, section=''):
     r = ''
@@ -476,53 +534,6 @@ def get(url, site_header, section=''):
         except Exception as e:
             print("Method %s Failed. Exception: %s" % (section[:-5], e))
             exit()
-
-# Function to validate input for each method
-def process_kwargs(required_args, optional_args, **kwargs):
-    # Validate all required kwargs passed
-    # if all(item in kwargs for item in required_args.keys()) is not True:
-    #    error_ = '\n***ERROR***\nREQUIRED Argument Not Found in Input:\n "%s"\nInsufficient required arguments.' % (item)
-    #    raise InsufficientArgs(error_)
-    error_count = 0
-    error_list = []
-    for item in required_args:
-        if item not in kwargs.keys():
-            error_count =+ 1
-            error_list += [item]
-    if error_count > 0:
-        error_ = '\n\n***Begin ERROR***\n\n - The Following REQUIRED Key(s) Were Not Found in kwargs: "%s"\n\n****End ERROR****\n' % (error_list)
-        raise InsufficientArgs(error_)
-
-    error_count = 0
-    error_list = []
-    for item in optional_args:
-        if item not in kwargs.keys():
-            error_count =+ 1
-            error_list += [item]
-    if error_count > 0:
-        error_ = '\n\n***Begin ERROR***\n\n - The Following Optional Key(s) Were Not Found in kwargs: "%s"\n\n****End ERROR****\n' % (error_list)
-        raise InsufficientArgs(error_)
-
-    # Load all required args values from kwargs
-    error_count = 0
-    error_list = []
-    for item in kwargs:
-        if item in required_args.keys():
-            required_args[item] = kwargs[item]
-            if required_args[item] == None:
-                error_count =+ 1
-                error_list += [item]
-
-    if error_count > 0:
-        error_ = '\n\n***Begin ERROR***\n\n - The Following REQUIRED Key(s) Argument(s) are Blank:\nPlease Validate "%s"\n\n****End ERROR****\n' % (error_list)
-        raise InsufficientArgs(error_)
-
-    for item in kwargs:
-        if item in optional_args.keys():
-            optional_args[item] = kwargs[item]
-    # Combine option and required dicts for Jinja template render
-    templateVars = {**required_args, **optional_args}
-    return(templateVars)
 
 # Function to PATCH Contents to URL
 def patch(url, payload, site_header, section=''):

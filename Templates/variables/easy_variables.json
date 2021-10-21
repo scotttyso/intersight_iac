@@ -188,21 +188,6 @@
             "default":"No-op"
         }
     },
-    "terraformVersion":{
-        "description":"Supported Terraform Versions",
-        "enum":[
-            "1.0.0",
-            "1.0.1",
-            "1.0.2",
-            "1.0.3",
-            "1.0.4",
-            "1.0.5",
-            "1.0.6",
-            "1.0.7",
-            "1.0.8",
-            "1.0.9"
-        ]
-    },
     "wizard":{
         "files":{
             "description": "Files to Pull down from the Easy Projects.",
@@ -322,7 +307,8 @@
                 "Deploy Domain Fabric Interconnects Wizard",
                 "Deploy Domain Servers Wizard",
                 "Deploy Standalone Servers Wizard",
-                "Deploy Individual Policies"
+                "Deploy Individual Policies",
+                "Skip Policy Deployment"
             ],
             "default":"Deploy Domain Wizard"
         },
