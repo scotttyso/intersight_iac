@@ -603,8 +603,8 @@ def process_wizard(easy_jsonData, jsonData):
             lib_ucs.easy_imm_wizard(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData)
         if policy == 'bios_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).bios_policies(jsonData, easy_jsonData)
-        if policy == 'boot_order_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).boot_order_policies(jsonData, easy_jsonData)
+        # if policy == 'boot_order_policies':
+        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).boot_order_policies(jsonData, easy_jsonData)
         #========================================================
         # Certificate Management Policies doesn't work
         #========================================================
@@ -640,8 +640,8 @@ def process_wizard(easy_jsonData, jsonData):
             lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_boot_policies(jsonData, easy_jsonData)
         elif policy == 'iscsi_static_target_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_static_target_policies(jsonData, easy_jsonData)
-        elif policy == 'lan_connectivity_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
+        # elif policy == 'lan_connectivity_policies':
+        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ldap_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).ldap_policies(jsonData, easy_jsonData)
         elif policy == 'link_aggregation_policies':
@@ -667,8 +667,8 @@ def process_wizard(easy_jsonData, jsonData):
         elif policy == 'san_connectivity_policies':
             pci_order_consumed = [{0:[0, 1, 2, 3, 4, 5, 6, 7]},{1:[0, 1, 2, 3, 4, 5, 6, 7]}]
             lib_ucs.easy_imm_wizard(name_prefix, org, type).san_connectivity_policies(jsonData, pci_order_consumed)
-        elif policy == 'sd_card_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData)
+        # elif policy == 'sd_card_policies':
+        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData)
         elif policy == 'serial_over_lan_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).serial_over_lan_policies(jsonData, easy_jsonData)
         elif policy == 'smtp_policies':
@@ -677,8 +677,8 @@ def process_wizard(easy_jsonData, jsonData):
             lib_ucs.easy_imm_wizard(name_prefix, org, type).snmp_policies(jsonData, easy_jsonData)
         elif policy ==  'ssh_policies':
              lib_ucs.easy_imm_wizard(name_prefix, org, type).ssh_policies(jsonData, easy_jsonData)
-        elif policy == 'storage_policies':
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).storage_policies(jsonData, easy_jsonData)
+        # elif policy == 'storage_policies':
+        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).storage_policies(jsonData, easy_jsonData)
         elif policy == 'switch_control_policies':
             lib_ucs.easy_imm_wizard(domain_prefix, org, type).switch_control_policies(jsonData, easy_jsonData)
         elif policy == 'syslog_policies':
