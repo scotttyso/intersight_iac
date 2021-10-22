@@ -8,7 +8,7 @@
   {%- for item in ipv4_blocks %}
       {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}",
+        {{ k }} = "{{ v }}"
     {%- endfor %}
       },
   {%- endfor %}
@@ -20,7 +20,7 @@
     ipv4_config      = {
       config = {
   {%- for k, v in ipv4_configuration.items() %}
-        {{ k }} = "{{ v }}",
+        {{ k }} = "{{ v }}"
   {%- endfor %}
       }
     }
@@ -32,7 +32,7 @@
   {%- for item in ipv6_blocks %}
       {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}",
+        {{ k }} = "{{ v }}"
     {%- endfor %}
       },
   {%- endfor %}
@@ -44,7 +44,7 @@
     ipv6_config      = {
       config = {
   {%- for k, v in ipv6_configuration.items() %}
-        {{ k }} = "{{ v }}",
+        {{ k }} = "{{ v }}"
   {%- endfor %}
       }
     }

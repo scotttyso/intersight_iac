@@ -193,17 +193,17 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         for folder in folder_list:
             name_prefix = 'dummy'
             type = 'pools'
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'policies'
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'policies_vlans'
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'ucs_chassis_profiles'
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'ucs_domain_profiles'
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'ucs_server_profiles'
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(jsonData, easy_jsonData, tfcb_config)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
 
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -686,7 +686,7 @@ def process_wizard(easy_jsonData, jsonData):
         #========================================================
         elif policy == 'san_connectivity_policies':
             pci_order_consumed = [{0:[0, 1, 2, 3, 4, 5, 6, 7]},{1:[0, 1, 2, 3, 4, 5, 6, 7]}]
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).san_connectivity_policies(jsonData, pci_order_consumed)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData, pci_order_consumed)
         # elif policy == 'sd_card_policies':
         #     lib_ucs.easy_imm_wizard(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData)
         elif policy == 'serial_over_lan_policies':
@@ -720,7 +720,7 @@ def process_wizard(easy_jsonData, jsonData):
 
         type = 'ucs_domain_profiles'
         if policy == 'ucs_domain_profiles':
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).ucs_domain_profiles(jsonData, name_prefix)
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).ucs_domain_profiles(jsonData, easy_jsonData, name_prefix)
 
         type = 'ucs_server_profiles'
         if policy == 'ucs_server_profile_templates':

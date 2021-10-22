@@ -803,8 +803,6 @@ def strong_password(varName, varValue, minLength, maxLength):
         invalid_count += 1
     if not re.search(r'[0-9]', varValue):
         invalid_count += 1
-    if re.search(r'[0-9]', varValue):
-        invalid_count += 1
     if not re.search(r'[\!\@\#\$\%\^\&\*\-\_\+\=]', varValue):
         invalid_count += 1
     if not invalid_count == 0:

@@ -3,12 +3,13 @@
 {%- if assignment_order %}
     assignment_order = "{{ assignment_order }}"
 {%- endif %}
+    prefix           = "{{ prefix }}"
 {%- if uuid_blocks %}
     uuid_blocks = [
   {%- for item in uuid_blocks %}
       {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}",
+        {{ k }} = "{{ v }}"
     {%- endfor %}
       },
   {%- endfor %}

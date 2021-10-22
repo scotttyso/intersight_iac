@@ -12,7 +12,7 @@
   {%- for item in iqn_blocks %}
       {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}",
+        {{ k }} = "{{ v }}"
     {%- endfor %}
       },
   {%- endfor %}
@@ -25,7 +25,7 @@
   {%- for item in tags %}
       {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}",
+        {{ k }} = "{{ v }}"
     {%- endfor %}
       },
   {%- endfor %}

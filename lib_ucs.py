@@ -1542,8 +1542,11 @@ class easy_imm_wizard(object):
                                                     if y == 'vlan_list':
                                                         vlan_list.append(val)
 
-                        vlan_list = ','.join(vlan_list)
-                        vlan_list = vlan_list_full(vlan_list)
+                        vlan_convert = ''
+                        for vlan in vlan_list:
+                            vlan = str(vlan)
+                            vlan_convert = vlan_convert + ',' + str(vlan)
+                        vlan_list = vlan_list_full(vlan_convert)
                         vlanListExpanded = vlan_list_full(VlanList)
                         valid_vlan = True
                         vlans_not_in_domain_policy = []
@@ -2192,15 +2195,17 @@ class easy_imm_wizard(object):
                                 for item in policyData['vsan_policies']:
                                     for key, value in item.items():
                                         if key == vsan_policy:
-                                            for i in value[0]['vlans']:
+                                            for i in value[0]['vsans']:
                                                 for k, v in i.items():
                                                     for x in v:
                                                         for y, val in x.items():
-                                                            if y == 'vlan_list':
+                                                            if y == 'vsan_id':
                                                                 vsan_list.append(val)
 
-                                vsan_list = ','.join(vsan_list)
-                                vsan_list = vlan_list_full(vsan_list)
+                                vsan_string = ''
+                                for vsan in vsan_list:
+                                    vsan_string = vsan_string + ',' + str(vsan)
+                                vsan_list = vlan_list_full(vsan_string)
                                 vsan_count = 0
                                 for vsan in vsan_list:
                                     if int(templateVars["vsan_id"]) == int(vsan):
@@ -2542,8 +2547,11 @@ class easy_imm_wizard(object):
                                                         if y == 'vlan_list':
                                                             vlan_list.append(val)
 
-                            vlan_list = ','.join(vlan_list)
-                            vlan_list = vlan_list_full(vlan_list)
+                            vlan_convert = ''
+                            for vlan in vlan_list:
+                                vlan = str(vlan)
+                                vlan_convert = vlan_convert + ',' + str(vlan)
+                            vlan_list = vlan_list_full(vlan_convert)
                             vlan_count = 0
                             for vlan in vlan_list:
                                 if int(templateVars["inband_vlan_id"]) == int(vlan):
@@ -2760,17 +2768,17 @@ class easy_imm_wizard(object):
 
                 valid = False
                 while valid == False:
-                    config_ipv6 = input('Do you want to configure IPv6 for this Pool?  Enter "Y" or "N" [Y]: ')
-                    if config_ipv6 == 'Y' or config_ipv6 == '':
+                    config_ipv6 = input('Do you want to configure IPv6 for this Pool?  Enter "Y" or "N" [N]: ')
+                    if config_ipv6 == 'Y':
                         valid = True
-                    elif config_ipv6 == 'N':
+                    elif config_ipv6 == 'N' or config_ipv6 == '':
                         valid = True
                     else:
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                if config_ipv6 == 'Y' or config_ipv6 == '':
+                if config_ipv6 == 'Y':
                     valid = False
                     while valid == False:
                         network_prefix = input('What is the Gateway/Mask to Assign to the Pool?  [2001:0002::1/64]: ')
@@ -2872,7 +2880,7 @@ class easy_imm_wizard(object):
                             print(f'        secondary_dns = "{v}"')
                     print('      }')
                     print('    }')
-                if config_ipv6 == 'Y' or config_ipv6 == '':
+                if config_ipv6 == 'Y':
                     print(f'    ipv6_blocks = [')
                     for item in templateVars["ipv6_blocks"]:
                         print('      {')
@@ -3040,9 +3048,7 @@ class easy_imm_wizard(object):
     #========================================
     # Intersight Module
     #========================================
-    def intersight(self, jsonData, easy_jsonData, tfcb_config):
-        name_prefix = self.name_prefix
-        name_suffix = 'intersight'
+    def intersight(self, easy_jsonData, tfcb_config):
         org = self.org
         policy_type = 'Intersight'
         templateVars = {}
@@ -4780,10 +4786,10 @@ class easy_imm_wizard(object):
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                                 templateVars["multi_select"] = False
-                                jsonVars = easy_jsonData['policies']
-                                templateVars["var_description"] = jsonVars['iam.LocalUserPasswordPolicy']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['iam.LocalUserPasswordPolicy']['enum'])
-                                templateVars["defaultVar"] = jsonVars['iam.LocalUserPasswordPolicy']['default']
+                                jsonVars = easy_jsonData['policies']['iam.LocalUserPasswordPolicy']
+                                templateVars["var_description"] = jsonVars['role']['description']
+                                templateVars["jsonVars"] = sorted(jsonVars['role']['enum'])
+                                templateVars["defaultVar"] = jsonVars['role']['default']
                                 templateVars["varType"] = 'User Role'
                                 role = variablesFromAPI(**templateVars)
 
@@ -7629,7 +7635,7 @@ class easy_imm_wizard(object):
 
                         templateVars["wwnn_pool"] = ''
                         templateVars["wwnn_static"] = ''
-                        if templateVars["wwnn_allocation_type"] == 'Pool':
+                        if templateVars["wwnn_allocation_type"] == 'POOL':
                             policy_list = [
                                 'pools.wwnn_pools.wwnn_pool'
                             ]
@@ -7656,7 +7662,7 @@ class easy_imm_wizard(object):
                         temp_policy_name = templateVars["name"]
                         templateVars["name"] = 'the vHBAs'
                         policy_list = [
-                            'policies.fibre_channel_adapter_policies.fibre_channel_adapter_policy'
+                            'policies.fibre_channel_adapter_policies.fibre_channel_adapter_policy',
                             'policies.fibre_channel_qos_policies.fibre_channel_qos_policy'
                         ]
                         templateVars["allow_opt_out"] = False
@@ -7664,6 +7670,7 @@ class easy_imm_wizard(object):
                             policy_short = policy.split('.')[2]
                             templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                             templateVars.update(policyData)
+                            print(f'policy is {policy_short} and value is {templateVars[policy_short]}')
 
                         for x in fabrics:
                             templateVars["name"] = f'the vHBA on Fabric {x}'
@@ -7672,9 +7679,8 @@ class easy_imm_wizard(object):
                             ]
                             templateVars["allow_opt_out"] = False
                             for policy in policy_list:
-                                policy_short = item.split('.')[2]
-                                templateVars[f"{policy_short}_{x}"],
-                                policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                                policy_short = policy.split('.')[2]
+                                templateVars[f"{policy_short}_{x}"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                 templateVars.update(policyData)
 
                         templateVars["name"] = temp_policy_name
@@ -7817,7 +7823,7 @@ class easy_imm_wizard(object):
                             templateVars[f'wwpn_pool_B'] = ''
                             templateVars[f'wwpn_static_A'] = ''
                             templateVars[f'wwpn_static_B'] = ''
-                            if templateVars["wwpn_allocation_type"] == 'Pool':
+                            if templateVars["wwpn_allocation_type"] == 'POOL':
                                 policy_list = [
                                     'pools.wwpn_pools.wwpn_pool'
                                 ]
@@ -7828,8 +7834,7 @@ class easy_imm_wizard(object):
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     for policy in policy_list:
                                         policy_short = policy.split('.')[2]
-                                        templateVars[f'{policy_short}_{x}'],
-                                        policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                                        templateVars[f'{policy_short}_{x}'],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                         templateVars.update(policyData)
 
                             else:
@@ -9864,7 +9869,7 @@ class easy_imm_wizard(object):
                         if re.search(r'(switch_control|system_qos)', policy):
                             templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         else:
-                            templateVars[policy_short],policyData = policy_select_loop(policy_prefix, policy, **templateVars)
+                            templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, policy_prefix, policy, **templateVars)
                         templateVars.update(policyData)
 
                     policy_list = [
@@ -10521,7 +10526,7 @@ class easy_imm_wizard(object):
                         templateVars['prefix'] = input(f'\nWhat is the UUID Prefix you would like to assign to the Pool?  [000025B5-0000-0000]: ')
                         if templateVars['prefix'] == '':
                             templateVars['prefix'] = '000025B5-0000-0000'
-                        valid = validating.uuid_suffix('UUID Pool From', templateVars['prefix'])
+                        valid = validating.uuid_prefix('UUID Pool From', templateVars['prefix'])
 
                     valid = False
                     while valid == False:
@@ -10535,7 +10540,7 @@ class easy_imm_wizard(object):
                         pool_size = input(f'\nWhat is the size of the Block?  [512]: ')
                         if pool_size == '':
                             pool_size = '512'
-                        valid_size = validating.number_in_range('UUID Pool Size', pool_size, 1, 1000)
+                        valid = validating.number_in_range('UUID Pool Size', pool_size, 1, 1000)
 
                     templateVars["uuid_blocks"] = [
                         {
@@ -10549,7 +10554,7 @@ class easy_imm_wizard(object):
                     print(f'    name             = "{templateVars["name"]}"')
                     print(f'    prefix           = "{templateVars["prefix"]}"')
                     print(f'    uuid_blocks = [')
-                    for i in templateVars["iqn_blocks"]:
+                    for i in templateVars["uuid_blocks"]:
                         print(f'      ''{')
                         for k, v in i.items():
                             if k == 'from':
