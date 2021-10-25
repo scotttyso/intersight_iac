@@ -1099,6 +1099,12 @@ class easy_imm_wizard(object):
         configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  A {policy_type} configures the linear ordering of devices and enables you to change ')
+            print(f'  the boot order and boot mode. You can also add multiple devices under various device types,')
+            print(f'  rearrange the boot order, and set parameters for each boot device type.\n')
+            print(f'  This wizard will save the configuraton for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}.  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
@@ -1112,33 +1118,444 @@ class easy_imm_wizard(object):
                     templateVars["name"] = policy_name(name, policy_type)
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
+                    # Pull in the Policies for iSCSI Boot
+                    jsonVars = jsonData['components']['schemas']['boot.PrecisionPolicy']['allOf'][1]['properties']
+                    templateVars["multi_select"] = False
+
+                    # Configured Boot Mode
+                    templateVars["var_description"] = jsonVars['ConfiguredBootMode']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['ConfiguredBootMode']['enum'])
+                    templateVars["defaultVar"] = jsonVars['ConfiguredBootMode']['default']
+                    templateVars["varType"] = 'Configured Boot Mode'
+                    templateVars["boot_mode"] = variablesFromAPI(**templateVars)
+
+                    if templateVars["boot_mode"] == 'Uefi':
+                        # Enforce Uefi SecureBoot
+                        templateVars["Description"] = jsonVars['EnforceUefiSecureBoot']['description']
+                        templateVars["varInput"] = f'Do you want to Enforce Uefi Secure Boot?'
+                        templateVars["varDefault"] = 'Y'
+                        templateVars["varName"] = 'Uefi SecureBoot'
+                        templateVars["enable_secure_boot"] = varBoolLoop(**templateVars)
+                    else:
+                        templateVars["enable_secure_boot"] = False
+
+
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Assignment order decides the order in which the next identifier is allocated.')
-                    print(f'    1. default - (Intersight Default) Assignment order is decided by the system.')
-                    print(f'    2. sequential - (Recommended) Identifiers are assigned in a sequential order.')
+                    print(f'  Add and configure a boot device. The configuration options vary with boot device types.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        templateVars["assignment_order"] = input('Specify the Index for the value to select [2]: ')
-                        if templateVars["assignment_order"] == '' or templateVars["assignment_order"] == '2':
-                            templateVars["assignment_order"] = 'sequential'
-                            valid = True
-                        elif templateVars["assignment_order"] == '1':
-                            templateVars["assignment_order"] = 'default'
-                            valid = True
+                    templateVars["boot_devices"] = []
+                    inner_loop_count = 1
+                    sub_loop = False
+                    while sub_loop == False:
+                        question = input(f'\nWould you like to configure a Boot Device?  Enter "Y" or "N" [Y]: ')
+                        if question == '' or question == 'Y':
+                            valid_sub = False
+                            while valid_sub == False:
+                                # Pull in the Policies for iSCSI Boot
+                                jsonVars = jsonData['components']['schemas']['boot.DeviceBase']['allOf'][1]['properties']
+
+                                # Configured Boot Mode
+                                templateVars["var_description"] = 'Select the Type of Boot Device to configure.'
+                                templateVars["jsonVars"] = sorted(jsonVars['ClassId']['enum'])
+                                templateVars["defaultVar"] = 'boot.LocalDisk'
+                                templateVars["varType"] = 'Boot Device Class ID'
+                                objectType = variablesFromAPI(**templateVars)
+
+                                templateVars["Description"] = jsonVars['Name']['description']
+                                templateVars["varDefault"] = ''
+                                templateVars["varInput"] = 'Boot Device Name:'
+                                templateVars["varName"] = 'Boot Device Name'
+                                templateVars["varRegex"] = jsonVars['Name']['pattern']
+                                templateVars["minLength"] = 1
+                                templateVars["maxLength"] = 30
+                                device_name = varStringLoop(**templateVars)
+
+                                boot_device = {
+                                    "enabled":True,
+                                    "device_name":device_name,
+                                    "object_type":objectType
+                                }
+
+                                if objectType == 'boot.Iscsi':
+                                    device_type = 'iscsi_boot'
+                                    jsonVars = jsonData['components']['schemas']['boot.Iscsi']['allOf'][1]['properties']
+                                elif objectType == 'boot.LocalCdd':
+                                    device_type = 'local_cdd'
+                                    jsonVars = jsonData['components']['schemas']['boot.LocalCdd']['allOf'][1]['properties']
+                                elif objectType == 'boot.LocalDisk':
+                                    device_type = 'local_disk'
+                                    jsonVars = jsonData['components']['schemas']['boot.LocalDisk']['allOf'][1]['properties']
+                                elif objectType == 'boot.Nvme':
+                                    device_type = 'nvme'
+                                    jsonVars = jsonData['components']['schemas']['boot.Nvme']['allOf'][1]['properties']
+                                elif objectType == 'boot.PchStorage':
+                                    device_type = 'pch_storage'
+                                    jsonVars = jsonData['components']['schemas']['boot.PchStorage']['allOf'][1]['properties']
+                                elif objectType == 'boot.Pxe':
+                                    device_type = 'pxe_boot'
+                                    jsonVars = jsonData['components']['schemas']['boot.Pxe']['allOf'][1]['properties']
+                                elif objectType == 'boot.San':
+                                    device_type = 'san_boot'
+                                    jsonVars = jsonData['components']['schemas']['boot.San']['allOf'][1]['properties']
+                                elif objectType == 'boot.SdCard':
+                                    device_type = 'sd_card'
+                                    jsonVars = jsonData['components']['schemas']['boot.SdCard']['allOf'][1]['properties']
+                                elif objectType == 'boot.UefiShell':
+                                    device_type = 'uefi_shell'
+                                    jsonVars = jsonData['components']['schemas']['boot.UefiShell']['allOf'][1]['properties']
+                                elif objectType == 'boot.Usb':
+                                    device_type = 'usb'
+                                    jsonVars = jsonData['components']['schemas']['boot.Usb']['allOf'][1]['properties']
+                                elif objectType == 'boot.VirtualMedia':
+                                    device_type = 'virtual_media'
+                                    jsonVars = jsonData['components']['schemas']['boot.VirtualMedia']['allOf'][1]['properties']
+
+                                boot_device.update({'device_type':device_type})
+
+                                if templateVars["boot_mode"] == 'Uefi' and re.fullmatch('boot\.(Iscsi|LocalDisk|Nvme|PchStorage|San|SdCard)', objectType):
+                                    addLoader = {
+                                        "bootloader_description":"Uefi Bootloader",
+                                        "bootloader_name":"BOOTX64.EFI",
+                                        "bootloader_path":"\\\\EFI\\\\BOOT\\\\"
+                                    }
+                                    boot_device.update(addLoader)
+
+                                if objectType == 'boot.LocalDisk':
+                                    templateVars["multi_select"] = False
+                                    jsonVars = jsonData['components']['schemas']['vnic.EthNetworkPolicy']['allOf'][1]['properties']
+                                    templateVars["var_description"] = jsonVars['TargetPlatform']['description']
+                                    templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
+                                    templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                                    templateVars["varType"] = 'Target Platform'
+                                    target_platform = variablesFromAPI(**templateVars)
+
+                                    # Slot
+                                    templateVars["var_description"] = jsonVars['Slot']['description']
+                                    templateVars["jsonVars"] = easy_jsonData['policies']['boot.Localdisk'][target_platform]
+                                    templateVars["defaultVar"] = easy_jsonData['policies']['boot.Localdisk']['default']
+                                    templateVars["varType"] = 'Slot'
+                                    Slot = variablesFromAPI(**templateVars)
+
+                                    if re.search('[0-9]+', Slot):
+                                        templateVars["Description"] = 'Slot Number between 1 and 205.'
+                                        templateVars["varDefault"] =  1
+                                        templateVars["varInput"] = 'Slot ID of the Localdisk:'
+                                        templateVars["varName"] = 'Slot'
+                                        templateVars["varRegex"] = '[0-9]+'
+                                        templateVars["minNum"] = 1
+                                        templateVars["maxNum"] = 205
+                                        Slot = varNumberLoop(**templateVars)
+
+                                    localDisk = {'slot':Slot}
+                                    boot_device.update(localDisk)
+
+                                if objectType == 'boot.Pxe':
+                                    # IPv4 or IPv6
+                                    templateVars["var_description"] = jsonVars['IpType']['description']
+                                    templateVars["jsonVars"] = sorted(jsonVars['IpType']['enum'])
+                                    templateVars["defaultVar"] = jsonVars['IpType']['default']
+                                    templateVars["varType"] = 'IP Type'
+                                    IpType = variablesFromAPI(**templateVars)
+
+                                    # Interface Source
+                                    templateVars["var_description"] = jsonVars['InterfaceSource']['description']
+                                    templateVars["jsonVars"] = sorted(jsonVars['InterfaceSource']['enum'])
+                                    templateVars["defaultVar"] = jsonVars['InterfaceSource']['default']
+                                    templateVars["varType"] = 'Interface Source'
+                                    InterfaceSource = variablesFromAPI(**templateVars)
+
+                                if objectType == 'boot.Iscsi' or (objectType == 'boot.Pxe' and InterfaceSource == 'name'):
+                                    policy_list = [
+                                        'policies.lan_connectivity_policies.lan_connectivity_policy',
+                                    ]
+                                    templateVars["allow_opt_out"] = False
+                                    for policy in policy_list:
+                                        lan_connectivity_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                                    vnicNames = []
+                                    for x in policyData['lan_connectivity_policies']:
+                                        for keys, values in x.items():
+                                            if keys == lan_connectivity_policy:
+                                                for i in values[0]['vnics']:
+                                                    for k, v in i.items():
+                                                        vnicNames.append(k)
+
+                                                templateVars["var_description"] = 'LAN Connectivity vNIC Names.'
+                                                templateVars["jsonVars"] = sorted(vnicNames)
+                                                templateVars["defaultVar"] = ''
+                                                templateVars["varType"] = 'vNIC Names'
+                                                vnicTemplate = variablesFromAPI(**templateVars)
+                                                InterfaceName = values[0]['vnics'][0][vnicTemplate][0]['name']
+                                                Slot = values[0]['vnics'][0][vnicTemplate][0]['placement_slot_id']
+
+                                    if objectType == 'boot.Iscsi':
+                                        Port = 0
+                                    else:
+                                        Port = -1
+                                        MacAddress = ''
+
+                                if objectType == 'boot.Pxe':
+                                    if InterfaceSource == 'mac':
+                                        templateVars["Description"] = jsonVars['MacAddress']['description']
+                                        templateVars["varDefault"] = ''
+                                        templateVars["varInput"] = 'The MAC Address of the adapter on the underlying Virtual NIC:'
+                                        templateVars["varName"] = 'Mac Address'
+                                        templateVars["varRegex"] = jsonVars['MacAddress']['pattern']
+                                        templateVars["minLength"] = 17
+                                        templateVars["maxLength"] = 17
+                                        MacAddress = varStringLoop(**templateVars)
+                                        InterfaceName = ''
+                                        Port = -1
+                                    elif InterfaceSource == 'port':
+                                        templateVars["Description"] = jsonVars['Port']['description']
+                                        templateVars["varDefault"] =  jsonVars['Port']['default']
+                                        templateVars["varInput"] = 'The Port ID of the adapter on the underlying Virtual NIC:'
+                                        templateVars["varName"] = 'Port'
+                                        templateVars["varRegex"] = jsonVars['Port']['pattern']
+                                        templateVars["minNum"] = 1
+                                        templateVars["maxNum"] = 3
+                                        Port = varNumberLoop(**templateVars)
+                                        InterfaceName = ''
+                                        MacAddress = ''
+
+                                    if not InterfaceSource == 'name':
+                                        templateVars["Description"] = jsonVars['Slot']['description']
+                                        templateVars["varDefault"] = 'MLOM'
+                                        templateVars["varInput"] = 'The Slot ID of the adapter on the underlying Virtual NIC:'
+                                        templateVars["varName"] = 'Slot'
+                                        templateVars["varRegex"] = jsonVars['Slot']['pattern']
+                                        templateVars["minLength"] = 1
+                                        templateVars["maxLength"] = 4
+                                        Slot = varStringLoop(**templateVars)
+
+                                    pxeBoot = {
+                                        'interface_name':InterfaceName,
+                                        'interface_source':InterfaceSource,
+                                        'ip_type':IpType,
+                                        'mac_address':MacAddress,
+                                        'port':Port,
+                                        'slot':Slot
+                                    }
+                                    boot_device.update(pxeBoot)
+
+                                if re.fullmatch('boot\.Iscsi', objectType):
+                                    jsonVars = jsonData['components']['schemas']['boot.Iscsi']['allOf'][1]['properties']
+
+                                    # Port
+                                    templateVars["Description"] = jsonVars['Port']['description']
+                                    templateVars["varInput"] = 'Enter the Port ID of the Adapter:'
+                                    templateVars["varDefault"] = jsonVars['Port']['description']
+                                    templateVars["varName"] = 'Port'
+                                    templateVars["minNum"] = jsonVars['Port']['minimum']
+                                    templateVars["maxNum"] = jsonVars['Port']['maximum']
+                                    templateVars["port"] = varNumberLoop(**templateVars)
+
+                                if re.fullmatch('boot\.(PchStorage|San|SdCard)', objectType):
+                                    templateVars["Description"] = jsonVars['Lun']['description']
+                                    templateVars["varDefault"] =  jsonVars['Lun']['default']
+                                    templateVars["varInput"] = 'LUN Identifier:'
+                                    templateVars["varName"] = 'LUN ID'
+                                    templateVars["varRegex"] = '[\\d]+'
+                                    templateVars["minNum"] = jsonVars['Lun']['minimum']
+                                    templateVars["maxNum"] = jsonVars['Lun']['maximum']
+                                    Lun = varNumberLoop(**templateVars)
+                                    boot_device.update({'lun':Lun})
+
+                                if objectType == 'boot.San':
+                                    policy_list = [
+                                        'policies.san_connectivity_policies.san_connectivity_policy',
+                                    ]
+                                    templateVars["allow_opt_out"] = False
+                                    for policy in policy_list:
+                                        san_connectivity_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                                    vnicNames = []
+                                    for x in policyData['san_connectivity_policies']:
+                                        for keys, values in x.items():
+                                            if keys == san_connectivity_policy:
+                                                for i in values[0]['vhbas']:
+                                                    for k, v in i.items():
+                                                        vnicNames.append(k)
+
+                                                templateVars["var_description"] = 'SAN Connectivity vNIC Names.'
+                                                templateVars["jsonVars"] = sorted(vnicNames)
+                                                templateVars["defaultVar"] = ''
+                                                templateVars["varType"] = 'vHBA Names'
+                                                vnicTemplate = variablesFromAPI(**templateVars)
+                                                InterfaceName = values[0]['vhbas'][0][vnicTemplate][0]['name']
+                                                Slot = values[0]['vhbas'][0][vnicTemplate][0]['placement_slot_id']
+
+                                    templateVars["Description"] = jsonVars['Wwpn']['description']
+                                    templateVars["varDefault"] = ''
+                                    templateVars["varInput"] = 'WWPN of the Target Appliance:'
+                                    templateVars["varName"] = 'WWPN'
+                                    templateVars["varRegex"] = jsonVars['Wwpn']['pattern']
+                                    templateVars["minLength"] = 23
+                                    templateVars["maxLength"] = 23
+                                    Wwpn = varStringLoop(**templateVars)
+
+                                    targetWwpn = {'target_wwpn':Wwpn}
+                                    boot_device.update(targetWwpn)
+
+                                if re.fullmatch('boot\.(SdCard|Usb|VirtualMedia)', objectType):
+                                    if objectType == 'boot.SdCard':
+                                        # Pull in the Sub Types for Virtual Media
+                                        jsonVars = jsonData['components']['schemas']['boot.SdCard']['allOf'][1]['properties']
+                                    elif objectType == 'boot.Usb':
+                                        # Pull in the Sub Types for Virtual Media
+                                        jsonVars = jsonData['components']['schemas']['boot.Usb']['allOf'][1]['properties']
+                                    elif objectType == 'boot.VirtualMedia':
+                                        # Pull in the Sub Types for Virtual Media
+                                        jsonVars = jsonData['components']['schemas']['boot.VirtualMedia']['allOf'][1]['properties']
+
+                                    # Configured Boot Mode
+                                    templateVars["var_description"] = jsonVars['Subtype']['description']
+                                    templateVars["jsonVars"] = sorted(jsonVars['Subtype']['enum'])
+                                    templateVars["defaultVar"] = jsonVars['Subtype']['default']
+                                    templateVars["varType"] = 'Sub type'
+                                    Subtype = variablesFromAPI(**templateVars)
+
+                                    boot_device.update({'subtype':Subtype})
+
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                for k, v in boot_device.items():
+                                    if k == 'bootloader_description':
+                                        print(f'   bootloader_description = "{v}"')
+                                    elif k == 'bootloader_name':
+                                        print(f'   bootloader_name        = "{v}"')
+                                    elif k == 'bootloader_path':
+                                        print(f'   bootloader_path        = "{v}"')
+                                    elif k == 'enabled':
+                                        print(f'   enabled                = {v}')
+                                    elif k == 'interface_name':
+                                        print(f'   InterfaceName          = "{v}"')
+                                    elif k == 'interface_source':
+                                        print(f'   InterfaceSource        = "{v}"')
+                                    elif k == 'ip_type':
+                                        print(f'   IpType                 = "{v}"')
+                                    elif k == 'mac_address':
+                                        print(f'   MacAddress             = "{v}"')
+                                    elif k == 'device_name':
+                                        print(f'   name                   = "{v}"')
+                                    elif k == 'lun':
+                                        print(f'   Lun                    = {v}')
+                                    elif k == 'object_type':
+                                        print(f'   object_type            = "{v}"')
+                                    elif k == 'port':
+                                        print(f'   Port                   = {v}')
+                                    elif k == 'slot':
+                                        print(f'   Slot                   = "{v}"')
+                                    elif k == 'subtype':
+                                        print(f'   Subtype                = "{v}"')
+                                    elif k == 'target_wwpn':
+                                        print(f'   Wwpn                   = "{v}"')
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                valid_confirm = False
+                                while valid_confirm == False:
+                                    confirm_config = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                                    if confirm_config == 'Y' or confirm_config == '':
+                                        templateVars["boot_devices"].append(boot_device)
+                                        valid_exit = False
+                                        while valid_exit == False:
+                                            if inner_loop_count < 3:
+                                                loop_exit = input(f'Would You like to Configure another Boot Device?  Enter "Y" or "N" [Y]: ')
+                                            else:
+                                                loop_exit = input(f'Would You like to Configure another Boot Device?  Enter "Y" or "N" [N]: ')
+                                            if loop_exit == 'Y' or (inner_loop_count < 3 and loop_exit == ''):
+                                                inner_loop_count += 1
+                                                valid_confirm = True
+                                                valid_exit = True
+                                            elif loop_exit == 'N' or loop_exit == '':
+                                                sub_loop = True
+                                                valid_confirm = True
+                                                valid_exit = True
+                                                valid_sub = True
+                                            else:
+                                                print(f'\n------------------------------------------------------\n')
+                                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                                                print(f'\n------------------------------------------------------\n')
+
+                                    elif confirm_config == 'N':
+                                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                                        print(f'  Starting LDAP Group Configuration Over.')
+                                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                                        valid_confirm = True
+                                    else:
+                                        print(f'\n------------------------------------------------------\n')
+                                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                                        print(f'\n------------------------------------------------------\n')
+
+                        elif question == 'N':
+                            sub_loop = True
                         else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Option.  Please Select a valid option from the List.')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
 
-                    # Write Policies to Template File
-                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                    write_to_template(self, **templateVars)
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'    boot_mode          = "{templateVars["boot_mode"]}"')
+                    print(f'    description        = "{templateVars["descr"]}"')
+                    print(f'    enable_secure_boot = {templateVars["enable_secure_boot"]}')
+                    print(f'    name               = "{templateVars["name"]}"')
+                    if len(templateVars['boot_devices']) > 0:
+                        print(f'    boot_devices = ''{')
+                        for i in templateVars['boot_devices']:
+                            for k, v in i.items():
+                                if k == 'device_name':
+                                    print(f'      "{v}" = ''{')
+                            for k, v in i.items():
+                                if k == 'bootloader_description':
+                                    print(f'        bootloader_description = "{v}"')
+                                elif k == 'bootloader_name':
+                                    print(f'        bootloader_name        = "{v}"')
+                                elif k == 'bootloader_path':
+                                    print(f'        bootloader_path        = "{v}"')
+                                elif k == 'enabled':
+                                    print(f'        enabled                = {v}')
+                                elif k == 'interface_name':
+                                    print(f'        InterfaceName          = "{v}"')
+                                elif k == 'interface_source':
+                                    print(f'        InterfaceSource        = "{v}"')
+                                elif k == 'ip_type':
+                                    print(f'        IpType                 = "{v}"')
+                                elif k == 'mac_address':
+                                    print(f'        MacAddress             = "{v}"')
+                                elif k == 'lun':
+                                    print(f'        Lun                    = {v}')
+                                elif k == 'object_type':
+                                    print(f'        object_type            = "{v}"')
+                                elif k == 'port':
+                                    print(f'        Port                   = {v}')
+                                elif k == 'slot':
+                                    print(f'        Slot                   = "{v}"')
+                                elif k == 'subtype':
+                                    print(f'        Subtype                = "{v}"')
+                                elif k == 'target_wwpn':
+                                    print(f'        Wwpn                   = "{v}"')
+                        print(f'      ''}')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
 
-                    exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [N]: ')
-                    if exit_answer == 'N' or exit_answer == '':
-                        policy_loop = True
-                        configure_loop = True
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % ('boot_policies')
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
             elif configure == 'N':
                 configure_loop = True
             else:
@@ -1959,7 +2376,10 @@ class easy_imm_wizard(object):
                                 system_qos_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
 
                     mtu = policyData['system_qos_policies'][0][system_qos_policy][0]['classes'][0][templateVars["priority"]][0]['mtu']
-                    templateVars["mtu"] = mtu
+                    if mtu > 8999:
+                        templateVars["mtu"] = mtu
+                    else:
+                        templateVars["mtu"] = mtu
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  ')
@@ -5910,7 +6330,7 @@ class easy_imm_wizard(object):
                                         templateVars["multi_select"] = False
                                         jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
                                         templateVars["var_description"] = jsonVars['AdminSpeed']['description']
-                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
                                         templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
                                         templateVars["varType"] = 'Admin Speed'
                                         templateVars["admin_speed"] = variablesFromAPI(**templateVars)
@@ -6080,7 +6500,7 @@ class easy_imm_wizard(object):
                                         templateVars["multi_select"] = False
                                         jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
                                         templateVars["var_description"] = jsonVars['AdminSpeed']['description']
-                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
                                         templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
                                         templateVars["varType"] = 'Admin Speed'
                                         templateVars["admin_speed"] = variablesFromAPI(**templateVars)
@@ -6212,9 +6632,10 @@ class easy_imm_wizard(object):
                             port_list = vars_from_list(fc_converted_ports, **templateVars)
 
                             # Prompt User for the Admin Speed of the Port
+                            templateVars["multi_select"] = False
                             jsonVars = jsonData['components']['schemas']['fabric.FcUplinkPcRole']['allOf'][1]['properties']
                             templateVars["var_description"] = jsonVars['AdminSpeed']['description']
-                            templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                            templateVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
                             templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
                             templateVars["varType"] = 'Admin Speed'
                             templateVars["admin_speed"] = variablesFromAPI(**templateVars)
@@ -6401,7 +6822,7 @@ class easy_imm_wizard(object):
                                         templateVars["multi_select"] = False
                                         jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
                                         templateVars["var_description"] = jsonVars['AdminSpeed']['description']
-                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
                                         templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
                                         templateVars["varType"] = 'Admin Speed'
                                         templateVars["admin_speed"] = variablesFromAPI(**templateVars)
@@ -6549,7 +6970,7 @@ class easy_imm_wizard(object):
                                         templateVars["multi_select"] = False
                                         jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
                                         templateVars["var_description"] = jsonVars['AdminSpeed']['description']
-                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
                                         templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
                                         templateVars["varType"] = 'Admin Speed'
                                         templateVars["admin_speed"] = variablesFromAPI(**templateVars)
@@ -6712,7 +7133,7 @@ class easy_imm_wizard(object):
                                         templateVars["multi_select"] = False
                                         jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
                                         templateVars["var_description"] = jsonVars['AdminSpeed']['description']
-                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
                                         templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
                                         templateVars["varType"] = 'Admin Speed'
                                         templateVars["admin_speed"] = variablesFromAPI(**templateVars)
@@ -6826,7 +7247,7 @@ class easy_imm_wizard(object):
                             # Prompt User for the Admin Speed of the Port
                             jsonVars = jsonData['components']['schemas']['fabric.FcUplinkPcRole']['allOf'][1]['properties']
                             templateVars["var_description"] = jsonVars['AdminSpeed']['description']
-                            templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                            templateVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
                             templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
                             templateVars["varType"] = 'Admin Speed'
                             templateVars["admin_speed"] = variablesFromAPI(**templateVars)
@@ -6993,7 +7414,7 @@ class easy_imm_wizard(object):
                                         templateVars["multi_select"] = False
                                         jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
                                         templateVars["var_description"] = jsonVars['AdminSpeed']['description']
-                                        templateVars["jsonVars"] = sorted(jsonVars['AdminSpeed']['enum'])
+                                        templateVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
                                         templateVars["defaultVar"] = jsonVars['AdminSpeed']['default']
                                         templateVars["varType"] = 'Admin Speed'
                                         templateVars["admin_speed"] = variablesFromAPI(**templateVars)
@@ -7528,7 +7949,7 @@ class easy_imm_wizard(object):
                 templateVars["jsonVars"] = sorted(jsonVars['RedundancyMode']['enum'])
                 templateVars["defaultVar"] = jsonVars['RedundancyMode']['default']
                 templateVars["varType"] = 'Power Redundancy Mode'
-                templateVars["redundancy_mode"] = variablesFromAPI(**templateVars)
+                templateVars["power_redundancy"] = variablesFromAPI(**templateVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 if system_type == '9508':
@@ -7537,7 +7958,7 @@ class easy_imm_wizard(object):
                 print(f'   name                = "{templateVars["name"]}"')
                 if system_type == 'Server':
                     print(f'   power_restore_state = "{templateVars["power_restore_state"]}"')
-                print(f'   redundancy_mode     = "{templateVars["redundancy_mode"]}"')
+                print(f'   redundancy_mode     = "{templateVars["power_redundancy"]}"')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:
@@ -7572,9 +7993,131 @@ class easy_imm_wizard(object):
         write_to_template(self, **templateVars)
 
     #========================================
+    # Resource Pool Module
+    #========================================
+    def resource_pools(self, jsonData, easy_jsonData):
+        name_prefix = self.name_prefix
+        name_suffix = 'resource'
+        org = self.org
+        policy_type = 'Resource Pool'
+        templateVars = {}
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'resource_pools'
+
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
+
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  The {policy_type} represents a collection of resources that can be associated to ')
+            print(f'  the configuration entities such as server profiles.\n')
+            print(f'  This wizard will save the configuraton for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                policy_loop = False
+                while policy_loop == False:
+
+                    if not name_prefix == '':
+                        name = '%s_%s' % (name_prefix, name_suffix)
+                    else:
+                        name = '%s_%s' % (org, name_suffix)
+
+                    templateVars["name"] = policy_name(name, policy_type)
+                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+
+                    # Pull in the Policies for iSCSI Boot
+                    templateVars["multi_select"] = False
+
+                    # Assignment Order
+                    jsonVars = jsonData['components']['schemas']['pool.AbstractPool']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['AssignmentOrder']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
+                    templateVars["defaultVar"] = jsonVars['AssignmentOrder']['default']
+                    templateVars["varType"] = 'Assignment Order'
+                    templateVars["assignment_order"] = variablesFromAPI(**templateVars)
+
+                    # List of Serial Numbers
+                    templateVars['serial_number_list'] = []
+                    valid = False
+                    while valid == False:
+                        templateVars["Description"] = 'A List of Serial Numbers to add to the Resource Pool.'
+                        templateVars["varDefault"] = ''
+                        templateVars["varInput"] = 'Enter the Server Serial Number:'
+                        templateVars["varName"] = 'Serial Number'
+                        templateVars["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
+                        templateVars["minLength"] = 11
+                        templateVars["maxLength"] = 11
+                        templateVars['serial_number_list'].append(varStringLoop(**templateVars))
+
+                        templateVars["Description"] = 'Add Additional Serial Numbers.'
+                        templateVars["varInput"] = f'Do you want to add another Serial Number?'
+                        templateVars["varDefault"] = 'N'
+                        templateVars["varName"] = 'Additional Serial Numbers'
+                        valid = varBoolLoop(**templateVars)
+
+                    # Server Type
+                    jsonVars = easy_jsonData['pools']['resourcepool.Pool']
+                    templateVars["var_description"] = jsonVars['server_type']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['server_type']['enum'])
+                    templateVars["defaultVar"] = jsonVars['server_type']['default']
+                    templateVars["varType"] = 'Server Type'
+                    templateVars["server_type"] = variablesFromAPI(**templateVars)
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'   assignment_order   = "{templateVars["assignment_order"]}"')
+                    print(f'   description        = "{templateVars["descr"]}"')
+                    print(f'   name               = "{templateVars["name"]}"')
+                    print(f'   serial_number_list = {templateVars["serial_number_list"]}')
+                    print(f'   server_type        = "{templateVars["server_type"]}"')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
+            elif configure == 'N':
+                configure_loop = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
+
+    #========================================
     # SAN Connectivity Policy Module
     #========================================
-    def san_connectivity_policies(self, jsonData, easy_jsonData, pci_order_consumed):
+    def san_connectivity_policies(self, jsonData, easy_jsonData):
+        pci_order_consumed = [{0:[0, 1, 2, 3, 4, 5, 6, 7]},{1:[0, 1, 2, 3, 4, 5, 6, 7]}]
         name_prefix = self.name_prefix
         name_suffix = 'san'
         org = self.org
@@ -7873,6 +8416,9 @@ class easy_imm_wizard(object):
                                 'slot_id':templateVars["slot_id"],
                                 'switch_id':'B',
                                 'vhba_type':templateVars["vhba_type"],
+                                'wwpn_allocation_type':templateVars["wwpn_allocation_type"],
+                                'wwpn_pool':templateVars["wwpn_pool_B"],
+                                'wwpn_static':templateVars["wwpn_static_B"]
                             }
                         else:
                             vhba_fabric_a = {
@@ -7886,6 +8432,9 @@ class easy_imm_wizard(object):
                                 'slot_id':templateVars["slot_id"],
                                 'uplink_port':templateVars["uplink_port_A"],
                                 'vhba_type':templateVars["vhba_type"],
+                                'wwpn_allocation_type':templateVars["wwpn_allocation_type"],
+                                'wwpn_pool':templateVars["wwpn_pool_A"],
+                                'wwpn_static':templateVars["wwpn_static_A"]
                             }
                             vhba_fabric_b = {
                                 'fibre_channel_adapter_policy':templateVars["fibre_channel_adapter_policy"],
@@ -7900,8 +8449,10 @@ class easy_imm_wizard(object):
                                 'vhba_type':templateVars["vhba_type"],
                                 'wwpn_allocation_type':templateVars["wwpn_allocation_type"],
                                 'wwpn_pool':templateVars["wwpn_pool_B"],
-                                'wwpn_static':templateVars["wwpn_static_B"],
+                                'wwpn_static':templateVars["wwpn_static_B"]
                             }
+                        print(vhba_fabric_a)
+                        print(vhba_fabric_b)
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'Fabric A:')
                         print(f'   fibre_channel_adapter_policy = "{templateVars["fibre_channel_adapter_policy"]}"')
@@ -9467,7 +10018,7 @@ class easy_imm_wizard(object):
                     'weight':10,
                 }
                 templateVars["Gold"] = {
-                    'bandwidth_percent':19,
+                    'bandwidth_percent':18,
                     'cos':4,
                     'mtu':templateVars["mtu"],
                     'multicast_optimize':False,
@@ -9477,7 +10028,7 @@ class easy_imm_wizard(object):
                     'weight':9,
                 }
                 templateVars["FC"] = {
-                    'bandwidth_percent':21,
+                    'bandwidth_percent':20,
                     'cos':3,
                     'mtu':2240,
                     'multicast_optimize':False,
@@ -9487,7 +10038,7 @@ class easy_imm_wizard(object):
                     'weight':10,
                 }
                 templateVars["Silver"] = {
-                    'bandwidth_percent':16,
+                    'bandwidth_percent':18,
                     'cos':2,
                     'mtu':templateVars["mtu"],
                     'multicast_optimize':False,
@@ -10008,6 +10559,7 @@ class easy_imm_wizard(object):
                 templateVars["name"] = policy_name(name, policy_type)
                 templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
+                templateVars["allow_opt_out"] = False
                 templateVars["multi_select"] = False
                 jsonVars = easy_jsonData['profiles']
                 templateVars["var_description"] = jsonVars['action']['description']
@@ -10016,21 +10568,38 @@ class easy_imm_wizard(object):
                 templateVars["varType"] = 'Action'
                 templateVars["action"] = variablesFromAPI(**templateVars)
 
-                valid = False
-                while valid == False:
+
+                jsonVars = jsonData['components']['schemas']['server.Profile']['allOf'][1]['properties']
+                templateVars["var_description"] = jsonVars['ServerAssignmentMode']['description']
+                templateVars["jsonVars"] = sorted(jsonVars['ServerAssignmentMode']['enum'])
+                templateVars["defaultVar"] = jsonVars['ServerAssignmentMode']['default']
+                templateVars["varType"] = 'Server Assignment Mode'
+                templateVars["server_assignment_mode"] = variablesFromAPI(**templateVars)
+
+                if templateVars["server_assignment_mode"] == 'Static':
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Note: If you do not have the Serial Number at this time you can manually add it to the:')
                     print(f'        - ucs_server_profiles/ucs_server_profiles.auto.tfvars file later.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    templateVars["serial_number"] = input('What is the Serial Number of the Server? [press enter to skip]: ')
-                    if templateVars["serial_number"] == '':
+                    templateVars["Description"] = 'Serial Number of the Physical Compute Resource to assign to the Profile.'
+                    templateVars["varDefault"] = ''
+                    templateVars["varInput"] = 'What is the Serial Number of the Server? [press enter to skip]:'
+                    templateVars["varName"] = 'Serial Number'
+                    templateVars["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
+                    templateVars["minLength"] = 11
+                    templateVars["maxLength"] = 11
+                    templateVars['serial_number'] = varStringLoop(**templateVars)
+                elif templateVars["server_assignment_mode"] == 'Pool':
+                    policy_list = [
+                        'pools.resource_pools.resource_pool'
+                    ]
+                    templateVars["allow_opt_out"] = False
+                    for policy in policy_list:
+                        policy_short = policy.split('.')[2]
+                        templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                        templateVars.update(policyData)
+                        server_template = True
                         valid = True
-                    elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', templateVars["serial_number"]):
-                        valid = True
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Serial Number.  "{templateVars["serial_number"]}" is not a valid serial.')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
 
                 valid = False
                 while valid == False:
@@ -10074,6 +10643,7 @@ class easy_imm_wizard(object):
                             #
                             # Compute Configuration
                             #___________________________
+                            'pools.uuid_pools.uuid_pool',
                             'policies.bios_policies.bios_policy',
                             'policies.boot_order_policies.boot_order_policy',
                             'policies.power_policies.power_policy',
@@ -10148,16 +10718,14 @@ class easy_imm_wizard(object):
                         templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         templateVars.update(policyData)
 
-                if templateVars["serial_number"] == '':
-                    templateVars["assign_server"] = False
-                else:
-                    templateVars["assign_server"] = True
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'    action          = "{templateVars["action"]}"')
-                print(f'    assign_server   = {templateVars["assign_server"]}')
                 print(f'    description     = "{templateVars["descr"]}"')
                 print(f'    name            = "{templateVars["name"]}"')
-                print(f'    serial_number   = "{templateVars["serial_number"]}"')
+                if templateVars["server_assignment_mode"] == 'Pool':
+                    print(f'    resource_pool   = {templateVars["resource_pool"]}')
+                if templateVars["server_assignment_mode"] == 'Static':
+                    print(f'    serial_number   = "{templateVars["serial_number"]}"')
                 if server_template == True:
                     print(f'    ucs_server_profile_template = "{templateVars["ucs_server_profile_template"]}"')
                 if server_template == False:
@@ -10167,6 +10735,10 @@ class easy_imm_wizard(object):
                     print(f'    #')
                     print(f'    # Compute Configuration')
                     print(f'    #___________________________"')
+                    if not templateVars["static_uuid_address"] == '':
+                        print(f'    static_uuid_address        = "{templateVars["static_uuid_address"]}"')
+                    if not templateVars["uuid_pool"] == '':
+                        print(f'    uuid_pool                  = "{templateVars["uuid_pool"]}"')
                     print(f'    bios_policy                = "{templateVars["bios_policy"]}"')
                     print(f'    boot_order_policy          = "{templateVars["boot_order_policy"]}"')
                     if templateVars["target_platform"] == 'Standalone':
@@ -10298,6 +10870,7 @@ class easy_imm_wizard(object):
                             #
                             # Compute Configuration
                             #___________________________
+                            'pools.uuid_pools.uuid_pool'
                             'policies.bios_policies.bios_policy',
                             'policies.boot_order_policies.boot_order_policy',
                             'policies.power_policies.power_policy',
@@ -10380,6 +10953,8 @@ class easy_imm_wizard(object):
                     print(f'    #')
                     print(f'    # Compute Configuration')
                     print(f'    #___________________________"')
+                    if templateVars["target_platform"] == 'FIAttached':
+                        print(f'    uuid_pool                  = "{templateVars["uuid_pool"]}"')
                     print(f'    bios_policy                = "{templateVars["bios_policy"]}"')
                     print(f'    boot_order_policy          = "{templateVars["boot_order_policy"]}"')
                     if templateVars["target_platform"] == 'Standalone':

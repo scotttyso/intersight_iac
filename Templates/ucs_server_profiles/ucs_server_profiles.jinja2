@@ -5,14 +5,13 @@
 {%- else %}
     action                        = "No-op"
 {%- endif %}
-{%- if assign_server %}
-    assign_server                 = {{ assign_server|lower }}
-{%- else %}
-    assign_server                 = false
-{%- endif %}
 {%- if adapter_configuration_policy %}
     adapter_configuration_policy  = "{{ adapter_configuration_policy }}"
 {%- endif %}
+{%- if static_uuid_address %}
+    static_uuid_address        = "{{ static_uuid_address }}"
+{%- if uuid_pool %}
+    uuid_pool                  = "{{ uuid_pool }}"
 {%- if bios_policy %}
     bios_policy                   = "{{ bios_policy }}"
 {%- endif %}
@@ -51,15 +50,23 @@
 {%- if persistent_memory_policies %}
     persistent_memory_policies    = "{{ persistent_memory_policies }}"
 {%- endif %}
+{%- if server_assignment_mode == 'Pool' %}
+    resource_pool                 = "{{ resource_pool }}"
+{%- endif %}
 {%- if san_connectivity_policy %}
     san_connectivity_policy       = "{{ san_connectivity_policy }}"
 {%- endif %}
 {%- if sd_card_policy %}
     sd_card_policy                = "{{ sd_card_policy }}"
 {%- endif %}
-    serial_number                 = ""
+    serial_number                 = "{{ serial_number }}"
 {%- if serial_over_lan_policy %}
     serial_over_lan_policy        = "{{ serial_over_lan_policy }}"
+{%- endif %}
+{%- if server_assignment_mode %}
+    server_assignment_mode        = "{{ server_assignment_mode }}"
+{%- else %}
+    server_assignment_mode        = "None"
 {%- endif %}
 {%- if smtp_policies %}
     smtp_policies                 = "{{ smtp_policies }}"

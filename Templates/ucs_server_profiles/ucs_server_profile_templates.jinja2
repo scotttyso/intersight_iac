@@ -9,6 +9,8 @@
     #___________________________
     bios_policy                = "{{ bios_policy }}"
     boot_order_policy          = "{{ boot_policy }}"
+{%- if target_platform == 'FIAttached' %}
+    uuid_pool                  = "{{ uuid_pool }}"
 {%- if target_platform == 'Standalone' %}
     persistent_memory_policies = "{{ persistent_memory_policies }}"
 {%- endif %}

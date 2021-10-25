@@ -357,11 +357,14 @@ def process_wizard(easy_jsonData, jsonData):
     main_menu = main_menu.replace(' ', '_')
     main_menu = main_menu.lower()
 
+    policy_list = []
     if main_menu == 'deploy_domain_wizard':
         policy_list = [
             # Pools
             'ip_pools',
+            'iqn_pools',
             'mac_pools',
+            'resource_pools',
             'uuid_pools',
             'wwnn_pools',
             'wwpn_pools',
@@ -438,7 +441,9 @@ def process_wizard(easy_jsonData, jsonData):
         policy_list = [
             # Pools
             'ip_pools',
+            'iqn_pools',
             'mac_pools',
+            'resource_pools',
             'uuid_pools',
             'wwnn_pools',
             'wwpn_pools',
@@ -472,7 +477,9 @@ def process_wizard(easy_jsonData, jsonData):
         policy_list = [
             # Pools
             'ip_pools',
+            'iqn_pools',
             'mac_pools',
+            'resource_pools',
             'uuid_pools',
             'wwnn_pools',
             'wwpn_pools',
@@ -510,7 +517,6 @@ def process_wizard(easy_jsonData, jsonData):
             'ucs_server_profiles',
         ]
 
-    policy_list = []
     if main_menu == 'deploy_individual_policies':
         templateVars["var_description"] = jsonVars['Individual']['description']
         templateVars["jsonVars"] = jsonVars['Individual']['enum']
@@ -611,7 +617,6 @@ def process_wizard(easy_jsonData, jsonData):
         #================================
         # Policies needed for 1st release
         #================================
-        # boot_order_policies
         # lan_connectivity_policies
         # storage_policies
         #================================
@@ -623,8 +628,8 @@ def process_wizard(easy_jsonData, jsonData):
             lib_ucs.easy_imm_wizard(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData)
         if policy == 'bios_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).bios_policies(jsonData, easy_jsonData)
-        # if policy == 'boot_order_policies':
-        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).boot_order_policies(jsonData, easy_jsonData)
+        if policy == 'boot_order_policies':
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).boot_order_policies(jsonData, easy_jsonData)
         #========================================================
         # Certificate Management Policies doesn't work
         #========================================================
@@ -685,8 +690,7 @@ def process_wizard(easy_jsonData, jsonData):
         # Need to finish LAN Policies for pci_order_consumed
         #========================================================
         elif policy == 'san_connectivity_policies':
-            pci_order_consumed = [{0:[0, 1, 2, 3, 4, 5, 6, 7]},{1:[0, 1, 2, 3, 4, 5, 6, 7]}]
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData, pci_order_consumed)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData)
         # elif policy == 'sd_card_policies':
         #     lib_ucs.easy_imm_wizard(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData)
         elif policy == 'serial_over_lan_policies':

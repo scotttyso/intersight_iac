@@ -3,9 +3,9 @@
     description          = "{{ descr }}"
     organization         = "{{ org }}"
 {%- if target_platform == 'FI-Attached' %}
-    target_platform             = "FIAttached"
+    target_platform      = "FIAttached"
 {%- else %}
-    target_platform             = "{{ target_platform }}"
+    target_platform      = "{{ target_platform }}"
 {%- endif %}
 {%- if vhba_placement_mode %}
     vhba_placement_mode  = "{{ vhba_placement_mode }}"
@@ -46,7 +46,7 @@
       {%- elif k == 'name' %}
         name                         = "{{ v }}"
       {%- elif k == 'persistent_lun_bindings' %}
-        persistent_lun_bindings      = "{{ v }}"
+        persistent_lun_bindings      = {{ v|lower }}
       {%- elif k == 'pci_link' %}
         placement_pci_link           = {{ v }}
       {%- elif k == 'pci_order' %}

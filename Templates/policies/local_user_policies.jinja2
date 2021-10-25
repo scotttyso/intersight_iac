@@ -38,7 +38,7 @@
     password_history          = 5
 {%- endif %}
 {%- if local_users %}
-    local_users = {
+    users = {
   {%- for item in local_users %}
     {%- for k, v in item.items() %}
       {%- if k ==  'username' %}

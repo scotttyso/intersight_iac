@@ -4,6 +4,6 @@ simplejson
 lxml
 pathlib
 phonenumbers
+requests
 stdiomask
-subprocess
 validators

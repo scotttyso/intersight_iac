@@ -1,4 +1,16 @@
 {
+    "pools":{
+        "resourcepool.Pool":{
+            "server_type":{
+                "description": "The type of Server for this Pool.",
+                "enum":[
+                    "Blade",
+                    "RackUnit"
+                ],
+                "default": "Blade"
+            }
+        }
+    },
     "policies":{
         "bios.Policy":{
             "templates":{
@@ -12,6 +24,33 @@
                     "Windows"
                 ],
                 "default": "Virtualization"
+            }
+        },
+        "boot.PrecisionPolicy":{
+            "boot.Localdisk":{
+                "description": "Slot options for a Localdisk boot Policy.",
+                "FIAttached":[
+                    "1-205",
+                    "FMEZZ1-SAS",
+                    "MRAID",
+                    "MRAID1",
+                    "MRAID2",
+                    "MSTOR-RAID",
+                    "MSTOR-RAID-1",
+                    "MSTOR-RAID-2"
+                ],
+                "Standalone":[
+                    "1-205",
+                    "M",
+                    "HBA",
+                    "SAS",
+                    "MRAID",
+                    "MRAID1",
+                    "MRAID2",
+                    "MSTOR-RAID",
+                    "RAID"
+                ],
+                "default": "MSTOR-RAID"
             }
         },
         "fabric.PortPolicy":{
@@ -255,8 +294,13 @@
             "pools": [
                 "README.md",
                 "data_sources.tf",
+                "ip_pools.tf",
+                "iqn_pools.tf",
                 "locals.tf",
-                "main.tf",
+                "mac_pools.tf",
+                "uuid_pools.tf",
+                "wwnn_pools.tf",
+                "wwpn_pools.tf",
                 "outputs.tf",
                 "provider.tf",
                 "variables.tf"

@@ -1,12 +1,12 @@
 
   "{{ name }}" = {
     boot_mode          = "{{ boot_mode }}"
+    description        = "{{ descr }}"
 {%- if enable_secure_boot %}
     enable_secure_boot = {{ enable_secure_boot }}
 {%- else %}
     enable_secure_boot = false
 {%- endif %}
-    description        = "{{ descr }}"
     organization       = "{{ org }}"
 {%- if tags %}
     tags = [
@@ -222,6 +222,7 @@
         Lun                    = 0,
     {%- endif %}
         object_type            = "boot.San"
+        Port                   = 0,
         Slot                   = "{{ item['slot'] }}",
         Wwpn                   = "{{ item['target_wwpn'] }}"
   {%- elif item['device_type'] == 'san_boot' %}
