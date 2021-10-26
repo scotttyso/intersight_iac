@@ -3,16 +3,18 @@
     description                 = "{{ descr }}"
 {%- if enable_azure_stack_host_qos %}
     enable_azure_stack_host_qos = {{ enable_azure_stack_host_qos|lower }}
-{%- else %}
-    enable_azure_stack_host_qos = false
 {%- endif %}
 {%- if iqn_allocation_type %}
     iqn_allocation_type         = "{{ iqn_allocation_type|capitalize }}"
 {%- else %}
     iqn_allocation_type         = "None"
 {%- endif %}
+{%- if iqn_pool %}
     iqn_pool                    = "{{ iqn_pool }}"
+{%- endif %}
+{%- if iqn_static_identifier %}
     iqn_static_identifier       = "{{ iqn_identifier }}"
+{%- endif %}
     organization                = "{{ org }}"
 {%- if vnic_placement_mode %}
     vnic_placement_mode         = "{{ vnic_placement_mode }}"
@@ -84,7 +86,7 @@
         placement_uplink_port           = "{{ v }}"
       {%- elif k == 'usnic_settings' %}
         usnic_settings = [
-        {%- for i in k %}
+        {%- for i in v %}
           {%- for key, value in i.items() %}
             {%- if key == 'class_of_service' %}
           cos                  = {{ value }}
@@ -98,7 +100,7 @@
         {%- endfor %}
       {%- elif k == 'vmq_settings' %}
         vmq_settings = [
-        {%- for i in k %}
+        {%- for i in v %}
           {%- for key, value in i.items() %}
             {%- if key == 'enable_virtual_machine_multi_queue' %}
           enable_virtual_machine_multi_queue = {{ value|lower }}

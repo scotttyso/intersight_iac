@@ -11,6 +11,7 @@ import subprocess
 import stdiomask
 import sys
 import validating
+from textwrap import fill
 
 ucs_template_path = pkg_resources.resource_filename('lib_ucs', 'Templates/')
 
@@ -1181,7 +1182,6 @@ class easy_imm_wizard(object):
                                     jsonVars = jsonData['components']['schemas']['boot.Iscsi']['allOf'][1]['properties']
                                 elif objectType == 'boot.LocalCdd':
                                     device_type = 'local_cdd'
-                                    jsonVars = jsonData['components']['schemas']['boot.LocalCdd']['allOf'][1]['properties']
                                 elif objectType == 'boot.LocalDisk':
                                     device_type = 'local_disk'
                                     jsonVars = jsonData['components']['schemas']['boot.LocalDisk']['allOf'][1]['properties']
@@ -4186,10 +4186,11 @@ class easy_imm_wizard(object):
     #========================================
     # LAN Connectivity Policy Module
     #========================================
-    def lan_connectivity_policies(self, jsonData, easy_jsonData, policies):
+    def lan_connectivity_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
-        name_suffix = 'lan'
+        name_suffix = ['Management', 'Migration', 'Storage', 'Virtual_Machines']
         org = self.org
+        policy_names = []
         policy_type = 'LAN Connectivity Policy'
         templateVars = {}
         templateVars["header"] = '%s Variables' % (policy_type)
@@ -4207,106 +4208,512 @@ class easy_imm_wizard(object):
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} will configure vNIC adapters for Server Profiles.\n')
+            print(f'  If failover is not configured the Wizard will create a Pair of vNICs.')
+            print(f'  For Instance with a Virtual Host that may have the following vNIC Pairs:')
+            print(f'     1. Management')
+            print(f'     2. Migration/vMotion')
+            print(f'     3. Storage')
+            print(f'     4. Virtual Machines\n')
             print(f'  This wizard will save the configuraton for this section to the following file:')
             print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            loop_count = 1
-            policy_loop = False
-            while policy_loop == False:
+            configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                loop_count = 1
+                policy_loop = False
+                while policy_loop == False:
 
-                if not name_prefix == '':
-                    name = '%s_%s' % (name_prefix, name_suffix)
-                else:
-                    name = '%s_%s' % (org, name_suffix)
-
-                templateVars["name"] = policy_name(name, policy_type)
-                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
-
-                valid = False
-                while valid == False:
-                    azure_stack_qos = input(f'\nNote: Enabling AzureStack-Host QoS on an adapter allows the user to carve out \n'\
-                        'traffic classes for RDMA traffic which ensures that a desired portion of the bandwidth is allocated to it.\n\n'\
-                        'Do you want to Enable Azure Stack Host QoS for this LAN Policy?    Enter "Y" or "N" [N]: ')
-                    if azure_stack_qos == '' or azure_stack_qos == 'N':
-                        templateVars["enable_azure_stack_host_qos"] = False
-                        valid = True
-                    elif azure_stack_qos == 'Y':
-                        templateVars["enable_azure_stack_host_qos"] = True
-                        valid = True
+                    if not name_prefix == '':
+                        name = '%s_%s' % (name_prefix, 'lancon')
                     else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                        name = '%s_%s' % (org, 'lancon')
 
-                valid = False
-                while valid == False:
-                    question = input(f'\nDo you want to Enable iSCSI Policies for this LAN Connectivity Policy?  Enter "Y" or "N" [N]: ')
-                    if question == '' or question == 'N':
-                        iscsi_policies = False
-                        valid = True
-                    elif question == 'Y':
-                        iscsi_policies = True
-                        valid = True
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                    templateVars["name"] = policy_name(name, policy_type)
+                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
-                if iscsi_policies == True:
                     templateVars["multi_select"] = False
                     jsonVars = jsonData['components']['schemas']['vnic.LanConnectivityPolicy']['allOf'][1]['properties']
-                    templateVars["var_description"] = jsonVars['IqnAllocationType']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['IqnAllocationType']['enum'])
-                    templateVars["defaultVar"] = jsonVars['IqnAllocationType']['default']
-                    templateVars["varType"] = 'IQN Allocation Type'
-                    templateVars["iqn_allocation_type"] = variablesFromAPI(**templateVars)
-                    if templateVars["iqn_allocation_type"] == 'Pool':
-                        templateVars["iqn_static_identifier"] = ''
 
-                        policy_list = ['iqn_pools']
+                    templateVars["var_description"] = jsonVars['TargetPlatform']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
+                    templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                    templateVars["varType"] = 'Target Platform'
+                    templateVars["target_platform"] = variablesFromAPI(**templateVars)
+
+                    if templateVars["target_platform"] == 'FIAttached':
+                        templateVars["Description"] = jsonVars['AzureQosEnabled']['description']
+                        templateVars["varInput"] = f'Do you want to Enable AzureStack-Host QoS?'
+                        templateVars["varDefault"] = 'N'
+                        templateVars["varName"] = 'AzureStack-Host QoS'
+                        templateVars["enable_azure_stack_host_qos"] = varBoolLoop(**templateVars)
+
+                        templateVars["var_description"] = jsonVars['IqnAllocationType']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['IqnAllocationType']['enum'])
+                        templateVars["defaultVar"] = jsonVars['IqnAllocationType']['default']
+                        templateVars["varType"] = 'Iqn Allocation Type'
+                        templateVars["iqn_allocation_type"] = variablesFromAPI(**templateVars)
+
+                        if templateVars["iqn_allocation_type"] == 'Pool':
+                            templateVars["iqn_static_identifier"] = ''
+                            policy_list = [
+                                'pools.iqn_pools.iqn_pool',
+                            ]
+                            templateVars["allow_opt_out"] = False
+                            for policy in policy_list:
+                                policy_short = policy.split('.')[2]
+                                templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                                templateVars.update(policyData)
+
+                        elif templateVars["iqn_allocation_type"] == 'Static':
+                                templateVars["iqn_pool"] = ''
+                                valid = False
+                                while valid == False:
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                                    print(f'  User provided static iSCSI Qualified Name (IQN) for use as initiator identifiers by iSCSI')
+                                    print(f'  vNICs.')
+                                    print(f'  The iSCSI Qualified Name (IQN) format is: iqn.yyyy-mm.naming-authority:unique name, where:')
+                                    print(f'    - literal iqn (iSCSI Qualified Name) - always iqn')
+                                    print(f'    - date (yyyy-mm) that the naming authority took ownership of the domain')
+                                    print(f'    - reversed domain name of the authority (e.g. org.linux, com.example, com.cisco)')
+                                    print(f'    - unique name is any name you want to use, for example, the name of your host. The naming')
+                                    print(f'      authority must make sure that any names assigned following the colon are unique, such as:')
+                                    print(f'        * iqn.1984-12.com.cisco.iscsi:lnx1')
+                                    print(f'        * iqn.1984-12.com.cisco.iscsi:win-server1')
+                                    print(f'  Note: You can also obtain an IQN by going to any Linux system and typing in the command:')
+                                    print(f'        - iscsi-iname')
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                                    question = input(f'\nWould you Like the script to auto generate an IQN For you?  Enter "Y" or "N" [Y]: ')
+                                    if question == '' or question == 'Y':
+                                        p = subprocess.Popen(['iscsi-iname'],
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.STDOUT)
+                                        for line in iter(p.stdout.readline, b''):
+                                            line = line.decode("utf-8")
+                                            line = line.strip()
+                                            suffix = line.split(':')[1]
+                                            templateVars["iqn_static_identifier"] = 'iqn.1984-12.com.cisco.iscsi:%s' % (suffix)
+                                            print(f'IQN is {templateVars["iqn_static_identifier"]}')
+                                        valid = True
+                                    elif question == 'N':
+                                        templateVars["Description"] = jsonVars['StaticIqnName']['description']
+                                        templateVars["varDefault"] = ''
+                                        templateVars["varInput"] = 'What is the Static IQN you would like to assign to this LAN Policy?'
+                                        templateVars["varName"] = 'Static IQN'
+                                        templateVars["varRegex"] = jsonVars['StaticIqnName']['pattern']
+                                        templateVars["minLength"] = 4
+                                        templateVars["maxLength"] = 128
+                                        templateVars["iqn_static_identifier"] = varStringLoop(**templateVars)
+
+                        templateVars["var_description"] = jsonVars['PlacementMode']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['PlacementMode']['enum'])
+                        templateVars["defaultVar"] = jsonVars['PlacementMode']['default']
+                        templateVars["varType"] = 'Placement Mode'
+                        templateVars["vnic_placement_mode"] = variablesFromAPI(**templateVars)
+
+                    else:
+                        templateVars["iqn_allocation_type"] = 'None'
+
+                    global_name = templateVars["name"]
+                    print(f'\n-----------------------------------------------------------------------------------------------\n')
+                    print(f'Easy IMM will now begin the vNIC Configuration Process.  We recommend the following guidlines:')
+                    print(f'  - For Baremetal Operating Systems like Linux and Windows; use a Failover Policy with a single vnic')
+                    print(f'  - For a Virtual Environment it is a Good Practice to not use Failover and use the following')
+                    print(f'    vnic layout:')
+                    print(f'    1. Management')
+                    print(f'    2. Migration/vMotion')
+                    print(f'    3. Storage')
+                    print(f'    4. Virtual Machines')
+                    print(f'If you select no for Failover Policy the script will create mirroring vnics for A and B')
+                    print(f'\n-----------------------------------------------------------------------------------------------\n')
+                    inner_loop_count = 1
+                    pci_order_consumed = [{0:[]},{1:[]}]
+                    templateVars["vnics"] = []
+                    vnic_loop = False
+                    while vnic_loop == False:
+                        jsonVars = jsonData['components']['schemas']['vnic.EthIf']['allOf'][1]['properties']
+
+                        templateVars["Description"] = jsonVars['FailoverEnabled']['description']
+                        templateVars["varInput"] = f'Do you want to Enable Failover for this vNIC?'
+                        templateVars["varDefault"] = 'N'
+                        templateVars["varName"] = 'Enable Failover'
+                        templateVars["enable_failover"] = varBoolLoop(**templateVars)
+
+                        if templateVars["enable_failover"] == True:
+                            fabrics = ['A']
+                            templateVars["varDefault"] = 'vnic'
+                        else:
+                            fabrics = ['A','B']
+                            if inner_loop_count < 4:
+                                numValue = inner_loop_count -1
+                                templateVars["varDefault"] = name_suffix[numValue]
+                            else:
+                                templateVars["varDefault"] = 'vnic'
+                        templateVars["Description"] = jsonVars['Name']['description']
+                        templateVars["varInput"] = f'What is the name for this vNIC? [{templateVars["varDefault"]}]:'
+                        templateVars["varName"] = 'vNIC Name'
+                        templateVars["varRegex"] = jsonVars['Name']['pattern']
+                        templateVars["minLength"] = 1
+                        templateVars["maxLength"] = jsonVars['Name']['maxLength']
+                        Name = varStringLoop(**templateVars)
+                        for x in fabrics:
+                            templateVars[f"name_{x}"] = '%s-%s' % (Name, x)
+
+                        if templateVars["target_platform"] == 'FIAttached':
+                            templateVars["var_description"] = jsonVars['MacAddressType']['description']
+                            templateVars["jsonVars"] = sorted(jsonVars['MacAddressType']['enum'])
+                            templateVars["defaultVar"] = jsonVars['MacAddressType']['default']
+                            templateVars["varType"] = 'Mac Address Type'
+                            MacAddressType = variablesFromAPI(**templateVars)
+
+                            if MacAddressType == 'POOL':
+                                for x in fabrics:
+                                    templateVars["name"] = templateVars[f"name_{x}"]
+                                    policy_list = [
+                                        'pools.mac_pools.mac_pool',
+                                    ]
+                                    templateVars["allow_opt_out"] = False
+                                    for policy in policy_list:
+                                        templateVars[f"StaticMac_{x}"] = ''
+                                        if templateVars["enable_failover"] == False:
+                                            templateVars["optional_message"] = f'MAC Address Pool for Fabric {x}'
+                                        policy_short = policy.split('.')[2]
+                                        templateVars[f'mac_pool_{x}'],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                                        templateVars.update(policyData)
+                                    templateVars.pop('optional_message')
+                            else:
+                                for x in fabrics:
+                                    templateVars[f'macPool_{x}'] = ''
+                                    templateVars["Description"] = jsonVars['StaticMacAddress']['description']
+                                    if templateVars["enable_failover"] == True:
+                                        templateVars["varInput"] = f'What is the static MAC Address?'
+                                    else:
+                                        templateVars["varInput"] = f'What is the static MAC Address for Fabric {x}?'
+                                    if templateVars["enable_failover"] == True:
+                                        templateVars["varName"] = f'Static Mac Address'
+                                    else:
+                                        templateVars["varName"] = f'Fabric {x} Mac Address'
+                                    templateVars["varRegex"] = jsonData['components']['schemas']['boot.Pxe']['allOf'][1]['properties']['MacAddress']['pattern']
+                                    templateVars["minLength"] = 17
+                                    templateVars["maxLength"] = 17
+                                    templateVars[f"StaticMac_{x}"] = varStringLoop(**templateVars)
+
+                        # Pull in API Attributes
+                        jsonVars = jsonData['components']['schemas']['vnic.PlacementSettings']['allOf'][1]['properties']
+
+                        for x in fabrics:
+                            templateVars["var_description"] = jsonVars['PciLink']['description']
+                            if templateVars["enable_failover"] == False:
+                                templateVars["var_description"] = templateVars["var_description"] + f'\n\nPCI Link For Fabric {x}'
+                            templateVars["jsonVars"] = [0, 1]
+                            templateVars["defaultVar"] = jsonVars['PciLink']['default']
+                            if templateVars["enable_failover"] == True:
+                                templateVars["varType"] = 'PCI Link'
+                            else:
+                                templateVars["varType"] = f'Fabric {x} PCI Link'
+                            templateVars[f"pci_link_{x}"] = variablesFromAPI(**templateVars)
+
+                            if templateVars["target_platform"] == 'Standalone':
+                                templateVars["var_description"] = jsonVars['Uplink']['description']
+                                templateVars["jsonVars"] = [0, 1, 2, 3]
+                                templateVars["defaultVar"] = 0
+                                templateVars["varType"] = 'Mac Address Type'
+                                templateVars[f"uplink_port_{x}"] = variablesFromAPI(**templateVars)
+
+                        templateVars["var_description"] = jsonVars['Id']['description']
+                        templateVars["jsonVars"] = easy_jsonData['policies']['vnic.PlacementSettings']['enum']
+                        templateVars["defaultVar"] = easy_jsonData['policies']['vnic.PlacementSettings']['default']
+                        templateVars["varType"] = 'Slot ID'
+                        templateVars[f"slot_id"] = variablesFromAPI(**templateVars)
+
+                        # Pull in API Attributes
+                        jsonVars = jsonData['components']['schemas']['vnic.EthIf']['allOf'][1]['properties']
+
+                        for x in fabrics:
+                            valid = False
+                            while valid == False:
+                                templateVars["Description"] = jsonVars['Order']['description']
+                                if templateVars["enable_failover"] == False:
+                                    templateVars["varInput"] = f'\nPCI Order For Fabric {x}.'
+                                else:
+                                    templateVars["varInput"] = f'\nPCI Order.'
+                                print(pci_order_consumed)
+                                print(f' pci_link is templateVars[f"pci_link_{x}"]')
+                                if len(pci_order_consumed[0][templateVars[f"pci_link_{x}"]]) > 0:
+                                    print('Matched greater than 1')
+                                    templateVars["varDefault"] = len(pci_order_consumed[0][templateVars[f"pci_link_{x}"]])
+                                else:
+                                    templateVars["varDefault"] = 0
+                                templateVars["varName"] = 'PCI Order'
+                                templateVars["minNum"] = 0
+                                templateVars["maxNum"] = 255
+                                templateVars[f"pci_order_{x}"] = varNumberLoop(**templateVars)
+
+                                consumed_count = 0
+                                for i in pci_order_consumed[0][templateVars[f"pci_link_{x}"]]:
+                                    if int(i) == int(templateVars[f"pci_order_{x}"]):
+                                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                                        print(f'  Error!! PCI Order "{templateVars[f"PciOrder_{x}"]}" is already in use.  Please use an alternative.')
+                                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                                        consumed_count += 1
+
+                                if consumed_count == 0:
+                                    pci_order_consumed[0][templateVars[f"pci_link_{x}"]].append(templateVars[f"pci_order_{x}"])
+                                    print(pci_order_consumed)
+                                    valid = True
+
+                        # Pull in API Attributes
+                        jsonVars = jsonData['components']['schemas']['vnic.Cdn']['allOf'][1]['properties']
+
+                        templateVars["var_description"] = jsonVars['Source']['description']
+                        templateVars["jsonVars"] = jsonVars['Source']['enum']
+                        templateVars["defaultVar"] = jsonVars['Source']['default']
+                        templateVars["varType"] = 'CDN Source'
+                        templateVars["cdn_source"] = variablesFromAPI(**templateVars)
+
+                        if templateVars["cdn_source"] == 'user':
+                            for x in fabrics:
+                                templateVars["Description"] = jsonVars['Value']['description']
+                                if templateVars["enable_failover"] == True:
+                                    templateVars["varInput"] = 'What is the value for the Consistent Device Name?'
+                                else:
+                                    templateVars["varInput"] = 'What is the value for Fabric {x} Consistent Device Name?'
+                                templateVars["varName"] = 'CDN Name'
+                                templateVars["varRegex"] = jsonVars['Value']['pattern']
+                                templateVars["minLength"] = 1
+                                templateVars["maxLength"] = jsonVars['Value']['maxLength']
+                                templateVars[f"cdn_value_{x}"] = varStringLoop(**templateVars)
+                        else:
+                            for x in fabrics:
+                                templateVars[f"cdn_value_{x}"] = ''
+
+                        policy_list = [
+                            'policies.ethernet_adapter_policies.ethernet_adapter_policy',
+                        ]
+                        if templateVars["target_platform"] == 'Standalone':
+                            policy_list.append('policies.ethernet_network_policies.ethernet_network_policy')
+                        else:
+                            policy_list.append('policies.ethernet_network_control_policies.ethernet_network_control_policy')
+                            policy_list.append('policies.ethernet_network_group_policies.ethernet_network_group_policy')
+                        policy_list.append('policies.ethernet_qos_policies.ethernet_qos_policy')
                         templateVars["allow_opt_out"] = False
                         for policy in policy_list:
-                            templateVars["policies"] = policies.get(policy)
-                            templateVars['inband_ip_pool'] = choose_policy(policy, **templateVars)
-                    else:
-                        templateVars["iqn_pool"] = ''
-                        valid = False
-                        while valid == False:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  User provided static iSCSI Qualified Name (IQN) for use as initiator identifiers by iSCSI')
-                            print(f'  vNICs.')
-                            print(f'  The iSCSI Qualified Name (IQN) format is: iqn.yyyy-mm.naming-authority:unique name, where:')
-                            print(f'    - literal iqn (iSCSI Qualified Name) - always iqn')
-                            print(f'    - date (yyyy-mm) that the naming authority took ownership of the domain')
-                            print(f'    - reversed domain name of the authority (e.g. org.linux, com.example, com.cisco)')
-                            print(f'    - unique name is any name you want to use, for example, the name of your host. The naming')
-                            print(f'      authority must make sure that any names assigned following the colon are unique, such as:')
-                            print(f'        * iqn.1984-12.com.cisco:lnx1')
-                            print(f'        * iqn.1984-12.com.cisco:win-server1')
-                            print(f'        * iqn.1984-12.com.cisco:win-server1')
-                            print(f'  Note: You can also obtain an IQN by going to any Linux system and typing in the command:')
-                            print(f'        - iscsi-iname')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            question = input(f'\nWould you Like the script to auto generate an IQN For you?  Enter "Y" or "N" [Y]: ')
-                            if question == '' or question == 'Y':
-                                p = subprocess.Popen(['iscsi-iname'],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
-                                for line in iter(p.stdout.readline, b''):
-                                    line = line.decode("utf-8")
-                                    line = line.strip()
-                                    suffix = line.split(':')[1]
-                                    templateVars["iqn_static_identifier"] = 'iqn.1984-12.com.cisco:%s' % (suffix)
-                                valid = True
-                            elif question == 'N':
-                                templateVars["iqn_static_identifier"] = input(f'What is the Static IQN you would like to assign to this LAN Policy?  ')
-                                if not templateVars["iqn_static_identifier"] == '':
-                                    valid = validating.iqn_address('IQN Static Identifier', templateVars["iqn_static_identifier"])
+                            policy_short = policy.split('.')[2]
+                            templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                            templateVars.update(policyData)
+                        if not templateVars["iqn_allocation_type"] == 'None':
+                            policy_list [
+                                'policies.iscsi_boot_policies.iscsi_boot_policy'
+                            ]
+                            for x in fabrics:
+                                if templateVars["enable_failover"] == False:
+                                    templateVars["optional_message"] = f'iSCSI Boot Policy for Fabric {x}'
+                                policy_short = policy.split('.')[2]
+                                templateVars[f"{policy_short}_{x}"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                                templateVars.update(policyData)
+                            else:
+                                templateVars[f'iscsi_boot_policy_{x}'] = ''
 
-                else:
-                    templateVars["iqn_allocation_type"] = 'None'
-                    templateVars["iqn_pool"] = ''
-                    templateVars["iqn_static_identifier"] = ''
+
+
+                        for x in fabrics:
+                            templateVars[f"vnic_fabric_{x}"] = {
+                                'cdn_source':templateVars["cdn_source"],
+                            }
+                            if not templateVars[f"cdn_value_{x}"] == '':
+                                templateVars[f"vnic_fabric_{x}"].update({'cdn_value':templateVars[f"cdn_value_{x}"]})
+                            templateVars[f"vnic_fabric_{x}"].update({'enable_failover':templateVars["enable_failover"]})
+                            templateVars[f"vnic_fabric_{x}"].update({'ethernet_adapter_policy':templateVars["ethernet_adapter_policy"]})
+                            if templateVars["target_platform"] == 'Standalone':
+                                templateVars[f"vnic_fabric_{x}"].update({'ethernet_network_policy':templateVars["ethernet_network_policy"]})
+                            else:
+                                templateVars[f"vnic_fabric_{x}"].update({'ethernet_network_control_policy':templateVars["ethernet_network_control_policy"]})
+                                templateVars[f"vnic_fabric_{x}"].update({'ethernet_network_group_policy':templateVars["ethernet_network_group_policy"]})
+                            templateVars[f"vnic_fabric_{x}"].update({'ethernet_qos_policy':templateVars["ethernet_qos_policy"]})
+                            if not templateVars["iqn_allocation_type"] == 'None':
+                                templateVars[f"vnic_fabric_{x}"].update({'iscsi_boot_policy':templateVars[f"iscsi_boot_policy_{x}"]})
+                            if templateVars["target_platform"] == 'FIAttached':
+                                templateVars[f"vnic_fabric_{x}"].update({'mac_address_allocation_type':templateVars[f"mac_address_allocation_type"]})
+                                if templateVars["mac_address_allocation_type"] == 'POOL':
+                                    templateVars[f"vnic_fabric_{x}"].update({'mac_address_pool':templateVars[f"macPool_{x}"]})
+                                else:
+                                    templateVars[f"vnic_fabric_{x}"].update({'mac_address_static':templateVars[f"StaticMac_{x}"]})
+                            templateVars[f"vnic_fabric_{x}"].update({'name':templateVars[f"name_{x}"]})
+                            templateVars[f"vnic_fabric_{x}"].update({'pci_link':templateVars[f"pci_link_{x}"]})
+                            templateVars[f"vnic_fabric_{x}"].update({'pci_order':templateVars[f"pci_order_{x}"]})
+                            templateVars[f"vnic_fabric_{x}"].update({'slot_id':templateVars[f"slot_id"]})
+                            if templateVars["target_platform"] == 'FIAttached':
+                                templateVars[f"vnic_fabric_{x}"].update({'switch_id':templateVars[f"{x}"]})
+                            else:
+                                templateVars[f"vnic_fabric_{x}"].update({'uplink_port':templateVars[f"uplink_port_{x}"]})
+
+                        templateVars["name"] = global_name
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                        for x in fabrics:
+                            if templateVars["enable_failover"] == False:
+                                print(f'Fabric {x}:')
+                            for k, v in [f'vnic_fabric_{x}'].items():
+                                if k == 'cdn_source':
+                                    print(f'    cdn_source                      = "{v}"')
+                                elif k == 'cdn_value':
+                                    print(f'    cdn_value                       = "{v}"')
+                                elif k == 'enable_failover':
+                                    print(f'    enable_failover                 = "{v}"')
+                                elif k == 'ethernet_adapter_policy':
+                                    print(f'    ethernet_adapter_policy         = "{v}"')
+                                elif k == 'ethernet_network_control_policy':
+                                    print(f'    ethernet_network_control_policy = "{v}"')
+                                elif k == 'ethernet_network_group_policy':
+                                    print(f'    ethernet_network_group_policy   = "{v}"')
+                                elif k == 'ethernet_network_policy':
+                                    print(f'    ethernet_network_policy         = "{v}"')
+                                elif k == 'iscsi_boot_policy':
+                                    print(f'    iscsi_boot_policy               = "{v}"')
+                                elif k == 'mac_address_allocation_type':
+                                    print(f'    mac_address_allocation_type     = "{v}"')
+                                elif k == 'mac_address_pool':
+                                    print(f'    mac_address_pool                = "{v}"')
+                                elif k == 'mac_address_static':
+                                    print(f'    mac_address_static              = "{v}"')
+                                elif k == 'name':
+                                    print(f'    name                            = "{v}"')
+                                elif k == 'pci_link':
+                                    print(f'    placement_pci_link              = {v}')
+                                elif k == 'pci_order':
+                                    print(f'    placement_pci_order             = {v}')
+                                elif k == 'slot_id':
+                                    print(f'    placement_slot_id               = "{v}"')
+                                elif k == 'switch_id':
+                                    print(f'    placement_switch_id             = "{v}"')
+                                elif k == 'uplink_port':
+                                    print(f'    placement_uplink_port           = {v}')
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                        valid_confirm = False
+                        while valid_confirm == False:
+                            confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                            if confirm_v == 'Y' or confirm_v == '':
+                                for x in fabrics:
+                                    templateVars["vnics"].append(templateVars[f"vnic_fabric_{x}"])
+                                valid_exit = False
+                                while valid_exit == False:
+                                    loop_exit = input(f'Would You like to Configure another vNIC?  Enter "Y" or "N" [N]: ')
+                                    if loop_exit == 'Y':
+                                        inner_loop_count += 1
+                                        valid_confirm = True
+                                        valid_exit = True
+                                    elif loop_exit == 'N' or loop_exit == '':
+                                        vnic_loop = True
+                                        valid_confirm = True
+                                        valid_exit = True
+                                    else:
+                                        print(f'\n------------------------------------------------------\n')
+                                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                                        print(f'\n------------------------------------------------------\n')
+
+                            elif confirm_v == 'N':
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                print(f'  Starting Remote Host Configuration Over.')
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                valid_confirm = True
+                            else:
+                                print(f'\n------------------------------------------------------\n')
+                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                                print(f'\n------------------------------------------------------\n')
+
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    # if templateVars["target_platform"] == 'FIAttached':
+                    print(f'    description                 = {templateVars["descr"]}')
+                    print(f'    enable_azure_stack_host_qos = "{templateVars["enable_azure_stack_host_qos"]}"')
+                    # if not templateVars["iqn_allocation_type"] == 'None':
+                    print(f'    iqn_allocation_type         = "{templateVars["iqn_allocation_type"]}"')
+                    # if templateVars["iqn_allocation_type"] == 'Pool':
+                    print(f'    iqn_pool                    = "{templateVars["iqn_pool"]}"')
+                    # if templateVars["iqn_allocation_type"] == 'Static':
+                    print(f'    iqn_static_identifier       = "{templateVars["iqn_static_identifier"]}"')
+                    print(f'    name                        = "{templateVars["name"]}"')
+                    print(f'    target_platform             = "{templateVars["target_platform"]}"')
+                    print(f'    vnic_placement_mode         = "{templateVars["vnic_placement_mode"]}"')
+                    if len(templateVars["vnics"]) > 0:
+                        print(f'    vnics = ''{')
+                        for item in templateVars["vnics"]:
+                            for k, v in item.items():
+                                if k == 'name':
+                                    print(f'      "{v}" = ''{')
+                            for k, v in item.items():
+                                if k == 'cdn_source':
+                                    print(f'        cdn_source                      = "{v}"')
+                                elif k == 'cdn_value':
+                                    print(f'        cdn_value                       = "{v}"')
+                                elif k == 'enable_failover':
+                                    print(f'        enable_failover                 = "{v}"')
+                                elif k == 'ethernet_adapter_policy':
+                                    print(f'        ethernet_adapter_policy         = "{v}"')
+                                elif k == 'ethernet_network_control_policy':
+                                    print(f'        ethernet_network_control_policy = "{v}"')
+                                elif k == 'ethernet_network_group_policy':
+                                    print(f'        ethernet_network_group_policy   = "{v}"')
+                                elif k == 'ethernet_network_policy':
+                                    print(f'        ethernet_network_policy         = "{v}"')
+                                elif k == 'iscsi_boot_policy':
+                                    print(f'        iscsi_boot_policy               = "{v}"')
+                                elif k == 'mac_address_allocation_type':
+                                    print(f'        mac_address_allocation_type     = "{v}"')
+                                elif k == 'mac_address_pool':
+                                    print(f'        mac_address_pool                = "{v}"')
+                                elif k == 'mac_address_static':
+                                    print(f'        mac_address_static              = "{v}"')
+                                elif k == 'name':
+                                    print(f'        name                            = "{v}"')
+                                elif k == 'pci_link':
+                                    print(f'        placement_pci_link              = {v}')
+                                elif k == 'pci_order':
+                                    print(f'        placement_pci_order             = {v}')
+                                elif k == 'slot_id':
+                                    print(f'        placement_slot_id               = "{v}"')
+                                elif k == 'switch_id':
+                                    print(f'        placement_switch_id             = "{v}"')
+                                elif k == 'uplink_port':
+                                    print(f'        placement_uplink_port           = {v}')
+                            print(f'      ''}')
+                        print(f'    ''}')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Add Template Name to Policies Output
+                            policy_names.append(templateVars["name"])
+
+                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
+            elif configure == 'N':
+                configure_loop = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
 
     #========================================
     # LDAP Policy Module
@@ -8323,7 +8730,7 @@ class easy_imm_wizard(object):
                                     valid = True
 
                         templateVars["multi_select"] = False
-                        jsonVars = easy_jsonData['policies']['fabric.PortPolicy']
+                        jsonVars = easy_jsonData['policies']
                         templateVars["var_description"] = jsonVars['vnic.PlacementSettings']['description']
                         templateVars["jsonVars"] = [x for x in jsonVars['vnic.PlacementSettings']['enum']]
                         templateVars["defaultVar"] = jsonVars['vnic.PlacementSettings']['default']
@@ -12637,7 +13044,7 @@ def policies_parse(org, policy_type, policy):
 def policy_descr(name, policy_type):
     valid = False
     while valid == False:
-        descr = input(f'What is the templateVars["Description"] for the {policy_type}?  [{name} {policy_type}]: ')
+        descr = input(f'What is the Description for the {policy_type}?  [{name} {policy_type}]: ')
         if descr == '':
             descr = '%s %s' % (name, policy_type)
         valid = validating.description(f'{policy_type} templateVars["Description"]', descr, 1, 62)
@@ -12750,14 +13157,18 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                 elif 'pools' in policy_description:
                     policy_description = policy_description.replace('Pools', 'Pool')
 
-                Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
-                if Question == '' or Question == 'Y':
+                if templateVars["allow_opt_out"] == True:
+                    Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
+                    if Question == '' or Question == 'Y':
+                        create_policy = True
+                        valid = True
+                    elif Question == 'N':
+                        create_policy = False
+                        valid = True
+                        return templateVars[inner_var],policyData
+                else:
                     create_policy = True
                     valid = True
-                elif Question == 'N':
-                    create_policy = False
-                    valid = True
-                    return templateVars[inner_var],policyData
 
         else:
             templateVars[inner_var] = choose_policy(inner_policy, **templateVars)
@@ -12905,7 +13316,16 @@ def variablesFromAPI(**templateVars):
                             json_vars.pop(r)
                             break
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'{templateVars["var_description"]}')
+        newDescr = templateVars["var_description"]
+        if '\n' in newDescr:
+            newDescr = newDescr.split('\n')
+            for line in newDescr:
+                if '*' in line:
+                    print(fill(f'{line}',width=88, subsequent_indent='    '))
+                else:
+                    print(fill(f'{line}',88))
+        else:
+            print(fill(f'{templateVars["var_description"]}',88))
         print(f'\n    Select an Option Below:')
         for index, value in enumerate(json_vars):
             index += 1
@@ -12959,7 +13379,16 @@ def variablesFromAPI(**templateVars):
 
 def varBoolLoop(**templateVars):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  {templateVars["Description"]}')
+    newDescr = templateVars["Description"]
+    if '\n' in newDescr:
+        newDescr = newDescr.split('\n')
+        for line in newDescr:
+            if '*' in line:
+                print(fill(f'{line}',width=88, subsequent_indent='    '))
+            else:
+                print(fill(f'{line}',88))
+    else:
+        print(fill(f'{templateVars["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
@@ -12988,7 +13417,16 @@ def varNumberLoop(**templateVars):
     varName = templateVars["varName"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  {templateVars["Description"]}')
+    newDescr = templateVars["Description"]
+    if '\n' in newDescr:
+        newDescr = newDescr.split('\n')
+        for line in newDescr:
+            if '*' in line:
+                print(fill(f'{line}',width=88, subsequent_indent='    '))
+            else:
+                print(fill(f'{line}',88))
+    else:
+        print(fill(f'{templateVars["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
@@ -13011,7 +13449,16 @@ def varSensitiveStringLoop(**templateVars):
     varRegex = templateVars["varRegex"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  {templateVars["Description"]}')
+    newDescr = templateVars["Description"]
+    if '\n' in newDescr:
+        newDescr = newDescr.split('\n')
+        for line in newDescr:
+            if '*' in line:
+                print(fill(f'{line}',width=88, subsequent_indent='    '))
+            else:
+                print(fill(f'{line}',88))
+    else:
+        print(fill(f'{templateVars["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
@@ -13031,7 +13478,16 @@ def varStringLoop(**templateVars):
     varRegex = templateVars["varRegex"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  {templateVars["Description"]}')
+    newDescr = templateVars["Description"]
+    if '\n' in newDescr:
+        newDescr = newDescr.split('\n')
+        for line in newDescr:
+            if '*' in line:
+                print(fill(f'{line}',width=88, subsequent_indent='    '))
+            else:
+                print(fill(f'{line}',88))
+    else:
+        print(fill(f'{templateVars["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:

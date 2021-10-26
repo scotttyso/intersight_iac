@@ -665,8 +665,8 @@ def process_wizard(easy_jsonData, jsonData):
             lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_boot_policies(jsonData, easy_jsonData)
         elif policy == 'iscsi_static_target_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).iscsi_static_target_policies(jsonData, easy_jsonData)
-        # elif policy == 'lan_connectivity_policies':
-        #     lib_ucs.easy_imm_wizard(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
+        elif policy == 'lan_connectivity_policies':
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ldap_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).ldap_policies(jsonData, easy_jsonData)
         elif policy == 'link_aggregation_policies':
