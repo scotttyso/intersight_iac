@@ -3,6 +3,8 @@
     description                 = "{{ descr }}"
 {%- if enable_azure_stack_host_qos %}
     enable_azure_stack_host_qos = {{ enable_azure_stack_host_qos|lower }}
+{%- else %}
+    enable_azure_stack_host_qos = false
 {%- endif %}
 {%- if iqn_allocation_type %}
     iqn_allocation_type         = "{{ iqn_allocation_type|capitalize }}"

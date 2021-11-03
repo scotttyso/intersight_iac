@@ -1230,9 +1230,10 @@ class easy_imm_wizard(object):
                                     target_platform = variablesFromAPI(**templateVars)
 
                                     # Slot
+                                    jsonVars = jsonData['components']['schemas']['boot.LocalDisk']['allOf'][1]['properties']
                                     templateVars["var_description"] = jsonVars['Slot']['description']
-                                    templateVars["jsonVars"] = easy_jsonData['policies']['boot.Localdisk'][target_platform]
-                                    templateVars["defaultVar"] = easy_jsonData['policies']['boot.Localdisk']['default']
+                                    templateVars["jsonVars"] = easy_jsonData['policies']['boot.PrecisionPolicy']['boot.Localdisk'][target_platform]
+                                    templateVars["defaultVar"] = easy_jsonData['policies']['boot.PrecisionPolicy']['boot.Localdisk']['default']
                                     templateVars["varType"] = 'Slot'
                                     Slot = variablesFromAPI(**templateVars)
 
@@ -3484,12 +3485,21 @@ class easy_imm_wizard(object):
         templateVars["org"] = org
 
         if policyVar == 'policies':
-            templateVars["ws_pools"] = tfcb_config[0]['pools']
-            templateVars["ws_ucs_chassis_profiles"] = tfcb_config[0]['ucs_chassis_profiles']
-            templateVars["ws_ucs_domain_profiles"] = tfcb_config[0]['ucs_domain_profiles']
-            templateVars["ws_ucs_server_profiles"] = tfcb_config[0]['ucs_server_profiles']
+            for i in tfcb_config:
+                for k, v in i.items():
+                    if k == 'pools':
+                        templateVars["ws_pools"] = v
+                    elif k == 'ucs_chassis_profiles':
+                        templateVars["ws_ucs_chassis_profiles"] = v
+                    elif k == 'ws_ucs_domain_profiles':
+                        templateVars["ws_ucs_domain_profiles"] = v
+                    elif k == 'ws_ucs_server_profiles':
+                        templateVars["ws_ucs_server_profiles"] = v
         elif policyVar == 'policies_vlans':
-            templateVars["ws_ucs_domain_profiles"] = tfcb_config[0]['ucs_domain_profiles']
+             for i in tfcb_config:
+                for k, v in i.items():
+                    if k == 'ws_ucs_domain_profiles':
+                        templateVars["ws_ucs_domain_profiles"] = v
 
         templateVars["tags"] = '[{ key = "Module", value = "terraform-intersight-easy-imm" }, { key = "Version", value = "'f'{easy_jsonData["version"]}''" }]'
 
@@ -4338,12 +4348,13 @@ class easy_imm_wizard(object):
                         templateVars["varName"] = 'Enable Failover'
                         templateVars["enable_failover"] = varBoolLoop(**templateVars)
 
+                        print(f' inner loop count is {inner_loop_count}')
                         if templateVars["enable_failover"] == True:
                             fabrics = ['A']
                             templateVars["varDefault"] = 'vnic'
                         else:
                             fabrics = ['A','B']
-                            if inner_loop_count < 4:
+                            if inner_loop_count < 5:
                                 numValue = inner_loop_count -1
                                 templateVars["varDefault"] = name_suffix[numValue]
                             else:
@@ -4363,9 +4374,9 @@ class easy_imm_wizard(object):
                             templateVars["jsonVars"] = sorted(jsonVars['MacAddressType']['enum'])
                             templateVars["defaultVar"] = jsonVars['MacAddressType']['default']
                             templateVars["varType"] = 'Mac Address Type'
-                            MacAddressType = variablesFromAPI(**templateVars)
+                            templateVars[f"mac_address_allocation_type"] = variablesFromAPI(**templateVars)
 
-                            if MacAddressType == 'POOL':
+                            if templateVars[f"mac_address_allocation_type"] == 'POOL':
                                 for x in fabrics:
                                     templateVars["name"] = templateVars[f"name_{x}"]
                                     policy_list = [
@@ -4373,7 +4384,7 @@ class easy_imm_wizard(object):
                                     ]
                                     templateVars["allow_opt_out"] = False
                                     for policy in policy_list:
-                                        templateVars[f"StaticMac_{x}"] = ''
+                                        templateVars[f"static_mac_{x}"] = ''
                                         if templateVars["enable_failover"] == False:
                                             templateVars["optional_message"] = f'MAC Address Pool for Fabric {x}'
                                         policy_short = policy.split('.')[2]
@@ -4382,7 +4393,7 @@ class easy_imm_wizard(object):
                                     templateVars.pop('optional_message')
                             else:
                                 for x in fabrics:
-                                    templateVars[f'macPool_{x}'] = ''
+                                    templateVars[f'mac_pool_{x}'] = ''
                                     templateVars["Description"] = jsonVars['StaticMacAddress']['description']
                                     if templateVars["enable_failover"] == True:
                                         templateVars["varInput"] = f'What is the static MAC Address?'
@@ -4395,7 +4406,7 @@ class easy_imm_wizard(object):
                                     templateVars["varRegex"] = jsonData['components']['schemas']['boot.Pxe']['allOf'][1]['properties']['MacAddress']['pattern']
                                     templateVars["minLength"] = 17
                                     templateVars["maxLength"] = 17
-                                    templateVars[f"StaticMac_{x}"] = varStringLoop(**templateVars)
+                                    templateVars[f"static_mac_{x}"] = varStringLoop(**templateVars)
 
                         # Pull in API Attributes
                         jsonVars = jsonData['components']['schemas']['vnic.PlacementSettings']['allOf'][1]['properties']
@@ -4411,6 +4422,7 @@ class easy_imm_wizard(object):
                             else:
                                 templateVars["varType"] = f'Fabric {x} PCI Link'
                             templateVars[f"pci_link_{x}"] = variablesFromAPI(**templateVars)
+                            print(templateVars[f"pci_link_{x}"])
 
                             if templateVars["target_platform"] == 'Standalone':
                                 templateVars["var_description"] = jsonVars['Uplink']['description']
@@ -4436,10 +4448,7 @@ class easy_imm_wizard(object):
                                     templateVars["varInput"] = f'\nPCI Order For Fabric {x}.'
                                 else:
                                     templateVars["varInput"] = f'\nPCI Order.'
-                                print(pci_order_consumed)
-                                print(f' pci_link is templateVars[f"pci_link_{x}"]')
                                 if len(pci_order_consumed[0][templateVars[f"pci_link_{x}"]]) > 0:
-                                    print('Matched greater than 1')
                                     templateVars["varDefault"] = len(pci_order_consumed[0][templateVars[f"pci_link_{x}"]])
                                 else:
                                     templateVars["varDefault"] = 0
@@ -4458,7 +4467,6 @@ class easy_imm_wizard(object):
 
                                 if consumed_count == 0:
                                     pci_order_consumed[0][templateVars[f"pci_link_{x}"]].append(templateVars[f"pci_order_{x}"])
-                                    print(pci_order_consumed)
                                     valid = True
 
                         # Pull in API Attributes
@@ -4486,6 +4494,7 @@ class easy_imm_wizard(object):
                             for x in fabrics:
                                 templateVars[f"cdn_value_{x}"] = ''
 
+                        templateVars["name"] = templateVars["name"].split('-')[0]
                         policy_list = [
                             'policies.ethernet_adapter_policies.ethernet_adapter_policy',
                         ]
@@ -4534,15 +4543,15 @@ class easy_imm_wizard(object):
                             if templateVars["target_platform"] == 'FIAttached':
                                 templateVars[f"vnic_fabric_{x}"].update({'mac_address_allocation_type':templateVars[f"mac_address_allocation_type"]})
                                 if templateVars["mac_address_allocation_type"] == 'POOL':
-                                    templateVars[f"vnic_fabric_{x}"].update({'mac_address_pool':templateVars[f"macPool_{x}"]})
+                                    templateVars[f"vnic_fabric_{x}"].update({'mac_address_pool':templateVars[f"mac_pool_{x}"]})
                                 else:
-                                    templateVars[f"vnic_fabric_{x}"].update({'mac_address_static':templateVars[f"StaticMac_{x}"]})
+                                    templateVars[f"vnic_fabric_{x}"].update({'mac_address_static':templateVars[f"static_mac_{x}"]})
                             templateVars[f"vnic_fabric_{x}"].update({'name':templateVars[f"name_{x}"]})
                             templateVars[f"vnic_fabric_{x}"].update({'pci_link':templateVars[f"pci_link_{x}"]})
                             templateVars[f"vnic_fabric_{x}"].update({'pci_order':templateVars[f"pci_order_{x}"]})
                             templateVars[f"vnic_fabric_{x}"].update({'slot_id':templateVars[f"slot_id"]})
                             if templateVars["target_platform"] == 'FIAttached':
-                                templateVars[f"vnic_fabric_{x}"].update({'switch_id':templateVars[f"{x}"]})
+                                templateVars[f"vnic_fabric_{x}"].update({'switch_id':f"{x}"})
                             else:
                                 templateVars[f"vnic_fabric_{x}"].update({'uplink_port':templateVars[f"uplink_port_{x}"]})
 
@@ -4551,13 +4560,13 @@ class easy_imm_wizard(object):
                         for x in fabrics:
                             if templateVars["enable_failover"] == False:
                                 print(f'Fabric {x}:')
-                            for k, v in [f'vnic_fabric_{x}'].items():
+                            for k, v in templateVars[f"vnic_fabric_{x}"].items():
                                 if k == 'cdn_source':
                                     print(f'    cdn_source                      = "{v}"')
                                 elif k == 'cdn_value':
                                     print(f'    cdn_value                       = "{v}"')
                                 elif k == 'enable_failover':
-                                    print(f'    enable_failover                 = "{v}"')
+                                    print(f'    enable_failover                 = {v}')
                                 elif k == 'ethernet_adapter_policy':
                                     print(f'    ethernet_adapter_policy         = "{v}"')
                                 elif k == 'ethernet_network_control_policy':
@@ -4595,8 +4604,11 @@ class easy_imm_wizard(object):
                                     templateVars["vnics"].append(templateVars[f"vnic_fabric_{x}"])
                                 valid_exit = False
                                 while valid_exit == False:
-                                    loop_exit = input(f'Would You like to Configure another vNIC?  Enter "Y" or "N" [N]: ')
-                                    if loop_exit == 'Y':
+                                    if inner_loop_count < 4:
+                                        loop_exit = input(f'Would You like to Configure another vNIC?  Enter "Y" or "N" [Y]: ')
+                                    else:
+                                        loop_exit = input(f'Would You like to Configure another vNIC?  Enter "Y" or "N" [N]: ')
+                                    if loop_exit == 'Y' or (inner_loop_count < 4 and loop_exit == ''):
                                         inner_loop_count += 1
                                         valid_confirm = True
                                         valid_exit = True
@@ -4621,15 +4633,15 @@ class easy_imm_wizard(object):
 
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    # if templateVars["target_platform"] == 'FIAttached':
                     print(f'    description                 = {templateVars["descr"]}')
-                    print(f'    enable_azure_stack_host_qos = "{templateVars["enable_azure_stack_host_qos"]}"')
-                    # if not templateVars["iqn_allocation_type"] == 'None':
-                    print(f'    iqn_allocation_type         = "{templateVars["iqn_allocation_type"]}"')
-                    # if templateVars["iqn_allocation_type"] == 'Pool':
-                    print(f'    iqn_pool                    = "{templateVars["iqn_pool"]}"')
-                    # if templateVars["iqn_allocation_type"] == 'Static':
-                    print(f'    iqn_static_identifier       = "{templateVars["iqn_static_identifier"]}"')
+                    if templateVars["target_platform"] == 'FIAttached':
+                        print(f'    enable_azure_stack_host_qos = {templateVars["enable_azure_stack_host_qos"]}')
+                    if not templateVars["iqn_allocation_type"] == 'None':
+                        print(f'    iqn_allocation_type         = "{templateVars["iqn_allocation_type"]}"')
+                    if templateVars["iqn_allocation_type"] == 'Pool':
+                        print(f'    iqn_pool                    = "{templateVars["iqn_pool"]}"')
+                    if templateVars["iqn_allocation_type"] == 'Static':
+                        print(f'    iqn_static_identifier       = "{templateVars["iqn_static_identifier"]}"')
                     print(f'    name                        = "{templateVars["name"]}"')
                     print(f'    target_platform             = "{templateVars["target_platform"]}"')
                     print(f'    vnic_placement_mode         = "{templateVars["vnic_placement_mode"]}"')
@@ -4645,7 +4657,7 @@ class easy_imm_wizard(object):
                                 elif k == 'cdn_value':
                                     print(f'        cdn_value                       = "{v}"')
                                 elif k == 'enable_failover':
-                                    print(f'        enable_failover                 = "{v}"')
+                                    print(f'        enable_failover                 = {v}')
                                 elif k == 'ethernet_adapter_policy':
                                     print(f'        ethernet_adapter_policy         = "{v}"')
                                 elif k == 'ethernet_network_control_policy':

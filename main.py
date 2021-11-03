@@ -90,6 +90,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
             tfcb_config.append({folder.split('/')[3]:templateVars["workspaceName"]})
             # templateVars["vcsBranch"] = ''
 
+
             templateVars['workspace_id'] = lib_terraform.Terraform_Cloud().tfcWorkspace(**templateVars)
             vars = [
                 'apikey.Intersight API Key',
@@ -189,7 +190,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                     templateVars["Sensitive"] = True
                     lib_terraform.Terraform_Cloud().tfcVariables(**templateVars)
 
-        tfcb_config.update({'org':org})
+        tfcb_config.append({'org':org})
         for folder in folder_list:
             name_prefix = 'dummy'
             type = 'pools'
