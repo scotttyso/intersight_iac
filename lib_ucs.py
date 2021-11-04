@@ -3072,283 +3072,292 @@ class easy_imm_wizard(object):
             print(f'  This wizard will save the configuraton for this section to the following file:')
             print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            policy_loop = False
-            while policy_loop == False:
+            configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                policy_loop = False
+                while policy_loop == False:
 
-                if not name_prefix == '':
-                    name = '%s_%s' % (name_prefix, name_suffix)
-                else:
-                    name = '%s_%s' % (org, name_suffix)
-
-                templateVars["name"] = policy_name(name, policy_type)
-                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
-
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Assignment order decides the order in which the next identifier is allocated.')
-                print(f'    1. default - (Intersight Default) Assignment order is decided by the system.')
-                print(f'    2. sequential - (Recommended) Identifiers are assigned in a sequential order.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                valid = False
-                while valid == False:
-                    templateVars["assignment_order"] = input('Specify the number for the value to select.  [2]: ')
-                    if templateVars["assignment_order"] == '' or templateVars["assignment_order"] == '2':
-                        templateVars["assignment_order"] = 'sequential'
-                        valid = True
-                    elif templateVars["assignment_order"] == '1':
-                        templateVars["assignment_order"] = 'default'
-                        valid = True
+                    if not name_prefix == '':
+                        name = '%s_%s' % (name_prefix, name_suffix)
                     else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Option.  Please Select a valid option from the List.')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                        name = '%s_%s' % (org, name_suffix)
 
-                valid = False
-                while valid == False:
-                    config_ipv4 = input('Do you want to configure IPv4 for this Pool?  Enter "Y" or "N" [Y]: ')
+                    templateVars["name"] = policy_name(name, policy_type)
+                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Assignment order decides the order in which the next identifier is allocated.')
+                    print(f'    1. default - (Intersight Default) Assignment order is decided by the system.')
+                    print(f'    2. sequential - (Recommended) Identifiers are assigned in a sequential order.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid = False
+                    while valid == False:
+                        templateVars["assignment_order"] = input('Specify the number for the value to select.  [2]: ')
+                        if templateVars["assignment_order"] == '' or templateVars["assignment_order"] == '2':
+                            templateVars["assignment_order"] = 'sequential'
+                            valid = True
+                        elif templateVars["assignment_order"] == '1':
+                            templateVars["assignment_order"] = 'default'
+                            valid = True
+                        else:
+                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Option.  Please Select a valid option from the List.')
+                            print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                    valid = False
+                    while valid == False:
+                        config_ipv4 = input('Do you want to configure IPv4 for this Pool?  Enter "Y" or "N" [Y]: ')
+                        if config_ipv4 == 'Y' or config_ipv4 == '':
+                            valid = True
+                        elif config_ipv4 == 'N':
+                            valid = True
+                        else:
+                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n-------------------------------------------------------------------------------------------\n')
+
                     if config_ipv4 == 'Y' or config_ipv4 == '':
-                        valid = True
-                    elif config_ipv4 == 'N':
-                        valid = True
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                if config_ipv4 == 'Y' or config_ipv4 == '':
-                    valid = False
-                    while valid == False:
-                        network_prefix = input('What is the Gateway/Mask to Assign to the Pool?  [198.18.0.1/24]: ')
-                        if network_prefix == '':
-                            network_prefix = '198.18.0.1/24'
-                        gateway_valid = validating.ip_address('Gateway Address', network_prefix)
-                        mask_valid = validating.number_in_range('Mask Length', network_prefix.split('/')[1], 1, 30)
-                        if gateway_valid == True and mask_valid == True:
-                            valid = True
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please Verify you have entered the gateway/prefix correctly.')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                    gateway = str(ipaddress.IPv4Interface(network_prefix).ip)
-                    netmask = str(ipaddress.IPv4Interface(network_prefix).netmask)
-                    network = str(ipaddress.IPv4Interface(network_prefix).network)
-                    prefix = network_prefix.split('/')[1]
-
-                    valid = False
-                    while valid == False:
-                        starting = input('What is the Starting IP Address to Assign to the Pool?  [198.18.0.10]: ')
-                        if starting == '':
-                            starting = '198.18.0.10'
-                        valid_ip = validating.ip_address('Starting IP Address', starting)
-                        if valid_ip == True:
-                            if network == str(ipaddress.IPv4Interface('/'.join([starting, prefix])).network):
+                        valid = False
+                        while valid == False:
+                            network_prefix = input('What is the Gateway/Mask to Assign to the Pool?  [198.18.0.1/24]: ')
+                            if network_prefix == '':
+                                network_prefix = '198.18.0.1/24'
+                            gateway_valid = validating.ip_address('Gateway Address', network_prefix)
+                            mask_valid = validating.number_in_range('Mask Length', network_prefix.split('/')[1], 1, 30)
+                            if gateway_valid == True and mask_valid == True:
                                 valid = True
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please Verify the starting IP is in the same network')
-                                print(f'  as the Gateway')
+                                print(f'  Error!! Invalid Value.  Please Verify you have entered the gateway/prefix correctly.')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    valid = False
-                    while valid == False:
-                        pool_size = input('How Many IP Addresses should be added to the Pool?  Range is 1-1000 [160]: ')
-                        if pool_size == '':
-                            pool_size = '160'
-                        valid = validating.number_in_range('Pool Size', pool_size, 1, 1000)
+                        gateway = str(ipaddress.IPv4Interface(network_prefix).ip)
+                        netmask = str(ipaddress.IPv4Interface(network_prefix).netmask)
+                        network = str(ipaddress.IPv4Interface(network_prefix).network)
+                        prefix = network_prefix.split('/')[1]
+
+                        valid = False
+                        while valid == False:
+                            starting = input('What is the Starting IP Address to Assign to the Pool?  [198.18.0.10]: ')
+                            if starting == '':
+                                starting = '198.18.0.10'
+                            valid_ip = validating.ip_address('Starting IP Address', starting)
+                            if valid_ip == True:
+                                if network == str(ipaddress.IPv4Interface('/'.join([starting, prefix])).network):
+                                    valid = True
+                                else:
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                                    print(f'  Error!! Invalid Value.  Please Verify the starting IP is in the same network')
+                                    print(f'  as the Gateway')
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                        valid = False
+                        while valid == False:
+                            pool_size = input('How Many IP Addresses should be added to the Pool?  Range is 1-1000 [160]: ')
+                            if pool_size == '':
+                                pool_size = '160'
+                            valid = validating.number_in_range('Pool Size', pool_size, 1, 1000)
+
+                        valid = False
+                        while valid == False:
+                            primary_dns = input('What is your Primary DNS Server [208.67.220.220]? ')
+                            if primary_dns == '':
+                                primary_dns = '208.67.220.220'
+                            valid = validating.ip_address('Primary DNS Server', primary_dns)
+
+                        valid = False
+                        while valid == False:
+                            alternate_true = input('Do you want to Configure an Alternate DNS Server?  Enter "Y" or "N" [Y]: ')
+                            if alternate_true == 'Y' or alternate_true == '':
+                                secondary_dns = input('What is your Alternate DNS Server [208.67.222.222]? ')
+                                if secondary_dns == '':
+                                    secondary_dns = '208.67.222.222'
+                                valid = validating.ip_address('Alternate DNS Server', secondary_dns)
+                            elif alternate_true == 'N':
+                                secondary_dns = ''
+                                valid = True
+                            else:
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                        beginx = int(ipaddress.IPv4Address(starting))
+                        add_dec = (beginx + int(pool_size))
+                        ending = str(ipaddress.IPv4Address(add_dec))
+
+                        templateVars["ipv4_blocks"] = [{'from':starting, 'to':ending}]
+                        templateVars["ipv4_configuration"] = {'gateway':gateway, 'netmask':netmask,
+                            'primary_dns':primary_dns, 'secondary_dns':secondary_dns}
 
                     valid = False
                     while valid == False:
-                        primary_dns = input('What is your Primary DNS Server [208.67.220.220]? ')
-                        if primary_dns == '':
-                            primary_dns = '208.67.220.220'
-                        valid = validating.ip_address('Primary DNS Server', primary_dns)
-
-                    valid = False
-                    while valid == False:
-                        alternate_true = input('Do you want to Configure an Alternate DNS Server?  Enter "Y" or "N" [Y]: ')
-                        if alternate_true == 'Y' or alternate_true == '':
-                            secondary_dns = input('What is your Alternate DNS Server [208.67.222.222]? ')
-                            if secondary_dns == '':
-                                secondary_dns = '208.67.222.222'
-                            valid = validating.ip_address('Alternate DNS Server', secondary_dns)
-                        elif alternate_true == 'N':
-                            secondary_dns = ''
+                        config_ipv6 = input('Do you want to configure IPv6 for this Pool?  Enter "Y" or "N" [N]: ')
+                        if config_ipv6 == 'Y':
+                            valid = True
+                        elif config_ipv6 == 'N' or config_ipv6 == '':
                             valid = True
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    beginx = int(ipaddress.IPv4Address(starting))
-                    add_dec = (beginx + int(pool_size))
-                    ending = str(ipaddress.IPv4Address(add_dec))
-
-                    templateVars["ipv4_blocks"] = [{'from':starting, 'to':ending}]
-                    templateVars["ipv4_configuration"] = {'gateway':gateway, 'netmask':netmask,
-                        'primary_dns':primary_dns, 'secondary_dns':secondary_dns}
-
-                valid = False
-                while valid == False:
-                    config_ipv6 = input('Do you want to configure IPv6 for this Pool?  Enter "Y" or "N" [N]: ')
                     if config_ipv6 == 'Y':
-                        valid = True
-                    elif config_ipv6 == 'N' or config_ipv6 == '':
-                        valid = True
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                if config_ipv6 == 'Y':
-                    valid = False
-                    while valid == False:
-                        network_prefix = input('What is the Gateway/Mask to Assign to the Pool?  [2001:0002::1/64]: ')
-                        if network_prefix == '':
-                            network_prefix = '2001:0002::1/64'
-                        gateway_valid = validating.ip_address('Gateway Address', network_prefix)
-                        mask_valid = validating.number_in_range('Mask Length', network_prefix.split('/')[1], 48, 127)
-                        if gateway_valid == True and mask_valid == True:
-                            valid = True
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please Verify you have entered the gateway/prefix correctly.')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                    # broadcast = str(ipaddress.IPv4Interface(network_prefix).broadcast_address)
-                    gateway = str(ipaddress.IPv6Interface(network_prefix).ip)
-                    network = str(ipaddress.IPv6Interface(network_prefix).network)
-                    prefix = network_prefix.split('/')[1]
-
-                    valid = False
-                    while valid == False:
-                        starting = input('What is the Starting IP Address to Assign to the Pool?  [2001:0002::10]: ')
-                        if starting == '':
-                            starting = '2001:0002::10'
-                        valid_ip = validating.ip_address('Starting IP Address', starting)
-                        if valid_ip == True:
-                            if network == str(ipaddress.IPv6Interface('/'.join([starting, prefix])).network):
+                        valid = False
+                        while valid == False:
+                            network_prefix = input('What is the Gateway/Mask to Assign to the Pool?  [2001:0002::1/64]: ')
+                            if network_prefix == '':
+                                network_prefix = '2001:0002::1/64'
+                            gateway_valid = validating.ip_address('Gateway Address', network_prefix)
+                            mask_valid = validating.number_in_range('Mask Length', network_prefix.split('/')[1], 48, 127)
+                            if gateway_valid == True and mask_valid == True:
                                 valid = True
-                                # print('gateway and starting ip are in the same network')
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please Verify the starting IP is in the same network')
-                                print(f'  as the Gateway')
+                                print(f'  Error!! Invalid Value.  Please Verify you have entered the gateway/prefix correctly.')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    valid = False
-                    while valid == False:
-                        pool_size = input('How Many IP Addresses should be added to the Pool?  Range is 1-1000 [160]: ')
-                        if pool_size == '':
-                            pool_size = '160'
-                        valid = validating.number_in_range('Pool Size', pool_size, 1, 1000)
+                        # broadcast = str(ipaddress.IPv4Interface(network_prefix).broadcast_address)
+                        gateway = str(ipaddress.IPv6Interface(network_prefix).ip)
+                        network = str(ipaddress.IPv6Interface(network_prefix).network)
+                        prefix = network_prefix.split('/')[1]
 
-                    valid = False
-                    while valid == False:
-                        primary_dns = input('What is your Primary DNS Server [2620:119:35::35]? ')
-                        if primary_dns == '':
-                            primary_dns = '2620:119:35::35'
-                        valid = validating.ip_address('Primary DNS Server', primary_dns)
+                        valid = False
+                        while valid == False:
+                            starting = input('What is the Starting IP Address to Assign to the Pool?  [2001:0002::10]: ')
+                            if starting == '':
+                                starting = '2001:0002::10'
+                            valid_ip = validating.ip_address('Starting IP Address', starting)
+                            if valid_ip == True:
+                                if network == str(ipaddress.IPv6Interface('/'.join([starting, prefix])).network):
+                                    valid = True
+                                    # print('gateway and starting ip are in the same network')
+                                else:
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                                    print(f'  Error!! Invalid Value.  Please Verify the starting IP is in the same network')
+                                    print(f'  as the Gateway')
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    valid = False
-                    while valid == False:
-                        alternate_true = input('Do you want to Configure an Alternate DNS Server? Enter "Y" or "N" [Y]: ')
-                        if alternate_true == 'Y' or alternate_true == '':
-                            secondary_dns = input('What is your Alternate DNS Server [2620:119:53::53]? ')
-                            if secondary_dns == '':
-                                secondary_dns = '2620:119:53::53'
-                            valid = validating.ip_address('Alternate DNS Server', secondary_dns)
-                        elif alternate_true == 'N':
-                            secondary_dns = ''
-                            valid = True
+                        valid = False
+                        while valid == False:
+                            pool_size = input('How Many IP Addresses should be added to the Pool?  Range is 1-1000 [160]: ')
+                            if pool_size == '':
+                                pool_size = '160'
+                            valid = validating.number_in_range('Pool Size', pool_size, 1, 1000)
+
+                        valid = False
+                        while valid == False:
+                            primary_dns = input('What is your Primary DNS Server [2620:119:35::35]? ')
+                            if primary_dns == '':
+                                primary_dns = '2620:119:35::35'
+                            valid = validating.ip_address('Primary DNS Server', primary_dns)
+
+                        valid = False
+                        while valid == False:
+                            alternate_true = input('Do you want to Configure an Alternate DNS Server? Enter "Y" or "N" [Y]: ')
+                            if alternate_true == 'Y' or alternate_true == '':
+                                secondary_dns = input('What is your Alternate DNS Server [2620:119:53::53]? ')
+                                if secondary_dns == '':
+                                    secondary_dns = '2620:119:53::53'
+                                valid = validating.ip_address('Alternate DNS Server', secondary_dns)
+                            elif alternate_true == 'N':
+                                secondary_dns = ''
+                                valid = True
+                            else:
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                        # beginx = int(ipaddress.IPv6Address(starting))
+                        # add_dec = (beginx + int(pool_size))
+                        # ending = str(ipaddress.IPv6Address(add_dec))
+
+                        templateVars["ipv6_blocks"] = [{'from':starting, 'size':pool_size}]
+                        templateVars["ipv6_configuration"] = {'gateway':gateway, 'prefix':prefix,
+                            'primary_dns':primary_dns, 'secondary_dns':secondary_dns}
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'    assignment_order = "{templateVars["assignment_order"]}"')
+                    print(f'    description      = "{templateVars["descr"]}"')
+                    print(f'    name             = "{templateVars["name"]}"')
+                    if config_ipv4 == 'Y' or config_ipv4 == '':
+                        print(f'    ipv4_blocks = [')
+                        for item in templateVars["ipv4_blocks"]:
+                            print('      {')
+                            for k, v in item.items():
+                                if k == 'from':
+                                    print(f'        from = "{v}" ')
+                                elif k == 'to':
+                                    print(f'        to   = "{v}"')
+                            print('      }')
+                        print(f'    ]')
+                        print('    ipv4_configuration = {')
+                        print('      {')
+                        for k, v in templateVars["ipv4_configuration"].items():
+                            if k == 'gateway':
+                                print(f'        gateway       = "{v}"')
+                            elif k == 'netmask':
+                                print(f'        netmask       = "{v}"')
+                            elif k == 'primary_dns':
+                                print(f'        primary_dns   = "{v}"')
+                            elif k == 'secondary_dns':
+                                print(f'        secondary_dns = "{v}"')
+                        print('      }')
+                        print('    }')
+                    if config_ipv6 == 'Y':
+                        print(f'    ipv6_blocks = [')
+                        for item in templateVars["ipv6_blocks"]:
+                            print('      {')
+                            for k, v in item.items():
+                                if k == 'from':
+                                    print(f'        from = {v}')
+                                elif k == 'size':
+                                    print(f'        size = {v}')
+                            print('      }')
+                        print(f'    ]')
+                        print('    ipv6_configuration = {')
+                        print('      {')
+                        for k, v in templateVars["ipv6_configuration"].items():
+                            if k == 'gateway':
+                                print(f'        gateway       = "{v}"')
+                            elif k == 'prefix':
+                                print(f'        prefix        = "{v}"')
+                            elif k == 'primary_dns':
+                                print(f'        primary_dns   = "{v}"')
+                            elif k == 'secondary_dns':
+                                print(f'        secondary_dns = "{v}"')
+                        print('      }')
+                        print('    }')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
                         else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            print(f'\n------------------------------------------------------\n')
 
-                    # beginx = int(ipaddress.IPv6Address(starting))
-                    # add_dec = (beginx + int(pool_size))
-                    # ending = str(ipaddress.IPv6Address(add_dec))
-
-                    templateVars["ipv6_blocks"] = [{'from':starting, 'size':pool_size}]
-                    templateVars["ipv6_configuration"] = {'gateway':gateway, 'prefix':prefix,
-                        'primary_dns':primary_dns, 'secondary_dns':secondary_dns}
-
+            elif configure == 'N':
+                configure_loop = True
+            else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'    assignment_order = "{templateVars["assignment_order"]}"')
-                print(f'    description      = "{templateVars["descr"]}"')
-                print(f'    name             = "{templateVars["name"]}"')
-                if config_ipv4 == 'Y' or config_ipv4 == '':
-                    print(f'    ipv4_blocks = [')
-                    for item in templateVars["ipv4_blocks"]:
-                        print('      {')
-                        for k, v in item.items():
-                            if k == 'from':
-                                print(f'        from = "{v}" ')
-                            elif k == 'to':
-                                print(f'        to   = "{v}"')
-                        print('      }')
-                    print(f'    ]')
-                    print('    ipv4_configuration = {')
-                    print('      {')
-                    for k, v in templateVars["ipv4_configuration"].items():
-                        if k == 'gateway':
-                            print(f'        gateway       = "{v}"')
-                        elif k == 'netmask':
-                            print(f'        netmask       = "{v}"')
-                        elif k == 'primary_dns':
-                            print(f'        primary_dns   = "{v}"')
-                        elif k == 'secondary_dns':
-                            print(f'        secondary_dns = "{v}"')
-                    print('      }')
-                    print('    }')
-                if config_ipv6 == 'Y':
-                    print(f'    ipv6_blocks = [')
-                    for item in templateVars["ipv6_blocks"]:
-                        print('      {')
-                        for k, v in item.items():
-                            if k == 'from':
-                                print(f'        from = {v}')
-                            elif k == 'size':
-                                print(f'        size = {v}')
-                        print('      }')
-                    print(f'    ]')
-                    print('    ipv6_configuration = {')
-                    print('      {')
-                    for k, v in templateVars["ipv6_configuration"].items():
-                        if k == 'gateway':
-                            print(f'        gateway       = "{v}"')
-                        elif k == 'prefix':
-                            print(f'        prefix        = "{v}"')
-                        elif k == 'primary_dns':
-                            print(f'        primary_dns   = "{v}"')
-                        elif k == 'secondary_dns':
-                            print(f'        secondary_dns = "{v}"')
-                    print('      }')
-                    print('    }')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                valid_confirm = False
-                while valid_confirm == False:
-                    confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
-                    if confirm_policy == 'Y' or confirm_policy == '':
-                        confirm_policy = 'Y'
-
-                        # Write Policies to Template File
-                        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                        write_to_template(self, **templateVars)
-
-                        configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
-                        valid_confirm = True
-
-                    elif confirm_policy == 'N':
-                        print(f'\n------------------------------------------------------\n')
-                        print(f'  Starting {templateVars["policy_type"]} Section over.')
-                        print(f'\n------------------------------------------------------\n')
-                        valid_confirm = True
-
-                    else:
-                        print(f'\n------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n------------------------------------------------------\n')
 
         # Close the Template file
         templateVars["template_file"] = 'template_close.jinja2'
@@ -11377,7 +11386,7 @@ class easy_imm_wizard(object):
                     print(f'    bios_policy                = "{templateVars["bios_policy"]}"')
                     print(f'    boot_order_policy          = "{templateVars["boot_order_policy"]}"')
                     if templateVars["target_platform"] == 'Standalone':
-                        print(f'    persistent_memory_policies = "{templateVars["persistent_memory_policies"]}"')
+                        print(f'    persistent_memory_policies = "{templateVars["persistent_memory_policy"]}"')
                     if templateVars["target_platform"] == 'FIAttached':
                         print(f'    power_policy               = "{templateVars["power_policy"]}"')
                     print(f'    virtual_media_policy       = "{templateVars["virtual_media_policy"]}"')
@@ -11388,12 +11397,12 @@ class easy_imm_wizard(object):
                     # if target_platform == 'FIAttached':
                     #     print(f'    certificate_management_policy = "{templateVars["certificate_management_policy"]}"')
                     if templateVars["target_platform"] == 'Standalone':
-                        print(f'    device_connector_policies     = "{templateVars["device_connector_policies"]}"')
+                        print(f'    device_connector_policies     = "{templateVars["device_connector_policy"]}"')
                     if templateVars["target_platform"] == 'FIAttached':
                         print(f'    imc_access_policy             = "{templateVars["imc_access_policy"]}"')
                     print(f'    ipmi_over_lan_policy          = "{templateVars["ipmi_over_lan_policy"]}"')
                     if templateVars["target_platform"] == 'Standalone':
-                        print(f'    ldap_policies                 = "{templateVars["ldap_policies"]}"')
+                        print(f'    ldap_policies                 = "{templateVars["ldap_policy"]}"')
                     print(f'    local_user_policy             = "{templateVars["local_user_policy"]}"')
                     if templateVars["target_platform"] == 'Standalone':
                         print(f'    network_connectivity_policy   = "{templateVars["network_connectivity_policy"]}"')
@@ -13166,8 +13175,12 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
 
                 if 'Policies' in policy_description:
                     policy_description = policy_description.replace('Policies', 'Policy')
-                elif 'pools' in policy_description:
+                elif 'Pools' in policy_description:
                     policy_description = policy_description.replace('Pools', 'Pool')
+                elif 'Profiles' in policy_description:
+                    policy_description = policy_description.replace('Profiles', 'Profile')
+                elif 'Templates' in policy_description:
+                    policy_description = policy_description.replace('Templates', 'Template')
 
                 if templateVars["allow_opt_out"] == True:
                     Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
@@ -13235,7 +13248,6 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
             elif inner_policy == 'fibre_channel_qos_policies':
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).fibre_channel_qos_policies(jsonData, easy_jsonData)
             elif inner_policy == 'flow_control_policies':
-                print('creating policy')
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).flow_control_policies(jsonData, easy_jsonData)
             elif inner_policy == 'imc_access_policies':
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).imc_access_policies(jsonData, easy_jsonData)
@@ -13289,6 +13301,10 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData)
             elif inner_policy == 'thermal_policies':
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).thermal_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ucs_server_profiles':
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ucs_server_profiles(jsonData, easy_jsonData)
+            elif inner_policy == 'ucs_server_profile_templates':
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ucs_server_profile_templates(jsonData, easy_jsonData)
             elif inner_policy == 'virtual_kvm_policies':
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).virtual_kvm_policies(jsonData, easy_jsonData)
             elif inner_policy == 'virtual_media_policies':

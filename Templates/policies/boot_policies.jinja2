@@ -3,7 +3,7 @@
     boot_mode          = "{{ boot_mode }}"
     description        = "{{ descr }}"
 {%- if enable_secure_boot %}
-    enable_secure_boot = {{ enable_secure_boot }}
+    enable_secure_boot = {{ enable_secure_boot|lower }}
 {%- else %}
     enable_secure_boot = false
 {%- endif %}
