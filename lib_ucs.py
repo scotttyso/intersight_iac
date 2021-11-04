@@ -3509,6 +3509,11 @@ class easy_imm_wizard(object):
                 for k, v in i.items():
                     if k == 'ws_ucs_domain_profiles':
                         templateVars["ws_ucs_domain_profiles"] = v
+        elif policyVar == 'ucs_server_profiles':
+             for i in tfcb_config:
+                for k, v in i.items():
+                    if k == 'pools':
+                        templateVars["ws_pools"] = v
 
         templateVars["tags"] = '[{ key = "Module", value = "terraform-intersight-easy-imm" }, { key = "Version", value = "'f'{easy_jsonData["version"]}''" }]'
 
