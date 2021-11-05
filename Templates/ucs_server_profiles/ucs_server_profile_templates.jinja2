@@ -7,18 +7,18 @@
     #
     # Compute Configuration
     #___________________________
-    bios_policy                = "{{ bios_policy }}"
-    boot_order_policy          = "{{ boot_policy }}"
+    bios_policy              = "{{ bios_policy }}"
+    boot_order_policy        = "{{ boot_policy }}"
 {%- if target_platform == 'FIAttached' %}
-    uuid_pool                  = "{{ uuid_pool }}"
+    uuid_pool                = "{{ uuid_pool }}"
 {%- endif %}
 {%- if target_platform == 'Standalone' %}
-    persistent_memory_policies = "{{ persistent_memory_policies }}"
+    persistent_memory_policy = "{{ persistent_memory_policy }}"
 {%- endif %}
 {%- if target_platform == 'FIAttached' %}
-    power_policy               = "{{ power_policy }}"
+    power_policy             = "{{ power_policy }}"
 {%- endif %}
-    virtual_media_policy       = "{{ virtual_media_policy }}"
+    virtual_media_policy     = "{{ virtual_media_policy }}"
     #___________________________
     #
     # Management Configuration
@@ -27,7 +27,7 @@
     certificate_management_policy = "{{ certificate_management_policy }}"
 {%- endif %}
 {%- if target_platform == 'Standalone' %}
-    device_connector_policies     = "{{ device_connector_policies }}"
+    device_connector_policy       = "{{ device_connector_policy }}"
 {%- endif %}
 {%- if target_platform == 'FIAttached' %}
     imc_access_policy             = "{{ imc_access_policy }}"
