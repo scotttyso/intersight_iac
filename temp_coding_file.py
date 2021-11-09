@@ -19,6 +19,7 @@ class easy_imm_wizard(object):
         self.name_prefix = name_prefix
         self.org = org
         self.type = type
+        print('synching github')
 
 
     #========================================
