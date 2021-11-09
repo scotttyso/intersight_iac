@@ -1,3 +1,10 @@
+# Local .terraform directories
+**/.terraform/*
+**/.secret
+**/terraform.tfvars
+**/.terraform.lock.hcl
+
+# Local Python Directories
 **/intersight/*
 **/Intersight/*
 __pycache__/

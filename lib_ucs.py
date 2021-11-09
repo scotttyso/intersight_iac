@@ -11303,7 +11303,7 @@ class easy_imm_wizard(object):
                             #
                             # Compute Configuration
                             #___________________________
-                            'pools.uuid_pools.uuid_pool'
+                            'pools.uuid_pools.uuid_pool',
                             'policies.bios_policies.bios_policy',
                             'policies.boot_order_policies.boot_order_policy',
                             'policies.power_policies.power_policy',
@@ -12289,14 +12289,14 @@ class easy_imm_wizard(object):
                 if not native_vlan == '' and len(vlan_list) > 1:
                     templateVars["vlans"] = [
                         {
-                            'auto_allow_on_uplinks':True,
+                            'auto_allow_on_uplinks':False,
                             'id':native_vlan,
                             'multicast_policy':templateVars["multicast_policy"],
                             'name':native_name,
                             'native_vlan':True
                         },
                         {
-                            'auto_allow_on_uplinks':True,
+                            'auto_allow_on_uplinks':False,
                             'id':vlan_list,
                             'multicast_policy':templateVars["multicast_policy"],
                             'name':vlan_name,
@@ -12306,7 +12306,7 @@ class easy_imm_wizard(object):
                 elif not native_vlan == '' and len(vlan_list) == 1:
                     templateVars["vlans"] = [
                         {
-                            'auto_allow_on_uplinks':True,
+                            'auto_allow_on_uplinks':False,
                             'id':native_vlan,
                             'multicast_policy':templateVars["multicast_policy"],
                             'name':native_name,
@@ -12316,7 +12316,7 @@ class easy_imm_wizard(object):
                 else:
                     templateVars["vlans"] = [
                         {
-                            'auto_allow_on_uplinks':True,
+                            'auto_allow_on_uplinks':False,
                             'id':vlan_list,
                             'multicast_policy':templateVars["multicast_policy"],
                             'name':vlan_name,
@@ -13242,6 +13242,8 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_adapter_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ethernet_network_control_policies':
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ethernet_network_group_policies':
+                easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_network_group_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ethernet_network_policies':
                 easy_imm_wizard(name_prefix, templateVars["org"], inner_type).ethernet_network_policies(jsonData, easy_jsonData)
             elif inner_policy == 'ethernet_qos_policies':

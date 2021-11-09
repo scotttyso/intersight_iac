@@ -298,6 +298,7 @@
                 "iqn_pools.tf",
                 "locals.tf",
                 "mac_pools.tf",
+                "resource_pools.tf",
                 "uuid_pools.tf",
                 "wwnn_pools.tf",
                 "wwpn_pools.tf",
