@@ -1,0 +1,11 @@
+ip pools
+ ip range
+ dns
+ vlan for IMC Access Policy
+MAC/UUID/WWNN/WWPN pools
+ Prefix Value
+cdp or lldp for discovery
+Jumbo MTU
+Local User and Password
+SNMP User and passwords
+Syslog Servers

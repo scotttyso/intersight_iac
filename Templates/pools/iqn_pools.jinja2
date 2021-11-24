@@ -8,17 +8,25 @@
     organization     = "{{ org }}"
     prefix           = "{{ prefix }}"
 {%- if iqn_blocks %}
-    iqn_blocks = [
+    iqn_blocks = {
   {%- for item in iqn_blocks %}
-      {
+      "{{ loop.index }}" = {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}"
+      {%- if k == 'from' %}
+        from   = {{ v }}
+      {%- elif k == 'size' %}
+        size   = {{ v }}
+      {%- elif k == 'size' %}
+        suffix = "{{ v }}"
+      {%- elif k == 'to' %}
+        # to     = {{ v }}
+      {%- endif %}
     {%- endfor %}
       },
   {%- endfor %}
-    ]
+    }
 {%- else %}
-    iqn_blocks = []
+    iqn_blocks = {}
 {%- endif %}
 {%- if tags %}
     tags = [

@@ -4,15 +4,21 @@
     assignment_order = "{{ assignment_order }}"
 {%- endif %}
 {%- if mac_blocks %}
-    mac_blocks       = [
+    mac_blocks       = {
   {%- for item in mac_blocks %}
-      {
+      "{{ loop.index }}" = {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}"
+      {%- if k == 'from' %}
+        from = "{{ v }}"
+      {%- elif k == 'size' %}
+        size = {{ v }}
+      {%- elif k == 'to' %}
+        # to   = "{{ v }}"
+      {%- endif %}
     {%- endfor %}
       },
   {%- endfor %}
-    ]
+    }
 {%- else %}
     mac_blocks       = []
 {%- endif %}

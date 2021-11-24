@@ -4,23 +4,37 @@
     assignment_order = "{{ assignment_order }}"
 {%- endif %}
 {%- if ipv4_blocks %}
-    ipv4_block       = [
+    ipv4_blocks      = {
   {%- for item in ipv4_blocks %}
-      {
+      "{{ loop.index }}" = {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}"
+      {%- if k == 'from' %}
+        from = "{{ v }}"
+      {%- elif k == 'size' %}
+        size = {{ v }}
+      {%- elif k == 'to' %}
+        # to   = "{{ v }}"
+      {%- endif %}
     {%- endfor %}
       },
   {%- endfor %}
-    ]
+    }
 {%- else %}
-    ipv4_block       = []
+    ipv4_blocks      = {}
 {%- endif %}
 {%- if ipv4_configuration %}
     ipv4_config      = {
       config = {
   {%- for k, v in ipv4_configuration.items() %}
-        {{ k }} = "{{ v }}"
+    {%- if k == 'gateway' %}
+        gateway       = "{{ v }}"
+    {%- elif k == 'prefix' %}
+        network       = "{{ v }}"
+    {%- elif k == 'primary_dns' %}
+        primary_dns   = "{{ v }}"
+    {%- elif k == 'secondary_dns' %}
+        secondary_dns = "{{ v }}"
+    {%- endif %}
   {%- endfor %}
       }
     }
@@ -28,28 +42,42 @@
     ipv4_config      = {}
 {%- endif %}
 {%- if ipv6_blocks %}
-    ipv6_block       = [
+    ipv6_blocks      = {
   {%- for item in ipv6_blocks %}
-      {
+      "{{ loop.index }}" = {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}"
+      {%- if k == 'from' %}
+        from = "{{ v }}"
+      {%- elif k == 'size' %}
+        size = {{ v }}
+      {%- elif k == 'to' %}
+        # to   = "{{ v }}"
+      {%- endif %}
     {%- endfor %}
       },
   {%- endfor %}
-    ]
+    }
 {%- else %}
-    ipv6_block       = []
+    ipv6_blocks      = {}
 {%- endif %}
 {%- if ipv6_configuration %}
     ipv6_config      = {
       config = {
   {%- for k, v in ipv6_configuration.items() %}
-        {{ k }} = "{{ v }}"
+    {%- if k == 'gateway' %}
+        gateway       = "{{ v }}"
+    {%- elif k == 'prefix' %}
+        prefix        = {{ v }}
+    {%- elif k == 'primary_dns' %}
+        primary_dns   = "{{ v }}"
+    {%- elif k == 'secondary_dns' %}
+        secondary_dns = "{{ v }}"
+    {%- endif %}
   {%- endfor %}
       }
     }
 {%- else %}
-    ipv6_config      = {}
+    ipv6_configs     = {}
 {%- endif %}
     organization     = "{{ org }}"
 {%- if tags %}

@@ -53,6 +53,17 @@
                 "default": "MSTOR-RAID"
             }
         },
+        "fabric.EthNetworkControlPolicy":{
+            "discoveryProtocol":{
+                "description": "Neighbor Discovery Protocol.",
+                "enum":[
+                    "CDP",
+                    "LLDP",
+                    "None"
+                ],
+                "default": "None"
+            }
+        },
         "fabric.PortPolicy":{
             "unifiedPorts":{
                 "description": "The Port Range to convert to Fibre-Channel Mode.",
@@ -353,6 +364,7 @@
                 "Deploy Domain Servers Wizard",
                 "Deploy Standalone Servers Wizard",
                 "Deploy Individual Policies",
+                "Quick Start Deployment - Domain - VMware M2",
                 "Skip Policy Deployment"
             ],
             "default":"Deploy Domain Wizard"

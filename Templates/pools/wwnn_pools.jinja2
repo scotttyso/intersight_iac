@@ -4,17 +4,23 @@
     assignment_order = "{{ assignment_order }}"
 {%- endif %}
 {%- if wwnn_blocks %}
-    id_blocks        = [
+    id_blocks        = {
   {%- for item in wwnn_blocks %}
-      {
+      "{{ loop.index }}" = {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}"
+      {%- if k == 'from' %}
+        from = "{{ v }}"
+      {%- elif k == 'size' %}
+        size = {{ v }}
+      {%- elif k == 'to' %}
+        # to   = "{{ v }}"
+      {%- endif %}
     {%- endfor %}
       },
   {%- endfor %}
-    ]
+    }
 {%- else %}
-    id_blocks        = []
+    id_blocks        = {}
 {%- endif %}
     organization     = "{{ org }}"
     pool_purpose     = "WWNN"

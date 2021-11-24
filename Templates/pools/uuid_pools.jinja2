@@ -5,17 +5,23 @@
 {%- endif %}
     prefix           = "{{ prefix }}"
 {%- if uuid_blocks %}
-    uuid_blocks = [
+    uuid_blocks = {
   {%- for item in uuid_blocks %}
-      {
+      "{{ loop.index }}" = {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}"
+      {%- if k == 'from' %}
+        from = "{{ v }}"
+      {%- elif k == 'size' %}
+        size = {{ v }}
+      {%- elif k == 'to' %}
+        # to   = "{{ v }}"
+      {%- endif %}
     {%- endfor %}
       },
   {%- endfor %}
-    ]
+    }
 {%- else %}
-    uuid_blocks = []
+    uuid_blocks = {}
 {%- endif %}
     organization     = "{{ org }}"
 {%- if tags %}

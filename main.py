@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import subprocess
 import lib_terraform
 import lib_ucs
 import os
@@ -281,6 +282,21 @@ def merge_easy_imm_repository(easy_jsonData, org):
                     wr_file.write(wrString)
                     wr_file.close()
 
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Running "terraform fmt" in folder "{folder}",')
+            print(f'  to correct variable formatting!')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            p = subprocess.Popen(
+                ['terraform', 'fmt', folder],
+                stdout = subprocess.PIPE,
+                stderr = subprocess.PIPE
+            )
+            print('Format updated for the following Files:')
+            for line in iter(p.stdout.readline, b''):
+                line = line.decode("utf-8")
+                line = line.strip()
+                print(f'- {line}')
+
 def process_config_conversion(json_data):
     print(f'\n---------------------------------------------------------------------------------------\n')
     print(f'  Starting the Easy IMM Configuration Conversion Wizard!')
@@ -514,6 +530,11 @@ def process_wizard(easy_jsonData, jsonData):
             'ucs_server_template_profiles',
             'ucs_server_profiles',
         ]
+    #  Easy Deploy - VMware M2 Boot Server Profiles
+    elif 'quick_start' in main_menu:
+        policy_list = [
+            'quick_start'
+        ]
 
     if main_menu == 'deploy_individual_policies':
         templateVars["var_description"] = jsonVars['Individual']['description']
@@ -590,9 +611,10 @@ def process_wizard(easy_jsonData, jsonData):
                 valid = validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
 
     for policy in policy_list:
-        pci_order_consumed = [{0:[]},{1:[]}]
         type = 'pools'
-        if policy == 'ip_pools':
+        if 'quick_start' in policy:
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).easy_domain_pools(jsonData, easy_jsonData)
+        elif policy == 'ip_pools':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).ip_pools(jsonData, easy_jsonData)
         elif policy == 'iqn_pools':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).iqn_pools(jsonData, easy_jsonData)
