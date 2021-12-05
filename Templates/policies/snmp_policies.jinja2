@@ -49,7 +49,7 @@
       {%- elif k == 'trap_type' %}
         trap_type           = "{{ v }}",
       {%- elif k == 'user' %}
-        user                = "{{ v }}",
+        snmp_v3_user        = "{{ v }}",
       {%- elif k == 'version' %}
         snmp_version        = "{{ v }}",
       {%- endif %}

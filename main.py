@@ -375,6 +375,7 @@ def process_wizard(easy_jsonData, jsonData):
     main_menu = main_menu.lower()
 
     policy_list = []
+    print(f'main_menu is {main_menu}')
     if main_menu == 'deploy_domain_wizard':
         policy_list = [
             # Pools
@@ -531,9 +532,11 @@ def process_wizard(easy_jsonData, jsonData):
             'ucs_server_profiles',
         ]
     #  Easy Deploy - VMware M2 Boot Server Profiles
-    elif 'quick_start' in main_menu:
+    elif '-_domain_-' in main_menu:
         policy_list = [
-            'quick_start'
+            'quick_start_pools',
+            'quick_start_network',
+            'quick_start_domain_policies'
         ]
 
     if main_menu == 'deploy_individual_policies':
@@ -595,24 +598,28 @@ def process_wizard(easy_jsonData, jsonData):
         print(f'  for Pools and Server Policies can be entered to override the default behavior.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
 
-        valid = False
-        while valid == False:
-            domain_prefix = input('Enter a Name Prefix for Domain Profile Policies.  [press enter to skip]: ')
-            if domain_prefix == '':
-                valid = True
-            else:
-                valid = validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
-        valid = False
-        while valid == False:
-            name_prefix = input('Enter a Name Prefix for Pools and Server Policies.  [press enter to skip]: ')
-            if name_prefix == '':
-                valid = True
-            else:
-                valid = validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
+        if not 'quick_start' in main_menu:
+            valid = False
+            while valid == False:
+                domain_prefix = input('Enter a Name Prefix for Domain Profile Policies.  [press enter to skip]: ')
+                if domain_prefix == '':
+                    valid = True
+                else:
+                    valid = validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
+            valid = False
+            while valid == False:
+                name_prefix = input('Enter a Name Prefix for Pools and Server Policies.  [press enter to skip]: ')
+                if name_prefix == '':
+                    valid = True
+                else:
+                    valid = validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
+        else:
+            domain_prefix = 'default'
+            name_prefix = 'default'
 
     for policy in policy_list:
         type = 'pools'
-        if 'quick_start' in policy:
+        if 'quick_start_pools' in policy:
             lib_ucs.easy_imm_wizard(domain_prefix, org, type).easy_domain_pools(jsonData, easy_jsonData)
         elif policy == 'ip_pools':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).ip_pools(jsonData, easy_jsonData)
@@ -705,10 +712,15 @@ def process_wizard(easy_jsonData, jsonData):
             lib_ucs.easy_imm_wizard(domain_prefix, org, type).port_policies(jsonData, easy_jsonData)
         elif policy == 'power_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).power_policies(jsonData, easy_jsonData)
-        #========================================================
-        # Work in Progress
-        # Need to finish LAN Policies for pci_order_consumed
-        #========================================================
+        elif 'quick_start_network' in policy:
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).easy_domain_network_policies(jsonData, easy_jsonData)
+        elif 'quick_start_domain_policies' in policy or 'quick_start_rack_policies' in policy:
+            if 'domain' in policy:
+                server_type = 'FIAttached'
+            else:
+                server_type = 'Standalone'
+                lib_ucs.easy_imm_wizard(name_prefix, org, type).easy_standalone_policies(jsonData, easy_jsonData)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).easy_shared_policies(jsonData, easy_jsonData, server_type)
         elif policy == 'san_connectivity_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData)
         # elif policy == 'sd_card_policies':

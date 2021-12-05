@@ -489,9 +489,9 @@ class easy_imm_wizard(object):
         self.org = org
         self.type = type
 
-    #========================================
+    #==============================================
     # Adapter Configuration Policy Module
-    #========================================
+    #==============================================
     def adapter_configuration_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'adapter'
@@ -644,9 +644,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # BIOS Policy Module
-    #========================================
+    #==============================================
     def bios_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -736,9 +736,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Boot Order Policy Module
-    #========================================
+    #==============================================
     def boot_order_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'boot_order'
@@ -1227,9 +1227,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Device Connector Policy Module
-    #========================================
+    #==============================================
     def device_connector_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'devcon'
@@ -1326,9 +1326,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #================================================
-    # Easy Deployment Module - Network Configuration
-    #================================================
+    #==============================================
+    # Easy Deployment Module - Network Policies
+    #==============================================
     def easy_domain_network_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -1370,19 +1370,10 @@ class easy_imm_wizard(object):
                     print(f'     * VSAN ID for Fabric B')
                     print(f'     ** Note: This should not overlap with any of the VLANs assigned to the')
                     print(f'              LAN Connectivity Policies.')
-                    print(f'   - Local User Policy (Required for KVM Access).')
-                    print(f'     * user and role')
-                    print(f'     * user password (strong passwords enforced)')
-                    print(f'   - SNMP Policy')
-                    print(f'     * Contact')
-                    print(f'     * Location')
-                    print(f'     * SNMPv3 Users (optional)')
-                    print(f'     * SNMPv3 Trap Servers (optional)')
-                    print(f'   - Syslog Policy - (Optional)')
-                    print(f'     * Remote Syslog Server(s)')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     # Get List of VLAN's from the Domain Policies
+                    templateVars["name"] = 'Quick Start Deployment'
                     policy_list = [
                         'policies_vlans.vlan_policies.vlan_policy',
                     ]
@@ -1415,7 +1406,7 @@ class easy_imm_wizard(object):
                     neighbor_discovery = variablesFromAPI(**templateVars)
 
                     # MTU
-                    templateVars["Description"] = 'MTU for Server vNICs'
+                    templateVars["Description"] = 'This option will set the MTU to 9000 if Jumbo is Yes; 1500 if Jumbo is No.'
                     templateVars["varInput"] = f'Do you want to enable Jumbo MTU?  Enter "Y" or "N"'
                     templateVars["varDefault"] = 'Y'
                     templateVars["varName"] = 'MTU'
@@ -1428,8 +1419,8 @@ class easy_imm_wizard(object):
                     # Management VLAN
                     valid = False
                     while valid == False:
-                        templateVars["Description"] = 'Management VLAN Identifier'
-                        templateVars["varInput"] = 'Enter the VLAN ID for MGMT.'
+                        templateVars["Description"] = 'LAN Connectivity Policy vNICs - MGMT VLAN Identifier'
+                        templateVars["varInput"] = 'Enter the VLAN ID for MGMT:'
                         templateVars["varDefault"] = 1
                         templateVars["varName"] = 'Management VLAN ID'
                         templateVars["minNum"] = 1
@@ -1440,8 +1431,8 @@ class easy_imm_wizard(object):
                     # vMotion VLAN
                     valid = False
                     while valid == False:
-                        templateVars["Description"] = 'vMotion VLAN Identifier'
-                        templateVars["varInput"] = 'Enter the VLAN ID for vMotion.'
+                        templateVars["Description"] = 'LAN Connectivity Policy vNICs - vMotion VLAN Identifier'
+                        templateVars["varInput"] = 'Enter the VLAN ID for vMotion:'
                         templateVars["varDefault"] = 2
                         templateVars["varName"] = 'Management VLAN ID'
                         templateVars["minNum"] = 1
@@ -1452,8 +1443,8 @@ class easy_imm_wizard(object):
                     # Storage VLAN
                     valid = False
                     while valid == False:
-                        templateVars["Description"] = 'Storage VLAN Identifier'
-                        templateVars["varInput"] = 'Enter the VLAN ID for Storage.'
+                        templateVars["Description"] = 'LAN Connectivity Policy vNICs - Storage VLAN Identifier'
+                        templateVars["varInput"] = 'Enter the VLAN ID for Storage:'
                         templateVars["varDefault"] = 3
                         templateVars["varName"] = 'Storage VLAN ID'
                         templateVars["minNum"] = 1
@@ -1474,7 +1465,7 @@ class easy_imm_wizard(object):
                                     continue
                                 else:
                                     vlan_count = 0
-                                    for vlans in vlan_list:
+                                    for vlans in vlan_policy_list:
                                         if int(vlan) == int(vlans):
                                             vlan_count += 1
                                             break
@@ -1486,6 +1477,7 @@ class easy_imm_wizard(object):
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Error with VLAN(s) assignment!!  The following VLAN(s) are missing.')
                                 print(f'  - Domain VLAN Policy: "{vlan_policy}"')
+                                print(f'  - VLANs in Policy: "{vlan_list}"')
                                 print(f'  - Missing VLANs: {vlans_not_in_domain_policy}')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 valid_vlan = False
@@ -1526,7 +1518,7 @@ class easy_imm_wizard(object):
                         valid = False
                         while valid == False:
                             templateVars["Description"] = f'VSAN Identifier for Fabric {x}'
-                            templateVars["varInput"] = 'What VSAN Identifier do you want to Assign to Fabric {x}?'
+                            templateVars["varInput"] = f'What VSAN Identifier do you want to Assign to Fabric {x}?'
                             if x == 'A':
                                 templateVars["varDefault"] = 100
                             else:
@@ -1570,7 +1562,7 @@ class easy_imm_wizard(object):
                                 valid = True
                     
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Network Configuration Variables:"')
+                    print(f'  Network Configuration Variables:')
                     print(f'    MGMT VLAN     = {mgmt_vlan}')
                     print(f'    vMotion VLAN  = {vmotion_vlan}')
                     print(f'    Storage VLAN  = {storage_vlan}')
@@ -1605,7 +1597,7 @@ class easy_imm_wizard(object):
                             templateVars["adapter_template"] = 'VMware'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            templateVars["template_file"] = '%s.jinja2' % ('ethernet_adapter_templates')
                             write_to_template(self, **templateVars)
 
                             # Close the Template file
@@ -1756,7 +1748,7 @@ class easy_imm_wizard(object):
                             templateVars["adapter_template"] = 'VMware'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            templateVars["template_file"] = '%s.jinja2' % ('ethernet_adapter_templates')
                             write_to_template(self, **templateVars)
 
                             # Close the Template file
@@ -1929,6 +1921,9 @@ class easy_imm_wizard(object):
                             templateVars["template_file"] = 'template_close.jinja2'
                             write_to_template(self, **templateVars)
 
+                            configure_loop = True
+                            policy_loop = True
+                            valid_confirm = True
 
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
@@ -1949,9 +1944,9 @@ class easy_imm_wizard(object):
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-    #========================================
-    # Easy Deployment Module - Easy Pools
-    #========================================
+    #==============================================
+    # Easy Deployment Module - Pools
+    #==============================================
     def easy_domain_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -2115,8 +2110,12 @@ class easy_imm_wizard(object):
                                     'to':pool_to
                                 }
                             ]
-                            templateVars["ipv4_configuration"] = {'gateway':gateway, 'netmask':netmask,
-                                'primary_dns':primary_dns, 'secondary_dns':secondary_dns}
+                            templateVars["ipv4_configuration"] = {
+                                'gateway':gateway,
+                                'prefix':netmask,
+                                'primary_dns':primary_dns,
+                                'secondary_dns':secondary_dns
+                            }
 
                             # Write Policies to Template File
                             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -2306,9 +2305,1244 @@ class easy_imm_wizard(object):
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-    #========================================
+    #==============================================
+    # Easy Deployment Module - Shared Policies
+    #==============================================
+    def easy_shared_policies(self, jsonData, easy_jsonData, server_type):
+        name_prefix = self.name_prefix
+        org = self.org
+        templateVars = {}
+        templateVars["org"] = org
+
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  The Easy Deployment Module - Pools, will configure pools for a UCS Server Profile')
+            print(f'  connected to an IMM Domain.\n')
+            print(f'  This wizard will save the output for these pools in the following files:\n')
+            print(f'  - Intersight/{org}/{self.type}/bios_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/boot_order_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/imc_access_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/ipmi_over_lan_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/local_user_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/power_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/serial_over_lan_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/snmp_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/storage_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/syslog_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/thermal_policies.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to run the Easy Deployment Module - Policy Configuration?  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                loop_count = 1
+                policy_loop = False
+                while policy_loop == False:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Below are the Questions that will be asked by the Policies Portion of the wizard.')
+                    print(f'   - VLAN ID for IMC Access Policy.')
+                    print(f'   - Local User Policy (Required for direct KVM Access).')
+                    print(f'     * user and role')
+                    print(f'     * user password (strong passwords enforced)')
+                    print(f'   - SNMP Policy')
+                    print(f'     * Contact')
+                    print(f'     * Location')
+                    print(f'     * SNMPv3 Users (optional)')
+                    print(f'     * SNMPv3 Trap Servers (optional)')
+                    print(f'   - Syslog Policy - (Optional)')
+                    print(f'     * Remote Syslog Server(s)')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                    templateVars["name"] = 'Easy Deployment Module'
+
+                    # Get List of VLAN's from the Domain Policies
+                    policy_list = [
+                        'policies_vlans.vlan_policies.vlan_policy',
+                    ]
+                    templateVars["allow_opt_out"] = False
+                    for policy in policy_list:
+                        vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+
+                    vlan_list = []
+                    for item in policyData['vlan_policies'][0][vlan_policy][0]['vlans']:
+                        for k, v in item.items():
+                            vlan_list.append(v[0]['vlan_list'])
+
+                    vlan_convert = ''
+                    for vlan in vlan_list:
+                        if vlan_convert == '':
+                            vlan_convert = str(vlan)
+                        else:
+                            vlan_convert = vlan_convert + ',' + str(vlan)
+
+                    vlan_policy_list = vlan_list_full(vlan_convert)
+
+                    templateVars["multi_select"] = False
+
+                    # IMC Access VLAN
+                    valid = False
+                    while valid == False:
+                        templateVars["Description"] = 'IMC Access VLAN Identifier'
+                        templateVars["varInput"] = 'Enter the VLAN ID for the IMC Access Policy.'
+                        templateVars["varDefault"] = 1
+                        templateVars["varName"] = 'IMC Access Policy VLAN ID'
+                        templateVars["minNum"] = 1
+                        templateVars["maxNum"] = 4094
+                        imc_vlan = varNumberLoop(**templateVars)
+                        if server_type == 'FIAttached':
+                            valid = validate_vlan_in_policy(vlan_policy_list, imc_vlan)
+                        else:
+                            valid = True
+
+                    # Pull in the Policies for SNMP Policies
+                    jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
+
+                    # SNMP Contact
+                    templateVars["Description"] = jsonVars['SysContact']['description'] + \
+                        'Note: Enter a string up to 64 characters, such as an email address or a name and telephone number.'
+                    templateVars["varDefault"] = ''
+                    templateVars["varInput"] = 'SNMP System Contact:'
+                    templateVars["varName"] = 'SNMP System Contact'
+                    templateVars["varRegex"] = '.*'
+                    templateVars["minLength"] = 1
+                    templateVars["maxLength"] = jsonVars['SysContact']['maxLength']
+                    templateVars["system_contact"] = varStringLoop(**templateVars)
+
+                    # SNMP Location
+                    templateVars["Description"] = jsonVars['SysLocation']['description']
+                    templateVars["varDefault"] = ''
+                    templateVars["varInput"] = 'What is the Location of the host on which the SNMP agent (server) runs?'
+                    templateVars["varName"] = 'SNMP System Location'
+                    templateVars["varRegex"] = '.*'
+                    templateVars["minLength"] = 1
+                    templateVars["maxLength"] = jsonVars['SysLocation']['maxLength']
+                    templateVars["system_location"] = varStringLoop(**templateVars)
+
+                    # SNMP Users
+                    ilCount = 1
+                    snmp_user_list = []
+                    snmp_loop = False
+                    while snmp_loop == False:
+                        question = input(f'Would you like to configure an SNMPv3 User?  Enter "Y" or "N" [Y]: ')
+                        if question == '' or question == 'Y':
+                            snmp_user_list,snmp_loop = snmp_users(jsonData, ilCount, **templateVars)
+                        elif question == 'N':
+                            snmp_loop = True
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+                    templateVars["users"] = snmp_user_list
+
+                    # SNMP Trap Destinations
+                    ilCount = 1
+                    snmp_dests = []
+                    snmp_loop = False
+                    if len(snmp_user_list) > 0:
+                        while snmp_loop == False:
+                            question = input(f'Would you like to configure SNMP Trap Destionations?  Enter "Y" or "N" [Y]: ')
+                            if question == '' or question == 'Y':
+                                snmp_dests,snmp_loop = snmp_trap_servers(jsonData, ilCount, snmp_user_list, **templateVars)
+                            elif question == 'N':
+                                snmp_loop = True
+                            else:
+                                print(f'\n------------------------------------------------------\n')
+                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                                print(f'\n------------------------------------------------------\n')
+                    templateVars["trap_destinations"] = snmp_dests
+
+                    # Syslog Local Logging
+                    jsonVars = jsonData['components']['schemas']['syslog.LocalClientBase']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['MinSeverity']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+                    templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
+                    templateVars["varType"] = 'Syslog Local Minimum Severity'
+                    templateVars["min_severity"] = variablesFromAPI(**templateVars)
+
+                    templateVars["local_logging"] = {'file':{'min_severity':templateVars["min_severity"]}}
+                    remote_logging = syslog_servers(jsonData, **templateVars)
+                    templateVars['remote_logging'] = remote_logging
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Policy Variables:')
+                    print(f'    IMC Access VLAN  = {imc_vlan}')
+                    print(f'    System Contact   = "{templateVars["system_contact"]}"')
+                    print(f'    System Locaction = "{templateVars["system_location"]}"')
+                    if len(templateVars["trap_destinations"]) > 0:
+                        print(f'    snmp_trap_destinations = ''{')
+                        for item in templateVars["trap_destinations"]:
+                            for k, v in item.items():
+                                if k == 'destination_address':
+                                    print(f'      "{v}" = ''{')
+                            for k, v in item.items():
+                                if k == 'community':
+                                    print(f'        community_string    = "Sensitive"')
+                                elif k == 'destination_address':
+                                    print(f'        destination_address = "{v}"')
+                                elif k == 'enabled':
+                                    print(f'        enable              = {v}')
+                                elif k == 'port':
+                                    print(f'        port                = {v}')
+                                elif k == 'trap_type':
+                                    print(f'        trap_type           = "{v}"')
+                                elif k == 'user':
+                                    print(f'        user                = "{v}"')
+                            print(f'      ''}')
+                        print(f'    ''}')
+                    if len(templateVars["users"]) > 0:
+                        print(f'    snmp_users = ''{')
+                        for item in templateVars["users"]:
+                            for k, v in item.items():
+                                if k == 'name':
+                                    print(f'      "{v}" = ''{')
+                            for k, v in item.items():
+                                if k == 'auth_password':
+                                    print(f'        auth_password    = "Sensitive"')
+                                elif k == 'auth_type':
+                                    print(f'        auth_type        = "{v}"')
+                                elif k == 'privacy_password':
+                                    print(f'        privacy_password = "Sensitive"')
+                                elif k == 'privacy_type':
+                                    print(f'        privacy_type     = "{v}"')
+                                elif k == 'security_level':
+                                    print(f'        security_level   = "{v}"')
+                            print(f'      ''}')
+                        print(f'    ''}')
+                    print(f'    remote_clients = [')
+                    item_count = 1
+                    for key, value in templateVars["remote_logging"].items():
+                        print(f'      ''{')
+                        for k, v in value.items():
+                            if k == 'enable':
+                                print(f'        enabled      = {"%s".lower() % (v)}')
+                            elif k == 'hostname':
+                                print(f'        hostname     = "{v}"')
+                            elif k == 'min_severity':
+                                print(f'        min_severity = "{v}"')
+                            elif k == 'port':
+                                print(f'        port         = {v}')
+                            elif k == 'protocol':
+                                print(f'        protocol     = "{v}"')
+                        print(f'      ''}')
+                        item_count += 1
+                    print(f'    ]')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure BIOS Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'BIOS Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'bios_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Configure BIOS Policy
+                            name = 'VMware'
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} BIOS Policy'
+                            templateVars["bios_template"] = 'VMware'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Boot Order Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Boot Order Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'boot_order_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Configure Boot Order Policy
+                            name = 'VMware_M2'
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Boot Order Policy'
+                            templateVars["boot_mode"] = 'Uefi'
+                            templateVars["enable_secure_boot"] = True
+                            templateVars["boot_mode"] = 'Uefi'
+                            templateVars["boot_devices"] = [
+                                {
+                                    'enabled':True,
+                                    'device_name':'kvm-dvd',
+                                    'object_type':'boot.VirtualMedia',
+                                    'Subtype':'cimc-mapped-dvd'
+                                },
+                                {
+                                    'device_name':'m2',
+                                    'enabled':True,
+                                    'object_type':'boot.LocalDisk',
+                                    'Slot':'MSTOR-RAID'
+                                },
+                                {
+                                    'device_name':'pxe',
+                                    'enabled':True,
+                                    'InterfaceName':'MGMT-A',
+                                    'InterfaceSource':'name',
+                                    'IpType':'IPv4',
+                                    'MacAddress':'',
+                                    'object_type':'boot.Pxe',
+                                    'Port':-1,
+                                    'Slot':'MLOM'
+                                }
+                            ]
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % ('boot_policies')
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure IMC Access Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'IMC Access Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'imc_access_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Configure IMC Access Policy
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} IMC Access Policy'
+                            templateVars["inband_ip_pool"] = 'VMWare_KVM'
+                            templateVars["inband_vlan_id"] = imc_vlan
+                            templateVars["ipv4_address_configuration"] = True
+                            templateVars["ipv6_address_configuration"] = False
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure IPMI over LAN Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'IPMI over LAN Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'ipmi_over_lan_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # IPMI over LAN Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} IPMI over LAN Policy'
+                            templateVars["enabled"] = True
+                            templateVars["ipmi_key"] = 1
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Local User Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Local User Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'local_user_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Local User Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Local User Policy'
+                            templateVars["enabled"] = True
+                            templateVars["ipmi_key"] = 1
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Power Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Power Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'power_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Power Settings
+                            names = ['5108', '9508', 'Server']
+                            for name in names:
+                                templateVars["allocated_budget"] = 0
+                                templateVars["name"] = name
+                                templateVars["description"] = f'{name} Power Policy'
+                                if name == 'Server': templateVars["power_restore_state"] = 'LastState'
+                                elif name == '9508': templateVars["allocated_budget"] = 5600
+
+                                templateVars["power_redundancy"] = 'Grid'
+                                templateVars["ipmi_key"] = 1
+
+                                # Write Policies to Template File
+                                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                                write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Serial over LAN Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Serial over LAN Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'serial_over_lan_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Serial over LAN Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Serial over LAN Policy'
+                            templateVars["enabled"] = True
+                            templateVars["baud_rate"] = 115200
+                            templateVars["com_port"] = 'com0'
+                            templateVars["ssh_port"] = 2400
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure SNMP Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'SNMP Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'snmp_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # SNMP Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} SNMP Policy'
+                            templateVars["access_community_string"] = ''
+                            templateVars["enabled"] = True
+                            templateVars["engine_input_id"] = ''
+                            templateVars["port"] = 161
+                            templateVars["snmp_community_access"] = 'Disabled'
+                            templateVars["trap_community_string"] = ''
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Storage Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Storage Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'storage_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            name = 'M2_Raid'
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Storage Policy'
+                            templateVars["drive_group"] = {}
+                            templateVars["global_hot_spares"] = ''
+                            templateVars["m2_configuration"] = [ { 'controller_slot':'MSTOR-RAID-1,MSTOR-RAID-2' } ]
+                            templateVars["single_drive_raid_configuration"] = {}
+                            templateVars["unused_disks_state"] = 'No Change'
+                            templateVars["use_jbod_for_vd_creation"] = True
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Syslog Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Syslog Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'syslog_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Syslog Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Syslog Policy'
+                            templateVars["enabled"] = True
+                            templateVars["ipmi_key"] = 1
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Thermal Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Thermal Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'thermal_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Thermal Settings
+                            names = ['5108', '9508']
+                            for name in names:
+                                templateVars["name"] = name
+                                templateVars["description"] = f'{name} Thermal Policy'
+                                templateVars["fan_control_mode"] = 'Balanced'
+
+                                # Write Policies to Template File
+                                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                                write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            configure_loop = True
+                            policy_loop = True
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
+
+            elif configure == 'N':
+                configure_loop = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+    #==============================================
+    # Easy Deployment Module - Standalone Policies
+    #==============================================
+    def easy_standalone_policies(self, jsonData, easy_jsonData, server_type):
+        name_prefix = self.name_prefix
+        org = self.org
+        templateVars = {}
+        templateVars["org"] = org
+
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  The Easy Deployment Module - Pools, will configure pools for a UCS Server Profile')
+            print(f'  connected to an IMM Domain.\n')
+            print(f'  This wizard will save the output for these pools in the following files:\n')
+            print(f'  - Intersight/{org}/{self.type}/bios_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/boot_order_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/imc_access_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/ipmi_over_lan_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/local_user_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/power_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/serial_over_lan_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/snmp_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/storage_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/syslog_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/thermal_policies.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to run the Easy Deployment Module - Policy Configuration?  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                loop_count = 1
+                policy_loop = False
+                while policy_loop == False:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Below are the Questions that will be asked by the Policies Portion of the wizard.')
+                    print(f'   - VLAN ID for IMC Access Policy.')
+                    print(f'   - Local User Policy (Required for direct KVM Access).')
+                    print(f'     * user and role')
+                    print(f'     * user password (strong passwords enforced)')
+                    print(f'   - SNMP Policy')
+                    print(f'     * Contact')
+                    print(f'     * Location')
+                    print(f'     * SNMPv3 Users (optional)')
+                    print(f'     * SNMPv3 Trap Servers (optional)')
+                    print(f'   - Syslog Policy - (Optional)')
+                    print(f'     * Remote Syslog Server(s)')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                    # Get List of VLAN's from the Domain Policies
+                    policy_list = [
+                        'policies_vlans.vlan_policies.vlan_policy',
+                    ]
+                    templateVars["allow_opt_out"] = False
+                    for policy in policy_list:
+                        vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+
+                    vlan_list = []
+                    for item in policyData['vlan_policies'][0][vlan_policy][0]['vlans']:
+                        for k, v in item.items():
+                            vlan_list.append(v[0]['vlan_list'])
+
+                    vlan_convert = ''
+                    for vlan in vlan_list:
+                        if vlan_convert == '':
+                            vlan_convert = str(vlan)
+                        else:
+                            vlan_convert = vlan_convert + ',' + str(vlan)
+
+                    vlan_policy_list = vlan_list_full(vlan_convert)
+
+                    templateVars["multi_select"] = False
+
+                    # IMC Access VLAN
+                    valid = False
+                    while valid == False:
+                        templateVars["Description"] = 'IMC Access VLAN Identifier'
+                        templateVars["varInput"] = 'Enter the VLAN ID for the IMC Access Policy.'
+                        templateVars["varDefault"] = 1
+                        templateVars["varName"] = 'IMC Access Policy VLAN ID'
+                        templateVars["minNum"] = 1
+                        templateVars["maxNum"] = 4094
+                        imc_vlan = varNumberLoop(**templateVars)
+                        if server_type == 'FIAttached':
+                            valid = validate_vlan_in_policy(vlan_policy_list, imc_vlan)
+                        else:
+                            valid = True
+
+                    # Pull in the Policies for SNMP Policies
+                    jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
+
+                    # SNMP Contact
+                    templateVars["Description"] = jsonVars['SysContact']['description'] + \
+                        'Note: Enter a string up to 64 characters, such as an email address or a name and telephone number.'
+                    templateVars["varDefault"] = ''
+                    templateVars["varInput"] = 'SNMP System Contact:'
+                    templateVars["varName"] = 'SNMP System Contact'
+                    templateVars["varRegex"] = '.*'
+                    templateVars["minLength"] = 1
+                    templateVars["maxLength"] = jsonVars['SysContact']['maxLength']
+                    templateVars["system_contact"] = varStringLoop(**templateVars)
+
+                    # SNMP Location
+                    templateVars["Description"] = jsonVars['SysLocation']['description']
+                    templateVars["varDefault"] = ''
+                    templateVars["varInput"] = 'What is the Location of the host on which the SNMP agent (server) runs?'
+                    templateVars["varName"] = 'SNMP System Location'
+                    templateVars["varRegex"] = '.*'
+                    templateVars["minLength"] = 1
+                    templateVars["maxLength"] = jsonVars['SysLocation']['maxLength']
+                    templateVars["system_location"] = varStringLoop(**templateVars)
+
+                    # SNMP Users
+                    snmp_user_list = []
+                    inner_loop_count = 1
+                    snmp_loop = False
+                    while snmp_loop == False:
+                        question = input(f'Would you like to configure an SNMPv3 User?  Enter "Y" or "N" [Y]: ')
+                        if question == '' or question == 'Y':
+                            snmp_user_list,snmp_loop = snmp_users(jsonData, inner_loop_count, **templateVars)
+                        elif question == 'N':
+                            snmp_loop = True
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+                    templateVars["users"] = snmp_user_list
+
+                    # SNMP Trap Destinations
+                    snmp_dests = []
+                    inner_loop_count = 1
+                    snmp_loop = False
+                    if len(snmp_user_list) > 0:
+                        while snmp_loop == False:
+                            question = input(f'Would you like to configure SNMP Trap Destionations?  Enter "Y" or "N" [Y]: ')
+                            if question == '' or question == 'Y':
+                                snmp_dests,snmp_loop = snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **templateVars)
+                            elif question == 'N':
+                                snmp_loop = True
+                            else:
+                                print(f'\n------------------------------------------------------\n')
+                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                                print(f'\n------------------------------------------------------\n')
+                    templateVars["trap_destinations"] = snmp_dests
+
+                    # Syslog Local Logging
+                    jsonVars = jsonData['components']['schemas']['syslog.LocalClientBase']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['MinSeverity']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+                    templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
+                    templateVars["varType"] = 'Syslog Local Minimum Severity'
+                    templateVars["min_severity"] = variablesFromAPI(**templateVars)
+
+                    templateVars["local_logging"] = {'file':{'min_severity':templateVars["min_severity"]}}
+                    remote_logging = syslog_servers(jsonData, **templateVars)
+                    templateVars['remote_logging'] = remote_logging
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Network Configuration Variables:"')
+                    print(f'    IMC Access VLAN  = {imc_vlan}')
+                    print(f'    System Contact   = "{templateVars["system_contact"]}"')
+                    print(f'    System Locaction = "{templateVars["system_location"]}"')
+                    if len(templateVars["trap_destinations"]) > 0:
+                        print(f'    snmp_trap_destinations = ''{')
+                        for item in templateVars["trap_destinations"]:
+                            for k, v in item.items():
+                                if k == 'destination_address':
+                                    print(f'      "{v}" = ''{')
+                            for k, v in item.items():
+                                if k == 'community':
+                                    print(f'        community_string    = "Sensitive"')
+                                elif k == 'destination_address':
+                                    print(f'        destination_address = "{v}"')
+                                elif k == 'enabled':
+                                    print(f'        enable              = {v}')
+                                elif k == 'port':
+                                    print(f'        port                = {v}')
+                                elif k == 'trap_type':
+                                    print(f'        trap_type           = "{v}"')
+                                elif k == 'user':
+                                    print(f'        user                = "{v}"')
+                            print(f'      ''}')
+                        print(f'    ''}')
+                    if len(templateVars["users"]) > 0:
+                        print(f'    snmp_users = ''{')
+                        for item in templateVars["users"]:
+                            for k, v in item.items():
+                                if k == 'name':
+                                    print(f'      "{v}" = ''{')
+                            for k, v in item.items():
+                                if k == 'auth_password':
+                                    print(f'        auth_password    = "Sensitive"')
+                                elif k == 'auth_type':
+                                    print(f'        auth_type        = "{v}"')
+                                elif k == 'privacy_password':
+                                    print(f'        privacy_password = "Sensitive"')
+                                elif k == 'privacy_type':
+                                    print(f'        privacy_type     = "{v}"')
+                                elif k == 'security_level':
+                                    print(f'        security_level   = "{v}"')
+                            print(f'      ''}')
+                        print(f'    ''}')
+                    print(f'    remote_clients = [')
+                    item_count = 1
+                    for key, value in templateVars["remote_logging"].items():
+                        print(f'      ''{')
+                        for k, v in value.items():
+                            if k == 'enable':
+                                print(f'        enabled      = {"%s".lower() % (v)}')
+                            elif k == 'hostname':
+                                print(f'        hostname     = "{v}"')
+                            elif k == 'min_severity':
+                                print(f'        min_severity = "{v}"')
+                            elif k == 'port':
+                                print(f'        port         = {v}')
+                            elif k == 'protocol':
+                                print(f'        protocol     = "{v}"')
+                        print(f'      ''}')
+                        item_count += 1
+                    print(f'    ]')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure BIOS Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'BIOS Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'bios_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Configure BIOS Policy
+                            name = 'VMware'
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} BIOS Policy'
+                            templateVars["bios_template"] = 'VMware'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Boot Order Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Boot Order Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'boot_order_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Configure Boot Order Policy
+                            name = 'VMware_M2'
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Boot Order Policy'
+                            templateVars["boot_mode"] = 'Uefi'
+                            templateVars["enable_secure_boot"] = True
+                            templateVars["boot_mode"] = 'Uefi'
+                            templateVars["boot_devices"] = [
+                                {
+                                    'enabled':True,
+                                    'device_name':'kvm-dvd',
+                                    'object_type':'boot.VirtualMedia',
+                                    'Subtype':'cimc-mapped-dvd'
+                                },
+                                {
+                                    'device_name':'m2',
+                                    'enabled':True,
+                                    'object_type':'boot.LocalDisk',
+                                    'Slot':'MSTOR-RAID'
+                                },
+                                {
+                                    'device_name':'pxe',
+                                    'enabled':True,
+                                    'InterfaceName':'MGMT-A',
+                                    'InterfaceSource':'name',
+                                    'IpType':'IPv4',
+                                    'MacAddress':'',
+                                    'object_type':'boot.Pxe',
+                                    'Port':-1,
+                                    'Slot':'MLOM'
+                                }
+                            ]
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % ('boot_policies')
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure IMC Access Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'IMC Access Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'imc_access_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Configure IMC Access Policy
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} IMC Access Policy'
+                            templateVars["inband_ip_pool"] = 'VMWare_KVM'
+                            templateVars["inband_vlan_id"] = imc_vlan
+                            templateVars["ipv4_address_configuration"] = True
+                            templateVars["ipv6_address_configuration"] = False
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure IPMI over LAN Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'IPMI over LAN Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'ipmi_over_lan_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # IPMI over LAN Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} IPMI over LAN Policy'
+                            templateVars["enabled"] = True
+                            templateVars["ipmi_key"] = 1
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Local User Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Local User Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'local_user_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Local User Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Local User Policy'
+                            templateVars["enabled"] = True
+                            templateVars["ipmi_key"] = 1
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Power Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Power Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'power_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Power Settings
+                            names = ['5108', '9508', 'Server']
+                            for name in names:
+                                templateVars["allocated_budget"] = 0
+                                templateVars["name"] = name
+                                templateVars["description"] = f'{name} Power Policy'
+                                if name == 'Server': templateVars["power_restore_state"] = 'LastState'
+                                elif name == '9508': templateVars["allocated_budget"] = 5600
+
+                                templateVars["power_redundancy"] = 'Grid'
+                                templateVars["ipmi_key"] = 1
+
+                                # Write Policies to Template File
+                                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                                write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Serial over LAN Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Serial over LAN Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'serial_over_lan_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Serial over LAN Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Serial over LAN Policy'
+                            templateVars["enabled"] = True
+                            templateVars["baud_rate"] = 115200
+                            templateVars["com_port"] = 'com0'
+                            templateVars["ssh_port"] = 2400
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure SNMP Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'SNMP Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'snmp_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # SNMP Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} SNMP Policy'
+                            templateVars["access_community_string"] = ''
+                            templateVars["enabled"] = True
+                            templateVars["engine_input_id"] = ''
+                            templateVars["port"] = 161
+                            templateVars["snmp_community_access"] = 'Disabled'
+                            templateVars["trap_community_string"] = ''
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Storage Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Storage Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'storage_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            name = 'M2_Raid'
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Storage Policy'
+                            templateVars["drive_group"] = {}
+                            templateVars["global_hot_spares"] = ''
+                            templateVars["m2_configuration"] = [ { 'controller_slot':'MSTOR-RAID-1,MSTOR-RAID-2' } ]
+                            templateVars["single_drive_raid_configuration"] = {}
+                            templateVars["unused_disks_state"] = 'No Change'
+                            templateVars["use_jbod_for_vd_creation"] = True
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Syslog Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Syslog Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'syslog_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Syslog Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["description"] = f'{name} Syslog Policy'
+                            templateVars["enabled"] = True
+                            templateVars["ipmi_key"] = 1
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
+                            # Configure Thermal Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Thermal Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'thermal_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Thermal Settings
+                            names = ['5108', '9508']
+                            for name in names:
+                                templateVars["name"] = name
+                                templateVars["description"] = f'{name} Thermal Policy'
+                                templateVars["fan_control_mode"] = 'Balanced'
+
+                                # Write Policies to Template File
+                                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                                write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
+
+            elif configure == 'N':
+                configure_loop = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+    #==============================================
     # Ethernet Adapter Policy Module
-    #========================================
+    #==============================================
     def ethernet_adapter_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -2398,9 +3632,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Ethernet Network Control Policy Module
-    #========================================
+    #==============================================
     def ethernet_network_control_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'netwk_ctrl'
@@ -2520,9 +3754,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Ethernet Network Group Policy Module
-    #========================================
+    #==============================================
     def ethernet_network_group_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'VMs']
@@ -2718,9 +3952,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Ethernet Network Policy Module
-    #========================================
+    #==============================================
     def ethernet_network_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'network'
@@ -2815,9 +4049,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Ethernet QoS Policy Module
-    #========================================
+    #==============================================
     def ethernet_qos_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'VMs']
@@ -3082,9 +4316,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Fibre-Channel Adapter Policy Module
-    #========================================
+    #==============================================
     def fibre_channel_adapter_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -3176,9 +4410,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Fibre-Channel Network Policy Module
-    #========================================
+    #==============================================
     def fibre_channel_network_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -3319,9 +4553,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Fibre-Channel QoS Policy Module
-    #========================================
+    #==============================================
     def fibre_channel_qos_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'qos'
@@ -3407,9 +4641,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Firmware - UCS Domain Module
-    #========================================
+    #==============================================
     def firmware_ucs_domain(self, jsonData, easy_jsonData):
         templateVars = {}
         templateVars["header"] = 'UCS Domain Profile Variables'
@@ -3447,9 +4681,9 @@ class easy_imm_wizard(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
             version_file.close()
 
-    #========================================
+    #==============================================
     # Flow Control Policy Module
-    #========================================
+    #==============================================
     def flow_control_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'flow_ctrl'
@@ -3527,9 +4761,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # IMC Access Policy Module
-    #========================================
+    #==============================================
     def imc_access_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'imc_access'
@@ -3680,9 +4914,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # IP Pools Module
-    #========================================
+    #==============================================
     def ip_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ip_pool'
@@ -3997,9 +5231,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # IPMI over LAN Policy Module
-    #========================================
+    #==============================================
     def ipmi_over_lan_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ipmi'
@@ -4109,9 +5343,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Intersight Module
-    #========================================
+    #==============================================
     def intersight(self, easy_jsonData, tfcb_config):
         org = self.org
         policy_type = 'Intersight'
@@ -4155,9 +5389,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # IQN Pools Module
-    #========================================
+    #==============================================
     def iqn_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'iqn_pool'
@@ -4325,9 +5559,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # iSCSI Adapter Policy Module
-    #========================================
+    #==============================================
     def iscsi_adapter_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'adapter'
@@ -4438,9 +5672,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # iSCSI Boot Policy Module
-    #========================================
+    #==============================================
     def iscsi_boot_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'boot'
@@ -4717,9 +5951,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # iSCSI Static Target Policy Module
-    #========================================
+    #==============================================
     def iscsi_static_target_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'target'
@@ -4860,9 +6094,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # LAN Connectivity Policy Module
-    #========================================
+    #==============================================
     def lan_connectivity_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'Virtual_Machines']
@@ -5398,9 +6632,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # LDAP Policy Module
-    #========================================
+    #==============================================
     def ldap_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ldap'
@@ -5952,9 +7186,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Link Aggregation Policy Module
-    #========================================
+    #==============================================
     def link_aggregation_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'link_agg'
@@ -6030,9 +7264,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Link Control Policy Module
-    #========================================
+    #==============================================
     def link_control_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'link_ctrl'
@@ -6109,9 +7343,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Local User Policy Module
-    #========================================
+    #==============================================
     def local_user_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'local_users'
@@ -6449,9 +7683,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # MAC Pools Module
-    #========================================
+    #==============================================
     def mac_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -6584,9 +7818,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Multicast Policy Module
-    #========================================
+    #==============================================
     def multicast_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'multicast'
@@ -6687,9 +7921,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Network Connectivity Policy Module
-    #========================================
+    #==============================================
     def network_connectivity_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'dns'
@@ -6827,9 +8061,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # NTP Policy Module
-    #========================================
+    #==============================================
     def ntp_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ntp'
@@ -6966,9 +8200,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Persistent Memory Policy Module
-    #========================================
+    #==============================================
     def persistent_memory_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'persistent_memory'
@@ -7276,9 +8510,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Port Policy Module
-    #========================================
+    #==============================================
     def port_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -8965,9 +10199,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Power Policy Module
-    #========================================
+    #==============================================
     def power_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -9084,9 +10318,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Resource Pool Module
-    #========================================
+    #==============================================
     def resource_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'resource'
@@ -9205,9 +10439,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # SAN Connectivity Policy Module
-    #========================================
+    #==============================================
     def san_connectivity_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'san'
@@ -9707,9 +10941,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # SD Card Policy Module
-    #========================================
+    #==============================================
     def sd_card_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'sdcard'
@@ -9766,9 +11000,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Serial over LAN Policy Module
-    #========================================
+    #==============================================
     def serial_over_lan_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'sol'
@@ -9877,9 +11111,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # SMTP Policy Module
-    #========================================
+    #==============================================
     def smtp_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'smtp'
@@ -10047,9 +11281,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # SNMP Policy Module
-    #========================================
+    #==============================================
     def snmp_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'snmp'
@@ -10104,20 +11338,28 @@ class easy_imm_wizard(object):
                             print(f'  Excluding [22, 23, 80, 123, 389, 443, 623, 636, 2068, 3268, 3269].')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    valid = False
-                    while valid == False:
-                        templateVars["system_contact"] = input(f'Note: Enter a string up to 64 characters, such as an email address or a name and telephone number.\n'\
-                            'What is the Contact person responsible for the SNMP implementation?  [UCS Admins]: ')
-                        if templateVars["system_contact"] == '':
-                            templateVars["system_contact"] = 'UCS Admins'
-                        valid = validating.string_length('System Contact', templateVars["system_contact"], 1, 64)
+                    templateVars["multi_select"] = False
+                    jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
 
-                    valid = False
-                    while valid == False:
-                        templateVars["system_location"] = input(f'What is the Location of the host on which the SNMP agent (server) runs?  [Data Center]: ')
-                        if templateVars["system_location"] == '':
-                            templateVars["system_location"] = 'Data Center'
-                        valid = validating.string_length('System Location', templateVars["system_location"], 1, 64)
+                    # SNMP Contact
+                    templateVars["Description"] = jsonVars['SysContact']['description']
+                    templateVars["varDefault"] = 'UCS Admins'
+                    templateVars["varInput"] = 'SNMP System Contact:'
+                    templateVars["varName"] = 'SNMP System Contact'
+                    templateVars["varRegex"] = '.*'
+                    templateVars["minLength"] = 1
+                    templateVars["maxLength"] = jsonVars['SysContact']['maxLength']
+                    templateVars["system_contact"] = varStringLoop(**templateVars)
+
+                    # SNMP Location
+                    templateVars["Description"] = jsonVars['SysLocation']['description']
+                    templateVars["varDefault"] = 'Data Center'
+                    templateVars["varInput"] = 'What is the Location of the host on which the SNMP agent (server) runs?'
+                    templateVars["varName"] = 'System Location'
+                    templateVars["varRegex"] = '.*'
+                    templateVars["minLength"] = 1
+                    templateVars["maxLength"] = jsonVars['SysLocation']['maxLength']
+                    templateVars["system_location"] = varStringLoop(**templateVars)
 
                     templateVars["access_community_string"] = ''
                     valid = False
@@ -10145,8 +11387,6 @@ class easy_imm_wizard(object):
                             print(f'\n------------------------------------------------------\n')
 
                     if not templateVars["access_community_string"] == '':
-                        templateVars["multi_select"] = False
-                        jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
                         templateVars["var_description"] = jsonVars['CommunityAccess']['description']
                         templateVars["jsonVars"] = sorted(jsonVars['CommunityAccess']['enum'])
                         templateVars["defaultVar"] = jsonVars['CommunityAccess']['default']
@@ -10204,297 +11444,40 @@ class easy_imm_wizard(object):
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
 
-                    templateVars["users"] = []
-                    inner_loop_count = 1
+                    # SNMP Users
+                    ilCount = 1
+                    snmp_user_list = []
                     snmp_loop = False
                     while snmp_loop == False:
                         question = input(f'Would you like to configure an SNMPv3 User?  Enter "Y" or "N" [Y]: ')
                         if question == '' or question == 'Y':
-                            valid_users = False
-                            while valid_users == False:
-                                valid = False
-                                while valid == False:
-                                    snmp_user = input(f'What is your SNMPv3 username? ')
-                                    if not snmp_user == '':
-                                        valid = validating.snmp_string('SNMPv3 User', snmp_user)
-                                    else:
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                                templateVars["multi_select"] = False
-                                jsonVars = jsonData['components']['schemas']['snmp.User']['allOf'][1]['properties']
-                                templateVars["var_description"] = jsonVars['SecurityLevel']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['SecurityLevel']['enum'])
-                                templateVars["defaultVar"] = jsonVars['SecurityLevel']['default']
-                                templateVars["varType"] = 'SNMP Security Level'
-                                security_level = variablesFromAPI(**templateVars)
-
-                                if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
-                                    templateVars["var_description"] = jsonVars['AuthType']['description']
-                                    templateVars["jsonVars"] = sorted(jsonVars['AuthType']['enum'])
-                                    templateVars["defaultVar"] = 'SHA'
-                                    templateVars["popList"] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
-                                    templateVars["varType"] = 'SNMP Auth Type'
-                                    auth_type = variablesFromAPI(**templateVars)
-
-                                if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
-                                    valid = False
-                                    while valid == False:
-                                        auth_password = stdiomask.getpass(f'What is the authorization password for {snmp_user}? ')
-                                        if not auth_password == '':
-                                            valid = validating.snmp_string('SNMPv3 Authorization Password', auth_password)
-                                        else:
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                            print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    TF_VAR = 'TF_VAR_snmp_auth_password_%s' % (inner_loop_count)
-                                    os.environ[TF_VAR] = '%s' % (auth_password)
-                                    auth_password = inner_loop_count
-
-                                if security_level == 'AuthPriv':
-                                    templateVars["var_description"] = jsonVars['PrivacyType']['description']
-                                    templateVars["jsonVars"] = sorted(jsonVars['PrivacyType']['enum'])
-                                    templateVars["defaultVar"] = 'AES'
-                                    templateVars["popList"] = ['NA']
-                                    templateVars["varType"] = 'SNMP Auth Type'
-                                    privacy_type = variablesFromAPI(**templateVars)
-
-                                    valid = False
-                                    while valid == False:
-                                        privacy_password = stdiomask.getpass(f'What is the privacy password for {snmp_user}? ')
-                                        if not privacy_password == '':
-                                            valid = validating.snmp_string('SNMPv3 Privacy Password', privacy_password)
-                                        else:
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                            print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    TF_VAR = 'TF_VAR_snmp_privacy_password_%s' % (inner_loop_count)
-                                    os.environ[TF_VAR] = '%s' % (privacy_password)
-                                    privacy_password = inner_loop_count
-
-                                if security_level == 'AuthPriv':
-                                    snmp_userx = {
-                                        'auth_password':inner_loop_count,
-                                        'auth_type':auth_type,
-                                        'name':snmp_user,
-                                        'privacy_password':inner_loop_count,
-                                        'privacy_type':privacy_type,
-                                        'security_level':security_level
-                                    }
-                                elif security_level == 'AuthNoPriv':
-                                    snmp_userx = {
-                                        'auth_password':inner_loop_count,
-                                        'auth_type':auth_type,
-                                        'name':snmp_user,
-                                        'security_level':security_level
-                                    }
-
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'   auth_password    = "Sensitive"')
-                                print(f'   auth_type        = "{auth_type}"')
-                                if security_level == 'AuthPriv':
-                                    print(f'   privacy_password = "Sensitive"')
-                                    print(f'   privacy_type     = "{privacy_type}"')
-                                print(f'   security_level   = "{security_level}"')
-                                print(f'   snmp_user        = "{snmp_user}"')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                valid_confirm = False
-                                while valid_confirm == False:
-                                    confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
-                                    if confirm_v == 'Y' or confirm_v == '':
-                                        templateVars["users"].append(snmp_userx)
-                                        valid_exit = False
-                                        while valid_exit == False:
-                                            loop_exit = input(f'Would You like to Configure another SNMP User?  Enter "Y" or "N" [N]: ')
-                                            if loop_exit == 'Y':
-                                                inner_loop_count += 1
-                                                valid_confirm = True
-                                                valid_exit = True
-                                            elif loop_exit == 'N' or loop_exit == '':
-                                                snmp_loop = True
-                                                valid_confirm = True
-                                                valid_exit = True
-                                                valid_users = True
-                                            else:
-                                                print(f'\n------------------------------------------------------\n')
-                                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                                print(f'\n------------------------------------------------------\n')
-
-                                    elif confirm_v == 'N':
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Starting Remote Host Configuration Over.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        valid_confirm = True
-                                    else:
-                                        print(f'\n------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                        print(f'\n------------------------------------------------------\n')
-
+                            snmp_user_list,snmp_loop = snmp_users(jsonData, ilCount, **templateVars)
                         elif question == 'N':
                             snmp_loop = True
                         else:
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
+                    templateVars["users"] = snmp_user_list
 
-
-                    snmp_user_list = []
-                    if len(templateVars["users"]):
-                        for item in templateVars["users"]:
-                            for k, v in item.items():
-                                if k == 'name':
-                                    snmp_user_list.append(v)
-
-                    templateVars["trap_destinations"] = []
-                    inner_loop_count = 1
+                    # SNMP Trap Destinations
+                    ilCount = 1
+                    snmp_dests = []
                     snmp_loop = False
                     while snmp_loop == False:
                         question = input(f'Would you like to configure SNMP Trap Destionations?  Enter "Y" or "N" [Y]: ')
                         if question == '' or question == 'Y':
-                            valid_traps = False
-                            while valid_traps == False:
-                                templateVars["multi_select"] = False
-                                jsonVars = jsonData['components']['schemas']['snmp.Trap']['allOf'][1]['properties']
-                                if len(snmp_user_list) == 0:
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    print(f'  There are no valid SNMP Users so Trap Destinations can only be set to SNMPv2.')
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    snmp_version = 'V2'
-                                else:
-                                    templateVars["var_description"] = jsonVars['Version']['description']
-                                    templateVars["jsonVars"] = sorted(jsonVars['Version']['enum'])
-                                    templateVars["defaultVar"] = jsonVars['Version']['default']
-                                    templateVars["varType"] = 'SNMP Version'
-                                    snmp_version = variablesFromAPI(**templateVars)
-
-                                if snmp_version == 'V2':
-                                    valid = False
-                                    while valid == False:
-                                        community_string = stdiomask.getpass(f'What is the Community String for the Destination? ')
-                                        if not community_string == '':
-                                            valid = validating.snmp_string('SNMP Community String', community_string)
-                                        else:
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                            print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Community String.')
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    TF_VAR = 'TF_VAR_snmp_community_string_%s' % (inner_loop_count)
-                                    os.environ[TF_VAR] = '%s' % (community_string)
-                                    community_string = inner_loop_count
-
-                                if snmp_version == 'V3':
-                                    templateVars["multi_select"] = False
-                                    templateVars["var_description"] = '    Please Select the SNMP User to assign to this Destination:\n'
-                                    templateVars["var_type"] = 'SNMP User'
-                                    snmp_user = vars_from_list(snmp_user_list, **templateVars)
-                                    snmp_user = snmp_user[0]
-
-                                if snmp_version == 'V2':
-                                    templateVars["var_description"] = jsonVars['Type']['description']
-                                    templateVars["jsonVars"] = sorted(jsonVars['Type']['enum'])
-                                    templateVars["defaultVar"] = jsonVars['Type']['default']
-                                    templateVars["varType"] = 'SNMP Trap Type'
-                                    trap_type = variablesFromAPI(**templateVars)
-                                else:
-                                    trap_type = 'Trap'
-
-                                valid = False
-                                while valid == False:
-                                    destination_address = input(f'What is the SNMP Trap Destination Hostname/Address? ')
-                                    if not destination_address == '':
-                                        if re.search(r'^[0-9a-fA-F]+[:]+[0-9a-fA-F]$', destination_address) or \
-                                            re.search(r'^(\d{1,3}\.){3}\d{1,3}$', destination_address):
-                                            valid = validating.ip_address('SNMP Trap Destination', destination_address)
-                                        else:
-                                            valid = validating.dns_name('SNMP Trap Destination', destination_address)
-                                    else:
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Trap Destination Hostname/Address.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                                valid = False
-                                while valid == False:
-                                    port = input(f'Enter the Port to Assign to this Destination.  Valid Range is 1-65535.  [162]: ')
-                                    if port == '':
-                                        port = 162
-                                    if re.search(r'[0-9]{1,4}', str(port)):
-                                        valid = validating.snmp_port('SNMP Port', port, 1, 65535)
-                                    else:
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                                if snmp_version == 'V3':
-                                    snmp_destination = {
-                                        'destination_address':destination_address,
-                                        'enabled':True,
-                                        'port':port,
-                                        'trap_type':trap_type,
-                                        'user':snmp_user,
-                                        'version':snmp_version
-                                    }
-                                else:
-                                    snmp_destination = {
-                                        'community':community_string,
-                                        'destination_address':destination_address,
-                                        'enabled':True,
-                                        'port':port,
-                                        'trap_type':trap_type,
-                                        'version':snmp_version
-                                    }
-
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                if snmp_version == 'V2':
-                                    print(f'   community_string    = "Sensitive"')
-                                print(f'   destination_address = "{destination_address}"')
-                                print(f'   enable              = True')
-                                print(f'   trap_type           = "{trap_type}"')
-                                print(f'   snmp_version        = "{snmp_version}"')
-                                if snmp_version == 'V3':
-                                    print(f'   user                = "{snmp_user}"')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                valid_confirm = False
-                                while valid_confirm == False:
-                                    confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
-                                    if confirm_v == 'Y' or confirm_v == '':
-                                        templateVars["trap_destinations"].append(snmp_destination)
-                                        valid_exit = False
-                                        while valid_exit == False:
-                                            loop_exit = input(f'Would You like to Configure another SNMP Trap Destination?  Enter "Y" or "N" [N]: ')
-                                            if loop_exit == 'Y':
-                                                inner_loop_count += 1
-                                                valid_confirm = True
-                                                valid_exit = True
-                                            elif loop_exit == 'N' or loop_exit == '':
-                                                snmp_loop = True
-                                                valid_confirm = True
-                                                valid_exit = True
-                                                valid_traps = True
-                                            else:
-                                                print(f'\n------------------------------------------------------\n')
-                                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                                print(f'\n------------------------------------------------------\n')
-
-                                    elif confirm_v == 'N':
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Starting Remote Host Configuration Over.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        valid_confirm = True
-                                    else:
-                                        print(f'\n------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                        print(f'\n------------------------------------------------------\n')
-
+                            snmp_dests,snmp_loop = snmp_trap_servers(jsonData, ilCount, snmp_user_list, **templateVars)
                         elif question == 'N':
                             snmp_loop = True
                         else:
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
+                    templateVars["trap_destinations"] = snmp_dests
 
-                    templateVars["enabled"] = True
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    if templateVars["access_community_string"] == '':
+                    if not templateVars["access_community_string"] == '':
                         print(f'    access_community_string = "Sensitive"')
                     print(f'    description             = "{templateVars["descr"]}"')
                     print(f'    enable_snmp             = {templateVars["enabled"]}')
@@ -10510,17 +11493,19 @@ class easy_imm_wizard(object):
                                     print(f'      "{v}" = ''{')
                             for k, v in item.items():
                                 if k == 'community':
-                                    print(f'        community_string = "Sensitive"')
+                                    print(f'        community_string    = "Sensitive"')
+                                elif k == 'destination_address':
+                                    print(f'        destination_address = "{v}"')
                                 elif k == 'enabled':
-                                    print(f'        enable           = {v}')
-                                elif k == 'trap_type':
-                                    print(f'        trap_type        = "{v}"')
+                                    print(f'        enable              = {v}')
                                 elif k == 'port':
-                                    print(f'        port             = {v}')
+                                    print(f'        port                = {v}')
+                                elif k == 'trap_type':
+                                    print(f'        trap_type           = "{v}"')
                                 elif k == 'user':
-                                    print(f'        user             = "{v}"')
+                                    print(f'        user                = "{v}"')
                                 elif k == 'version':
-                                    print(f'        snmp_server      = "{v}"')
+                                    print(f'        snmp_server         = "{v}"')
                             print(f'      ''}')
                         print(f'    ''}')
                     if len(templateVars["users"]) > 0:
@@ -10542,7 +11527,7 @@ class easy_imm_wizard(object):
                                     print(f'        security_level   = "{v}"')
                             print(f'      ''}')
                         print(f'    ''}')
-                    if templateVars["trap_community_string"] == '':
+                    if not templateVars["trap_community_string"] == '':
                         print(f'    trap_community_string   = "Sensitive"')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
@@ -10580,9 +11565,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # SSH Policy Module
-    #========================================
+    #==============================================
     def ssh_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'ssh'
@@ -10696,9 +11681,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Storage Policy Module
-    #========================================
+    #==============================================
     def storage_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'storage'
@@ -10755,9 +11740,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Switch Control Policy Module
-    #========================================
+    #==============================================
     def switch_control_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'sw_ctrl'
@@ -10840,9 +11825,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Syslog Policy Module
-    #========================================
+    #==============================================
     def syslog_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'syslog'
@@ -10882,6 +11867,7 @@ class easy_imm_wizard(object):
                     templateVars["name"] = policy_name(name, policy_type)
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
+                    # Syslog Local Logging
                     templateVars["multi_select"] = False
                     jsonVars = jsonData['components']['schemas']['syslog.LocalClientBase']['allOf'][1]['properties']
                     templateVars["var_description"] = jsonVars['MinSeverity']['description']
@@ -10892,94 +11878,8 @@ class easy_imm_wizard(object):
 
                     templateVars["local_logging"] = {'file':{'min_severity':templateVars["min_severity"]}}
 
-                    templateVars["remote_logging"] = {}
-                    syslog_count = 1
-                    syslog_loop = False
-                    while syslog_loop == False:
-                        valid = False
-                        while valid == False:
-                            hostname = input(f'Enter the Hostname/IP Address of the Remote Server: ')
-                            if re.search(r'[a-zA-Z]+', hostname):
-                                valid = validating.dns_name('Remote Logging Server', hostname)
-                            else:
-                                valid = validating.ip_address('Remote Logging Server', hostname)
-
-                        jsonVars = jsonData['components']['schemas']['syslog.RemoteClientBase']['allOf'][1]['properties']
-                        templateVars["var_description"] = jsonVars['MinSeverity']['description']
-                        templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
-                        templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
-                        templateVars["varType"] = 'Syslog Remote Minimum Severity'
-                        min_severity = variablesFromAPI(**templateVars)
-
-                        templateVars["var_description"] = jsonVars['Protocol']['description']
-                        templateVars["jsonVars"] = sorted(jsonVars['Protocol']['enum'])
-                        templateVars["defaultVar"] = jsonVars['Protocol']['default']
-                        templateVars["varType"] = 'Syslog Protocol'
-                        templateVars["protocol"] = variablesFromAPI(**templateVars)
-
-                        valid = False
-                        while valid == False:
-                            port = input(f'Enter the Port to Assign to this Policy.  Valid Range is 1-65535.  [514]: ')
-                            if port == '':
-                                port = 514
-                            if re.search(r'[0-9]{1,4}', str(port)):
-                                valid = validating.number_in_range('Port', port, 1, 65535)
-                            else:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                        remote_host = {
-                            'enable':True,
-                            'hostname':hostname,
-                            'min_severity':min_severity,
-                            'port':port,
-                            'protocol':templateVars["protocol"]
-                        }
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'   hostname     = "{hostname}"')
-                        print(f'   min_severity = "{min_severity}"')
-                        print(f'   port         = {port}')
-                        print(f'   protocol     = "{templateVars["protocol"]}"')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        valid_confirm = False
-                        while valid_confirm == False:
-                            confirm_host = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
-                            if confirm_host == 'Y' or confirm_host == '':
-                                if syslog_count == 1:
-                                    templateVars['remote_logging'].update({'server1':remote_host})
-                                if syslog_count == 2:
-                                    templateVars['remote_logging'].update({'server2':remote_host})
-                                if syslog_count == 1:
-                                    valid_exit = False
-                                    while valid_exit == False:
-                                        remote_exit = input(f'Would You like to Configure another Remote Host?  Enter "Y" or "N" [Y]: ')
-                                        if remote_exit == 'Y' or remote_exit == '':
-                                            syslog_count += 1
-                                            valid_confirm = True
-                                            valid_exit = True
-                                        elif remote_exit == 'N':
-                                            syslog_loop = True
-                                            valid_exit = True
-                                        else:
-                                            print(f'\n------------------------------------------------------\n')
-                                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                            print(f'\n------------------------------------------------------\n')
-
-                                else:
-                                    syslog_loop = True
-                                    valid_confirm = True
-
-                            elif confirm_host == 'N':
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Starting Remote Host Configuration Over.')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                syslog_loop = True
-                                valid_confirm = True
-                            else:
-                                print(f'\n------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                print(f'\n------------------------------------------------------\n')
+                    remote_logging = syslog_servers(jsonData, **templateVars)
+                    templateVars['remote_logging'] = remote_logging
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    description        = "{templateVars["descr"]}"')
@@ -11039,9 +11939,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # System QoS Policy Module
-    #========================================
+    #==============================================
     def system_qos_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'qos'
@@ -11225,9 +12125,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Thermal Policy Module
-    #========================================
+    #==============================================
     def thermal_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -11313,9 +12213,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # UCS Chassis Profile Module
-    #========================================
+    #==============================================
     def ucs_chassis_profiles(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'chassis'
@@ -11433,9 +12333,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # UCS Domain Profile Module
-    #========================================
+    #==============================================
     def ucs_domain_profiles(self, jsonData, easy_jsonData, policy_prefix):
         name_prefix = self.name_prefix
         name_suffix = 'ucs'
@@ -11623,9 +12523,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # UCS Server Profile Module
-    #========================================
+    #==============================================
     def ucs_server_profiles(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'server'
@@ -11913,9 +12813,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # UCS Server Profile Template Module
-    #========================================
+    #==============================================
     def ucs_server_profile_templates(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'template'
@@ -12136,9 +13036,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # UUID Pools Module
-    #========================================
+    #==============================================
     def uuid_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'uuid_pool'
@@ -12285,9 +13185,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Virtual KVM Policy Module
-    #========================================
+    #==============================================
     def virtual_kvm_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'vkvm'
@@ -12401,9 +13301,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # Virtual Media Policy Policy Module
-    #========================================
+    #==============================================
     def virtual_media_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'vmedia'
@@ -12854,9 +13754,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # VLAN Policy Module
-    #========================================
+    #==============================================
     def vlan_policies(self, jsonData, easy_jsonData):
         vlan_policies_vlans = []
         name_prefix = self.name_prefix
@@ -13043,9 +13943,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # VSAN Policy Module
-    #========================================
+    #==============================================
     def vsan_policies(self, jsonData, easy_jsonData):
         vsan_policies_vsans = []
         name_prefix = self.name_prefix
@@ -13280,9 +14180,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # WWNN Pools Module
-    #========================================
+    #==============================================
     def wwnn_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         name_suffix = 'wwnn_pool'
@@ -13422,9 +14322,9 @@ class easy_imm_wizard(object):
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
 
-    #========================================
+    #==============================================
     # WWPN Pools Module
-    #========================================
+    #==============================================
     def wwpn_pools(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
@@ -14150,6 +15050,368 @@ def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
     payload = template.render(templateVars)
     wr_file.write(payload)
     wr_file.close()
+
+def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **templateVars):
+    trap_servers = []
+    valid_traps = False
+    while valid_traps == False:
+        templateVars["multi_select"] = False
+        jsonVars = jsonData['components']['schemas']['snmp.Trap']['allOf'][1]['properties']
+        if len(snmp_user_list) == 0:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  There are no valid SNMP Users so Trap Destinations can only be set to SNMPv2.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            snmp_version = 'V2'
+        else:
+            templateVars["var_description"] = jsonVars['Version']['description']
+            templateVars["jsonVars"] = sorted(jsonVars['Version']['enum'])
+            templateVars["defaultVar"] = jsonVars['Version']['default']
+            templateVars["varType"] = 'SNMP Version'
+            snmp_version = variablesFromAPI(**templateVars)
+
+        if snmp_version == 'V2':
+            valid = False
+            while valid == False:
+                community_string = stdiomask.getpass(f'What is the Community String for the Destination? ')
+                if not community_string == '':
+                    valid = validating.snmp_string('SNMP Community String', community_string)
+                else:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Community String.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            TF_VAR = 'TF_VAR_snmp_community_string_%s' % (inner_loop_count)
+            os.environ[TF_VAR] = '%s' % (community_string)
+            community_string = inner_loop_count
+
+        if snmp_version == 'V3':
+            templateVars["multi_select"] = False
+            templateVars["var_description"] = '    Please Select the SNMP User to assign to this Destination:\n'
+            templateVars["var_type"] = 'SNMP User'
+            snmp_users = []
+            for item in snmp_user_list:
+                snmp_users.append(item['name'])
+            snmp_user = vars_from_list(snmp_users, **templateVars)
+            snmp_user = snmp_user[0]
+
+        if snmp_version == 'V2':
+            templateVars["var_description"] = jsonVars['Type']['description']
+            templateVars["jsonVars"] = sorted(jsonVars['Type']['enum'])
+            templateVars["defaultVar"] = jsonVars['Type']['default']
+            templateVars["varType"] = 'SNMP Trap Type'
+            trap_type = variablesFromAPI(**templateVars)
+        else:
+            trap_type = 'Trap'
+
+        valid = False
+        while valid == False:
+            destination_address = input(f'What is the SNMP Trap Destination Hostname/Address? ')
+            if not destination_address == '':
+                if re.search(r'^[0-9a-fA-F]+[:]+[0-9a-fA-F]$', destination_address) or \
+                    re.search(r'^(\d{1,3}\.){3}\d{1,3}$', destination_address):
+                    valid = validating.ip_address('SNMP Trap Destination', destination_address)
+                else:
+                    valid = validating.dns_name('SNMP Trap Destination', destination_address)
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Trap Destination Hostname/Address.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        valid = False
+        while valid == False:
+            port = input(f'Enter the Port to Assign to this Destination.  Valid Range is 1-65535.  [162]: ')
+            if port == '':
+                port = 162
+            if re.search(r'[0-9]{1,4}', str(port)):
+                valid = validating.snmp_port('SNMP Port', port, 1, 65535)
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        if snmp_version == 'V3':
+            snmp_destination = {
+                'destination_address':destination_address,
+                'enabled':True,
+                'port':port,
+                'trap_type':trap_type,
+                'user':snmp_user,
+                'version':snmp_version
+            }
+        else:
+            snmp_destination = {
+                'community':community_string,
+                'destination_address':destination_address,
+                'enabled':True,
+                'port':port,
+                'trap_type':trap_type,
+                'version':snmp_version
+            }
+
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        if snmp_version == 'V2':
+            print(f'   community_string    = "Sensitive"')
+        print(f'   destination_address = "{destination_address}"')
+        print(f'   enable              = True')
+        print(f'   trap_type           = "{trap_type}"')
+        print(f'   snmp_version        = "{snmp_version}"')
+        if snmp_version == 'V3':
+            print(f'   user                = "{snmp_user}"')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        valid_confirm = False
+        while valid_confirm == False:
+            confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+            if confirm_v == 'Y' or confirm_v == '':
+                trap_servers.append(snmp_destination)
+                valid_exit = False
+                while valid_exit == False:
+                    loop_exit = input(f'Would You like to Configure another SNMP Trap Destination?  Enter "Y" or "N" [N]: ')
+                    if loop_exit == 'Y':
+                        inner_loop_count += 1
+                        valid_confirm = True
+                        valid_exit = True
+                    elif loop_exit == 'N' or loop_exit == '':
+                        snmp_loop = True
+                        valid_confirm = True
+                        valid_exit = True
+                        valid_traps = True
+                    else:
+                        print(f'\n------------------------------------------------------\n')
+                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                        print(f'\n------------------------------------------------------\n')
+
+            elif confirm_v == 'N':
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Starting Remote Host Configuration Over.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                valid_confirm = True
+            else:
+                print(f'\n------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n------------------------------------------------------\n')
+
+    return trap_servers,snmp_loop
+
+def snmp_users(jsonData, inner_loop_count, **templateVars):
+    snmp_user_list = []
+    valid_users = False
+    while valid_users == False:
+        templateVars["multi_select"] = False
+        jsonVars = jsonData['components']['schemas']['snmp.User']['allOf'][1]['properties']
+
+        templateVars["Description"] = jsonVars['Name']['description']
+        templateVars["varDefault"] = 'admin'
+        templateVars["varInput"] = 'What is the SNMPv3 Username:'
+        templateVars["varName"] = 'SNMP User'
+        templateVars["varRegex"] = '^([a-zA-Z]+[a-zA-Z0-9\\-\\_\\.\\@]+)$'
+        templateVars["minLength"] = jsonVars['Name']['minLength']
+        templateVars["maxLength"] = jsonVars['Name']['maxLength']
+        snmp_user = varStringLoop(**templateVars)
+
+        templateVars["var_description"] = jsonVars['SecurityLevel']['description']
+        templateVars["jsonVars"] = sorted(jsonVars['SecurityLevel']['enum'])
+        templateVars["defaultVar"] = jsonVars['SecurityLevel']['default']
+        templateVars["varType"] = 'SNMP Security Level'
+        security_level = variablesFromAPI(**templateVars)
+
+        if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
+            templateVars["var_description"] = jsonVars['AuthType']['description']
+            templateVars["jsonVars"] = sorted(jsonVars['AuthType']['enum'])
+            templateVars["defaultVar"] = 'SHA'
+            templateVars["popList"] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
+            templateVars["varType"] = 'SNMP Auth Type'
+            auth_type = variablesFromAPI(**templateVars)
+
+        if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
+            valid = False
+            while valid == False:
+                auth_password = stdiomask.getpass(f'What is the authorization password for {snmp_user}? ')
+                if not auth_password == '':
+                    valid = validating.snmp_string('SNMPv3 Authorization Password', auth_password)
+                else:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            TF_VAR = 'TF_VAR_snmp_auth_password_%s' % (inner_loop_count)
+            os.environ[TF_VAR] = '%s' % (auth_password)
+            auth_password = inner_loop_count
+
+        if security_level == 'AuthPriv':
+            templateVars["var_description"] = jsonVars['PrivacyType']['description']
+            templateVars["jsonVars"] = sorted(jsonVars['PrivacyType']['enum'])
+            templateVars["defaultVar"] = 'AES'
+            templateVars["popList"] = ['NA']
+            templateVars["varType"] = 'SNMP Auth Type'
+            privacy_type = variablesFromAPI(**templateVars)
+
+            valid = False
+            while valid == False:
+                privacy_password = stdiomask.getpass(f'What is the privacy password for {snmp_user}? ')
+                if not privacy_password == '':
+                    valid = validating.snmp_string('SNMPv3 Privacy Password', privacy_password)
+                else:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            TF_VAR = 'TF_VAR_snmp_privacy_password_%s' % (inner_loop_count)
+            os.environ[TF_VAR] = '%s' % (privacy_password)
+            privacy_password = inner_loop_count
+
+        if security_level == 'AuthPriv':
+            snmp_user = {
+                'auth_password':inner_loop_count,
+                'auth_type':auth_type,
+                'name':snmp_user,
+                'privacy_password':inner_loop_count,
+                'privacy_type':privacy_type,
+                'security_level':security_level
+            }
+        elif security_level == 'AuthNoPriv':
+            snmp_user = {
+                'auth_password':inner_loop_count,
+                'auth_type':auth_type,
+                'name':snmp_user,
+                'security_level':security_level
+            }
+
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'   auth_password    = "Sensitive"')
+        print(f'   auth_type        = "{auth_type}"')
+        if security_level == 'AuthPriv':
+            print(f'   privacy_password = "Sensitive"')
+            print(f'   privacy_type     = "{privacy_type}"')
+        print(f'   security_level   = "{security_level}"')
+        print(f'   snmp_user        = "{snmp_user["name"]}"')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        valid_confirm = False
+        while valid_confirm == False:
+            confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+            if confirm_v == 'Y' or confirm_v == '':
+                snmp_user_list.append(snmp_user)
+                valid_exit = False
+                while valid_exit == False:
+                    loop_exit = input(f'Would You like to Configure another SNMP User?  Enter "Y" or "N" [N]: ')
+                    if loop_exit == 'Y':
+                        inner_loop_count += 1
+                        valid_confirm = True
+                        valid_exit = True
+                    elif loop_exit == 'N' or loop_exit == '':
+                        snmp_loop = True
+                        valid_confirm = True
+                        valid_exit = True
+                        valid_users = True
+                    else:
+                        print(f'\n------------------------------------------------------\n')
+                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                        print(f'\n------------------------------------------------------\n')
+
+            elif confirm_v == 'N':
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Starting SNMP User Configuration Over.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                valid_confirm = True
+            else:
+                print(f'\n------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n------------------------------------------------------\n')
+    return snmp_user_list,snmp_loop
+
+def syslog_servers(jsonData, **templateVars):
+    remote_logging = {}
+    syslog_count = 1
+    syslog_loop = False
+    while syslog_loop == False:
+        valid = False
+        while valid == False:
+            hostname = input(f'Enter the Hostname/IP Address of the Remote Server: ')
+            if re.search(r'[a-zA-Z]+', hostname):
+                valid = validating.dns_name('Remote Logging Server', hostname)
+            else:
+                valid = validating.ip_address('Remote Logging Server', hostname)
+
+        jsonVars = jsonData['components']['schemas']['syslog.RemoteClientBase']['allOf'][1]['properties']
+        templateVars["var_description"] = jsonVars['MinSeverity']['description']
+        templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+        templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
+        templateVars["varType"] = 'Syslog Remote Minimum Severity'
+        min_severity = variablesFromAPI(**templateVars)
+
+        templateVars["var_description"] = jsonVars['Protocol']['description']
+        templateVars["jsonVars"] = sorted(jsonVars['Protocol']['enum'])
+        templateVars["defaultVar"] = jsonVars['Protocol']['default']
+        templateVars["varType"] = 'Syslog Protocol'
+        templateVars["protocol"] = variablesFromAPI(**templateVars)
+
+        valid = False
+        while valid == False:
+            port = input(f'Enter the Port to Assign to this Policy.  Valid Range is 1-65535.  [514]: ')
+            if port == '':
+                port = 514
+            if re.search(r'[0-9]{1,4}', str(port)):
+                valid = validating.number_in_range('Port', port, 1, 65535)
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        remote_host = {
+            'enable':True,
+            'hostname':hostname,
+            'min_severity':min_severity,
+            'port':port,
+            'protocol':templateVars["protocol"]
+        }
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'   hostname     = "{hostname}"')
+        print(f'   min_severity = "{min_severity}"')
+        print(f'   port         = {port}')
+        print(f'   protocol     = "{templateVars["protocol"]}"')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        valid_confirm = False
+        while valid_confirm == False:
+            confirm_host = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+            if confirm_host == 'Y' or confirm_host == '':
+                if syslog_count == 1:
+                    remote_logging.update({'server1':remote_host})
+                elif syslog_count == 2:
+                    remote_logging.update({'server2':remote_host})
+                    syslog_loop = True
+                    valid_confirm = True
+                if syslog_count == 1:
+                    valid_exit = False
+                    while valid_exit == False:
+                        remote_exit = input(f'Would You like to Configure another Remote Host?  Enter "Y" or "N" [Y]: ')
+                        if remote_exit == 'Y' or remote_exit == '':
+                            syslog_count += 1
+                            valid_confirm = True
+                            valid_exit = True
+                        elif remote_exit == 'N':
+                            remote_host = {
+                                'enable':False,
+                                'hostname':'0.0.0.0',
+                                'min_severity':'warning',
+                                'port':514,
+                                'protocol':'udp'
+                            }
+                            remote_logging.update({'server2':remote_host})
+                            syslog_loop = True
+                            valid_confirm = True
+                            valid_exit = True
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
+            elif confirm_host == 'N':
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Starting Syslog Server Configuration Over.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                valid_confirm = True
+            else:
+                print(f'\n------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n------------------------------------------------------\n')
+
+    return remote_logging
 
 def validate_vlan_in_policy(vlan_policy_list, vlan_id):
     valid = False
