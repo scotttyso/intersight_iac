@@ -15,7 +15,8 @@ from class_pools import pools
 from class_policies_domain import policies_domain
 from class_policies_lan import policies_lan
 from class_policies_san import policies_san
-from class_policies import policies
+from class_policies_sect1 import policies_sect1
+from class_policies_sect2 import policies_sect2
 from class_profiles import profiles
 from class_quick_start import quick_start
 from class_terraform import terraform_cloud
@@ -673,18 +674,18 @@ def process_wizard(easy_jsonData, jsonData):
         # certificate_management_policies
         # sd_card_policies
         if policy == 'adapter_configuration_policies':
-            policies(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData)
+            policies_sect1(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData)
         if policy == 'bios_policies':
-            policies(name_prefix, org, type).bios_policies(jsonData, easy_jsonData)
+            policies_sect1(name_prefix, org, type).bios_policies(jsonData, easy_jsonData)
         if policy == 'boot_order_policies':
-            policies(name_prefix, org, type).boot_order_policies(jsonData, easy_jsonData)
+            policies_sect1(name_prefix, org, type).boot_order_policies(jsonData, easy_jsonData)
         #========================================================
         # Certificate Management Policies doesn't work
         #========================================================
         # elif policy == 'certificate_management_policies':
         #     policies(name_prefix, org, type).certificate_management_policies()
         elif policy == 'device_connector_policies':
-            policies(name_prefix, org, type).device_connector_policies(jsonData, easy_jsonData)
+            policies_sect1(name_prefix, org, type).device_connector_policies(jsonData, easy_jsonData)
         elif policy == 'ethernet_adapter_policies':
             policies_lan(name_prefix, org, type).ethernet_adapter_policies(jsonData, easy_jsonData)
         elif policy == 'ethernet_network_control_policies':
@@ -704,9 +705,9 @@ def process_wizard(easy_jsonData, jsonData):
         elif policy == 'flow_control_policies':
             policies_domain(domain_prefix, org, type).flow_control_policies(jsonData, easy_jsonData)
         elif policy == 'imc_access_policies':
-            policies(name_prefix, org, type).imc_access_policies(jsonData, easy_jsonData)
+            policies_sect1(name_prefix, org, type).imc_access_policies(jsonData, easy_jsonData)
         elif policy == 'ipmi_over_lan_policies':
-            policies(name_prefix, org, type).ipmi_over_lan_policies(jsonData, easy_jsonData)
+            policies_sect1(name_prefix, org, type).ipmi_over_lan_policies(jsonData, easy_jsonData)
         elif policy == 'iscsi_adapter_policies':
             policies_lan(name_prefix, org, type).iscsi_adapter_policies(jsonData, easy_jsonData)
         elif policy == 'iscsi_boot_policies':
@@ -716,49 +717,49 @@ def process_wizard(easy_jsonData, jsonData):
         elif policy == 'lan_connectivity_policies':
             policies_lan(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ldap_policies':
-            policies(name_prefix, org, type).ldap_policies(jsonData, easy_jsonData)
+            policies_sect1(name_prefix, org, type).ldap_policies(jsonData, easy_jsonData)
         elif policy == 'link_aggregation_policies':
             policies_domain(domain_prefix, org, type).link_aggregation_policies(jsonData, easy_jsonData)
         elif policy == 'link_control_policies':
             policies_domain(domain_prefix, org, type).link_control_policies(jsonData, easy_jsonData)
         elif policy == 'local_user_policies':
-            policies(name_prefix, org, type).local_user_policies(jsonData, easy_jsonData)
+            policies_sect1(name_prefix, org, type).local_user_policies(jsonData, easy_jsonData)
         elif policy == 'network_connectivity_policies':
-            policies(name_prefix, org, type).network_connectivity_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).network_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ntp_policies':
-            policies(name_prefix, org, type).ntp_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).ntp_policies(jsonData, easy_jsonData)
         elif policy == 'persistent_memory_policies':
-            policies(name_prefix, org, type).persistent_memory_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).persistent_memory_policies(jsonData, easy_jsonData)
         elif policy == 'port_policies':
             policies_domain(domain_prefix, org, type).port_policies(jsonData, easy_jsonData)
         elif policy == 'power_policies':
-            policies(name_prefix, org, type).power_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).power_policies(jsonData, easy_jsonData)
         elif policy == 'san_connectivity_policies':
             policies_san(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData)
         # elif policy == 'sd_card_policies':
         #     policies(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData)
         elif policy == 'serial_over_lan_policies':
-            policies(name_prefix, org, type).serial_over_lan_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).serial_over_lan_policies(jsonData, easy_jsonData)
         elif policy == 'smtp_policies':
-            policies(name_prefix, org, type).smtp_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).smtp_policies(jsonData, easy_jsonData)
         elif policy == 'snmp_policies':
-            policies(name_prefix, org, type).snmp_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).snmp_policies(jsonData, easy_jsonData)
         elif policy ==  'ssh_policies':
-             policies(name_prefix, org, type).ssh_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).ssh_policies(jsonData, easy_jsonData)
         # elif policy == 'storage_policies':
         #     policies(name_prefix, org, type).storage_policies(jsonData, easy_jsonData)
         elif policy == 'switch_control_policies':
             policies_domain(domain_prefix, org, type).switch_control_policies(jsonData, easy_jsonData)
         elif policy == 'syslog_policies':
-            policies(name_prefix, org, type).syslog_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).syslog_policies(jsonData, easy_jsonData)
         elif policy == 'system_qos_policies':
             policies_domain(domain_prefix, org, type).system_qos_policies(jsonData, easy_jsonData)
         elif policy == 'thermal_policies':
-            policies(name_prefix, org, type).thermal_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).thermal_policies(jsonData, easy_jsonData)
         elif policy == 'virtual_kvm_policies':
-            policies(name_prefix, org, type).virtual_kvm_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).virtual_kvm_policies(jsonData, easy_jsonData)
         elif policy == 'virtual_media_policies':
-            policies(name_prefix, org, type).virtual_media_policies(jsonData, easy_jsonData)
+            policies_sect2(name_prefix, org, type).virtual_media_policies(jsonData, easy_jsonData)
         elif policy == 'vsan_policies':
             policies_domain(domain_prefix, org, type).vsan_policies(jsonData, easy_jsonData)
 

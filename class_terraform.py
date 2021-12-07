@@ -6,7 +6,6 @@ import pkg_resources
 import re
 import requests
 import stdiomask
-import sys
 import time
 import validating
 
