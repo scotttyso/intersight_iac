@@ -16,27 +16,33 @@
 {%- if drive_group %}
     drive_group = {
   {%- for item in drive_group %}
-      {{ item['drive_group_name'] }} = {
-    {%- for k, v in item.items() %}
-      {%- if k == 'manual_drive_selection' %}
+      "{{ item['drive_group_name'] }}" = {
+    {%- for keys, values in item.items() %}
+      {%- if keys == 'manual_drive_selection' %}
         manual_drive_group = {
-        {%- for i in manual_drive_selection %}
+        {%- for key, value in values.items() %}
           "{{ loop.index }}" = {
-          {%- for key, value in i.items() %}
-            {%- if key == 'dedicated_hot_spares' %}
-              dedicated_hot_spares = "{{ value }}",
-            {%- elif key == 'drive_array_spans' %}
-              drive_array_spans    = {{ value }}
-            {%- endif %}
-          {%- endfor %}
+          {%- if key == 'dedicated_hot_spares' %}
+            dedicated_hot_spares = "{{ value }}",
+          {%- elif key == 'drive_array_spans' %}
+              drive_array_spans = {
+            {%- for itx in value %}
+                "span_{{ loop.index }}" = {
+              {%- for k, v in itx.items() %}
+                  {{ k }} = "{{ v }}"
+              {%- endfor %}
+                }
+            {%- endfor %}
+              }
+          {%- endif %}
           }
         {%- endfor %}
         }
-      {%- elif k == 'raid_level' %}
-        raid_level = "{{ v|capitalize }}"
-      {%- elif k == 'virtual_drives' %}
+      {%- elif keys == 'raid_level' %}
+        raid_level = "{{ values|capitalize }}"
+      {%- elif keys == 'virtual_drives' %}
         virtual_drives = {
-        {%- for i in v %}
+        {%- for i in values %}
           "{{ i['vd_name'] }}" = {
           {%- for key, value in i.items()|sort %}
             {%- if key == 'access_policy' %}
@@ -102,7 +108,7 @@
         }
       {%- endif %}
     {%- endfor %}
-      },
+      }
   {%- endfor %}
     }
 {%- else %}
@@ -115,9 +121,9 @@
     {%- for k, v in item.items() %}
         {{ k }} = "{{ v }}"
     {%- endfor %}
-      },
+      }
   {%- endfor %}
-    ]
+    }
 {%- else %}
     m2_configuration         = {}
 {%- endif %}
@@ -180,7 +186,7 @@
         {%- endif %}
       {%- endif %}
     {%- endfor %}
-      },
+      }
   {%- endfor %}
     }
 {%- else %}
@@ -191,9 +197,9 @@
   {%- for item in tags %}
       {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}",
+        {{ k }} = "{{ v }}"
     {%- endfor %}
-      },
+      }
   {%- endfor %}
     ]
 {%- else %}

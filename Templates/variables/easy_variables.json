@@ -365,6 +365,7 @@
                 "Deploy Standalone Servers Wizard",
                 "Deploy Individual Policies",
                 "Quick Start Deployment - Domain - VMware M2",
+                "Quick Start Deployment - Domain - VMware Raid1",
                 "Skip Policy Deployment"
             ],
             "default":"Deploy Domain Wizard"

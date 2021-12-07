@@ -73,7 +73,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         ]
         for folder in folder_list:
             templateVars["autoApply"] = False
-            templateVars["description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[3])
+            templateVars["Description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[3])
             if re.search('(pools|profiles)', folder.split('/')[3]):
                 templateVars["globalRemoteState"] = True
             else:
@@ -394,9 +394,9 @@ def process_wizard(easy_jsonData, jsonData):
             'link_aggregation_policies',
             'link_control_policies',
             'port_policies',
+            'network_connectivity_policies',
             'ntp_policies',
             'syslog_policies',
-            'network_connectivity_policies',
             'snmp_policies',
             'system_qos_policies',
             'switch_control_policies',
@@ -534,10 +534,17 @@ def process_wizard(easy_jsonData, jsonData):
     #  Easy Deploy - VMware M2 Boot Server Profiles
     elif '-_domain_-' in main_menu:
         policy_list = [
-            'quick_start_pools',
-            'quick_start_network',
-            'quick_start_domain_policies'
+            # 'quick_start_pools',
+            'quick_start_vxan_policies',
+            # 'quick_start_domain_policies'
+            # 'quick_start_network_policies',
+            # 'quick_start_ucs_domain',
+            # 'quick_start_ucs_chassis',
         ]
+        if 'm2' in main_menu:
+            policy_list.append('quick_start_boot_m2_policies')
+        elif 'raid' in main_menu:
+            policy_list.append('quick_start_boot_raid1_policies')
 
     if main_menu == 'deploy_individual_policies':
         templateVars["var_description"] = jsonVars['Individual']['description']
@@ -617,10 +624,12 @@ def process_wizard(easy_jsonData, jsonData):
             domain_prefix = 'default'
             name_prefix = 'default'
 
+    kwargs = {}
     for policy in policy_list:
         type = 'pools'
         if 'quick_start_pools' in policy:
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).easy_domain_pools(jsonData, easy_jsonData)
+            primary_dns,secondary_dns = lib_ucs.easy_imm_wizard(domain_prefix, org, type).quick_start_pools(jsonData, easy_jsonData)
+            kwargs.update({'primary_dns':primary_dns,'secondary_dns':secondary_dns})
         elif policy == 'ip_pools':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).ip_pools(jsonData, easy_jsonData)
         elif policy == 'iqn_pools':
@@ -639,12 +648,10 @@ def process_wizard(easy_jsonData, jsonData):
             lib_ucs.easy_imm_wizard(domain_prefix, org, type).multicast_policies(jsonData, easy_jsonData)
         elif policy == 'vlan_policies':
             lib_ucs.easy_imm_wizard(domain_prefix, org, type).vlan_policies(jsonData, easy_jsonData)
-
         type = 'policies'
         #================================
         # Policies needed for 1st release
         #================================
-        # lan_connectivity_policies
         # storage_policies
         #================================
         # Policies needed for 2nd release
@@ -712,15 +719,24 @@ def process_wizard(easy_jsonData, jsonData):
             lib_ucs.easy_imm_wizard(domain_prefix, org, type).port_policies(jsonData, easy_jsonData)
         elif policy == 'power_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).power_policies(jsonData, easy_jsonData)
-        elif 'quick_start_network' in policy:
-            lib_ucs.easy_imm_wizard(domain_prefix, org, type).easy_domain_network_policies(jsonData, easy_jsonData)
+        elif policy == 'quick_start_boot_m2_policies':
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).quick_start_boot_m2_policies()
+        elif policy == 'quick_start_boot_raid1_policies':
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).quick_start_boot_raid1_policies()
+        elif 'quick_start_network_policies' in policy:
+            lib_ucs.easy_imm_wizard(domain_prefix, org, type).quick_start_network_policies(jsonData, easy_jsonData, **kwargs)
         elif 'quick_start_domain_policies' in policy or 'quick_start_rack_policies' in policy:
+            vsan_policies = []
+            vlan_policies = ''
             if 'domain' in policy:
-                server_type = 'FIAttached'
+                kwargs.update({'server_type':'FIAttached'})
+                vlan_policy,vsan_policies = lib_ucs.easy_imm_wizard(name_prefix, org, type).quick_start_domain_policies(jsonData, easy_jsonData, **kwargs)
+                kwargs.update({'vlan_policy':vlan_policy,'vsan_policies':vsan_policies})
             else:
-                server_type = 'Standalone'
-                lib_ucs.easy_imm_wizard(name_prefix, org, type).easy_standalone_policies(jsonData, easy_jsonData)
-            lib_ucs.easy_imm_wizard(name_prefix, org, type).easy_shared_policies(jsonData, easy_jsonData, server_type)
+                kwargs.update({'server_type':'Standalone'})
+                kwargs.update({'vsan_policies':vsan_policies})
+                lib_ucs.easy_imm_wizard(name_prefix, org, type).quick_start_rack_policies(jsonData, easy_jsonData)
+            lib_ucs.easy_imm_wizard(name_prefix, org, type).quick_start_shared_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'san_connectivity_policies':
             lib_ucs.easy_imm_wizard(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData)
         # elif policy == 'sd_card_policies':

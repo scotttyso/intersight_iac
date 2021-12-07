@@ -48,9 +48,11 @@
       "{{ item['pc_id'] }}" = {
     {%- for k, v in item.items() %}
       {%- if k == 'admin_speed' %}
-        admin_speed         = "{{ v }}"
+        admin_speed                     = "{{ v }}"
+      {%- elif k == 'ethernet_network_group_policy' %}
+        ethernet_network_group_policy   = "{{ v }}"
       {%- elif k == 'flow_control_policy' %}
-        flow_control_policy = "{{ v }}"
+        flow_control_policy             = "{{ v }}"
       {%- elif k == 'interfaces' and v|length > 1 %}
         interfaces = [
         {%- for i in v %}
@@ -203,19 +205,21 @@
       "{{ loop.index }}" = {
     {%- for k, v in item.items() %}
       {%- if k == 'admin_speed' %}
-        admin_speed         = "{{ v }}"
+        admin_speed                     = "{{ v }}"
       {%- elif k == 'aggr_id' %}
-        breakout_port_id    = {{ v }}
+        breakout_port_id                = {{ v }}
+      {%- elif k == 'ethernet_network_group_policy' %}
+        ethernet_network_group_policy   = "{{ v }}"
       {%- elif k == 'fec' %}
-        fec                 = "{{ v }}"
+        fec                             = "{{ v }}"
       {%- elif k == 'flow_control_policy' %}
-        flow_control_policy = "{{ v }}"
+        flow_control_policy             = "{{ v }}"
       {%- elif k == 'link_control_policy' %}
-        link_control_policy = "{{ v }}"
+        link_control_policy             = "{{ v }}"
       {%- elif k == 'port_id' %}
-        port_list           = "{{ v }}"
+        port_list                       = "{{ v }}"
       {%- elif k == 'slot_id' %}
-        slot_id             = {{ v }}
+        slot_id                         = {{ v }}
       {%- endif %}
     {%- endfor %}
       }
