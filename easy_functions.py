@@ -651,8 +651,8 @@ def ucs_domain_serials():
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Serial Number.  "templateVars["serial_{x}"]" is not a valid serial.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-    serial_a = templateVars["serial_a"]
-    serial_b = templateVars["serial_b"]
+    serial_a = templateVars["serial_A"]
+    serial_b = templateVars["serial_B"]
     return serial_a,serial_b
 
 def validate_vlan_in_policy(vlan_policy_list, vlan_id):

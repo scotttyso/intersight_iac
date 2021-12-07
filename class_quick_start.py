@@ -126,6 +126,7 @@ class quick_start(object):
                     templateVars["ports_in_use"] = ports_in_use
                     templateVars["fc_converted_ports"] = fc_converted_ports
                     templateVars["port_modes"] = port_modes
+                    templateVars["fc_ports"] = templateVars["port_modes"]["port_list"]
 
                     # Ethernet Uplink Port-Channel
                     templateVars['port_type'] = 'Ethernet Uplink Port-Channel'
@@ -133,7 +134,7 @@ class quick_start(object):
 
                     # Fibre-Channel Port-Channel
                     templateVars["fc_ports_in_use"] = []
-                    templateVars["port_type"] == 'Fibre Channel Port-Channel'
+                    templateVars["port_type"] = 'Fibre Channel Port-Channel'
                     Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars)
                     Fabric_A_fc_port_channels = Fab_A
                     Fabric_B_fc_port_channels = Fab_B
