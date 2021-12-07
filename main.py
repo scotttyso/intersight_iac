@@ -792,6 +792,7 @@ def process_wizard(easy_jsonData, jsonData):
         #==============================================
         type = 'policies'
         if 'quick_start_domain_policies' in policy or 'quick_start_rack_policies' in policy:
+            kwargs.update({'primary_dns':'208.67.220.220','secondary_dns':'208.67.222.222'})
             vsan_policies = []
             vlan_policies = ''
             if 'domain' in policy:

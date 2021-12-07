@@ -2,7 +2,11 @@
   "{{ name }}" = {
     description     = "{{ descr }}"
     organization    = "{{ org }}"
+{%- if uplink_trunking %}
     uplink_trunking = {{ uplink_trunking|lower }}
+{%- else %}
+    uplink_trunking = false
+{%- endif %}
 {%- if tags %}
     tags = [
   {%- for item in tags %}

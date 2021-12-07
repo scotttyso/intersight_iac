@@ -126,6 +126,72 @@ class policies_vxan(object):
         write_to_template(self, **templateVars)
 
     #==============================================
+    # Quick Start - Multicast Policy Module
+    #==============================================
+    def quick_start_multicast(self, **templateVars):
+        org = self.org
+        policy_type = 'Multicast Policy'
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'multicast_policies'
+
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
+
+        templateVars["igmp_snooping_state"] = 'Enabled'
+        templateVars["querier_ip_address"] = ''
+        templateVars["igmp_snooping_querier_state"] = 'Disabled'
+        templateVars["querier_ip_address_peer"] = ''
+
+        # Write Policies to Template File
+        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+        write_to_template(self, **templateVars)
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
+
+    #==============================================
+    # Quick Start - VLAN Policy Module
+    #==============================================
+    def quick_start_vlan(self, **templateVars):
+        org = self.org
+        policy_type = 'VLAN Policy'
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'vlan_policies'
+
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
+
+        templateVars["auto_allow_on_uplinks"] = False
+        templateVars["vlans"] = [
+            {
+                'auto_allow_on_uplinks':False,
+                'id':templateVars["vlan_list"],
+                'multicast_policy':templateVars["multicast_policy"],
+                'name':templateVars["name"],
+                'native_vlan':False
+            }
+        ]
+
+        # Write Policies to Template File
+        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+        write_to_template(self, **templateVars)
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
+
+    #==============================================
     # VLAN Policy Module
     #==============================================
     def vlan_policies(self, jsonData, easy_jsonData):

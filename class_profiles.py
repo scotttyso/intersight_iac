@@ -849,9 +849,12 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                     y = y.capitalize()
                     policy_description.append(y)
                 policy_description = " ".join(policy_description)
+                policy_description = policy_description.replace('Ipmi', 'IPMI')
                 policy_description = policy_description.replace('Ip', 'IP')
+                policy_description = policy_description.replace('Iqn', 'IQN')
                 policy_description = policy_description.replace('Ntp', 'NTP')
                 policy_description = policy_description.replace('Snmp', 'SNMP')
+                policy_description = policy_description.replace('Ssh', 'SSH')
                 policy_description = policy_description.replace('Wwnn', 'WWNN')
                 policy_description = policy_description.replace('Wwpn', 'WWPN')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -966,6 +969,8 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                 policies_p2(name_prefix, templateVars["org"], inner_type).persistent_memory_policies(jsonData, easy_jsonData)
             elif inner_policy == 'port_policies':
                 policies_domain(name_prefix, templateVars["org"], inner_type).port_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'power_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).power_policies(jsonData, easy_jsonData)
             elif inner_policy == 'san_connectivity_policies':
                 policies_san(name_prefix, templateVars["org"], inner_type).san_connectivity_policies(jsonData, easy_jsonData)
             elif inner_policy == 'sd_card_policies':

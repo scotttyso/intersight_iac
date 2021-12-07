@@ -958,6 +958,46 @@ def vlan_list_full(vlan_list):
         full_vlan_list.append(vlan_list)
     return full_vlan_list
 
+def vlan_pool():
+    valid = False
+    while valid == False:
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'  The allowed vlan list can be in the format of:')
+        print(f'     5 - Single VLAN')
+        print(f'     1-10 - Range of VLANs')
+        print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
+        print(f'     1-10,20-30 - Ranges and Lists of VLANs')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        VlanList = input('Enter the VLAN or List of VLANs to assign to the Domain VLAN Pool: ')
+        if not VlanList == '':
+            vlanListExpanded = vlan_list_full(VlanList)
+            valid_vlan = True
+            for vlan in vlanListExpanded:
+                valid_vlan = validating.number_in_range('VLAN ID', vlan, 1, 4094)
+                if valid_vlan == False:
+                    continue
+            if valid_vlan == False:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error with VLAN(s) assignment!!! VLAN List: "{VlanList}" is not Valid.')
+                print(f'  The allowed vlan list can be in the format of:')
+                print(f'     5 - Single VLAN')
+                print(f'     1-10 - Range of VLANs')
+                print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
+                print(f'     1-10,20-30 - Ranges and Lists of VLANs')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+            else:
+                valid = True
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  The allowed vlan list can be in the format of:')
+            print(f'     5 - Single VLAN')
+            print(f'     1-10 - Range of VLANs')
+            print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
+            print(f'     1-10,20-30 - Ranges and Lists of VLANs')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    
+    return VlanList,vlanListExpanded
+
 def write_to_template(self, **templateVars):
     # Define the Template Source
     template = self.templateEnv.get_template(templateVars["template_file"])

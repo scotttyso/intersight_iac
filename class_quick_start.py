@@ -3,6 +3,7 @@
 import ipaddress
 import jinja2
 import pkg_resources
+import re
 import validating
 from class_policies_domain import policies_domain
 from class_policies_domain import port_list_eth, port_list_fc, port_modes_fc
@@ -10,6 +11,8 @@ from class_policies_lan import policies_lan
 from class_policies_san import policies_san
 from class_policies_p1 import policies_p1
 from class_policies_p2 import policies_p2
+from class_policies_system_qos import system_qos
+from class_policies_vxan import policies_vxan
 from class_pools import pools
 from class_profiles import profiles
 from easy_functions import choose_policy, policies_parse
@@ -22,7 +25,7 @@ from easy_functions import variablesFromAPI
 from easy_functions import varBoolLoop
 from easy_functions import varNumberLoop
 from easy_functions import varStringLoop
-from easy_functions import vlan_list_full
+from easy_functions import vlan_list_full, vlan_pool
 from easy_functions import write_to_template
 
 ucs_template_path = pkg_resources.resource_filename('class_quick_start', 'Templates/')
@@ -70,7 +73,7 @@ class quick_start(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Domain Policy Configuration?  \nEnter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
-                loop_count = 1
+                loop_count = 0
                 policy_loop = False
                 while policy_loop == False:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -121,6 +124,125 @@ class quick_start(object):
                     templateVars["serial_number_fabric_a"] = serial_a
                     templateVars["serial_number_fabric_b"] = serial_b
 
+                    # VLAN Pool
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  IMPORTANT NOTE: The FCoE VLAN Id will be assigned based on the VSAN Identifier.')
+                    print(f'                  Be sure to exclude the VSAN for Fabric A and B from teh VLAN Pool.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    VlanList,vlanListExpanded = vlan_pool()
+
+                    #_______________________________________________________________________
+                    #
+                    # Configure Multicast Policy
+                    #_______________________________________________________________________
+
+                    templateVars["name"] = f'{domain_name}'
+                    templateVars["descr"] = f'{templateVars["name"]} Multicast Policy'
+                    policies_vxan(name_prefix, org, 'policies_vlans').quick_start_multicast(**templateVars)
+
+                    #_______________________________________________________________________
+                    #
+                    # Configure VLAN Policy
+                    #_______________________________________________________________________
+
+                    templateVars["multicast_policy"] = templateVars["name"]
+                    templateVars["descr"] = f'{templateVars["name"]} VLAN Policy'
+                    templateVars["native_vlan"] = ''
+                    templateVars["vlan_list"] = VlanList
+                    policies_vxan(name_prefix, org, 'policies_vlans').quick_start_vlan(**templateVars)
+
+                    #_______________________________________________________________________
+                    #
+                    # Configure Flow Control Policy
+                    #_______________________________________________________________________
+
+                    templateVars["initial_write"] = True
+                    templateVars["policy_type"] = 'Flow Control Policy'
+                    templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                    templateVars["template_file"] = 'template_open.jinja2'
+                    templateVars["template_type"] = 'flow_control_policies'
+
+                    # Open the Template file
+                    write_to_template(self, **templateVars)
+                    templateVars["initial_write"] = False
+
+                    # Configure Flow Control Policy
+                    name = f'{domain_name}'
+                    templateVars["name"] = name
+                    templateVars["descr"] = f'{name} Flow Control Policy'
+                    templateVars["priority"] = 'auto'
+                    templateVars["receive"] = 'Enabled'
+                    templateVars["send"] = 'Enabled'
+
+                    # Write Policies to Template File
+                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                    write_to_template(self, **templateVars)
+
+                    # Close the Template file
+                    templateVars["template_file"] = 'template_close.jinja2'
+                    write_to_template(self, **templateVars)
+
+                    #_______________________________________________________________________
+                    #
+                    # Configure Link Aggregation Policy
+                    #_______________________________________________________________________
+
+                    templateVars["initial_write"] = True
+                    templateVars["policy_type"] = 'Link Aggregation Policy'
+                    templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                    templateVars["template_file"] = 'template_open.jinja2'
+                    templateVars["template_type"] = 'link_aggregation_policies'
+
+                    # Open the Template file
+                    write_to_template(self, **templateVars)
+                    templateVars["initial_write"] = False
+
+                    # Configure Link Aggregation Policy
+                    name = f'{domain_name}'
+                    templateVars["name"] = name
+                    templateVars["descr"] = f'{name} Link Aggregation Policy'
+                    templateVars["lacp_rate"] = 'normal'
+                    templateVars["suspend_individual"] = False
+
+                    # Write Policies to Template File
+                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                    write_to_template(self, **templateVars)
+
+                    # Close the Template file
+                    templateVars["template_file"] = 'template_close.jinja2'
+                    write_to_template(self, **templateVars)
+
+                    #_______________________________________________________________________
+                    #
+                    # Configure Link Control Policy
+                    #_______________________________________________________________________
+
+                    templateVars["initial_write"] = True
+                    templateVars["policy_type"] = 'Link Control Policy'
+                    templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                    templateVars["template_file"] = 'template_open.jinja2'
+                    templateVars["template_type"] = 'link_control_policies'
+
+                    # Open the Template file
+                    write_to_template(self, **templateVars)
+                    templateVars["initial_write"] = False
+
+                    # Configure Link Control Policy
+                    name = f'{domain_name}'
+                    templateVars["name"] = name
+                    templateVars["descr"] = f'{name} Link Control Policy'
+                    templateVars["admin_state"] = 'Enabled'
+                    templateVars["mode"] = 'normal'
+
+                    # Write Policies to Template File
+                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                    write_to_template(self, **templateVars)
+
+                    # Close the Template file
+                    templateVars["template_file"] = 'template_close.jinja2'
+                    write_to_template(self, **templateVars)
+
+                    # Configure Fibre-Channel Unified Ports
                     fc_mode,ports_in_use,fc_converted_ports,port_modes = port_modes_fc(jsonData, easy_jsonData, name_prefix, **templateVars)
                     templateVars["fc_mode"] = fc_mode
                     templateVars["ports_in_use"] = ports_in_use
@@ -128,11 +250,142 @@ class quick_start(object):
                     templateVars["port_modes"] = port_modes
                     templateVars["fc_ports"] = templateVars["port_modes"]["port_list"]
 
+                    # If Unified Ports Exist Configure VSAN Policies
+                    if len(templateVars["fc_converted_ports"]) > 0:
+                        # Obtain the VSAN for Fabric A/B
+                        fabrics = ['A', 'B']
+                        for x in fabrics:
+                            valid = False
+                            while valid == False:
+                                if loop_count % 2 == 0:
+                                    vsan_id = input(f'Enter the VSAN id to add to {templateVars["name"]} Fabric {x}. [100]: ')
+                                else:
+                                    vsan_id = input(f'Enter the VSAN id to add to {templateVars["name"]} Fabric {x}. [200]: ')
+                                if loop_count % 2 == 0 and vsan_id == '':
+                                    vsan_id = 100
+                                elif vsan_id == '':
+                                    vsan_id = 200
+                                if re.search(r'[0-9]{1,4}', str(vsan_id)):
+                                    valid_count = 0
+                                    for y in vlanListExpanded:
+                                        if int(y) == int(vsan_id):
+                                            valid_count += 1
+                                            continue
+                                    if valid_count == 0:
+                                        templateVars[f"vsan_id_{x}"] = vsan_id
+                                        valid_vlan = validating.number_in_range('VSAN ID', vsan_id, 1, 4094)
+                                        if valid_vlan == True:
+                                            loop_count += 1
+                                            valid = True
+                                    else:
+                                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                                        print(f'  Invalid VSAN!  The FCoE VLAN {x} must not be assigned to the Domain VLAN Pool.')
+                                        print(f'  Choose an Alternate VSAN Value.')
+                                        print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                                else:
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                                    print(f'  Invalid Entry!  Please Enter a VSAN ID in the range of 1-4094.')
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                        
+                        #_______________________________________________________________________
+                        #
+                        # Configure VSAN Policies
+                        #_______________________________________________________________________
+
+                        templateVars["initial_write"] = True
+                        templateVars["policy_type"] = 'VSAN Policy'
+                        templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                        templateVars["template_file"] = 'template_open.jinja2'
+                        templateVars["template_type"] = 'vsan_policies'
+
+                        # Open the Template file
+                        write_to_template(self, **templateVars)
+                        templateVars["initial_write"] = False
+
+                        # Configure VSAN Policy
+                        for x in fabrics:
+                            name = f'{domain_name}-{x}'
+                            templateVars["name"] = name
+                            templateVars["descr"] = f'{name} VSAN Policy'
+                            templateVars["uplink_trunking"] = False
+                            xlower = x.lower
+                            templateVars['vsans'] = []
+                            vsans = {
+                                'fcoe_vlan_id':templateVars[f"vsan_id_{x}"],
+                                'name':f'{domain_name}-{xlower}',
+                                'id':templateVars[f"vsan_id_{x}"]
+                            }
+                            templateVars['vsans'].append(vsans)
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                        # Close the Template file
+                        templateVars["template_file"] = 'template_close.jinja2'
+                        write_to_template(self, **templateVars)
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  IMPORTANT NOTE: If you want to assign one of the VLANs from the Pool as the Native VLAN')
+                    print(f'                  for the Port-Channel assign that here.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid = False
+                    while valid == False:
+                        nativeVlan = input('What is the Native VLAN for the Ethernet Port-Channel?  [press enter to skip]: ')
+                        if nativeVlan == '':
+                            valid = True
+                        else:
+                            native_count = 0
+                            for vlan in vlanListExpanded:
+                                if int(nativeVlan) == int(vlan):
+                                    native_count = 1
+                            if not native_count == 1:
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                print(f'  Error!! The Native VLAN "{nativeVlan}" was not in the VLAN Policy List.')
+                                print(f'  VLAN Policy List is: "{VlanList}"')
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                            else:
+                                valid = True
+
+                    #_______________________________________________________________________
+                    #
+                    # Configure Ethernet Network Group Policy
+                    #_______________________________________________________________________
+
+                    templateVars["initial_write"] = True
+                    templateVars["policy_type"] = 'Ethernet Network Group Policy'
+                    templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                    templateVars["template_file"] = 'template_open.jinja2'
+                    templateVars["template_type"] = 'ethernet_network_group_policies'
+
+                    # Open the Template file
+                    write_to_template(self, **templateVars)
+                    templateVars["initial_write"] = False
+
+                    # Configure Link Control Policy
+                    name = f'{domain_name}_vg'
+                    templateVars["name"] = name
+                    templateVars["descr"] = f'{name} Ethernet Network Group Policy'
+                    templateVars["allowed_vlans"] = VlanList
+                    if not nativeVlan == '':
+                        templateVars["native_vlan"] = nativeVlan
+                    else:
+                        templateVars["native_vlan"] = ''
+                        templateVars.pop('native_vlan')
+
+                    # Write Policies to Template File
+                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                    write_to_template(self, **templateVars)
+
+                    # Close the Template file
+                    templateVars["template_file"] = 'template_close.jinja2'
+                    write_to_template(self, **templateVars)
+
                     # Ethernet Uplink Port-Channel
                     templateVars['port_type'] = 'Ethernet Uplink Port-Channel'
                     port_channel_ethernet_uplinks,templateVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars)
 
-                    # Fibre-Channel Port-Channel
                     templateVars["fc_ports_in_use"] = []
                     templateVars["port_type"] = 'Fibre Channel Port-Channel'
                     Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars)
@@ -143,6 +396,17 @@ class quick_start(object):
                     # Server Ports
                     templateVars['port_type'] = 'Server Ports'
                     port_role_servers,templateVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars)
+
+                    # System MTU for System QoS Policy
+                    templateVars["Description"] = 'This option will set the MTU to 9000 MB if answer is "Y" or 1500 MB if answer is "N".'
+                    templateVars["varInput"] = f'Do you want to enable Jumbo MTU?  Enter "Y" or "N"'
+                    templateVars["varDefault"] = 'Y'
+                    templateVars["varName"] = 'MTU'
+                    answer = varBoolLoop(**templateVars)
+                    if answer == True:
+                        mtu = 9000
+                    else:
+                        mtu = 1500
 
                     # NTP Servers
                     primary_ntp = ntp_primary()
@@ -180,80 +444,56 @@ class quick_start(object):
                     templateVars["varType"] = 'Region Timezones'
                     templateVars["timezone"] = variablesFromAPI(**templateVars)
 
-                    # System MTU for System QoS Policy
-                    templateVars["Description"] = 'This option will set the MTU to 9000 if answer is "Y"; 1500 if answer is "N".'
-                    templateVars["varInput"] = f'Do you want to enable Jumbo MTU?  Enter "Y" or "N"'
-                    templateVars["varDefault"] = 'Y'
-                    templateVars["varName"] = 'MTU'
-                    answer = varBoolLoop(**templateVars)
-                    if answer == True:
-                        mtu = 9000
-                    else:
-                        mtu = 1500
-
-                    valid = False
-                    while valid == False:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  The allowed vlan list can be in the format of:')
-                        print(f'     5 - Single VLAN')
-                        print(f'     1-10 - Range of VLANs')
-                        print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
-                        print(f'     1-10,20-30 - Ranges and Lists of VLANs')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        VlanList = input('Enter the VLAN or List of VLANs to add to the Domain: ')
-                        if not VlanList == '':
-                            vlanListExpanded = vlan_list_full(VlanList)
-                            valid_vlan = True
-                            for vlan in vlanListExpanded:
-                                valid_vlan = validating.number_in_range('VLAN ID', vlan, 1, 4094)
-                                if valid_vlan == False:
-                                    continue
-                            if valid_vlan == False:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error with VLAN(s) assignment!!! VLAN List: "{VlanList}" is not Valid.')
-                                print(f'  The allowed vlan list can be in the format of:')
-                                print(f'     5 - Single VLAN')
-                                print(f'     1-10 - Range of VLANs')
-                                print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
-                                print(f'     1-10,20-30 - Ranges and Lists of VLANs')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                            else:
-                                valid = True
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  The allowed vlan list can be in the format of:')
-                            print(f'     5 - Single VLAN')
-                            print(f'     1-10 - Range of VLANs')
-                            print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
-                            print(f'     1-10,20-30 - Ranges and Lists of VLANs')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                    valid = False
-                    while valid == False:
-                        nativeVlan = input('What is the Native VLAN for the Ethernet Port-Channel?  [press enter to skip]: ')
-                        if nativeVlan == '':
-                            valid = True
-                        else:
-                            for vlan in vlanListExpanded:
-                                if int(nativeVlan) == int(vlan):
-                                    native_count = 1
-                            if not native_count == 1:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! The Native VLAN was not in the VLAN Policy List.')
-                                print(f'  VLAN Policy List is: "{VlanList}"')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                            else:
-                                valid = True
-
+                    templateVars["port_channel_ethernet_uplinks"] = port_channel_ethernet_uplinks
+                    templateVars["Fabric_A_fc_port_channels"] = Fabric_A_fc_port_channels
+                    templateVars["Fabric_B_fc_port_channels"] = Fabric_B_fc_port_channels
+                    templateVars["port_role_servers"] = port_role_servers
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  UCS Domain Name        = "{domain_name}"')
                     print(f'  Device Model           = "{templateVars["device_model"]}"')
                     print(f'  Serial Number Fabric A = "{templateVars["serial_number_fabric_a"]}"')
                     print(f'  Serial Number Fabric B = "{templateVars["serial_number_fabric_b"]}"')
                     print(f'  Port Policy Variables:')
-                    print(f'    Ethernet Port-Channel Ports      = "{templateVars["timezone"]}"')
-                    print(f'    Fibre-Channel Port-Channel Ports = "{templateVars["timezone"]}"')
-                    print(f'    Server Ports                     = "{templateVars["timezone"]}"')
+                    port_type_list = ['port_channel_ethernet_uplinks', 'Fabric_A_fc_port_channels', 'Fabric_B_fc_port_channels', 'port_role_servers']
+                    for port_list in port_type_list:
+                        if port_list == 'port_channel_ethernet_uplinks':
+                            print(f'    Ethernet Port-Channel Ports = [')
+                        elif port_list == 'Fabric_A_fc_port_channels':
+                            print(f'    Fibre-Channel Port-Channel Fabric A = [')
+                        elif port_list == 'Fabric_B_fc_port_channels':
+                            print(f'    Fibre-Channel Port-Channel Fabric B = [')
+                        elif port_list == 'port_role_servers':
+                            print(f'    Server Ports = [')
+                        for item in templateVars[f"{port_list}"]:
+                            for key, value in item.items():
+                                if key == 'admin_speed':
+                                    print(f'        admin_speed                   = "{value}"')
+                                elif key == 'ethernet_network_group_policy':
+                                    print(f'        ethernet_network_group_policy = "{value}"')
+                                elif key == 'fill_pattern':
+                                    print(f'        fill_pattern                  = "{value}"')
+                                elif key == 'flow_control_policy':
+                                    print(f'        flow_control_policy           = "{value}"')
+                                elif key == 'link_aggregation_policy':
+                                    print(f'        link_aggregation_policy       = "{value}"')
+                                elif key == 'link_control_policy':
+                                    print(f'        link_control_policy           = "{value}"')
+                                elif key == 'link_aggregation_policy':
+                                    print(f'        link_aggregation_policy       = "{value}"')
+                                elif key == 'port_list':
+                                    print(f'        port_list = "{value}"')
+                                elif key == 'slot_id':
+                                    print(f'        slot_id   = "{value}"')
+                                elif key == 'interfaces':
+                                    int_count = 0
+                                    print(f'        interfaces = [')
+                                    for i in value:
+                                        print(f'          "{int_count}" = ''{')
+                                        for k, v in i.items():
+                                            print(f'            {k} = {v}')
+                                        print(f'          ''}')
+                                        int_count +=1
+                        print(f'        ]')
                     print(f'  System MTU: {mtu}')
                     print(f'  NTP Variables:')
                     print(f'    timezone: "{templateVars["timezone"]}"')
@@ -263,8 +503,8 @@ class quick_start(object):
                             print(f'      "{server}",')
                         print(f'    ]')
                     print(f'  VLAN Pool: "{VlanList}"')
-                    print(f'  VSAN Fabric A: "{templateVars["vsan_a"]}"')
-                    print(f'  VSAN Fabric B: "{templateVars["vsan_b"]}"')
+                    print(f'  VSAN Fabric A: "{templateVars["vsan_id_A"]}"')
+                    print(f'  VSAN Fabric B: "{templateVars["vsan_id_B"]}"')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
@@ -3160,4 +3400,3 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                 policies_domain(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData)
             elif inner_policy == 'vsan_policies':
                 policies_domain(name_prefix, templateVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData)
-

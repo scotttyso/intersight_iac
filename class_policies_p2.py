@@ -1669,6 +1669,8 @@ class policies_p2(object):
 
                 if templateVars["chassis_type"] == '5108':
                     templateVars["popList"] = ['Acoustic', 'HighPower', 'MaximumPower']
+                if templateVars["chassis_type"] == '9508':
+                    templateVars["popList"] = []
                 jsonVars = jsonData['components']['schemas']['thermal.Policy']['allOf'][1]['properties']
                 templateVars["var_description"] = jsonVars['FanControlMode']['description']
                 templateVars["jsonVars"] = sorted(jsonVars['FanControlMode']['enum'])

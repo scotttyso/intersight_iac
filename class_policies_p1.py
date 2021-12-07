@@ -952,7 +952,7 @@ class policies_p1(object):
                 jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
                 templateVars["var_description"] = jsonVars['TargetPlatform']['description']
                 templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
-                templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                templateVars["defaultVar"] = 'FIAttached'
                 templateVars["varType"] = 'Target Platform'
                 templateVars["target_platform"] = variablesFromAPI(**templateVars)
 

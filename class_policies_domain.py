@@ -947,8 +947,7 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars):
                                     'interfaces':interfaces,
                                     'mode':templateVars["mode"],
                                     'pc_id':pc_id,
-                                    'priority':templateVars["priority"],
-                                    'slot_id':1
+                                    'priority':templateVars["priority"]
                                 }
                             elif templateVars["port_type"] == 'Ethernet Uplink Port-Channel':
                                 port_channel = {
@@ -959,7 +958,6 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars):
                                     'link_aggregation_policy':templateVars["link_aggregation_policy"],
                                     'link_control_policy':templateVars["link_control_policy"],
                                     'pc_id':pc_id,
-                                    'slot_id':1
                                 }
                             elif templateVars["port_type"] == 'FCoE Uplink Port-Channel':
                                 port_channel = {
@@ -968,7 +966,6 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars):
                                     'link_aggregation_policy':templateVars["link_aggregation_policy"],
                                     'link_control_policy':templateVars["link_control_policy"],
                                     'pc_id':pc_id,
-                                    'slot_id':1
                                 }
                             elif templateVars["port_type"] == 'Appliance Ports':
                                 port_role = {
@@ -1000,7 +997,10 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars):
                                     'slot_id':1
                                 }
                             elif templateVars["port_type"] == 'Server Ports':
-                                server_ports = {'port_list':original_port_list,'slot_id':1}
+                                server_ports = {
+                                    'port_list':original_port_list,
+                                    'slot_id':1
+                                }
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             if not templateVars["port_type"] == 'Server Ports':
                                 print(f'    admin_speed                     = "{templateVars["admin_speed"]}"')
@@ -1207,7 +1207,6 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                             'fill_pattern':templateVars["fill_pattern"],
                             'interfaces':interfaces,
                             'pc_id':pc_id,
-                            'slot_id':1,
                             'vsan_id':vsans.get("Fabric_A")
                         }
                         port_channel_b = {
@@ -1215,7 +1214,6 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                             'fill_pattern':templateVars["fill_pattern"],
                             'interfaces':interfaces,
                             'pc_id':pc_id,
-                            'slot_id':1,
                             'vsan_id':vsans.get("Fabric_B")
                         }
                     else:
