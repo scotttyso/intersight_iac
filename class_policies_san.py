@@ -4,10 +4,13 @@ import jinja2
 import pkg_resources
 import re
 import validating
+from class_pools import pools
+from class_policies_vxan import policies_vxan
+from class_policies_lan import policies_lan
+from easy_functions import choose_policy, policies_parse
 from easy_functions import exit_default_no, exit_default_yes, exit_loop_default_yes
 from easy_functions import naming_rule_fabric
 from easy_functions import policy_descr, policy_name
-from easy_functions import policy_select_loop
 from easy_functions import variablesFromAPI
 from easy_functions import vlan_list_full
 from easy_functions import write_to_template
@@ -160,7 +163,7 @@ class policies_san(object):
                     jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
                     templateVars["var_description"] = jsonVars['TargetPlatform']['description']
                     templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
-                    templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                    templateVars["defaultVar"] = 'FIAttached'
                     templateVars["varType"] = 'Target Platform'
                     templateVars["target_platform"] = variablesFromAPI(**templateVars)
 
@@ -393,7 +396,7 @@ class policies_san(object):
                     jsonVars = jsonData['components']['schemas']['vnic.SanConnectivityPolicy']['allOf'][1]['properties']
                     templateVars["var_description"] = jsonVars['TargetPlatform']['description']
                     templateVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
-                    templateVars["defaultVar"] = jsonVars['TargetPlatform']['default']
+                    templateVars["defaultVar"] = 'FIAttached'
                     templateVars["varType"] = 'Target Platform'
                     templateVars["target_platform"] = variablesFromAPI(**templateVars)
 
@@ -849,3 +852,83 @@ class policies_san(object):
         # Close the Template file
         templateVars["template_file"] = 'template_close.jinja2'
         write_to_template(self, **templateVars)
+
+def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars):
+    loop_valid = False
+    while loop_valid == False:
+        create_policy = True
+        inner_policy = policy.split('.')[1]
+        inner_type = policy.split('.')[0]
+        inner_var = policy.split('.')[2]
+        templateVars[inner_var] = ''
+        templateVars["policies"],policyData = policies_parse(templateVars["org"], inner_type, inner_policy)
+        if not len(templateVars["policies"]) > 0:
+            valid = False
+            while valid == False:
+
+                x = inner_policy.split('_')
+                policy_description = []
+                for y in x:
+                    y = y.capitalize()
+                    policy_description.append(y)
+                policy_description = " ".join(policy_description)
+                policy_description = policy_description.replace('Wwnn', 'WWNN')
+                policy_description = policy_description.replace('Wwpn', 'WWPN')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'   There were no {policy_description} found.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                if 'Policies' in policy_description:
+                    policy_description = policy_description.replace('Policies', 'Policy')
+                elif 'Pools' in policy_description:
+                    policy_description = policy_description.replace('Pools', 'Pool')
+                elif 'Profiles' in policy_description:
+                    policy_description = policy_description.replace('Profiles', 'Profile')
+                elif 'Templates' in policy_description:
+                    policy_description = policy_description.replace('Templates', 'Template')
+
+                if templateVars["allow_opt_out"] == True:
+                    Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
+                    if Question == '' or Question == 'Y':
+                        create_policy = True
+                        valid = True
+                    elif Question == 'N':
+                        create_policy = False
+                        valid = True
+                        return templateVars[inner_var],policyData
+                else:
+                    create_policy = True
+                    valid = True
+
+        else:
+            templateVars[inner_var] = choose_policy(inner_policy, **templateVars)
+            if templateVars[inner_var] == 'create_policy':
+                create_policy = True
+            elif templateVars[inner_var] == '' and templateVars["allow_opt_out"] == True:
+                loop_valid = True
+                create_policy = False
+                return templateVars[inner_var],policyData
+            elif not templateVars[inner_var] == '':
+                loop_valid = True
+                create_policy = False
+                return templateVars[inner_var],policyData
+        if create_policy == True:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Starting module to create {inner_policy}')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            if inner_policy == 'wwnn_pools':
+                pools(name_prefix, templateVars["org"], inner_type).wwnn_pools(jsonData, easy_jsonData)
+            elif inner_policy == 'wwpn_pools':
+                pools(name_prefix, templateVars["org"], inner_type).wwpn_pools(jsonData, easy_jsonData)
+            elif inner_policy == 'fibre_channel_adapter_policies':
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_adapter_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'fibre_channel_network_policies':
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_network_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'fibre_channel_qos_policies':
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_qos_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'lan_connectivity_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).lan_connectivity_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'vlan_policies':
+                policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'vsan_policies':
+                policies_vxan(name_prefix, templateVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData)

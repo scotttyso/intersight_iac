@@ -4,9 +4,16 @@ import ipaddress
 import jinja2
 import pkg_resources
 import validating
+from class_policies_domain import policies_domain
+from class_policies_domain import port_list_eth, port_list_fc, port_modes_fc
+from class_policies_lan import policies_lan
+from class_policies_san import policies_san
+from class_policies_p1 import policies_p1
+from class_policies_p2 import policies_p2
+from class_pools import pools
+from class_profiles import profiles
+from easy_functions import choose_policy, policies_parse
 from easy_functions import ntp_alternate, ntp_primary
-from easy_functions import policy_select_loop
-from easy_functions import port_list_eth, port_list_fc, port_modes_fc
 from easy_functions import snmp_trap_servers, snmp_users
 from easy_functions import syslog_servers
 from easy_functions import ucs_domain_serials
@@ -2981,3 +2988,175 @@ class quick_start(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
+
+def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars):
+    loop_valid = False
+    while loop_valid == False:
+        create_policy = True
+        inner_policy = policy.split('.')[1]
+        inner_type = policy.split('.')[0]
+        inner_var = policy.split('.')[2]
+        templateVars[inner_var] = ''
+        templateVars["policies"],policyData = policies_parse(templateVars["org"], inner_type, inner_policy)
+        if not len(templateVars["policies"]) > 0:
+            valid = False
+            while valid == False:
+
+                x = inner_policy.split('_')
+                policy_description = []
+                for y in x:
+                    y = y.capitalize()
+                    policy_description.append(y)
+                policy_description = " ".join(policy_description)
+                policy_description = policy_description.replace('Ip', 'IP')
+                policy_description = policy_description.replace('Ntp', 'NTP')
+                policy_description = policy_description.replace('Snmp', 'SNMP')
+                policy_description = policy_description.replace('Wwnn', 'WWNN')
+                policy_description = policy_description.replace('Wwpn', 'WWPN')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'   There were no {policy_description} found.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                if 'Policies' in policy_description:
+                    policy_description = policy_description.replace('Policies', 'Policy')
+                elif 'Pools' in policy_description:
+                    policy_description = policy_description.replace('Pools', 'Pool')
+                elif 'Profiles' in policy_description:
+                    policy_description = policy_description.replace('Profiles', 'Profile')
+                elif 'Templates' in policy_description:
+                    policy_description = policy_description.replace('Templates', 'Template')
+
+                if templateVars["allow_opt_out"] == True:
+                    Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
+                    if Question == '' or Question == 'Y':
+                        create_policy = True
+                        valid = True
+                    elif Question == 'N':
+                        create_policy = False
+                        valid = True
+                        return templateVars[inner_var],policyData
+                else:
+                    create_policy = True
+                    valid = True
+
+        else:
+            templateVars[inner_var] = choose_policy(inner_policy, **templateVars)
+            if templateVars[inner_var] == 'create_policy':
+                create_policy = True
+            elif templateVars[inner_var] == '' and templateVars["allow_opt_out"] == True:
+                loop_valid = True
+                create_policy = False
+                return templateVars[inner_var],policyData
+            elif not templateVars[inner_var] == '':
+                loop_valid = True
+                create_policy = False
+                return templateVars[inner_var],policyData
+        if create_policy == True:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Starting module to create {inner_policy}')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            if inner_policy == 'ip_pools':
+                pools(name_prefix, templateVars["org"], inner_type).ip_pools(jsonData, easy_jsonData)
+            elif inner_policy == 'iqn_pools':
+                pools(name_prefix, templateVars["org"], inner_type).iqn_pools(jsonData, easy_jsonData)
+            elif inner_policy == 'mac_pools':
+                pools(name_prefix, templateVars["org"], inner_type).mac_pools(jsonData, easy_jsonData)
+            elif inner_policy == 'uuid_pools':
+                pools(name_prefix, templateVars["org"], inner_type).uuid_pools(jsonData, easy_jsonData)
+            elif inner_policy == 'wwnn_pools':
+                pools(name_prefix, templateVars["org"], inner_type).wwnn_pools(jsonData, easy_jsonData)
+            elif inner_policy == 'wwpn_pools':
+                pools(name_prefix, templateVars["org"], inner_type).wwpn_pools(jsonData, easy_jsonData)
+            elif inner_policy == 'adapter_configuration_policies':
+                policies_p1(name_prefix, templateVars["org"], inner_type).adapter_configuration_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'bios_policies':
+                policies_p1(name_prefix, templateVars["org"], inner_type).bios_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'boot_order_policies':
+                policies_p1(name_prefix, templateVars["org"], inner_type).boot_order_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'certificate_management_policies':
+                policies_p1(name_prefix, templateVars["org"], inner_type).certificate_management_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'device_connector_policies':
+                policies_p1(name_prefix, templateVars["org"], inner_type).device_connector_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ethernet_adapter_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_adapter_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ethernet_network_control_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ethernet_network_group_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_group_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ethernet_network_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ethernet_qos_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_qos_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'fibre_channel_adapter_policies':
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_adapter_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'fibre_channel_network_policies':
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_network_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'fibre_channel_qos_policies':
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_qos_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'flow_control_policies':
+                policies_domain(name_prefix, templateVars["org"], inner_type).flow_control_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'imc_access_policies':
+                policies_p1(name_prefix, templateVars["org"], inner_type).imc_access_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ipmi_over_lan_policies':
+                policies_p1(name_prefix, templateVars["org"], inner_type).ipmi_over_lan_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'iscsi_adapter_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_adapter_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'iscsi_boot_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_boot_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'iscsi_static_target_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_static_target_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'lan_connectivity_policies':
+                policies_lan(name_prefix, templateVars["org"], inner_type).lan_connectivity_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ldap_policies':
+                policies_p1(name_prefix, templateVars["org"], inner_type).ldap_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'link_aggregation_policies':
+                policies_domain(name_prefix, templateVars["org"], inner_type).link_aggregation_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'link_control_policies':
+                policies_domain(name_prefix, templateVars["org"], inner_type).link_control_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'local_user_policies':
+                policies_p1(name_prefix, templateVars["org"], inner_type).local_user_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'multicast_policies':
+                policies_domain(name_prefix, templateVars["org"], inner_type).multicast_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'network_connectivity_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).network_connectivity_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ntp_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).ntp_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'persistent_memory_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).persistent_memory_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'port_policies':
+                policies_domain(name_prefix, templateVars["org"], inner_type).port_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'san_connectivity_policies':
+                policies_san(name_prefix, templateVars["org"], inner_type).san_connectivity_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'sd_card_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).sd_card_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'serial_over_lan_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).serial_over_lan_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'smtp_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).smtp_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'snmp_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).snmp_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ssh_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).ssh_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'storage_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).storage_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'switch_control_policies':
+                policies_domain(name_prefix, templateVars["org"], inner_type).switch_control_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'syslog_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).syslog_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'system_qos_policies':
+                policies_domain(name_prefix, templateVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'thermal_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).thermal_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'ucs_server_profiles':
+                profiles(name_prefix, templateVars["org"], inner_type).ucs_server_profiles(jsonData, easy_jsonData)
+            elif inner_policy == 'ucs_server_profile_templates':
+                profiles(name_prefix, templateVars["org"], inner_type).ucs_server_profile_templates(jsonData, easy_jsonData)
+            elif inner_policy == 'virtual_kvm_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).virtual_kvm_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'virtual_media_policies':
+                policies_p2(name_prefix, templateVars["org"], inner_type).virtual_media_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'vlan_policies':
+                policies_domain(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData)
+            elif inner_policy == 'vsan_policies':
+                policies_domain(name_prefix, templateVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData)
+

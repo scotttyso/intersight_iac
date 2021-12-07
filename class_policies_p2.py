@@ -15,9 +15,9 @@ from easy_functions import variablesFromAPI
 from easy_functions import varStringLoop
 from easy_functions import write_to_template
 
-ucs_template_path = pkg_resources.resource_filename('class_policies_sect2', 'Templates/')
+ucs_template_path = pkg_resources.resource_filename('class_policies_p2', 'Templates/')
 
-class policies_sect2(object):
+class policies_p2(object):
     def __init__(self, name_prefix, org, type):
         self.templateLoader = jinja2.FileSystemLoader(
             searchpath=(ucs_template_path + '%s/') % (type))
