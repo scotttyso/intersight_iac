@@ -31,6 +31,31 @@ class profiles(object):
         self.type = type
 
     #==============================================
+    # Quick Start - UCS Domain Profile Module
+    #==============================================
+    def quick_start_domain(self, **templateVars):
+        org = self.org
+        policy_type = 'UCS Domain Profile'
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'ucs_domain_profiles'
+
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
+
+        # Write Policies to Template File
+        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+        write_to_template(self, **templateVars)
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
+
+    #==============================================
     # UCS Chassis Profile Module
     #==============================================
     def ucs_chassis_profiles(self, jsonData, easy_jsonData):

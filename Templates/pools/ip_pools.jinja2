@@ -29,7 +29,7 @@
     {%- if k == 'gateway' %}
         gateway       = "{{ v }}"
     {%- elif k == 'prefix' %}
-        network       = "{{ v }}"
+        netmask       = "{{ v }}"
     {%- elif k == 'primary_dns' %}
         primary_dns   = "{{ v }}"
     {%- elif k == 'secondary_dns' %}
