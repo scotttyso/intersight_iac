@@ -11,7 +11,7 @@ uuid_pools = {
       "1" = {
         from = "0000-000000000000"
         size = 1000
-        # to   = "0000-0000000003E7"
+        to   = "0000-0000000003E7"
       },
     }
     organization = "canada"

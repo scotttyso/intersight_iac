@@ -10,7 +10,7 @@ wwpn_pools = {
       "1" = {
         from = "20:00:00:25:B5:A5:A0:00"
         size = 1000
-        # to   = "20:00:00:25:B5:A5:A3:E7"
+        to   = "20:00:00:25:B5:A5:A3:E7"
       },
     }
     organization = "canada"
@@ -23,7 +23,7 @@ wwpn_pools = {
       "1" = {
         from = "20:00:00:25:B5:A5:B0:00"
         size = 1000
-        # to   = "20:00:00:25:B5:A5:B3:E7"
+        to   = "20:00:00:25:B5:A5:B3:E7"
       },
     }
     organization = "canada"

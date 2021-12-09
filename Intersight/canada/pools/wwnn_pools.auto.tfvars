@@ -10,7 +10,7 @@ wwnn_pools = {
       "1" = {
         from = "20:00:00:25:B5:A5:00:00"
         size = 1000
-        # to   = "20:00:00:25:B5:A5:03:E7"
+        to   = "20:00:00:25:B5:A5:03:E7"
       },
     }
     organization = "canada"
