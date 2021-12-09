@@ -10,7 +10,7 @@ mac_pools = {
       "1" = {
         from = "00:25:B5:A5:10:00"
         size = 1000
-        to   = "00:25:B5:A5:G3:E7"
+        # to   = "00:25:B5:A5:G3:E7"
       },
     }
     organization = "canada"
@@ -22,7 +22,7 @@ mac_pools = {
       "1" = {
         from = "00:25:B5:A5:20:00"
         size = 1000
-        to   = "00:25:B5:A5:H3:E7"
+        # to   = "00:25:B5:A5:H3:E7"
       },
     }
     organization = "canada"
