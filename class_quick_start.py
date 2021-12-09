@@ -1578,8 +1578,8 @@ class quick_start(object):
                                     elif nam == 'MIGRATION' and fab == 'B': key_id = 'D'
                                     elif nam == 'STORAGE' and fab == 'A': key_id = 'E'
                                     elif nam == 'STORAGE' and fab == 'B': key_id = 'F'
-                                    elif nam == 'DATA' and fab == 'A': key_id = 'G'
-                                    elif nam == 'DATA' and fab == 'B': key_id = 'H'
+                                    elif nam == 'DATA' and fab == 'A': key_id = '1'
+                                    elif nam == 'DATA' and fab == 'B': key_id = '2'
 
                                     name = f'{nam}-{fab}'
                                     templateVars["name"] = name
