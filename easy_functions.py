@@ -98,6 +98,135 @@ def exit_loop_default_yes(loop_count, policy_type):
             print(f'\n------------------------------------------------------\n')
     return configure_loop, loop_count, policy_loop
 
+def ipmi_key_function(**templateVars):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  The ipmi_key Must be in Hexidecimal Format [a-fA-F0-9] and no longer than 40 characters.')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    valid = False
+    while valid == False:
+        password1 = stdiomask.getpass(prompt='Enter the ipmi_key: ')
+        password2 = stdiomask.getpass(prompt='Please re-enter ipmi_key: ')
+        if not password1 == '':
+            if password1 == password2:
+                TF_VAR = 'TF_VAR_ipmi_key_1'
+                os.environ[TF_VAR] = '%s' % (password1)
+                templateVars["ipmi_key"] = 1
+                valid = validating.ipmi_key_check(password1)
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! The Keys did not match.  Please Re-enter the IPMI Key.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Error!! Invalid Value.  Please Re-enter the IPMI Key.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+
+    return templateVars["ipmi_key"]
+
+def local_users_function(jsonData, easy_jsonData, inner_loop_count, **templateVars):
+    local_users = []
+    valid_users = False
+    while valid_users == False:
+        templateVars["multi_select"] = False
+        jsonVars = jsonData['components']['schemas']['iam.EndPointUser']['allOf'][1]['properties']
+
+        templateVars["Description"] = jsonVars['Name']['description']
+        templateVars["varDefault"] = 'admin'
+        templateVars["varInput"] = 'What is the Local username?'
+        templateVars["varName"] = 'Local User'
+        templateVars["varRegex"] = jsonVars['Name']['pattern']
+        templateVars["minLength"] = 1
+        templateVars["maxLength"] = jsonVars['Name']['maxLength']
+        username = varStringLoop(**templateVars)
+
+        templateVars["multi_select"] = False
+        jsonVars = easy_jsonData['policies']['iam.LocalUserPasswordPolicy']
+        templateVars["var_description"] = jsonVars['role']['description']
+        templateVars["jsonVars"] = sorted(jsonVars['role']['enum'])
+        templateVars["defaultVar"] = jsonVars['role']['default']
+        templateVars["varType"] = 'User Role'
+        role = variablesFromAPI(**templateVars)
+
+        if templateVars["enforce_strong_password"] == True:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print('Enforce Strong Password is enabled so the following rules must be followed:')
+            print('  - The password must have a minimum of 8 and a maximum of 20 characters.')
+            print("  - The password must not contain the User's Name.")
+            print('  - The password must contain characters from three of the following four categories.')
+            print('    * English uppercase characters (A through Z).')
+            print('    * English lowercase characters (a through z).')
+            print('    * Base 10 digits (0 through 9).')
+            print('    * Non-alphabetic characters (! , @, #, $, %, ^, &, *, -, _, +, =)\n\n')
+        valid = False
+        while valid == False:
+            password1 = stdiomask.getpass(f'What is the password for {username}? ')
+            password2 = stdiomask.getpass(f'Please re-enter the password for {username}? ')
+            if not password1 == '':
+                if password1 == password2:
+                    if templateVars["enforce_strong_password"] == True:
+                        valid = validating.strong_password(f"{username}'s password", password1, 8, 20)
+
+                    else:
+                        valid = validating.string_length(f'{username} password', password1, 1, 127)
+
+                else:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Error!! The Passwords did not match.  Please Re-enter the password for {username}.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please Re-enter the password for {username}.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+        TF_VAR = 'TF_VAR_local_user_password_%s' % (inner_loop_count)
+        os.environ[TF_VAR] = '%s' % (password1)
+        password1 = inner_loop_count
+
+        user_attributes = {
+            'enabled':True,
+            'password':inner_loop_count,
+            'role':role,
+            'username':username
+        }
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'   enabled  = True')
+        print(f'   password = "Sensitive"')
+        print(f'   role     = "{role}"')
+        print(f'   username = "{username}"')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        valid_confirm = False
+        while valid_confirm == False:
+            question = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+            if question == 'Y' or question == '':
+                local_users.append(user_attributes)
+                valid_exit = False
+                while valid_exit == False:
+                    loop_exit = input(f'Would You like to Configure another Local User?  Enter "Y" or "N" [N]: ')
+                    if loop_exit == 'Y':
+                        inner_loop_count += 1
+                        valid_confirm = True
+                        valid_exit = True
+                    elif loop_exit == 'N' or loop_exit == '':
+                        user_loop = True
+                        valid_confirm = True
+                        valid_exit = True
+                        valid_users = True
+                    else:
+                        print(f'\n------------------------------------------------------\n')
+                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                        print(f'\n------------------------------------------------------\n')
+
+            elif question == 'N':
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Starting Local User Configuration Over.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                valid_confirm = True
+            else:
+                print(f'\n------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n------------------------------------------------------\n')
+
+    return local_users,user_loop
+
 def naming_rule(name_prefix, name_suffix, org):
     if not name_prefix == '':
         name = '%s_%s' % (name_prefix, name_suffix)
@@ -254,7 +383,11 @@ def policy_name(namex, policy_type):
             return name
 
 def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
-    dest_dir = './Intersight/%s/%s' % (templateVars["org"], dest_dir)
+    if os.environ.get('TF_DEST_DIR') is None:
+        tfDir = 'Intersight'
+    else:
+        tfDir = os.environ.get('TF_DEST_DIR')
+    dest_dir = './%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
     if not os.path.isdir(dest_dir):
         mk_dir = 'mkdir -p %s' % (dest_dir)
         os.system(mk_dir)
@@ -443,16 +576,22 @@ def snmp_users(jsonData, inner_loop_count, **templateVars):
         if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
             valid = False
             while valid == False:
-                auth_password = stdiomask.getpass(f'What is the authorization password for {snmp_user}? ')
-                if not auth_password == '':
-                    valid = validating.snmp_string('SNMPv3 Authorization Password', auth_password)
+                password1 = stdiomask.getpass(f'What is the authorization password for {snmp_user}? ')
+                password2 = stdiomask.getpass(f'Please re-enter the authorization password for {snmp_user}? ')
+                if not password1 == '':
+                    if password1 == password2:
+                        TF_VAR = 'TF_VAR_snmp_auth_password_%s' % (inner_loop_count)
+                        os.environ[TF_VAR] = '%s' % (password1)
+                        auth_password = inner_loop_count
+                        valid = validating.snmp_string(f"{snmp_user}'s Authorization Password", password1)
+                    else:
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                        print(f'  Error!! The Passwords did not match.  Please Re-enter the password for {snmp_user}.')
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
                 else:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
+                    print(f'  Error!! Invalid Value.  Please Re-enter the password for {snmp_user}.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-            TF_VAR = 'TF_VAR_snmp_auth_password_%s' % (inner_loop_count)
-            os.environ[TF_VAR] = '%s' % (auth_password)
-            auth_password = inner_loop_count
 
         if security_level == 'AuthPriv':
             templateVars["var_description"] = jsonVars['PrivacyType']['description']
@@ -464,29 +603,35 @@ def snmp_users(jsonData, inner_loop_count, **templateVars):
 
             valid = False
             while valid == False:
-                privacy_password = stdiomask.getpass(f'What is the privacy password for {snmp_user}? ')
-                if not privacy_password == '':
-                    valid = validating.snmp_string('SNMPv3 Privacy Password', privacy_password)
+                password1 = stdiomask.getpass(f'What is the privacy password for {snmp_user}? ')
+                password2 = stdiomask.getpass(f'Please re-enter the privacy password for {snmp_user}? ')
+                if not password1 == '':
+                    if password1 == password2:
+                        TF_VAR = 'TF_VAR_snmp_privacy_password_%s' % (inner_loop_count)
+                        os.environ[TF_VAR] = '%s' % (password1)
+                        privacy_password = inner_loop_count
+                        valid = validating.snmp_string(f"{snmp_user}'s Privacy Password", password1)
+                    else:
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                        print(f'  Error!! The Passwords did not match.  Please Re-enter the password for {snmp_user}.')
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
                 else:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Error!! Invalid Value.  Please Re-enter the SNMPv3 Username.')
+                    print(f'  Error!! Invalid Value.  Please Re-enter the password for {snmp_user}.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-            TF_VAR = 'TF_VAR_snmp_privacy_password_%s' % (inner_loop_count)
-            os.environ[TF_VAR] = '%s' % (privacy_password)
-            privacy_password = inner_loop_count
 
         if security_level == 'AuthPriv':
             snmp_user = {
-                'auth_password':inner_loop_count,
+                'auth_password':auth_password,
                 'auth_type':auth_type,
                 'name':snmp_user,
-                'privacy_password':inner_loop_count,
+                'privacy_password':privacy_password,
                 'privacy_type':privacy_type,
                 'security_level':security_level
             }
         elif security_level == 'AuthNoPriv':
             snmp_user = {
-                'auth_password':inner_loop_count,
+                'auth_password':auth_password,
                 'auth_type':auth_type,
                 'name':snmp_user,
                 'security_level':security_level

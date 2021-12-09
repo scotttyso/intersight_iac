@@ -6,6 +6,6 @@
 
 # Local Python Directories
 **/intersight/*
-**/Intersight/*
+**/Testing/*
 __pycache__/
 **/.DS_Store/*

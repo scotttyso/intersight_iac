@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+
+import argparse
 import json
 import subprocess
 import os
@@ -25,6 +27,7 @@ from lxml import etree
 from pathlib import Path
 
 home = Path.home()
+Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
 
 def create_terraform_workspaces(jsonData, easy_jsonData, org):
     tfcb_config = []
@@ -53,6 +56,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         templateVars["speculativeEnabled"] = True
         templateVars["triggerPrefixes"] = []
 
+        # Query the Terraform Versions from the Release URL
         terraform_versions = []
         url = f'https://releases.hashicorp.com/terraform/'
         r = requests.get(url)
@@ -67,21 +71,25 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                 tf_version = re.search(r'/terraform/([1-2]\.[0-9]+\.[0-9]+)/', i).group(1)
                 terraform_versions.append(tf_version)
 
+        # Assign the Terraform Version from the Terraform Release URL Above
         templateVars["multi_select"] = False
         templateVars["var_description"] = "Terraform Version for Workspaces:"
         templateVars["jsonVars"] = sorted(terraform_versions)
         templateVars["varType"] = 'Terraform Version'
         templateVars["defaultVar"] = ''
         templateVars["terraformVersion"] = variablesFromAPI(**templateVars)
-        # templateVars["terraformVersion"] = '1.0.9'
 
+        if os.environ.get('TF_DEST_DIR') is None:
+            tfDir = 'Intersight'
+        else:
+            tfDir = os.environ.get('TF_DEST_DIR')
         folder_list = [
-            f'./Intersight/{org}/policies',
-            f'./Intersight/{org}/policies_vlans',
-            f'./Intersight/{org}/pools',
-            f'./Intersight/{org}/ucs_chassis_profiles',
-            f'./Intersight/{org}/ucs_domain_profiles',
-            f'./Intersight/{org}/ucs_server_profiles'
+            f'./{tfDir}/{org}/policies',
+            f'./{tfDir}/{org}/policies_vlans',
+            f'./{tfDir}/{org}/pools',
+            f'./{tfDir}/{org}/ucs_chassis_profiles',
+            f'./{tfDir}/{org}/ucs_domain_profiles',
+            f'./{tfDir}/{org}/ucs_server_profiles'
         ]
         for folder in folder_list:
             templateVars["autoApply"] = False
@@ -207,17 +215,17 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         for folder in folder_list:
             name_prefix = 'dummy'
             type = 'pools'
-            policies(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'policies'
-            policies(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'policies_vlans'
-            policies(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'ucs_chassis_profiles'
-            policies(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'ucs_domain_profiles'
-            policies(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'ucs_server_profiles'
-            policies(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
 
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -225,13 +233,17 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def merge_easy_imm_repository(easy_jsonData, org):
+    if os.environ.get('TF_DEST_DIR') is None:
+        tfDir = 'Intersight'
+    else:
+        tfDir = os.environ.get('TF_DEST_DIR')
     folder_list = [
-        f'./Intersight/{org}/policies',
-        f'./Intersight/{org}/policies_vlans',
-        f'./Intersight/{org}/pools',
-        f'./Intersight/{org}/ucs_chassis_profiles',
-        f'./Intersight/{org}/ucs_domain_profiles',
-        f'./Intersight/{org}/ucs_server_profiles'
+        f'./{tfDir}/{org}/policies',
+        f'./{tfDir}/{org}/policies_vlans',
+        f'./{tfDir}/{org}/pools',
+        f'./{tfDir}/{org}/ucs_chassis_profiles',
+        f'./{tfDir}/{org}/ucs_domain_profiles',
+        f'./{tfDir}/{org}/ucs_server_profiles'
     ]
     for folder in folder_list:
         if os.path.isdir(folder):
@@ -546,16 +558,17 @@ def process_wizard(easy_jsonData, jsonData):
     #  Easy Deploy - VMware M2 Boot Server Profiles
     elif '-_domain_-' in main_menu:
         policy_list = [
-            # 'quick_start_pools',
-            # 'quick_start_domain_policies',
+            'quick_start_pools',
+            'quick_start_domain_policies',
             'quick_start_lan_san_policies',
-            # 'quick_start_ucs_chassis',
-            # 'quick_start_ucs_servers',
+            'quick_start_ucs_chassis',
+            'quick_start_ucs_servers',
         ]
         if 'm2' in main_menu:
             policy_list.append('quick_start_vmware_m2')
         elif 'raid' in main_menu:
             policy_list.append('quick_start_vmware_raid1')
+        policy_list.append('quick_start_server_profile')
 
     if main_menu == 'deploy_individual_policies':
         templateVars["var_description"] = jsonVars['Individual']['description']
@@ -794,42 +807,43 @@ def process_wizard(easy_jsonData, jsonData):
 
         type = 'policies'
         if 'quick_start_domain_policies' in policy or 'quick_start_rack_policies' in policy:
-            # if 'domain' in policy:
-            #     kwargs = {'primary_dns': '208.67.220.220', 'secondary_dns': ''}
-            #     kwargs.update({'server_type':'FIAttached'})
-            #     vlan_policy,vsan_a,vsan_b,fc_ports,mtu = quick_start(
-            #         name_prefix, org, type
-            #         ).domain_policies(
-            #         jsonData, easy_jsonData, **kwargs
-            #     )
-            #     # print(vlan_policy)
-            #     kwargs.update({'vlan_policy':vlan_policy["vlan_policy"],'vlans':vlan_policy["vlans"]})
-            #     kwargs.update({'vsan_a':vsan_a,'vsan_b':vsan_b,'fc_ports':fc_ports})
-            #     kwargs.update({'mtu':mtu})
-            #     print(kwargs)
-            # else:
-            #     kwargs.update({'server_type':'Standalone'})
-            #     kwargs.update({'fc_ports':[]})
-            #     quick_start(name_prefix, org, type).standalone_policies(jsonData, easy_jsonData)
+            if 'domain' in policy:
+                # kwargs = {'primary_dns': '208.67.220.220', 'secondary_dns': ''}
+                kwargs.update({'server_type':'FIAttached'})
+                vlan_policy,vsan_a,vsan_b,fc_ports,mtu = quick_start(
+                    name_prefix, org, type
+                    ).domain_policies(
+                    jsonData, easy_jsonData, **kwargs
+                )
+                kwargs.update({'vlan_policy':vlan_policy["vlan_policy"],'vlans':vlan_policy["vlans"]})
+                kwargs.update({'vsan_a':vsan_a,'vsan_b':vsan_b,'fc_ports':fc_ports})
+                kwargs.update({'mtu':mtu})
+            else:
+                kwargs.update({'server_type':'Standalone'})
+                kwargs.update({'fc_ports':[]})
+                quick_start(name_prefix, org, type).standalone_policies(jsonData, easy_jsonData)
             quick_start(name_prefix, org, type).server_policies(jsonData, easy_jsonData, **kwargs)
         elif 'quick_start_lan_san_policies' in policy:
-            kwargs = {
-                'primary_dns': '208.67.220.220',
-                'secondary_dns': '',
-                'server_type': 'FIAttached',
-                'vlan_policy': 'asgard-ucs',
-                'vlans': '1-99,101-199,201-299',
-                'vsan_a': 100,
-                'vsan_b': 200,
-                'fc_ports': [1, 2, 3, 4],
-                'mtu':9216
-            }
             quick_start(domain_prefix, org, type).lan_san_policies(jsonData, easy_jsonData, **kwargs)
-            print(kwargs)
         elif policy == 'quick_start_vmware_m2':
             quick_start(name_prefix, org, type).vmware_m2()
+            # kwargs = {
+            #     'primary_dns': '208.67.220.220',
+            #     'secondary_dns': '',
+            #     'server_type': 'FIAttached',
+            #     'vlan_policy': 'asgard-ucs',
+            #     'vlans': '1-99,101-199,201-299',
+            #     'vsan_a': 100,
+            #     'vsan_b': 200,
+            #     'fc_ports': [1, 2, 3, 4],
+            #     'mtu':9216
+            # }
+            kwargs.update({'boot_order_policy':'VMware_M2'})
         elif policy == 'quick_start_vmware_raid1':
             quick_start(name_prefix, org, type).vmware_raid1()
+            kwargs.update({'boot_order_policy':'VMware_Raid1'})
+        elif 'quick_start_server_profile' in policy:
+            quick_start(domain_prefix, org, type).server_profiles(jsonData, easy_jsonData, **kwargs)
 
     return org
 
@@ -845,11 +859,29 @@ def main():
     easy_jsonData = json.load(jsonOpen)
     jsonOpen.close()
 
-    if len(sys.argv) > 1:
-        json_file = sys.argv[1]
-        json_open = open(json_file, 'r')
-        json_data = json.load(json_open)
-        orgs = process_imm_transition(json_data)
+    """
+    Arguments:
+        description {string}: Optional description used within argparse help
+    Returns:
+        api
+    """
+    description = None
+    if description is not None:
+        Parser.description = description
+    Parser.add_argument('-d', '--dir', default='Intersight',
+                        help='The Directory to Publish the Terraform Files to.')
+    Parser.add_argument('-j', '--json_file', default=None,
+                        help='The IMM Transition Tool JSON Dump File to Convert to HCL.')
+    args = Parser.parse_args()
+
+    os.environ['TF_DEST_DIR'] = '%s' % (args.dir)
+
+    if not args.json_file == None:
+        if os.path.isfile(args.json_file):
+            json_file = args.json_file
+            json_open = open(json_file, 'r')
+            json_data = json.load(json_open)
+            orgs = process_imm_transition(json_data)
     else:
         org = process_wizard(easy_jsonData, jsonData)
         orgs = []

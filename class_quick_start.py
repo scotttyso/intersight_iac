@@ -16,6 +16,7 @@ from class_policies_vxan import policies_vxan
 from class_pools import pools
 from class_profiles import profiles
 from easy_functions import choose_policy, policies_parse
+from easy_functions import ipmi_key_function, local_users_function
 from easy_functions import ntp_alternate, ntp_primary
 from easy_functions import snmp_trap_servers, snmp_users
 from easy_functions import syslog_servers
@@ -48,6 +49,7 @@ class quick_start(object):
         templateVars = {}
         templateVars["org"] = org
         vlan_type = 'policies_vlan'
+        chassis_type = 'ucs_chassis_profiles'
         domain_type = 'ucs_domain_profiles'
 
         configure_loop = False
@@ -67,6 +69,7 @@ class quick_start(object):
             print(f'  - Intersight/{org}/{self.type}/vsan_policies.auto.tfvars')
             print(f'  - Intersight/{org}/{vlan_type}/multicast_policies.auto.tfvars')
             print(f'  - Intersight/{org}/{vlan_type}/vlan_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{chassis_type}/ucs_chassis_profiles.auto.tfvars')
             print(f'  - Intersight/{org}/{domain_type}/ucs_domain_profiles.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Domain Policy Configuration?  \nEnter "Y" or "N" [Y]: ')
@@ -124,8 +127,8 @@ class quick_start(object):
 
                     # VLAN Pool
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  IMPORTANT NOTE: The FCoE VLAN Id will be assigned based on the VSAN Identifier.')
-                    print(f'                  Be sure to exclude the VSAN for Fabric A and B from teh VLAN Pool.')
+                    print(f'  IMPORTANT NOTE: The FCoE VLAN will be assigned based on the VSAN Identifier.')
+                    print(f'                  Be sure to exclude the VSAN for Fabric A and B from the VLAN Pool.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     VlanList,vlanListExpanded = vlan_pool()
 
@@ -748,6 +751,14 @@ class quick_start(object):
 
                             #_______________________________________________________________________
                             #
+                            # Configure UCS Chassis Profile
+                            #_______________________________________________________________________
+                            name = domain_name
+                            templateVars["name"] = name
+                            profiles(name_prefix, org, 'ucs_chassis_profiles').quick_start_chassis(easy_jsonData, **templateVars)
+
+                            #_______________________________________________________________________
+                            #
                             # Configure UCS Domain Profile
                             #_______________________________________________________________________
 
@@ -809,7 +820,7 @@ class quick_start(object):
         vsan_a = templateVars["vsan_id_A"]
         vsan_b = templateVars["vsan_id_B"]
         fc_ports = templateVars["fc_converted_ports"]
-        mtu = templateVars["fc_converted_ports"]
+        mtu = templateVars["mtu"]
         return vlan_policy,vsan_a,vsan_b,fc_ports,mtu
 
     #==============================================
@@ -820,7 +831,6 @@ class quick_start(object):
             mtu = 9000
         else:
             mtu = 1500
-        name_prefix = self.name_prefix
         org = self.org
         templateVars = {}
         templateVars["org"] = org
@@ -1730,11 +1740,7 @@ class quick_start(object):
     #==============================================
     def server_policies(self, jsonData, easy_jsonData, **kwargs):
         server_type = kwargs['server_type']
-        vlan_policy = kwargs['vlan_policy']
         vlan_list = kwargs['vlans']
-        vsan_a = kwargs['vsan_a']
-        vsan_b = kwargs['vsan_b']
-        name_prefix = self.name_prefix
         org = self.org
         templateVars = {}
         templateVars["org"] = org
@@ -1781,6 +1787,9 @@ class quick_start(object):
 
                     templateVars["multi_select"] = False
 
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Now Starting the IMC Access Policy Section.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
                     # IMC Access VLAN
                     valid = False
                     while valid == False:
@@ -1796,6 +1805,41 @@ class quick_start(object):
                         else:
                             valid = True
 
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Need to obtain the IPMI Key for IPMI over LAN Policy Encryption.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    templateVars["ipmi_key"] = ipmi_key_function(**templateVars)
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Now Starting the Local User Policy Section.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    # Local Users
+                    templateVars["always_send_user_password"] = False
+                    templateVars["enforce_strong_password"] = True
+                    templateVars["grace_period"] = 0
+                    templateVars["notification_period"] = 15
+                    templateVars["password_expiry_duration"] = 90
+                    templateVars["password_history"] = 5
+                    ilCount = 1
+                    local_users = []
+                    user_loop = False
+                    while user_loop == False:
+                        question = input(f'Would you like to configure a Local user?  Enter "Y" or "N" [Y]: ')
+                        if question == '' or question == 'Y':
+                            local_users,user_loop = local_users_function(
+                                jsonData, easy_jsonData, ilCount, **templateVars
+                            )
+                        elif question == 'N':
+                            user_loop = True
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+                    templateVars["local_users"] = local_users
+
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Now Starting the SNMP Policy Section.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
                     # Pull in the Policies for SNMP Policies
                     jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
 
@@ -1853,10 +1897,14 @@ class quick_start(object):
                                 print(f'\n------------------------------------------------------\n')
                     templateVars["trap_destinations"] = snmp_dests
 
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Now Starting the Syslog Policy Section.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    # Syslog Section
                     ilCount = 1
                     syslog_loop = False
                     while syslog_loop == False:
-                        question = input(f'Do you want to configure Remote Syslog?  Enter "Y" or "N" [Y]: ')
+                        question = input(f'Do you want to configure Remote Syslog Servers?  Enter "Y" or "N" [Y]: ')
                         if question == '' or question == 'Y':
                             # Syslog Local Logging
                             jsonVars = jsonData['components']['schemas']['syslog.LocalClientBase']['allOf'][1]['properties']
@@ -1901,6 +1949,21 @@ class quick_start(object):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Policy Variables:')
                     print(f'    IMC Access VLAN  = {imc_vlan}')
+                    if len(templateVars["local_users"]) > 0:
+                        print(f'    local_users = ''{')
+                        for item in templateVars["local_users"]:
+                            for k, v in item.items():
+                                if k == 'username':
+                                    print(f'      "{v}" = ''{')
+                            for k, v in item.items():
+                                if k == 'enabled':
+                                    print(f'        enable   = {v}')
+                                elif k == 'password':
+                                    print(f'        password = "Sensitive"')
+                                elif k == 'role':
+                                    print(f'        role     = {v}')
+                            print(f'      ''}')
+                        print(f'    ''}')
                     print(f'    System Contact   = "{templateVars["system_contact"]}"')
                     print(f'    System Locaction = "{templateVars["system_location"]}"')
                     if len(templateVars["trap_destinations"]) > 0:
@@ -2048,7 +2111,6 @@ class quick_start(object):
                             templateVars["name"] = name
                             templateVars["descr"] = f'{name} IPMI over LAN Policy'
                             templateVars["enabled"] = True
-                            templateVars["ipmi_key"] = 1
 
                             # Write Policies to Template File
                             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -2077,8 +2139,7 @@ class quick_start(object):
                             name = org
                             templateVars["name"] = name
                             templateVars["descr"] = f'{name} Local User Policy'
-                            templateVars["enabled"] = True
-                            templateVars["ipmi_key"] = 1
+
 
                             # Write Policies to Template File
                             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -2113,7 +2174,6 @@ class quick_start(object):
                                 elif name == '9508': templateVars["allocated_budget"] = 5600
 
                                 templateVars["power_redundancy"] = 'Grid'
-                                templateVars["ipmi_key"] = 1
 
                                 # Write Policies to Template File
                                 templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -2208,8 +2268,6 @@ class quick_start(object):
                             name = org
                             templateVars["name"] = name
                             templateVars["descr"] = f'{name} Syslog Policy'
-                            templateVars["enabled"] = True
-                            templateVars["ipmi_key"] = 1
 
                             # Write Policies to Template File
                             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -2249,6 +2307,38 @@ class quick_start(object):
                             templateVars["template_file"] = 'template_close.jinja2'
                             write_to_template(self, **templateVars)
 
+                            #_______________________________________________________________________
+                            #
+                            # Configure Virtual KVM Policy
+                            #_______________________________________________________________________
+
+                            templateVars["initial_write"] = True
+                            templateVars["policy_type"] = 'Virtual KVM Policy'
+                            templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                            templateVars["template_file"] = 'template_open.jinja2'
+                            templateVars["template_type"] = 'virtual_kvm_policies'
+
+                            # Open the Template file
+                            write_to_template(self, **templateVars)
+                            templateVars["initial_write"] = False
+
+                            # Virtual KVM Settings
+                            name = org
+                            templateVars["name"] = name
+                            templateVars["descr"] = f'{name} Virtual KVM Policy'
+                            templateVars["enable_local_server_video"] = True
+                            templateVars["enable_video_encryption"] = True
+                            templateVars["enable_virtual_kvm"] = True
+                            templateVars["remote_port"] = 2068
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
+
                             configure_loop = True
                             policy_loop = True
                             valid_confirm = True
@@ -2273,9 +2363,58 @@ class quick_start(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
     #==============================================
+    # UCS Domain and Policies
+    #==============================================
+    def server_profiles(self, jsonData, easy_jsonData, **kwargs):
+        name_prefix = self.name_prefix
+        org = self.org
+        server_type = 'ucs_server_profiles'
+        templateVars = {}
+        templateVars["org"] = org
+        templateVars["fc_ports"] = kwargs["fc_ports"]
+        templateVars["server_type"] = kwargs["server_type"]
+        templateVars["boot_order_policy"] = kwargs["boot_order_policy"]
+
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  The Quick Deployment Module - Domain Policies, will configure pools for a UCS Domain ')
+            print(f'  Profile.\n')
+            print(f'  This wizard will save the output for these pools in the following files:\n')
+            print(f'  - Intersight/{org}/{server_type}/ucs_server_profile_templates.auto.tfvars')
+            print(f'  - Intersight/{org}/{server_type}/ucs_server_profiles.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to run the Quick Deployment Module - Server Profiles Configuration?  \nEnter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                policy_loop = False
+                while policy_loop == False:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Below are the Questions that will be asked by the Server Profiles Portion of the wizard.')
+                    print(f'   - Number of Servers you are going to deploy.')
+                    print(f'   - Name of the Server Profile(s).')
+                    print(f'   - Serial Number of the Server Profile(s).')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                    #_______________________________________________________________________
+                    #
+                    # Configure UCS Chassis Profile
+                    #_______________________________________________________________________
+                    profiles(name_prefix, org, 'ucs_server_profiles').quick_start_server_profiles(**templateVars)
+                    profiles(name_prefix, org, 'ucs_server_profiles').quick_start_server_templates(**templateVars)
+                    policy_loop = True
+                    configure_loop = True
+
+            elif configure == 'N':
+                configure_loop = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+        
+    #==============================================
     # Standalone Server Policies
     #==============================================
-    def standalone_policies(self, jsonData, easy_jsonData, server_type):
+    def standalone_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
         org = self.org
         templateVars = {}
@@ -2287,77 +2426,36 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Pools, will configure pools for a UCS Server Profile')
             print(f'  connected to an IMM Domain.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - Intersight/{org}/{self.type}/bios_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/boot_order_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/imc_access_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ipmi_over_lan_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/local_user_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/power_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/serial_over_lan_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/snmp_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/storage_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/syslog_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/thermal_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/adapter_configuration_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/device_connector_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/ethernet_network_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/ldap_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/network_connectivity_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/ntp_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/persistent_memory_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/smtp_policies.auto.tfvars')
+            print(f'  - Intersight/{org}/{self.type}/ssh_policies.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            configure = input(f'Do You Want to run the Quick Deployment Module - Policy Configuration?  Enter "Y" or "N" [Y]: ')
+            configure = input(f'Do You Want to run the Quick Deployment Module - Standalone Policy Configuration?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 loop_count = 1
                 policy_loop = False
                 while policy_loop == False:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Below are the Questions that will be asked by the Policies Portion of the wizard.')
-                    print(f'   - VLAN ID for IMC Access Policy.')
-                    print(f'   - Local User Policy (Required for direct KVM Access).')
-                    print(f'     * user and role')
-                    print(f'     * user password (strong passwords enforced)')
-                    print(f'   - SNMP Policy')
-                    print(f'     * Contact')
-                    print(f'     * Location')
-                    print(f'     * SNMPv3 Users (optional)')
-                    print(f'     * SNMPv3 Trap Servers (optional)')
-                    print(f'   - Syslog Policy - (Optional)')
-                    print(f'     * Remote Syslog Server(s)')
+                    print(f'   - If the Server will Have a VIC Installed.')
+                    print(f'     * What the Ethernet Settings should be.')
+                    print(f'   - DNS Servers (Primary/Secondary).')
+                    print(f'   - LDAP Policy (Optional).')
+                    print(f'     * Base Distinguished Name')
+                    print(f'     * LDAP Groups')
+                    print(f'     * LDAP Security')
+                    print(f'   - NTP Configuration:')
+                    print(f'     * Timezone')
+                    print(f'     * NTP Servers')
+                    print(f'   - Persistent Memory Policies (Optional)')
+                    print(f'   - SMTP Policy (Optional)')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                    # Get List of VLAN's from the Domain Policies
-                    policy_list = [
-                        'policies_vlans.vlan_policies.vlan_policy',
-                    ]
-                    templateVars["allow_opt_out"] = False
-                    for policy in policy_list:
-                        vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
-
-                    vlan_list = []
-                    for item in policyData['vlan_policies'][0][vlan_policy][0]['vlans']:
-                        for k, v in item.items():
-                            vlan_list.append(v[0]['vlan_list'])
-
-                    vlan_convert = ''
-                    for vlan in vlan_list:
-                        if vlan_convert == '':
-                            vlan_convert = str(vlan)
-                        else:
-                            vlan_convert = vlan_convert + ',' + str(vlan)
-
-                    vlan_policy_list = vlan_list_full(vlan_convert)
-
-                    templateVars["multi_select"] = False
-
-                    # IMC Access VLAN
-                    valid = False
-                    while valid == False:
-                        templateVars["Description"] = 'IMC Access VLAN Identifier'
-                        templateVars["varInput"] = 'Enter the VLAN ID for the IMC Access Policy.'
-                        templateVars["varDefault"] = 1
-                        templateVars["varName"] = 'IMC Access Policy VLAN ID'
-                        templateVars["minNum"] = 1
-                        templateVars["maxNum"] = 4094
-                        imc_vlan = varNumberLoop(**templateVars)
-                        if server_type == 'FIAttached':
-                            valid = validate_vlan_in_policy(vlan_policy_list, imc_vlan)
-                        else:
-                            valid = True
-
                     # Pull in the Policies for SNMP Policies
                     jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
 
@@ -2429,7 +2527,6 @@ class quick_start(object):
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Network Configuration Variables:"')
-                    print(f'    IMC Access VLAN  = {imc_vlan}')
                     print(f'    System Contact   = "{templateVars["system_contact"]}"')
                     print(f'    System Locaction = "{templateVars["system_location"]}"')
                     if len(templateVars["trap_destinations"]) > 0:
@@ -2602,7 +2699,6 @@ class quick_start(object):
                             templateVars["name"] = name
                             templateVars["descr"] = f'{name} IMC Access Policy'
                             templateVars["inband_ip_pool"] = 'VMWare_KVM'
-                            templateVars["inband_vlan_id"] = imc_vlan
                             templateVars["ipv4_address_configuration"] = True
                             templateVars["ipv6_address_configuration"] = False
 
@@ -2891,7 +2987,6 @@ class quick_start(object):
     # VMware M2 - Boot and Storage Policies
     #==============================================
     def vmware_m2(self):
-        name_prefix = self.name_prefix
         org = self.org
         templateVars = {}
         templateVars["org"] = org
@@ -3010,7 +3105,6 @@ class quick_start(object):
     # VMware Raid1 - Boot and Storage Policies
     #==============================================
     def vmware_raid1(self):
-        name_prefix = self.name_prefix
         org = self.org
         templateVars = {}
         templateVars["org"] = org

@@ -111,7 +111,7 @@
         },
         "thermal.Policy":{
             "chassisType": {
-                "description": "The Type of Chassis to Apply this Thermal Policy to.",
+                "description": "The Type of Chassis to Apply this Policy to.",
                 "enum":[
                     "5108",
                     "9508"

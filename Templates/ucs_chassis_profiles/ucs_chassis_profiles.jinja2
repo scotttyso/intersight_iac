@@ -5,8 +5,8 @@
 {%- else %}
     action            = "No-op"
 {%- endif %}
-{%- if assign_chassis %}
-    assign_chassis    = {{ assign_chassis|lower }}
+{%- if not serial_number == '' %}
+    assign_chassis    = true
 {%- else %}
     assign_chassis    = false
 {%- endif %}

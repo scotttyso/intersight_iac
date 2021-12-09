@@ -12,7 +12,8 @@
         port         = 514
         protocol     = "udp"
       },
-{%- elif not remote_logging['server2']['hostname'] == 'none' %}
+{%- endif %}
+{%- if not remote_logging['server2']['hostname'] == 'none' %}
       {
         enabled      = {{ remote_logging['server2']['enable']|lower }}
         hostname     = "{{ remote_logging['server2']['hostname'] }}"

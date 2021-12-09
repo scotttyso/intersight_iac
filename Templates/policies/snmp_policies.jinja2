@@ -41,17 +41,15 @@
     {%- endfor %}
     {%- for k, v in item.items() %}
       {%- if k == 'community' %}
-        community_string    = 1,
+        community_string = 1,
       {%- elif k == 'enabled' %}
-        enable              = {{ v|lower }},
+        enable           = {{ v|lower }},
       {%- elif k == 'port' %}
-        port                = {{ v }},
+        port             = {{ v }},
       {%- elif k == 'trap_type' %}
-        trap_type           = "{{ v }}",
+        trap_type        = "{{ v }}",
       {%- elif k == 'user' %}
-        snmp_v3_user        = "{{ v }}",
-      {%- elif k == 'version' %}
-        snmp_version        = "{{ v }}",
+        user             = "{{ v }}",
       {%- endif %}
     {%- endfor %}
       },

@@ -12,6 +12,7 @@ from class_policies_san import policies_san
 from class_pools import pools
 from easy_functions import choose_policy, policies_parse
 from easy_functions import exit_default_no, exit_default_yes
+from easy_functions import ipmi_key_function, local_users_function
 from easy_functions import policy_descr, policy_name
 from easy_functions import variablesFromAPI
 from easy_functions import varBoolLoop
@@ -1108,19 +1109,7 @@ class policies_p1(object):
                     while valid == False:
                         encrypt_traffic = input('Do you want to encrypt IPMI over LAN Traffic?  Enter "Y" or "N" [Y]: ')
                         if encrypt_traffic == 'Y' or encrypt_traffic == '':
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  The ipmi_key Must be in Hexidecimal Format and no longer than 40 characters.')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            valid_password = False
-                            while valid_password == False:
-                                ipmi_key = stdiomask.getpass(prompt='Enter ipmi_key: ')
-                                valid_password = validating.ipmi_key_check(ipmi_key)
-
-                            templateVars["ipmi_key"] = 1
-                            os.environ['TF_VAR_ipmi_key_1'] = '%s' % (ipmi_key)
-                            valid = True
-                        else:
-                            valid = True
+                            templateVars["ipmi_key"] = ipmi_key_function(**templateVars)
 
                     templateVars["multi_select"] = False
                     jsonVars = jsonData['components']['schemas']['ipmioverlan.Policy']['allOf'][1]['properties']
@@ -1339,10 +1328,6 @@ class policies_p1(object):
                             bind_dn = input(f'What is the Distinguished Name for the user? [CN={varUser},OU={varOU},{base_dn}]')
                             if bind_dn == '':
                                 bind_dn = 'CN=%s,OU=%s,%s' % (varUser, varOU, base_dn)
-                            # regex = re.compile(r'^(cn|ou|dc)\=[a-zA-Z0-9\\\,\+\$ ]+$')
-                            # bind_split = bind_dn.split(',')
-                            # for x in bind_split:
-                            #     reg_test = (regex, bind_dn, re.IGNORECASE)
                             templateVars["minLength"] = 1
                             templateVars["maxLength"] = 254
                             templateVars["varName"] = 'LDAP Bind DN'
@@ -1815,121 +1800,90 @@ class policies_p1(object):
                     templateVars["name"] = policy_name(name, policy_type)
                     templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
-                    valid = False
-                    while valid == False:
-                        always_send = input(f'\nNote: Always Send User Password - If the option is not set to true, user passwords will only \n'\
-                            'be sent to endpoint devices for new users and if a user password is changed for existing users.\n\n'\
-                            'Do you want Intersight to Always send the user password with policy updates?  Enter "Y" or "N" [N]: ')
-                        if always_send == '' or always_send == 'N':
-                            templateVars["always_send_user_password"] = False
-                            valid = True
-                        elif always_send == 'Y':
-                            templateVars["always_send_user_password"] = True
-                            valid = True
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                    # Obtain Information for iam.EndpointPasswordProperties
+                    templateVars["multi_select"] = False
+                    jsonVars = jsonData['components']['schemas']['iam.EndPointPasswordProperties']['allOf'][1]['properties']
 
-                    valid = False
-                    while valid == False:
-                        always_send = input(f'\nEnforce Strong Password, Enables a strong password policy. Strong password requirements:\n'\
-                            '  A. The password must have a minimum of 8 and a maximum of 20 characters.\n'\
-                            "  B. The password must not contain the User's Name.\n"\
-                            '  C. The password must contain characters from three of the following four categories.\n'\
-                            '    1. English uppercase characters (A through Z).\n'\
-                            '    2. English lowercase characters (a through z).\n'\
-                            '    3. Base 10 digits (0 through 9).\n'\
-                            '    4. Non-alphabetic characters (! , @, #, $, %, ^, &, *, -, _, +, =)\n\n'\
-                            'Do you want to Enforce Strong Passwords?  Enter "Y" or "N" [Y]: ')
-                        if always_send == 'N':
-                            templateVars["enforce_strong_password"] = False
-                            valid = True
-                        if always_send == '' or always_send == 'Y':
-                            templateVars["enforce_strong_password"] = True
-                            valid = True
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                    # Local User Always Send Password
+                    templateVars["Description"] = jsonVars['ForceSendPassword']['description']
+                    templateVars["varInput"] = f'Do you want Intersight to Always send the user password with policy updates?'
+                    templateVars["varDefault"] = 'N'
+                    templateVars["varName"] = 'Force Send Password'
+                    templateVars["always_send_user_password"] = varBoolLoop(**templateVars)
 
-                    valid = False
-                    while valid == False:
-                        always_send = input(f'\nDo you want to Enable password Expiry on the Endpoint?  Enter "Y" or "N" [Y]: ')
-                        if always_send == 'N':
-                            templateVars["enable_password_expiry"] = False
-                            valid = True
-                        elif always_send == '' or always_send == 'Y':
-                            templateVars["enable_password_expiry"] = True
-                            valid = True
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                    # Local User Enforce Strong Password
+                    templateVars["Description"] = jsonVars['EnforceStrongPassword']['description']
+                    templateVars["varInput"] = f'Do you want to Enforce Strong Passwords?'
+                    templateVars["varDefault"] = 'Y'
+                    templateVars["varName"] = 'Enforce Strong Password'
+                    templateVars["enforce_strong_password"] = varBoolLoop(**templateVars)
+
+                    # Local User Password Expiry
+                    templateVars["Description"] = jsonVars['EnablePasswordExpiry']['description']
+                    templateVars["varInput"] = f'Do you want to Enable password Expiry on the Endpoint?'
+                    templateVars["varDefault"] = 'Y'
+                    templateVars["varName"] = 'Enable Password Expiry'
+                    templateVars["enable_password_expiry"] = varBoolLoop(**templateVars)
 
                     if templateVars["enable_password_expiry"] == True:
+                        # Local User Grace Period
+                        templateVars["Description"] = 'Grace Period, in days, after the password is expired '\
+                                'that a user can continue to use their expired password.'\
+                                'The allowed grace period is between 0 to 5 days.  With 0 being no grace period.'
+                        templateVars["varDefault"] =  jsonVars['GracePeriod']['default']
+                        templateVars["varInput"] = 'How many days would you like to set for the Grace Period?'
+                        templateVars["varName"] = 'Grace Period'
+                        templateVars["varRegex"] = '[0-9]+'
+                        templateVars["minNum"] = jsonVars['GracePeriod']['minimum']
+                        templateVars["maxNum"] = jsonVars['GracePeriod']['maximum']
+                        templateVars["grace_period"] = varNumberLoop(**templateVars)
+
+                        # Local User Notification Period
+                        templateVars["Description"] = 'Notification Period - Number of days, between 0 to 15 '\
+                                '(0 being disabled), that a user is notified to change their password before it expires.'
+                        templateVars["varDefault"] =  jsonVars['NotificationPeriod']['default']
+                        templateVars["varInput"] = 'How many days would you like to set for the Notification Period?'
+                        templateVars["varName"] = 'Notification Period'
+                        templateVars["varRegex"] = '[0-9]+'
+                        templateVars["minNum"] = jsonVars['NotificationPeriod']['minimum']
+                        templateVars["maxNum"] = jsonVars['NotificationPeriod']['maximum']
+                        templateVars["notification_period"] = varNumberLoop(**templateVars)
+
+                        # Local User Password Expiry Duration
                         valid = False
                         while valid == False:
-                            templateVars["grace_period"] = input(f'\nNote: Grace Period, in days, after the password is expired that a user \n'\
-                                'can continue to use their expired password.\n'\
-                                'The allowed grace period is between 0 to 5 days.  With 0 being no grace period.\n\n'\
-                                'How many days would you like to set for the Grace Period?  [0]: ')
-                            if templateVars["grace_period"] == '':
-                                templateVars["grace_period"] = 0
-                            if re.fullmatch(r'[0-5]', str(templateVars["grace_period"])):
-                                valid = validating.number_in_range('Grace Period', templateVars["grace_period"], 0, 5)
+                            templateVars["Description"] = 'Note: When Password Expiry is Enabled, Password Expiry '\
+                                    'Duration sets the duration of time, (in days), a password may be valid.  '\
+                                    'The password expiryduration must be greater than '\
+                                    'notification period + grace period.  Range is 1-3650.'
+                            templateVars["varDefault"] =  jsonVars['PasswordExpiryDuration']['default']
+                            templateVars["varInput"] = 'How many days would you like to set for the Password Expiry Duration?'
+                            templateVars["varName"] = 'Password Expiry Duration'
+                            templateVars["varRegex"] = '[0-9]+'
+                            templateVars["minNum"] = jsonVars['PasswordExpiryDuration']['minimum']
+                            templateVars["maxNum"] = jsonVars['PasswordExpiryDuration']['maximum']
+                            templateVars["password_expiry_duration"] = varNumberLoop(**templateVars)
+                            x = int(templateVars["grace_period"])
+                            y = int(templateVars["notification_period"])
+                            z = int(templateVars["password_expiry_duration"])
+                            if z > (x + y):
+                                valid = True
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please enter a number in the range of 0 to 5.')
+                                print(f'  Error!! The Value of Password Expiry Duration must be greater than Grace Period +')
+                                print(f'  Notification Period.  {z} is not greater than [{x} + {y}]')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                        valid = False
-                        while valid == False:
-                            templateVars["notification_period"] = input(f'Note: Notification Period - Number of days, between 0 to 15 '\
-                                '(0 being disabled),\n that a user is notified to change their password before it expires.\n\n'\
-                                'How many days would you like to set for the Notification Period?  [15]: ')
-                            if templateVars["notification_period"] == '':
-                                templateVars["notification_period"] = 15
-                            if re.search(r'^[0-9]+$', str(templateVars["notification_period"])):
-                                valid = validating.number_in_range('Notification Period', templateVars["notification_period"], 0, 15)
-                            else:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please enter a number in the range of 0 to 15.')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                        valid = False
-                        while valid == False:
-                            templateVars["password_expiry_duration"] = input(f'Note: When Password Expiry is Enabled, Password Expiry Duration '\
-                                'sets the duration of time,\n (in days), a password may be valid.  The password expiry duration must be greater than \n'\
-                                'notification period + grace period.  Range is 1-3650.\n\n'\
-                                'How many days would you like to set for the Password Expiry Duration?  [90]: ')
-                            if templateVars["password_expiry_duration"] == '':
-                                templateVars["password_expiry_duration"] = 90
-                            if re.search(r'^[0-9]+$', str(templateVars["password_expiry_duration"])):
-                                first_check = validating.number_in_range('Password Expiry Duration', templateVars["password_expiry_duration"], 1, 3650)
-                                if first_check == True:
-                                    x = int(templateVars["grace_period"])
-                                    y = int(templateVars["notification_period"])
-                                    if int(templateVars["password_expiry_duration"]) > (x + y):
-                                        valid = True
-                            else:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please enter a number in the range of 1 to 3650.')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                        valid = False
-                        while valid == False:
-                            templateVars["password_history"] = input(f'\nNote: Password change history. Specifies the number of previous passwords \n'\
-                                'that are stored and compared to a new password.  Range is 0 to 5.\n\n'\
-                                'How many passwords would you like to store for a user?  [5]: ')
-                            if templateVars["password_history"] == '':
-                                templateVars["password_history"] = 5
-                            if re.fullmatch(r'[0-5]', str(templateVars["password_history"])):
-                                valid = validating.number_in_range('Password History', templateVars["password_history"], 0, 5)
-                            else:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please enter a number in the range of 0 to 5.')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                        # Local User Notification Period
+                        templateVars["Description"] = jsonVars['PasswordHistory']['description'] + \
+                            ' Range is 0 to 5.'
+                        templateVars["varDefault"] =  jsonVars['PasswordHistory']['default']
+                        templateVars["varInput"] = 'How many passwords would you like to store for a user?'
+                        templateVars["varName"] = 'Password History'
+                        templateVars["varRegex"] = '[0-9]+'
+                        templateVars["minNum"] = jsonVars['PasswordHistory']['minimum']
+                        templateVars["maxNum"] = jsonVars['PasswordHistory']['maximum']
+                        templateVars["password_history"] = varNumberLoop(**templateVars)
 
                     else:
                         templateVars["grace_period"] = 0
@@ -1937,120 +1891,23 @@ class policies_p1(object):
                         templateVars["password_expiry_duration"] = 90
                         templateVars["password_history"] = 5
 
-
-                    templateVars["local_users"] = []
-                    inner_loop_count = 1
+                    # Local Users
+                    ilCount = 1
+                    local_users = []
                     user_loop = False
                     while user_loop == False:
-                        question = input(f'\nWould you like to configure a Local user?  Enter "Y" or "N" [Y]: ')
+                        question = input(f'Would you like to configure a Local user?  Enter "Y" or "N" [Y]: ')
                         if question == '' or question == 'Y':
-                            valid_users = False
-                            while valid_users == False:
-                                valid = False
-                                while valid == False:
-                                    username = input(f'\nName of the user to be created on the endpoint. It can be any string that adheres to the following constraints:\n'\
-                                        '  - It can have alphanumeric characters, dots, underscores and hyphen.\n'\
-                                        '  - It cannot be more than 16 characters.\n\n'\
-                                        'What is your Local username? ')
-                                    if not username == '':
-                                        valid = validating.username('Local User', username, 1, 16)
-                                    else:
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please Re-enter the Local Username.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                                templateVars["multi_select"] = False
-                                jsonVars = easy_jsonData['policies']['iam.LocalUserPasswordPolicy']
-                                templateVars["var_description"] = jsonVars['role']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['role']['enum'])
-                                templateVars["defaultVar"] = jsonVars['role']['default']
-                                templateVars["varType"] = 'User Role'
-                                role = variablesFromAPI(**templateVars)
-
-                                if templateVars["enforce_strong_password"] == True:
-                                    print('Enforce Strong Password is enabled so the following rules must be followed:')
-                                    print('  - The password must have a minimum of 8 and a maximum of 20 characters.')
-                                    print("  - The password must not contain the User's Name.")
-                                    print('  - The password must contain characters from three of the following four categories.')
-                                    print('    * English uppercase characters (A through Z).')
-                                    print('    * English lowercase characters (a through z).')
-                                    print('    * Base 10 digits (0 through 9).')
-                                    print('    * Non-alphabetic characters (! , @, #, $, %, ^, &, *, -, _, +, =)\n\n')
-                                valid = False
-                                while valid == False:
-                                    password1 = stdiomask.getpass(f'What is the password for {username}? ')
-                                    password2 = stdiomask.getpass(f'Please re-enter the password for {username}? ')
-                                    if not password1 == '':
-                                        if password1 == password2:
-                                            if templateVars["enforce_strong_password"] == True:
-                                                valid = validating.strong_password(f"{username}'s password", password1, 8, 20)
-
-                                            else:
-                                                valid = validating.string_length(f'{username} password', password1, 1, 127)
-
-                                        else:
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                            print(f'  Error!! The Passwords did not match.  Please Re-enter the password for {username}.')
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    else:
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please Re-enter the password for {username}.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                TF_VAR = 'TF_VAR_local_user_password_%s' % (inner_loop_count)
-                                os.environ[TF_VAR] = '%s' % (password1)
-                                password1 = inner_loop_count
-
-                                user_attributes = {
-                                    'enabled':True,
-                                    'password':inner_loop_count,
-                                    'role':role,
-                                    'username':username
-                                }
-
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'   enabled  = True')
-                                print(f'   password = "Sensitive"')
-                                print(f'   role     = "{role}"')
-                                print(f'   username = "{username}"')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                valid_confirm = False
-                                while valid_confirm == False:
-                                    confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
-                                    if confirm_v == 'Y' or confirm_v == '':
-                                        templateVars["local_users"].append(user_attributes)
-                                        valid_exit = False
-                                        while valid_exit == False:
-                                            loop_exit = input(f'Would You like to Configure another Local User?  Enter "Y" or "N" [N]: ')
-                                            if loop_exit == 'Y':
-                                                inner_loop_count += 1
-                                                valid_confirm = True
-                                                valid_exit = True
-                                            elif loop_exit == 'N' or loop_exit == '':
-                                                user_loop = True
-                                                valid_confirm = True
-                                                valid_exit = True
-                                                valid_users = True
-                                            else:
-                                                print(f'\n------------------------------------------------------\n')
-                                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                                print(f'\n------------------------------------------------------\n')
-
-                                    elif confirm_v == 'N':
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Starting Local User Configuration Over.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        valid_confirm = True
-                                    else:
-                                        print(f'\n------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                        print(f'\n------------------------------------------------------\n')
-
+                            local_users,user_loop = local_users_function(
+                                jsonData, easy_jsonData, ilCount, **templateVars
+                            )
                         elif question == 'N':
                             user_loop = True
                         else:
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
+                    templateVars["local_users"] = local_users
 
                     templateVars["enabled"] = True
                     print(f'\n-------------------------------------------------------------------------------------------\n')

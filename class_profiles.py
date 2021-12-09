@@ -3,6 +3,7 @@
 import jinja2
 import pkg_resources
 import re
+import validating
 from class_policies_domain import policies_domain
 from class_policies_lan import policies_lan
 from class_policies_san import policies_san
@@ -16,6 +17,7 @@ from easy_functions import exit_default_no
 from easy_functions import policy_descr, policy_name
 from easy_functions import ucs_domain_serials
 from easy_functions import variablesFromAPI
+from easy_functions import varNumberLoop
 from easy_functions import varStringLoop
 from easy_functions import write_to_template
 
@@ -29,6 +31,69 @@ class profiles(object):
         self.name_prefix = name_prefix
         self.org = org
         self.type = type
+
+    #==============================================
+    # Quick Start - UCS Chassis Profile Module
+    #==============================================
+    def quick_start_chassis(self, easy_jsonData, **templateVars):
+        org = self.org
+        policy_type = 'UCS Chassis Profile'
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'ucs_chassis_profiles'
+
+        domain_name = templateVars["name"]
+        templateVars["Description"] = f'Number of Chassis attached to {domain_name}.'
+        templateVars["varInput"] = f'Enter the Number of Chassis attached to {domain_name}:'
+        templateVars["varDefault"] = 1
+        templateVars["varName"] = 'Chassis Count'
+        templateVars["minNum"] = 1
+        templateVars["maxNum"] = 20
+        chassis_count = varNumberLoop(**templateVars)
+
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
+
+        rangex = chassis_count + 1
+        for x in range(1,rangex):
+            # Chassis Model
+            templateVars["multi_select"] = False
+            jsonVars = easy_jsonData['policies']['thermal.Policy']
+            templateVars["var_description"] = jsonVars['chassisType']['description']
+            templateVars["jsonVars"] = sorted(jsonVars['chassisType']['enum'])
+            templateVars["defaultVar"] = jsonVars['chassisType']['default']
+            templateVars["varType"] = 'Chassis Model'
+            chassis_model = variablesFromAPI(**templateVars)
+
+            # Set Default Policy Values
+            templateVars["imc_access_policy"] = templateVars["org"]
+            templateVars["power_poicy"] = chassis_model
+            templateVars["snmp_policy"] = templateVars["org"]
+            templateVars["thermal_policy"] = chassis_model
+            templateVars["name"] = f'{domain_name}-{x}'
+            templateVars["descr"] = f'{domain_name}-{x} Chassis Profile.'
+
+            # Obtain Chassis Serial Number or Skip
+            templateVars["Description"] = 'Serial Number of the Chassis to assign to the Profile.'
+            templateVars["varDefault"] = ''
+            templateVars["varInput"] = f'What is the Serial Number of Chassis {x}? [press enter to skip]:'
+            templateVars["varName"] = 'Serial Number'
+            templateVars["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
+            templateVars["minLength"] = 11
+            templateVars["maxLength"] = 11
+            templateVars['serial_number'] = varStringLoop(**templateVars)
+
+            # Write Policies to Template File
+            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+            write_to_template(self, **templateVars)
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
 
     #==============================================
     # Quick Start - UCS Domain Profile Module
@@ -46,6 +111,135 @@ class profiles(object):
         # Open the Template file
         write_to_template(self, **templateVars)
         templateVars["initial_write"] = False
+
+        # Write Policies to Template File
+        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+        write_to_template(self, **templateVars)
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
+
+    #==============================================
+    # Quick Start - UCS Server Profile Module
+    #==============================================
+    def quick_start_server_profiles(self, **templateVars):
+        org = self.org
+        policy_type = 'UCS Server Profile'
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'ucs_server_profiles'
+
+        templateVars["Description"] = f'Number of Server Profiles.'
+        templateVars["varInput"] = f'Enter the Number of Server Profiles to Create:'
+        templateVars["varDefault"] = 1
+        templateVars["varName"] = 'Server Count'
+        templateVars["minNum"] = 1
+        templateVars["maxNum"] = 160
+        server_count = varNumberLoop(**templateVars)
+
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
+
+        rangex = server_count + 1
+        for x in range(1,rangex):
+            # Server Profile Name
+            valid = False
+            while valid == False:
+                name = input(f'What is the Name for the Server Profile? ')
+                if not name == '':
+                    valid = validating.name_rule(f'Server Profile Name', name, 1, 62)
+                else:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Error!! Invalid Value.  Please Re-enter the Server Profile Name.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            templateVars["name"] = name
+
+            # Set Default Policy Values
+            templateVars["descr"] = f'{templateVars["name"]} Server Profile'
+            templateVars["ucs_server_profile_template"] = f'{templateVars["boot_order_policy"]}'
+
+            # Obtain Chassis Serial Number or Skip
+            templateVars["Description"] = f'Serial Number of the Server Profile {templateVars["name"]}.'
+            templateVars["varDefault"] = ''
+            templateVars["varInput"] = f'What is the Serial Number of {templateVars["name"]}? [press enter to skip]:'
+            templateVars["varName"] = 'Serial Number'
+            templateVars["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
+            templateVars["minLength"] = 11
+            templateVars["maxLength"] = 11
+            templateVars['serial_number'] = varStringLoop(**templateVars)
+
+            if not templateVars['serial_number'] == '':
+                templateVars["server_assignment_mode"] = 'Static'
+            else:
+                templateVars["server_assignment_mode"] = 'None'
+
+            # Write Policies to Template File
+            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+            write_to_template(self, **templateVars)
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
+
+    #==================================================
+    # Quick Start - UCS Server Profile Template Module
+    #==================================================
+    def quick_start_server_templates(self, **templateVars):
+        org = self.org
+        policy_type = 'UCS Server Profile Template'
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'ucs_server_profile_templates'
+
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
+
+        # Set Default Policy Values
+        templateVars["name"] = f'{templateVars["boot_order_policy"]}'
+        templateVars["descr"] = f'{templateVars["name"]} Server Profile Template'
+
+        templateVars["uuid_pool"] = 'VMware'
+        templateVars["bios_policy"] = 'VMware'
+        templateVars["boot_policy"] = f'{templateVars["boot_order_policy"]}'
+        templateVars["virtual_media_policy"] = ''
+        templateVars["ipmi_over_lan_policy"] = f'{org}'
+        templateVars["local_user_policy"] = f'{org}'
+        templateVars["serial_over_lan_policy"] = f'{org}'
+        templateVars["snmp_policy"] = f'{org}'
+        templateVars["syslog_policy"] = f'{org}'
+        templateVars["virtual_kvm_policy"] = f'{org}'
+        templateVars["sd_card_policy"] = ''
+        if templateVars["boot_order_policy"] == 'VMware_M2':
+            templateVars["storage_policy"] = 'M2_Raid'
+        elif templateVars["boot_order_policy"] == 'VMware_Raid1':
+            templateVars["storage_policy"] = 'MRAID'
+        templateVars["lan_connectivity_policy"] = 'VMware_LAN'
+        if len(templateVars["fc_ports"]) > 0:
+            templateVars["san_connectivity_policy"] = 'VMware_SAN'
+
+        if templateVars["server_type"] == 'FIAttached':
+            templateVars["power_policy"] = 'Server'
+            templateVars["certificate_management_policy"] = ''
+            templateVars["imc_access_policy"] = f'{org}'
+
+        if templateVars["server_type"] == 'Standalone':
+            templateVars["persistent_memory_policy"] = f'{org}'
+            templateVars["device_connector_policy"] = f'{org}'
+            templateVars["ldap_policy"] = f'{org}'
+            templateVars["network_connectivity_policy"] = f'{org}'
+            templateVars["ntp_policy"] = f'{org}'
+            templateVars["smtp_policy"] = f'{org}'
+            templateVars["ssh_policy"] = f'{org}'
+            templateVars["adapter_configuration_policy"] = f'{org}'
 
         # Write Policies to Template File
         templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -535,6 +729,7 @@ class profiles(object):
                         templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         templateVars.update(policyData)
 
+                templateVars["boot_policy"] = templateVars["boot_order_policy"]
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'    action          = "{templateVars["action"]}"')
                 print(f'    description     = "{templateVars["descr"]}"')
@@ -557,7 +752,7 @@ class profiles(object):
                     if not templateVars["uuid_pool"] == '':
                         print(f'    uuid_pool                  = "{templateVars["uuid_pool"]}"')
                     print(f'    bios_policy                = "{templateVars["bios_policy"]}"')
-                    print(f'    boot_order_policy          = "{templateVars["boot_order_policy"]}"')
+                    print(f'    boot_order_policy          = "{templateVars["boot_policy"]}"')
                     if templateVars["target_platform"] == 'Standalone':
                         print(f'    persistent_memory_policies = "{templateVars["persistent_memory_policies"]}"')
                     if templateVars["target_platform"] == 'FIAttached':
@@ -762,6 +957,7 @@ class profiles(object):
                         templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                         templateVars.update(policyData)
 
+                    templateVars["boot_policy"] = templateVars["boot_order_policy"]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    description     = "{templateVars["descr"]}"')
                     print(f'    name            = "{templateVars["name"]}"')
@@ -773,7 +969,7 @@ class profiles(object):
                     if templateVars["target_platform"] == 'FIAttached':
                         print(f'    uuid_pool                  = "{templateVars["uuid_pool"]}"')
                     print(f'    bios_policy                = "{templateVars["bios_policy"]}"')
-                    print(f'    boot_order_policy          = "{templateVars["boot_order_policy"]}"')
+                    print(f'    boot_order_policy          = "{templateVars["boot_policy"]}"')
                     if templateVars["target_platform"] == 'Standalone':
                         print(f'    persistent_memory_policies = "{templateVars["persistent_memory_policy"]}"')
                     if templateVars["target_platform"] == 'FIAttached':
