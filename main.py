@@ -558,9 +558,9 @@ def process_wizard(easy_jsonData, jsonData):
     #  Easy Deploy - VMware M2 Boot Server Profiles
     elif '-_domain_-' in main_menu:
         policy_list = [
-            'quick_start_pools',
-            'quick_start_domain_policies',
-            'quick_start_lan_san_policies',
+            #'quick_start_pools',
+            #'quick_start_domain_policies',
+            #'quick_start_lan_san_policies',
             'quick_start_ucs_chassis',
             'quick_start_ucs_servers',
         ]
@@ -827,17 +827,17 @@ def process_wizard(easy_jsonData, jsonData):
             quick_start(domain_prefix, org, type).lan_san_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'quick_start_vmware_m2':
             quick_start(name_prefix, org, type).vmware_m2()
-            # kwargs = {
-            #     'primary_dns': '208.67.220.220',
-            #     'secondary_dns': '',
-            #     'server_type': 'FIAttached',
-            #     'vlan_policy': 'asgard-ucs',
-            #     'vlans': '1-99,101-199,201-299',
-            #     'vsan_a': 100,
-            #     'vsan_b': 200,
-            #     'fc_ports': [1, 2, 3, 4],
-            #     'mtu':9216
-            # }
+            kwargs = {
+                'primary_dns': '208.67.220.220',
+                'secondary_dns': '',
+                'server_type': 'FIAttached',
+                'vlan_policy': 'asgard-ucs',
+                'vlans': '1-99,101-199,201-299',
+                'vsan_a': 100,
+                'vsan_b': 200,
+                'fc_ports': [1, 2, 3, 4],
+                'mtu':9216
+            }
             kwargs.update({'boot_order_policy':'VMware_M2'})
         elif policy == 'quick_start_vmware_raid1':
             quick_start(name_prefix, org, type).vmware_raid1()

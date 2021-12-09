@@ -1,0 +1,4125 @@
+{
+    "easyucs": {
+       "metadata": [
+          {
+             "easyucs_version": "0.9.8",
+             "imm_migration_version": "1.0.0",
+             "file_type": "config",
+             "uuid": "58f1423f-7e4b-449a-a8e1-c2b974d7b97f",
+             "device_name": "dummy.intersight.com",
+             "device_type": "intersight",
+             "device_uuid": "1b4ef360-4540-443d-be1d-07100681c65c",
+             "origin": "convert",
+             "timestamp": "Tue, 19 Oct 2021 04:53:01",
+             "hash": "9fba6d413d9ba11ef17718dea21fb293116124a16665aa93185d8f39a7951b95"
+          }
+       ]
+    },
+    "config": {
+       "orgs": [
+          {
+             "bios_policies": [
+                {
+                   "cbs_cmn_gnb_nb_iommu": "enabled",
+                   "name": "SRIOV",
+                   "svm_mode": "enabled",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "core_multi_processing": "all",
+                   "descr": "Recommended bios settings for usNIC vNICs",
+                   "direct_cache_access": "enabled",
+                   "enhanced_intel_speed_step_tech": "enabled",
+                   "execute_disable_bit": "disabled",
+                   "intel_hyper_threading_tech": "disabled",
+                   "intel_turbo_boost_tech": "enabled",
+                   "intel_virtualization_technology": "enabled",
+                   "intel_vt_for_directed_io": "enabled",
+                   "intel_vtd_coherency_support": "enabled",
+                   "intel_vtdats_support": "enabled",
+                   "lv_ddr_mode": "performance-mode",
+                   "memory_mapped_io_above4gb": "disabled",
+                   "name": "usNIC",
+                   "numa_optimized": "enabled",
+                   "processor_c1e": "disabled",
+                   "processor_c6report": "disabled",
+                   "select_memory_ras_configuration": "maximum-performance",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "boot_policies": [
+                {
+                   "boot_devices": [
+                      {
+                         "device_name": "1",
+                         "device_type": "local_disk",
+                         "enabled": true
+                      },
+                      {
+                         "device_name": "2_primary",
+                         "device_type": "pxe_boot",
+                         "enabled": true,
+                         "interface_name": "default",
+                         "interface_source": "name",
+                         "ip_type": "None"
+                      },
+                      {
+                         "device_name": "3",
+                         "device_type": "local_cdd",
+                         "enabled": true
+                      }
+                   ],
+                   "boot_mode": "Legacy",
+                   "name": "default",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "boot_devices": [
+                      {
+                         "device_name": "1",
+                         "device_type": "local_disk",
+                         "enabled": true
+                      },
+                      {
+                         "device_name": "2_primary",
+                         "device_type": "pxe_boot",
+                         "enabled": true,
+                         "interface_name": "default",
+                         "interface_source": "name",
+                         "ip_type": "None"
+                      },
+                      {
+                         "device_name": "3",
+                         "device_type": "local_cdd",
+                         "enabled": true
+                      }
+                   ],
+                   "boot_mode": "Uefi",
+                   "name": "default-UEFI",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "boot_devices": [
+                      {
+                         "device_name": "1",
+                         "device_type": "local_cdd",
+                         "enabled": true
+                      }
+                   ],
+                   "boot_mode": "Legacy",
+                   "name": "diag",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "boot_devices": [
+                      {
+                         "device_name": "1_primary",
+                         "device_type": "pxe_boot",
+                         "enabled": true,
+                         "interface_name": "default",
+                         "interface_source": "name",
+                         "ip_type": "None"
+                      }
+                   ],
+                   "boot_mode": "Legacy",
+                   "name": "utility",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "ethernet_adapter_policies": [
+                {
+                   "completion_queue_count": 2,
+                   "descr": "default adapter policy",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 4
+                   },
+                   "name": "default",
+                   "receive_queue_count": 1,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 4
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": false
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 2,
+                   "descr": "Recommended adapter settings for linux",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 4
+                   },
+                   "name": "Linux",
+                   "receive_queue_count": 1,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": false
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 2,
+                   "descr": "Recommended adapter settings for NVMe using RDMA",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 256
+                   },
+                   "name": "Linux-NVMe-RoCE",
+                   "receive_queue_count": 1,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 5,
+                      "enable_rdma_over_converged_ethernet": true,
+                      "memory_regions": 131072,
+                      "queue_pairs": 1024,
+                      "resource_groups": 8,
+                      "version": 2
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 576,
+                   "descr": "Recommended adapter settings for VM Multi Queue Connection with no RDMA",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 256
+                   },
+                   "name": "MQ",
+                   "receive_queue_count": 512,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 5,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 8192,
+                      "queue_pairs": 64,
+                      "resource_groups": 2
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 64,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 576,
+                   "descr": "Recommended adapter settings for MultiQueue with RDMA",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 512
+                   },
+                   "name": "MQ-SMBd",
+                   "receive_queue_count": 512,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 5,
+                      "enable_rdma_over_converged_ethernet": true,
+                      "memory_regions": 65536,
+                      "queue_pairs": 256,
+                      "resource_groups": 2,
+                      "version": 2
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 64,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 5,
+                   "descr": "Recommended adapter settings for SMB Client",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 8
+                   },
+                   "name": "SMBClient",
+                   "receive_queue_count": 4,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 5,
+                      "enable_rdma_over_converged_ethernet": true,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32,
+                      "version": 1
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 5,
+                   "descr": "Recommended adapter settings for SMB server",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 8
+                   },
+                   "name": "SMBServer",
+                   "receive_queue_count": 4,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 5,
+                      "enable_rdma_over_converged_ethernet": true,
+                      "memory_regions": 131072,
+                      "queue_pairs": 2048,
+                      "resource_groups": 32,
+                      "version": 1
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 2,
+                   "descr": "Recommended adapter settings for Solaris",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 4
+                   },
+                   "name": "Solaris",
+                   "receive_queue_count": 1,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": false
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 5,
+                   "descr": "Recommended adapter settings for Win8 SRIOV-VMFEX PF",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 32
+                   },
+                   "name": "SRIOV",
+                   "receive_queue_count": 4,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 12,
+                   "descr": "Recommended adapter settings for usNIC Connection",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 6
+                   },
+                   "name": "usNIC",
+                   "receive_queue_count": 6,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 6,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 0
+                },
+                {
+                   "completion_queue_count": 2000,
+                   "descr": "Recommended adapter settings for usNIC Oracle RAC Connection",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": true,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 1024
+                   },
+                   "name": "usNICOracleRAC",
+                   "receive_queue_count": 1000,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1000,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 0
+                },
+                {
+                   "completion_queue_count": 2,
+                   "descr": "Recommended adapter settings for VMWare",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 4
+                   },
+                   "name": "VMWare",
+                   "receive_queue_count": 1,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": false
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 8,
+                   "descr": "Recommended adapter settings for VMWare pass-thru (dynamic vNIC)",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSI",
+                      "interrupt_timer": 125,
+                      "interrupts": 12
+                   },
+                   "name": "VMWarePassThru",
+                   "receive_queue_count": 4,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 4,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 11,
+                   "descr": "Recommended adapter settings for Azure Stack",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": true,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 256
+                   },
+                   "name": "WIN-AzureStack",
+                   "receive_queue_count": 8,
+                   "receive_ring_size": 4096,
+                   "roce_settings": {
+                      "class_of_service": 5,
+                      "enable_rdma_over_converged_ethernet": true,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 2,
+                      "version": 2
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 3,
+                   "transmit_ring_size": 1024,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 5,
+                   "descr": "Recommended adapter settings for Windows high performance and networking",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": true,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 512
+                   },
+                   "name": "Win-HPN",
+                   "receive_queue_count": 4,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 5,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 5,
+                   "descr": "Recommended adapter settings for Windows high performance and networking with RoCE V2",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": true,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 512
+                   },
+                   "name": "Win-HPN-SMBd",
+                   "receive_queue_count": 4,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 5,
+                      "enable_rdma_over_converged_ethernet": true,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 2,
+                      "version": 2
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                },
+                {
+                   "completion_queue_count": 5,
+                   "descr": "Recommended adapter settings for Windows",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 8
+                   },
+                   "name": "Windows",
+                   "receive_queue_count": 4,
+                   "receive_ring_size": 512,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 32
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                }
+             ],
+             "ethernet_network_control_policies": [
+                {
+                   "action_on_uplink_fail": "linkDown",
+                   "cdp_enable": false,
+                   "lldp_receive_enable": true,
+                   "lldp_transmit_enable": true,
+                   "mac_register_mode": "nativeVlanOnly",
+                   "mac_security_forge": "allow",
+                   "name": "default_appliance",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "action_on_uplink_fail": "linkDown",
+                   "cdp_enable": false,
+                   "lldp_receive_enable": false,
+                   "lldp_transmit_enable": false,
+                   "mac_register_mode": "nativeVlanOnly",
+                   "mac_security_forge": "allow",
+                   "name": "default",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "ethernet_network_group_policies": [
+                {
+                   "allowed_vlans": "2101",
+                   "name": "MGMT",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "allowed_vlans": "2104,2103",
+                   "name": "Storage",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "allowed_vlans": "2102",
+                   "name": "vMotion",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "allowed_vlans": "2701,2702,2703,2704,2705,2706,2707,2708,2709,2710,2711,2712,2713,2714,2715,2716,2717,2718,2719,2720,2721,2722,2723,2724,2725,2726,2727,2728,2729,2730,2731,2732,2733,2734,2735,2736,2737,2738,2739,2740,2741,2742,2743,2744,2745,2746,2747,2748,2749,2750,2751,2752,2753,2754,2755,2756,2757,2758,2759,2760,2761,2762,2763,2764,2765,2766,2767,2768,2769,2770,2771,2772,2773,2774,2775,2776,2777,2778,2779,2780,2781,2782,2783,2784,2785,2786,2787,2788,2789,2790,2791,2792,2793,2794,2795,2796,2797,2798,2799",
+                   "name": "vSwitch",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "fibre_channel_adapter_policies": [
+                {
+                   "descr": "default adapter policy",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 30000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "default",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 64,
+                   "scsi_io_queue_count": 1,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                },
+                {
+                   "descr": "Recommended adapter settings for FC-NVMe Initiator Mode",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 30000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "FCNVMeInitiator",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 64,
+                   "scsi_io_queue_count": 16,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                },
+                {
+                   "descr": "Recommended adapter settings for FC-NVMe Target Mode",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 30000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "FCNVMeTarget",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 2048,
+                   "scsi_io_queue_count": 16,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                },
+                {
+                   "descr": "Recommended adapter settings for FC Initiator Mode",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 10000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "Initiator",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 64,
+                   "scsi_io_queue_count": 1,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                },
+                {
+                   "descr": "Recommended adapter settings for Linux",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 30000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "Linux",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 64,
+                   "scsi_io_queue_count": 1,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                },
+                {
+                   "descr": "Recommended adapter settings for Solaris",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 30000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "Solaris",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 64,
+                   "scsi_io_queue_count": 1,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                },
+                {
+                   "descr": "Recommended adapter settings for FC Target Mode",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 30000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "Target",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 2048,
+                   "scsi_io_queue_count": 1,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                },
+                {
+                   "descr": "Recommended adapter settings for VMWare",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 10000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "VMWare",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 64,
+                   "scsi_io_queue_count": 1,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                },
+                {
+                   "descr": "Recommended adapter settings for Windows",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 30000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "Windows",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 64,
+                   "scsi_io_queue_count": 1,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                },
+                {
+                   "descr": "Recommended adapter settings for Windows SAN Boot",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 5000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "WindowsBoot",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 4000,
+                   "receive_ring_size": 64,
+                   "scsi_io_queue_count": 1,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                }
+             ],
+             "flow_control_policies": [
+                {
+                   "name": "default",
+                   "priority": "auto",
+                   "receive": "Disabled",
+                   "send": "Disabled",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "iscsi_adapter_policies": [
+                {
+                   "dhcp_timeout": 60,
+                   "lun_busy_retry_count": 0,
+                   "name": "default",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_connection_timeout": 0
+                }
+             ],
+             "link_aggregation_policies": [
+                {
+                   "lacp_rate": "normal",
+                   "name": "default",
+                   "suspend_individual": false,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "link_control_policies": [
+                {
+                   "admin_state": "Disabled",
+                   "mode": "normal",
+                   "name": "default",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "multicast_policies": [
+                {
+                   "igmp_snooping_querier_state": "Disabled",
+                   "igmp_snooping_state": "Enabled",
+                   "name": "default",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "igmp_snooping_querier_state": "Disabled",
+                   "igmp_snooping_state": "Enabled",
+                   "name": "HyperFlex",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "name": "wakanda-ucs",
+             "network_connectivity_policies": [
+                {
+                   "alternate_ipv4_dns_server": "10.101.128.16",
+                   "enable_dynamic_dns": false,
+                   "name": "wakanda-ucs",
+                   "obtain_ipv4_dns_from_dhcp": false,
+                   "preferred_ipv4_dns_server": "10.101.128.15",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "port_policies": [
+                {
+                   "device_model": "UCS-FI-6454",
+                   "lan_port_channels": [
+                      {
+                         "admin_speed": "40Gbps",
+                         "flow_control_policy": "default",
+                         "interfaces": [
+                            {
+                               "port_id": 39,
+                               "slot_id": 1
+                            },
+                            {
+                               "port_id": 40,
+                               "slot_id": 1
+                            }
+                         ],
+                         "link_aggregation_policy": "default",
+                         "link_control_policy": "default",
+                         "pc_id": 39
+                      }
+                   ],
+                   "name": "wakanda-ucs-A",
+                   "server_ports": [
+                      {
+                         "port_id": 9,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 10,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 11,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 12,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 13,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 14,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 15,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 16,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 17,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 18,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 19,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 20,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 21,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 22,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 23,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 24,
+                         "slot_id": 1
+                      }
+                   ],
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "device_model": "UCS-FI-6454",
+                   "lan_port_channels": [
+                      {
+                         "admin_speed": "40Gbps",
+                         "flow_control_policy": "default",
+                         "interfaces": [
+                            {
+                               "port_id": 39,
+                               "slot_id": 1
+                            },
+                            {
+                               "port_id": 40,
+                               "slot_id": 1
+                            }
+                         ],
+                         "link_aggregation_policy": "default",
+                         "link_control_policy": "default",
+                         "pc_id": 39
+                      }
+                   ],
+                   "name": "wakanda-ucs-B",
+                   "server_ports": [
+                      {
+                         "port_id": 9,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 10,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 11,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 12,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 13,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 14,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 15,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 16,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 17,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 18,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 19,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 20,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 21,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 22,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 23,
+                         "slot_id": 1
+                      },
+                      {
+                         "port_id": 24,
+                         "slot_id": 1
+                      }
+                   ],
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "power_policies": [
+                {
+                   "name": "wakanda-ucs",
+                   "power_redundancy": "N+1"
+                }
+             ],
+             "snmp_policies": [
+                {
+                   "enabled": false,
+                   "name": "wakanda-ucs",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "switch_control_policies": [
+                {
+                   "link_control_global_settings": {
+                      "message_interval": 15,
+                      "recovery_action": "none"
+                   },
+                   "mac_address_table_aging": "Default",
+                   "name": "wakanda-ucs",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "vlan_port_count_optimization": false
+                }
+             ],
+             "syslog_policies": [
+                {
+                   "local_logging": {
+                      "file": {
+                         "min_severity": "critical"
+                      }
+                   },
+                   "name": "wakanda-ucs",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "system_qos_policies": [
+                {
+                   "classes": [
+                      {
+                         "cos": 1,
+                         "mtu": 9216,
+                         "multicast_optimized": false,
+                         "packet_drop": true,
+                         "priority": "Bronze",
+                         "state": "Enabled",
+                         "weight": 1
+                      },
+                      {
+                         "cos": 4,
+                         "mtu": 9216,
+                         "multicast_optimized": false,
+                         "packet_drop": true,
+                         "priority": "Gold",
+                         "state": "Enabled",
+                         "weight": 4
+                      },
+                      {
+                         "cos": 5,
+                         "mtu": 9216,
+                         "multicast_optimized": false,
+                         "packet_drop": false,
+                         "priority": "Platinum",
+                         "state": "Enabled",
+                         "weight": 4
+                      },
+                      {
+                         "cos": 2,
+                         "mtu": 9216,
+                         "multicast_optimized": true,
+                         "packet_drop": true,
+                         "priority": "Silver",
+                         "state": "Enabled",
+                         "weight": 1
+                      },
+                      {
+                         "cos": 3,
+                         "mtu": 2240,
+                         "multicast_optimized": false,
+                         "packet_drop": false,
+                         "priority": "FC",
+                         "state": "Enabled",
+                         "weight": 6
+                      },
+                      {
+                         "cos": 255,
+                         "mtu": 9216,
+                         "multicast_optimized": false,
+                         "packet_drop": true,
+                         "priority": "Best Effort",
+                         "state": "Enabled",
+                         "weight": 1
+                      }
+                   ],
+                   "name": "wakanda-ucs",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "thermal_policies": [
+                {
+                   "fan_control_mode": "Balanced",
+                   "name": "default",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "ucs_domain_profiles": [
+                {
+                   "name": "wakanda-ucs",
+                   "network_connectivity_policy": "wakanda-ucs",
+                   "port_policies": {
+                      "fabric_a": "wakanda-ucs-A",
+                      "fabric_b": "wakanda-ucs-B"
+                   },
+                   "snmp_policy": "wakanda-ucs",
+                   "switch_control_policy": "wakanda-ucs",
+                   "syslog_policy": "wakanda-ucs",
+                   "system_qos_policy": "wakanda-ucs",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "vlan_policies": {
+                      "fabric_a": "wakanda-ucs",
+                      "fabric_b": "wakanda-ucs"
+                   },
+                   "vsan_policies": {
+                      "fabric_a": "wakanda-ucs-A",
+                      "fabric_b": "wakanda-ucs-B"
+                   }
+                }
+             ],
+             "virtual_kvm_policies": [
+                {
+                   "enable_video_encryption": false,
+                   "name": "default",
+                   "remote_port": 2068,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "vlan_policies": [
+                {
+                   "name": "wakanda-ucs",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "vlans": [
+                      {
+                         "id": 1,
+                         "multicast_policy": "default",
+                         "name": "default",
+                         "native_vlan": true
+                      },
+                      {
+                         "id": 2101,
+                         "multicast_policy": "HyperFlex",
+                         "name": "Wakanda_Prod_Mgmt",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2102,
+                         "multicast_policy": "HyperFlex",
+                         "name": "Wakanda_vMotion",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2103,
+                         "multicast_policy": "HyperFlex",
+                         "name": "Wakanda_Storage",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2104,
+                         "multicast_policy": "HyperFlex",
+                         "name": "hx-inband-iscsi-2104",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2110,
+                         "multicast_policy": "HyperFlex",
+                         "name": "Panther-VL2110",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2700,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2700",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2701,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2701",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2702,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2702",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2703,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2703",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2704,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2704",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2705,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2705",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2706,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2706",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2707,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2707",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2708,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2708",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2709,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2709",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2710,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2710",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2711,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2711",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2712,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2712",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2713,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2713",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2714,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2714",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2715,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2715",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2716,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2716",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2717,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2717",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2718,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2718",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2719,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2719",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2720,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2720",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2721,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2721",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2722,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2722",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2723,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2723",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2724,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2724",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2725,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2725",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2726,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2726",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2727,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2727",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2728,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2728",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2729,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2729",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2730,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2730",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2731,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2731",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2732,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2732",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2733,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2733",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2734,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2734",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2735,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2735",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2736,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2736",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2737,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2737",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2738,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2738",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2739,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2739",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2740,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2740",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2741,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2741",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2742,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2742",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2743,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2743",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2744,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2744",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2745,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2745",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2746,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2746",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2747,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2747",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2748,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2748",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2749,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2749",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2750,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2750",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2751,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2751",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2752,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2752",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2753,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2753",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2754,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2754",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2755,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2755",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2756,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2756",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2757,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2757",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2758,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2758",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2759,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2759",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2760,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2760",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2761,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2761",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2762,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2762",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2763,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2763",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2764,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2764",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2765,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2765",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2766,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2766",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2767,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2767",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2768,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2768",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2769,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2769",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2770,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2770",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2771,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2771",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2772,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2772",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2773,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2773",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2774,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2774",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2775,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2775",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2776,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2776",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2777,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2777",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2778,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2778",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2779,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2779",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2780,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2780",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2781,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2781",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2782,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2782",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2783,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2783",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2784,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2784",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2785,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2785",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2786,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2786",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2787,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2787",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2788,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2788",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2789,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2789",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2790,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2790",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2791,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2791",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2792,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2792",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2793,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2793",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2794,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2794",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2795,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2795",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2796,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2796",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2797,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2797",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2798,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2798",
+                         "native_vlan": false
+                      },
+                      {
+                         "id": 2799,
+                         "multicast_policy": "default",
+                         "name": "Wakanda-ACI-Dynamic2799",
+                         "native_vlan": false
+                      }
+                   ]
+                }
+             ],
+             "vsan_policies": [
+                {
+                   "name": "wakanda-ucs-A",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "uplink_trunking": false,
+                   "vsans": [
+                      {
+                         "fcoe_vlan_id": 4048,
+                         "id": 1,
+                         "name": "default",
+                         "zoning": "Disabled"
+                      },
+                      {
+                         "fcoe_vlan_id": 100,
+                         "id": 100,
+                         "name": "Fabric_A",
+                         "zoning": "Disabled"
+                      }
+                   ]
+                },
+                {
+                   "name": "wakanda-ucs-B",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "uplink_trunking": false,
+                   "vsans": [
+                      {
+                         "fcoe_vlan_id": 4048,
+                         "id": 1,
+                         "name": "default",
+                         "zoning": "Disabled"
+                      },
+                      {
+                         "fcoe_vlan_id": 200,
+                         "id": 200,
+                         "name": "Fabric_B",
+                         "zoning": "Disabled"
+                      }
+                   ]
+                }
+             ]
+          },
+          {
+             "bios_policies": [
+                {
+                   "altitude": "auto",
+                   "console_redirection": "serial-port-a",
+                   "cpu_energy_performance": "performance",
+                   "cpu_performance": "hpc",
+                   "cpu_power_management": "performance",
+                   "direct_cache_access": "enabled",
+                   "imc_interleave": "Auto",
+                   "intel_virtualization_technology": "enabled",
+                   "intel_vt_for_directed_io": "enabled",
+                   "intel_vtd_coherency_support": "disabled",
+                   "intel_vtd_interrupt_remapping": "enabled",
+                   "llc_prefetch": "disabled",
+                   "lom_port0state": "disabled",
+                   "lom_port1state": "disabled",
+                   "lom_ports_all_state": "disabled",
+                   "memory_mapped_io_above4gb": "enabled",
+                   "name": "hx-bios-af",
+                   "out_of_band_mgmt_port": "enabled",
+                   "processor_c1e": "disabled",
+                   "processor_c3report": "disabled",
+                   "processor_c6report": "disabled",
+                   "processor_cstate": "disabled",
+                   "serial_port_aenable": "enabled",
+                   "snc": "disabled",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tpm_control": "enabled",
+                   "txt_support": "enabled",
+                   "vmd_enable": "enabled",
+                   "xpt_prefetch": "disabled"
+                },
+                {
+                   "altitude": "auto",
+                   "console_redirection": "serial-port-a",
+                   "cpu_energy_performance": "performance",
+                   "cpu_performance": "hpc",
+                   "cpu_power_management": "performance",
+                   "direct_cache_access": "enabled",
+                   "intel_virtualization_technology": "enabled",
+                   "intel_vt_for_directed_io": "enabled",
+                   "intel_vtd_coherency_support": "disabled",
+                   "intel_vtd_interrupt_remapping": "enabled",
+                   "memory_mapped_io_above4gb": "enabled",
+                   "name": "hx-bios-m4",
+                   "out_of_band_mgmt_port": "enabled",
+                   "processor_c1e": "disabled",
+                   "processor_c3report": "disabled",
+                   "processor_c6report": "disabled",
+                   "processor_cstate": "disabled",
+                   "serial_port_aenable": "enabled",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tpm_control": "enabled",
+                   "txt_support": "enabled"
+                },
+                {
+                   "altitude": "auto",
+                   "console_redirection": "serial-port-a",
+                   "cpu_energy_performance": "performance",
+                   "cpu_performance": "hpc",
+                   "cpu_power_management": "performance",
+                   "direct_cache_access": "enabled",
+                   "imc_interleave": "Auto",
+                   "intel_virtualization_technology": "enabled",
+                   "intel_vt_for_directed_io": "enabled",
+                   "intel_vtd_coherency_support": "disabled",
+                   "intel_vtd_interrupt_remapping": "enabled",
+                   "llc_prefetch": "disabled",
+                   "lom_port0state": "disabled",
+                   "lom_port1state": "disabled",
+                   "lom_ports_all_state": "disabled",
+                   "memory_mapped_io_above4gb": "enabled",
+                   "name": "hx-bios-m5",
+                   "out_of_band_mgmt_port": "enabled",
+                   "processor_c1e": "disabled",
+                   "processor_c3report": "disabled",
+                   "processor_c6report": "disabled",
+                   "processor_cstate": "disabled",
+                   "serial_port_aenable": "enabled",
+                   "snc": "disabled",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tpm_control": "enabled",
+                   "txt_support": "enabled",
+                   "xpt_prefetch": "disabled"
+                }
+             ],
+             "boot_policies": [
+                {
+                   "boot_devices": [
+                      {
+                         "device_name": "1",
+                         "device_type": "local_cdd",
+                         "enabled": true
+                      },
+                      {
+                         "device_name": "2",
+                         "device_type": "local_disk",
+                         "enabled": true
+                      }
+                   ],
+                   "boot_mode": "Uefi",
+                   "descr": "Recommended boot policy for HyperFlex servers with Any Local Disk",
+                   "enable_secure_boot": true,
+                   "name": "HyperFlex-anyld",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "boot_devices": [
+                      {
+                         "device_name": "1",
+                         "device_type": "local_cdd",
+                         "enabled": true
+                      },
+                      {
+                         "device_name": "2",
+                         "device_type": "local_disk",
+                         "enabled": true
+                      }
+                   ],
+                   "boot_mode": "Uefi",
+                   "descr": "Recommended boot policy for HyperFlex servers with MegaRAID Controller and M3/M4 servers with any local disks",
+                   "enable_secure_boot": true,
+                   "name": "HyperFlex-ldr1",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "boot_devices": [
+                      {
+                         "device_name": "1",
+                         "device_type": "local_cdd",
+                         "enabled": true
+                      },
+                      {
+                         "device_name": "2",
+                         "device_type": "local_disk",
+                         "enabled": true
+                      }
+                   ],
+                   "boot_mode": "Uefi",
+                   "descr": "Recommended boot policy for HyperFlex servers with M.2 PCH Controller",
+                   "name": "HyperFlex-m2pch",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "boot_devices": [
+                      {
+                         "device_name": "1",
+                         "device_type": "local_cdd",
+                         "enabled": true
+                      },
+                      {
+                         "device_name": "2",
+                         "device_type": "pch_storage",
+                         "enabled": true
+                      }
+                   ],
+                   "boot_mode": "Uefi",
+                   "descr": "Recommended boot policy for HyperFlex servers with M.2 Raid Controller",
+                   "enable_secure_boot": true,
+                   "name": "HyperFlex-m2r1",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "boot_devices": [
+                      {
+                         "device_name": "1",
+                         "device_type": "local_cdd",
+                         "enabled": true
+                      },
+                      {
+                         "device_name": "2",
+                         "device_type": "sd_card",
+                         "enabled": true
+                      }
+                   ],
+                   "boot_mode": "Uefi",
+                   "descr": "Recommended boot policy for HyperFlex servers with SD Card",
+                   "name": "HyperFlex-sd",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "ethernet_adapter_policies": [
+                {
+                   "completion_queue_count": 5,
+                   "descr": "Recommended adapter policy for HyperFlex servers",
+                   "enable_accelerated_receive_flow_steering": false,
+                   "enable_advanced_filter": false,
+                   "enable_geneve_offload": false,
+                   "enable_interrupt_scaling": false,
+                   "enable_nvgre_offload": false,
+                   "enable_vxlan_offload": false,
+                   "interrupt_settings": {
+                      "interrupt_coalescing_type": "Min",
+                      "interrupt_mode": "MSIx",
+                      "interrupt_timer": 125,
+                      "interrupts": 7
+                   },
+                   "name": "HyperFlex",
+                   "receive_queue_count": 4,
+                   "receive_ring_size": 4096,
+                   "roce_settings": {
+                      "class_of_service": 6,
+                      "enable_rdma_over_converged_ethernet": false,
+                      "memory_regions": 131072,
+                      "queue_pairs": 256,
+                      "resource_groups": 4
+                   },
+                   "rss_settings": {
+                      "enable_receive_side_scaling": true
+                   },
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "tcp_offload_settings": {
+                      "enable_large_receive_offload": true,
+                      "enable_large_send_offload": true,
+                      "enable_rx_checksum_offload": true,
+                      "enable_tx_checksum_offload": true
+                   },
+                   "transmit_queue_count": 1,
+                   "transmit_ring_size": 256,
+                   "uplink_failback_timeout": 5
+                }
+             ],
+             "ethernet_network_control_policies": [
+                {
+                   "action_on_uplink_fail": "linkDown",
+                   "cdp_enable": true,
+                   "descr": "Network Control policy for infrastructure vNICs HyperFlex servers",
+                   "lldp_receive_enable": false,
+                   "lldp_transmit_enable": false,
+                   "mac_register_mode": "nativeVlanOnly",
+                   "mac_security_forge": "allow",
+                   "name": "HyperFlex-infra",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "action_on_uplink_fail": "linkDown",
+                   "cdp_enable": false,
+                   "descr": "Network Control policy for VM vNICs on HyperFlex servers",
+                   "lldp_receive_enable": true,
+                   "lldp_transmit_enable": true,
+                   "mac_register_mode": "nativeVlanOnly",
+                   "mac_security_forge": "allow",
+                   "name": "HyperFlex-vm",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "ethernet_network_group_policies": [
+                {
+                   "allowed_vlans": "2101",
+                   "name": "MGMT",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "allowed_vlans": "2102",
+                   "name": "vMotion",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "allowed_vlans": "2104,2103",
+                   "name": "Storage",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "allowed_vlans": "2701,2702,2703,2704,2705,2706,2707,2708,2709,2710,2711,2712,2713,2714,2715,2716,2717,2718,2719,2720,2721,2722,2723,2724,2725,2726,2727,2728,2729,2730,2731,2732,2733,2734,2735,2736,2737,2738,2739,2740,2741,2742,2743,2744,2745,2746,2747,2748,2749,2750,2751,2752,2753,2754,2755,2756,2757,2758,2759,2760,2761,2762,2763,2764,2765,2766,2767,2768,2769,2770,2771,2772,2773,2774,2775,2776,2777,2778,2779,2780,2781,2782,2783,2784,2785,2786,2787,2788,2789,2790,2791,2792,2793,2794,2795,2796,2797,2798,2799",
+                   "name": "vSwitch",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "ethernet_qos_policies": [
+                {
+                   "burst": 10240,
+                   "enable_trust_host_cos": false,
+                   "name": "best-effort",
+                   "priority": "Best Effort",
+                   "rate_limit": 0,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "burst": 10240,
+                   "enable_trust_host_cos": false,
+                   "name": "bronze",
+                   "priority": "Bronze",
+                   "rate_limit": 0,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "burst": 10240,
+                   "enable_trust_host_cos": false,
+                   "name": "gold",
+                   "priority": "Gold",
+                   "rate_limit": 0,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "burst": 10240,
+                   "enable_trust_host_cos": false,
+                   "name": "platinum",
+                   "priority": "Platinum",
+                   "rate_limit": 0,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "burst": 10240,
+                   "enable_trust_host_cos": false,
+                   "name": "silver",
+                   "priority": "Silver",
+                   "rate_limit": 0,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "burst": 10240,
+                   "enable_trust_host_cos": false,
+                   "name": "default",
+                   "priority": "Best Effort",
+                   "rate_limit": 0,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "burst": 10240,
+                   "enable_trust_host_cos": false,
+                   "mtu": 9000,
+                   "name": "bronze_mtu9000",
+                   "priority": "Bronze",
+                   "rate_limit": 0
+                },
+                {
+                   "burst": 10240,
+                   "enable_trust_host_cos": false,
+                   "mtu": 9000,
+                   "name": "platinum_mtu9000",
+                   "priority": "Platinum",
+                   "rate_limit": 0
+                },
+                {
+                   "burst": 10240,
+                   "enable_trust_host_cos": false,
+                   "mtu": 9000,
+                   "name": "gold_mtu9000",
+                   "priority": "Gold",
+                   "rate_limit": 0
+                }
+             ],
+             "fibre_channel_adapter_policies": [
+                {
+                   "descr": "default adapter policy",
+                   "error_recovery_settings": {
+                      "enable_fcp_error_recovery": false,
+                      "io_retry_timeout": 5,
+                      "link_down_timeout": 30000,
+                      "port_down_io_retry": 30,
+                      "port_down_timeout": 30000
+                   },
+                   "flogi_retries": 8,
+                   "flogi_timeout": 4000,
+                   "interrupt_settings": {
+                      "interrupt_mode": "MSIx"
+                   },
+                   "io_throttle_count": 256,
+                   "lun_queue_depth": 20,
+                   "max_luns_per_target": 1024,
+                   "name": "default",
+                   "plogi_retries": 8,
+                   "plogi_timeout": 20000,
+                   "receive_ring_size": 64,
+                   "scsi_io_queue_count": 1,
+                   "scsi_io_ring_size": 512,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "transmit_ring_size": 64
+                }
+             ],
+             "fibre_channel_network_policies": [
+                {
+                   "default_vlan": 100,
+                   "name": "Fabric_A_A",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "vsan_id": 100
+                },
+                {
+                   "default_vlan": 200,
+                   "name": "Fabric_B_B",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "vsan_id": 200
+                }
+             ],
+             "fibre_channel_qos_policies": [
+                {
+                   "burst": 10240,
+                   "name": "default",
+                   "rate_limit": 0,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "ip_pools": [
+                {
+                   "ipv4_blocks": [
+                      {
+                         "from": "192.168.65.175",
+                         "to": "192.168.65.200"
+                      }
+                   ],
+                   "ipv4_configuration": {
+                      "gateway": "192.168.64.1",
+                      "netmask": "255.255.254.0"
+                   },
+                   "name": "hx-ext-mgmt",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "lan_connectivity_policies": [
+                {
+                   "descr": "Recommended LAN connectivity policy for HyperFlex servers",
+                   "name": "HyperFlex",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "vnics": [
+                      {
+                         "cdn_source": "vnic",
+                         "enable_failover": false,
+                         "ethernet_adapter_policy": "HyperFlex",
+                         "ethernet_network_control_policy": "HyperFlex-infra",
+                         "ethernet_network_group_policy": "MGMT",
+                         "ethernet_qos_policy": "silver",
+                         "mac_address_allocation_type": "pool",
+                         "mac_address_pool": "hv-mgmt-a",
+                         "name": "hv-mgmt-a",
+                         "pci_order": 1,
+                         "slot_id": "MLOM",
+                         "switch_id": "A"
+                      },
+                      {
+                         "cdn_source": "vnic",
+                         "enable_failover": false,
+                         "ethernet_adapter_policy": "HyperFlex",
+                         "ethernet_network_control_policy": "HyperFlex-infra",
+                         "ethernet_network_group_policy": "MGMT",
+                         "ethernet_qos_policy": "silver",
+                         "mac_address_allocation_type": "pool",
+                         "mac_address_pool": "hv-mgmt-b",
+                         "name": "hv-mgmt-b",
+                         "pci_order": 2,
+                         "slot_id": "MLOM",
+                         "switch_id": "B"
+                      },
+                      {
+                         "cdn_source": "vnic",
+                         "enable_failover": false,
+                         "ethernet_adapter_policy": "HyperFlex",
+                         "ethernet_network_control_policy": "HyperFlex-infra",
+                         "ethernet_network_group_policy": "Storage",
+                         "ethernet_qos_policy": "platinum_mtu9000",
+                         "mac_address_allocation_type": "pool",
+                         "mac_address_pool": "storage-data-a",
+                         "name": "storage-data-a",
+                         "pci_order": 3,
+                         "slot_id": "MLOM",
+                         "switch_id": "A"
+                      },
+                      {
+                         "cdn_source": "vnic",
+                         "enable_failover": false,
+                         "ethernet_adapter_policy": "HyperFlex",
+                         "ethernet_network_control_policy": "HyperFlex-infra",
+                         "ethernet_network_group_policy": "Storage",
+                         "ethernet_qos_policy": "platinum_mtu9000",
+                         "mac_address_allocation_type": "pool",
+                         "mac_address_pool": "storage-data-b",
+                         "name": "storage-data-b",
+                         "pci_order": 4,
+                         "slot_id": "MLOM",
+                         "switch_id": "B"
+                      },
+                      {
+                         "cdn_source": "vnic",
+                         "enable_failover": false,
+                         "ethernet_adapter_policy": "HyperFlex",
+                         "ethernet_network_control_policy": "HyperFlex-vm",
+                         "ethernet_network_group_policy": "vSwitch",
+                         "ethernet_qos_policy": "gold_mtu9000",
+                         "mac_address_allocation_type": "pool",
+                         "mac_address_pool": "vm-network-a",
+                         "name": "vm-network-a",
+                         "pci_order": 5,
+                         "slot_id": "MLOM",
+                         "switch_id": "A"
+                      },
+                      {
+                         "cdn_source": "vnic",
+                         "enable_failover": false,
+                         "ethernet_adapter_policy": "HyperFlex",
+                         "ethernet_network_control_policy": "HyperFlex-vm",
+                         "ethernet_network_group_policy": "vSwitch",
+                         "ethernet_qos_policy": "gold_mtu9000",
+                         "mac_address_allocation_type": "pool",
+                         "mac_address_pool": "vm-network-b",
+                         "name": "vm-network-b",
+                         "pci_order": 6,
+                         "slot_id": "MLOM",
+                         "switch_id": "B"
+                      },
+                      {
+                         "cdn_source": "vnic",
+                         "enable_failover": false,
+                         "ethernet_adapter_policy": "HyperFlex",
+                         "ethernet_network_control_policy": "HyperFlex-infra",
+                         "ethernet_network_group_policy": "vMotion",
+                         "ethernet_qos_policy": "bronze_mtu9000",
+                         "mac_address_allocation_type": "pool",
+                         "mac_address_pool": "hv-vmotion-a",
+                         "name": "hv-vmotion-a",
+                         "pci_order": 7,
+                         "slot_id": "MLOM",
+                         "switch_id": "A"
+                      },
+                      {
+                         "cdn_source": "vnic",
+                         "enable_failover": false,
+                         "ethernet_adapter_policy": "HyperFlex",
+                         "ethernet_network_control_policy": "HyperFlex-infra",
+                         "ethernet_network_group_policy": "vMotion",
+                         "ethernet_qos_policy": "bronze_mtu9000",
+                         "mac_address_allocation_type": "pool",
+                         "mac_address_pool": "hv-vmotion-b",
+                         "name": "hv-vmotion-b",
+                         "pci_order": 8,
+                         "slot_id": "MLOM",
+                         "switch_id": "B"
+                      }
+                   ]
+                }
+             ],
+             "mac_pools": [
+                {
+                   "mac_blocks": [
+                      {
+                         "from": "00:25:B5:65:A1:01",
+                         "to": "00:25:B5:65:A1:64"
+                      }
+                   ],
+                   "name": "hv-mgmt-a",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "mac_blocks": [
+                      {
+                         "from": "00:25:B5:65:B2:01",
+                         "to": "00:25:B5:65:B2:64"
+                      }
+                   ],
+                   "name": "hv-mgmt-b",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "mac_blocks": [
+                      {
+                         "from": "00:25:B5:65:A7:01",
+                         "to": "00:25:B5:65:A7:64"
+                      }
+                   ],
+                   "name": "hv-vmotion-a",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "mac_blocks": [
+                      {
+                         "from": "00:25:B5:65:B8:01",
+                         "to": "00:25:B5:65:B8:64"
+                      }
+                   ],
+                   "name": "hv-vmotion-b",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "mac_blocks": [
+                      {
+                         "from": "00:25:B5:65:A3:01",
+                         "to": "00:25:B5:65:A3:64"
+                      }
+                   ],
+                   "name": "storage-data-a",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "mac_blocks": [
+                      {
+                         "from": "00:25:B5:65:B4:01",
+                         "to": "00:25:B5:65:B4:64"
+                      }
+                   ],
+                   "name": "storage-data-b",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "mac_blocks": [
+                      {
+                         "from": "00:25:B5:65:A5:01",
+                         "to": "00:25:B5:65:A5:64"
+                      }
+                   ],
+                   "name": "vm-network-a",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                },
+                {
+                   "mac_blocks": [
+                      {
+                         "from": "00:25:B5:65:B6:01",
+                         "to": "00:25:B5:65:B6:64"
+                      }
+                   ],
+                   "name": "vm-network-b",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "name": "wakanda-ucs_Panther",
+             "san_connectivity_policies": [
+                {
+                   "descr": "SAN Connectivity Policy for Hyperflex",
+                   "name": "Hyperflex",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "vhbas": [
+                      {
+                         "fibre_channel_adapter_policy": "default",
+                         "fibre_channel_network_policy": "Fabric_A_A",
+                         "fibre_channel_qos_policy": "default",
+                         "name": "hx-ext-fc-a",
+                         "pci_order": 9,
+                         "slot_id": "MLOM",
+                         "switch_id": "A",
+                         "wwpn_allocation_type": "pool",
+                         "wwpn_pool": "hx-ext-storage-fc-a"
+                      },
+                      {
+                         "fibre_channel_adapter_policy": "default",
+                         "fibre_channel_network_policy": "Fabric_B_B",
+                         "fibre_channel_qos_policy": "default",
+                         "name": "hx-ext-fc-b",
+                         "pci_order": 10,
+                         "slot_id": "MLOM",
+                         "switch_id": "B",
+                         "wwpn_allocation_type": "pool",
+                         "wwpn_pool": "hx-ext-storage-fc-b"
+                      }
+                   ],
+                   "wwnn_allocation_type": "pool",
+                   "wwnn_pool": "hx-ext-storage-fc"
+                }
+             ],
+             "sd_card_policies": [
+                {
+                   "descr": "Recommended Local Disk policy for HyperFlex servers with FlexFlash Enabled",
+                   "name": "hx-flex-enabled",
+                   "partitions": [
+                      {
+                         "type": "OS",
+                         "virtual_drives": [
+                            {
+                               "enable": true,
+                               "name": "Hypervisor",
+                               "object_type": "Operating_System"
+                            }
+                         ]
+                      }
+                   ],
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "serial_over_lan_policies": [
+                {
+                   "baud_rate": 115200,
+                   "descr": "Recommended Serial over LAN policy for HyperFlex servers",
+                   "enabled": true,
+                   "name": "HyperFlex",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "storage_policies": [
+                {
+                   "descr": "Storage Profile on HyperFlex servers with M2 raid",
+                   "m2_configuration": {
+                      "controller_slot": "MSTOR-RAID-1",
+                      "enable": true
+                   },
+                   "name": "HyperFlex-m2r1",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "unused_disks_state": "No Change"
+                },
+                {
+                   "descr": "Recommended Local Disk policy for M5 HyperFlex servers",
+                   "drive_group": [
+                      {
+                         "drive_group_name": "hx-raid-mirrored_local_disk_dg",
+                         "manual_drive_selection": {
+                            "drive_array_spans": [
+                               {
+                                  "slots": "1,2"
+                               }
+                            ]
+                         },
+                         "raid_level": "RAID1",
+                         "virtual_drives": [
+                            {
+                               "boot_drive": false,
+                               "expand_to_available": true,
+                               "vd_name": "hx-raid-mirrored"
+                            }
+                         ]
+                      }
+                   ],
+                   "name": "hx-raid-mirrored_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "thermal_policies": [
+                {
+                   "descr": "Recommended Power control policy for HyperFlex servers",
+                   "fan_control_mode": "Balanced",
+                   "name": "HyperFlex",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "ucs_server_profile_templates": [
+                {
+                   "bios_policy": "hx-bios-m4",
+                   "boot_policy": "HyperFlex-ldr1",
+                   "descr": "Generic Service Profile Template for compute servers",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "compute-nodes-anyld",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "hx-flex-disabled_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                },
+                {
+                   "bios_policy": "hx-bios-m4",
+                   "boot_policy": "HyperFlex-ldr1",
+                   "descr": "Service Profile Template for compute servers with Megaraid Controller",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "compute-nodes-ldr1",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "hx-raid-mirrored_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                },
+                {
+                   "bios_policy": "hx-bios-m5",
+                   "boot_policy": "HyperFlex-anyld",
+                   "descr": "Generic Service Profile Template for M5 compute servers",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "compute-nodes-m5-anyld",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "hx-flex-disabled_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                },
+                {
+                   "bios_policy": "hx-bios-m5",
+                   "boot_policy": "HyperFlex-ldr1",
+                   "descr": "Service Profile Template for M5 compute servers with Megaraid Controller",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "compute-nodes-m5-ldr1",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "hx-raid-mirrored_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default",
+                   "virtual_media_policy": "HyperFlex"
+                },
+                {
+                   "bios_policy": "hx-bios-m5",
+                   "boot_policy": "HyperFlex-m2pch",
+                   "descr": "Service Profile Template for M5 compute servers with PCH Controller",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "compute-nodes-m5-m2pch",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "hx-flex-disabled_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                },
+                {
+                   "bios_policy": "hx-bios-m5",
+                   "boot_policy": "HyperFlex-m2r1",
+                   "descr": "Service Profile Template for M5 compute servers with M.2 raid Controller",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "compute-nodes-m5-m2r1",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "HyperFlex-m2r1",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                },
+                {
+                   "bios_policy": "hx-bios-m5",
+                   "boot_policy": "HyperFlex-sd",
+                   "descr": "Service Profile Template for M5 compute servers with SD Card",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "compute-nodes-m5-sd",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "hx-flex-enabled_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                },
+                {
+                   "bios_policy": "hx-bios-m4",
+                   "boot_policy": "HyperFlex-sd",
+                   "descr": "Service Profile Template for compute servers with SD Card",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "compute-nodes-sd",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "hx-flex-enabled_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                },
+                {
+                   "bios_policy": "hx-bios-m4",
+                   "boot_policy": "HyperFlex-sd",
+                   "descr": "Service Profile Template for HX servers",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "hx-nodes",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "hx-flex-enabled_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                },
+                {
+                   "bios_policy": "hx-bios-af",
+                   "boot_policy": "HyperFlex-m2pch",
+                   "descr": "Service Profile Template for M5 HX servers",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "hx-nodes-m5",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "hx-flex-disabled_local_disk",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                },
+                {
+                   "bios_policy": "hx-bios-af",
+                   "boot_policy": "HyperFlex-m2r1",
+                   "descr": "Service Profile Template for M5 HX servers with M.2 raid Controller",
+                   "lan_connectivity_policy": "HyperFlex",
+                   "name": "hx-nodes-m5-m2r1",
+                   "san_connectivity_policy": "Hyperflex",
+                   "serial_over_lan_policy": "HyperFlex",
+                   "storage_policy": "HyperFlex-m2r1",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "target_platform": "FI-Attached",
+                   "virtual_kvm_policy": "default"
+                }
+             ],
+             "virtual_kvm_policies": [
+                {
+                   "enable_video_encryption": false,
+                   "name": "default",
+                   "remote_port": 2068,
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "virtual_media_policies": [
+                {
+                   "descr": "vMedia policy to install or re-install software on HyperFlex servers",
+                   "name": "HyperFlex",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ]
+                }
+             ],
+             "wwnn_pools": [
+                {
+                   "descr": "WWNN Pool for Hyperflex",
+                   "name": "hx-ext-storage-fc",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "wwnn_blocks": [
+                      {
+                         "from": "20:00:00:25:B5:96:00:01",
+                         "to": "20:00:00:25:B5:96:00:64"
+                      }
+                   ]
+                }
+             ],
+             "wwpn_pools": [
+                {
+                   "descr": "WWPN Pool for Hyperflex Fabric-A",
+                   "name": "hx-ext-storage-fc-a",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "wwpn_blocks": [
+                      {
+                         "from": "20:00:00:25:B5:96:A9:01",
+                         "to": "20:00:00:25:B5:96:A9:64"
+                      }
+                   ]
+                },
+                {
+                   "descr": "WWPN Pool for Hyperflex Fabric-B",
+                   "name": "hx-ext-storage-fc-b",
+                   "tags": [
+                      {
+                         "key": "easyucs_origin",
+                         "value": "convert"
+                      },
+                      {
+                         "key": "easyucs_version",
+                         "value": "0.9.8"
+                      }
+                   ],
+                   "wwpn_blocks": [
+                      {
+                         "from": "20:00:00:25:B5:96:BA:01",
+                         "to": "20:00:00:25:B5:96:BA:64"
+                      }
+                   ]
+                }
+             ]
+          }
+       ]
+    }
+ }

@@ -388,7 +388,7 @@ class imm_transition(object):
         header = 'Storage Policy Variables'
         initial_policy = True
         template_type = 'storage_policies'
-        policy_loop_standard(self, header, initial_policy, template_type)
+        # policy_loop_standard(self, header, initial_policy, template_type)
 
     def switch_control_policies(self):
         header = 'Switch Control Policy Variables'
@@ -400,7 +400,7 @@ class imm_transition(object):
         header = 'Syslog Policy Variables'
         initial_policy = True
         template_type = 'syslog_policies'
-        policy_loop_standard(self, header, initial_policy, template_type)
+        # policy_loop_standard(self, header, initial_policy, template_type)
 
     def system_qos_policies(self):
         header = 'System QoS Policy Variables'

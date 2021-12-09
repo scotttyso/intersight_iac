@@ -58,7 +58,7 @@ class profiles(object):
         write_to_template(self, **templateVars)
         templateVars["initial_write"] = False
 
-        rangex = chassis_count + 1
+        rangex = int(chassis_count) + 1
         for x in range(1,rangex):
             # Chassis Model
             templateVars["multi_select"] = False
@@ -145,7 +145,7 @@ class profiles(object):
         write_to_template(self, **templateVars)
         templateVars["initial_write"] = False
 
-        rangex = server_count + 1
+        rangex = int(server_count) + 1
         for x in range(1,rangex):
             # Server Profile Name
             valid = False
