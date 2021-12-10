@@ -742,7 +742,7 @@ class policies_p1(object):
                             confirm_policy = 'Y'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % ('boot_policies')
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
                             write_to_template(self, **templateVars)
 
                             configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])

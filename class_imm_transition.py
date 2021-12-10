@@ -36,7 +36,7 @@ class imm_transition(object):
     def boot_order_policies(self):
         header = 'Boot Order Policy Variables'
         initial_policy = True
-        template_type = 'boot_policies'
+        template_type = 'boot_order_policies'
         policy_loop_standard(self, header, initial_policy, template_type)
 
     def ethernet_adapter_policies(self):
@@ -388,7 +388,7 @@ class imm_transition(object):
         header = 'Storage Policy Variables'
         initial_policy = True
         template_type = 'storage_policies'
-        # policy_loop_standard(self, header, initial_policy, template_type)
+        policy_loop_standard(self, header, initial_policy, template_type)
 
     def switch_control_policies(self):
         header = 'Switch Control Policy Variables'
@@ -400,7 +400,7 @@ class imm_transition(object):
         header = 'Syslog Policy Variables'
         initial_policy = True
         template_type = 'syslog_policies'
-        # policy_loop_standard(self, header, initial_policy, template_type)
+        policy_loop_standard(self, header, initial_policy, template_type)
 
     def system_qos_policies(self):
         header = 'System QoS Policy Variables'
@@ -505,8 +505,12 @@ def policy_loop_standard(self, header, initial_policy, template_type):
         template_file = '%s.jinja2' % (template_type)
         template = self.templateEnv.get_template(template_file)
 
-        if template_type in self.json_data["config"]["orgs"][org_count]:
-            for item in self.json_data["config"]["orgs"][org_count][template_type]:
+        if template_type == 'boot_order_policies':
+            imm_template_type = 'boot_policies'
+        else:
+            imm_template_type = template_type
+        if imm_template_type in self.json_data["config"]["orgs"][org_count]:
+            for item in self.json_data["config"]["orgs"][org_count][imm_template_type]:
                 # Reset TemplateVars to Default for each Loop
                 templateVars = {}
                 templateVars["org"] = org

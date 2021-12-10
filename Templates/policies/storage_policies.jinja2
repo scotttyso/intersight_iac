@@ -116,13 +116,14 @@
 {%- endif %}
 {%- if m2_configuration %}
     m2_configuration = {
-  {%- for item in m2_configuration %}
-      "{{ loop.index }}" = {
-    {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}"
-    {%- endfor %}
+      "0" = {
+        controller_slot = "{{ m2_configuration["controller_slot"] }}"
+  {%- if m2_configuration["enable"] %}
+        enable          = {{ m2_configuration["enable"]|lower }}
+  {%- else %}
+        enable          = true
+  {%- endif %}
       }
-  {%- endfor %}
     }
 {%- else %}
     m2_configuration         = {}
@@ -197,9 +198,9 @@
   {%- for item in tags %}
       {
     {%- for k, v in item.items() %}
-        {{ k }} = "{{ v }}"
+        {{ k }} = "{{ v }}",
     {%- endfor %}
-      }
+      },
   {%- endfor %}
     ]
 {%- else %}

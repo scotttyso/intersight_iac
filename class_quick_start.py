@@ -3052,7 +3052,7 @@ class quick_start(object):
                 ]
 
                 # Write Policies to Template File
-                templateVars["template_file"] = '%s.jinja2' % ('boot_policies')
+                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
                 write_to_template(self, **templateVars)
 
                 # Close the Template file
@@ -3079,7 +3079,7 @@ class quick_start(object):
                 templateVars["descr"] = f'{name} Storage Policy'
                 templateVars["drive_group"] = {}
                 templateVars["global_hot_spares"] = ''
-                templateVars["m2_configuration"] = [ { 'controller_slot':'MSTOR-RAID-1,MSTOR-RAID-2' } ]
+                templateVars["m2_configuration"] = { 'controller_slot':'MSTOR-RAID-1,MSTOR-RAID-2' }
                 templateVars["single_drive_raid_configuration"] = {}
                 templateVars["unused_disks_state"] = 'No Change'
                 templateVars["use_jbod_for_vd_creation"] = True
@@ -3170,7 +3170,7 @@ class quick_start(object):
                 ]
 
                 # Write Policies to Template File
-                templateVars["template_file"] = '%s.jinja2' % ('boot_policies')
+                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
                 write_to_template(self, **templateVars)
 
                 # Close the Template file

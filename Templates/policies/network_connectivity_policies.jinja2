@@ -4,7 +4,11 @@
 {%- if enable_dynamic_dns %}
     enable_dynamic_dns        = {{ enable_dynamic_dns|lower }}
 {%- endif %}
+{%- if enable_ipv6 %}
     enable_ipv6               = {{ enable_ipv6|lower }}
+{%- else %}
+    enable_ipv6               = false
+{%- endif %}
 {%- if obtain_ipv4_dns_from_dhcp %}
     obtain_ipv4_dns_from_dhcp = {{ obtain_ipv4_dns_from_dhcp|lower }}
 {%- endif %}
