@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
+"""Intersight IAC - 
+This Wizard to Create Terraform HCL configuration from Question and Answer or the IMM Transition Tool.
+It uses argparse to take in the following CLI arguments:
+    u or url:                The intersight root URL for the api endpoint. (The default is https://intersight.com)
+    d or dir:                Base Directory to use for creation of the HCL Configuration Files
+    i or ignore-tls:         Ignores TLS server-side certificate verification
+    l or api-key-legacy:     Use legacy API client (v2) key
+    j or json_file:          IMM Transition JSON export to convert to HCL
+    k or api-key:            API client key id for the HTTP signature scheme
+    f or api-key-file:       Name of file containing secret key for the HTTP signature scheme
+"""
 
 import argparse
+import credentials
 import json
 import subprocess
 import os
@@ -23,8 +35,12 @@ from class_profiles import profiles
 from class_quick_start import quick_start
 from class_terraform import terraform_cloud
 from io import StringIO
+from intersight.api import organization_api
+from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
 from lxml import etree
 from pathlib import Path
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 home = Path.home()
 Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
@@ -226,7 +242,39 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
             policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'ucs_server_profiles'
             policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+    else:
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'  Skipping Step to Create Terraform Cloud Workspaces.')
+        print(f'  Moving to last step to Confirm the Intersight Organization Exists.')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+     
+def intersight_org_check(home, org, args):
+    # Login to Intersight API
+    api_client = credentials.config_credentials(home, args)
 
+    #=============================================================
+    # Create Intersight API instance and Verify if the Org Exists
+    #=============================================================
+    api_handle = organization_api.OrganizationApi(api_client)
+    query_filter = f"Name eq '{org}'"
+    kwargs = dict(filter=query_filter)
+    org_list = api_handle.get_organization_organization_list(**kwargs)
+    if not org_list.results:
+        api_body = {
+            "ClassId":"mo.MoRef",
+            "Name":org,
+            "ObjectType":"organization.Organization"
+        }
+        organization = api_handle.create_organization_organization(api_body)
+        org_2nd_list = api_handle.get_organization_organization_list(**kwargs)
+        if org_2nd_list.results:
+            org_moid = org_2nd_list.results[0].moid
+            print(org_moid)
+            exit()
+    elif org_list.results:
+        org_moid = org_list.results[0].moid
+        print(org_moid)
+        exit()
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
@@ -849,6 +897,36 @@ def process_wizard(easy_jsonData, jsonData):
 
 
 def main():
+    description = None
+    if description is not None:
+        Parser.description = description
+    Parser.add_argument(
+        '-a', '--api-key-id',
+        default=os.getenv('TF_VAR_apikey'),
+        help='The Intersight API client key id for HTTP signature scheme'
+    )
+    Parser.add_argument(
+        '-s', '--api-key-file',
+        default='~/Downloads/SecretKey.txt',
+        help='Name of file containing The Intersight secret key for the HTTP signature scheme'
+    )
+    Parser.add_argument('--api-key-v3', action='store_true',
+                        help='Use New API client (v3) key'
+    )
+    Parser.add_argument('-d', '--dir', default='Intersight',
+                        help='The Directory to Publish the Terraform Files to.'
+    )
+    Parser.add_argument('-i', '--ignore-tls', action='store_true',
+                        help='Ignore TLS server-side certificate verification'
+    )
+    Parser.add_argument('-j', '--json_file', default=None,
+                        help='The IMM Transition Tool JSON Dump File to Convert to HCL.'
+    )
+    Parser.add_argument('-u', '--url', default='https://intersight.com',
+                        help='The Intersight root URL for the API endpoint. The default is https://intersight.com'
+    )
+    args = Parser.parse_args()
+
     jsonFile = 'Templates/variables/intersight_openapi.json'
     jsonOpen = open(jsonFile, 'r')
     jsonData = json.load(jsonOpen)
@@ -858,21 +936,6 @@ def main():
     jsonOpen = open(jsonFile, 'r')
     easy_jsonData = json.load(jsonOpen)
     jsonOpen.close()
-
-    """
-    Arguments:
-        description {string}: Optional description used within argparse help
-    Returns:
-        api
-    """
-    description = None
-    if description is not None:
-        Parser.description = description
-    Parser.add_argument('-d', '--dir', default='Intersight',
-                        help='The Directory to Publish the Terraform Files to.')
-    Parser.add_argument('-j', '--json_file', default=None,
-                        help='The IMM Transition Tool JSON Dump File to Convert to HCL.')
-    args = Parser.parse_args()
 
     os.environ['TF_DEST_DIR'] = '%s' % (args.dir)
 
@@ -889,6 +952,7 @@ def main():
     for org in orgs:
         merge_easy_imm_repository(easy_jsonData, org)
         create_terraform_workspaces(jsonData, easy_jsonData, org)
+        intersight_org_check(home, org, args)
 
 if __name__ == '__main__':
     main()
