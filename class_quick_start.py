@@ -3017,43 +3017,66 @@ class quick_start(object):
                 write_to_template(self, **templateVars)
                 templateVars["initial_write"] = False
 
-                # Configure Boot Order Policy
-                name = 'VMware_M2'
-                templateVars["name"] = name
-                templateVars["descr"] = f'{name} Boot Order Policy'
-                templateVars["boot_mode"] = 'Uefi'
-                templateVars["enable_secure_boot"] = True
-                templateVars["boot_mode"] = 'Uefi'
-                templateVars["boot_devices"] = [
-                    {
-                        'enabled':True,
-                        'device_name':'KVM-DVD',
-                        'device_type':'virtual_media',
-                        'object_type':'boot.VirtualMedia',
-                        'subtype':'kvm-mapped-dvd'
-                    },
-                    {
-                        'device_name':'M2',
-                        'device_type':'local_disk',
-                        'enabled':True,
-                        'object_type':'boot.LocalDisk',
-                        'slot':'MSTOR-RAID'
-                    },
-                    {
-                        'device_name':'PXE',
-                        'device_type':'pxe_boot',
-                        'enabled':True,
-                        'interface_name':'MGMT-A',
-                        'interface_source':'name',
-                        'ip_type':'IPv4',
-                        'object_type':'boot.Pxe',
-                        'slot':'MLOM'
-                    }
-                ]
+                secBootList = [False, True]
+                for i in secBootList:
+                    # Configure Boot Order Policy
+                    if i == False:
+                        name = 'VMware_M2_pxe'
+                    else:
+                        name = 'VMware_M2'
+                    templateVars["name"] = name
+                    templateVars["descr"] = f'{name} Boot Order Policy'
+                    templateVars["boot_mode"] = 'Uefi'
+                    templateVars["enable_secure_boot"] = i
+                    templateVars["boot_mode"] = 'Uefi'
+                    if i == False:
+                        templateVars["boot_devices"] = [
+                            {
+                                'enabled':True,
+                                'device_name':'KVM-DVD',
+                                'device_type':'virtual_media',
+                                'object_type':'boot.VirtualMedia',
+                                'subtype':'kvm-mapped-dvd'
+                            },
+                            {
+                                'device_name':'M2',
+                                'device_type':'local_disk',
+                                'enabled':True,
+                                'object_type':'boot.LocalDisk',
+                                'slot':'MSTOR-RAID'
+                            },
+                            {
+                                'device_name':'PXE',
+                                'device_type':'pxe_boot',
+                                'enabled':True,
+                                'interface_name':'MGMT-A',
+                                'interface_source':'name',
+                                'ip_type':'IPv4',
+                                'object_type':'boot.Pxe',
+                                'slot':'MLOM'
+                            }
+                        ]
+                    else:
+                        templateVars["boot_devices"] = [
+                            {
+                                'enabled':True,
+                                'device_name':'KVM-DVD',
+                                'device_type':'virtual_media',
+                                'object_type':'boot.VirtualMedia',
+                                'subtype':'kvm-mapped-dvd'
+                            },
+                            {
+                                'device_name':'M2',
+                                'device_type':'local_disk',
+                                'enabled':True,
+                                'object_type':'boot.LocalDisk',
+                                'slot':'MSTOR-RAID'
+                            }
+                        ]
 
-                # Write Policies to Template File
-                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                write_to_template(self, **templateVars)
+                    # Write Policies to Template File
+                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                    write_to_template(self, **templateVars)
 
                 # Close the Template file
                 templateVars["template_file"] = 'template_close.jinja2'
@@ -3074,6 +3097,7 @@ class quick_start(object):
                 write_to_template(self, **templateVars)
                 templateVars["initial_write"] = False
 
+                # Storage Policy Settings
                 name = 'M2_Raid'
                 templateVars["name"] = name
                 templateVars["descr"] = f'{name} Storage Policy'
@@ -3135,43 +3159,66 @@ class quick_start(object):
                 write_to_template(self, **templateVars)
                 templateVars["initial_write"] = False
 
-                # Configure Boot Order Policy
-                name = 'VMware_Raid1'
-                templateVars["name"] = name
-                templateVars["descr"] = f'{name} Boot Order Policy'
-                templateVars["boot_mode"] = 'Uefi'
-                templateVars["enable_secure_boot"] = True
-                templateVars["boot_mode"] = 'Uefi'
-                templateVars["boot_devices"] = [
-                    {
-                        'enabled':True,
-                        'device_name':'KVM-DVD',
-                        'device_type':'virtual_media',
-                        'object_type':'boot.VirtualMedia',
-                        'subtype':'kvm-mapped-dvd'
-                    },
-                    {
-                        'device_name':'MRAID',
-                        'device_type':'local_disk',
-                        'enabled':True,
-                        'object_type':'boot.LocalDisk',
-                        'slot':'MRAID'
-                    },
-                    {
-                        'device_name':'PXE',
-                        'device_type':'pxe_boot',
-                        'enabled':True,
-                        'interface_name':'MGMT-A',
-                        'interface_source':'name',
-                        'ip_type':'IPv4',
-                        'object_type':'boot.Pxe',
-                        'slot':'MLOM'
-                    }
-                ]
+                secBootList = [False, True]
+                for i in secBootList:
+                    # Configure Boot Order Policy
+                    if i == False:
+                        name = 'VMware_Raid1_pxe'
+                    else:
+                        name = 'VMware_Raid1'
+                    templateVars["name"] = name
+                    templateVars["descr"] = f'{name} Boot Order Policy'
+                    templateVars["boot_mode"] = 'Uefi'
+                    templateVars["enable_secure_boot"] = i
+                    templateVars["boot_mode"] = 'Uefi'
+                    if i == False:
+                        templateVars["boot_devices"] = [
+                            {
+                                'enabled':True,
+                                'device_name':'KVM-DVD',
+                                'device_type':'virtual_media',
+                                'object_type':'boot.VirtualMedia',
+                                'subtype':'kvm-mapped-dvd'
+                            },
+                            {
+                                'device_name':'MRAID',
+                                'device_type':'local_disk',
+                                'enabled':True,
+                                'object_type':'boot.LocalDisk',
+                                'slot':'MRAID'
+                            },
+                            {
+                                'device_name':'PXE',
+                                'device_type':'pxe_boot',
+                                'enabled':True,
+                                'interface_name':'MGMT-A',
+                                'interface_source':'name',
+                                'ip_type':'IPv4',
+                                'object_type':'boot.Pxe',
+                                'slot':'MLOM'
+                            }
+                        ]
+                    else:
+                        templateVars["boot_devices"] = [
+                            {
+                                'enabled':True,
+                                'device_name':'KVM-DVD',
+                                'device_type':'virtual_media',
+                                'object_type':'boot.VirtualMedia',
+                                'subtype':'kvm-mapped-dvd'
+                            },
+                            {
+                                'device_name':'MRAID',
+                                'device_type':'local_disk',
+                                'enabled':True,
+                                'object_type':'boot.LocalDisk',
+                                'slot':'MRAID'
+                            }
+                        ]
 
-                # Write Policies to Template File
-                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                write_to_template(self, **templateVars)
+                    # Write Policies to Template File
+                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                    write_to_template(self, **templateVars)
 
                 # Close the Template file
                 templateVars["template_file"] = 'template_close.jinja2'

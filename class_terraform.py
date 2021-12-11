@@ -1,6 +1,5 @@
 import jinja2
 import json
-import lib_ucs
 import os
 import pkg_resources
 import re
@@ -8,6 +7,8 @@ import requests
 import stdiomask
 import time
 import validating
+from easy_functions import variablesFromAPI
+from requests.api import delete, request
 
 # Global options for debugging
 print_payload = False
@@ -221,7 +222,7 @@ class terraform_cloud(object):
             templateVars["jsonVars"] = tfcOrgs
             templateVars["varType"] = 'Terraform Cloud Organization'
             templateVars["defaultVar"] = ''
-            tfc_organization = lib_ucs.variablesFromAPI(**templateVars)
+            tfc_organization = variablesFromAPI(**templateVars)
             return tfc_organization
         else:
             print(status)
@@ -261,7 +262,7 @@ class terraform_cloud(object):
             templateVars["jsonVars"] = sorted(repo_list)
             templateVars["varType"] = 'VCS Base Repository'
             templateVars["defaultVar"] = ''
-            vcsBaseRepo = lib_ucs.variablesFromAPI(**templateVars)
+            vcsBaseRepo = variablesFromAPI(**templateVars)
 
             return vcsBaseRepo
         else:
@@ -313,7 +314,7 @@ class terraform_cloud(object):
             templateVars["jsonVars"] = vcsProvider
             templateVars["varType"] = 'VCS Provider'
             templateVars["defaultVar"] = ''
-            vcsRepoName = lib_ucs.variablesFromAPI(**templateVars)
+            vcsRepoName = variablesFromAPI(**templateVars)
 
             for i in vcsAttributes:
                 if i["name"] == vcsRepoName:
@@ -413,13 +414,49 @@ class terraform_cloud(object):
 
         if not key_count > 0:
             print(f'\n-----------------------------------------------------------------------------\n')
-            print(f"\n   Unable to Determine the Workspace ID for {templateVars['Workspace_Name']}.")
-            print(f"\n   Exiting...")
+            print(f'\n   Unable to Determine the Workspace ID for "{templateVars["workspaceName"]}".')
+            print(f'\n   Exiting...')
             print(f'\n-----------------------------------------------------------------------------\n')
             exit()
 
         # print(json.dumps(json_data, indent = 4))
         return workspace_id
+
+    def tfcWorkspace_remove(self, **templateVars):
+        #-------------------------------
+        # Configure the Workspace URL
+        #-------------------------------
+        url = 'https://app.terraform.io/api/v2/organizations/%s/workspaces/%s' %  (templateVars['tfc_organization'], templateVars['workspaceName'])
+        tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+        tf_header = {'Authorization': tf_token,
+                'Content-Type': 'application/vnd.api+json'
+        }
+
+        #----------------------------------------------------------------------------------
+        # Delete the Workspace of the Organization to Search for the Workspace
+        #----------------------------------------------------------------------------------
+        response = delete(url, headers=tf_header)
+        # print(response)
+
+        #--------------------------------------------------------------
+        # Parse the JSON Data to see if the Workspace Exists or Not.
+        #--------------------------------------------------------------
+        del_count = 0
+        workspace_id = ''
+        # print(json.dumps(json_data, indent = 4))
+        if response.status_code == 200:
+            print(f'\n-----------------------------------------------------------------------------\n')
+            print(f'    Successfully Deleted Workspace "{templateVars["workspaceName"]}".')
+            print(f'\n-----------------------------------------------------------------------------\n')
+            del_count =+ 1
+
+        if not del_count > 0:
+            print(f'\n-----------------------------------------------------------------------------\n')
+            print(f'    Unable to Determine the Workspace ID for "{templateVars["workspaceName"]}".')
+            print(f'\n-----------------------------------------------------------------------------\n')
+            # exit()
+
+        # print(json.dumps(json_data, indent = 4))
 
     def tfcVariables(self, **templateVars):
         #-------------------------------

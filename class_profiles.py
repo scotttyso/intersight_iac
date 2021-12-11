@@ -71,7 +71,7 @@ class profiles(object):
 
             # Set Default Policy Values
             templateVars["imc_access_policy"] = templateVars["org"]
-            templateVars["power_poicy"] = chassis_model
+            templateVars["power_policy"] = chassis_model
             templateVars["snmp_policy"] = templateVars["org"]
             templateVars["thermal_policy"] = chassis_model
             templateVars["name"] = f'{domain_name}-{x}'
@@ -227,19 +227,21 @@ class profiles(object):
             templateVars["san_connectivity_policy"] = 'VMware_SAN'
 
         if templateVars["server_type"] == 'FIAttached':
-            templateVars["power_policy"] = 'Server'
             templateVars["certificate_management_policy"] = ''
             templateVars["imc_access_policy"] = f'{org}'
+            templateVars["power_policy"] = 'Server'
+            templateVars["target_platform"] = 'FIAttached'
 
         if templateVars["server_type"] == 'Standalone':
-            templateVars["persistent_memory_policy"] = f'{org}'
+            templateVars["adapter_configuration_policy"] = f'{org}'
             templateVars["device_connector_policy"] = f'{org}'
             templateVars["ldap_policy"] = f'{org}'
             templateVars["network_connectivity_policy"] = f'{org}'
             templateVars["ntp_policy"] = f'{org}'
+            templateVars["persistent_memory_policy"] = f'{org}'
             templateVars["smtp_policy"] = f'{org}'
             templateVars["ssh_policy"] = f'{org}'
-            templateVars["adapter_configuration_policy"] = f'{org}'
+            templateVars["target_platform"] = 'Standalone'
 
         # Write Policies to Template File
         templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])

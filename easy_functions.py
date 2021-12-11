@@ -859,8 +859,9 @@ def variablesFromAPI(**templateVars):
                 var_selection = input(f'Please Enter the Option Number to Select for {templateVars["varType"]}.  [{defaultIndex}]: ')
             else:
                 var_selection = input(f'Please Enter the Option Number to Select for {templateVars["varType"]}: ')
-        if var_selection == '':
+        if not templateVars["defaultVar"] == '' and var_selection == '':
             var_selection = defaultIndex
+
         if templateVars["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
             for index, value in enumerate(json_vars):
                 index += 1

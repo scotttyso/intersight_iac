@@ -46,8 +46,8 @@ def config_credentials(home, args):
     else:
         raise Exception('Must provide API key information to configure at least one authentication scheme')
 
-    if args.ignore_tls:
-        configuration.verify_ssl = False
+    # if args.ignore_tls:
+    configuration.verify_ssl = False
 
     configuration.proxy = os.getenv('https_proxy')
     api_client = intersight.ApiClient(configuration)
