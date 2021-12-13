@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import base64
 import jinja2
 import os
 import pkg_resources
@@ -14,6 +15,7 @@ from easy_functions import choose_policy, policies_parse
 from easy_functions import exit_default_no, exit_default_yes
 from easy_functions import ipmi_key_function, local_users_function
 from easy_functions import policy_descr, policy_name
+from easy_functions import sensitive_var_value
 from easy_functions import variablesFromAPI
 from easy_functions import varBoolLoop
 from easy_functions import varNumberLoop
@@ -746,6 +748,129 @@ class policies_p1(object):
                             write_to_template(self, **templateVars)
 
                             configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            valid_confirm = True
+
+                        elif confirm_policy == 'N':
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'\n------------------------------------------------------\n')
+                            valid_confirm = True
+
+                        else:
+                            print(f'\n------------------------------------------------------\n')
+                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                            print(f'\n------------------------------------------------------\n')
+
+            elif configure == 'N':
+                configure_loop = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
+
+    #==============================================
+    # Certificate Management Policy Module
+    #==============================================
+    def certificate_management_policies(self, jsonData, easy_jsonData):
+        name_prefix = self.name_prefix
+        name_suffix = 'cert_mgmt'
+        org = self.org
+        policy_type = 'Certificate Management Policy'
+        templateVars = {}
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'certificate_management_policies'
+
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
+
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  A {policy_type} Allows you to specify the certificate and private key-pair ')
+            print(f'  details for an external certificate.\n')
+            print(f'  This wizard will save the configuration for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            loop_count = 1
+            configure = input(f'Do You Want to Configure a {policy_type}.  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                policy_loop = False
+                while policy_loop == False:
+
+                    if not name_prefix == '':
+                        name = '%s_%s' % (name_prefix, name_suffix)
+                    else:
+                        name = '%s_%s' % (org, name_suffix)
+
+                    templateVars["name"] = policy_name(name, policy_type)
+                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+
+                    # Pull in the Policies for Certificate Management
+                    jsonVars = jsonData['components']['schemas']['certificatemanagement.CertificateBase']['allOf'][1]['properties']
+                    templateVars["multi_select"] = False
+
+                    # Request Certificate
+                    templateVars["Multi_Line_Input"] = True
+                    templateVars["Description"] = jsonVars['Certificate']['description']
+                    templateVars["Variable"] = f'base64_certificate_{loop_count}'
+                    certificate = sensitive_var_value(jsonData, **templateVars)
+                    templateVars["certificate"] = loop_count
+
+                    # Encode the Certificate as Base64
+                    print('certificate:')
+                    print(certificate)
+                    base64Cert = base64.b64encode(str.encode(certificate)).decode()
+                    print('base64 encoded:')
+                    print(base64Cert)
+                    TF_VAR = f'base64_certificate_{loop_count}'
+                    os.environ[TF_VAR] = base64Cert
+
+                    # Request Private Key
+                    templateVars["Multi_Line_Input"] = True
+                    templateVars["Description"] = jsonVars['Privatekey']['description']
+                    templateVars["Variable"] = f'base64_private_key_{loop_count}'
+                    privateKey = sensitive_var_value(jsonData, **templateVars)
+                    templateVars["private_key"] = loop_count
+
+                    # Encode the Certificate as Base64
+                    print('certificate:')
+                    print(privateKey)
+                    base64Key = base64.b64encode(str.encode(privateKey)).decode()
+                    print('base64 encoded:')
+                    print(base64Key)
+                    TF_VAR = f'base64_certificate_{loop_count}'
+                    os.environ[TF_VAR] = base64Key
+
+                    templateVars["enabled"] = True
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'    certificate = {templateVars["certificate"]}')
+                    print(f'    description = "{templateVars["descr"]}"')
+                    print(f'    enabled     = {templateVars["enabled"]}')
+                    print(f'    name        = "{templateVars["name"]}"')
+                    print(f'    private_key = {templateVars["private_key"]}')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            confirm_policy = 'Y'
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            if policy_loop == True and configure_loop == False:
+                                loop_count += 1
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
