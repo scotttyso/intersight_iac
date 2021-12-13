@@ -443,11 +443,17 @@ def sensitive_var_value(jsonData, **templateVars):
                 secure_value = stdiomask.getpass(prompt=f'Enter the value for {templateVars["Variable"]}: ')
 
             # Validate Sensitive Passwords
-            print(sensitive_var)
+            cert_regex = re.compile(r'^\-{5}BEGIN (CERTIFICATE|PRIVATE KEY)\-{5}.*\-{5}END (CERTIFICATE|PRIVATE KEY)\-{5}$')
             if re.search('(certificate|private_key)', sensitive_var):
-                valid = True
+                if not re.search(cert_regex, secure_value):
+                    valid = True
+                else:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'    Error!!! Invalid Value for the {sensitive_var}.  Please re-enter the {sensitive_var}.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
             elif re.search('(apikey|secretkey)', sensitive_var):
-                valid = True
+                if not sensitive_var == '':
+                    valid = True
             elif 'bind' in sensitive_var:
                 jsonVars = jsonData['components']['schemas']['iam.LdapBaseProperties']['allOf'][1]['properties']
                 minLength = 1

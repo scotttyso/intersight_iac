@@ -826,8 +826,6 @@ class policies_p1(object):
                     templateVars["certificate"] = loop_count
 
                     # Encode the Certificate as Base64
-                    print('certificate:')
-                    print(certificate)
                     base64Cert = base64.b64encode(str.encode(certificate)).decode()
                     print('base64 encoded:')
                     print(base64Cert)
@@ -842,8 +840,6 @@ class policies_p1(object):
                     templateVars["private_key"] = loop_count
 
                     # Encode the Certificate as Base64
-                    print('certificate:')
-                    print(privateKey)
                     base64Key = base64.b64encode(str.encode(privateKey)).decode()
                     print('base64 encoded:')
                     print(base64Key)
@@ -869,8 +865,9 @@ class policies_p1(object):
                             write_to_template(self, **templateVars)
 
                             configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
-                            if policy_loop == True and configure_loop == False:
-                                loop_count += 1
+                            print(f'configure loop is {configure_loop}')
+                            print(f'policy loop is {policy_loop}')
+                            loop_count += 1
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
