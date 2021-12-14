@@ -224,7 +224,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                         templateVars["Description"] = 'SNMP Privacy Password'
                     elif 'trap_comm' in var:
                         templateVars["Description"] = 'SNMP Trap Community String'
-                    templateVars["varValue"] = terraform_cloud().sensitive_var_value(jsonData, **templateVars)
+                    templateVars["varValue"] = sensitive_var_value(jsonData, **templateVars)
                     templateVars["varId"] = var
                     templateVars["varKey"] = var
                     templateVars["Sensitive"] = True
@@ -854,7 +854,7 @@ def process_wizard(easy_jsonData, jsonData):
         type = 'policies'
         if 'quick_start_domain_policies' in policy or 'quick_start_rack_policies' in policy:
             if 'domain' in policy:
-                # kwargs = {'primary_dns': '208.67.220.220', 'secondary_dns': ''}
+                kwargs = {'primary_dns': '208.67.220.220', 'secondary_dns': ''}
                 kwargs.update({'server_type':'FIAttached'})
                 vlan_policy,vsan_a,vsan_b,fc_ports,mtu = quick_start(
                     name_prefix, org, type
@@ -873,17 +873,17 @@ def process_wizard(easy_jsonData, jsonData):
             quick_start(domain_prefix, org, type).lan_san_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'quick_start_vmware_m2':
             quick_start(name_prefix, org, type).vmware_m2()
-            # kwargs = {
-            #     'primary_dns': '208.67.220.220',
-            #     'secondary_dns': '',
-            #     'server_type': 'FIAttached',
-            #     'vlan_policy': 'asgard-ucs',
-            #     'vlans': '1-99,101-199,201-299',
-            #     'vsan_a': 100,
-            #     'vsan_b': 200,
-            #     'fc_ports': [1, 2, 3, 4],
-            #     'mtu':9216
-            # }
+            kwargs = {
+                'primary_dns': '208.67.220.220',
+                'secondary_dns': '',
+                'server_type': 'FIAttached',
+                'vlan_policy': 'asgard-ucs',
+                'vlans': '1-99,101-199,201-299',
+                'vsan_a': 100,
+                'vsan_b': 200,
+                'fc_ports': [1, 2, 3, 4],
+                'mtu':9216
+            }
             kwargs.update({'boot_order_policy':'VMware_M2_pxe'})
         elif policy == 'quick_start_vmware_raid1':
             quick_start(name_prefix, org, type).vmware_raid1()
