@@ -82,7 +82,7 @@
             {%- elif key == 'strip_size' %}
               {%- if 'KiB' in value %}
               strip_size          = {{ value }}.split('K')[0]
-              {%- elif value == 1MiB %}
+              {%- elif value == '1MiB' %}
               strip_size          = 1024
               {%- else %}
               strip_size          = {{ value }}

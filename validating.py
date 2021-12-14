@@ -231,7 +231,6 @@ def ip_address(varName, varValue):
 
 def ipmi_key_check(varValue):
     valid_count = 0
-    print(f'checking password {varValue}')
     varValue = varValue.capitalize()
     if ((varValue < '0' or varValue > '9') and (varValue < 'A' or varValue > 'F')):
         valid_count += 1

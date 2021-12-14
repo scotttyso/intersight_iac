@@ -1420,7 +1420,7 @@ class quick_start(object):
                     print(f'        - DATA Pool A: 00:25:B5:[prefix]:G0:00 to 00:25:B5:[prefix]:G3:E7')
                     print(f'        - DATA Pool B: 00:25:B5:[prefix]:H0:00 to 00:25:B5:[prefix]:H3:E7')
                     print(f'        - UUID Pool: 000025B5-[prefix]00-0000 to 000025B5-[prefix]00-03E7')
-                    print(f'        - WWNN Pool A: 20:00:00:25:B5:[prefix]:00:00 to 20:00:00:25:B5:[prefix]:03:E7')
+                    print(f'        - WWNN Pool: 20:00:00:25:B5:[prefix]:00:00 to 20:00:00:25:B5:[prefix]:03:E7')
                     print(f'        - WWPN Pool A: 20:00:00:25:B5:[prefix]:A0:00 to 20:00:00:25:B5:[prefix]:A3:E7')
                     print(f'        - WWPN Pool B: 20:00:00:25:B5:[prefix]:B0:00 to 20:00:00:25:B5:[prefix]:B3:E7')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
