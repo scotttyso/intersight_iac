@@ -7,7 +7,7 @@ import re
 import subprocess
 import validating
 from class_policies_vxan import policies_vxan
-from class_policies_system_qos import system_qos
+from class_policies_p3 import policies_p3
 from class_pools import pools
 from easy_functions import choose_policy, policies_parse
 from easy_functions import exit_default_no, exit_default_yes
@@ -1960,6 +1960,6 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
             elif inner_policy == 'iscsi_static_target_policies':
                 policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_static_target_policies(jsonData, easy_jsonData)
             elif inner_policy == 'system_qos_policies':
-                system_qos(name_prefix, templateVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData)
             elif inner_policy == 'vlan_policies':
                 policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData)

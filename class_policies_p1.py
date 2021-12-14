@@ -7,13 +7,13 @@ import pkg_resources
 import re
 import stdiomask
 import validating
-from class_policies_vxan import policies_vxan
 from class_policies_lan import policies_lan
 from class_policies_san import policies_san
+from class_policies_vxan import policies_vxan
 from class_pools import pools
 from easy_functions import choose_policy, policies_parse
 from easy_functions import exit_default_no, exit_default_yes
-from easy_functions import ipmi_key_function, local_users_function
+from easy_functions import ipmi_key_function
 from easy_functions import policy_descr, policy_name
 from easy_functions import sensitive_var_value
 from easy_functions import variablesFromAPI
@@ -1032,6 +1032,86 @@ class policies_p1(object):
             version_file.close()
 
     #==============================================
+    # Flow Control Policy Module
+    #==============================================
+    def flow_control_policies(self, jsonData, easy_jsonData):
+        name_prefix = self.name_prefix
+        name_suffix = 'flow_ctrl'
+        org = self.org
+        policy_type = 'Flow Control Policy'
+        templateVars = {}
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'flow_control_policies'
+
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
+
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  The Flow Control Policy will enable Priority Flow Control on the Fabric Interconnects.')
+            print(f'  We recommend the default parameters so you will only be asked for the name and')
+            print(f'  description for the Policy.  You only need one of these policies for Organization')
+            print(f'  {org}.\n')
+            print(f'  This wizard will save the configuration for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            policy_loop = False
+            while policy_loop == False:
+
+                if not name_prefix == '':
+                    name = '%s_%s' % (name_prefix, name_suffix)
+                else:
+                    name = '%s_%s' % (org, name_suffix)
+
+                templateVars["name"] = policy_name(name, policy_type)
+                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+
+                templateVars["priority"] = 'auto'
+                templateVars["receive"] = 'Enabled'
+                templateVars["send"] = 'Enabled'
+
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'    description = "{templateVars["descr"]}"')
+                print(f'    name        = "{templateVars["name"]}"')
+                print(f'    priority    = "{templateVars["priority"]}"')
+                print(f'    receive     = "{templateVars["receive"]}"')
+                print(f'    send        = "{templateVars["send"]}"')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                valid_confirm = False
+                while valid_confirm == False:
+                    confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                    if confirm_policy == 'Y' or confirm_policy == '':
+                        confirm_policy = 'Y'
+
+                        # Write Policies to Template File
+                        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                        write_to_template(self, **templateVars)
+
+                        configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                        valid_confirm = True
+
+                    elif confirm_policy == 'N':
+                        print(f'\n------------------------------------------------------\n')
+                        print(f'  Starting {templateVars["policy_type"]} Section over.')
+                        print(f'\n------------------------------------------------------\n')
+                        valid_confirm = True
+
+                    else:
+                        print(f'\n------------------------------------------------------\n')
+                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                        print(f'\n------------------------------------------------------\n')
+
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
+
+    #==============================================
     # IMC Access Policy Module
     #==============================================
     def imc_access_policies(self, jsonData, easy_jsonData):
@@ -1881,20 +1961,20 @@ class policies_p1(object):
         write_to_template(self, **templateVars)
 
     #==============================================
-    # Local User Policy Module
+    # Link Aggregation Policy Module
     #==============================================
-    def local_user_policies(self, jsonData, easy_jsonData):
+    def link_aggregation_policies(self, jsonData, easy_jsonData):
         name_prefix = self.name_prefix
-        name_suffix = 'local_users'
+        name_suffix = 'link_agg'
         org = self.org
-        policy_type = 'Local User Policy'
+        policy_type = 'Link Aggregation Policy'
         templateVars = {}
         templateVars["header"] = '%s Variables' % (policy_type)
         templateVars["initial_write"] = True
         templateVars["org"] = org
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'local_user_policies'
+        templateVars["template_type"] = 'link_aggregation_policies'
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -1903,190 +1983,135 @@ class policies_p1(object):
         configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  A {policy_type} will configure servers with Local Users for KVM Access.  This Policy ')
-            print(f'  is not required to standup a server but is a good practice for day 2 support.\n')
+            print(f'  A Link Aggregation Policy will assign LACP settings to the Ethernet Port-Channels and')
+            print(f'  uplinks.  We recommend the default wizard settings so you will only be asked for the ')
+            print(f'  name and description for the Policy.  You only need one of these policies for ')
+            print(f'  Organization {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
-            if configure == 'Y' or configure == '':
-                loop_count = 1
-                policy_loop = False
-                while policy_loop == False:
+            policy_loop = False
+            while policy_loop == False:
 
-                    if not name_prefix == '':
-                        name = '%s_%s' % (name_prefix, name_suffix)
-                    else:
-                        name = '%s_%s' % (org, name_suffix)
+                if not name_prefix == '':
+                    name = '%s_%s' % (name_prefix, name_suffix)
+                else:
+                    name = '%s_%s' % (org, name_suffix)
 
-                    templateVars["name"] = policy_name(name, policy_type)
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+                templateVars["name"] = policy_name(name, policy_type)
+                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
-                    # Obtain Information for iam.EndpointPasswordProperties
-                    templateVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['iam.EndPointPasswordProperties']['allOf'][1]['properties']
+                templateVars["lacp_rate"] = 'normal'
+                templateVars["suspend_individual"] = False
 
-                    # Local User Always Send Password
-                    templateVars["Description"] = jsonVars['ForceSendPassword']['description']
-                    templateVars["varInput"] = f'Do you want Intersight to Always send the user password with policy updates?'
-                    templateVars["varDefault"] = 'N'
-                    templateVars["varName"] = 'Force Send Password'
-                    templateVars["always_send_user_password"] = varBoolLoop(**templateVars)
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'    description        = "{templateVars["descr"]}"')
+                print(f'    lacp_rate          = "{templateVars["lacp_rate"]}"')
+                print(f'    name               = "{templateVars["name"]}"')
+                print(f'    suspend_individual = {templateVars["suspend_individual"]}')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                valid_confirm = False
+                while valid_confirm == False:
+                    confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                    if confirm_policy == 'Y' or confirm_policy == '':
+                        confirm_policy = 'Y'
 
-                    # Local User Enforce Strong Password
-                    templateVars["Description"] = jsonVars['EnforceStrongPassword']['description']
-                    templateVars["varInput"] = f'Do you want to Enforce Strong Passwords?'
-                    templateVars["varDefault"] = 'Y'
-                    templateVars["varName"] = 'Enforce Strong Password'
-                    templateVars["enforce_strong_password"] = varBoolLoop(**templateVars)
+                        # Write Policies to Template File
+                        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                        write_to_template(self, **templateVars)
 
-                    # Local User Password Expiry
-                    templateVars["Description"] = jsonVars['EnablePasswordExpiry']['description']
-                    templateVars["varInput"] = f'Do you want to Enable password Expiry on the Endpoint?'
-                    templateVars["varDefault"] = 'Y'
-                    templateVars["varName"] = 'Enable Password Expiry'
-                    templateVars["enable_password_expiry"] = varBoolLoop(**templateVars)
+                        configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                        valid_confirm = True
 
-                    if templateVars["enable_password_expiry"] == True:
-                        # Local User Grace Period
-                        templateVars["Description"] = 'Grace Period, in days, after the password is expired '\
-                                'that a user can continue to use their expired password.'\
-                                'The allowed grace period is between 0 to 5 days.  With 0 being no grace period.'
-                        templateVars["varDefault"] =  jsonVars['GracePeriod']['default']
-                        templateVars["varInput"] = 'How many days would you like to set for the Grace Period?'
-                        templateVars["varName"] = 'Grace Period'
-                        templateVars["varRegex"] = '[0-9]+'
-                        templateVars["minNum"] = jsonVars['GracePeriod']['minimum']
-                        templateVars["maxNum"] = jsonVars['GracePeriod']['maximum']
-                        templateVars["grace_period"] = varNumberLoop(**templateVars)
-
-                        # Local User Notification Period
-                        templateVars["Description"] = 'Notification Period - Number of days, between 0 to 15 '\
-                                '(0 being disabled), that a user is notified to change their password before it expires.'
-                        templateVars["varDefault"] =  jsonVars['NotificationPeriod']['default']
-                        templateVars["varInput"] = 'How many days would you like to set for the Notification Period?'
-                        templateVars["varName"] = 'Notification Period'
-                        templateVars["varRegex"] = '[0-9]+'
-                        templateVars["minNum"] = jsonVars['NotificationPeriod']['minimum']
-                        templateVars["maxNum"] = jsonVars['NotificationPeriod']['maximum']
-                        templateVars["notification_period"] = varNumberLoop(**templateVars)
-
-                        # Local User Password Expiry Duration
-                        valid = False
-                        while valid == False:
-                            templateVars["Description"] = 'Note: When Password Expiry is Enabled, Password Expiry '\
-                                    'Duration sets the duration of time, (in days), a password may be valid.  '\
-                                    'The password expiryduration must be greater than '\
-                                    'notification period + grace period.  Range is 1-3650.'
-                            templateVars["varDefault"] =  jsonVars['PasswordExpiryDuration']['default']
-                            templateVars["varInput"] = 'How many days would you like to set for the Password Expiry Duration?'
-                            templateVars["varName"] = 'Password Expiry Duration'
-                            templateVars["varRegex"] = '[0-9]+'
-                            templateVars["minNum"] = jsonVars['PasswordExpiryDuration']['minimum']
-                            templateVars["maxNum"] = jsonVars['PasswordExpiryDuration']['maximum']
-                            templateVars["password_expiry_duration"] = varNumberLoop(**templateVars)
-                            x = int(templateVars["grace_period"])
-                            y = int(templateVars["notification_period"])
-                            z = int(templateVars["password_expiry_duration"])
-                            if z > (x + y):
-                                valid = True
-                            else:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! The Value of Password Expiry Duration must be greater than Grace Period +')
-                                print(f'  Notification Period.  {z} is not greater than [{x} + {y}]')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                        # Local User Notification Period
-                        templateVars["Description"] = jsonVars['PasswordHistory']['description'] + \
-                            ' Range is 0 to 5.'
-                        templateVars["varDefault"] =  jsonVars['PasswordHistory']['default']
-                        templateVars["varInput"] = 'How many passwords would you like to store for a user?'
-                        templateVars["varName"] = 'Password History'
-                        templateVars["varRegex"] = '[0-9]+'
-                        templateVars["minNum"] = jsonVars['PasswordHistory']['minimum']
-                        templateVars["maxNum"] = jsonVars['PasswordHistory']['maximum']
-                        templateVars["password_history"] = varNumberLoop(**templateVars)
+                    elif confirm_policy == 'N':
+                        print(f'\n------------------------------------------------------\n')
+                        print(f'  Starting {templateVars["policy_type"]} Section over.')
+                        print(f'\n------------------------------------------------------\n')
+                        valid_confirm = True
 
                     else:
-                        templateVars["grace_period"] = 0
-                        templateVars["notification_period"] = 15
-                        templateVars["password_expiry_duration"] = 90
-                        templateVars["password_history"] = 5
+                        print(f'\n------------------------------------------------------\n')
+                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                        print(f'\n------------------------------------------------------\n')
 
-                    # Local Users
-                    ilCount = 1
-                    local_users = []
-                    user_loop = False
-                    while user_loop == False:
-                        question = input(f'Would you like to configure a Local user?  Enter "Y" or "N" [Y]: ')
-                        if question == '' or question == 'Y':
-                            local_users,user_loop = local_users_function(
-                                jsonData, easy_jsonData, ilCount, **templateVars
-                            )
-                        elif question == 'N':
-                            user_loop = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-                    templateVars["local_users"] = local_users
+        # Close the Template file
+        templateVars["template_file"] = 'template_close.jinja2'
+        write_to_template(self, **templateVars)
 
-                    templateVars["enabled"] = True
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    always_send_user_password = {templateVars["always_send_user_password"]}')
-                    print(f'    description               = "{templateVars["descr"]}"')
-                    print(f'    enable_password_expiry    = {templateVars["enable_password_expiry"]}')
-                    print(f'    enforce_strong_password   = {templateVars["enforce_strong_password"]}')
-                    print(f'    grace_period              = "{templateVars["grace_period"]}"')
-                    print(f'    name                      = "{templateVars["name"]}"')
-                    print(f'    password_expiry_duration  = "{templateVars["password_expiry_duration"]}"')
-                    print(f'    password_history          = "{templateVars["password_history"]}"')
-                    if len(templateVars["local_users"]) > 0:
-                        print(f'    local_users = ''{')
-                        for item in templateVars["local_users"]:
-                            for k, v in item.items():
-                                if k == 'username':
-                                    print(f'      "{v}" = ''{')
-                            for k, v in item.items():
-                                if k == 'enabled':
-                                    print(f'        enable   = {v}')
-                                elif k == 'password':
-                                    print(f'        password = "Sensitive"')
-                                elif k == 'role':
-                                    print(f'        role     = {v}')
-                            print(f'      ''}')
-                        print(f'    ''}')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid_confirm = False
-                    while valid_confirm == False:
-                        confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
-                        if confirm_policy == 'Y' or confirm_policy == '':
-                            confirm_policy = 'Y'
+    #==============================================
+    # Link Control Policy Module
+    #==============================================
+    def link_control_policies(self, jsonData, easy_jsonData):
+        name_prefix = self.name_prefix
+        name_suffix = 'link_ctrl'
+        org = self.org
+        policy_type = 'Link Control Policy'
+        templateVars = {}
+        templateVars["header"] = '%s Variables' % (policy_type)
+        templateVars["initial_write"] = True
+        templateVars["org"] = org
+        templateVars["policy_type"] = policy_type
+        templateVars["template_file"] = 'template_open.jinja2'
+        templateVars["template_type"] = 'link_control_policies'
 
-                            # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
+        # Open the Template file
+        write_to_template(self, **templateVars)
+        templateVars["initial_write"] = False
 
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
-                            valid_confirm = True
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  A Link Control Policy will configure the Unidirectional Link Detection Protocol for')
+            print(f'  Ethernet Uplinks/Port-Channels.')
+            print(f'  We recommend the wizards default parameters so you will only be asked for the name')
+            print(f'  and description for the Policy.  You only need one of these policies for')
+            print(f'  Organization {org}.\n')
+            print(f'  This wizard will save the configuration for this section to the following file:')
+            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            policy_loop = False
+            while policy_loop == False:
 
-                        elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {templateVars["policy_type"]} Section over.')
-                            print(f'\n------------------------------------------------------\n')
-                            valid_confirm = True
+                if not name_prefix == '':
+                    name = '%s_%s' % (name_prefix, name_suffix)
+                else:
+                    name = '%s_%s' % (org, name_suffix)
 
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
+                templateVars["name"] = policy_name(name, policy_type)
+                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
-            elif configure == 'N':
-                configure_loop = True
-            else:
+                templateVars["admin_state"] = 'Enabled'
+                templateVars["mode"] = 'normal'
+
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'    admin_state = "{templateVars["admin_state"]}"')
+                print(f'    description = "{templateVars["descr"]}"')
+                print(f'    mode        = "{templateVars["mode"]}"')
+                print(f'    name        = "{templateVars["name"]}"')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
+                valid_confirm = False
+                while valid_confirm == False:
+                    confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                    if confirm_policy == 'Y' or confirm_policy == '':
+                        confirm_policy = 'Y'
+
+                        # Write Policies to Template File
+                        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                        write_to_template(self, **templateVars)
+
+                        configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                        valid_confirm = True
+
+                    elif confirm_policy == 'N':
+                        print(f'\n------------------------------------------------------\n')
+                        print(f'  Starting {templateVars["policy_type"]} Section over.')
+                        print(f'\n------------------------------------------------------\n')
+                        valid_confirm = True
+
+                    else:
+                        print(f'\n------------------------------------------------------\n')
+                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                        print(f'\n------------------------------------------------------\n')
 
         # Close the Template file
         templateVars["template_file"] = 'template_close.jinja2'
@@ -2112,10 +2137,10 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                     policy_description.append(y)
                 policy_description = " ".join(policy_description)
                 policy_description = policy_description.replace('Ip', 'IP')
-                policy_description = policy_description.replace('Ntp', 'NTP')
-                policy_description = policy_description.replace('Snmp', 'SNMP')
-                policy_description = policy_description.replace('Wwnn', 'WWNN')
-                policy_description = policy_description.replace('Wwpn', 'WWPN')
+                policy_description = policy_description.replace('Lan', 'LAN')
+                policy_description = policy_description.replace('San', 'SAN')
+                policy_description = policy_description.replace('Vlan', 'VLAN')
+                policy_description = policy_description.replace('Vsan', 'VSAN')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'   There were no {policy_description} found.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')

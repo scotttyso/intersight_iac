@@ -27,14 +27,16 @@ from easy_functions import variablesFromAPI
 from easy_functions import varStringLoop
 from class_imm_transition import imm_transition
 from class_pools import pools
-from class_policies_domain import policies_domain
 from class_policies_lan import policies_lan
-from class_policies_san import policies_san
 from class_policies_p1 import policies_p1
 from class_policies_p2 import policies_p2
+from class_policies_p3 import policies_p3
+from class_policies_san import policies_san
+from class_policies_vxan import policies_vxan
 from class_profiles import profiles
 from class_quick_start import quick_start
 from class_terraform import terraform_cloud
+from temp_coding import temp_coding
 from io import StringIO
 from intersight.api import organization_api
 from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
@@ -724,14 +726,10 @@ def process_wizard(easy_jsonData, jsonData):
         #==============================================
         type = 'policies_vlans'
         if policy == 'multicast_policies':
-            policies_domain(domain_prefix, org, type).multicast_policies(jsonData, easy_jsonData)
+            policies_vxan(domain_prefix, org, type).multicast_policies(jsonData, easy_jsonData)
         elif policy == 'vlan_policies':
-            policies_domain(domain_prefix, org, type).vlan_policies(jsonData, easy_jsonData)
+            policies_vxan(domain_prefix, org, type).vlan_policies(jsonData, easy_jsonData)
         type = 'policies'
-        #================================
-        # Policies needed for 1st release
-        #================================
-        # storage_policies
         #================================
         # Policies needed for 2nd release
         #================================
@@ -763,7 +761,7 @@ def process_wizard(easy_jsonData, jsonData):
         elif policy == 'fibre_channel_qos_policies':
             policies_san(name_prefix, org, type).fibre_channel_qos_policies(jsonData, easy_jsonData)
         elif policy == 'flow_control_policies':
-            policies_domain(domain_prefix, org, type).flow_control_policies(jsonData, easy_jsonData)
+            policies_p1(domain_prefix, org, type).flow_control_policies(jsonData, easy_jsonData)
         elif policy == 'imc_access_policies':
             policies_p1(name_prefix, org, type).imc_access_policies(jsonData, easy_jsonData)
         elif policy == 'ipmi_over_lan_policies':
@@ -779,11 +777,11 @@ def process_wizard(easy_jsonData, jsonData):
         elif policy == 'ldap_policies':
             policies_p1(name_prefix, org, type).ldap_policies(jsonData, easy_jsonData)
         elif policy == 'link_aggregation_policies':
-            policies_domain(domain_prefix, org, type).link_aggregation_policies(jsonData, easy_jsonData)
+            policies_p1(domain_prefix, org, type).link_aggregation_policies(jsonData, easy_jsonData)
         elif policy == 'link_control_policies':
-            policies_domain(domain_prefix, org, type).link_control_policies(jsonData, easy_jsonData)
+            policies_p1(domain_prefix, org, type).link_control_policies(jsonData, easy_jsonData)
         elif policy == 'local_user_policies':
-            policies_p1(name_prefix, org, type).local_user_policies(jsonData, easy_jsonData)
+            policies_p2(name_prefix, org, type).local_user_policies(jsonData, easy_jsonData)
         elif policy == 'network_connectivity_policies':
             policies_p2(name_prefix, org, type).network_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ntp_policies':
@@ -791,37 +789,37 @@ def process_wizard(easy_jsonData, jsonData):
         elif policy == 'persistent_memory_policies':
             policies_p2(name_prefix, org, type).persistent_memory_policies(jsonData, easy_jsonData)
         elif policy == 'port_policies':
-            policies_domain(domain_prefix, org, type).port_policies(jsonData, easy_jsonData)
+            policies_p2(domain_prefix, org, type).port_policies(jsonData, easy_jsonData)
         elif policy == 'power_policies':
-            policies_p2(name_prefix, org, type).power_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).power_policies(jsonData, easy_jsonData)
         elif policy == 'san_connectivity_policies':
             policies_san(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData)
         # elif policy == 'sd_card_policies':
         #     policies(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData)
         elif policy == 'serial_over_lan_policies':
-            policies_p2(name_prefix, org, type).serial_over_lan_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).serial_over_lan_policies(jsonData, easy_jsonData)
         elif policy == 'smtp_policies':
-            policies_p2(name_prefix, org, type).smtp_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).smtp_policies(jsonData, easy_jsonData)
         elif policy == 'snmp_policies':
-            policies_p2(name_prefix, org, type).snmp_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).snmp_policies(jsonData, easy_jsonData)
         elif policy ==  'ssh_policies':
-            policies_p2(name_prefix, org, type).ssh_policies(jsonData, easy_jsonData)
-        # elif policy == 'storage_policies':
-        #     policies(name_prefix, org, type).storage_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).ssh_policies(jsonData, easy_jsonData)
+        elif policy == 'storage_policies':
+            policies_p3(name_prefix, org, type).storage_policies(jsonData, easy_jsonData)
         elif policy == 'switch_control_policies':
-            policies_domain(domain_prefix, org, type).switch_control_policies(jsonData, easy_jsonData)
+            policies_p3(domain_prefix, org, type).switch_control_policies(jsonData, easy_jsonData)
         elif policy == 'syslog_policies':
-            policies_p2(name_prefix, org, type).syslog_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).syslog_policies(jsonData, easy_jsonData)
         elif policy == 'system_qos_policies':
-            policies_domain(domain_prefix, org, type).system_qos_policies(jsonData, easy_jsonData)
+            policies_p3(domain_prefix, org, type).system_qos_policies(jsonData, easy_jsonData)
         elif policy == 'thermal_policies':
-            policies_p2(name_prefix, org, type).thermal_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).thermal_policies(jsonData, easy_jsonData)
         elif policy == 'virtual_kvm_policies':
-            policies_p2(name_prefix, org, type).virtual_kvm_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).virtual_kvm_policies(jsonData, easy_jsonData)
         elif policy == 'virtual_media_policies':
-            policies_p2(name_prefix, org, type).virtual_media_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).virtual_media_policies(jsonData, easy_jsonData)
         elif policy == 'vsan_policies':
-            policies_domain(domain_prefix, org, type).vsan_policies(jsonData, easy_jsonData)
+            policies_vxan(domain_prefix, org, type).vsan_policies(jsonData, easy_jsonData)
 
         #==============================================
         # UCS Profiles
