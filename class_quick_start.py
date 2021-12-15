@@ -248,7 +248,10 @@ class quick_start(object):
                     templateVars["ports_in_use"] = ports_in_use
                     templateVars["fc_converted_ports"] = fc_converted_ports
                     templateVars["port_modes"] = port_modes
-                    templateVars["fc_ports"] = templateVars["port_modes"]["port_list"]
+                    if templateVars["port_modes"].get("port_list"):
+                        templateVars["fc_ports"] = templateVars["port_modes"]["port_list"]
+                    else:
+                        templateVars["fc_ports"] = []
 
                     # If Unified Ports Exist Configure VSAN Policies
                     if len(templateVars["fc_converted_ports"]) > 0:
@@ -383,6 +386,7 @@ class quick_start(object):
                     write_to_template(self, **templateVars)
 
                     # Ethernet Uplink Port-Channel
+                    templateVars["name"] = domain_name
                     templateVars['port_type'] = 'Ethernet Uplink Port-Channel'
                     port_channel_ethernet_uplinks,templateVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars)
 

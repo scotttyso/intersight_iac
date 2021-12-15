@@ -1258,6 +1258,10 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars):
     port_roles = []
     port_count = 1
     ports_in_use = templateVars["ports_in_use"]
+    if  len(templateVars["fc_converted_ports"]) > 0:
+        fc_count = len(templateVars["fc_converted_ports"])
+    else:
+        fc_count = 0
     if templateVars["port_type"] == 'Appliance Port-Channel' and templateVars["device_model"] == 'UCS-FI-64108':
         portx = '99,100'
     elif templateVars["port_type"] == 'Appliance Port-Channel':
@@ -1283,9 +1287,9 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars):
     elif templateVars["port_type"] == 'FCoE Uplink':
         portx = '53'
     elif templateVars["port_type"] == 'Server Ports' and templateVars["device_model"] == 'UCS-FI-64108':
-        portx = '5-36'
+        portx = f'{fc_count + 1}-36'
     elif templateVars["port_type"] == 'Server Ports':
-        portx = '5-18'
+        portx = f'{fc_count + 1}-18'
     if re.search('(Ethernet Uplink Port-Channel|Server Ports)', templateVars["port_type"]):
         default_answer = 'Y'
     else:

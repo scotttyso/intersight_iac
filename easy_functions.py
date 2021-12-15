@@ -332,8 +332,12 @@ def policies_list(policies_list, **templateVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def policies_parse(org, policy_type, policy):
+    if os.environ.get('TF_DEST_DIR') is None:
+        tfDir = 'Intersight'
+    else:
+        tfDir = os.environ.get('TF_DEST_DIR')
     policies = []
-    policy_file = './Intersight/%s/%s/%s.auto.tfvars' % (org, policy_type, policy)
+    policy_file = f'./{tfDir}/{org}/{policy_type}/{policy}.auto.tfvars'
     if os.path.isfile(policy_file):
         if len(policy_file) > 0:
             cmd = 'json2hcl -reverse < %s' % (policy_file)

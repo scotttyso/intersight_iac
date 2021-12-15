@@ -189,7 +189,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                                                         if ka == 'bind_method':
                                                             if va == 'ConfiguredCredentials':
                                                                 sensitive_vars.append('binding_parameters_password')
-                                            elif k == 'local_users' or k == 'vmedia_mappings':
+                                            elif k == 'users' or k == 'vmedia_mappings':
                                                 for itema in v:
                                                     for ka, va in itema.items():
                                                         for itemb in va:
