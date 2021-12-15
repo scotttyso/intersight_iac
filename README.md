@@ -40,6 +40,17 @@ This script will utilize the Intersight Terraform Provider and two modules built
 
 ## Running the Wizard
 
+- I recommend adding the following secure variables to your environment before running the script
+```bash
+## Intersight Variables
+export TF_VAR_apikey="<your_intersight_api_key>"
+export TF_VAR_secretkey=`cat ~/Downloads/SecretKey.txt` 
+# This is an example based on the key being in your Downloads folder.  Correct for your environment
+
+## Terraform Cloud Variables
+export TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
+```
+
 - Running the wizard to use a configuration migrated from UCS Manager using the IMM Transition Tool
 
 ```bash
