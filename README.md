@@ -54,13 +54,33 @@ export TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 - Running the wizard to use a configuration migrated from UCS Manager using the IMM Transition Tool
 
 ```bash
-./main.py {json_file_name.json}
+./main.py -j {json_file_name.json}
 ```
 
 - Running the Wizard to generate IaC through a Question and Answer Wizard
 
 ```bash
 ./main.py
+```
+
+- Help Information
+```bash
+main.py -h
+
+Intersight Easy IMM Deployment Module
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a API_KEY_ID, --api-key-id API_KEY_ID
+                        The Intersight API client key id for HTTP signature scheme
+  -s API_KEY_FILE, --api-key-file API_KEY_FILE
+                        Name of file containing The Intersight secret key for the HTTP signature scheme
+  --api-key-v3          Use New API client (v3) key
+  -d DIR, --dir DIR     The Directory to Publish the Terraform Files to.
+  -i, --ignore-tls      Ignore TLS server-side certificate verification
+  -j JSON_FILE, --json_file JSON_FILE
+                        The IMM Transition Tool JSON Dump File to Convert to HCL.
+  -u URL, --url URL     The Intersight root URL for the API endpoint. The default is https://intersight.com
 ```
 
 ## Disclaimer
