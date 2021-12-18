@@ -880,9 +880,9 @@ class policies_p2(object):
                 templateVars['port_type'] = 'Ethernet Uplink Port-Channel'
                 port_channel_ethernet_uplinks,templateVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars)
 
-                # Fibre Channel Port-Channel
+                # Fibre-Channel Port-Channel
                 templateVars["fc_ports_in_use"] = []
-                templateVars["port_type"] = 'Fibre Channel Port-Channel'
+                templateVars["port_type"] = 'Fibre-Channel Port-Channel'
                 Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars)
                 Fabric_A_fc_port_channels = Fab_A
                 Fabric_B_fc_port_channels = Fab_B
@@ -1595,7 +1595,7 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
         '  switchport fill-pattern IDLE speed 8000\n\n'\
         'mds-a(config-if)#\n'
 
-    if templateVars["port_type"] == 'Fibre Channel Port-Channel':
+    if templateVars["port_type"] == 'Fibre-Channel Port-Channel':
         default_answer = 'Y'
     else:
         default_answer = 'N'
@@ -1616,12 +1616,15 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
             if question == 'Y' or (default_answer == 'Y' and question == ''):
                 configure_valid = False
                 while configure_valid == False:
-                    if templateVars["port_type"] == 'Fibre Channel Port-Channel':
+                    if templateVars["port_type"] == 'Fibre-Channel Port-Channel':
                         templateVars["multi_select"] = True
                         templateVars["var_description"] = '    Please Select a Port for the Port-Channel:\n'
+                    elif templateVars["port_type"] == 'Fibre-Channel Storage':
+                        templateVars["multi_select"] = False
+                        templateVars["var_description"] = '    Please Select a Port for the Storage Port:\n'
                     else:
                         templateVars["multi_select"] = False
-                        templateVars["var_description"] = '    Please Select a Port for the Uplink:\n'
+                        templateVars["var_description"] = '    Please Select a Port for the Uplink Port:\n'
                     templateVars["var_type"] = 'Unified Port'
                     port_list = vars_from_list(templateVars["fc_converted_ports"], **templateVars)
 
@@ -1635,12 +1638,13 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                     templateVars["admin_speed"] = variablesFromAPI(**templateVars)
 
                     # Prompt User for the Fill Pattern of the Port
-                    templateVars["var_description"] = jsonVars['FillPattern']['description']
-                    templateVars["var_description"] = '%s\n%s' % (templateVars["var_description"], fill_pattern_descr)
-                    templateVars["jsonVars"] = sorted(jsonVars['FillPattern']['enum'])
-                    templateVars["defaultVar"] = jsonVars['FillPattern']['default']
-                    templateVars["varType"] = 'Fill Pattern'
-                    templateVars["fill_pattern"] = variablesFromAPI(**templateVars)
+                    if not templateVars["port_type"] == 'Fibre-Channel Storage':
+                        templateVars["var_description"] = jsonVars['FillPattern']['description']
+                        templateVars["var_description"] = '%s\n%s' % (templateVars["var_description"], fill_pattern_descr)
+                        templateVars["jsonVars"] = sorted(jsonVars['FillPattern']['enum'])
+                        templateVars["defaultVar"] = jsonVars['FillPattern']['default']
+                        templateVars["varType"] = 'Fill Pattern'
+                        templateVars["fill_pattern"] = variablesFromAPI(**templateVars)
 
                     vsans = {}
                     fabrics = ['Fabric_A', 'Fabric_B']
@@ -1672,7 +1676,7 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                         vsan_list = vlan_list_full(vsan_list)
 
                         templateVars["multi_select"] = False
-                        if templateVars["port_type"] == 'Fibre Channel Port-Channel':
+                        if templateVars["port_type"] == 'Fibre-Channel Port-Channel':
                             templateVars["var_description"] = '    Please Select a VSAN for the Port-Channel:\n'
                         elif templateVars["port_type"] == 'Fibre-Channel Storage':
                             templateVars["var_description"] = '    Please Select a VSAN for the Storage Port:\n'
@@ -1685,7 +1689,7 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                         vsans.update({fabric:vsan})
 
 
-                    if templateVars["port_type"] == 'Fibre Channel Port-Channel':
+                    if templateVars["port_type"] == 'Fibre-Channel Port-Channel':
                         interfaces = []
                         for i in port_list:
                             interfaces.append({'port_id':i,'slot_id':1})
@@ -1705,6 +1709,20 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                             'pc_id':pc_id,
                             'vsan_id':vsans.get("Fabric_B")
                         }
+                    elif templateVars["port_type"] == 'Fibre-Channel Storage':
+                        port_list = '%s' % (port_list[0])
+                        fc_port_role_a = {
+                            'admin_speed':templateVars["admin_speed"],
+                            'port_id':port_list,
+                            'slot_id':1,
+                            'vsan_id':vsans["Fabric_A"]
+                        }
+                        fc_port_role_b = {
+                            'admin_speed':templateVars["admin_speed"],
+                            'port_id':port_list,
+                            'slot_id':1,
+                            'vsan_id':vsans["Fabric_B"]
+                        }
                     else:
                         port_list = '%s' % (port_list[0])
                         fc_port_role_a = {
@@ -1723,12 +1741,13 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                         }
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    admin_speed      = "{templateVars["admin_speed"]}"')
-                    print(f'    fill_pattern     = "{templateVars["fill_pattern"]}"')
+                    if not templateVars["port_type"] == 'Fibre-Channel Storage':
+                        print(f'    fill_pattern     = "{templateVars["fill_pattern"]}"')
                     if re.search('Uplink|Storage', templateVars["port_type"]):
                         print(f'    port_list        = "{port_list}"')
                     print(f'    vsan_id_fabric_a = {vsans["Fabric_A"]}')
                     print(f'    vsan_id_fabric_b = {vsans["Fabric_B"]}')
-                    if templateVars["port_type"] == 'Fibre Channel Port-Channel':
+                    if templateVars["port_type"] == 'Fibre-Channel Port-Channel':
                         print(f'    interfaces = [')
                         for item in interfaces:
                             print('      {')
@@ -1741,7 +1760,7 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                     while valid_confirm == False:
                         confirm_port = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_port == 'Y' or confirm_port == '':
-                            if templateVars["port_type"] == 'Fibre Channel Port-Channel':
+                            if templateVars["port_type"] == 'Fibre-Channel Port-Channel':
                                 A_port_channels.append(port_channel_a)
                                 B_port_channels.append(port_channel_b)
                             else:
@@ -1784,7 +1803,7 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n------------------------------------------------------\n')
 
-    if templateVars["port_type"] == 'Fibre Channel Port-Channel':
+    if templateVars["port_type"] == 'Fibre-Channel Port-Channel':
         return A_port_channels,B_port_channels,fc_ports_in_use
     else:
         return A_port_role,B_port_role,fc_ports_in_use
@@ -1795,7 +1814,7 @@ def port_modes_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
     fc_converted_ports = []
     valid = False
     while valid == False:
-        fc_mode = input('Do you want to convert ports to Fibre Channel Mode?  Enter "Y" or "N" [Y]: ')
+        fc_mode = input('Do you want to convert ports to Fibre-Channel Mode?  Enter "Y" or "N" [Y]: ')
         if fc_mode == '' or fc_mode == 'Y':
             fc_mode = 'Y'
             jsonVars = easy_jsonData['policies']['fabric.PortPolicy']
