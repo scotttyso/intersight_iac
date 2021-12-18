@@ -1,6 +1,16 @@
 
   "{{ name }}" = {
     description                  = ""
+{%- if ethernet_switching_mode %}
+    ethernet_switching_mode      = "{{ ethernet_switching_mode }}"
+{%- else %}
+    ethernet_switching_mode      = "end-host"
+{%- endif %}
+{%- if fc_switching_mode %}
+    fc_switching_mode            = "{{ fc_switching_mode }}"
+{%- else %}
+    fc_switching_mode            = "end-host"
+{%- endif %}
     mac_address_table_aging      = "{{ mac_address_table_aging }}"
     mac_aging_time               = 14500
     organization                 = "{{ org }}"
@@ -18,6 +28,6 @@
   {%- endfor %}
     ]
 {%- else %}
-    tags                         = []
+    tags = []
 {%- endif %}
   }

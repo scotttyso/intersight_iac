@@ -17,13 +17,19 @@
                 "description": "Pre-Defined BIOS Templates with recommended policy parameters.",
                 "enum":[
                     "DSS",
+                    "DSS_tpm",
                     "HPC",
+                    "HPC_tpm",
                     "Java",
+                    "Java_tpm",
                     "OLTP",
+                    "OLTP_tpm",
                     "Virtualization",
-                    "Windows"
+                    "Virtualization_tpm",
+                    "Windows",
+                    "Windows_tpm"
                 ],
-                "default": "Virtualization"
+                "default": "Virtualization_tpm"
             }
         },
         "boot.PrecisionPolicy":{
@@ -240,7 +246,7 @@
     },
     "wizard":{
         "files":{
-            "description": "Files to Pull down from the Easy Projects.",
+            "description": "Files to Pull down from the Easy IMM Project.",
             "policies": [
                 "README.md",
                 "adapter_configuration_policies.tf",
@@ -269,6 +275,7 @@
                 "link_control_policies.tf",
                 "local_user_policies.tf",
                 "locals.tf",
+                "multicast_policies.tf",
                 "network_connectivity_policies.tf",
                 "ntp_policies.tf",
                 "output.tf",
@@ -290,17 +297,8 @@
                 "variables.tf",
                 "virtual_kvm_policies.tf",
                 "virtual_media_policies.tf",
+                "vlan_policies.tf",
                 "vsan_policies.tf"
-            ],
-            "policies_vlans": [
-                "README.md",
-                "data_sources.tf",
-                "locals.tf",
-                "multicast_policies.tf",
-                "output.tf",
-                "provider.tf",
-                "variables.tf",
-                "vlan_policies.tf"
             ],
             "pools": [
                 "README.md",
@@ -317,13 +315,15 @@
                 "provider.tf",
                 "variables.tf"
             ],
-            "ucs_chassis_profiles": [
+            "profiles": [
                 "README.md",
                 "data_sources.tf",
                 "locals.tf",
                 "output.tf",
                 "provider.tf",
                 "ucs_chassis_profiles.tf",
+                "ucs_server_profile_templates.tf",
+                "ucs_server_profiles.tf",
                 "variables.tf"
             ],
             "ucs_domain_profiles": [
@@ -333,16 +333,6 @@
                 "outputs.tf",
                 "provider.tf",
                 "ucs_domain_profiles.tf",
-                "variables.tf"
-            ],
-            "ucs_server_profiles": [
-                "README.md",
-                "data_sources.tf",
-                "locals.tf",
-                "output.tf",
-                "provider.tf",
-                "ucs_server_profile_templates.tf",
-                "ucs_server_profiles.tf",
                 "variables.tf"
             ]
         },
@@ -444,11 +434,9 @@
         },
         "underConstruction":{
             "description": "These are being worked on.",
-            "enum": [
-                "Certificate Management Policies"
-            ],
+            "enum": [],
             "default":""
         }
     },
-    "version":"0.8.5"
+    "version":"0.9.5"
 }

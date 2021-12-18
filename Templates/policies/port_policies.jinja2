@@ -228,6 +228,31 @@
 {%- else %}
     port_role_ethernet_uplinks = {}
 {%- endif %}
+{%- if port_role_fc_storage %}
+    port_role_fc_storage = {
+  {%- for item in port_role_fc_storage %}
+      "{{ loop.index }}" = {
+    {%- for k, v in item.items() %}
+      {%- if k == 'admin_speed' %}
+        admin_speed      = "{{ v }}"
+      {%- elif k == 'aggr_id' %}
+        breakout_port_id = {{ v }}
+      {%- elif k == 'fill_pattern' %}
+        fill_pattern     = "{{ v }}"
+      {%- elif k == 'port_id' %}
+        port_list        = "{{ v }}"
+      {%- elif k == 'slot_id' %}
+        slot_id          = {{ v }}
+      {%- elif k == 'vsan_id' %}
+        vsan_id          = "{{ v }}"
+      {%- endif %}
+    {%- endfor %}
+      }
+  {%- endfor %}
+    }
+{%- else %}
+    port_role_fc_storage = {}
+{%- endif %}
 {%- if port_role_fc_uplinks %}
     port_role_fc_uplinks = {
   {%- for item in port_role_fc_uplinks %}

@@ -8,6 +8,9 @@ from easy_functions import choose_policy, policies_parse
 from easy_functions import exit_default_no, exit_loop_default_yes
 from easy_functions import naming_rule_fabric
 from easy_functions import policy_descr, policy_name
+from easy_functions import varBoolLoop
+from easy_functions import variablesFromAPI
+from easy_functions import varStringLoop
 from easy_functions import vlan_list_full
 from easy_functions import write_to_template
 
@@ -428,15 +431,17 @@ class policies_vxan(object):
                     print(f'  Uplink Trunking: Default is No.')
                     print(f'     Most deployments do not enable Uplink Trunking for Fibre-Channel. ')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        uplink_trunking = input('Do you want to Enable Uplink Trunking for this VSAN Policy? [N]? ')
-                        if uplink_trunking == 'Y':
-                            templateVars["uplink_trunking"] = True
-                            valid = True
-                        else:
-                            templateVars["uplink_trunking"] = False
-                            valid = True
+                    
+                    # Pull Information from the API
+                    templateVars["multi_select"] = False
+                    jsonVars = jsonData['components']['schemas']['fabric.FcNetworkPolicy']['allOf'][1]['properties']
+
+                    # Uplink Trunking
+                    templateVars["Description"] = jsonVars['EnableTrunking']['description']
+                    templateVars["varInput"] = f'Do you want to Enable Uplink Trunking for this VSAN Policy?'
+                    templateVars["varDefault"] = 'N'
+                    templateVars["varName"] = 'Enable Trunking'
+                    templateVars["uplink_trunking"] = varBoolLoop(**templateVars)
 
                     templateVars["vsans"] = []
                     vsan_count = 0
@@ -507,27 +512,39 @@ class policies_vxan(object):
                                 print(f'  Invalid Entry!  Please Enter a valid VLAN ID in the range of 1-4094.')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                        valid = False
-                        while valid == False:
-                            if loop_count % 2 == 0:
-                                vsan_name = input(f'What Name would you like to assign to "{vsan_id}"?  [VSAN-A]: ')
-                            else:
-                                vsan_name = input(f'What Name would you like to assign to "{vsan_id}"?  [VSAN-B]: ')
-                            if loop_count % 2 == 0 and vsan_name == '':
-                                vsan_name = 'VSAN-A'
-                            elif vsan_name == '':
-                                vsan_name = 'VSAN-B'
-                            valid = validating.name_rule('VSAN Name', vsan_name, 1, 62)
+                        jsonVars = jsonData['components']['schemas']['fabric.Vsan']['allOf'][1]['properties']
+
+                        # VSAN Name
+                        templateVars["Description"] = jsonVars['Name']['description']
+                        if loop_count % 2 == 0:
+                            templateVars["varDefault"] = 'VSAN-A'
+                        else:
+                            templateVars["varDefault"] = 'VSAN-B'
+                        templateVars["varInput"] = f'What Name would you like to assign to "{vsan_id}"?  [{templateVars["varDefault"]}]'
+                        templateVars["varName"] = 'VSAN Name'
+                        templateVars["varRegex"] = '.*'
+                        templateVars["minLength"] = 1
+                        templateVars["maxLength"] = 128
+                        vsan_name = varStringLoop(**templateVars)
+
+                        # Assign the VSAN Scope for this List
+                        templateVars["var_description"] = jsonVars['VsanScope']['description']
+                        templateVars["jsonVars"] = sorted(jsonVars['VsanScope']['enum'])
+                        templateVars["defaultVar"] = jsonVars['VsanScope']['default']
+                        templateVars["varType"] = 'Vsan Scope'
+                        vsan_scope = variablesFromAPI(**templateVars)
 
                         vsan = {
                             'fcoe_vlan_id':fcoe_id,
                             'name':vsan_name,
-                            'id':vsan_id
+                            'id':vsan_id,
+                            'vsan_scope':vsan_scope
                         }
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'   fcoe_vlan_id = {fcoe_id}')
+                        print(f'   name         = "{vsan_name}"')
                         print(f'   vsan_id      = {vsan_id}')
-                        print(f'   vsan_name    = "{vsan_name}"')
+                        print(f'   vsan_scope   = "{vsan_scope}"')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         valid_confirm = False
                         while valid_confirm == False:
@@ -568,13 +585,10 @@ class policies_vxan(object):
                     item_count = 1
                     for item in templateVars["vsans"]:
                         print(f'      {item_count} = ''{')
-                        for k, v in item.items():
-                            if k == 'fcoe_vlan_id':
-                                print(f'        fcoe_vlan_id = {v}')
-                            elif k == 'name':
-                                print(f'        name         = "{v}"')
-                            elif k == 'id':
-                                print(f'        vsan_id      = {v}')
+                        print(f'        fcoe_vlan_id = {item["fcoe_vlan_id"]}')
+                        print(f'        name         = "{item["name"]}"')
+                        print(f'        vsan_id      = {item["vsan_id"]}')
+                        print(f'        vsan_scope   = {item["vsan_scope"]}')
                         print('      }')
                         item_count += 1
                     print(f'    ]')

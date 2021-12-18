@@ -324,6 +324,9 @@ class imm_transition(object):
                     if 'lan_uplink_ports' in templateVars:
                         templateVars["port_role_ethernet_uplinks"] = templateVars["lan_uplink_ports"]
                         del templateVars["lan_uplink_ports"]
+                    if 'storage_ports' in templateVars:
+                        templateVars["port_role_fc_storage"] = templateVars["storage_ports"]
+                        del templateVars["storage_ports"]
                     if 'san_uplink_ports' in templateVars:
                         templateVars["port_role_fc_uplinks"] = templateVars["san_uplink_ports"]
                         del templateVars["san_uplink_ports"]
@@ -412,6 +415,12 @@ class imm_transition(object):
         header = 'Thermal Policy Variables'
         initial_policy = True
         template_type = 'thermal_policies'
+        policy_loop_standard(self, header, initial_policy, template_type)
+
+    def ucs_chassis_profiles(self):
+        header = 'UCS Chassis Profile Variables'
+        initial_policy = True
+        template_type = 'ucs_chassis_profiles'
         policy_loop_standard(self, header, initial_policy, template_type)
 
     def ucs_domain_profiles(self):

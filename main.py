@@ -104,11 +104,9 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
             tfDir = os.environ.get('TF_DEST_DIR')
         folder_list = [
             f'./{tfDir}/{org}/policies',
-            f'./{tfDir}/{org}/policies_vlans',
             f'./{tfDir}/{org}/pools',
-            f'./{tfDir}/{org}/ucs_chassis_profiles',
-            f'./{tfDir}/{org}/ucs_domain_profiles',
-            f'./{tfDir}/{org}/ucs_server_profiles'
+            f'./{tfDir}/{org}/profiles',
+            f'./{tfDir}/{org}/ucs_domain_profiles'
         ]
         for folder in folder_list:
             templateVars["autoApply"] = False
@@ -237,13 +235,9 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
             policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'policies'
             policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
-            type = 'policies_vlans'
-            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
-            type = 'ucs_chassis_profiles'
+            type = 'profiles'
             policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
             type = 'ucs_domain_profiles'
-            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
-            type = 'ucs_server_profiles'
             policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
     else:
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -409,6 +403,7 @@ def process_imm_transition(json_data):
     imm_transition(json_data, type).lan_connectivity_policies()
     imm_transition(json_data, type).link_aggregation_policies()
     imm_transition(json_data, type).link_control_policies()
+    imm_transition(json_data, type).multicast_policies()
     imm_transition(json_data, type).network_connectivity_policies()
     imm_transition(json_data, type).ntp_policies()
     imm_transition(json_data, type).port_policies()
@@ -424,13 +419,13 @@ def process_imm_transition(json_data):
     imm_transition(json_data, type).thermal_policies()
     imm_transition(json_data, type).virtual_kvm_policies()
     imm_transition(json_data, type).virtual_media_policies()
-    imm_transition(json_data, type).vsan_policies()
-    type = 'policies_vlans'
-    imm_transition(json_data, type).multicast_policies()
     imm_transition(json_data, type).vlan_policies()
+    imm_transition(json_data, type).vsan_policies()
+    type = 'profiles'
+    imm_transition(json_data, type).ucs_chassis_profiles()
     type = 'ucs_domain_profiles'
     imm_transition(json_data, type).ucs_domain_profiles()
-    type = 'ucs_server_profiles'
+    type = 'profiles'
     imm_transition(json_data, type).ucs_server_profile_templates()
     imm_transition(json_data, type).ucs_server_profiles()
 
@@ -705,7 +700,7 @@ def process_wizard(easy_jsonData, jsonData):
     kwargs = {}
     for policy in policy_list:
         #==============================================
-        # UCS Pools
+        # Intersight Pools
         #==============================================
         type = 'pools'
         if policy == 'ip_pools':
@@ -722,18 +717,9 @@ def process_wizard(easy_jsonData, jsonData):
             pools(name_prefix, org, type).uuid_pools(jsonData, easy_jsonData)
 
         #==============================================
-        # UCS Policies
+        # Intersight Policies
         #==============================================
-        type = 'policies_vlans'
-        if policy == 'multicast_policies':
-            policies_vxan(domain_prefix, org, type).multicast_policies(jsonData, easy_jsonData)
-        elif policy == 'vlan_policies':
-            policies_vxan(domain_prefix, org, type).vlan_policies(jsonData, easy_jsonData)
         type = 'policies'
-        #================================
-        # Policies needed for 2nd release
-        #================================
-        # sd_card_policies
         if policy == 'adapter_configuration_policies':
             policies_p1(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData)
         if policy == 'bios_policies':
@@ -782,6 +768,8 @@ def process_wizard(easy_jsonData, jsonData):
             policies_p1(domain_prefix, org, type).link_control_policies(jsonData, easy_jsonData)
         elif policy == 'local_user_policies':
             policies_p2(name_prefix, org, type).local_user_policies(jsonData, easy_jsonData)
+        elif policy == 'multicast_policies':
+            policies_vxan(domain_prefix, org, type).multicast_policies(jsonData, easy_jsonData)
         elif policy == 'network_connectivity_policies':
             policies_p2(name_prefix, org, type).network_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ntp_policies':
@@ -818,25 +806,26 @@ def process_wizard(easy_jsonData, jsonData):
             policies_p3(name_prefix, org, type).virtual_kvm_policies(jsonData, easy_jsonData)
         elif policy == 'virtual_media_policies':
             policies_p3(name_prefix, org, type).virtual_media_policies(jsonData, easy_jsonData)
+        elif policy == 'vlan_policies':
+            policies_vxan(domain_prefix, org, type).vlan_policies(jsonData, easy_jsonData)
         elif policy == 'vsan_policies':
             policies_vxan(domain_prefix, org, type).vsan_policies(jsonData, easy_jsonData)
 
         #==============================================
-        # UCS Profiles
+        # Intersight Profiles
         #==============================================
-        type = 'ucs_chassis_profiles'
+        type = 'profiles'
         if policy == 'ucs_chassis_profiles':
             profiles(domain_prefix, org, type).ucs_chassis_profiles(jsonData, easy_jsonData)
+        elif policy == 'ucs_server_profile_templates':
+            profiles(name_prefix, org, type).ucs_server_profile_templates(jsonData, easy_jsonData)
+        elif policy == 'ucs_server_profiles':
+            profiles(name_prefix, org, type).ucs_server_profiles(jsonData, easy_jsonData)
 
         type = 'ucs_domain_profiles'
         if policy == 'ucs_domain_profiles':
             profiles(domain_prefix, org, type).ucs_domain_profiles(jsonData, easy_jsonData, name_prefix)
 
-        type = 'ucs_server_profiles'
-        if policy == 'ucs_server_profile_templates':
-            profiles(name_prefix, org, type).ucs_server_profile_templates(jsonData, easy_jsonData)
-        elif policy == 'ucs_server_profiles':
-            profiles(name_prefix, org, type).ucs_server_profiles(jsonData, easy_jsonData)
         
         #==============================================
         # Quick Start - Pools
@@ -867,28 +856,31 @@ def process_wizard(easy_jsonData, jsonData):
             else:
                 kwargs.update({'server_type':'Standalone'})
                 kwargs.update({'fc_ports':[]})
+                type = 'policies'
                 quick_start(name_prefix, org, type).standalone_policies(jsonData, easy_jsonData)
             quick_start(name_prefix, org, type).server_policies(jsonData, easy_jsonData, **kwargs)
         elif 'quick_start_lan_san_policies' in policy:
+            type = 'policies'
             quick_start(domain_prefix, org, type).lan_san_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'quick_start_vmware_m2':
             quick_start(name_prefix, org, type).vmware_m2()
-            kwargs = {
-                'primary_dns': '208.67.220.220',
-                'secondary_dns': '',
-                'server_type': 'FIAttached',
-                'vlan_policy': 'asgard-ucs',
-                'vlans': '1-99,101-199,201-299',
-                'vsan_a': 100,
-                'vsan_b': 200,
-                'fc_ports': [1, 2, 3, 4],
-                'mtu':9216
-            }
+            # kwargs = {
+            #     'primary_dns': '208.67.220.220',
+            #     'secondary_dns': '',
+            #     'server_type': 'FIAttached',
+            #     'vlan_policy': 'asgard-ucs',
+            #     'vlans': '1-99,101-199,201-299',
+            #     'vsan_a': 100,
+            #     'vsan_b': 200,
+            #     'fc_ports': [1, 2, 3, 4],
+            #     'mtu':9216
+            # }
             kwargs.update({'boot_order_policy':'VMware_M2_pxe'})
         elif policy == 'quick_start_vmware_raid1':
             quick_start(name_prefix, org, type).vmware_raid1()
             kwargs.update({'boot_order_policy':'VMware_Raid1_pxe'})
         elif 'quick_start_server_profile' in policy:
+            type = 'profiles'
             quick_start(domain_prefix, org, type).server_profiles(jsonData, easy_jsonData, **kwargs)
 
     return org

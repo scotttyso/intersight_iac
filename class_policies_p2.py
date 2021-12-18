@@ -833,6 +833,7 @@ class policies_p2(object):
             print(f'   - Ethernet Uplink Port-Channels')
             print(f'   - FCoE Uplinks')
             print(f'   - FCoE Uplink Port-Channels')
+            print(f'   - Fibre-Channel Storage')
             print(f'   - Fibre-Channel Uplinks')
             print(f'   - Fibre-Channel Uplink Port-Channels')
             print(f'   - Server Ports\n')
@@ -899,11 +900,18 @@ class policies_p2(object):
                 templateVars['port_type'] = 'Ethernet Uplink'
                 port_role_ethernet_uplinks,templateVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars)
 
+                # Fibre-Channel Storage
+                templateVars["port_type"] = 'Fibre-Channel Storage'
+                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars)
+                Fabric_A_port_role_fc_storage = Fab_A
+                Fabric_B_port_role_fc_storage = Fab_B
+                templateVars["fc_ports_in_use"] = fc_ports_in_use
+
                 # Fibre-Channel Uplink
                 templateVars["port_type"] = 'Fibre-Channel Uplink'
                 Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars)
-                Fabric_A_port_role_fc = Fab_A
-                Fabric_B_port_role_fc = Fab_B
+                Fabric_A_port_role_fc_uplink = Fab_A
+                Fabric_B_port_role_fc_uplink = Fab_B
                 templateVars["fc_ports_in_use"] = fc_ports_in_use
 
                 # FCoE Uplink
@@ -1076,9 +1084,9 @@ class policies_p2(object):
                         print('      }')
                     print(f'    ]')
                 item_count = 0
-                if len(Fabric_A_port_role_fc) > 0:
-                    print(f'    port_role_fc_uplinks = [')
-                    for item in Fabric_A_port_role_fc:
+                if len(Fabric_A_port_role_fc_storage) > 0:
+                    print(f'    port_role_fc_storage = [')
+                    for item in Fabric_A_port_role_fc_storage:
                         print(f'      {item_count} = ''{')
                         for k, v in item.items():
                             if k == 'admin_speed':
@@ -1091,7 +1099,27 @@ class policies_p2(object):
                                 print(f'        slot_id       = 1')
                             elif k == 'vsan_id':
                                 print(f'        vsan_fabric_a = "{v}"')
-                                print(f'        vsan_fabric_b = "{Fabric_B_port_role_fc[item_count].get("vsan_id")}"')
+                                print(f'        vsan_fabric_b = "{Fabric_B_port_role_fc_storage[item_count].get("vsan_id")}"')
+                        print('      }')
+                        item_count += 1
+                    print(f'    ]')
+                item_count = 0
+                if len(Fabric_A_port_role_fc_uplink) > 0:
+                    print(f'    port_role_fc_uplinks = [')
+                    for item in Fabric_A_port_role_fc_uplink:
+                        print(f'      {item_count} = ''{')
+                        for k, v in item.items():
+                            if k == 'admin_speed':
+                                print(f'        admin_speed   = "{v}"')
+                            elif k == 'fill_pattern':
+                                print(f'        fill_pattern  = "{v}"')
+                            elif k == 'port_id':
+                                print(f'        port_list     = "{v}"')
+                            elif k == 'slot_id':
+                                print(f'        slot_id       = 1')
+                            elif k == 'vsan_id':
+                                print(f'        vsan_fabric_a = "{v}"')
+                                print(f'        vsan_fabric_b = "{Fabric_B_port_role_fc_uplink[item_count].get("vsan_id")}"')
                         print('      }')
                         item_count += 1
                     print(f'    ]')
@@ -1144,7 +1172,8 @@ class policies_p2(object):
                         original_name = templateVars["name"]
                         templateVars["name"] = '%s_A' % (original_name)
                         templateVars["port_channel_fc_uplinks"] = Fabric_A_fc_port_channels
-                        templateVars["port_role_fc_uplinks"] = Fabric_A_port_role_fc
+                        templateVars["port_role_fc_storage"] = Fabric_A_port_role_fc_storage
+                        templateVars["port_role_fc_uplinks"] = Fabric_A_port_role_fc_uplink
 
                         # Write Policies to Template File
                         templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -1152,7 +1181,8 @@ class policies_p2(object):
 
                         templateVars["name"] = '%s_B' % (original_name)
                         templateVars["port_channel_fc_uplinks"] = Fabric_B_fc_port_channels
-                        templateVars["port_role_fc_uplinks"] = Fabric_B_port_role_fc
+                        templateVars["port_role_fc_storage"] = Fabric_B_port_role_fc_storage
+                        templateVars["port_role_fc_uplinks"] = Fabric_B_port_role_fc_uplink
 
                         # Write Policies to Template File
                         templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -1644,8 +1674,10 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                         templateVars["multi_select"] = False
                         if templateVars["port_type"] == 'Fibre Channel Port-Channel':
                             templateVars["var_description"] = '    Please Select a VSAN for the Port-Channel:\n'
+                        elif templateVars["port_type"] == 'Fibre-Channel Storage':
+                            templateVars["var_description"] = '    Please Select a VSAN for the Storage Port:\n'
                         else:
-                            templateVars["var_description"] = '    Please Select a VSAN for the Uplink:\n'
+                            templateVars["var_description"] = '    Please Select a VSAN for the Uplink Port:\n'
                         templateVars["var_type"] = 'VSAN'
                         vsan_x = vars_from_list(vsan_list, **templateVars)
                         for vs in vsan_x:
@@ -1692,7 +1724,7 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    admin_speed      = "{templateVars["admin_speed"]}"')
                     print(f'    fill_pattern     = "{templateVars["fill_pattern"]}"')
-                    if templateVars["port_type"] == 'Fibre Channel Uplink':
+                    if re.search('Uplink|Storage', templateVars["port_type"]):
                         print(f'    port_list        = "{port_list}"')
                     print(f'    vsan_id_fabric_a = {vsans["Fabric_A"]}')
                     print(f'    vsan_id_fabric_b = {vsans["Fabric_B"]}')

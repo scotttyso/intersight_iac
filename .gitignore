@@ -7,5 +7,7 @@
 # Local Python Directories
 **/intersight/*
 **/Testing/*
+**/QA/*
+**/PROD/*
 __pycache__/
 **/.DS_Store/*

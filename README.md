@@ -4,7 +4,12 @@
 
 ## Updates/News
 
-No New Items at this time.
+* IMPORTANT - There is currently a bug with Policy Buckets for UCS Domain Profiles.  That is the only reason ucs_domain_profiles are not in the same folder as chassis and servers.  When this is fixed the ucs_domain_profiles folder will be merged with the profiles folder.  Because of this limitation at this time make sure to create a seperate policy for Domains of the following types:
+
+- network_connectivity_policies - If Using Standalone Server Policies
+- ntp_policies - If Using Standalone Server Policies
+- snmp_policies
+- syslog_policies
 
 ## Getting Started
 
@@ -40,12 +45,13 @@ This script will utilize the Intersight Terraform Provider and two modules built
 
 ## Running the Wizard
 
-- I recommend adding the following secure variables to your environment before running the script
+- It is recommend to add the following secure variables to your environment before running the script
+
 ```bash
 ## Intersight Variables
 export TF_VAR_apikey="<your_intersight_api_key>"
 export TF_VAR_secretkey=`cat ~/Downloads/SecretKey.txt` 
-# This is an example based on the key being in your Downloads folder.  Correct for your environment
+# The above example is based on the key being in your Downloads folder.  Correct for your environment
 
 ## Terraform Cloud Variables
 export TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
@@ -65,7 +71,7 @@ export TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 
 - Help Information
 ```bash
-main.py -h
+./main.py -h
 
 Intersight Easy IMM Deployment Module
 
@@ -82,6 +88,16 @@ optional arguments:
                         The IMM Transition Tool JSON Dump File to Convert to HCL.
   -u URL, --url URL     The Intersight root URL for the API endpoint. The default is https://intersight.com
 ```
+
+## Terraform Plan and Apply
+
+After the Script has generated the Terraform Directories and downloaded the resources from the Easy IMM Repository, the data will need to be pushed to Intersight using Terraform Cloud.  It is important to execute the Workspaces in the following Order:
+
+1. pools and ucs_domain_profiles*
+2. policies
+3. profiles
+
+* It doesn't matter if you run pools or ucs_domain_profiles first as there is no dependency between both of them.  Both Just need to be run before you run policies and profiles.
 
 ## Disclaimer
 
@@ -178,7 +194,6 @@ This set of modules support creating the following Policy Types:
 
 This set of modules support creating the following Profile Types:
 
-- Kubernetes Cluster Profile
 - UCS Chassis Profile
 - UCS Domain Profile
 - UCS Server Profile
