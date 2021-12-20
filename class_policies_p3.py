@@ -652,18 +652,15 @@ class policies_p3(object):
                     # SNMP Users
                     ilCount = 1
                     snmp_user_list = []
-                    snmp_loop = False
-                    while snmp_loop == False:
-                        question = input(f'Would you like to configure an SNMPv3 User?  Enter "Y" or "N" [Y]: ')
-                        if question == '' or question == 'Y':
+                    templateVars["Description"] = 'Configure SNMP Users'
+                    templateVars["varInput"] = f'Would you like to configure an SNMPv3 User?'
+                    templateVars["varDefault"] = 'Y'
+                    templateVars["varName"] = 'Enable Trunking'
+                    configure_snmp_users = varBoolLoop(**templateVars)
+                    if configure_snmp_users == True:
+                        snmp_loop = False
+                        while snmp_loop == False:
                             snmp_user_list,snmp_loop = snmp_users(jsonData, ilCount, **templateVars)
-                        elif question == 'N':
-                            snmp_loop = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-                    templateVars["users"] = snmp_user_list
 
                     # SNMP Trap Destinations
                     ilCount = 1

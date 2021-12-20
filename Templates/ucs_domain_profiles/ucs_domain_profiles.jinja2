@@ -15,7 +15,11 @@
     assign_switches             = false
 {%- endif %}
     description                 = "{{ descr }}"
+{%- if device_model %}
     device_model                = "{{ device_model }}"
+{%- else %}
+    device_model                = "UCS-FI-6454"
+{%- endif %}
     network_connectivity_policy = "{{ network_connectivity_policy }}"
     ntp_policy                  = "{{ ntp_policy }}"
     organization                = "{{ org }}"

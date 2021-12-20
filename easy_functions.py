@@ -679,14 +679,22 @@ def snmp_users(jsonData, inner_loop_count, **templateVars):
         templateVars["multi_select"] = False
         jsonVars = jsonData['components']['schemas']['snmp.User']['allOf'][1]['properties']
 
-        templateVars["Description"] = jsonVars['Name']['description']
-        templateVars["varDefault"] = 'admin'
-        templateVars["varInput"] = 'What is the SNMPv3 Username:'
-        templateVars["varName"] = 'SNMP User'
-        templateVars["varRegex"] = '^([a-zA-Z]+[a-zA-Z0-9\\-\\_\\.\\@]+)$'
-        templateVars["minLength"] = jsonVars['Name']['minLength']
-        templateVars["maxLength"] = jsonVars['Name']['maxLength']
-        snmp_user = varStringLoop(**templateVars)
+        snmpUser = False
+        while snmpUser == False:
+            templateVars["Description"] = jsonVars['Name']['description']
+            templateVars["varDefault"] = 'admin'
+            templateVars["varInput"] = 'What is the SNMPv3 Username:'
+            templateVars["varName"] = 'SNMP User'
+            templateVars["varRegex"] = '^([a-zA-Z]+[a-zA-Z0-9\\-\\_\\.\\@]+)$'
+            templateVars["minLength"] = jsonVars['Name']['minLength']
+            templateVars["maxLength"] = jsonVars['Name']['maxLength']
+            snmp_user = varStringLoop(**templateVars)
+            if snmp_user == 'admin':
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  admin may not be used for the snmp user value.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+            else:
+                snmpUser = True
 
         templateVars["var_description"] = jsonVars['SecurityLevel']['description']
         templateVars["jsonVars"] = sorted(jsonVars['SecurityLevel']['enum'])

@@ -5,7 +5,11 @@
     enable_advanced_filter                   = {{ enable_advanced_filter|lower }}
     enable_accelerated_receive_flow_steering = {{ enable_accelerated_receive_flow_steering|lower }}
     enable_interrupt_scaling                 = {{ enable_interrupt_scaling|lower }}
+{%- if enable_geneve_offload %}
     enable_geneve_offload                    = {{ enable_geneve_offload|lower }}
+{%- else %}
+    enable_geneve_offload                    = false
+{%- endif %}
     enable_nvgre_offload                     = {{ enable_nvgre_offload|lower }}
     enable_vxlan_offload                     = {{ enable_vxlan_offload|lower }}
     description                              = "{{ descr }}"

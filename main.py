@@ -109,9 +109,9 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
             f'./{tfDir}/{org}/ucs_domain_profiles'
         ]
         for folder in folder_list:
-            templateVars["autoApply"] = False
+            templateVars["autoApply"] = True
             templateVars["Description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[3])
-            if re.search('(pools|profiles)', folder.split('/')[3]):
+            if re.search('(pools|profiles|ucs_domain_profiles)', folder.split('/')[3]):
                 templateVars["globalRemoteState"] = True
             else:
                 templateVars["globalRemoteState"] = False
@@ -288,11 +288,9 @@ def merge_easy_imm_repository(easy_jsonData, org):
         tfDir = os.environ.get('TF_DEST_DIR')
     folder_list = [
         f'./{tfDir}/{org}/policies',
-        f'./{tfDir}/{org}/policies_vlans',
         f'./{tfDir}/{org}/pools',
-        f'./{tfDir}/{org}/ucs_chassis_profiles',
-        f'./{tfDir}/{org}/ucs_domain_profiles',
-        f'./{tfDir}/{org}/ucs_server_profiles'
+        f'./{tfDir}/{org}/profiles',
+        f'./{tfDir}/{org}/ucs_domain_profiles'
     ]
     for folder in folder_list:
         if os.path.isdir(folder):
