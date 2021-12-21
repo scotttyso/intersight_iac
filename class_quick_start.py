@@ -1923,24 +1923,28 @@ class quick_start(object):
 
                         elif question == 'N':
                             templateVars["min_severity"] = 'warning'
-                            templateVars['remote_logging'] = [
-                                {
-                                    'server1':{
-                                        'enable':False,
-                                        'hostname':'0.0.0.0',
-                                        'min_severity':'warning',
-                                        'port':514,
-                                        'protocol':'udp'
-                                    },
-                                    'server2':{
-                                        'enable':False,
-                                        'hostname':'0.0.0.0',
-                                        'min_severity':'warning',
-                                        'port':514,
-                                        'protocol':'udp'
-                                    }
+                            templateVars['remote_logging'] = {}
+                            server1 = {
+                                'server1':{
+                                'enable':False,
+                                'hostname':'0.0.0.0',
+                                'min_severity':'warning',
+                                'port':514,
+                                'protocol':'udp'
                                 }
-                            ]
+                            }
+                            server2 = {
+                                'server2':{
+                                'enable':False,
+                                'hostname':'0.0.0.0',
+                                'min_severity':'warning',
+                                'port':514,
+                                'protocol':'udp'
+                                }
+                            }
+                            templateVars['remote_logging'].update(server1)
+                            templateVars['remote_logging'].update(server2)
+
                             syslog_loop = True
                         else:
                             print(f'\n------------------------------------------------------\n')
@@ -2007,25 +2011,24 @@ class quick_start(object):
                                     print(f'        security_level   = "{v}"')
                             print(f'      ''}')
                         print(f'    ''}')
-                    if len(templateVars["remote_clients"]) > 0:
-                        print(f'    remote_clients = [')
-                        item_count = 1
-                        for key, value in templateVars["remote_logging"].items():
-                            print(f'      ''{')
-                            for k, v in value.items():
-                                if k == 'enable':
-                                    print(f'        enabled      = {"%s".lower() % (v)}')
-                                elif k == 'hostname':
-                                    print(f'        hostname     = "{v}"')
-                                elif k == 'min_severity':
-                                    print(f'        min_severity = "{v}"')
-                                elif k == 'port':
-                                    print(f'        port         = {v}')
-                                elif k == 'protocol':
-                                    print(f'        protocol     = "{v}"')
-                            print(f'      ''}')
-                            item_count += 1
-                        print(f'    ]')
+                    print(f'    remote_clients = [')
+                    item_count = 1
+                    for key, value in templateVars["remote_logging"].items():
+                        print(f'      ''{')
+                        for k, v in value.items():
+                            if k == 'enable':
+                                print(f'        enabled      = {"%s".lower() % (v)}')
+                            elif k == 'hostname':
+                                print(f'        hostname     = "{v}"')
+                            elif k == 'min_severity':
+                                print(f'        min_severity = "{v}"')
+                            elif k == 'port':
+                                print(f'        port         = {v}')
+                            elif k == 'protocol':
+                                print(f'        protocol     = "{v}"')
+                        print(f'      ''}')
+                        item_count += 1
+                    print(f'    ]')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
