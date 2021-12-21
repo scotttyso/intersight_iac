@@ -296,7 +296,7 @@ class policies_vxan(object):
                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                 policy_list = [
-                    'policies_vlans.multicast_policies.multicast_policy'
+                    'policies.multicast_policies.multicast_policy'
                 ]
                 templateVars["allow_opt_out"] = False
                 for policy in policy_list:
@@ -473,7 +473,7 @@ class policies_vxan(object):
                                 valid_vlan = validating.number_in_range('VSAN ID', fcoe_id, 1, 4094)
                                 if valid_vlan == True:
                                     policy_list = [
-                                        'policies_vlans.vlan_policies.vlan_policy',
+                                        'policies.vlan_policies.vlan_policy',
                                     ]
                                     templateVars["allow_opt_out"] = False
                                     for policy in policy_list:

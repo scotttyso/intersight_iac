@@ -49,11 +49,9 @@ def delete_terraform_workspaces(org):
             tfDir = os.environ.get('TF_DEST_DIR')
         folder_list = [
             f'./{tfDir}/{org}/policies',
-            f'./{tfDir}/{org}/policies_vlans',
             f'./{tfDir}/{org}/pools',
-            f'./{tfDir}/{org}/ucs_chassis_profiles',
+            f'./{tfDir}/{org}/profiles',
             f'./{tfDir}/{org}/ucs_domain_profiles',
-            f'./{tfDir}/{org}/ucs_server_profiles'
         ]
         for folder in folder_list:
             templateVars["autoApply"] = False

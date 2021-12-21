@@ -111,7 +111,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         for folder in folder_list:
             templateVars["autoApply"] = True
             templateVars["Description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[3])
-            if re.search('(pools|profiles|ucs_domain_profiles)', folder.split('/')[3]):
+            if re.search('(pools|policies|ucs_domain_profiles)', folder.split('/')[3]):
                 templateVars["globalRemoteState"] = True
             else:
                 templateVars["globalRemoteState"] = False

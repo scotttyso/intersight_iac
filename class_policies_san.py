@@ -69,7 +69,7 @@ class policies_san(object):
                     templateVars["var_description"] = jsonVars['templates']['description']
                     templateVars["jsonVars"] = sorted(jsonVars['templates']['enum'])
                     templateVars["defaultVar"] = jsonVars['templates']['default']
-                    templateVars["varType"] = 'Fibre Channel Adapter Template'
+                    templateVars["varType"] = 'Fibre-Channel Adapter Template'
                     templateVars["policy_template"] = variablesFromAPI(**templateVars)
 
                     if not templateVars["name_prefix"] == '':

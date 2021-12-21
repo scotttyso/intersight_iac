@@ -1173,7 +1173,7 @@ class policies_p1(object):
                     if valid_vlan == True:
                         if templateVars["target_platform"] == 'FIAttached':
                             policy_list = [
-                                'policies_vlans.vlan_policies.vlan_policy',
+                                'policies.vlan_policies.vlan_policy',
                             ]
                             templateVars["allow_opt_out"] = False
                             for policy in policy_list:
@@ -1387,22 +1387,15 @@ class policies_p1(object):
                 for k, v in i.items():
                     if k == 'pools':
                         templateVars["ws_pools"] = v
-                    elif k == 'ucs_chassis_profiles':
-                        templateVars["ws_ucs_chassis_profiles"] = v
-                    elif k == 'ws_ucs_domain_profiles':
+                    elif k == 'ucs_domain_profiles':
                         templateVars["ws_ucs_domain_profiles"] = v
-                    elif k == 'ws_ucs_server_profiles':
-                        templateVars["ws_ucs_server_profiles"] = v
-        elif policyVar == 'policies_vlans':
-             for i in tfcb_config:
-                for k, v in i.items():
-                    if k == 'ws_ucs_domain_profiles':
-                        templateVars["ws_ucs_domain_profiles"] = v
-        elif policyVar == 'ucs_server_profiles':
+        elif policyVar == 'profiles':
              for i in tfcb_config:
                 for k, v in i.items():
                     if k == 'pools':
                         templateVars["ws_pools"] = v
+                    elif k == 'policies':
+                        templateVars["ws_policies"] = v
 
         templateVars["tags"] = '[{ key = "Module", value = "terraform-intersight-easy-imm" }, { key = "Version", value = "'f'{easy_jsonData["version"]}''" }]'
 

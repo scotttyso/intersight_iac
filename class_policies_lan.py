@@ -304,7 +304,7 @@ class policies_lan(object):
                 templateVars["action_on_uplink_fail"] = 'linkDown'
 
                 policy_list = [
-                    'policies_vlans.vlan_policies.vlan_policy',
+                    'policies.vlan_policies.vlan_policy',
                 ]
                 templateVars["allow_opt_out"] = False
                 for policy in policy_list:

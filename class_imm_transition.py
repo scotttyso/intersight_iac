@@ -70,19 +70,19 @@ class imm_transition(object):
         policy_loop_standard(self, header, initial_policy, template_type)
 
     def fibre_channel_adapter_policies(self):
-        header = 'Fibre Channel Adapter Policy Variables'
+        header = 'Fibre-Channel Adapter Policy Variables'
         initial_policy = True
         template_type = 'fibre_channel_adapter_policies'
         policy_loop_standard(self, header, initial_policy, template_type)
 
     def fibre_channel_network_policies(self):
-        header = 'Fibre Channel Network Policy Variables'
+        header = 'Fibre-Channel Network Policy Variables'
         initial_policy = True
         template_type = 'fibre_channel_network_policies'
         policy_loop_standard(self, header, initial_policy, template_type)
 
     def fibre_channel_qos_policies(self):
-        header = 'Fibre Channel QoS Policy Variables'
+        header = 'Fibre-Channel QoS Policy Variables'
         initial_policy = True
         template_type = 'fibre_channel_qos_policies'
         policy_loop_standard(self, header, initial_policy, template_type)
@@ -472,13 +472,13 @@ class imm_transition(object):
         policy_loop_standard(self, header, initial_policy, template_type)
 
     def wwnn_pools(self):
-        header = 'Fibre Channel WWNN Pool Variables'
+        header = 'Fibre-Channel WWNN Pool Variables'
         initial_policy = True
         template_type = 'wwnn_pools'
         policy_loop_standard(self, header, initial_policy, template_type)
 
     def wwpn_pools(self):
-        header = 'Fibre Channel WWPN Pool Variables'
+        header = 'Fibre-Channel WWPN Pool Variables'
         initial_policy = True
         template_type = 'wwpn_pools'
         policy_loop_standard(self, header, initial_policy, template_type)

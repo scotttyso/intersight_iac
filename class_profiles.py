@@ -437,7 +437,7 @@ class profiles(object):
 
                     policy_list = [
                         'policies.port_policies.port_policy',
-                        'policies_vlans.vlan_policies.vlan_policy',
+                        'policies.vlan_policies.vlan_policy',
                         'policies.vsan_policies.vsan_policy'
                     ]
                     templateVars["allow_opt_out"] = False

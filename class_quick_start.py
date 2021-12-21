@@ -137,7 +137,7 @@ class quick_start(object):
 
                     templateVars["name"] = domain_name
                     templateVars["descr"] = f'{templateVars["name"]} Multicast Policy'
-                    policies_vxan(name_prefix, org, 'policies_vlans').quick_start_multicast(**templateVars)
+                    policies_vxan(name_prefix, org, 'policies').quick_start_multicast(**templateVars)
 
                     #_______________________________________________________________________
                     #
@@ -148,7 +148,7 @@ class quick_start(object):
                     templateVars["descr"] = f'{templateVars["name"]} VLAN Policy'
                     templateVars["native_vlan"] = ''
                     templateVars["vlan_list"] = VlanList
-                    policies_vxan(name_prefix, org, 'policies_vlans').quick_start_vlan(**templateVars)
+                    policies_vxan(name_prefix, org, 'policies').quick_start_vlan(**templateVars)
 
                     #_______________________________________________________________________
                     #
@@ -390,7 +390,7 @@ class quick_start(object):
                     port_channel_ethernet_uplinks,templateVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars)
 
                     templateVars["fc_ports_in_use"] = []
-                    templateVars["port_type"] = 'Fibre Channel Port-Channel'
+                    templateVars["port_type"] = 'Fibre-Channel Port-Channel'
                     Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars)
                     Fabric_A_fc_port_channels = Fab_A
                     Fabric_B_fc_port_channels = Fab_B
@@ -1159,7 +1159,7 @@ class quick_start(object):
                             if len(fc_ports_in_use) > 0:
                                 #_______________________________________________________________________
                                 #
-                                # Configure Fibre Channel Adapter Policy
+                                # Configure Fibre-Channel Adapter Policy
                                 #_______________________________________________________________________
 
                                 templateVars["initial_write"] = True
@@ -1187,7 +1187,7 @@ class quick_start(object):
 
                                 #_______________________________________________________________________
                                 #
-                                # Configure Fibre Channel Network Policy
+                                # Configure Fibre-Channel Network Policy
                                 #_______________________________________________________________________
 
                                 templateVars["initial_write"] = True
@@ -1218,7 +1218,7 @@ class quick_start(object):
 
                                 #_______________________________________________________________________
                                 #
-                                # Configure Fibre Channel QoS Policy
+                                # Configure Fibre-Channel QoS Policy
                                 #_______________________________________________________________________
 
                                 templateVars["initial_write"] = True
