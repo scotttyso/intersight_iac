@@ -1923,6 +1923,7 @@ class quick_start(object):
 
                         elif question == 'N':
                             templateVars["min_severity"] = 'warning'
+                            templateVars["local_logging"] = {'file':{'min_severity':templateVars["min_severity"]}}
                             templateVars['remote_logging'] = {}
                             server1 = {
                                 'server1':{
