@@ -298,7 +298,7 @@ class profiles(object):
                     while valid == False:
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  Note: If you do not have the Serial Number at this time you can manually add it to the:')
-                        print(f'        - ucs_chassis_profiles/ucs_chassis_profiles.auto.tfvars file later.')
+                        print(f'        - profiles/ucs_chassis_profiles.auto.tfvars file later.')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         templateVars["serial_number"] = input('What is the Serial Number of the Chassis? [press enter to skip]: ')
                         if templateVars["serial_number"] == '':
@@ -591,7 +591,7 @@ class profiles(object):
                 if templateVars["server_assignment_mode"] == 'Static':
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Note: If you do not have the Serial Number at this time you can manually add it to the:')
-                    print(f'        - ucs_server_profiles/ucs_server_profiles.auto.tfvars file later.')
+                    print(f'        - profiles/ucs_server_profiles.auto.tfvars file later.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     templateVars["Description"] = 'Serial Number of the Physical Compute Resource to assign to the Profile.'
                     templateVars["varDefault"] = ''
@@ -618,7 +618,7 @@ class profiles(object):
                     server_template = input('Do you want to Associate to a UCS Server Profile Template?  Enter "Y" or "N" [Y]: ')
                     if server_template == '' or server_template == 'Y':
                         policy_list = [
-                            'ucs_server_profiles.ucs_server_profile_templates.ucs_server_profile_template'
+                            'profiles.ucs_server_profile_templates.ucs_server_profile_template'
                         ]
                         templateVars["allow_opt_out"] = False
                         for policy in policy_list:
