@@ -30,7 +30,7 @@
       {%- elif k == 'id' %}
         vsan_id        = {{ v }}
       {%- elif k == 'vsan_scope' %}
-        vsan_scope     = {{ v }}
+        vsan_scope     = "{{ v }}"
       {%- elif k == 'name' %}
         name           = "{{ v }}"
       {%- elif k == 'zoning' %}
