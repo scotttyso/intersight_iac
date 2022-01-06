@@ -818,12 +818,21 @@ class quick_start(object):
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
         
-        vlan_policy = {'vlan_policy':f'{domain_name}','vlans':VlanList}
-        vsan_a = templateVars["vsan_id_A"]
-        vsan_b = templateVars["vsan_id_B"]
-        fc_ports = templateVars["fc_converted_ports"]
-        mtu = templateVars["mtu"]
-        return vlan_policy,vsan_a,vsan_b,fc_ports,mtu
+        if configure == 'Y' or configure == '':
+            vlan_policy = {'vlan_policy':f'{domain_name}','vlans':VlanList}
+            vsan_a = templateVars["vsan_id_A"]
+            vsan_b = templateVars["vsan_id_B"]
+            fc_ports = templateVars["fc_converted_ports"]
+            mtu = templateVars["mtu"]
+            configure = True
+        elif configure == 'N':
+            vlan_policy = {}
+            vsan_a = 0
+            vsan_b = 0
+            fc_ports = [0]
+            mtu = 1500
+            configure = False
+        return configure,vlan_policy,vsan_a,vsan_b,fc_ports,mtu
 
     #==============================================
     # LAN and SAN Policies
@@ -2959,6 +2968,12 @@ class quick_start(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        if configure == 'Y' or configure == '':
+            configure = True
+        elif configure == 'N':
+            configure = False
+        return configure
 
     #==============================================
     # VMware M2 - Boot and Storage Policies
