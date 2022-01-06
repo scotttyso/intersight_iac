@@ -615,7 +615,7 @@ def process_wizard(easy_jsonData, jsonData):
     #  Easy Deploy - VMware M2 Boot Server Profiles
     elif '-_domain_-' in main_menu:
         policy_list = [
-            # 'quick_start_pools',
+            'quick_start_pools',
             'quick_start_domain_policies',
             'quick_start_lan_san_policies',
             'quick_start_ucs_chassis',

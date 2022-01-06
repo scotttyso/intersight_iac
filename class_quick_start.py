@@ -511,8 +511,9 @@ class quick_start(object):
                             print(f'      "{server}",')
                         print(f'    ]')
                     print(f'  VLAN Pool: "{VlanList}"')
-                    print(f'  VSAN Fabric A: "{templateVars["vsan_id_A"]}"')
-                    print(f'  VSAN Fabric B: "{templateVars["vsan_id_B"]}"')
+                    if len(templateVars["fc_converted_ports"]) > 0:
+                        print(f'  VSAN Fabric A: "{templateVars["vsan_id_A"]}"')
+                        print(f'  VSAN Fabric B: "{templateVars["vsan_id_B"]}"')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
@@ -734,18 +735,19 @@ class quick_start(object):
                             templateVars["port_role_fcoe_uplinks"] = []
                             templateVars["port_role_servers"] = port_role_servers
 
-                            for x in fabrics:
-                                xlower = x.lower()
-                                templateVars["name"] = f'{domain_name}-{xlower}'
-                                if x == 'A':
-                                    templateVars["port_channel_fc_uplinks"] = Fabric_A_fc_port_channels
-                                else:
-                                    templateVars["port_channel_fc_uplinks"] = Fabric_B_fc_port_channels
-                                templateVars["port_role_fc_uplinks"] = []
+                            if len(templateVars["fc_converted_ports"]) > 0:
+                                for x in fabrics:
+                                    xlower = x.lower()
+                                    templateVars["name"] = f'{domain_name}-{xlower}'
+                                    if x == 'A':
+                                        templateVars["port_channel_fc_uplinks"] = Fabric_A_fc_port_channels
+                                    else:
+                                        templateVars["port_channel_fc_uplinks"] = Fabric_B_fc_port_channels
+                                    templateVars["port_role_fc_uplinks"] = []
 
-                                # Write Policies to Template File
-                                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                                write_to_template(self, **templateVars)
+                                    # Write Policies to Template File
+                                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                                    write_to_template(self, **templateVars)
 
                             # Close the Template file
                             templateVars["template_file"] = 'template_close.jinja2'
@@ -820,8 +822,12 @@ class quick_start(object):
         
         if configure == 'Y' or configure == '':
             vlan_policy = {'vlan_policy':f'{domain_name}','vlans':VlanList}
-            vsan_a = templateVars["vsan_id_A"]
-            vsan_b = templateVars["vsan_id_B"]
+            if len(templateVars["fc_converted_ports"]) > 0:
+                vsan_a = templateVars["vsan_id_A"]
+                vsan_b = templateVars["vsan_id_B"]
+            else:
+                vsan_a = 0
+                vsan_b = 0
             fc_ports = templateVars["fc_converted_ports"]
             mtu = templateVars["mtu"]
             configure = True
@@ -829,7 +835,7 @@ class quick_start(object):
             vlan_policy = {}
             vsan_a = 0
             vsan_b = 0
-            fc_ports = [0]
+            fc_ports = []
             mtu = 1500
             configure = False
         return configure,vlan_policy,vsan_a,vsan_b,fc_ports,mtu
