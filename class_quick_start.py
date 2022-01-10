@@ -821,7 +821,7 @@ class quick_start(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
         
         if configure == 'Y' or configure == '':
-            vlan_policy = {'vlan_policy':f'{domain_name}','vlans':VlanList}
+            vlan_policy = {'vlan_policy':f'{domain_name}','vlans':VlanList,'native_vlan':nativeVlan}
             if len(templateVars["fc_converted_ports"]) > 0:
                 vsan_a = templateVars["vsan_id_A"]
                 vsan_b = templateVars["vsan_id_B"]
@@ -1103,15 +1103,18 @@ class quick_start(object):
                             write_to_template(self, **templateVars)
                             templateVars["initial_write"] = False
 
-                            names = ['MGMT', 'VMOTION', 'STORAGE', 'DATA']
+                            names = [kwargs["vlan_policy"], 'MGMT', 'VMOTION', 'STORAGE', 'DATA']
                             for x in names:
-                                if x == 'MGMT':
+                                if x == kwargs["vlan_policy"]:
+                                    allowed_vlans = kwargs["vlans"]
+                                    native_vlan = kwargs["native_vlan"]
+                                elif x == 'MGMT':
                                     allowed_vlans = mgmt_vlan
                                     native_vlan = mgmt_vlan
-                                elif x == 'MGMT':
+                                elif x == 'VMOTION':
                                     allowed_vlans = vmotion_vlan
                                     native_vlan = vmotion_vlan
-                                elif x == 'MGMT':
+                                elif x == 'STORAGE':
                                     allowed_vlans = storage_vlan
                                     native_vlan = storage_vlan
                                 elif x == 'DATA':
@@ -1585,14 +1588,14 @@ class quick_start(object):
                             write_to_template(self, **templateVars)
                             templateVars["initial_write"] = False
 
-                            names = ['DATA', 'MGMT', 'MIGRATION', 'STORAGE']
+                            names = ['DATA', 'MGMT', 'VMOTION', 'STORAGE']
                             fabrics = ['A', 'B']
                             for nam in names:
                                 for fab in fabrics:
                                     if nam == 'MGMT' and fab == 'A': key_id = 'A'
                                     elif nam == 'MGMT' and fab == 'B': key_id = 'B'
-                                    elif nam == 'MIGRATION' and fab == 'A': key_id = 'C'
-                                    elif nam == 'MIGRATION' and fab == 'B': key_id = 'D'
+                                    elif nam == 'VMOTION' and fab == 'A': key_id = 'C'
+                                    elif nam == 'VMOTION' and fab == 'B': key_id = 'D'
                                     elif nam == 'STORAGE' and fab == 'A': key_id = 'E'
                                     elif nam == 'STORAGE' and fab == 'B': key_id = 'F'
                                     elif nam == 'DATA' and fab == 'A': key_id = '1'
