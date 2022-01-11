@@ -852,7 +852,7 @@ def process_wizard(easy_jsonData, jsonData):
         if 'quick_start_domain_policies' in policy or 'quick_start_rack_policies' in policy:
             Config = True
             if 'domain' in policy:
-                kwargs = {'primary_dns': '208.67.220.220', 'secondary_dns': ''}
+                # kwargs = {'primary_dns': '208.67.220.220', 'secondary_dns': ''}
                 kwargs.update({'server_type':'FIAttached'})
                 Config,vlan_policy,vsan_a,vsan_b,fc_ports,mtu = quick_start(
                     name_prefix, org, type
@@ -860,7 +860,7 @@ def process_wizard(easy_jsonData, jsonData):
                     jsonData, easy_jsonData, **kwargs
                 )
                 if Config == True:
-                    kwargs.update({'vlan_policy':vlan_policy["vlan_policy"],'vlans':vlan_policy["vlans"]})
+                    kwargs.update({'vlan_policy':vlan_policy["vlan_policy"],'vlans':vlan_policy["vlans"],'native_vlan':vlan_policy["native_vlan"]})
                     kwargs.update({'vsan_a':vsan_a,'vsan_b':vsan_b,'fc_ports':fc_ports})
                     kwargs.update({'mtu':mtu})
             else:
@@ -869,6 +869,7 @@ def process_wizard(easy_jsonData, jsonData):
                 type = 'policies'
                 Config = quick_start(name_prefix, org, type).standalone_policies(jsonData, easy_jsonData)
             if not Config == False:
+                # kwargs = {'primary_dns': '208.67.220.220', 'secondary_dns': '', 'server_type': 'FIAttached', 'vlan_policy': 'asgard-ucs', 'vlans': '1-99', 'native_vlan': '1', 'vsan_a': 100, 'vsan_b': 200, 'fc_ports': [1, 2, 3, 4], 'mtu': 9216}
                 quick_start(name_prefix, org, type).server_policies(jsonData, easy_jsonData, **kwargs)
         elif 'quick_start_lan_san_policies' in policy:
             type = 'policies'

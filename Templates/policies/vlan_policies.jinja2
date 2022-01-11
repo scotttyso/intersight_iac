@@ -19,13 +19,11 @@
     vlans = {
   {%- for item in vlans %}
       "{{ loop.index }}" = {
-    {%- for k, v in item.items() %}
-      {%- if k == 'auto_allow_on_uplinks' %}
+    {%- if item['auto_allow_on_uplinks'] %}
         auto_allow_on_uplinks = {{ v|lower }}
-      {%- else %}
+    {%- else %}
         auto_allow_on_uplinks = false
-      {%- endif %}
-    {%- endfor %}
+    {%- endif %}
     {%- for k, v in item.items() %}
       {%- if k == 'id' %}
         vlan_list             = "{{ v }}",

@@ -13,6 +13,7 @@ from easy_functions import variablesFromAPI
 from easy_functions import varStringLoop
 from easy_functions import vlan_list_full
 from easy_functions import write_to_template
+from itertools import groupby, count
 
 ucs_template_path = pkg_resources.resource_filename('class_policies_vxan', 'Templates/')
 
@@ -175,16 +176,45 @@ class policies_vxan(object):
         write_to_template(self, **templateVars)
         templateVars["initial_write"] = False
 
-        templateVars["auto_allow_on_uplinks"] = False
-        templateVars["vlans"] = [
-            {
-                'auto_allow_on_uplinks':False,
-                'id':templateVars["vlan_list"],
-                'multicast_policy':templateVars["multicast_policy"],
-                'name':templateVars["name"],
-                'native_vlan':False
-            }
-        ]
+        vlanListExpanded = vlan_list_full(templateVars["vlan_list"])
+
+        if not templateVars["native_vlan"] == '':
+            if int(templateVars["native_vlan"]) in vlanListExpanded:
+                while(int(templateVars["native_vlan"]) in vlanListExpanded):
+                    vlanListExpanded.remove(int(templateVars["native_vlan"]))
+        vlanGroups = groupby(vlanListExpanded, key=lambda item, c=count():item-next(c))
+        tempvlans = [list(g) for k, g in vlanGroups]
+        vlanList = [str(x[0]) if len(x) == 1 else "{}-{}".format(x[0],x[-1]) for x in tempvlans]
+        templateVars["vlan_list"] = ",".join(vlanList)
+
+        # print(f'vlan list final is {templateVars["vlan_list"]}')
+        if not templateVars["native_vlan"] == '':
+            templateVars["vlans"] = [
+                {
+                    'auto_allow_on_uplinks':False,
+                    'id':templateVars["native_vlan"],
+                    'multicast_policy':templateVars["multicast_policy"],
+                    'name':'default',
+                    'native_vlan':True
+                },
+                {
+                    'auto_allow_on_uplinks':False,
+                    'id':templateVars["vlan_list"],
+                    'multicast_policy':templateVars["multicast_policy"],
+                    'name':templateVars["name"],
+                    'native_vlan':False
+                }
+            ]
+        else:
+            templateVars["vlans"] = [
+                {
+                    'auto_allow_on_uplinks':False,
+                    'id':templateVars["vlan_list"],
+                    'multicast_policy':templateVars["multicast_policy"],
+                    'name':templateVars["name"],
+                    'native_vlan':False
+                }
+            ]
 
         # Write Policies to Template File
         templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
