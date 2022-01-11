@@ -403,6 +403,7 @@ def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
     wr_file = open(tf_file, wr_method)
 
     # Render Payload and Write to File
+    print(templateVars)
     payload = template.render(templateVars)
     wr_file.write(payload)
     wr_file.close()

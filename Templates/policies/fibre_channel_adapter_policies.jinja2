@@ -23,7 +23,11 @@
   {%- endif %}
 {%- endfor %}
     io_throttle_count                 = {{ io_throttle_count }}
+{%- if lun_queue_depth %}
     lun_queue_depth                   = {{ lun_queue_depth }}
+{%- else %}
+    lun_queue_depth                   = 20
+{%- endif %}
     max_luns_per_target               = {{ max_luns_per_target }}
     organization                      = "{{ org }}"
     plogi_retries                     = {{ plogi_retries }}

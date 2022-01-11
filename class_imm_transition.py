@@ -624,8 +624,12 @@ def policy_loop_standard(self, header, initial_policy, template_type):
                              index_count += 1
                         for r in range(0,index_count):
                             if 'to' in templateVars["uuid_blocks"][r]:
-                                int_from = int(templateVars["uuid_blocks"][r]["from"].split('-')[1])
-                                int_to = int(templateVars["uuid_blocks"][r]["to"].split('-')[1])
+                                if re.search('[a-zA-Z]', templateVars["uuid_blocks"][r]["from"].split('-')[1]) or re.search('[a-zA-Z]', templateVars["uuid_blocks"][r]["to"].split('-')[1]):
+                                    int_from = int(templateVars["uuid_blocks"][r]["from"].split('-')[1], 16)
+                                    int_to = int(templateVars["uuid_blocks"][r]["to"].split('-')[1], 16)
+                                else:
+                                    int_from = int(templateVars["uuid_blocks"][r]["from"].split('-')[1])
+                                    int_to = int(templateVars["uuid_blocks"][r]["to"].split('-')[1])
                                 templateVars["uuid_blocks"][r]["size"] = int_to - int_from + 1
                                 uuid_to = templateVars["uuid_blocks"][r]["to"]
                                 templateVars["uuid_blocks"][r].pop('to')
