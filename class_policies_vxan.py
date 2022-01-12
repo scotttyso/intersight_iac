@@ -186,6 +186,10 @@ class policies_vxan(object):
             templateVars["native_vlan"] == 1
             while(1 in vlanListExpanded):
                 vlanListExpanded.remove(1)
+        temp_list = []
+        for vlan in vlanListExpanded:
+            temp_list.append(int(vlan))
+        vlanListExpanded = temp_list
         vlanGroups = groupby(vlanListExpanded, key=lambda item, c=count():item-next(c))
         tempvlans = [list(g) for k, g in vlanGroups]
         vlanList = [str(x[0]) if len(x) == 1 else "{}-{}".format(x[0],x[-1]) for x in tempvlans]
