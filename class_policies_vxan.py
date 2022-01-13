@@ -196,7 +196,7 @@ class policies_vxan(object):
         if not templateVars["native_vlan"] == '':
             templateVars["vlans"] = [
                 {
-                    'auto_allow_on_uplinks':False,
+                    'auto_allow_on_uplinks':True,
                     'id':templateVars["native_vlan"],
                     'multicast_policy':templateVars["multicast_policy"],
                     'name':'default',
