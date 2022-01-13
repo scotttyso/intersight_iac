@@ -1340,7 +1340,8 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars):
                 port_list = input(f'Please enter the list of ports you want to add to the {templateVars["port_type"]}?  [{portx}]: ')
                 if port_list == '': port_list = portx
 
-                if re.search(r'(^\d+$|^\d+,{1,48}\d+$|^(\d+\-\d+|\d,){1,48}\d+$)', port_list):
+                print('matching port list')
+                if re.search(r'(^\d+$|^\d+,{1,48}\d+$|^(\d+[\-,\d+]+){1,48}\d+$)', port_list):
                     original_port_list = port_list
                     ports_expanded = vlan_list_full(port_list)
                     port_list = []
@@ -1831,6 +1832,8 @@ def port_modes_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
             port_modes = {'custom_mode':'FibreChannel','port_list':fc_ports,'slot_id':1}
             valid = True
         elif fc_mode == 'N':
+            fc_ports = []
+            port_modes = {'custom_mode':'FibreChannel','port_list':fc_ports,'slot_id':1}
             valid = True
         else:
             print(f'\n------------------------------------------------------\n')

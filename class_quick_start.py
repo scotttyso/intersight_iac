@@ -384,8 +384,8 @@ class quick_start(object):
                     write_to_template(self, **templateVars)
                     templateVars["initial_write"] = False
 
-                    # Configure Link Control Policy
-                    name = f'{domain_name}-vg'
+                    # Configure Ethernet Network Group Policy
+                    name = f'{domain_name}'
                     templateVars["name"] = name
                     templateVars["descr"] = f'{name} Ethernet Network Group Policy'
                     templateVars["allowed_vlans"] = VlanList
