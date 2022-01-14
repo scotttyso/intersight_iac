@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# jsonpath.py <json_file> | grep -i <key>
 """
 Find the path of a key / value in a JSON hierarchy easily.
 It was made for JSON files, but it also works with dictionaries,

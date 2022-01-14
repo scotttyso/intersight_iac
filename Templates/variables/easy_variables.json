@@ -22,6 +22,11 @@
                     "HPC_tpm",
                     "Java",
                     "Java_tpm",
+                    "M6_analytical_DB_tpm",
+                    "M6_Data_tpm",
+                    "M6_HPC_tpm",
+                    "M6_relational_DB_tpm",
+                    "M6_Virtualization_tpm",
                     "OLTP",
                     "OLTP_tpm",
                     "Virtualization",
@@ -113,6 +118,17 @@
                     "Server"
                 ],
                 "default": "9508"
+            }
+        },
+        "server.Generation":{
+            "systemType": {
+                "description": "The Generation of UCS to Apply these Policies to.",
+                "enum":[
+                    "M5",
+                    "M6",
+                    "M7"
+                ],
+                "default": "M6"
             }
         },
         "thermal.Policy":{

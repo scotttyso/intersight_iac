@@ -2413,9 +2413,9 @@ class quick_start(object):
 
                     #_______________________________________________________________________
                     #
-                    # Configure UCS Chassis Profile
+                    # Configure UCS Server Profiles
                     #_______________________________________________________________________
-                    profiles(name_prefix, org, self.type).quick_start_server_profiles(**templateVars)
+                    profiles(name_prefix, org, self.type).quick_start_server_profiles(jsonData, easy_jsonData, **templateVars)
                     profiles(name_prefix, org, self.type).quick_start_server_templates(**templateVars)
                     policy_loop = True
                     configure_loop = True
@@ -3027,7 +3027,7 @@ class quick_start(object):
             if configure == 'Y' or configure == '':
                 # Trusted Platform Module
                 templateVars["Description"] = 'Flag to Determine if the Servers have a TPM Installed.'
-                templateVars["varInput"] = f'Will these servers have a TPM Module Installed?'
+                templateVars["varInput"] = f'Will any of these servers have a TPM Module Installed?'
                 templateVars["varDefault"] = 'Y'
                 templateVars["varName"] = 'TPM Installed'
                 tpm_installed = varBoolLoop(**templateVars)
@@ -3048,22 +3048,26 @@ class quick_start(object):
                 templateVars["initial_write"] = False
 
                 # Configure BIOS Policy
-                name = 'VMware'
-                templateVars["name"] = name
-                templateVars["descr"] = f'{name} BIOS Policy'
-                if tpm_installed == True:
-                    templateVars["policy_template"] = 'Virtualization_tpm'
-                else:
-                    templateVars["policy_template"] = 'Virtualization'
-                templateVars["bios_settings"] = {
-                    'execute_disable_bit':'disabled',
-                    'lv_ddr_mode':'Auto',
-                    'serial_port_aenable':'disabled'
-                }
+                template_names = ['M5_VMWare', 'M5_VMWare_tpm', 'M6_VMWare_tpm']
+                for bname in template_names:
+                    name = bname
+                    templateVars["name"] = name
+                    templateVars["descr"] = f'{name} BIOS Policy'
+                    if bname == 'M5_VMWare':
+                        templateVars["policy_template"] = 'Virtualization'
+                    elif name == 'M5_VMWare_tpm':
+                        templateVars["policy_template"] = 'Virtualization_tpm'
+                    elif name == 'M6_VMWare_tpm':
+                        templateVars["policy_template"] = 'M6_Virtualization_tpm'
+                    templateVars["bios_settings"] = {
+                        'execute_disable_bit':'disabled',
+                        'lv_ddr_mode':'Auto',
+                        'serial_port_aenable':'disabled'
+                    }
 
-                # Write Policies to Template File
-                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                write_to_template(self, **templateVars)
+                    # Write Policies to Template File
+                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                    write_to_template(self, **templateVars)
 
                 # Close the Template file
                 templateVars["template_file"] = 'template_close.jinja2'

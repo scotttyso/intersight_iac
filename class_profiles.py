@@ -15,6 +15,7 @@ from easy_functions import choose_policy, policies_parse
 from easy_functions import exit_default_no
 from easy_functions import policy_descr, policy_name
 from easy_functions import ucs_domain_serials
+from easy_functions import varBoolLoop
 from easy_functions import variablesFromAPI
 from easy_functions import varNumberLoop
 from easy_functions import varStringLoop
@@ -122,7 +123,7 @@ class profiles(object):
     #==============================================
     # Quick Start - UCS Server Profile Module
     #==============================================
-    def quick_start_server_profiles(self, **templateVars):
+    def quick_start_server_profiles(self, jsonData, easy_jsonData, **templateVars):
         org = self.org
         policy_type = 'UCS Server Profile'
         templateVars["header"] = '%s Variables' % (policy_type)
@@ -162,7 +163,7 @@ class profiles(object):
             templateVars["descr"] = f'{templateVars["name"]} Server Profile'
             templateVars["ucs_server_profile_template"] = f'{templateVars["boot_order_policy"]}'
 
-            # Obtain Chassis Serial Number or Skip
+            # Obtain Server Serial Number or Skip
             templateVars["Description"] = f'Serial Number of the Server Profile {templateVars["name"]}.'
             templateVars["varDefault"] = ''
             templateVars["varInput"] = f'What is the Serial Number of {templateVars["name"]}? [press enter to skip]:'
@@ -176,6 +177,31 @@ class profiles(object):
                 templateVars["server_assignment_mode"] = 'Static'
             else:
                 templateVars["server_assignment_mode"] = 'None'
+
+            # Generation of UCS Server
+            jsonVars = easy_jsonData['policies']['server.Generation']
+            templateVars["var_description"] = jsonVars['systemType']['description']
+            templateVars["jsonVars"] = sorted(jsonVars['systemType']['enum'])
+            templateVars["defaultVar"] = jsonVars['systemType']['default']
+            templateVars["varType"] = 'Generation of UCS Server'
+            ucs_generation = variablesFromAPI(**templateVars)
+
+            if ucs_generation == 'M5':
+                # Trusted Platform Module
+                templateVars["Description"] = 'Flag to Determine if the Server has TPM Installed.'
+                templateVars["varInput"] = f'Is a Trusted Platform Module installed in this Server?'
+                templateVars["varDefault"] = 'Y'
+                templateVars["varName"] = 'TPM Installed'
+                tpm_installed = varBoolLoop(**templateVars)
+            else:
+                tpm_installed = True
+
+            if ucs_generation == 'M5' and tpm_installed == True:
+                templateVars["bios_policy"] = 'M5_VMWare_tpm'
+            elif ucs_generation == 'M5':
+                templateVars["bios_policy"] = 'M5_VMWare'
+            elif ucs_generation == 'M6':
+                templateVars["bios_policy"] = 'M6_VMWare_tpm'
 
             # Write Policies to Template File
             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
