@@ -2629,7 +2629,8 @@ class quick_start(object):
                             name = 'VMware'
                             templateVars["name"] = name
                             templateVars["descr"] = f'{name} BIOS Policy'
-                            templateVars["bios_template"] = 'VMware'
+                            templateVars["bios_template"] = 'Virtualization'
+
 
                             # Write Policies to Template File
                             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -3051,9 +3052,14 @@ class quick_start(object):
                 templateVars["name"] = name
                 templateVars["descr"] = f'{name} BIOS Policy'
                 if tpm_installed == True:
-                    templateVars["policy_template"] = 'VMware_tpm'
+                    templateVars["policy_template"] = 'Virtualization_tpm'
                 else:
-                    templateVars["policy_template"] = 'VMware'
+                    templateVars["policy_template"] = 'Virtualization'
+                templateVars["bios_settings"] = {
+                    'execute_disable_bit':'disabled',
+                    'lv_ddr_mode':'Auto',
+                    'serial_port_aenable':'disabled'
+                }
 
                 # Write Policies to Template File
                 templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
