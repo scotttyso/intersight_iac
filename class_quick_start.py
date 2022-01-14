@@ -1567,7 +1567,7 @@ class quick_start(object):
                             write_to_template(self, **templateVars)
                             templateVars["initial_write"] = False
 
-                            name = 'VMWare_KVM'
+                            name = 'VMware_KVM'
                             templateVars["name"] = name
                             templateVars["descr"] = f'{name} KVM IP Pool'
                             templateVars["assignment_order"] = 'sequential'
@@ -2094,7 +2094,7 @@ class quick_start(object):
                             name = org
                             templateVars["name"] = name
                             templateVars["descr"] = f'{name} IMC Access Policy'
-                            templateVars["inband_ip_pool"] = 'VMWare_KVM'
+                            templateVars["inband_ip_pool"] = 'VMware_KVM'
                             templateVars["inband_vlan_id"] = imc_vlan
                             templateVars["ipv4_address_configuration"] = True
                             templateVars["ipv6_address_configuration"] = False
@@ -2715,7 +2715,7 @@ class quick_start(object):
                             name = org
                             templateVars["name"] = name
                             templateVars["descr"] = f'{name} IMC Access Policy'
-                            templateVars["inband_ip_pool"] = 'VMWare_KVM'
+                            templateVars["inband_ip_pool"] = 'VMware_KVM'
                             templateVars["ipv4_address_configuration"] = True
                             templateVars["ipv6_address_configuration"] = False
 
@@ -3048,16 +3048,16 @@ class quick_start(object):
                 templateVars["initial_write"] = False
 
                 # Configure BIOS Policy
-                template_names = ['M5_VMWare', 'M5_VMWare_tpm', 'M6_VMWare_tpm']
+                template_names = ['M5_VMware', 'M5_VMware_tpm', 'M6_VMware_tpm']
                 for bname in template_names:
                     name = bname
                     templateVars["name"] = name
                     templateVars["descr"] = f'{name} BIOS Policy'
-                    if bname == 'M5_VMWare':
+                    if bname == 'M5_VMware':
                         templateVars["policy_template"] = 'Virtualization'
-                    elif name == 'M5_VMWare_tpm':
+                    elif name == 'M5_VMware_tpm':
                         templateVars["policy_template"] = 'Virtualization_tpm'
-                    elif name == 'M6_VMWare_tpm':
+                    elif name == 'M6_VMware_tpm':
                         templateVars["policy_template"] = 'M6_Virtualization_tpm'
                     templateVars["bios_settings"] = {
                         'execute_disable_bit':'disabled',

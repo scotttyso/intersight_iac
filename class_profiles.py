@@ -197,11 +197,9 @@ class profiles(object):
                 tpm_installed = True
 
             if ucs_generation == 'M5' and tpm_installed == True:
-                templateVars["bios_policy"] = 'M5_VMWare_tpm'
+                templateVars["bios_policy"] = 'M5_VMware_tpm'
             elif ucs_generation == 'M5':
-                templateVars["bios_policy"] = 'M5_VMWare'
-            elif ucs_generation == 'M6':
-                templateVars["bios_policy"] = 'M6_VMWare_tpm'
+                templateVars["bios_policy"] = 'M5_VMware'
 
             # Write Policies to Template File
             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -233,7 +231,7 @@ class profiles(object):
         templateVars["descr"] = f'{templateVars["name"]} Server Profile Template'
 
         templateVars["uuid_pool"] = 'VMware'
-        templateVars["bios_policy"] = 'VMware'
+        templateVars["bios_policy"] = 'M6_VMware '
         templateVars["boot_policy"] = f'{templateVars["boot_order_policy"]}'
         templateVars["virtual_media_policy"] = ''
         templateVars["ipmi_over_lan_policy"] = f'{org}'

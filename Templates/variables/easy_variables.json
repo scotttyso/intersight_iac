@@ -199,14 +199,14 @@
                     "SRIOV",
                     "usNIC",
                     "usNICOracleRAC",
-                    "VMWare",
-                    "VMWarePassThru",
+                    "VMware",
+                    "VMwarePassThru",
                     "WIN-AzureStack",
                     "Win-HPN",
                     "Win-HPN-SMBd",
                     "Windows"
                 ],
-                "default": "VMWare"
+                "default": "VMware"
             }
         },
         "vnic.FcNetworkPolicy":{
@@ -219,11 +219,11 @@
                     "Linux",
                     "Solaris",
                     "Target",
-                    "VMWare",
+                    "VMware",
                     "WindowsBoot",
                     "Windows"
                 ],
-                "default": "VMWare"
+                "default": "VMware"
             }
         },
         "vnic.PlacementSettings": {
