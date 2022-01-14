@@ -1331,8 +1331,6 @@ class quick_start(object):
                                     templateVars["vnics"].append(vnic)
                                     Order += 1
 
-                            print(templateVars["vnics"])
-                            exit
                             # Write Policies to Template File
                             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
                             write_to_template(self, **templateVars)

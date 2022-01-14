@@ -178,6 +178,7 @@ class profiles(object):
             else:
                 templateVars["server_assignment_mode"] = 'None'
 
+            templateVars["multi_select"] = False
             # Generation of UCS Server
             jsonVars = easy_jsonData['policies']['server.Generation']
             templateVars["var_description"] = jsonVars['systemType']['description']
