@@ -6,6 +6,7 @@
 ip_pools = {
   "VMware_KVM" = {
     assignment_order = "sequential"
+    description = "Demo to Humana"
     ipv4_blocks = {
       "1" = {
         from = "198.18.0.10"
