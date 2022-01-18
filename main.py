@@ -296,15 +296,24 @@ def merge_easy_imm_repository(easy_jsonData, org):
         tfDir = 'Intersight'
     else:
         tfDir = os.environ.get('TF_DEST_DIR')
-    folder_list = [
-        f'./{tfDir}/{org}/policies',
-        f'./{tfDir}/{org}/pools',
-        f'./{tfDir}/{org}/profiles',
-        f'./{tfDir}/{org}/ucs_domain_profiles'
-    ]
+    if re.search(r'^/\w+', tfDir):
+        folder_list = [
+            f'{tfDir}/{org}/policies',
+            f'{tfDir}/{org}/pools',
+            f'{tfDir}/{org}/profiles',
+            f'{tfDir}/{org}/ucs_domain_profiles'
+        ]
+    elif re.search (r'^\w+', tfDir):
+        folder_list = [
+            f'./{tfDir}/{org}/policies',
+            f'./{tfDir}/{org}/pools',
+            f'./{tfDir}/{org}/profiles',
+            f'./{tfDir}/{org}/ucs_domain_profiles'
+        ]
     for folder in folder_list:
         if os.path.isdir(folder):
-            folder_type = folder.split('/')[3]
+            folder_length = len(folder.split('/'))
+            folder_type = folder.split('/')[folder_length -1]
             files = easy_jsonData['wizard']['files'][folder_type]
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'\n  Beginning Easy IMM Module Downloads for "{folder}"\n')
