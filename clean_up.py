@@ -94,11 +94,21 @@ def intersight_org_delete(home, org, args):
     if org_list.results:
         org_moid = org_list.results[0].moid
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'  Organization {org} has the Moid of {org_moid},')
-        print(f'  proceeding to Delete.')
+        print(f'  Organization {org} has the Moid of {org_moid}.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
-    if not org_moid == None:
-        api_handle.delete_organization_organization(org_moid)
+        org_remove = True
+        while org_remove == True:
+            Delete = input(f'Do You Want to proceed with deleting {org}?  Enter "Y" or "N": ')
+            if Delete == 'Y':
+                if not org_moid == None:
+                    api_handle.delete_organization_organization(org_moid)
+                    org_remove = False
+            elif Delete == 'N':
+                org_remove = False
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
