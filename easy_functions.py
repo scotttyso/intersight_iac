@@ -391,7 +391,12 @@ def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
         tfDir = 'Intersight'
     else:
         tfDir = os.environ.get('TF_DEST_DIR')
-    dest_dir = './%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
+    if re.search(r'^\/.*\/$', tfDir):
+        dest_dir = '%s%s/%s' % (tfDir, templateVars["org"], dest_dir)
+    elif re.search(r'^\/.*\w', tfDir):
+        dest_dir = '%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
+    else:
+        dest_dir = './%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
     if not os.path.isdir(dest_dir):
         mk_dir = 'mkdir -p %s' % (dest_dir)
         os.system(mk_dir)

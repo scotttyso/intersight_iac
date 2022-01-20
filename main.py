@@ -7,8 +7,8 @@ It uses argparse to take in the following CLI arguments:
     i or ignore-tls:         Ignores TLS server-side certificate verification
     l or api-key-legacy:     Use legacy API client (v2) key
     j or json_file:          IMM Transition JSON export to convert to HCL
-    k or api-key:            API client key id for the HTTP signature scheme
-    f or api-key-file:       Name of file containing secret key for the HTTP signature scheme
+    a or api-key:            API client key id for the HTTP signature scheme
+    s or api-key-file:       Name of file containing secret key for the HTTP signature scheme
 """
 
 import argparse
@@ -89,42 +89,69 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                 tf_version = re.search(r'/terraform/([1-2]\.[0-9]+\.[0-9]+)/', i).group(1)
                 terraform_versions.append(tf_version)
 
+        # Removing Deprecated Versions from the List
+        deprecatedVersions = ["1.1.0", "1.1.1"]
+        for depver in deprecatedVersions:
+            verCount = 0
+            for Version in terraform_versions:
+                print(f'depver is {depver} and Version is {Version}')
+                if str(depver) == str(Version):
+                    terraform_versions.pop(verCount)
+                verCount += 1
+        
         # Assign the Terraform Version from the Terraform Release URL Above
         templateVars["multi_select"] = False
         templateVars["var_description"] = "Terraform Version for Workspaces:"
-        templateVars["jsonVars"] = sorted(terraform_versions)
+        templateVars["jsonVars"] = terraform_versions
         templateVars["varType"] = 'Terraform Version'
         templateVars["defaultVar"] = ''
         templateVars["terraformVersion"] = variablesFromAPI(**templateVars)
 
-        if os.environ.get('TF_DEST_DIR') is None:
-            tfDir = 'Intersight'
-        else:
-            tfDir = os.environ.get('TF_DEST_DIR')
+        repoFoldercheck = False
+        while repoFoldercheck == False:
+            if os.environ.get('TF_DEST_DIR') is None:
+                tfDir = 'Intersight'
+            else:
+                tfDir = os.environ.get('TF_DEST_DIR')
+            if re.search(r'\/', tfDir):
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  The System Path has been entered as:')
+                print(f'  {tfDir}')
+                print(f'  For the Terraform Cloud Workspace we need the shortpath to the org files.')
+                print(f'  Please confirm the Path Below for the short Path to the Repository Directory.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                question = input(f'Press Enter to Confirm or Make Corrections: [{tfDir}]: ')
+                if question == '':
+                    repoFoldercheck = True
+                else:
+                    tfDir = question
+                    repoFoldercheck = True
         folder_list = [
-            f'./{tfDir}/{org}/policies',
-            f'./{tfDir}/{org}/pools',
-            f'./{tfDir}/{org}/profiles',
-            f'./{tfDir}/{org}/ucs_domain_profiles'
+            f'{tfDir}/{org}/policies',
+            f'{tfDir}/{org}/pools',
+            f'{tfDir}/{org}/profiles',
+            f'{tfDir}/{org}/ucs_domain_profiles'
         ]
         for folder in folder_list:
+            folder_length = len(folder.split('/'))
+
             templateVars["autoApply"] = True
-            templateVars["Description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[3])
-            if re.search('(pools|policies|ucs_domain_profiles)', folder.split('/')[3]):
+            templateVars["Description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[folder_length -2])
+            if re.search('(pools|policies|ucs_domain_profiles)', folder.split('/')[folder_length -1]):
                 templateVars["globalRemoteState"] = True
             else:
                 templateVars["globalRemoteState"] = False
             templateVars["workingDirectory"] = folder
 
-            templateVars["Description"] = 'Name of the Workspace to Create in Terraform Cloud'
-            templateVars["varDefault"] = f'{org}_{folder.split("/")[3]}'
-            templateVars["varInput"] = f'Terraform Cloud Workspace Name. [{org}_{folder.split("/")[3]}]: '
+            templateVars["Description"] = f'Name of the {folder.split("/")[folder_length -1]} Workspace to Create in Terraform Cloud'
+            templateVars["varDefault"] = f'{org}_{folder.split("/")[folder_length -1]}'
+            templateVars["varInput"] = f'Terraform Cloud Workspace Name. [{org}_{folder.split("/")[folder_length -1]}]: '
             templateVars["varName"] = f'Workspace Name'
             templateVars["varRegex"] = '^[a-zA-Z0-9\\-\\_]+$'
             templateVars["minLength"] = 1
             templateVars["maxLength"] = 90
             templateVars["workspaceName"] = varStringLoop(**templateVars)
-            tfcb_config.append({folder.split('/')[3]:templateVars["workspaceName"]})
+            tfcb_config.append({folder.split('/')[folder_length -1]:templateVars["workspaceName"]})
             # templateVars["vcsBranch"] = ''
 
 
@@ -144,7 +171,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                 templateVars["Sensitive"] = True
                 terraform_cloud().tfcVariables(**templateVars)
 
-            if folder.split("/")[3] == 'policies':
+            if folder.split("/")[folder_length -1] == 'policies':
                 templateVars["Multi_Line_Input"] = False
                 vars = [
                     'ipmi_over_lan_policies.ipmi_key',
@@ -296,7 +323,14 @@ def merge_easy_imm_repository(easy_jsonData, org):
         tfDir = 'Intersight'
     else:
         tfDir = os.environ.get('TF_DEST_DIR')
-    if re.search(r'^/\w+', tfDir):
+    if re.search(r'^/.*[\w\-\.\:\/]+\/$', tfDir):
+        folder_list = [
+            f'{tfDir}{org}/policies',
+            f'{tfDir}{org}/pools',
+            f'{tfDir}{org}/profiles',
+            f'{tfDir}{org}/ucs_domain_profiles'
+        ]
+    elif re.search(r'^/.*[\w\-\.\:\/]+$', tfDir):
         folder_list = [
             f'{tfDir}/{org}/policies',
             f'{tfDir}/{org}/pools',
@@ -331,7 +365,8 @@ def merge_easy_imm_repository(easy_jsonData, org):
 
     for folder in folder_list:
         if os.path.isdir(folder):
-            folder_type = folder.split('/')[3]
+            folder_length = len(folder.split('/'))
+            folder_type = folder.split('/')[folder_length -1]
             files = easy_jsonData['wizard']['files'][folder_type]
             removeList = [
                 'data_sources.tf',
@@ -941,7 +976,25 @@ def main():
     easy_jsonData = json.load(jsonOpen)
     jsonOpen.close()
 
-    os.environ['TF_DEST_DIR'] = '%s' % (args.dir)
+    destdirCheck = False
+    while destdirCheck == False:
+        splitDir = args.dir.split("/")
+        for folder in splitDir:
+            if folder == '':
+                folderCount = 0
+            elif not re.search(r'^[\w\-\.\:\/]+$', folder):
+                print(folder)
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  !!ERROR!!')
+                print(f'  The Directory structure can only contain the following characters:')
+                print(f'  letters(a-z, A-Z), numbers(0-9), hyphen(-), period(.), colon(:), or and underscore(-).')
+                print(f'  It can be a short path or a fully qualified path.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                exit()
+        os.environ['TF_DEST_DIR'] = '%s' % (args.dir)
+        destdirCheck = True
+
+
 
     if not args.json_file == None:
         if os.path.isfile(args.json_file):

@@ -12,7 +12,7 @@ from requests.api import delete, request
 
 # Global options for debugging
 print_payload = False
-print_response_always = True
+print_response_always = False
 print_response_on_fail = True
 
 # Log levels 0 = None, 1 = Class only, 2 = Line
