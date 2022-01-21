@@ -28,6 +28,8 @@
   {%- for k, v in ipv4_configuration.items() %}
     {%- if k == 'gateway' %}
         gateway       = "{{ v }}"
+    {%- elif k == 'netmask' %}
+        netmask       = "{{ v }}"
     {%- elif k == 'prefix' %}
         netmask       = "{{ v }}"
     {%- elif k == 'primary_dns' %}
