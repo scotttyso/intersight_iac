@@ -38,6 +38,7 @@ from class_terraform import terraform_cloud
 from temp_coding import temp_coding
 from io import StringIO
 from intersight.api import organization_api
+from intersight.api import resource_api
 from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
 from lxml import etree
 from pathlib import Path
@@ -335,6 +336,35 @@ def intersight_org_check(home, org, args):
             # Login to Intersight API
             api_client = credentials.config_credentials(home, args)
 
+            #========================================================================
+            # Create Intersight API instance and Verify if the Resource Group Exists
+            #========================================================================
+            api_handle = resource_api.ResourceApi(api_client)
+            query_filter = f"Name eq '{org}_rg'"
+            kwargs = dict(filter=query_filter)
+            rg_list = api_handle.get_resource_group_list(**kwargs)
+            resourceGroup = f'{org}_rg'
+            if not rg_list.results:
+                api_body = {
+                    "ClassId":"resource.Group",
+                    "Name":resourceGroup,
+                    "ObjectType":"resource.Group"
+                }
+                resource_group = api_handle.create_resource_group(api_body)
+                rg_2nd_list = api_handle.get_resource_group_list(**kwargs)
+                if rg_2nd_list.results:
+                    rg_moid = rg_2nd_list.results[0].moid
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Organization {org}_rg has the Moid of {rg_moid},')
+                    print(f'  which was just Created.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            elif rg_list.results:
+                rg_moid = rg_list.results[0].moid
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Resource Group {org}_rg has the Moid of {rg_moid},')
+                print(f'  which already exists.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
             #=============================================================
             # Create Intersight API instance and Verify if the Org Exists
             #=============================================================
@@ -346,7 +376,12 @@ def intersight_org_check(home, org, args):
                 api_body = {
                     "ClassId":"mo.MoRef",
                     "Name":org,
-                    "ObjectType":"organization.Organization"
+                    "ObjectType":"organization.Organization",
+                    "ResourceGroups":[{
+                        "ClassId":"mo.MoRef",
+                        "Moid": rg_moid,
+                        "ObjectType":"resource.Group"
+                    }]
                 }
                 organization = api_handle.create_organization_organization(api_body)
                 org_2nd_list = api_handle.get_organization_organization_list(**kwargs)
@@ -362,7 +397,9 @@ def intersight_org_check(home, org, args):
                 print(f'  Organization {org} has the Moid of {org_moid},')
                 print(f'  which already exists.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
+
             check_org = False
+
         elif question == 'N':
             check_org = False
         else:
@@ -370,6 +407,7 @@ def intersight_org_check(home, org, args):
             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
+            
 def merge_easy_imm_repository(easy_jsonData, org):
     if os.environ.get('TF_DEST_DIR') is None:
         tfDir = 'Intersight'

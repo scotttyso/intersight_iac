@@ -19,6 +19,7 @@ from easy_functions import variablesFromAPI
 from easy_functions import varStringLoop
 from class_terraform import terraform_cloud
 from intersight.api import organization_api
+from intersight.api import resource_api
 from pathlib import Path
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -102,6 +103,16 @@ def intersight_org_delete(home, org, args):
             if Delete == 'Y':
                 if not org_moid == None:
                     api_handle.delete_organization_organization(org_moid)
+                    
+                    api_handle = resource_api.ResourceApi(api_client)
+                    query_filter = f"Name eq '{org}_rg'"
+                    kwargs = dict(filter=query_filter)
+                    rg_list = api_handle.get_resource_group_list(**kwargs)
+                    rg_moid = None
+                    if rg_list.results:
+                        rg_moid = rg_list.results[0].moid
+                        api_handle.delete_resource_group(rg_moid)
+
                     org_remove = False
             elif Delete == 'N':
                 org_remove = False
