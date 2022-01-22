@@ -21,6 +21,8 @@
       "{{ loop.index }}" = {
     {%- if item['auto_allow_on_uplinks'] %}
         auto_allow_on_uplinks = {{ v|lower }}
+    {%- elif item['native_vlan'] == True %}
+        auto_allow_on_uplinks = true
     {%- else %}
         auto_allow_on_uplinks = false
     {%- endif %}

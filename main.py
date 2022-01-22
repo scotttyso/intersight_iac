@@ -52,7 +52,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
     valid = False
     while valid == False:
         templateVars = {}
-        templateVars["Description"] = 'Terraform Cloud Workspaces'
+        templateVars["Description"] = f'Terraform Cloud Workspaces for Organization {org}'
         templateVars["varInput"] = f'Do you want to Proceed with creating Workspaces in Terraform Cloud?'
         templateVars["varDefault"] = 'Y'
         templateVars["varName"] = 'Terraform Cloud Workspaces'
@@ -61,12 +61,32 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
     if runTFCB == True:
         templateVars = {}
         templateVars["terraform_cloud_token"] = terraform_cloud().terraform_token()
-        templateVars["tfc_organization"] = terraform_cloud().tfc_organization(**templateVars)
+        
+        # Obtain Terraform Cloud Organization
+        if os.environ.get('tfc_organization') is None:
+            templateVars["tfc_organization"] = terraform_cloud().tfc_organization(**templateVars)
+            os.environ['tfc_organization'] = templateVars["tfc_organization"]
+        else:
+            templateVars["tfc_organization"] = os.environ.get('tfc_organization')
         tfcb_config.append({'tfc_organization':templateVars["tfc_organization"]})
-        tfc_vcs_provider,templateVars["tfc_oath_token"] = terraform_cloud().tfc_vcs_providers(**templateVars)
-        templateVars["tfc_vcs_provider"] = tfc_vcs_provider
-        templateVars["vcsBaseRepo"] = terraform_cloud().tfc_vcs_repository(**templateVars)
+        
+        # Obtain Version Control Provider
+        if os.environ.get('tfc_vcs_provider') is None:
+            tfc_vcs_provider,templateVars["tfc_oath_token"] = terraform_cloud().tfc_vcs_providers(**templateVars)
+            templateVars["tfc_vcs_provider"] = tfc_vcs_provider
+            os.environ['tfc_vcs_provider'] = tfc_vcs_provider
+            os.environ['tfc_oath_token'] = templateVars["tfc_oath_token"]
+        else:
+            templateVars["tfc_vcs_provider"] = os.environ.get('tfc_vcs_provider')
+            templateVars["tfc_oath_token"] = os.environ['tfc_oath_token']
 
+        # Obtain Version Control Base Repo
+        if os.environ.get('vcsBaseRepo') is None:
+            templateVars["vcsBaseRepo"] = terraform_cloud().tfc_vcs_repository(**templateVars)
+            os.environ['vcsBaseRepo'] = templateVars["vcsBaseRepo"]
+        else:
+            templateVars["vcsBaseRepo"] = os.environ.get('vcsBaseRepo')
+        
         templateVars["agentPoolId"] = ''
         templateVars["allowDestroyPlan"] = False
         templateVars["executionMode"] = 'remote'
@@ -94,7 +114,6 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         for depver in deprecatedVersions:
             verCount = 0
             for Version in terraform_versions:
-                print(f'depver is {depver} and Version is {Version}')
                 if str(depver) == str(Version):
                     terraform_versions.pop(verCount)
                 verCount += 1
@@ -105,27 +124,57 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         templateVars["jsonVars"] = terraform_versions
         templateVars["varType"] = 'Terraform Version'
         templateVars["defaultVar"] = ''
-        templateVars["terraformVersion"] = variablesFromAPI(**templateVars)
+
+        # Obtain Terraform Workspace Version
+        if os.environ.get('terraformVersion') is None:
+            templateVars["terraformVersion"] = variablesFromAPI(**templateVars)
+            os.environ['terraformVersion'] = templateVars["terraformVersion"]
+        else:
+            templateVars["terraformVersion"] = os.environ.get('terraformVersion')
 
         repoFoldercheck = False
         while repoFoldercheck == False:
-            if os.environ.get('TF_DEST_DIR') is None:
-                tfDir = 'Intersight'
+            if not os.environ.get('tfWorkDir') is None:
+                tfDir = os.environ.get('tfWorkDir')
             else:
-                tfDir = os.environ.get('TF_DEST_DIR')
+                if os.environ.get('TF_DEST_DIR') is None:
+                    tfDir = 'Intersight'
+                    os.environ['tfWorkDir'] = 'Intersight'
+                else:
+                    tfDir = os.environ.get('TF_DEST_DIR')
             if re.search(r'\/', tfDir):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  The System Path has been entered as:')
-                print(f'  {tfDir}')
-                print(f'  For the Terraform Cloud Workspace we need the shortpath to the org files.')
-                print(f'  Please confirm the Path Below for the short Path to the Repository Directory.')
+                print(f'  Within Terraform Cloud, the Workspace will be configured with the directory where the ')
+                print(f'  configuration files are stored in the repo: {templateVars["vcsBaseRepo"]}.')
+                print(f'  For Example if the shortpath was "Intersight", The Repo URL end up like:\n')
+                print(f'    - {templateVars["vcsBaseRepo"]}/Intersight/policies')
+                print(f'    - {templateVars["vcsBaseRepo"]}/Intersight/pools')
+                print(f'    - {templateVars["vcsBaseRepo"]}/Intersight/profiles')
+                print(f'    - {templateVars["vcsBaseRepo"]}/Intersight/ucs_domain_profiles\n')
+                print(f'  The Destination Directory has been entered as:\n')
+                print(f'  {tfDir}\n')
+                print(f'  Which looks to be a system path instead of a Repository Directory.')
+                print(f'  Please confirm the Path Below is the short Path to the Repository Directory.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                question = input(f'Press Enter to Confirm or Make Corrections: [{tfDir}]: ')
+                dirLength = len(tfDir.split('/'))
+                if re.search(r'\/$', tfDir):
+                    question = input(f'Press Enter to Confirm or Make Corrections: [{tfDir.split("/")[dirLength -2]}]: ')
+                else:
+                    question = input(f'Press Enter to Confirm or Make Corrections: [{tfDir.split("/")[dirLength -1]}]: ')
                 if question == '':
+                    if re.search(r'\/$', tfDir):
+                        tfDir = tfDir.split("/")[dirLength -2]
+                    else:
+                        tfDir = tfDir.split("/")[dirLength -1]
+                    os.environ['tfWorkDir'] = tfDir
                     repoFoldercheck = True
                 else:
                     tfDir = question
+                    os.environ['tfWorkDir'] = tfDir
                     repoFoldercheck = True
+            else:
+                repoFoldercheck = True
+            print('reached the end')
         folder_list = [
             f'{tfDir}/{org}/policies',
             f'{tfDir}/{org}/pools',
@@ -155,12 +204,17 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
             # templateVars["vcsBranch"] = ''
 
 
+            # print(os.environ.get('tfc_vcs_provider'))
+            # print(os.environ.get('vcsBaseRepo'))
+            # print(os.environ.get('terraformVersion'))
+            # print(os.environ.get('tfWorkDir'))
             templateVars['workspace_id'] = terraform_cloud().tfcWorkspace(**templateVars)
             vars = [
                 'apikey.Intersight API Key',
                 'secretkey.Intersight Secret Key'
             ]
             for var in vars:
+                print(f'* Adding {var.split(".")[1]} to {templateVars["workspaceName"]}')
                 templateVars["Variable"] = var.split('.')[0]
                 if 'secret' in var:
                     templateVars["Multi_Line_Input"] = True
@@ -252,6 +306,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                     templateVars["varId"] = var
                     templateVars["varKey"] = var
                     templateVars["Sensitive"] = True
+                    print(f'* Adding {templateVars["Description"]} to {templateVars["workspaceName"]}')
                     terraform_cloud().tfcVariables(**templateVars)
 
         tfcb_config.append({'org':org})
@@ -274,6 +329,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
 def intersight_org_check(home, org, args):
     check_org = True
     while check_org == True:
+        print(f'\n-------------------------------------------------------------------------------------------\n')
         question = input(f'Do You Want to Check Intersight for the Organization {org}?  Enter "Y" or "N" [Y]: ')
         if question == 'Y' or question == '':
             # Login to Intersight API
@@ -313,10 +369,6 @@ def intersight_org_check(home, org, args):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-
-    print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
-    print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def merge_easy_imm_repository(easy_jsonData, org):
     if os.environ.get('TF_DEST_DIR') is None:
@@ -1010,6 +1062,11 @@ def main():
         merge_easy_imm_repository(easy_jsonData, org)
         create_terraform_workspaces(jsonData, easy_jsonData, org)
         intersight_org_check(home, org, args)
+
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+
 
 if __name__ == '__main__':
     main()
