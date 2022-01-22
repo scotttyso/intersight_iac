@@ -302,7 +302,6 @@ class imm_transition(object):
                                 xdeep = copy.deepcopy(attribute_list)
                                 templateVars[k].append(xdeep)
                                 ports_count += 1
-                            # print(k, templateVars[k])
                         else:
                             templateVars[k] = v
                     if 'appliance_port_channels' in templateVars:
@@ -314,7 +313,6 @@ class imm_transition(object):
                     if 'san_port_channels' in templateVars:
                         templateVars["port_channel_fc_uplinks"] = templateVars["san_port_channels"]
                         del templateVars["san_port_channels"]
-                        print(templateVars["port_channel_fc_uplinks"])
                     if 'fcoe_port_channels' in templateVars:
                         templateVars["port_channel_fcoe_uplinks"] = templateVars["fcoe_port_channels"]
                         del templateVars["fcoe_port_channels"]

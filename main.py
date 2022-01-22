@@ -143,7 +143,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                     os.environ['tfWorkDir'] = 'Intersight'
                 else:
                     tfDir = os.environ.get('TF_DEST_DIR')
-            if re.search(r'\/', tfDir):
+            if re.search(r'(^\/|^\.\.)', tfDir):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Within Terraform Cloud, the Workspace will be configured with the directory where the ')
                 print(f'  configuration files are stored in the repo: {templateVars["vcsBaseRepo"]}.')
@@ -204,11 +204,6 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
             tfcb_config.append({folder.split('/')[folder_length -1]:templateVars["workspaceName"]})
             # templateVars["vcsBranch"] = ''
 
-
-            # print(os.environ.get('tfc_vcs_provider'))
-            # print(os.environ.get('vcsBaseRepo'))
-            # print(os.environ.get('terraformVersion'))
-            # print(os.environ.get('tfWorkDir'))
             templateVars['workspace_id'] = terraform_cloud().tfcWorkspace(**templateVars)
             vars = [
                 'apikey.Intersight API Key',
@@ -407,20 +402,19 @@ def intersight_org_check(home, org, args):
             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
-            
 def merge_easy_imm_repository(easy_jsonData, org):
     if os.environ.get('TF_DEST_DIR') is None:
         tfDir = 'Intersight'
     else:
         tfDir = os.environ.get('TF_DEST_DIR')
-    if re.search(r'^/.*[\w\-\.\:\/]+\/$', tfDir):
+    if re.search(r'^(/.*[\w\-\.\:\/]+/|\.\..*/)$', tfDir):
         folder_list = [
             f'{tfDir}{org}/policies',
             f'{tfDir}{org}/pools',
             f'{tfDir}{org}/profiles',
             f'{tfDir}{org}/ucs_domain_profiles'
         ]
-    elif re.search(r'^/.*[\w\-\.\:\/]+$', tfDir):
+    elif re.search(r'^(/.*[\w\-\.\:\/]+|\.\..*[\w\-\.\:\/]+)$', tfDir):
         folder_list = [
             f'{tfDir}/{org}/policies',
             f'{tfDir}/{org}/pools',
@@ -434,21 +428,62 @@ def merge_easy_imm_repository(easy_jsonData, org):
             f'./{tfDir}/{org}/profiles',
             f'./{tfDir}/{org}/ucs_domain_profiles'
         ]
+    
+    # Get the Latest Release Tag for the terraform-intersight-imm repository
+    url = f'https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm/tags/'
+    r = requests.get(url, stream=True)
+    repoVer = 'BLANK'
+    stringMatch = False
+    while stringMatch == False:
+        for line in r.iter_lines():
+            toString = line.decode("utf-8")
+            if re.search('/releases/tag/(\d+\.\d+\.\d+)', toString):
+                repoVer = re.search('/releases/tag/(\d+\.\d+\.\d+)', toString).group(1)
+                break
+        stringMatch = True
+
     for folder in folder_list:
+
+        folderVer = "0.0.0"
+        if os.path.isfile(f'{folder}/version.txt'):
+            with open(f'{folder}/version.txt') as f:
+                folderVer = f.readline().rstrip()
+
         if os.path.isdir(folder):
             folder_length = len(folder.split('/'))
             folder_type = folder.split('/')[folder_length -1]
             files = easy_jsonData['wizard']['files'][folder_type]
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'\n  Beginning Easy IMM Module Downloads for "{folder}"\n')
+
             for file in files:
                 dest_file = f'{folder}/{file}'
                 if not os.path.isfile(dest_file):
-                    print(f'  Downloading "{file}" to "{folder}"')
+                    print(f'  Downloading "{file}"')
                     url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
                     r = requests.get(url)
                     open(dest_file, 'wb').write(r.content)
-                    print(f'  Download Complete!\n')
+                    print(f'  "{file}" Download Complete!\n')
+                elif not os.path.isfile(f'{folder}/version.txt'):
+                    print(f'  Downloading "{file}"')
+                    url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
+                    r = requests.get(url)
+                    open(dest_file, 'wb').write(r.content)
+                    print(f'  "{file}" Download Complete!\n')
+                elif os.path.isfile(f'{folder}/version.txt'):
+                    if not folderVer == repoVer:
+                        print(f'  Downloading "{file}"')
+                        url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
+                        r = requests.get(url)
+                        open(dest_file, 'wb').write(r.content)
+                        print(f'  "{file}" Download Complete!\n')
+
+            if not os.path.isfile(f'{folder}/version.txt'):
+                print(f'* Creating the repo "terraform-intersight-easy-imm" version check file\n "{folder}/version.txt"')
+                open(f'{folder}/version.txt', 'w').write('%s\n' % (repoVer))
+            elif not folderVer == repoVer:
+                print(f'* Updating the repo "terraform-intersight-easy-imm" version check file\n "{folder}/version.txt"')
+                open(f'{folder}/version.txt', 'w').write('%s\n' % (repoVer))
 
             print(f'\n  Completed Easy IMM Module Downloads for "{folder}"')
             print(f'\n-------------------------------------------------------------------------------------------\n')
