@@ -921,3 +921,32 @@ def vname(varName, varValue):
         return False
     else:
         return True
+
+def ws_hostname(row_num, ws, var, var_value):
+    if not (re.search('^[a-zA-Z0-9\\-]+$', var_value) and validators.length(var_value, min=1, max=63)):
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {var_value} ')
+        print(f'   is not a valid Hostname.  Be sure you are not using the FQDN.  Exiting....')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        exit()
+
+def ws_ip_address(row_num, ws, var, var_value):
+    if re.search('/', var_value):
+        x = var_value.split('/')
+        address = x[0]
+    else:
+        address = var_value
+    valid_count = 0
+    if re.search(r'\.', address):
+        if not validators.ip_address.ipv4(address):
+            valid_count =+ 1
+    else:
+        if not validators.ip_address.ipv6(address):
+            valid_count =+ 1
+    if not valid_count == 0:
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title} Row {row_num}. {var} {var_value} is not ')
+        print(f'   a valid IPv4 or IPv6 Address.  Exiting....')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        exit()
+

@@ -19,6 +19,7 @@ import os
 import re
 import requests
 import validating
+from easy_functions import api_key, api_secret
 from easy_functions import policies_parse
 from easy_functions import sensitive_var_value
 from easy_functions import varBoolLoop
@@ -1090,6 +1091,8 @@ def main():
                         help='The Intersight root URL for the API endpoint. The default is https://intersight.com'
     )
     args = Parser.parse_args()
+    args.api_key_id = api_key(args)
+    args.api_key_file = api_secret(args)
 
     jsonFile = 'Templates/variables/intersight_openapi.json'
     jsonOpen = open(jsonFile, 'r')

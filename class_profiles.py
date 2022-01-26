@@ -190,8 +190,8 @@ class profiles(object):
             if ucs_generation == 'M5':
                 # Trusted Platform Module
                 templateVars["Description"] = 'Flag to Determine if the Server has TPM Installed.'
-                templateVars["varInput"] = f'Is a Trusted Platform Module installed in this Server?'
-                templateVars["varDefault"] = 'Y'
+                templateVars["varInput"] = f'Is a Trusted Platform Module installed in this Server and do you want to enable secure-boot?'
+                templateVars["varDefault"] = 'N'
                 templateVars["varName"] = 'TPM Installed'
                 tpm_installed = varBoolLoop(**templateVars)
             else:
@@ -201,6 +201,8 @@ class profiles(object):
                 templateVars["bios_policy"] = 'M5_VMware_tpm'
             elif ucs_generation == 'M5':
                 templateVars["bios_policy"] = 'M5_VMware'
+            elif ucs_generation == 'M6':
+                templateVars["bios_policy"] = 'M6_VMware_tpm'
 
             # Write Policies to Template File
             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
@@ -232,7 +234,7 @@ class profiles(object):
         templateVars["descr"] = f'{templateVars["name"]} Server Profile Template'
 
         templateVars["uuid_pool"] = 'VMware'
-        templateVars["bios_policy"] = 'M6_VMware '
+        templateVars["bios_policy"] = 'M6_VMware'
         templateVars["boot_policy"] = f'{templateVars["boot_order_policy"]}'
         templateVars["virtual_media_policy"] = ''
         templateVars["ipmi_over_lan_policy"] = f'{org}'
@@ -242,7 +244,7 @@ class profiles(object):
         templateVars["syslog_policy"] = f'{org}'
         templateVars["virtual_kvm_policy"] = f'{org}'
         templateVars["sd_card_policy"] = ''
-        if templateVars["boot_order_policy"] == 'VMware_M2':
+        if re.search('VMware_M2', templateVars["boot_order_policy"]):
             templateVars["storage_policy"] = 'M2_Raid'
         elif templateVars["boot_order_policy"] == 'VMware_Raid1':
             templateVars["storage_policy"] = 'MRAID'

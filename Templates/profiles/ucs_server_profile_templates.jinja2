@@ -2,20 +2,24 @@
   "{{ name }}" = {
     description     = "{{ descr }}"
     organization    = "{{ org }}"
+{%- if target_platform == 'FI-Attached' %}
+    target_platform = "FIAttached"
+{%- else %}
     target_platform = "{{ target_platform }}"
+{%- endif %}
     #___________________________
     #
     # Compute Configuration
     #___________________________
     bios_policy              = "{{ bios_policy }}"
     boot_order_policy        = "{{ boot_policy }}"
-{%- if target_platform == 'FIAttached' %}
+{%- if 'Attached' in target_platform %}
     uuid_pool                = "{{ uuid_pool }}"
 {%- endif %}
 {%- if target_platform == 'Standalone' %}
     persistent_memory_policy = "{{ persistent_memory_policy }}"
 {%- endif %}
-{%- if target_platform == 'FIAttached' %}
+{%- if 'Attached' in target_platform %}
     power_policy             = "{{ power_policy }}"
 {%- endif %}
     virtual_media_policy     = "{{ virtual_media_policy }}"
@@ -23,13 +27,13 @@
     #
     # Management Configuration
     #___________________________
-{%- if target_platform == 'FIAttached' %}
+{%- if 'Attached' in target_platform %}
     certificate_management_policy = "{{ certificate_management_policy }}"
 {%- endif %}
 {%- if target_platform == 'Standalone' %}
     device_connector_policy       = "{{ device_connector_policy }}"
 {%- endif %}
-{%- if target_platform == 'FIAttached' %}
+{%- if if 'Attached' in target_platform %}
     imc_access_policy             = "{{ imc_access_policy }}"
 {%- endif %}
     ipmi_over_lan_policy          = "{{ ipmi_over_lan_policy }}"
