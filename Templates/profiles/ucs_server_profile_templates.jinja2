@@ -33,7 +33,7 @@
 {%- if target_platform == 'Standalone' %}
     device_connector_policy       = "{{ device_connector_policy }}"
 {%- endif %}
-{%- if if 'Attached' in target_platform %}
+{%- if 'Attached' in target_platform %}
     imc_access_policy             = "{{ imc_access_policy }}"
 {%- endif %}
     ipmi_over_lan_policy          = "{{ ipmi_over_lan_policy }}"
