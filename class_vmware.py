@@ -159,13 +159,14 @@ class Servers(object):
                 serverReg = api_handle.get_asset_device_registration_by_moid(apiQuery.registered_device.moid)
                 # domainReg = api_handle.get_asset_device_registration_by_moid(serverReg.parent_connection.moid)
             
-            # Obtain Server vNICs
+            # Obtain Server vNICs (Ethernet/Fibre-Channel)
             api_handle = vnic_api.VnicApi(api_client)
             query_filter = f"Profile.Moid eq '{profileMoid}'"
             kwargs = dict(filter=query_filter)
-            apiQuery = api_handle.get_vnic_eth_if_list(**kwargs)
+            eth_apiQuery = api_handle.get_vnic_eth_if_list(**kwargs)
+            fc_apiQuery = api_handle.get_vnic_fc_if_list(**kwargs)
             vnics = {}
-            for item in apiQuery.results:
+            for item in eth_apiQuery.results:
                 vnic_name = item['name']
                 mac_address = item['mac_address']
                 ngpMoid = item['fabric_eth_network_group_policy'][0].moid
@@ -173,9 +174,6 @@ class Servers(object):
                 api_handle = vnic_api.VnicApi(api_client)
                 qosPolicy = api_handle.get_vnic_eth_qos_policy_by_moid(qosMoid)
                 mTu = qosPolicy.mtu
-                # api_handle = fabric_api.FabricApi(api_client)
-                # ngpQuery = api_handle.get_fabric_eth_network_group_policy_by_moid(ngpMoid)
-                # netGroupP = ngpQuery.name
                 vnic = {
                     vnic_name: {
                         'mac_address':mac_address,
@@ -184,6 +182,19 @@ class Servers(object):
                 }
                 vnics.update(vnic)
 
+            vhbas = {}
+            for item in fc_apiQuery.results:
+                vhba_name = item['name']
+                wwpn_address = item['wwpn']
+                fcnpMoid = item['fc_network_policy'].moid
+                vhba = {
+                    vhba_name: {
+                        'wwpn_address':wwpn_address
+                    }
+                }
+                vhbas.update(vhba)
+
+            # Obtain Server vHBAs
             # vnicsSorted = sorted(vnics, key = itemgetter('name'))
             gins = templateVars['global_settings']
             vcin = templateVars['vcenter']
@@ -233,6 +244,7 @@ class Servers(object):
                     'serial': UcsSerial,
                     'timezone': pydict['global_settings'][gins]['timezone'],
                     'vcenter': pydict['vcenters'][vcin]['name'],
+                    'vhbas':vhbas,
                     'vswitches': vswitches
                 }
             }
