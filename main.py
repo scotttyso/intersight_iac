@@ -306,18 +306,43 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                     print(f'* Adding {templateVars["Description"]} to {templateVars["workspaceName"]}')
                     terraform_cloud().tfcVariables(**templateVars)
 
-        tfcb_config.append({'org':org})
-        for folder in folder_list:
-            name_prefix = 'dummy'
-            type = 'pools'
-            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
-            type = 'policies'
-            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
-            type = 'profiles'
-            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
-            type = 'ucs_domain_profiles'
-            policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+        tfcb_config.append({'backend':'remote','org':org})
+        name_prefix = 'dummy'
+        type = 'pools'
+        policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+        type = 'policies'
+        policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+        type = 'profiles'
+        policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+        type = 'ucs_domain_profiles'
+        policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
     else:
+        valid = False
+        while valid == False:
+            templateVars = {}
+            templateVars["Description"] = f'Will You be utilizing Local or Terraform Cloud'
+            templateVars["varInput"] = f'Will you be utilizing Terraform Cloud?'
+            templateVars["varDefault"] = 'Y'
+            templateVars["varName"] = 'Terraform Type'
+            runTFCB = varBoolLoop(**templateVars)
+
+            if runTFCB == False:
+                tfcb_config.append({'backend':'local','org':org,'tfc_organization':'default'})
+                tfcb_config.append({'policies':'','pools':'','ucs_domain_profiles':''})
+
+                name_prefix = 'dummy'
+                type = 'pools'
+                policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+                type = 'policies'
+                policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+                type = 'profiles'
+                policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+                type = 'ucs_domain_profiles'
+                policies_p1(name_prefix, org, type).intersight(easy_jsonData, tfcb_config)
+                valid = True
+            else:
+                valid = True
+
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'  Skipping Step to Create Terraform Cloud Workspaces.')
         print(f'  Moving to last step to Confirm the Intersight Organization Exists.')

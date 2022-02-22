@@ -2184,8 +2184,11 @@ class quick_start(object):
                                 templateVars["allocated_budget"] = 0
                                 templateVars["name"] = name
                                 templateVars["descr"] = f'{name} Power Policy'
-                                if name == 'Server': templateVars["power_restore_state"] = 'LastState'
-                                elif name == '9508': templateVars["allocated_budget"] = 5600
+                                if name == 'Server':
+                                    templateVars["power_restore"] = 'LastState'
+                                    
+                                elif name == '9508':
+                                    templateVars["power_allocation"] = 5600
 
                                 templateVars["power_redundancy"] = 'Grid'
 

@@ -32,7 +32,7 @@ def api_key(args):
     if args.api_key_id == None:
         key_loop = False
         while key_loop == False:
-            question = stdiomask.getpass(f'API Key was not entered as a command line option.\n'\
+            question = stdiomask.getpass(f'The Intersight API Key was not entered as a command line option.\n'\
                 'Please enter the Version 2 Intersight API key to use: ')
 
             if len(question) == 74:

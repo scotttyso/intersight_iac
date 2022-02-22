@@ -74,26 +74,53 @@ class policies_p3(object):
                 templateVars["name"] = policy_name(name, policy_type)
                 templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
-                if system_type == '9508':
-                    valid = False
-                    while valid == False:
-                        templateVars["allocated_budget"] = input('What is the Power Budget you would like to Apply?\n'
-                            'This should be a value between 2800 Watts and 16800 Watts. [5600]: ')
-                        if templateVars["allocated_budget"] == '':
-                            templateVars["allocated_budget"] = 5600
-                        valid = validating.number_in_range('Chassis Power Budget', templateVars["allocated_budget"], 2800, 16800)
-                else:
-                    templateVars["allocated_budget"] = 0
-
                 templateVars["multi_select"] = False
                 jsonVars = jsonData['components']['schemas']['power.Policy']['allOf'][1]['properties']
 
+                if system_type == '9508':
+                    valid = False
+                    while valid == False:
+                        templateVars["power_allocation"] = input('What is the Power Budget you would like to Apply?\n'
+                            'This should be a value between 2800 Watts and 16800 Watts. [5600]: ')
+                        if templateVars["power_allocation"] == '':
+                            templateVars["power_allocation"] = 5600
+                        valid = validating.number_in_range('Chassis Power Budget', templateVars["power_allocation"], 2800, 16800)
+
+                    templateVars["var_description"] = jsonVars['DynamicRebalancing']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['DynamicRebalancing']['enum'])
+                    templateVars["defaultVar"] = jsonVars['DynamicRebalancing']['default']
+                    templateVars["varType"] = 'Dynamic Power Rebalancing'
+                    templateVars["dynamic_power_rebalancing"] = variablesFromAPI(**templateVars)
+
+                    templateVars["var_description"] = jsonVars['PowerSaveMode']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['PowerSaveMode']['enum'])
+                    templateVars["defaultVar"] = jsonVars['PowerSaveMode']['default']
+                    templateVars["varType"] = 'Power Save Mode'
+                    templateVars["power_save_mode"] = variablesFromAPI(**templateVars)
+
+                else:
+                    templateVars["power_allocation"] = 0
+                    templateVars["dynamic_power_rebalancing"] = 'Enabled'
+                    templateVars["power_save_mode"] = 'Enabled'
+
                 if system_type == 'Server':
+                    templateVars["var_description"] = jsonVars['PowerPriority']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['PowerPriority']['enum'])
+                    templateVars["defaultVar"] = jsonVars['PowerPriority']['default']
+                    templateVars["varType"] = 'Power Priority'
+                    templateVars["power_priority"] = variablesFromAPI(**templateVars)
+
+                    templateVars["var_description"] = jsonVars['PowerProfiling']['description']
+                    templateVars["jsonVars"] = sorted(jsonVars['PowerProfiling']['enum'])
+                    templateVars["defaultVar"] = jsonVars['PowerProfiling']['default']
+                    templateVars["varType"] = 'Power Profiling'
+                    templateVars["power_profiling"] = variablesFromAPI(**templateVars)
+
                     templateVars["var_description"] = jsonVars['PowerRestoreState']['description']
                     templateVars["jsonVars"] = sorted(jsonVars['PowerRestoreState']['enum'])
                     templateVars["defaultVar"] = jsonVars['PowerRestoreState']['default']
-                    templateVars["varType"] = 'Power Restore State'
-                    templateVars["power_restore_state"] = variablesFromAPI(**templateVars)
+                    templateVars["varType"] = 'Power Restore'
+                    templateVars["power_restore"] = variablesFromAPI(**templateVars)
 
                 if system_type == '5108':
                     templateVars["popList"] = ['N+2']
@@ -106,13 +133,17 @@ class policies_p3(object):
                 templateVars["power_redundancy"] = variablesFromAPI(**templateVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'   description               = "{templateVars["descr"]}"')
+                print(f'   name                      = "{templateVars["name"]}"')
                 if system_type == '9508':
-                    print(f'   allocated_budget    = {templateVars["allocated_budget"]}')
-                print(f'   description         = "{templateVars["descr"]}"')
-                print(f'   name                = "{templateVars["name"]}"')
+                    # print(f'   dynamic_power_rebalancing = "{templateVars["dynamic_power_rebalancing"]}"')
+                    print(f'   power_allocation          = {templateVars["power_allocation"]}')
+                    # print(f'   power_save_mode           = "{templateVars["power_save_mode"]}"')
                 if system_type == 'Server':
-                    print(f'   power_restore_state = "{templateVars["power_restore_state"]}"')
-                print(f'   redundancy_mode     = "{templateVars["power_redundancy"]}"')
+                    # print(f'   power_priority            = "{templateVars["power_priority"]}"')
+                    print(f'   power_profiling           = "{templateVars["power_profiling"]}"')
+                    print(f'   power_restore             = "{templateVars["power_restore"]}"')
+                print(f'   power_redundancy          = "{templateVars["power_redundancy"]}"')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:

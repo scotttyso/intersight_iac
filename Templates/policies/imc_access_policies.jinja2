@@ -8,6 +8,7 @@
     ipv4_address_configuration = {{ ipv4_address_configuration|lower }}
     ipv6_address_configuration = {{ ipv6_address_configuration|lower }}
     organization               = "{{ org }}"
+    out_of_band_ip_pool        = "{{ out_of_band_ip_pool }}"
 {%- if tags %}
     tags = [
   {%- for item in tags %}
