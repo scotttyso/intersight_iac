@@ -86,7 +86,7 @@
     syslog_policy                 = "{{ syslog_policy }}"
 {%- endif %}
 {%- if target_platform %}
-    target_platform               = "{{ target_platform }}"
+    target_platform               = "{{ target_platform|replace("-", "") }}"
 {%- endif %}
 {%- if virtual_kvm_policy %}
     virtual_kvm_policy            = "{{ virtual_kvm_policy }}"

@@ -4,8 +4,10 @@
     organization    = "{{ org }}"
 {%- if target_platform == 'FI-Attached' %}
     target_platform = "FIAttached"
-{%- else %}
+{%- elif target_platform %}
     target_platform = "{{ target_platform }}"
+{%- else %}
+    target_platform = "FIAttached"
 {%- endif %}
     #___________________________
     #

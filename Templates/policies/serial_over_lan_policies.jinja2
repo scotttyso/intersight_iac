@@ -1,7 +1,11 @@
 
   "{{ name }}" = {
     baud_rate    = {{ baud_rate }}
+{%- if com_port %}
     com_port     = "{{ com_port }}"
+{%- else %}
+    com_port     = "com1"
+{%- endif %}
     description  = "{{ descr }}"
     enabled      = {{ enabled|lower }}
     organization = "{{ org }}"
