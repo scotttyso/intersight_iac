@@ -2,7 +2,6 @@
   "{{ name }}" = {
     description  = "{{ descr }}"
     enable_ssh   = {{ enable_ssh|lower }}
-    organization = "{{ org }}"
 {%- if ssh_port %}
     ssh_port     = {{ ssh_port }}
 {%- else %}

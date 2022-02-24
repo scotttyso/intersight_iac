@@ -5,7 +5,6 @@
 {%- if native_vlan %}
     native_vlan   = {{ native_vlan }}
 {%- endif %}
-    organization  = "{{ org }}"
 {%- if tags %}
     tags = [
   {%- for item in tags %}

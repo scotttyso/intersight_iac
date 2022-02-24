@@ -2,7 +2,6 @@
   "{{ name }}" = {
     description              = "{{ descr }}"
     global_hot_spares        = "{{ global_hot_spares }}"
-    organization             = "{{ org }}"
 {%- if unused_disks_state == 'JBOD' %}
     unused_disks_state       = "Jbod"
 {%- elif unused_disks_state == 'No Change' %}

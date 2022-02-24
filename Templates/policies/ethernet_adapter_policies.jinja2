@@ -24,7 +24,6 @@
     interrupts                               = {{ v }}
   {%- endif %}
 {%- endfor %}
-    organization                             = "{{ org }}"
 {%- for k, v in roce_settings.items() %}
   {%- if roce_settings['enable_rdma_over_converged_ethernet'] == True and k == 'class_of_service' %}
     roce_cos                                 = {{ v }}

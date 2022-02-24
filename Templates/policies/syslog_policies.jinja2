@@ -2,7 +2,6 @@
   "{{ name }}" = {
     description        = "{{ descr }}"
     local_min_severity = "{{ local_logging['file']['min_severity'] }}"
-    organization       = "{{ org }}"
 {%- if remote_clients %}
     remote_clients    = [
   {%- if not remote_logging['server1']['hostname'] == None %}

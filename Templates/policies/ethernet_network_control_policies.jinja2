@@ -7,7 +7,6 @@
     lldp_enable_transmit  = {{ lldp_transmit_enable|lower }}
     mac_register_mode     = "{{ mac_register_mode }}"
     mac_security_forge    = "{{ mac_security_forge }}"
-    organization          = "{{ org }}"
 {%- if tags %}
     tags = [
   {%- for item in tags %}

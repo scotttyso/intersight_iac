@@ -1,7 +1,6 @@
 
   "{{ name }}" = {
     description     = "{{ descr }}"
-    organization    = "{{ org }}"
 {%- if uplink_trunking %}
     uplink_trunking = {{ uplink_trunking|lower }}
 {%- else %}

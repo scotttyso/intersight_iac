@@ -15,7 +15,6 @@
 {%- if obtain_ipv6_dns_from_dhcp %}
     obtain_ipv6_dns_from_dhcp = {{ obtain_ipv6_dns_from_dhcp|lower }}
 {%- endif %}
-    organization              = "{{ org }}"
     update_domain             = "{{ update_domain }}"
 {%- if preferred_ipv4_dns_server %}
     dns_servers_v4 = [
