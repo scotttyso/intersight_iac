@@ -1390,7 +1390,7 @@ class policies_p1(object):
                     if k == 'pools':
                         templateVars["pools_ws"] = v
                     elif k == 'ucs_domain_profiles':
-                        templateVars["ucs_domain_profiles_ws"] = v
+                        templateVars["domain_profiles_ws"] = v
                 elif policyVar == 'profiles':
                     if k == 'pools':
                         templateVars["pools_ws"] = v

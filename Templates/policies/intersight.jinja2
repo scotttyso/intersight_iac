@@ -6,10 +6,26 @@
 tfc_workspaces = [{
   backend             = "{{ backend }}"
   tfc_organization    = "{{ tfc_organization }}"
+{%- if domain_profiles_dir %}
   domain_profiles_dir = "{{ domain_profiles_dir }}"
+{%- else %}
+  domain_profiles_dir = null
+{%- endif %}
+{%- if domain_profiles_ws %}
   domain_profiles_ws  = "{{ domain_profiles_ws }}"
+{%- else %}
+  domain_profiles_ws  = null
+{%- endif %}
+{%- if pools_dir %}
   pools_dir           = "{{ pools_dir }}"
+{%- else %}
+  pools_dir           = null
+{%- endif %}
+{%- if pools_ws %}
   pools_ws            = "{{ pools_ws }}"
+{%- else %}
+  pools_ws            = null
+{%- endif %}
 }]
 
 /*
