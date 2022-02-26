@@ -1307,38 +1307,7 @@ class quick_start(object):
                             templateVars["target_platform"] = "FIAttached"
                             templateVars["vnics"] = []
 
-                            names = ['MGMT_Silver', 'VMOTION_Bronze', 'STORAGE_Platinum', 'DATA_Gold']
                             Order = 0
-                            for nam in names:
-                                vname = nam.split('_')[0]
-                                qos = nam.split('_')[1]
-                                for fab in fabrics:
-                                    vnic = {
-                                        'cdn_source':'vnic',
-                                        'enable_failover':False,
-                                        'ethernet_adapter_policy':'VMware',
-                                        'ethernet_network_control_policy':neighbor_discovery,
-                                        'ethernet_network_group_policy':vname,
-                                        'ethernet_qos_policy':qos,
-                                        'mac_address_allocation_type':'POOL',
-                                        'mac_address_pool':f'{vname}-{fab}',
-                                        'name':f'{vname}-{fab}',
-                                        'pci_link':0,
-                                        'pci_order':Order,
-                                        'slot_id':'MLOM',
-                                        'switch_id':fab
-                                    }
-                                    templateVars["vnics"].append(vnic)
-                                    Order += 1
-
-                            # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
-
-                            # Close the Template file
-                            templateVars["template_file"] = 'template_close.jinja2'
-                            write_to_template(self, **templateVars)
-
                             if len(fc_ports_in_use) > 0:
                                 #_______________________________________________________________________
                                 #
@@ -1388,6 +1357,37 @@ class quick_start(object):
                                 # Close the Template file
                                 templateVars["template_file"] = 'template_close.jinja2'
                                 write_to_template(self, **templateVars)
+
+                            names = ['MGMT_Silver', 'VMOTION_Bronze', 'STORAGE_Platinum', 'DATA_Gold']
+                            for nam in names:
+                                vname = nam.split('_')[0]
+                                qos = nam.split('_')[1]
+                                for fab in fabrics:
+                                    vnic = {
+                                        'cdn_source':'vnic',
+                                        'enable_failover':False,
+                                        'ethernet_adapter_policy':'VMware',
+                                        'ethernet_network_control_policy':neighbor_discovery,
+                                        'ethernet_network_group_policy':vname,
+                                        'ethernet_qos_policy':qos,
+                                        'mac_address_allocation_type':'POOL',
+                                        'mac_address_pool':f'{vname}-{fab}',
+                                        'name':f'{vname}-{fab}',
+                                        'pci_link':0,
+                                        'pci_order':Order,
+                                        'slot_id':'MLOM',
+                                        'switch_id':fab
+                                    }
+                                    templateVars["vnics"].append(vnic)
+                                    Order += 1
+
+                            # Write Policies to Template File
+                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                            write_to_template(self, **templateVars)
+
+                            # Close the Template file
+                            templateVars["template_file"] = 'template_close.jinja2'
+                            write_to_template(self, **templateVars)
 
                             configure_loop = True
                             policy_loop = True

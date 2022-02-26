@@ -700,11 +700,11 @@ def process_wizard(easy_jsonData, jsonData):
             'iscsi_adapter_policies',
             'iscsi_boot_policies',
             'iscsi_static_target_policies',
-            'lan_connectivity_policies',
             'fibre_channel_adapter_policies',
             'fibre_channel_network_policies',
             'fibre_channel_qos_policies',
             'san_connectivity_policies',
+            'lan_connectivity_policies',
             'ucs_server_template_profiles',
             'ucs_server_profiles',
         ]
@@ -759,11 +759,11 @@ def process_wizard(easy_jsonData, jsonData):
             'iscsi_adapter_policies',
             'iscsi_boot_policies',
             'iscsi_static_target_policies',
-            'lan_connectivity_policies',
             'fibre_channel_adapter_policies',
             'fibre_channel_network_policies',
             'fibre_channel_qos_policies',
             'san_connectivity_policies',
+            'lan_connectivity_policies',
             'ucs_server_template_profiles',
             'ucs_server_profiles',
         ]
@@ -799,11 +799,11 @@ def process_wizard(easy_jsonData, jsonData):
             'iscsi_adapter_policies',
             'iscsi_boot_policies',
             'iscsi_static_target_policies',
-            'lan_connectivity_policies',
             'fibre_channel_adapter_policies',
             'fibre_channel_network_policies',
             'fibre_channel_qos_policies',
             'san_connectivity_policies',
+            'lan_connectivity_policies',
             'ucs_server_template_profiles',
             'ucs_server_profiles',
         ]
@@ -961,8 +961,6 @@ def process_wizard(easy_jsonData, jsonData):
             policies_lan(name_prefix, org, type).iscsi_boot_policies(jsonData, easy_jsonData)
         elif policy == 'iscsi_static_target_policies':
             policies_lan(name_prefix, org, type).iscsi_static_target_policies(jsonData, easy_jsonData)
-        elif policy == 'lan_connectivity_policies':
-            policies_lan(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
         elif policy == 'ldap_policies':
             policies_p1(name_prefix, org, type).ldap_policies(jsonData, easy_jsonData)
         elif policy == 'link_aggregation_policies':
@@ -985,6 +983,8 @@ def process_wizard(easy_jsonData, jsonData):
             policies_p3(name_prefix, org, type).power_policies(jsonData, easy_jsonData)
         elif policy == 'san_connectivity_policies':
             policies_san(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData)
+        elif policy == 'lan_connectivity_policies':
+            policies_lan(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
         # elif policy == 'sd_card_policies':
         #     policies(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData)
         elif policy == 'serial_over_lan_policies':

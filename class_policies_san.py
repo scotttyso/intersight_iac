@@ -443,8 +443,7 @@ class policies_san(object):
                         templateVars["name"] = 'the vHBAs'
                         policy_list = [
                             'policies.fibre_channel_adapter_policies.fibre_channel_adapter_policy',
-                            'policies.fibre_channel_qos_policies.fibre_channel_qos_policy',
-                            'policies.lan_connectivity_policies.lan_connectivity_policy'
+                            'policies.fibre_channel_qos_policies.fibre_channel_qos_policy'
                         ]
                         templateVars["allow_opt_out"] = False
                         for policy in policy_list:
@@ -453,13 +452,6 @@ class policies_san(object):
                             templateVars.update(policyData)
 
                         pci_order_consumed = [{0:[]},{1:[]}]
-                        print(pci_order_consumed)
-                        lan_policy = templateVars['lan_connectivity_policy']
-                        for item in policyData['lan_connectivity_policies'][0][lan_policy][0]['vnics']:
-                            for k, v in item.items():
-                                pLink = v[0]['placement_pci_link']
-                                pOrder = v[0]['placement_pci_order']
-                                pci_order_consumed[0][pLink].append(pOrder)
 
                         for x in fabrics:
                             templateVars["name"] = f'the vHBA on Fabric {x}'

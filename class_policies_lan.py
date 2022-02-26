@@ -1486,6 +1486,24 @@ class policies_lan(object):
                     print(f'\n-----------------------------------------------------------------------------------------------\n')
                     inner_loop_count = 1
                     pci_order_consumed = [{0:[]},{1:[]}]
+
+                    policy_list = [
+                        'policies.san_connectivity_policies.san_connectivity_policy'
+                    ]
+                    templateVars["allow_opt_out"] = True
+                    for policy in policy_list:
+                        policy_short = policy.split('.')[2]
+                        templateVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                        templateVars.update(policyData)
+
+                    if templateVars['san_connectivity_policy']:
+                        san_policy = templateVars['san_connectivity_policy']
+                        for item in policyData['san_connectivity_policies'][0][san_policy][0]['vhbas']:
+                            for k, v in item.items():
+                                pLink = v[0]['placement_pci_link']
+                                pOrder = v[0]['placement_pci_order']
+                                pci_order_consumed[0][pLink].append(pOrder)
+
                     templateVars["vnics"] = []
                     vnic_loop = False
                     while vnic_loop == False:
