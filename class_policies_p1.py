@@ -1388,14 +1388,14 @@ class policies_p1(object):
                     templateVars["tfc_organization"] = v
                 if policyVar == 'policies':
                     if k == 'pools':
-                        templateVars["ws_pools"] = v
+                        templateVars["pools_ws"] = v
                     elif k == 'ucs_domain_profiles':
-                        templateVars["ws_ucs_domain_profiles"] = v
+                        templateVars["ucs_domain_profiles_ws"] = v
                 elif policyVar == 'profiles':
                     if k == 'pools':
-                        templateVars["ws_pools"] = v
+                        templateVars["pools_ws"] = v
                     elif k == 'policies':
-                        templateVars["ws_policies"] = v
+                        templateVars["policies_ws"] = v
 
         templateVars["tags"] = '[{ key = "Module", value = "terraform-intersight-easy-imm" }, { key = "Version", value = "'f'{easy_jsonData["version"]}''" }]'
 

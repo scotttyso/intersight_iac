@@ -4,10 +4,12 @@
 #__________________________________________________________
 
 tfc_workspaces = [{
-  backend                 = "{{ backend }}"
-  tfc_organization        = "{{ tfc_organization }}"
-  ws_pools                = "{{ ws_pools }}"
-  ws_ucs_domain_profiles  = "{{ ws_ucs_domain_profiles }}"
+  backend             = "{{ backend }}"
+  tfc_organization    = "{{ tfc_organization }}"
+  domain_profiles_dir = "{{ domain_profiles_dir }}"
+  domain_profiles_ws  = "{{ domain_profiles_ws }}"
+  pools_dir           = "{{ pools_dir }}"
+  pools_ws            = "{{ pools_ws }}"
 }]
 
 /*
@@ -32,10 +34,10 @@ tfc_workspaces = [{
 # endpoint     = "https://intersight.com"
 organization = "{{org}}"
 
-# secretkey    = "~/intersight.secret"
+# secretkey    = "~/Downloads/SecretKey.txt"
 /*
   To export the Secret Key via an Environment Variable the format is as follows (Note: they are not quotation marks, but escape characters):
-  - export TF_VAR_secretkey=`cat ../../intersight.secret`
+  - export TF_VAR_secretkey=`cat ~/Downloads/SecretKey.txt`
   Either way will work in this case as we are not posting the contents of the file here.
 */
 /*
