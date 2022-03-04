@@ -1358,6 +1358,10 @@ class quick_start(object):
                                 templateVars["template_file"] = 'template_close.jinja2'
                                 write_to_template(self, **templateVars)
 
+                            name = 'VMware_LAN'
+                            templateVars["name"] = name
+                            templateVars["descr"] = f'{name} LAN Connectivity Policy'
+                            templateVars["template_type"] = 'lan_connectivity_policies'
                             names = ['MGMT_Silver', 'VMOTION_Bronze', 'STORAGE_Platinum', 'DATA_Gold']
                             for nam in names:
                                 vname = nam.split('_')[0]
@@ -1419,6 +1423,9 @@ class quick_start(object):
         org = self.org
         templateVars = {}
         templateVars["org"] = org
+
+        primary_dns = '208.67.220.220'
+        secondary_dns = ''
 
         configure_loop = False
         while configure_loop == False:
@@ -3061,9 +3068,12 @@ class quick_start(object):
                     elif name == 'M6_VMware_tpm':
                         templateVars["policy_template"] = 'M6_Virtualization_tpm'
                     templateVars["bios_settings"] = {
+                        'baud_rate':115200,
+                        'console_redirection':'serial-port-a',
                         'execute_disable_bit':'disabled',
-                        'lv_ddr_mode':'Auto',
-                        'serial_port_aenable':'disabled'
+                        'lv_ddr_mode':'auto',
+                        'serial_port_aenable':'enabled',
+                        'terminal_type':'vt100'
                     }
 
                     # Write Policies to Template File
