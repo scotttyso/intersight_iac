@@ -4,6 +4,7 @@ from openpyxl import load_workbook
 from ordered_set import OrderedSet
 import json
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -440,10 +441,18 @@ def policies_parse(org, policy_type, policy):
     else:
         tfDir = os.environ.get('TF_DEST_DIR')
     policies = []
-    policy_file = f'./{tfDir}/{org}/{policy_type}/{policy}.auto.tfvars'
+
+    opSystem = platform.system()
+    if opSystem == 'Windows':
+        policy_file = f'.\{tfDir}\{org}\{policy_type}\{policy}.auto.tfvars'
+    else:
+        policy_file = f'./{tfDir}/{org}/{policy_type}/{policy}.auto.tfvars'
     if os.path.isfile(policy_file):
         if len(policy_file) > 0:
-            cmd = 'json2hcl -reverse < %s' % (policy_file)
+            if opSystem == 'Windows':
+                cmd = 'hcl2json.exe %s' % (policy_file)
+            else:
+                cmd = 'json2hcl -reverse < %s' % (policy_file)
             p = subprocess.run(
                 cmd,
                 shell=True,
@@ -461,9 +470,13 @@ def policies_parse(org, policy_type, policy):
                 return policies,json_data
             else:
                 json_data = json.loads(p.stdout.decode('utf-8'))
-                for i in json_data[policy]:
-                    for k, v in i.items():
-                        policies.append(k)
+                if opSystem == 'Windows':
+                    for i in json_data[policy]:
+                        policies.append(i)
+                else:
+                    for i in json_data[policy]:
+                        for k, v in i.items():
+                            policies.append(k)
                 return policies,json_data
     else:
         json_data = {}
@@ -537,25 +550,47 @@ def process_kwargs(required_args, optional_args, **kwargs):
     return(templateVars)
 
 def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
-    if os.environ.get('TF_DEST_DIR') is None:
-        tfDir = 'Intersight'
+    opSystem = platform.system()
+    if opSystem == 'Windows':
+        if os.environ.get('TF_DEST_DIR') is None:
+            tfDir = 'Intersight'
+        else:
+            tfDir = os.environ.get('TF_DEST_DIR')
+        if re.search(r'^\\.*\\$', tfDir):
+            dest_dir = '%s%s\%s' % (tfDir, templateVars["org"], dest_dir)
+        elif re.search(r'^\\.*\w', tfDir):
+            dest_dir = '%s\%s\%s' % (tfDir, templateVars["org"], dest_dir)
+        else:
+            dest_dir = '.\%s\%s\%s' % (tfDir, templateVars["org"], dest_dir)
+        if not os.path.isdir(dest_dir):
+            mk_dir = 'mkdir %s' % (dest_dir)
+            os.system(mk_dir)
+        dest_file_path = '%s\%s' % (dest_dir, dest_file)
+        if not os.path.isfile(dest_file_path):
+            create_file = 'type nul >> %s' % (dest_file_path)
+            os.system(create_file)
+        tf_file = dest_file_path
+        wr_file = open(tf_file, wr_method)
     else:
-        tfDir = os.environ.get('TF_DEST_DIR')
-    if re.search(r'^\/.*\/$', tfDir):
-        dest_dir = '%s%s/%s' % (tfDir, templateVars["org"], dest_dir)
-    elif re.search(r'^\/.*\w', tfDir):
-        dest_dir = '%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
-    else:
-        dest_dir = './%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
-    if not os.path.isdir(dest_dir):
-        mk_dir = 'mkdir -p %s' % (dest_dir)
-        os.system(mk_dir)
-    dest_file_path = '%s/%s' % (dest_dir, dest_file)
-    if not os.path.isfile(dest_file_path):
-        create_file = 'touch %s' % (dest_file_path)
-        os.system(create_file)
-    tf_file = dest_file_path
-    wr_file = open(tf_file, wr_method)
+        if os.environ.get('TF_DEST_DIR') is None:
+            tfDir = 'Intersight'
+        else:
+            tfDir = os.environ.get('TF_DEST_DIR')
+        if re.search(r'^\/.*\/$', tfDir):
+            dest_dir = '%s%s/%s' % (tfDir, templateVars["org"], dest_dir)
+        elif re.search(r'^\/.*\w', tfDir):
+            dest_dir = '%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
+        else:
+            dest_dir = './%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
+        if not os.path.isdir(dest_dir):
+            mk_dir = 'mkdir -p %s' % (dest_dir)
+            os.system(mk_dir)
+        dest_file_path = '%s/%s' % (dest_dir, dest_file)
+        if not os.path.isfile(dest_file_path):
+            create_file = 'touch %s' % (dest_file_path)
+            os.system(create_file)
+        tf_file = dest_file_path
+        wr_file = open(tf_file, wr_method)
 
     # Render Payload and Write to File
     payload = template.render(templateVars)

@@ -17,6 +17,7 @@ import json
 import subprocess
 import os
 import re
+import platform
 import requests
 import validating
 from easy_functions import api_key, api_secret
@@ -50,6 +51,7 @@ home = Path.home()
 Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
 
 def create_terraform_workspaces(jsonData, easy_jsonData, org):
+    opSystem = platform.system()
     tfcb_config = []
     valid = False
     while valid == False:
@@ -144,7 +146,39 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                     os.environ['tfWorkDir'] = 'Intersight'
                 else:
                     tfDir = os.environ.get('TF_DEST_DIR')
-            if re.search(r'(^\/|^\.\.)', tfDir):
+            if opSystem == 'Windows' and re.search(r'(^\\|^\.\\)', tfDir):
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Within Terraform Cloud, the Workspace will be configured with the directory where the ')
+                print(f'  configuration files are stored in the repo: {templateVars["vcsBaseRepo"]}.')
+                print(f'  For Example if the shortpath was "Intersight", The Repo URL end up like:\n')
+                print(f'    - {templateVars["vcsBaseRepo"]}\\Intersight\\policies')
+                print(f'    - {templateVars["vcsBaseRepo"]}\\Intersight\\pools')
+                print(f'    - {templateVars["vcsBaseRepo"]}\\Intersight\\profiles')
+                print(f'    - {templateVars["vcsBaseRepo"]}\\Intersight\\ucs_domain_profiles\n')
+                print(f'  The Destination Directory has been entered as:\n')
+                print(f'  {tfDir}\n')
+                print(f'  Which looks to be a system path instead of a Repository Directory.')
+                print(f'  Please confirm the Path Below is the short Path to the Repository Directory.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                dirLength = len(tfDir.split('\\'))
+                if re.search(r'\\$', tfDir):
+                    dirSplit = tfDir.split("\\")[dirLength -2]
+                    question = input(f'Press Enter to Confirm or Make Corrections: [{dirSplit}]: ')
+                else:
+                    dirSplit = tfDir.split("\\")[dirLength -1]
+                    question = input(f'Press Enter to Confirm or Make Corrections: [{dirSplit}]: ')
+                if question == '':
+                    if re.search(r'\\$', tfDir):
+                        tfDir = tfDir.split("\\")[dirLength -2]
+                    else:
+                        tfDir = tfDir.split("\\")[dirLength -1]
+                    os.environ['tfWorkDir'] = tfDir
+                    repoFoldercheck = True
+                else:
+                    tfDir = question
+                    os.environ['tfWorkDir'] = tfDir
+                    repoFoldercheck = True
+            elif re.search(r'(^\/|^\.\.)', tfDir):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Within Terraform Cloud, the Workspace will be configured with the directory where the ')
                 print(f'  configuration files are stored in the repo: {templateVars["vcsBaseRepo"]}.')
@@ -176,33 +210,58 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                     repoFoldercheck = True
             else:
                 repoFoldercheck = True
-            print('reached the end')
-        folder_list = [
-            f'{tfDir}/{org}/policies',
-            f'{tfDir}/{org}/pools',
-            f'{tfDir}/{org}/profiles',
-            f'{tfDir}/{org}/ucs_domain_profiles'
-        ]
+
+        if opSystem == 'Windows':
+            folder_list = [
+                f'{tfDir}\\{org}\\policies',
+                f'{tfDir}\\{org}\\pools',
+                f'{tfDir}\\{org}\\profiles',
+                f'{tfDir}\\{org}\\ucs_domain_profiles'
+            ]
+        else:
+            folder_list = [
+                f'{tfDir}/{org}/policies',
+                f'{tfDir}/{org}/pools',
+                f'{tfDir}/{org}/profiles',
+                f'{tfDir}/{org}/ucs_domain_profiles'
+            ]
         for folder in folder_list:
-            folder_length = len(folder.split('/'))
+            if opSystem == 'Windows':
+                folder_length = len(folder.split('\\'))
+            else:
+                folder_length = len(folder.split('/'))
 
             templateVars["autoApply"] = True
-            templateVars["Description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[folder_length -2])
-            if re.search('(pools|policies|ucs_domain_profiles)', folder.split('/')[folder_length -1]):
+            if opSystem == 'Windows':
+                templateVars["Description"] = f'Intersight Organization {org} - %s' % (folder.split('\\')[folder_length -2])
+            else:
+                templateVars["Description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[folder_length -2])
+            if opSystem == 'Windows':
+                fSplit = folder.split('\\')[folder_length -1]
+            else:
+                fSplit = folder.split('/')[folder_length -1]
+            if re.search('(pools|policies|ucs_domain_profiles)', fSplit):
                 templateVars["globalRemoteState"] = True
             else:
                 templateVars["globalRemoteState"] = False
             templateVars["workingDirectory"] = folder
 
-            templateVars["Description"] = f'Name of the {folder.split("/")[folder_length -1]} Workspace to Create in Terraform Cloud'
-            templateVars["varDefault"] = f'{org}_{folder.split("/")[folder_length -1]}'
-            templateVars["varInput"] = f'Terraform Cloud Workspace Name. [{org}_{folder.split("/")[folder_length -1]}]: '
+            if opSystem == 'Windows':
+                fSplit = folder.split("\\")[folder_length -1]
+            else:
+                 fSplit = folder.split("/")[folder_length -1]
+            templateVars["Description"] = f'Name of the {fSplit} Workspace to Create in Terraform Cloud'
+            templateVars["varDefault"] = f'{org}_{fSplit}'
+            templateVars["varInput"] = f'Terraform Cloud Workspace Name. [{org}_{fSplit}]: '
             templateVars["varName"] = f'Workspace Name'
             templateVars["varRegex"] = '^[a-zA-Z0-9\\-\\_]+$'
             templateVars["minLength"] = 1
             templateVars["maxLength"] = 90
             templateVars["workspaceName"] = varStringLoop(**templateVars)
-            tfcb_config.append({folder.split('/')[folder_length -1]:templateVars["workspaceName"]})
+            if opSystem == 'Windows':
+                tfcb_config.append({folder.split('\\')[folder_length -1]:templateVars["workspaceName"]})
+            else:
+                tfcb_config.append({folder.split('/')[folder_length -1]:templateVars["workspaceName"]})
             # templateVars["vcsBranch"] = ''
 
             templateVars['workspace_id'] = terraform_cloud().tfcWorkspace(**templateVars)
@@ -222,7 +281,11 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                 templateVars["Sensitive"] = True
                 terraform_cloud().tfcVariables(**templateVars)
 
-            if folder.split("/")[folder_length -1] == 'policies':
+            if opSystem == 'Windows':
+                folderSplit = folder.split("\\")[folder_length -1]
+            else:
+                folderSplit = folder.split("/")[folder_length -1]
+            if folderSplit == 'policies':
                 templateVars["Multi_Line_Input"] = False
                 vars = [
                     'ipmi_over_lan_policies.ipmi_key',
@@ -247,42 +310,78 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                             sensitive_vars.append(z)
                     else:
                         for keys, values in json_data.items():
-                            for item in values:
-                                for key, value in item.items():
-                                    for i in value:
-                                        for k, v in i.items():
-                                            if k == z:
-                                                if not v == 0:
-                                                    if y == 'iscsi_boot_policies':
-                                                        varValue = 'iscsi_boot_password'
-                                                    else:
-                                                        varValue = '%s_%s' % (k, v)
-                                                    sensitive_vars.append(varValue)
-                                            elif k == 'binding_parameters':
-                                                for itema in v:
-                                                    for ka, va in itema.items():
-                                                        if ka == 'bind_method':
-                                                            if va == 'ConfiguredCredentials':
-                                                                sensitive_vars.append('binding_parameters_password')
-                                            elif k == 'users' or k == 'vmedia_mappings':
-                                                for itema in v:
-                                                    for ka, va in itema.items():
-                                                        for itemb in va:
-                                                            for kb, vb in itemb.items():
-                                                                if kb == 'password':
-                                                                    varValue = '%s_%s' % (z, vb)
-                                                                    sensitive_vars.append(varValue)
-                                            elif k == 'snmp_users' and z == 'password':
-                                                for itema in v:
-                                                    for ka, va in itema.items():
-                                                        for itemb in va:
-                                                            for kb, vb in itemb.items():
-                                                                if kb == 'auth_password':
-                                                                    varValue = 'snmp_auth_%s_%s' % (z, vb)
-                                                                    sensitive_vars.append(varValue)
-                                                                elif kb == 'privacy_password':
-                                                                    varValue = 'snmp_privacy_%s_%s' % (z, vb)
-                                                                    sensitive_vars.append(varValue)
+                            if opSystem == 'Windows':
+                                for key, value in values.items():
+                                    for k, v in value.items():
+                                        if k == z:
+                                            if not v == 0:
+                                                if y == 'iscsi_boot_policies':
+                                                    varValue = 'iscsi_boot_password'
+                                                else:
+                                                    varValue = '%s_%s' % (k, v)
+                                                sensitive_vars.append(varValue)
+                                        elif k == 'binding_parameters':
+                                            for itema in v:
+                                                for ka, va in itema.items():
+                                                    if ka == 'bind_method':
+                                                        if va == 'ConfiguredCredentials':
+                                                            sensitive_vars.append('binding_parameters_password')
+                                        elif k == 'users' or k == 'vmedia_mappings':
+                                            for itema in v:
+                                                for ka, va in itema.items():
+                                                    for itemb in va:
+                                                        for kb, vb in itemb.items():
+                                                            if kb == 'password':
+                                                                varValue = '%s_%s' % (z, vb)
+                                                                sensitive_vars.append(varValue)
+                                        elif k == 'snmp_users' and z == 'password':
+                                            for itema in v:
+                                                for ka, va in itema.items():
+                                                    for itemb in va:
+                                                        for kb, vb in itemb.items():
+                                                            if kb == 'auth_password':
+                                                                varValue = 'snmp_auth_%s_%s' % (z, vb)
+                                                                sensitive_vars.append(varValue)
+                                                            elif kb == 'privacy_password':
+                                                                varValue = 'snmp_privacy_%s_%s' % (z, vb)
+                                                                sensitive_vars.append(varValue)
+                            else:
+                                for item in values:
+                                    for key, value in item.items():
+                                        for i in value:
+                                            for k, v in i.items():
+                                                if k == z:
+                                                    if not v == 0:
+                                                        if y == 'iscsi_boot_policies':
+                                                            varValue = 'iscsi_boot_password'
+                                                        else:
+                                                            varValue = '%s_%s' % (k, v)
+                                                        sensitive_vars.append(varValue)
+                                                elif k == 'binding_parameters':
+                                                    for itema in v:
+                                                        for ka, va in itema.items():
+                                                            if ka == 'bind_method':
+                                                                if va == 'ConfiguredCredentials':
+                                                                    sensitive_vars.append('binding_parameters_password')
+                                                elif k == 'users' or k == 'vmedia_mappings':
+                                                    for itema in v:
+                                                        for ka, va in itema.items():
+                                                            for itemb in va:
+                                                                for kb, vb in itemb.items():
+                                                                    if kb == 'password':
+                                                                        varValue = '%s_%s' % (z, vb)
+                                                                        sensitive_vars.append(varValue)
+                                                elif k == 'snmp_users' and z == 'password':
+                                                    for itema in v:
+                                                        for ka, va in itema.items():
+                                                            for itemb in va:
+                                                                for kb, vb in itemb.items():
+                                                                    if kb == 'auth_password':
+                                                                        varValue = 'snmp_auth_%s_%s' % (z, vb)
+                                                                        sensitive_vars.append(varValue)
+                                                                    elif kb == 'privacy_password':
+                                                                        varValue = 'snmp_privacy_%s_%s' % (z, vb)
+                                                                        sensitive_vars.append(varValue)
                 for var in sensitive_vars:
                     templateVars["Variable"] = var
                     if 'ipmi_key' in var:
@@ -429,11 +528,27 @@ def intersight_org_check(home, org, args):
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def merge_easy_imm_repository(easy_jsonData, org):
+    opSystem = platform.system()
     if os.environ.get('TF_DEST_DIR') is None:
         tfDir = 'Intersight'
     else:
         tfDir = os.environ.get('TF_DEST_DIR')
-    if re.search(r'^(/.*[\w\-\.\:\/]+/|\.\..*/)$', tfDir):
+
+    if opSystem == 'Windows' and re.search(r'^(.\\.*[\w\-\.\:\\]+\\|\.\\)$', tfDir):
+        folder_list = [
+            f'{tfDir}{org}\\policies',
+            f'{tfDir}{org}\\pools',
+            f'{tfDir}{org}\\profiles',
+            f'{tfDir}{org}\\ucs_domain_profiles'
+        ]
+    elif re.search (r'^\w+', tfDir):
+        folder_list = [
+            f'.\\{tfDir}\\{org}\\policies',
+            f'.\\{tfDir}\\{org}\\pools',
+            f'.\\{tfDir}\\{org}\\profiles',
+            f'.\\{tfDir}\\{org}\\ucs_domain_profiles'
+        ]
+    elif re.search(r'^(/.*[\w\-\.\:\/]+/|\.\..*/)$', tfDir):
         folder_list = [
             f'{tfDir}{org}/policies',
             f'{tfDir}{org}/pools',
@@ -471,38 +586,78 @@ def merge_easy_imm_repository(easy_jsonData, org):
     for folder in folder_list:
 
         folderVer = "0.0.0"
-        if os.path.isfile(f'{folder}/version.txt'):
-            with open(f'{folder}/version.txt') as f:
-                folderVer = f.readline().rstrip()
+        if opSystem == 'Windows':
+            if os.path.isfile(f'{folder}\\version.txt'):
+                with open(f'{folder}\\version.txt') as f:
+                    folderVer = f.readline().rstrip()
+        else:
+            if os.path.isfile(f'{folder}/version.txt'):
+                with open(f'{folder}/version.txt') as f:
+                    folderVer = f.readline().rstrip()
 
         if os.path.isdir(folder):
-            folder_length = len(folder.split('/'))
-            folder_type = folder.split('/')[folder_length -1]
+            if opSystem == 'Windows':
+                folder_length = len(folder.split('\\'))
+                folder_type = folder.split('\\')[folder_length -1]
+            else:
+                folder_length = len(folder.split('/'))
+                folder_type = folder.split('/')[folder_length -1]
             files = easy_jsonData['wizard']['files'][folder_type]
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'\n  Beginning Easy IMM Module Downloads for "{folder}"\n')
 
             for file in files:
-                dest_file = f'{folder}/{file}'
+                if opSystem == 'Windows':
+                    dest_file = f'{folder}\\{file}'
+                else:
+                    dest_file = f'{folder}/{file}'
                 if not os.path.isfile(dest_file):
                     print(f'  Downloading "{file}"')
                     url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
                     r = requests.get(url)
                     open(dest_file, 'wb').write(r.content)
                     print(f'  "{file}" Download Complete!\n')
-                elif not os.path.isfile(f'{folder}/version.txt'):
-                    print(f'  Downloading "{file}"')
-                    url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
-                    r = requests.get(url)
-                    open(dest_file, 'wb').write(r.content)
-                    print(f'  "{file}" Download Complete!\n')
-                elif os.path.isfile(f'{folder}/version.txt'):
-                    if not folderVer == repoVer:
-                        print(f'  Downloading "{file}"')
-                        url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
-                        r = requests.get(url)
-                        open(dest_file, 'wb').write(r.content)
-                        print(f'  "{file}" Download Complete!\n')
+                else:
+                    if opSystem == 'Windows':
+                        if not os.path.isfile(f'{folder}\\version.txt'):
+                            print(f'  Downloading "{file}"')
+                            url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
+                            r = requests.get(url)
+                            open(dest_file, 'wb').write(r.content)
+                            print(f'  "{file}" Download Complete!\n')
+                        elif not os.path.isfile(f'{folder}\\version.txt'):
+                            print(f'  Downloading "{file}"')
+                            url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
+                            r = requests.get(url)
+                            open(dest_file, 'wb').write(r.content)
+                            print(f'  "{file}" Download Complete!\n')
+                        elif os.path.isfile(f'{folder}\\version.txt'):
+                            if not folderVer == repoVer:
+                                print(f'  Downloading "{file}"')
+                                url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
+                                r = requests.get(url)
+                                open(dest_file, 'wb').write(r.content)
+                                print(f'  "{file}" Download Complete!\n')
+                    else:
+                        if not os.path.isfile(f'{folder}/version.txt'):
+                            print(f'  Downloading "{file}"')
+                            url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
+                            r = requests.get(url)
+                            open(dest_file, 'wb').write(r.content)
+                            print(f'  "{file}" Download Complete!\n')
+                        elif not os.path.isfile(f'{folder}/version.txt'):
+                            print(f'  Downloading "{file}"')
+                            url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
+                            r = requests.get(url)
+                            open(dest_file, 'wb').write(r.content)
+                            print(f'  "{file}" Download Complete!\n')
+                        elif os.path.isfile(f'{folder}/version.txt'):
+                            if not folderVer == repoVer:
+                                print(f'  Downloading "{file}"')
+                                url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
+                                r = requests.get(url)
+                                open(dest_file, 'wb').write(r.content)
+                                print(f'  "{file}" Download Complete!\n')
 
             if not os.path.isfile(f'{folder}/version.txt'):
                 print(f'* Creating the repo "terraform-intersight-easy-imm" version check file\n "{folder}/version.txt"')
@@ -516,8 +671,12 @@ def merge_easy_imm_repository(easy_jsonData, org):
 
     for folder in folder_list:
         if os.path.isdir(folder):
-            folder_length = len(folder.split('/'))
-            folder_type = folder.split('/')[folder_length -1]
+            if opSystem == 'Windows':
+                folder_length = len(folder.split('\\'))
+                folder_type = folder.split('\\')[folder_length -1]
+            else:
+                folder_length = len(folder.split('/'))
+                folder_type = folder.split('/')[folder_length -1]
             files = easy_jsonData['wizard']['files'][folder_type]
             removeList = [
                 'data_sources.tf',
@@ -534,7 +693,10 @@ def merge_easy_imm_repository(easy_jsonData, org):
                     files.remove(xRemove)
             for file in files:
                 varFiles = f"{file.split('.')[0]}.auto.tfvars"
-                dest_file = f'{folder}/{varFiles}'
+                if opSystem == 'Windows':
+                    dest_file = f'{folder}\\{varFiles}'
+                else:    
+                    dest_file = f'{folder}/{varFiles}'
                 if not os.path.isfile(dest_file):
                     wr_file = open(dest_file, 'w')
                     x = file.split('.')

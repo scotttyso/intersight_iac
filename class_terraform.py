@@ -1,6 +1,7 @@
 import jinja2
 import json
 import os
+import platform
 import pkg_resources
 import re
 import requests
@@ -255,6 +256,11 @@ class terraform_cloud(object):
             tf_header = {'Authorization': tf_token,
                     'Content-Type': 'application/vnd.api+json'
             }
+
+            opSystem = platform.system()
+            if opSystem == 'Windows':
+                workingDir = templateVars["workingDirectory"]
+                templateVars["workingDirectory"] = workingDir.replace('\\', '/')
 
             # Define the Template Source
             template_file = 'workspace.jinja2'
