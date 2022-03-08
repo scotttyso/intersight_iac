@@ -18,9 +18,8 @@
 
 ## Install git
 
-[Windows](https://git-scm.com/download/win) - Download Here
-
-[Linux] - Use the System Package Manager - apt/yum etc.
+- Download Here [Windows](https://git-scm.com/download/win)
+- [Linux] - Use the System Package Manager - apt/yum etc.
 
 configure Git Credentials
 
@@ -56,13 +55,12 @@ $ go build
 
 ## Python Requirements
 
-[python](https://www.python.org/downloads/) - Download Here
-
+- Download Here [python](https://www.python.org/downloads/) 
 - Python 3.6 or Greater
 - For Windows.  Make sure python.exe and pip.exe are available via the system path.
 - Refer to requirements.txt for libraries needed to be installed or simply install the requirements file as shown below:
 
-- Windows Example
+- Windows Example (The Folder Python310 would be according to the Python Release)
 
 ```powershell
 $oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
@@ -80,8 +78,7 @@ pip install -r requirements.txt
 
 The script utilizes features introduced in 0.14 of Terraform.  So we need 0.14 or preferrably >1.0
 
-[terraform](https://www.terraform.io/downloads.html) - Download Here
-
+- Download Here [terraform](https://www.terraform.io/downloads.html) 
 - For Windows Make sure it is in a Directory that is in the system path.
 
 ### Terraform Modules and Providers
