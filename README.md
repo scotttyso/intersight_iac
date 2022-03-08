@@ -56,14 +56,13 @@ $ go build
 
 ## Python Requirements
 
-- Python 3.6 or Greater
-
 [python](https://www.python.org/downloads/) - Download Here
 
+- Python 3.6 or Greater
 - For Windows.  Make sure python.exe and pip.exe are available via the system path.
 - Refer to requirements.txt for libraries needed to be installed or simply install the requirements file as shown below:
 
-* Windows Example
+- Windows Example
 
 ```powershell
 $oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
