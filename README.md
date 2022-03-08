@@ -59,22 +59,20 @@ Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Co
 
 ### Install hcl2json - Windows
 
-```bash
-$ git clone https://github.com/tmccombs/hcl2json
-$ cd hcl2json
-$ go build
+```powershell
+git clone https://github.com/tmccombs/hcl2json
+cd hcl2json
+go build
 ```
 
 - IMPORTANT - Make sure to add the hcl2json.exe file to a folder that is included in the system path.
 
 ## Python Requirements
 
+- Python 3.6 or Greater
 - Windows Download Here: [Python](https://www.python.org/downloads/) 
 - Linux - Use the System Package Manager - apt/yum etc.
-- Python 3.6 or Greater
 - For Windows.  Make sure python.exe and pip.exe are available via the system path.
-- Refer to requirements.txt for libraries needed to be installed or simply install the requirements file as shown below:
-
 - Windows Example (The Folder Python310 would be according to the Python Release)
 
 ```powershell
@@ -83,10 +81,10 @@ $newpath = "$oldpath;%USERPROFILE%\AppData\Local\Programs\Python\Python310\;%USE
 Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newpath
 ```
 
-* Install the Requirements File
+- Install the Requirements File
 
 ```bash
-pip install -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
 ### Terraform Requirements
@@ -123,6 +121,7 @@ export TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 - Windows - First run the secret.cmd script in the directory which will echo the secret key to the window in the proper format.  Copy the PRIVATE KEY contents to the TF_VAR_secretkey environment variable
 
 ```powershell
+cd intersight_iac
 .\secret.cmd
 
 ## Intersight Variables
