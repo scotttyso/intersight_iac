@@ -18,7 +18,7 @@
 
 ## Install git
 
-[Windows](https://git-scm.com/download/win)
+[Windows](https://git-scm.com/download/win) - Download Here
 
 [Linux] - Use the System Package Manager - apt/yum etc.
 
@@ -34,9 +34,9 @@ git config --global user.email "<email>"
 
 ### Install the Go Compiler - Windows
 
-[go](https://go.dev/dl/)
+[go](https://go.dev/dl/) - Download Here
 
-- Windows - Add the Go Compiler to the System Path.
+- Add the Go Compiler to the System Path.
 
 ```powershell
 $oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
@@ -54,11 +54,11 @@ $ go build
 
 - IMPORTANT - Make sure to add the hcl2json.exe file to a folder that is included in the system path.
 
-### Python Requirements
+## Python Requirements
 
 - Python 3.6 or Greater
 
-[python](https://www.python.org/downloads/)
+[python](https://www.python.org/downloads/) - Download Here
 
 - For Windows.  Make sure python.exe and pip.exe are available via the system path.
 - Refer to requirements.txt for libraries needed to be installed or simply install the requirements file as shown below:
@@ -81,7 +81,7 @@ pip install -r requirements.txt
 
 The script utilizes features introduced in 0.14 of Terraform.  So we need 0.14 or preferrably >1.0
 
-[terraform](https://www.terraform.io/downloads.html)
+[terraform](https://www.terraform.io/downloads.html) - Download Here
 
 - For Windows Make sure it is in a Directory that is in the system path.
 
