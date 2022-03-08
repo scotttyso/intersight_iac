@@ -19,13 +19,14 @@
 ## Install git
 
 [Windows](https://git-scm.com/download/win)
+
 [Linux] - Use the System Package Manager - apt/yum etc.
 
 configure Git Credentials
 
 ```bash
-git config --global user.name "<git-user>"   
-git config --global user.email <git-email>
+git config --global user.name "<username>"   
+git config --global user.email "<email>"
 ```
 ### Install json2hcl - Linux/OS-X
 
@@ -35,7 +36,7 @@ git config --global user.email <git-email>
 
 [go](https://go.dev/dl/)
 
-* Windows
+- Windows - Add the Go Compiler to the System Path.
 
 ```powershell
 $oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
@@ -51,7 +52,7 @@ $ cd hcl2json
 $ go build
 ```
 
-Make sure to add the hcl2json.exe file to a folder that is included in the system path.
+- IMPORTANT - Make sure to add the hcl2json.exe file to a folder that is included in the system path.
 
 ### Python Requirements
 
