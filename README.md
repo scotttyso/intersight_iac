@@ -43,11 +43,11 @@ git config --global user.email "<email>"
 
 ### Install json2hcl - Linux/OS-X
 
-[json2hcl](https://github.com/kvz/json2hcl)
+ - Download Here: [json2hcl](https://github.com/kvz/json2hcl)
 
 ### Install the Go Compiler - Windows
 
-[go](https://go.dev/dl/) - Download Here
+ - Download Here: [go](https://go.dev/dl/)
 
 - Add the Go Compiler to the System Path.
 
