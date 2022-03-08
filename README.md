@@ -16,9 +16,22 @@
 
 ## Getting Started
 
+## Install Visual Studio Code
+
+- Download Here: [Visual Studio Code](https://code.visualstudio.com/Download)
+
+- Recommended Extensions: 
+  - GitHub Pull Requests and Issues - Author GitHub
+  - HashiCorp Terraform - Author HashiCorp
+  - Pylance - Author Microsoft
+  - Python - Author Microsoft
+  - PowerShell (Windows) - Author Microsoft
+
+- Authorize Visual Studio Code to GitHub via the GitHub Extension
+
 ## Install git
 
-- Windows Download Here [Git](https://git-scm.com/download/win)
+- Windows Download Here: [Git](https://git-scm.com/download/win)
 - Linux - Use the System Package Manager - apt/yum etc.
 
 configure Git Credentials
@@ -27,6 +40,7 @@ configure Git Credentials
 git config --global user.name "<username>"   
 git config --global user.email "<email>"
 ```
+
 ### Install json2hcl - Linux/OS-X
 
 [json2hcl](https://github.com/kvz/json2hcl)
@@ -55,7 +69,7 @@ $ go build
 
 ## Python Requirements
 
-- Windows Download Here [Python](https://www.python.org/downloads/) 
+- Windows Download Here: [Python](https://www.python.org/downloads/) 
 - Linux - Use the System Package Manager - apt/yum etc.
 - Python 3.6 or Greater
 - For Windows.  Make sure python.exe and pip.exe are available via the system path.
