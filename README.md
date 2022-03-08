@@ -4,6 +4,9 @@
 
 ## Updates/News
 
+03-08-2022
+* Added Windows Support
+
 * IMPORTANT - There is currently a bug with Policy Buckets for UCS Domain Profiles.  That is the only reason ucs_domain_profiles are not in the same folder as chassis and servers.  When this is fixed the ucs_domain_profiles folder will be merged with the profiles folder.  Because of this limitation at this time make sure to create a seperate policy for Domains of the following types:
 
 - network_connectivity_policies - If Using Standalone Server Policies
@@ -13,17 +16,61 @@
 
 ## Getting Started
 
-### Install json2hcl
+## Install git
+
+[Windows](https://git-scm.com/download/win)
+[Linux] - Use the System Package Manager - apt/yum etc.
+
+configure Git Credentials
+
+```bash
+git config --global user.name "<git-user>"   
+git config --global user.email <git-email>
+```
+### Install json2hcl - Linux/OS-X
 
 [json2hcl](https://github.com/kvz/json2hcl)
+
+# Install the Go Compiler - Windows
+
+[go](https://go.dev/dl/)
+
+* Windows
+
+```powershell
+$oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
+$newpath = "$oldpath;C:\Program Files\Go\bin"
+Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newpath
+```
+
+## Install hcl2json - Windows
+
+```bash
+$ git clone https://github.com/tmccombs/hcl2json
+$ cd hcl2json
+$ go build
+```
+
+Make sure to add the hcl2json.exe file to a folder that is included in the system path.
 
 ### Python Requirements
 
 - Python 3.6 or Greater
 
-[python](https://www.python.org/downloads/release/python-360/)
+[python](https://www.python.org/downloads/)
 
+- For Windows.  Make sure python.exe and pip.exe are available via the system path.
 - Refer to requirements.txt for libraries needed to be installed or simply install the requirements file as shown below:
+
+* Windows Example
+
+```powershell
+$oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
+$newpath = "$oldpath;%USERPROFILE%\AppData\Local\Programs\Python\Python310\;%USERPROFILE%\AppData\Local\Programs\Python\Python310\Scripts\"
+Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newpath
+```
+
+* Install the Requirements File
 
 ```bash
 pip install -r requirements.txt
@@ -34,6 +81,8 @@ pip install -r requirements.txt
 The script utilizes features introduced in 0.14 of Terraform.  So we need 0.14 or preferrably >1.0
 
 [terraform](https://www.terraform.io/downloads.html)
+
+- For Windows Make sure it is in a Directory that is in the system path.
 
 ### Terraform Modules and Providers
 
@@ -47,6 +96,8 @@ This script will utilize the Intersight Terraform Provider and two modules built
 
 - It is recommend to add the following secure variables to your environment before running the script
 
+- Linux
+
 ```bash
 ## Intersight Variables
 export TF_VAR_apikey="<your_intersight_api_key>"
@@ -55,6 +106,18 @@ export TF_VAR_secretkey=`cat ~/Downloads/SecretKey.txt`
 
 ## Terraform Cloud Variables
 export TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
+```
+
+- Windows - First run the secret.cmd script in the directory which will echo the secret key to the window in the proper format.  Copy the PRIVATE KEY contents to the secretkey
+
+```powershell
+## Intersight Variables
+$env:TF_VAR_apikey="<your_intersight_api_key>"
+$env:TF_VAR_secretkey="<secret_key_from_secret.cmd_output>"
+# The above example is based on the key being in your Downloads folder.  Correct for your environment
+
+## Terraform Cloud Variables
+$env:TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 ```
 
 - Running the wizard to use a configuration migrated from UCS Manager using the IMM Transition Tool
