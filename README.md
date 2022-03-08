@@ -31,8 +31,8 @@
 
 ## Install git
 
-- Windows Download Here: [Git](https://git-scm.com/download/win)
 - Linux - Use the System Package Manager - apt/yum etc.
+- Windows Download Here: [Git](https://git-scm.com/download/win)
 
 configure Git Credentials
 
@@ -43,11 +43,11 @@ git config --global user.email "<email>"
 
 ### Install json2hcl - Linux/OS-X
 
- - Download Here: [json2hcl](https://github.com/kvz/json2hcl)
+- Download Here: [json2hcl](https://github.com/kvz/json2hcl)
 
 ### Install the Go Compiler - Windows
 
- - Download Here: [Go](https://go.dev/dl/)
+- Download Here: [Go](https://go.dev/dl/)
 
 - Add the Go Compiler to the System Path.
 
@@ -70,8 +70,8 @@ go build
 ## Python Requirements
 
 - Python 3.6 or Greater
-- Windows Download Here: [Python](https://www.python.org/downloads/) 
 - Linux - Use the System Package Manager - apt/yum etc.
+- Windows Download Here: [Python](https://www.python.org/downloads/) 
 - For Windows.  Make sure python.exe and pip.exe are available via the system path.
 - Windows Example (The Folder Python310 would be according to the Python Release)
 
@@ -118,7 +118,7 @@ export TF_VAR_secretkey=`cat ~/Downloads/SecretKey.txt`
 export TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 ```
 
-- Windows - First run the secret.cmd script in the directory which will echo the secret key to the window in the proper format.  Copy the PRIVATE KEY contents to the TF_VAR_secretkey environment variable
+- Windows - First run the secret.cmd script in the directory which will echo the secret key to the window in the proper format.  Copy the PRIVATE KEY contents to the TF_VAR_secretkey environment variable.  The script assumes the SecretKey.txt file is in the Downloads folder.
 
 ```powershell
 cd intersight_iac
@@ -127,25 +127,27 @@ cd intersight_iac
 ## Intersight Variables
 $env:TF_VAR_apikey="<your_intersight_api_key>"
 $env:TF_VAR_secretkey="<secret_key_from_secret.cmd_output>"
-# The above example is based on the key being in your Downloads folder.  Correct for your environment
 
 ## Terraform Cloud Variables
 $env:TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 ```
 
+### Running the Wizard for Brownfield Migration with the IMM Transition Tool
 - Running the wizard to use a configuration migrated from UCS Manager using the IMM Transition Tool
 
 ```bash
 ./main.py -j {json_file_name.json}
 ```
 
+### Running the Wizard for Greenfield Deployment
 - Running the Wizard to generate IaC through a Question and Answer Wizard
 
 ```bash
 ./main.py
 ```
 
-- Help Information
+## Wizard Help Menu
+
 ```bash
 ./main.py -h
 
