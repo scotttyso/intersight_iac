@@ -47,7 +47,7 @@ git config --global user.email "<email>"
 
 ### Install the Go Compiler - Windows
 
- - Download Here: [go](https://go.dev/dl/)
+ - Download Here: [Go](https://go.dev/dl/)
 
 - Add the Go Compiler to the System Path.
 
@@ -120,9 +120,11 @@ export TF_VAR_secretkey=`cat ~/Downloads/SecretKey.txt`
 export TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 ```
 
-- Windows - First run the secret.cmd script in the directory which will echo the secret key to the window in the proper format.  Copy the PRIVATE KEY contents to the secretkey
+- Windows - First run the secret.cmd script in the directory which will echo the secret key to the window in the proper format.  Copy the PRIVATE KEY contents to the TF_VAR_secretkey environment variable
 
 ```powershell
+.\secret.cmd
+
 ## Intersight Variables
 $env:TF_VAR_apikey="<your_intersight_api_key>"
 $env:TF_VAR_secretkey="<secret_key_from_secret.cmd_output>"
