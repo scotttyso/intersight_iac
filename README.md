@@ -18,8 +18,8 @@
 
 ## Install git
 
-- Download Here [Windows](https://git-scm.com/download/win)
-- [Linux] - Use the System Package Manager - apt/yum etc.
+- Windows Download Here [Git](https://git-scm.com/download/win)
+- Linux - Use the System Package Manager - apt/yum etc.
 
 configure Git Credentials
 
@@ -55,7 +55,8 @@ $ go build
 
 ## Python Requirements
 
-- Download Here [python](https://www.python.org/downloads/) 
+- Windows Download Here [Python](https://www.python.org/downloads/) 
+- Linux - Use the System Package Manager - apt/yum etc.
 - Python 3.6 or Greater
 - For Windows.  Make sure python.exe and pip.exe are available via the system path.
 - Refer to requirements.txt for libraries needed to be installed or simply install the requirements file as shown below:
