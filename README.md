@@ -32,7 +32,7 @@ git config --global user.email "<email>"
 
 [json2hcl](https://github.com/kvz/json2hcl)
 
-# Install the Go Compiler - Windows
+### Install the Go Compiler - Windows
 
 [go](https://go.dev/dl/)
 
@@ -44,7 +44,7 @@ $newpath = "$oldpath;C:\Program Files\Go\bin"
 Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newpath
 ```
 
-## Install hcl2json - Windows
+### Install hcl2json - Windows
 
 ```bash
 $ git clone https://github.com/tmccombs/hcl2json
