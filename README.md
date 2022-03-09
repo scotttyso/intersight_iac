@@ -87,7 +87,7 @@ Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Co
 $ pip install -r requirements.txt
 ```
 
-### Terraform Requirements
+## Terraform Requirements
 
 The script utilizes features introduced in 0.14 of Terraform.  So we need 0.14 or preferrably >1.0
 
