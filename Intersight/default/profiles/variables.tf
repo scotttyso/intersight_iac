@@ -1,0 +1,84 @@
+terraform {
+  experiments = [module_variable_optional_attrs]
+}
+
+#__________________________________________________________
+#
+# Intersight Provider Variables
+#__________________________________________________________
+
+variable "apikey" {
+  description = "Intersight API Key."
+  sensitive   = true
+  type        = string
+}
+
+variable "endpoint" {
+  default     = "https://intersight.com"
+  description = "Intersight URL."
+  type        = string
+}
+
+variable "secretkey" {
+  description = "Intersight Secret Key."
+  sensitive   = true
+  type        = string
+}
+
+
+#__________________________________________________________
+#
+# Terraform Workspace Variables
+#__________________________________________________________
+
+variable "tfc_workspaces" {
+  default = [
+    {
+      backend          = "remote"
+      tfc_organization = "default"
+      policies_dir     = "../policies/"
+      policies_ws      = "default_policies"
+      pools_dir        = "../pools/"
+      pools_ws         = "default_pools"
+    }
+  ]
+  description = <<-EOT
+  * backend: Options are:
+    - local - The backend is on the Local Machine
+    - Remote - The backend is in TFCB.
+  * tfc_organization: Name of the Terraform Cloud Organization when backend is remote.
+  * policies_dir: Name of the Policies directory when the backend is local.
+  * policies_ws: Name of the Policies workspace in Terraform Cloud.
+  * pools_dir: Name of the Pools directory when the backend is local.
+  * pools_ws: Name of the Pools workspace in Terraform Cloud.
+  EOT
+  type = list(object(
+    {
+      backend          = string
+      tfc_organization = optional(string)
+      policies_dir     = optional(string)
+      policies_ws      = optional(string)
+      pools_dir        = optional(string)
+      pools_ws         = optional(string)
+    }
+  ))
+}
+
+
+
+#__________________________________________________________
+#
+# Global Variables
+#__________________________________________________________
+
+variable "organization" {
+  default     = "default"
+  description = "Intersight Organization Names to Apply Policy to.  https://intersight.com/an/settings/organizations/."
+  type        = string
+}
+
+variable "tags" {
+  default     = []
+  description = "List of Key/Value Pairs to Assign as Attributes to the Policy."
+  type        = list(map(string))
+}
