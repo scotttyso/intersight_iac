@@ -3438,9 +3438,15 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                     y = y.capitalize()
                     policy_description.append(y)
                 policy_description = " ".join(policy_description)
+                policy_description = policy_description.replace('Ipmi', 'IPMI')
                 policy_description = policy_description.replace('Ip', 'IP')
+                policy_description = policy_description.replace('Iqn', 'IQN')
+                policy_description = policy_description.replace('Ldap', 'LDAP')
                 policy_description = policy_description.replace('Ntp', 'NTP')
+                policy_description = policy_description.replace('Sd', 'SD')
+                policy_description = policy_description.replace('Smtp', 'SMTP')
                 policy_description = policy_description.replace('Snmp', 'SNMP')
+                policy_description = policy_description.replace('Ssh', 'SSH')
                 policy_description = policy_description.replace('Wwnn', 'WWNN')
                 policy_description = policy_description.replace('Wwpn', 'WWPN')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -3471,6 +3477,10 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
 
         else:
             templateVars[inner_var] = choose_policy(inner_policy, **templateVars)
+            if inner_var == 'ldap_policy':
+                print('matched')
+                print(templateVars[inner_var])
+                exit()
             if templateVars[inner_var] == 'create_policy':
                 create_policy = True
             elif templateVars[inner_var] == '' and templateVars["allow_opt_out"] == True:

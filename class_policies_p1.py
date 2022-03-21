@@ -1729,9 +1729,9 @@ class policies_p1(object):
 
                                 templateVars["multi_select"] = False
                                 jsonVars = easy_jsonData['policies']['iam.LdapPolicy']
-                                templateVars["var_description"] = jsonVars['iam.LdapPolicy']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['iam.LdapPolicy']['enum'])
-                                templateVars["defaultVar"] = jsonVars['iam.LdapPolicy']['default']
+                                templateVars["var_description"] = jsonVars['role']['description']
+                                templateVars["jsonVars"] = sorted(jsonVars['role']['enum'])
+                                templateVars["defaultVar"] = jsonVars['role']['default']
                                 templateVars["varType"] = 'Group Role'
                                 role = variablesFromAPI(**templateVars)
 

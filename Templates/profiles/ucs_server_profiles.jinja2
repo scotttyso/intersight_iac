@@ -24,7 +24,7 @@
     certificate_management_policy = "{{ certificate_management_policy }}"
 {%- endif %}
 {%- if device_connector_policies %}
-    device_connector_policies     = "{{ device_connector_policies }}"
+    device_connector_policies     = "{{ device_connector_policy }}"
 {%- endif %}
     description                   = "{{ descr }}"
 {%- if imc_access_policy %}
@@ -36,20 +36,20 @@
 {%- if lan_connectivity_policy %}
     lan_connectivity_policy       = "{{ lan_connectivity_policy }}"
 {%- endif %}
-{%- if ldap_policies %}
-    ldap_policies                 = "{{ ldap_policies }}"
+{%- if ldap_policy %}
+    ldap_policy                   = "{{ ldap_policy }}"
 {%- endif %}
 {%- if local_user_policy %}
     local_user_policy             = "{{ local_user_policy }}"
 {%- endif %}
-{%- if network_connectivity_policies %}
-    network_connectivity_policies = "{{ network_connectivity_policies }}"
+{%- if network_connectivity_policy %}
+    network_connectivity_policy   = "{{ network_connectivity_policy }}"
 {%- endif %}
-{%- if ntp_policies %}
-    ntp_policies                  = "{{ ntp_policies }}"
+{%- if ntp_policy %}
+    ntp_policy                    = "{{ ntp_policy }}"
 {%- endif %}
-{%- if persistent_memory_policies %}
-    persistent_memory_policies    = "{{ persistent_memory_policies }}"
+{%- if persistent_memory_policy %}
+    persistent_memory_policy      = "{{ persistent_memory_policy }}"
 {%- endif %}
 {%- if server_assignment_mode == 'Pool' %}
     resource_pool                 = "{{ resource_pool }}"
@@ -69,14 +69,14 @@
 {%- else %}
     server_assignment_mode        = "None"
 {%- endif %}
-{%- if smtp_policies %}
-    smtp_policies                 = "{{ smtp_policies }}"
+{%- if smtp_policy %}
+    smtp_policy                   = "{{ smtp_policy }}"
 {%- endif %}
 {%- if snmp_policy %}
     snmp_policy                   = "{{ snmp_policy }}"
 {%- endif %}
-{%- if ssh_policies %}
-    ssh_policies                  = "{{ ssh_policies }}"
+{%- if ssh_policy %}
+    ssh_policy                    = "{{ ssh_policy }}"
 {%- endif %}
 {%- if storage_policy %}
     storage_policy                = "{{ storage_policy }}"

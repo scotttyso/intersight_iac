@@ -112,23 +112,21 @@ This script will utilize the Intersight Terraform Provider and two modules built
 ## Intersight Variables
 export TF_VAR_apikey="<your_intersight_api_key>"
 export TF_VAR_secretkey=`cat ~/Downloads/SecretKey.txt` 
-# The above example is based on the key being in your Downloads folder.  Correct for your environment
+# The above example is based on the key being in your Downloads folder.  Correct for your environment.
 
 ## Terraform Cloud Variables
 export TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 ```
 
-- Windows - First run the secret.cmd script in the directory which will echo the secret key to the window in the proper format.  Copy the PRIVATE KEY contents to the TF_VAR_secretkey environment variable.  The script assumes the SecretKey.txt file is in the Downloads folder.
+- Windows - Plugin your API Keys and the File Location of the Intersight Secret Key.
 
 ```powershell
-cd intersight_iac
-.\secret.cmd
-
-## Intersight Variables
+## Powershell Intersight Variables
 $env:TF_VAR_apikey="<your_intersight_api_key>"
-$env:TF_VAR_secretkey="<secret_key_from_secret.cmd_output>"
+$env:TF_VAR_secretkey="$HOME\Downloads\SecretKey.txt"
+# The above example is based on the key being in your Downloads folder.  Correct for your environment.
 
-## Terraform Cloud Variables
+## Powershell Terraform Cloud Variables
 $env:TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 ```
 
