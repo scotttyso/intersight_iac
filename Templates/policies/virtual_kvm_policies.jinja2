@@ -1,5 +1,9 @@
 
   "{{ name }}" = {
+{%- if allow_tunneled_vkvm %}
+    allow_tunneled_vkvm       = {{ allow_tunneled_vkvm|lower }}
+{%- else %}
+    enable_virtual_kvm        = false
     description               = "{{ descr }}"
 {%- if enable_local_server_video %}
     enable_local_server_video = {{ enable_local_server_video|lower }}

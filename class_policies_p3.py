@@ -2068,41 +2068,43 @@ class policies_p3(object):
                 templateVars["enable_virtual_kvm"] = True
                 templateVars["maximum_sessions"] = 4
 
-                valid = False
-                while valid == False:
-                    local_video = input('Do you want to Display KVM on Monitors attached to the Server?  Enter "Y" or "N" [Y]: ')
-                    if local_video == '' or local_video == 'Y':
-                        templateVars["enable_local_server_video"] = True
-                        valid = True
-                    elif local_video == 'N':
-                        templateVars["enable_local_server_video"] = False
-                        valid = True
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                # Pull in the Policies for Virtual KVM
+                jsonVars = jsonData['components']['schemas']['kvm.Policy']['allOf'][1]['properties']
+                templateVars["multi_select"] = False
 
-                valid = False
-                while valid == False:
-                    video_encrypt = input('Do you want to Enable video Encryption?  Enter "Y" or "N" [Y]: ')
-                    if video_encrypt == '' or video_encrypt == 'Y':
-                        templateVars["enable_video_encryption"] = True
-                        valid = True
-                    elif video_encrypt == 'N':
-                        templateVars["enable_video_encryption"] = False
-                        valid = True
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                # Enable Local Server Video
+                templateVars["Description"] = 'Enables Tunneled vKVM on the endpoint. Applicable only for Device Connectors that support Tunneled vKVM'
+                templateVars["varInput"] = f'Do you want to Tunneled vKVM through Intersight for this Policy?\n'
+                '* Note: Make sure to Enable Virtual Tunneled KVM Launch and Configuration under:\n'
+                'Setttings > Settings > Security & Privacy.'
+                templateVars["varDefault"] = 'N'
+                templateVars["varName"] = 'Allow Tunneled vKVM'
+                templateVars["allow_tunneled_vkvm"] = varBoolLoop(**templateVars)
 
-                valid = False
-                while valid == False:
-                    templateVars["remote_port"] = input('What is the Port you would like to Assign for Remote Access?\n'
-                        'This should be a value between 1024-65535. [2068]: ')
-                    if templateVars["remote_port"] == '':
-                        templateVars["remote_port"] = 2068
-                    valid = validating.number_in_range('Remote Port', templateVars["remote_port"], 1, 65535)
+                # Enable Local Server Video
+                templateVars["Description"] = jsonVars['EnableLocalServerVideo']['description']
+                templateVars["varInput"] = f'Do you want to Display KVM on Monitors attached to the Server?'
+                templateVars["varDefault"] = 'Y'
+                templateVars["varName"] = 'Enable Local Server Video'
+                templateVars["enable_local_server_video"] = varBoolLoop(**templateVars)
+
+                # Enable Video Encryption
+                templateVars["Description"] = jsonVars['EnableVideoEncryption']['description']
+                templateVars["varInput"] = f'Do you want to Enable video Encryption?'
+                templateVars["varDefault"] = 'Y'
+                templateVars["varName"] = 'Enable Video Encryption'
+                templateVars["enable_video_encryption"] = varBoolLoop(**templateVars)
+
+                # Obtain the Port to Use for vKVM
+                templateVars["Description"] = jsonVars['RemotePort']['description']
+                templateVars["varDefault"] =  jsonVars['RemotePort']['default']
+                templateVars["varInput"] = 'What is the Port you would like to Assign for Remote Access?\n'
+                'This should be a value between 1024-65535. [2068]: '
+                templateVars["varName"] = 'Remote Port'
+                templateVars["varRegex"] = '^[0-9]+$'
+                templateVars["minNum"] = 1
+                templateVars["maxNum"] = 65535
+                templateVars["remote_port"] = varNumberLoop(**templateVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'   description               = "{templateVars["descr"]}"')
