@@ -32,6 +32,12 @@
 ## Install git
 
 - Linux - Use the System Package Manager - apt/yum etc.
+
+```bash
+sudo apt update
+sudo apt install git
+```
+
 - Windows Download Here: [Git](https://git-scm.com/download/win)
 
 configure Git Credentials
