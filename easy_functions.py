@@ -453,7 +453,7 @@ def policies_parse(org, policy_type, policy):
                 cmd = 'hcl2json.exe %s' % (policy_file)
             else:
                 cmd = 'hcl2json %s' % (policy_file)
-                cmd = 'json2hcl -reverse < %s' % (policy_file)
+                # cmd = 'json2hcl -reverse < %s' % (policy_file)
             p = subprocess.run(
                 cmd,
                 shell=True,
@@ -471,13 +471,8 @@ def policies_parse(org, policy_type, policy):
                 return policies,json_data
             else:
                 json_data = json.loads(p.stdout.decode('utf-8'))
-                if opSystem == 'Windows':
-                    for i in json_data[policy]:
-                        policies.append(i)
-                else:
-                    for i in json_data[policy]:
-                        for k, v in i.items():
-                            policies.append(k)
+                for i in json_data[policy]:
+                    policies.append(i)
                 return policies,json_data
     else:
         json_data = {}

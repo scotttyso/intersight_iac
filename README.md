@@ -41,10 +41,12 @@ git config --global user.name "<username>"
 git config --global user.email "<email>"
 ```
 
-### Install json2hcl - Linux/OS-X
+### Install the Go Compiler - Linux (Ubuntu Example)
 
-- Download Here: [json2hcl](https://github.com/kvz/json2hcl)
-
+```bash
+sudo apt update
+sudo apt install golang
+```
 ### Install the Go Compiler - Windows
 
 - Download Here: [Go](https://go.dev/dl/)
@@ -57,15 +59,28 @@ $newpath = "$oldpath;C:\Program Files\Go\bin"
 Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newpath
 ```
 
-### Install hcl2json - Windows
+### Build hcl2json - Linux & Windows
 
-```powershell
+```bash
 git clone https://github.com/tmccombs/hcl2json
 cd hcl2json
 go build
 ```
+### Move the hcl2json binary to a system Path
 
-- IMPORTANT - Make sure to add the hcl2json.exe file to a folder that is included in the system path.
+- Linux Example
+
+```bash
+mv ./hcl2json /usr/local/bin/
+or 
+mv ./hcl2json /usr/bin/
+```
+
+- Windows Example
+
+```powershell
+move hcl2json.exe C:\Windows\
+```
 
 ## Python Requirements
 

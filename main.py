@@ -310,78 +310,40 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                             sensitive_vars.append(z)
                     else:
                         for keys, values in json_data.items():
-                            if opSystem == 'Windows':
-                                for key, value in values.items():
-                                    for k, v in value.items():
-                                        if k == z:
-                                            if not v == 0:
-                                                if y == 'iscsi_boot_policies':
-                                                    varValue = 'iscsi_boot_password'
-                                                else:
-                                                    varValue = '%s_%s' % (k, v)
-                                                sensitive_vars.append(varValue)
-                                        elif k == 'binding_parameters':
-                                            for itema in v:
-                                                for ka, va in itema.items():
-                                                    if ka == 'bind_method':
-                                                        if va == 'ConfiguredCredentials':
-                                                            sensitive_vars.append('binding_parameters_password')
-                                        elif k == 'users' or k == 'vmedia_mappings':
-                                            for itema in v:
-                                                for ka, va in itema.items():
-                                                    for itemb in va:
-                                                        for kb, vb in itemb.items():
-                                                            if kb == 'password':
-                                                                varValue = '%s_%s' % (z, vb)
-                                                                sensitive_vars.append(varValue)
-                                        elif k == 'snmp_users' and z == 'password':
-                                            for itema in v:
-                                                for ka, va in itema.items():
-                                                    for itemb in va:
-                                                        for kb, vb in itemb.items():
-                                                            if kb == 'auth_password':
-                                                                varValue = 'snmp_auth_%s_%s' % (z, vb)
-                                                                sensitive_vars.append(varValue)
-                                                            elif kb == 'privacy_password':
-                                                                varValue = 'snmp_privacy_%s_%s' % (z, vb)
-                                                                sensitive_vars.append(varValue)
-                            else:
-                                for item in values:
-                                    for key, value in item.items():
-                                        for i in value:
-                                            for k, v in i.items():
-                                                if k == z:
-                                                    if not v == 0:
-                                                        if y == 'iscsi_boot_policies':
-                                                            varValue = 'iscsi_boot_password'
-                                                        else:
-                                                            varValue = '%s_%s' % (k, v)
-                                                        sensitive_vars.append(varValue)
-                                                elif k == 'binding_parameters':
-                                                    for itema in v:
-                                                        for ka, va in itema.items():
-                                                            if ka == 'bind_method':
-                                                                if va == 'ConfiguredCredentials':
-                                                                    sensitive_vars.append('binding_parameters_password')
-                                                elif k == 'users' or k == 'vmedia_mappings':
-                                                    for itema in v:
-                                                        for ka, va in itema.items():
-                                                            for itemb in va:
-                                                                for kb, vb in itemb.items():
-                                                                    if kb == 'password':
-                                                                        varValue = '%s_%s' % (z, vb)
-                                                                        sensitive_vars.append(varValue)
-                                                elif k == 'snmp_users' and z == 'password':
-                                                    for itema in v:
-                                                        for ka, va in itema.items():
-                                                            for itemb in va:
-                                                                for kb, vb in itemb.items():
-                                                                    if kb == 'auth_password':
-                                                                        varValue = 'snmp_auth_%s_%s' % (z, vb)
-                                                                        sensitive_vars.append(varValue)
-                                                                    elif kb == 'privacy_password':
-                                                                        varValue = 'snmp_privacy_%s_%s' % (z, vb)
-                                                                        sensitive_vars.append(varValue)
+                            for key, value in values.items():
+                                for k, v in value.items():
+                                    if k == z:
+                                        if not v == 0:
+                                            if y == 'iscsi_boot_policies':
+                                                varValue = 'iscsi_boot_password'
+                                            else:
+                                                varValue = '%s_%s' % (k, v)
+                                            sensitive_vars.append(varValue)
+                                    elif k == 'binding_parameters':
+                                        for itema in v:
+                                            for ka, va in itema.items():
+                                                if ka == 'bind_method':
+                                                    if va == 'ConfiguredCredentials':
+                                                        sensitive_vars.append('binding_parameters_password')
+                                    elif k == 'users' or k == 'vmedia_mappings':
+                                        for itema in v:
+                                            for ka, va in itema.items():
+                                                for itemb in va:
+                                                    for kb, vb in itemb.items():
+                                                        if kb == 'password':
+                                                            varValue = '%s_%s' % (z, vb)
+                                                            sensitive_vars.append(varValue)
+                                    elif k == 'snmp_users' and z == 'password':
+                                        for itema in v:
+                                            for ka, va in itema.items():
+                                                for itemb in va:
+                                                    for kb, vb in itemb.items():
+                                                        if kb == 'auth_password':
+                                                            varValue = 'snmp_auth_%s_%s' % (z, vb)
+                                                            sensitive_vars.append(varValue)
+                                                        elif kb == 'privacy_password':
+                                                            varValue = 'snmp_privacy_%s_%s' % (z, vb)
+                                                            sensitive_vars.append(varValue)
                 for var in sensitive_vars:
                     templateVars["Variable"] = var
                     if 'ipmi_key' in var:
