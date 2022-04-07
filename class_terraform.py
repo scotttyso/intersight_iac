@@ -247,6 +247,16 @@ class terraform_cloud(object):
         #--------------------------------------------
         # If the Workspace was not found Create it.
         #--------------------------------------------
+
+        opSystem = platform.system()
+        if opSystem == 'Windows':
+            workingDir = templateVars["workingDirectory"]
+            templateVars["workingDirectory"] = workingDir.replace('\\', '/')
+
+        if re.search(r'\/', templateVars["workingDirectory"]):
+            workingDir = templateVars["workingDirectory"]
+            templateVars["workingDirectory"] = workingDir[1 : ]
+        
         if not key_count > 0:
             #-------------------------------
             # Get Workspaces the Workspace URL
@@ -256,11 +266,6 @@ class terraform_cloud(object):
             tf_header = {'Authorization': tf_token,
                     'Content-Type': 'application/vnd.api+json'
             }
-
-            opSystem = platform.system()
-            if opSystem == 'Windows':
-                workingDir = templateVars["workingDirectory"]
-                templateVars["workingDirectory"] = workingDir.replace('\\', '/')
 
             # Define the Template Source
             template_file = 'workspace.jinja2'
@@ -449,7 +454,7 @@ def get(url, site_header, section=''):
             # Use this for Troubleshooting
             if print_response_always:
                 print(status)
-                # print(r.text)
+                print(r.text)
 
             if status == 200 or status == 404:
                 json_data = r.json()

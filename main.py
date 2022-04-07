@@ -193,15 +193,9 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                 print(f'  Please confirm the Path Below is the short Path to the Repository Directory.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 dirLength = len(tfDir.split('/'))
-                if re.search(r'\/$', tfDir):
-                    question = input(f'Press Enter to Confirm or Make Corrections: [{tfDir.split("/")[dirLength -2]}]: ')
-                else:
-                    question = input(f'Press Enter to Confirm or Make Corrections: [{tfDir.split("/")[dirLength -1]}]: ')
+                question = input(f'Enter Value to Make Corrections: [Press Enter to Leave Base Path Empty]: ')
                 if question == '':
-                    if re.search(r'\/$', tfDir):
-                        tfDir = tfDir.split("/")[dirLength -2]
-                    else:
-                        tfDir = tfDir.split("/")[dirLength -1]
+                    tfDir = ''
                     os.environ['tfWorkDir'] = tfDir
                     repoFoldercheck = True
                 else:
