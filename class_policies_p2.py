@@ -1660,15 +1660,12 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                             vsan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
 
                         vsan_list = []
-                        for item in policyData['vsan_policies']:
-                            for key, value in item.items():
-                                if key == vsan_policy:
-                                    for i in value[0]['vsans']:
-                                        for k, v in i.items():
-                                            for x in v:
-                                                for y, val in x.items():
-                                                    if y == 'vsan_id':
-                                                        vsan_list.append(val)
+                        for key, value in policyData['vsan_policies'].items():
+                            if key == vsan_policy:
+                                for k, v in value['vsans'].items():
+                                    for y, val in v.items():
+                                        if y == 'vsan_id':
+                                            vsan_list.append(val)
 
                         if len(vsan_list) > 1:
                             vsan_list = ','.join(str(vsan_list))

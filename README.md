@@ -47,6 +47,9 @@ git config --global user.name "<username>"
 git config --global user.email "<email>"
 ```
 
+### Fork this Repository to your own Repository
+
+
 ### Install the Go Compiler - Linux (Ubuntu Example)
 
 ```bash
@@ -57,12 +60,18 @@ sudo apt install golang
 
 - Download Here: [Go](https://go.dev/dl/)
 
-- Add the Go Compiler to the System Path.
+- Add the Go Compiler to the System Path as Administrator.
 
 ```powershell
 $oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
 $newpath = "$oldpath;C:\Program Files\Go\bin"
 Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newpath
+```
+
+- Update the System Path in the Visual Studio Terminal Window
+
+```powershell
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 ```
 
 ### Build hcl2json - Linux & Windows
@@ -82,7 +91,7 @@ or
 mv ./hcl2json /usr/bin/
 ```
 
-- Windows Example
+- Windows Example - Administrator Session
 
 ```powershell
 move hcl2json.exe C:\Windows\
@@ -94,12 +103,24 @@ move hcl2json.exe C:\Windows\
 - Linux - Use the System Package Manager - apt/yum etc.
 - Windows Download Here: [Python](https://www.python.org/downloads/) 
 - For Windows.  Make sure python.exe and pip.exe are available via the system path.
-- Windows Example (The Folder Python310 would be according to the Python Release)
+- Windows Example (The Folder Python310 would be according to the Python Release) - Administrator Session
 
 ```powershell
 $oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
 $newpath = "$oldpath;%USERPROFILE%\AppData\Local\Programs\Python\Python310\;%USERPROFILE%\AppData\Local\Programs\Python\Python310\Scripts\"
 Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newpath
+```
+
+- Update the System Path in the Visual Studio Terminal Window
+
+```powershell
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+```
+
+### Clone the Forked Repository to Local Machine
+
+```bash
+git clone https://github.com/<your-username>/intersight_iac
 ```
 
 - Install the Requirements File

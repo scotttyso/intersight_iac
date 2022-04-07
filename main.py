@@ -225,6 +225,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                 f'{tfDir}/{org}/profiles',
                 f'{tfDir}/{org}/ucs_domain_profiles'
             ]
+
         for folder in folder_list:
             if opSystem == 'Windows':
                 folder_length = len(folder.split('\\'))
@@ -496,7 +497,7 @@ def merge_easy_imm_repository(easy_jsonData, org):
     else:
         tfDir = os.environ.get('TF_DEST_DIR')
 
-    if opSystem == 'Windows' and re.search(r'^(.\\.*[\w\-\.\:\\]+\\|\.\\)$', tfDir):
+    if opSystem == 'Windows' and re.search(r'^(.+\\.*[\w\-\.\:\\]+\\|\.\\)$', tfDir):
         folder_list = [
             f'{tfDir}{org}\\policies',
             f'{tfDir}{org}\\pools',
@@ -532,6 +533,10 @@ def merge_easy_imm_repository(easy_jsonData, org):
             f'./{tfDir}/{org}/ucs_domain_profiles'
         ]
     
+    print(opSystem)
+    print(folder_list)
+    exit
+
     # Get the Latest Release Tag for the terraform-intersight-imm repository
     url = f'https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm/tags/'
     r = requests.get(url, stream=True)
@@ -1259,7 +1264,7 @@ def main():
         for folder in splitDir:
             if folder == '':
                 folderCount = 0
-            elif not re.search(r'^[\w\-\.\:\/]+$', folder):
+            elif not re.search(r'^[\w\-\.\:\/\\]+$', folder):
                 print(folder)
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  !!ERROR!!')
