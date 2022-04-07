@@ -514,15 +514,12 @@ class policies_vxan(object):
                                     for policy in policy_list:
                                         vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
                                     vlan_list = []
-                                    for item in policyData['vlan_policies']:
-                                        for key, value in item.items():
+                                    for key, value in policyData['vlan_policies'].items():
                                             if key == vlan_policy:
-                                                for i in value[0]['vlans']:
-                                                    for k, v in i.items():
-                                                        for x in v:
-                                                            for y, val in x.items():
-                                                                if y == 'vlan_list':
-                                                                    vlan_list.append(val)
+                                                for k, v in value['vlans'].items():
+                                                    for y, val in v.items():
+                                                        if y == 'vlan_list':
+                                                            vlan_list.append(val)
 
                                     vlan_list = ','.join(vlan_list)
                                     vlan_list = vlan_list_full(vlan_list)
