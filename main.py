@@ -274,6 +274,10 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                 templateVars["varKey"] = var.split('.')[0]
                 templateVars["varValue"] = sensitive_var_value(jsonData, **templateVars)
                 templateVars["Sensitive"] = True
+                if 'secret' in var and opSystem == 'Windows':
+                    if os.path.isfile(templateVars["varValue"]):
+                        f = open(templateVars["varValue"])
+                        templateVars["varValue"] = f.read().replace('\n', '\\n')
                 terraform_cloud().tfcVariables(**templateVars)
 
             if opSystem == 'Windows':
@@ -493,13 +497,22 @@ def merge_easy_imm_repository(easy_jsonData, org):
             f'{tfDir}{org}\\profiles',
             f'{tfDir}{org}\\ucs_domain_profiles'
         ]
-    elif re.search (r'^\w+', tfDir):
+    elif opSystem == 'Windows' and re.search(r'^(.+\\.*[\w\-\.\:\\]+|\.\\)$', tfDir):
+        folder_list = [
+            f'{tfDir}\\{org}\\policies',
+            f'{tfDir}\\{org}\\pools',
+            f'{tfDir}\\{org}\\profiles',
+            f'{tfDir}\\{org}\\ucs_domain_profiles'
+        ]
+        print('matched windows REgex')
+    elif opSystem == 'Windows' and re.search (r'^\w+', tfDir):
         folder_list = [
             f'.\\{tfDir}\\{org}\\policies',
             f'.\\{tfDir}\\{org}\\pools',
             f'.\\{tfDir}\\{org}\\profiles',
             f'.\\{tfDir}\\{org}\\ucs_domain_profiles'
         ]
+        print('default matched windows REgex')
     elif re.search(r'^(/.*[\w\-\.\:\/]+/|\.\..*/)$', tfDir):
         folder_list = [
             f'{tfDir}{org}/policies',
@@ -522,10 +535,6 @@ def merge_easy_imm_repository(easy_jsonData, org):
             f'./{tfDir}/{org}/ucs_domain_profiles'
         ]
     
-    print(opSystem)
-    print(folder_list)
-    exit
-
     # Get the Latest Release Tag for the terraform-intersight-imm repository
     url = f'https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm/tags/'
     r = requests.get(url, stream=True)
