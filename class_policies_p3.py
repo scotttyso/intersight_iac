@@ -30,8 +30,9 @@ class policies_p3(object):
     #==============================================
     # Power Policy Module
     #==============================================
-    def power_policies(self, jsonData, easy_jsonData):
+    def power_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Power Policy'
         templateVars = {}
@@ -41,6 +42,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'power_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -52,7 +54,10 @@ class policies_p3(object):
             print(f'  A {policy_type} will configure the Power Redundancy Policies for Chassis and Servers.')
             print(f'  For Servers it will configure the Power Restore State.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 1
             policy_loop = False
@@ -180,9 +185,10 @@ class policies_p3(object):
     #==============================================
     # SD Card Policy Module
     #==============================================
-    def sd_card_policies(self, jsonData, easy_jsonData):
+    def sd_card_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'sdcard'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'SD Card Policy'
         templateVars = {}
@@ -192,6 +198,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'sd_card_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -239,9 +246,10 @@ class policies_p3(object):
     #==============================================
     # Serial over LAN Policy Module
     #==============================================
-    def serial_over_lan_policies(self, jsonData, easy_jsonData):
+    def serial_over_lan_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'sol'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Serial over LAN Policy'
         templateVars = {}
@@ -251,6 +259,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'serial_over_lan_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -266,7 +275,10 @@ class policies_p3(object):
             print(f'   - SSH Port\n')
             print(f'  This Policy is not required to standup a server but is a good practice for day 2 support.')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -350,9 +362,10 @@ class policies_p3(object):
     #==============================================
     # SMTP Policy Module
     #==============================================
-    def smtp_policies(self, jsonData, easy_jsonData):
+    def smtp_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'smtp'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'SMTP Policy'
         templateVars = {}
@@ -362,6 +375,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'smtp_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -374,7 +388,10 @@ class policies_p3(object):
             print(f'  You can specify the preferred settings for outgoing communication and select the fault ')
             print(f'  severity level to report and the mail recipients.\n\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -520,9 +537,10 @@ class policies_p3(object):
     #==============================================
     # SNMP Policy Module
     #==============================================
-    def snmp_policies(self, jsonData, easy_jsonData):
+    def snmp_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'snmp'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'SNMP Policy'
         templateVars = {}
@@ -532,6 +550,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'snmp_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -543,7 +562,10 @@ class policies_p3(object):
             print(f'  An {policy_type} will configure chassis, domains, and servers with SNMP parameters.')
             print(f'  This Policy is not required to standup a server but is a good practice for day 2 support.')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -801,9 +823,10 @@ class policies_p3(object):
     #==============================================
     # SSH Policy Module
     #==============================================
-    def ssh_policies(self, jsonData, easy_jsonData):
+    def ssh_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'ssh'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'SSH Policy'
         templateVars = {}
@@ -813,6 +836,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ssh_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -825,7 +849,10 @@ class policies_p3(object):
             print(f'  create one or more SSH policies that contain a specific grouping of SSH properties for a ')
             print(f'  server or a set of servers.\n\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -917,9 +944,10 @@ class policies_p3(object):
     #========================================
     # Storage Policy Module
     #========================================
-    def storage_policies(self, jsonData, easy_jsonData):
+    def storage_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'storage'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_names = []
         policy_type = 'Storage Policy'
@@ -930,6 +958,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'storage_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -941,7 +970,10 @@ class policies_p3(object):
             print(f'  A {policy_type} allows you to create drive groups, virtual drives, configure the ')
             print(f'  storage capacity of a virtual drive, and configure the M.2 RAID controllers.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1530,9 +1562,10 @@ class policies_p3(object):
     #==============================================
     # Switch Control Policy Module
     #==============================================
-    def switch_control_policies(self, jsonData, easy_jsonData):
+    def switch_control_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'sw_ctrl'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Switch Control Policy'
         templateVars = {}
@@ -1542,6 +1575,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'switch_control_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -1556,7 +1590,10 @@ class policies_p3(object):
             print(f'  the name and description for the Policy.  You only need one of these policies for')
             print(f'  Organization {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1635,9 +1672,10 @@ class policies_p3(object):
     #==============================================
     # Syslog Policy Module
     #==============================================
-    def syslog_policies(self, jsonData, easy_jsonData):
+    def syslog_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'syslog'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Syslog Policy'
         templateVars = {}
@@ -1647,6 +1685,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'syslog_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -1659,7 +1698,10 @@ class policies_p3(object):
             print(f'  You can configure up to two Remote Syslog Servers.')
             print(f'  This Policy is not required to standup a server but is a good practice for day 2 support.')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1752,9 +1794,10 @@ class policies_p3(object):
     #==============================================
     # System QoS Policy Module
     #==============================================
-    def system_qos_policies(self, jsonData, easy_jsonData):
+    def system_qos_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'qos'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'System QoS Policy'
         templateVars = {}
@@ -1764,6 +1807,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'system_qos_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -1786,7 +1830,10 @@ class policies_p3(object):
             print(f'  Beyond the System MTU, we recommend you utilize the default parameters of this wizard.')
             print(f'  You only need one of these policies for Organization {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1938,8 +1985,9 @@ class policies_p3(object):
     #==============================================
     # Thermal Policy Module
     #==============================================
-    def thermal_policies(self, jsonData, easy_jsonData):
+    def thermal_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Thermal Policy'
         templateVars = {}
@@ -1949,6 +1997,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'thermal_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -1960,7 +2009,10 @@ class policies_p3(object):
             print(f'  A {policy_type} will configure the Cooling/FAN Policy for Chassis.  We recommend ')
             print(f'  Balanced for a 5108 and Acoustic for a 9508 Chassis, as of this writing.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -2028,9 +2080,10 @@ class policies_p3(object):
     #==============================================
     # Virtual KVM Policy Module
     #==============================================
-    def virtual_kvm_policies(self, jsonData, easy_jsonData):
+    def virtual_kvm_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'vkvm'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Virtual KVM Policy'
         templateVars = {}
@@ -2040,6 +2093,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'virtual_kvm_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -2053,7 +2107,10 @@ class policies_p3(object):
             print(f'   - Video Encryption - encrypts all video information sent through KVM.')
             print(f'   - Remote Port - The port used for KVM communication. Range is 1 to 65535.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -2146,9 +2203,10 @@ class policies_p3(object):
     #==============================================
     # Virtual Media Policy Policy Module
     #==============================================
-    def virtual_media_policies(self, jsonData, easy_jsonData):
+    def virtual_media_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'vmedia'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Virtual Media Policy'
         templateVars = {}
@@ -2158,6 +2216,7 @@ class policies_p3(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'virtual_media_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -2173,7 +2232,10 @@ class policies_p3(object):
             print(f'  virtual media mappings, one for ISO files through CDD and the other for IMG files ')
             print(f'  through HDD.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':

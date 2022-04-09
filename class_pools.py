@@ -30,9 +30,10 @@ class pools(object):
     #==============================================
     # IP Pools Module
     #==============================================
-    def ip_pools(self, jsonData, easy_jsonData):
+    def ip_pools(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'ip_pool'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'IP Pool'
         templateVars = {}
@@ -42,6 +43,7 @@ class pools(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ip_pools'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -54,7 +56,10 @@ class pools(object):
             print(f'  management is not supported for KVM access.  This IP Pool will need to be associated to a ')
             print(f'  VLAN assigned to the VLAN Pool of the Domain.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -347,9 +352,10 @@ class pools(object):
     #==============================================
     # IQN Pools Module
     #==============================================
-    def iqn_pools(self, jsonData, easy_jsonData):
+    def iqn_pools(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'iqn_pool'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'IQN Pool'
         templateVars = {}
@@ -359,6 +365,7 @@ class pools(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'iqn_pools'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -517,8 +524,9 @@ class pools(object):
     #==============================================
     # MAC Pools Module
     #==============================================
-    def mac_pools(self, jsonData, easy_jsonData):
+    def mac_pools(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'MAC Pool'
         templateVars = {}
@@ -528,6 +536,7 @@ class pools(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'mac_pools'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -542,7 +551,10 @@ class pools(object):
             print(f'  - Pool Size can be between 1 and 1000 addresses.')
             print(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 0
             policy_loop = False
@@ -652,9 +664,10 @@ class pools(object):
     #==============================================
     # Resource Pool Module
     #==============================================
-    def resource_pools(self, jsonData, easy_jsonData):
+    def resource_pools(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'resource'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Resource Pool'
         templateVars = {}
@@ -664,6 +677,7 @@ class pools(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'resource_pools'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -675,7 +689,10 @@ class pools(object):
             print(f'  The {policy_type} represents a collection of resources that can be associated to ')
             print(f'  the configuration entities such as server profiles.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -773,9 +790,10 @@ class pools(object):
     #==============================================
     # UUID Pools Module
     #==============================================
-    def uuid_pools(self, jsonData, easy_jsonData):
+    def uuid_pools(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'uuid_pool'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'UUID Pool'
         templateVars = {}
@@ -785,6 +803,7 @@ class pools(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'uuid_pools'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -922,9 +941,10 @@ class pools(object):
     #==============================================
     # WWNN Pools Module
     #==============================================
-    def wwnn_pools(self, jsonData, easy_jsonData):
+    def wwnn_pools(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'wwnn_pool'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'WWNN Pool'
         templateVars = {}
@@ -934,6 +954,7 @@ class pools(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'wwnn_pools'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -947,7 +968,10 @@ class pools(object):
             print(f'  - Pool Size can be between 1 and 1000 addresses.')
             print(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1064,8 +1088,9 @@ class pools(object):
     #==============================================
     # WWPN Pools Module
     #==============================================
-    def wwpn_pools(self, jsonData, easy_jsonData):
+    def wwpn_pools(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'WWPN Pool'
         templateVars = {}
@@ -1075,6 +1100,7 @@ class pools(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'wwpn_pools'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -1089,7 +1115,10 @@ class pools(object):
             print(f'  - Pool Size can be between 1 and 1000 addresses.')
             print(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':

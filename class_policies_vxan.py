@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import jinja2
+import os
 import pkg_resources
+import platform
 import re
 import validating
 from easy_functions import choose_policy, policies_parse
@@ -29,9 +31,10 @@ class policies_vxan(object):
     #==============================================
     # Multicast Policy Module
     #==============================================
-    def multicast_policies(self, jsonData, easy_jsonData):
+    def multicast_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'multicast'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Multicast Policy'
         templateVars = {}
@@ -41,6 +44,7 @@ class policies_vxan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'multicast_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -55,7 +59,10 @@ class policies_vxan(object):
             print(f'  If you configure IGMP Queriers for a Multicast Policy that Policy should only be')
             print(f'  Assigned to the VLAN for which those Queriers will service.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -232,10 +239,11 @@ class policies_vxan(object):
     #==============================================
     # VLAN Policy Module
     #==============================================
-    def vlan_policies(self, jsonData, easy_jsonData):
+    def vlan_policies(self, jsonData, easy_jsonData, **kwargs):
         vlan_policies_vlans = []
         name_prefix = self.name_prefix
         name_suffix = 'vlans'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'VLAN Policy'
         templateVars = {}
@@ -245,6 +253,7 @@ class policies_vxan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'vlan_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -266,7 +275,10 @@ class policies_vxan(object):
             print(f'  IMPORTANT NOTE: You can only have one Native VLAN for the Fabric at this time,')
             print(f'                  as Disjoint Layer 2 is not yet supported.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -421,9 +433,10 @@ class policies_vxan(object):
     #==============================================
     # VSAN Policy Module
     #==============================================
-    def vsan_policies(self, jsonData, easy_jsonData):
+    def vsan_policies(self, jsonData, easy_jsonData, **kwargs):
         vsan_policies_vsans = []
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'VSAN Policy'
         templateVars = {}
@@ -433,6 +446,7 @@ class policies_vxan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'vsan_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -448,7 +462,10 @@ class policies_vxan(object):
             print(f'                  in a FCoE (Fibre-Channel over Ethernet) VLAN.  This VLAN Must not be')
             print(f'                  already used by the VLAN Policy.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -715,11 +732,22 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                 create_policy = False
                 return templateVars[inner_var],policyData
         if create_policy == True:
+            kwargs = {}
+            opSystem = platform.system()
+            if os.environ.get('TF_DEST_DIR') is None:
+                tfDir = 'Intersight'
+            else:
+                tfDir = os.environ.get('TF_DEST_DIR')
+            if tfDir[-1] == '\\' or tfDir[-1] == '/':
+                    tfDir = tfDir[:-1]
+
+            kwargs.update({'opSystem':opSystem,'tfDir':tfDir})
+
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Starting module to create {inner_policy}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             if inner_policy == 'multicast_policies':
-                policies_vxan(name_prefix, templateVars["org"], inner_type).multicast_policies(jsonData, easy_jsonData)
+                policies_vxan(name_prefix, templateVars["org"], inner_type).multicast_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'vlan_policies':
-                policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData)
+                policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData, **kwargs)
 

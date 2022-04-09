@@ -3,6 +3,7 @@
 import jinja2
 import os
 import pkg_resources
+import platform
 import re
 import subprocess
 import validating
@@ -34,8 +35,9 @@ class policies_lan(object):
     #==============================================
     # Ethernet Adapter Policy Module
     #==============================================
-    def ethernet_adapter_policies(self, jsonData, easy_jsonData):
+    def ethernet_adapter_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Ethernet Adapter Policy'
         policy_x = 'Ethernet Adapter'
@@ -47,6 +49,7 @@ class policies_lan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ethernet_adapter_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -60,7 +63,10 @@ class policies_lan(object):
             print(f'  configuration to the {templateVars["template_type"]}.auto.tfvars file at your descretion.')
             print(f'  That will not be covered by this wizard as the focus of the wizard is on simplicity.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -126,9 +132,10 @@ class policies_lan(object):
     #==============================================
     # Ethernet Network Control Policy Module
     #==============================================
-    def ethernet_network_control_policies(self, jsonData, easy_jsonData):
+    def ethernet_network_control_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'netwk_ctrl'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Ethernet Network Control Policy'
         templateVars = {}
@@ -138,6 +145,7 @@ class policies_lan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ethernet_network_control_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -149,7 +157,10 @@ class policies_lan(object):
             print(f'  An {policy_type} will allow you to control Network Discovery with ')
             print(f'  protocols like CDP and LLDP as well as MAC Address Control Features.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -248,9 +259,10 @@ class policies_lan(object):
     #==============================================
     # Ethernet Network Group Policy Module
     #==============================================
-    def ethernet_network_group_policies(self, jsonData, easy_jsonData):
+    def ethernet_network_group_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'VMs']
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Ethernet Network Group Policy'
         templateVars = {}
@@ -260,6 +272,7 @@ class policies_lan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ethernet_network_group_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -283,7 +296,10 @@ class policies_lan(object):
             print(f'     1-10,20-30 - Ranges and Lists of VLANs')
             print(f'  If you want to Assign a Native VLAN Make sure it is in the allowed list.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 0
             policy_loop = False
@@ -446,9 +462,10 @@ class policies_lan(object):
     #==============================================
     # Ethernet Network Policy Module
     #==============================================
-    def ethernet_network_policies(self, jsonData, easy_jsonData):
+    def ethernet_network_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'network'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Ethernet Network Policy'
         templateVars = {}
@@ -458,6 +475,7 @@ class policies_lan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ethernet_network_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -470,7 +488,10 @@ class policies_lan(object):
             print(f'  or multiple VLANs (Trunk) traffic. You can specify the VLAN to be associated with an ')
             print(f'  Ethernet packet if no tag is found.\n\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -543,9 +564,10 @@ class policies_lan(object):
     #==============================================
     # Ethernet QoS Policy Module
     #==============================================
-    def ethernet_qos_policies(self, jsonData, easy_jsonData):
+    def ethernet_qos_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'VMs']
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Ethernet QoS Policy'
         templateVars = {}
@@ -555,6 +577,7 @@ class policies_lan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ethernet_qos_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -577,7 +600,10 @@ class policies_lan(object):
             print(f'     Storage - Platinum')
             print(f'     Virtual Machines - Gold.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
             templateVars["multi_select"] = False
@@ -810,9 +836,10 @@ class policies_lan(object):
     #==============================================
     # iSCSI Adapter Policy Module
     #==============================================
-    def iscsi_adapter_policies(self, jsonData, easy_jsonData):
+    def iscsi_adapter_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'adapter'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'iSCSI Adapter Policy'
         templateVars = {}
@@ -822,6 +849,7 @@ class policies_lan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'iscsi_adapter_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -833,7 +861,10 @@ class policies_lan(object):
             print(f'  The {policy_type} allows you to configure values for TCP Connection Timeout, ')
             print(f'  DHCP Timeout, and the Retry Count if the specified LUN ID is busy.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -923,9 +954,10 @@ class policies_lan(object):
     #==============================================
     # iSCSI Boot Policy Module
     #==============================================
-    def iscsi_boot_policies(self, jsonData, easy_jsonData):
+    def iscsi_boot_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'boot'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'iSCSI Boot Policy'
         templateVars = {}
@@ -935,6 +967,7 @@ class policies_lan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'iscsi_boot_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -947,7 +980,10 @@ class policies_lan(object):
             print(f'  blade and rack servers from a remote disk across a Storage Area Network. The remote disk, ')
             print(f'  known as the target, is accessed using TCP/IP and iSCSI boot firmware.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1202,9 +1238,10 @@ class policies_lan(object):
     #==============================================
     # iSCSI Static Target Policy Module
     #==============================================
-    def iscsi_static_target_policies(self, jsonData, easy_jsonData):
+    def iscsi_static_target_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'target'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'iSCSI Static Target Policy'
         templateVars = {}
@@ -1214,6 +1251,7 @@ class policies_lan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'iscsi_static_target_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -1226,7 +1264,10 @@ class policies_lan(object):
             print(f'  logical unit number of the primary target for iSCSI boot. You can optionally specify these ')
             print(f'  details for a secondary target as well.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1345,9 +1386,10 @@ class policies_lan(object):
     #==============================================
     # LAN Connectivity Policy Module
     #==============================================
-    def lan_connectivity_policies(self, jsonData, easy_jsonData):
+    def lan_connectivity_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'Virtual_Machines']
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_names = []
         policy_type = 'LAN Connectivity Policy'
@@ -1358,6 +1400,7 @@ class policies_lan(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'lan_connectivity_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -1374,7 +1417,10 @@ class policies_lan(object):
             print(f'     3. Storage')
             print(f'     4. Virtual Machines\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1954,30 +2000,41 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                 create_policy = False
                 return templateVars[inner_var],policyData
         if create_policy == True:
+            kwargs = {}
+            opSystem = platform.system()
+            if os.environ.get('TF_DEST_DIR') is None:
+                tfDir = 'Intersight'
+            else:
+                tfDir = os.environ.get('TF_DEST_DIR')
+            if tfDir[-1] == '\\' or tfDir[-1] == '/':
+                    tfDir = tfDir[:-1]
+
+            kwargs.update({'opSystem':opSystem,'tfDir':tfDir})
+
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Starting module to create {inner_policy}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             if inner_policy == 'iqn_pools':
-                pools(name_prefix, templateVars["org"], inner_type).iqn_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).iqn_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'mac_pools':
-                pools(name_prefix, templateVars["org"], inner_type).mac_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).mac_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_adapter_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_adapter_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_adapter_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_network_control_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_network_group_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_group_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_group_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_network_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_qos_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_qos_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_qos_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'iscsi_adapter_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_adapter_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_adapter_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'iscsi_boot_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_boot_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_boot_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'iscsi_static_target_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_static_target_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_static_target_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'system_qos_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'vlan_policies':
-                policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData)
+                policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData, **kwargs)

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import jinja2
+import os
 import pkg_resources
+import platform
 import re
 import validating
 from class_pools import pools
@@ -29,8 +31,9 @@ class policies_san(object):
     #==============================================
     # Fibre-Channel Adapter Policy Module
     #==============================================
-    def fibre_channel_adapter_policies(self, jsonData, easy_jsonData):
+    def fibre_channel_adapter_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Fibre-Channel Adapter Policy'
         policy_x = 'Fibre-Channel Adapter'
@@ -43,6 +46,7 @@ class policies_san(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'fibre_channel_adapter_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -57,7 +61,10 @@ class policies_san(object):
             print(f'  configuration to the {templateVars["template_type"]}.auto.tfvars file at your descretion.  ')
             print(f'  That will not be covered by this wizard as the focus of the wizard is on simplicity.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -123,8 +130,9 @@ class policies_san(object):
     #==============================================
     # Fibre-Channel Network Policy Module
     #==============================================
-    def fibre_channel_network_policies(self, jsonData, easy_jsonData):
+    def fibre_channel_network_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Fibre-Channel Network Policy'
         templateVars = {}
@@ -134,6 +142,7 @@ class policies_san(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'fibre_channel_network_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -146,7 +155,10 @@ class policies_san(object):
             print(f'  Fibre-Channel Network Policies Notes:')
             print(f'  - You will need one Policy per Fabric.  VSAN A and VSAN B.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -266,9 +278,10 @@ class policies_san(object):
     #==============================================
     # Fibre-Channel QoS Policy Module
     #==============================================
-    def fibre_channel_qos_policies(self, jsonData, easy_jsonData):
+    def fibre_channel_qos_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'qos'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Fibre-Channel QoS Policy'
         templateVars = {}
@@ -278,6 +291,7 @@ class policies_san(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'fibre_channel_qos_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -291,7 +305,10 @@ class policies_san(object):
             print(f'  creates the policy with all the default values, so you only need one')
             print(f'  {policy_type}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -354,9 +371,10 @@ class policies_san(object):
     #==============================================
     # SAN Connectivity Policy Module
     #==============================================
-    def san_connectivity_policies(self, jsonData, easy_jsonData):
+    def san_connectivity_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'san'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'SAN Connectivity Policy'
         templateVars = {}
@@ -366,6 +384,7 @@ class policies_san(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'san_connectivity_policies'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -377,7 +396,10 @@ class policies_san(object):
             print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
             print(f'  A {policy_type} will configure vHBA adapters for Server Profiles.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - Intersight/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -905,22 +927,33 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                 create_policy = False
                 return templateVars[inner_var],policyData
         if create_policy == True:
+            kwargs = {}
+            opSystem = platform.system()
+            if os.environ.get('TF_DEST_DIR') is None:
+                tfDir = 'Intersight'
+            else:
+                tfDir = os.environ.get('TF_DEST_DIR')
+            if tfDir[-1] == '\\' or tfDir[-1] == '/':
+                    tfDir = tfDir[:-1]
+
+            kwargs.update({'opSystem':opSystem,'tfDir':tfDir})
+
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Starting module to create {inner_policy}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             if inner_policy == 'wwnn_pools':
-                pools(name_prefix, templateVars["org"], inner_type).wwnn_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).wwnn_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'wwpn_pools':
-                pools(name_prefix, templateVars["org"], inner_type).wwpn_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).wwpn_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'fibre_channel_adapter_policies':
-                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_adapter_policies(jsonData, easy_jsonData)
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_adapter_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'fibre_channel_network_policies':
-                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_network_policies(jsonData, easy_jsonData)
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_network_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'fibre_channel_qos_policies':
-                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_qos_policies(jsonData, easy_jsonData)
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_qos_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'lan_connectivity_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).lan_connectivity_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).lan_connectivity_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'vlan_policies':
-                policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData)
+                policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'vsan_policies':
-                policies_vxan(name_prefix, templateVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData)
+                policies_vxan(name_prefix, templateVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData, **kwargs)

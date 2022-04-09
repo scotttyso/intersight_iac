@@ -347,6 +347,11 @@ class terraform_cloud(object):
             print(f'    Successfully Deleted Workspace "{templateVars["workspaceName"]}".')
             print(f'\n-----------------------------------------------------------------------------\n')
             del_count =+ 1
+        elif response.status_code == 204:
+            print(f'\n-----------------------------------------------------------------------------\n')
+            print(f'    Successfully Deleted Workspace "{templateVars["workspaceName"]}".')
+            print(f'\n-----------------------------------------------------------------------------\n')
+            del_count =+ 1
 
         if not del_count > 0:
             print(f'\n-----------------------------------------------------------------------------\n')

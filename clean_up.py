@@ -103,7 +103,6 @@ def delete_terraform_workspaces(org):
                     repoFoldercheck = True
             else:
                 repoFoldercheck = True
-            print('reached the end')
         folder_list = [
             f'{tfDir}/{org}/policies',
             f'{tfDir}/{org}/pools',

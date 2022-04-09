@@ -315,30 +315,25 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                                                 varValue = '%s_%s' % (k, v)
                                             sensitive_vars.append(varValue)
                                     elif k == 'binding_parameters':
-                                        for itema in v:
-                                            for ka, va in itema.items():
-                                                if ka == 'bind_method':
-                                                    if va == 'ConfiguredCredentials':
-                                                        sensitive_vars.append('binding_parameters_password')
+                                        for ka, va in v.items():
+                                            if ka == 'bind_method':
+                                                if va == 'ConfiguredCredentials':
+                                                    sensitive_vars.append('binding_parameters_password')
                                     elif k == 'users' or k == 'vmedia_mappings':
-                                        for itema in v:
-                                            for ka, va in itema.items():
-                                                for itemb in va:
-                                                    for kb, vb in itemb.items():
-                                                        if kb == 'password':
-                                                            varValue = '%s_%s' % (z, vb)
-                                                            sensitive_vars.append(varValue)
+                                        for ka, va in v.items():
+                                            for kb, vb in va.items():
+                                                if kb == 'password':
+                                                    varValue = '%s_%s' % (z, vb)
+                                                    sensitive_vars.append(varValue)
                                     elif k == 'snmp_users' and z == 'password':
-                                        for itema in v:
-                                            for ka, va in itema.items():
-                                                for itemb in va:
-                                                    for kb, vb in itemb.items():
-                                                        if kb == 'auth_password':
-                                                            varValue = 'snmp_auth_%s_%s' % (z, vb)
-                                                            sensitive_vars.append(varValue)
-                                                        elif kb == 'privacy_password':
-                                                            varValue = 'snmp_privacy_%s_%s' % (z, vb)
-                                                            sensitive_vars.append(varValue)
+                                        for ka, va in v.items():
+                                            for kb, vb in va.items():
+                                                if kb == 'auth_password':
+                                                    varValue = 'snmp_auth_%s_%s' % (z, vb)
+                                                    sensitive_vars.append(varValue)
+                                                elif kb == 'privacy_password':
+                                                    varValue = 'snmp_privacy_%s_%s' % (z, vb)
+                                                    sensitive_vars.append(varValue)
                 for var in sensitive_vars:
                     templateVars["Variable"] = var
                     if 'ipmi_key' in var:
@@ -930,7 +925,7 @@ def process_wizard(easy_jsonData, jsonData):
             'ucs_server_template_profiles',
             'ucs_server_profiles',
         ]
-    #  Easy Deploy - VMware M2 Boot Server Profiles
+    #  Quick Start
     elif '-_domain_-' in main_menu:
         policy_list = [
             'quick_start_pools',
@@ -943,6 +938,8 @@ def process_wizard(easy_jsonData, jsonData):
             policy_list.append('quick_start_vmware_m2')
         elif 'raid' in main_menu:
             policy_list.append('quick_start_vmware_raid1')
+        elif 'stateless' in main_menu:
+            policy_list.append('quick_start_vmware_stateless')
         policy_list.append('quick_start_server_profile')
 
     if main_menu == 'deploy_individual_policies':
@@ -1025,132 +1022,142 @@ def process_wizard(easy_jsonData, jsonData):
 
     kwargs = {}
     for policy in policy_list:
+        opSystem = platform.system()
+        if os.environ.get('TF_DEST_DIR') is None:
+            tfDir = 'Intersight'
+        else:
+            tfDir = os.environ.get('TF_DEST_DIR')
+        if tfDir[-1] == '\\' or tfDir[-1] == '/':
+                tfDir = tfDir[:-1]
+
+        kwargs.update({'opSystem':opSystem,'tfDir':tfDir})
+
         #==============================================
         # Intersight Pools
         #==============================================
         type = 'pools'
         if policy == 'ip_pools':
-            pools(name_prefix, org, type).ip_pools(jsonData, easy_jsonData)
+            pools(name_prefix, org, type).ip_pools(jsonData, easy_jsonData, **kwargs)
         elif policy == 'iqn_pools':
-            pools(name_prefix, org, type).iqn_pools(jsonData, easy_jsonData)
+            pools(name_prefix, org, type).iqn_pools(jsonData, easy_jsonData, **kwargs)
         elif policy == 'mac_pools':
-            pools(name_prefix, org, type).mac_pools(jsonData, easy_jsonData)
+            pools(name_prefix, org, type).mac_pools(jsonData, easy_jsonData, **kwargs)
         elif policy == 'wwnn_pools':
-            pools(name_prefix, org, type).wwnn_pools(jsonData, easy_jsonData)
+            pools(name_prefix, org, type).wwnn_pools(jsonData, easy_jsonData, **kwargs)
         elif policy == 'wwpn_pools':
-            pools(name_prefix, org, type).wwpn_pools(jsonData, easy_jsonData)
+            pools(name_prefix, org, type).wwpn_pools(jsonData, easy_jsonData, **kwargs)
         elif policy == 'uuid_pools':
-            pools(name_prefix, org, type).uuid_pools(jsonData, easy_jsonData)
+            pools(name_prefix, org, type).uuid_pools(jsonData, easy_jsonData, **kwargs)
 
         #==============================================
         # Intersight Policies
         #==============================================
         type = 'policies'
         if policy == 'adapter_configuration_policies':
-            policies_p1(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData)
+            policies_p1(name_prefix, org, type).adapter_configuration_policies(jsonData, easy_jsonData, **kwargs)
         if policy == 'bios_policies':
-            policies_p1(name_prefix, org, type).bios_policies(jsonData, easy_jsonData)
+            policies_p1(name_prefix, org, type).bios_policies(jsonData, easy_jsonData, **kwargs)
         if policy == 'boot_order_policies':
-            policies_p1(name_prefix, org, type).boot_order_policies(jsonData, easy_jsonData)
+            policies_p1(name_prefix, org, type).boot_order_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'certificate_management_policies':
-            policies_p1(name_prefix, org, type).certificate_management_policies(jsonData, easy_jsonData)
+            policies_p1(name_prefix, org, type).certificate_management_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'device_connector_policies':
-            policies_p1(name_prefix, org, type).device_connector_policies(jsonData, easy_jsonData)
+            policies_p1(name_prefix, org, type).device_connector_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ethernet_adapter_policies':
-            policies_lan(name_prefix, org, type).ethernet_adapter_policies(jsonData, easy_jsonData)
+            policies_lan(name_prefix, org, type).ethernet_adapter_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ethernet_network_control_policies':
-            policies_lan(name_prefix, org, type).ethernet_network_control_policies(jsonData, easy_jsonData)
+            policies_lan(name_prefix, org, type).ethernet_network_control_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ethernet_network_group_policies':
-            policies_lan(name_prefix, org, type).ethernet_network_group_policies(jsonData, easy_jsonData)
+            policies_lan(name_prefix, org, type).ethernet_network_group_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ethernet_network_policies':
-            policies_lan(name_prefix, org, type).ethernet_network_policies(jsonData, easy_jsonData)
+            policies_lan(name_prefix, org, type).ethernet_network_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ethernet_qos_policies':
-            policies_lan(name_prefix, org, type).ethernet_qos_policies(jsonData, easy_jsonData)
+            policies_lan(name_prefix, org, type).ethernet_qos_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'fibre_channel_adapter_policies':
-            policies_san(name_prefix, org, type).fibre_channel_adapter_policies(jsonData, easy_jsonData)
+            policies_san(name_prefix, org, type).fibre_channel_adapter_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'fibre_channel_network_policies':
-            policies_san(name_prefix, org, type).fibre_channel_network_policies(jsonData, easy_jsonData)
+            policies_san(name_prefix, org, type).fibre_channel_network_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'fibre_channel_qos_policies':
-            policies_san(name_prefix, org, type).fibre_channel_qos_policies(jsonData, easy_jsonData)
+            policies_san(name_prefix, org, type).fibre_channel_qos_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'flow_control_policies':
-            policies_p1(domain_prefix, org, type).flow_control_policies(jsonData, easy_jsonData)
+            policies_p1(domain_prefix, org, type).flow_control_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'imc_access_policies':
-            policies_p1(name_prefix, org, type).imc_access_policies(jsonData, easy_jsonData)
+            policies_p1(name_prefix, org, type).imc_access_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ipmi_over_lan_policies':
-            policies_p1(name_prefix, org, type).ipmi_over_lan_policies(jsonData, easy_jsonData)
+            policies_p1(name_prefix, org, type).ipmi_over_lan_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'iscsi_adapter_policies':
-            policies_lan(name_prefix, org, type).iscsi_adapter_policies(jsonData, easy_jsonData)
+            policies_lan(name_prefix, org, type).iscsi_adapter_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'iscsi_boot_policies':
-            policies_lan(name_prefix, org, type).iscsi_boot_policies(jsonData, easy_jsonData)
+            policies_lan(name_prefix, org, type).iscsi_boot_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'iscsi_static_target_policies':
-            policies_lan(name_prefix, org, type).iscsi_static_target_policies(jsonData, easy_jsonData)
+            policies_lan(name_prefix, org, type).iscsi_static_target_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ldap_policies':
-            policies_p1(name_prefix, org, type).ldap_policies(jsonData, easy_jsonData)
+            policies_p1(name_prefix, org, type).ldap_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'link_aggregation_policies':
-            policies_p1(domain_prefix, org, type).link_aggregation_policies(jsonData, easy_jsonData)
+            policies_p1(domain_prefix, org, type).link_aggregation_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'link_control_policies':
-            policies_p1(domain_prefix, org, type).link_control_policies(jsonData, easy_jsonData)
+            policies_p1(domain_prefix, org, type).link_control_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'local_user_policies':
-            policies_p2(name_prefix, org, type).local_user_policies(jsonData, easy_jsonData)
+            policies_p2(name_prefix, org, type).local_user_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'multicast_policies':
-            policies_vxan(domain_prefix, org, type).multicast_policies(jsonData, easy_jsonData)
+            policies_vxan(domain_prefix, org, type).multicast_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'network_connectivity_policies':
-            policies_p2(name_prefix, org, type).network_connectivity_policies(jsonData, easy_jsonData)
+            policies_p2(name_prefix, org, type).network_connectivity_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ntp_policies':
-            policies_p2(name_prefix, org, type).ntp_policies(jsonData, easy_jsonData)
+            policies_p2(name_prefix, org, type).ntp_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'persistent_memory_policies':
-            policies_p2(name_prefix, org, type).persistent_memory_policies(jsonData, easy_jsonData)
+            policies_p2(name_prefix, org, type).persistent_memory_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'port_policies':
-            policies_p2(domain_prefix, org, type).port_policies(jsonData, easy_jsonData)
+            policies_p2(domain_prefix, org, type).port_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'power_policies':
-            policies_p3(name_prefix, org, type).power_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).power_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'san_connectivity_policies':
-            policies_san(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData)
+            policies_san(name_prefix, org, type).san_connectivity_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'lan_connectivity_policies':
-            policies_lan(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData)
+            policies_lan(name_prefix, org, type).lan_connectivity_policies(jsonData, easy_jsonData, **kwargs)
         # elif policy == 'sd_card_policies':
-        #     policies(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData)
+        #     policies(name_prefix, org, type).sd_card_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'serial_over_lan_policies':
-            policies_p3(name_prefix, org, type).serial_over_lan_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).serial_over_lan_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'smtp_policies':
-            policies_p3(name_prefix, org, type).smtp_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).smtp_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'snmp_policies':
-            policies_p3(name_prefix, org, type).snmp_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).snmp_policies(jsonData, easy_jsonData, **kwargs)
         elif policy ==  'ssh_policies':
-            policies_p3(name_prefix, org, type).ssh_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).ssh_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'storage_policies':
-            policies_p3(name_prefix, org, type).storage_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).storage_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'switch_control_policies':
-            policies_p3(domain_prefix, org, type).switch_control_policies(jsonData, easy_jsonData)
+            policies_p3(domain_prefix, org, type).switch_control_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'syslog_policies':
-            policies_p3(name_prefix, org, type).syslog_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).syslog_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'system_qos_policies':
-            policies_p3(domain_prefix, org, type).system_qos_policies(jsonData, easy_jsonData)
+            policies_p3(domain_prefix, org, type).system_qos_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'thermal_policies':
-            policies_p3(name_prefix, org, type).thermal_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).thermal_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'virtual_kvm_policies':
-            policies_p3(name_prefix, org, type).virtual_kvm_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).virtual_kvm_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'virtual_media_policies':
-            policies_p3(name_prefix, org, type).virtual_media_policies(jsonData, easy_jsonData)
+            policies_p3(name_prefix, org, type).virtual_media_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'vlan_policies':
-            policies_vxan(domain_prefix, org, type).vlan_policies(jsonData, easy_jsonData)
+            policies_vxan(domain_prefix, org, type).vlan_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'vsan_policies':
-            policies_vxan(domain_prefix, org, type).vsan_policies(jsonData, easy_jsonData)
+            policies_vxan(domain_prefix, org, type).vsan_policies(jsonData, easy_jsonData, **kwargs)
 
         #==============================================
         # Intersight Profiles
         #==============================================
         type = 'profiles'
         if policy == 'ucs_chassis_profiles':
-            profiles(domain_prefix, org, type).ucs_chassis_profiles(jsonData, easy_jsonData)
+            profiles(domain_prefix, org, type).ucs_chassis_profiles(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ucs_server_profile_templates':
-            profiles(name_prefix, org, type).ucs_server_profile_templates(jsonData, easy_jsonData)
+            profiles(name_prefix, org, type).ucs_server_profile_templates(jsonData, easy_jsonData, **kwargs)
         elif policy == 'ucs_server_profiles':
-            profiles(name_prefix, org, type).ucs_server_profiles(jsonData, easy_jsonData)
+            profiles(name_prefix, org, type).ucs_server_profiles(jsonData, easy_jsonData, **kwargs)
 
         type = 'ucs_domain_profiles'
         if policy == 'ucs_domain_profiles':
-            profiles(domain_prefix, org, type).ucs_domain_profiles(jsonData, easy_jsonData, name_prefix)
+            profiles(domain_prefix, org, type).ucs_domain_profiles(jsonData, easy_jsonData, name_prefix, **kwargs)
 
         
         #==============================================
@@ -1159,7 +1166,7 @@ def process_wizard(easy_jsonData, jsonData):
 
         type = 'pools'
         if 'quick_start_pools' in policy:
-            primary_dns,secondary_dns = quick_start(domain_prefix, org, type).pools(jsonData, easy_jsonData)
+            primary_dns,secondary_dns = quick_start(domain_prefix, org, type).pools(jsonData, easy_jsonData, **kwargs)
             kwargs.update({'primary_dns':primary_dns,'secondary_dns':secondary_dns})
 
         #==============================================
@@ -1185,7 +1192,7 @@ def process_wizard(easy_jsonData, jsonData):
                 kwargs.update({'server_type':'Standalone'})
                 kwargs.update({'fc_ports':[]})
                 type = 'policies'
-                Config = quick_start(name_prefix, org, type).standalone_policies(jsonData, easy_jsonData)
+                Config = quick_start(name_prefix, org, type).standalone_policies(jsonData, easy_jsonData, **kwargs)
             if not Config == False:
                 # kwargs = {'primary_dns': '208.67.220.220', 'secondary_dns': '', 'server_type': 'FIAttached', 'vlan_policy': 'asgard-ucs', 'vlans': '1-99', 'native_vlan': '1', 'vsan_a': 100, 'vsan_b': 200, 'fc_ports': [1, 2, 3, 4], 'mtu': 9216}
                 quick_start(name_prefix, org, type).server_policies(jsonData, easy_jsonData, **kwargs)
@@ -1195,12 +1202,16 @@ def process_wizard(easy_jsonData, jsonData):
                 quick_start(domain_prefix, org, type).lan_san_policies(jsonData, easy_jsonData, **kwargs)
         elif policy == 'quick_start_vmware_m2':
             if not Config == False:
-                quick_start(name_prefix, org, type).vmware_m2()
+                quick_start(name_prefix, org, type).vmware_m2(**kwargs)
                 kwargs.update({'boot_order_policy':'VMware_M2_pxe'})
         elif policy == 'quick_start_vmware_raid1':
             if not Config == False:
-                quick_start(name_prefix, org, type).vmware_raid1()
+                quick_start(name_prefix, org, type).vmware_raid1(**kwargs)
                 kwargs.update({'boot_order_policy':'VMware_Raid1_pxe'})
+        elif policy == 'quick_start_vmware_stateless':
+            if not Config == False:
+                quick_start(name_prefix, org, type).vmware_pxe(**kwargs)
+                kwargs.update({'boot_order_policy':'VMware_pxe'})
         elif 'quick_start_server_profile' in policy:
             if not Config == False:
                 type = 'profiles'
@@ -1242,7 +1253,7 @@ def main():
     args.api_key_id = api_key(args)
     args.api_key_file = api_secret(args)
 
-    jsonFile = 'Templates/variables/intersight_openapi.json'
+    jsonFile = 'Templates/variables/intersight-openapi.json'
     jsonOpen = open(jsonFile, 'r')
     jsonData = json.load(jsonOpen)
     jsonOpen.close()

@@ -2,7 +2,9 @@
 
 import ipaddress
 import jinja2
+import os
 import pkg_resources
+import platform
 import re
 import validating
 from class_policies_lan import policies_lan
@@ -43,12 +45,14 @@ class quick_start(object):
     # UCS Domain and Policies
     #==============================================
     def domain_policies(self, jsonData, easy_jsonData, **kwargs):
+        chassis_type = 'profiles'
+        domain_type = 'ucs_domain_profiles'
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         templateVars = {}
         templateVars["org"] = org
-        chassis_type = 'profiles'
-        domain_type = 'ucs_domain_profiles'
+        tfDir = kwargs['tfDir']
 
         configure_loop = False
         while configure_loop == False:
@@ -56,19 +60,34 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Domain Policies, will configure pools for a UCS Domain ')
             print(f'  Profile.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - Intersight/{org}/{self.type}/flow_control_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/link_aggregation_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/link_control_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/multicast_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/network_connectivity_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ntp_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/port_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/system_qos_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/switch_control_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/vsan_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/vlan_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{chassis_type}/ucs_chassis_profiles.auto.tfvars')
-            print(f'  - Intersight/{org}/{domain_type}/ucs_domain_profiles.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\flow_control_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\link_aggregation_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\link_control_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\multicast_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\network_connectivity_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ntp_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\port_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\system_qos_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\switch_control_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\vsan_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\vlan_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{chassis_type}\\ucs_chassis_profiles.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{domain_type}\\ucs_domain_profiles.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/flow_control_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/link_aggregation_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/link_control_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/multicast_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/network_connectivity_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ntp_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/port_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/system_qos_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/switch_control_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/vsan_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/vlan_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{chassis_type}/ucs_chassis_profiles.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{domain_type}/ucs_domain_profiles.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Domain Policy Configuration?  \nEnter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -867,9 +886,12 @@ class quick_start(object):
             mtu = 9000
         else:
             mtu = 1500
+        opSystem = kwargs['opSystem']
         org = self.org
         templateVars = {}
         templateVars["org"] = org
+        tfDir = kwargs['tfDir']
+
 
         configure_loop = False
         while configure_loop == False:
@@ -877,15 +899,26 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Network Configuration, will configure policies for the')
             print(f'  Network Configuration of a UCS Server Profile connected to an IMM Domain.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - Intersight/{org}/{self.type}/ethernet_adapter_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ethernet_network_control_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ethernet_network_group_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ethernet_qos_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/fibre_channel_adapter_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/fibre_channel_network_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/fibre_channel_qos_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/lan_connectivity_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/san_connectivity_policies.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ethernet_adapter_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ethernet_network_control_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ethernet_network_group_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ethernet_qos_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\fibre_channel_adapter_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\fibre_channel_network_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\fibre_channel_qos_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\lan_connectivity_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\san_connectivity_policies.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/ethernet_adapter_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ethernet_network_control_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ethernet_network_group_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ethernet_qos_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/fibre_channel_adapter_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/fibre_channel_network_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/fibre_channel_qos_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/lan_connectivity_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/san_connectivity_policies.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Network Configuration?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1419,13 +1452,14 @@ class quick_start(object):
     #==============================================
     # Pools
     #==============================================
-    def pools(self, jsonData, easy_jsonData):
+    def pools(self, jsonData, easy_jsonData, **kwargs):
         org = self.org
-        templateVars = {}
-        templateVars["org"] = org
-
+        opSystem = kwargs['opSystem']
         primary_dns = '208.67.220.220'
         secondary_dns = ''
+        templateVars = {}
+        templateVars["org"] = org
+        tfDir = kwargs['tfDir']
 
         configure_loop = False
         while configure_loop == False:
@@ -1433,11 +1467,18 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Pools, will configure pools for a UCS Server Profile')
             print(f'  connected to an IMM Domain.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - Intersight/{org}/{self.type}/ip_pools.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/mac_pools.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/uuid_pools.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/wwnn_pools.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/wwpn_pools.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ip_pools.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\mac_pools.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\uuid_pools.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\wwnn_pools.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\wwpn_pools.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/ip_pools.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/mac_pools.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/uuid_pools.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/wwnn_pools.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/wwpn_pools.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Pools?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1787,9 +1828,11 @@ class quick_start(object):
     def server_policies(self, jsonData, easy_jsonData, **kwargs):
         server_type = kwargs['server_type']
         vlan_list = kwargs['vlans']
+        opSystem = kwargs['opSystem']
         org = self.org
         templateVars = {}
         templateVars["org"] = org
+        tfDir = kwargs['tfDir']
 
         configure_loop = False
         while configure_loop == False:
@@ -1797,14 +1840,24 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Pools, will configure pools for a UCS Server Profile')
             print(f'  connected to an IMM Domain.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - Intersight/{org}/{self.type}/imc_access_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ipmi_over_lan_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/local_user_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/power_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/serial_over_lan_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/snmp_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/syslog_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/thermal_policies.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\imc_access_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ipmi_over_lan_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\local_user_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\power_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\serial_over_lan_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\snmp_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\syslog_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\thermal_policies.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/imc_access_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ipmi_over_lan_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/local_user_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/power_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/serial_over_lan_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/snmp_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/syslog_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/thermal_policies.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Policy Configuration?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -2391,6 +2444,7 @@ class quick_start(object):
     #==============================================
     def server_profiles(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         server_type = 'profiles'
         templateVars = {}
@@ -2398,6 +2452,7 @@ class quick_start(object):
         templateVars["fc_ports"] = kwargs["fc_ports"]
         templateVars["server_type"] = kwargs["server_type"]
         templateVars["boot_order_policy"] = kwargs["boot_order_policy"]
+        tfDir = kwargs['tfDir']
 
         configure_loop = False
         while configure_loop == False:
@@ -2405,8 +2460,12 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Domain Policies, will configure pools for a UCS Domain ')
             print(f'  Profile.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - Intersight/{org}/{self.type}/ucs_server_profile_templates.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ucs_server_profiles.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ucs_server_profile_templates.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ucs_server_profiles.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/ucs_server_profile_templates.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ucs_server_profiles.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Server Profiles Configuration?  \nEnter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -2438,11 +2497,13 @@ class quick_start(object):
     #==============================================
     # Standalone Server Policies
     #==============================================
-    def standalone_policies(self, jsonData, easy_jsonData):
+    def standalone_policies(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
+        opSystem = kwargs['opSystem']
         org = self.org
         templateVars = {}
         templateVars["org"] = org
+        tfDir = kwargs['tfDir']
 
         configure_loop = False
         while configure_loop == False:
@@ -2450,15 +2511,26 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Pools, will configure pools for a UCS Server Profile')
             print(f'  connected to an IMM Domain.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - Intersight/{org}/{self.type}/adapter_configuration_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/device_connector_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ethernet_network_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ldap_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/network_connectivity_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ntp_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/persistent_memory_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/smtp_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/ssh_policies.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\adapter_configuration_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\device_connector_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ethernet_network_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ldap_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\network_connectivity_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ntp_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\persistent_memory_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\smtp_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\ssh_policies.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/adapter_configuration_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/device_connector_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ethernet_network_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ldap_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/network_connectivity_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ntp_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/persistent_memory_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/smtp_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/ssh_policies.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Standalone Policy Configuration?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -3017,10 +3089,12 @@ class quick_start(object):
     #==============================================
     # VMware M2 - Boot and Storage Policies
     #==============================================
-    def vmware_m2(self):
+    def vmware_m2(self, **kwargs):
+        opSystem = kwargs['opSystem']
         org = self.org
         templateVars = {}
         templateVars["org"] = org
+        tfDir = kwargs['tfDir']
 
         configure_loop = False
         while configure_loop == False:
@@ -3028,8 +3102,14 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Boot/Storage, will configure policies for a UCS Server ')
             print(f'  Profile connected to an IMM Domain.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - Intersight/{org}/{self.type}/boot_order_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/storage_policies.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\bios_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\boot_order_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\storage_policies.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/bios_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/boot_order_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/storage_policies.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Boot/Storage Configuration?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -3213,10 +3293,12 @@ class quick_start(object):
     #================================================
     # VMware Raid1 - BIOS, Boot and Storage Policies
     #================================================
-    def vmware_raid1(self):
+    def vmware_raid1(self, **kwargs):
+        opSystem = kwargs['opSystem']
         org = self.org
         templateVars = {}
         templateVars["org"] = org
+        tfDir = kwargs['tfDir']
 
         configure_loop = False
         while configure_loop == False:
@@ -3224,9 +3306,14 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Boot/Storage, will configure policies for a UCS Server ')
             print(f'  Profile connected to an IMM Domain.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - Intersight/{org}/{self.type}/bios_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/boot_order_policies.auto.tfvars')
-            print(f'  - Intersight/{org}/{self.type}/storage_policies.auto.tfvars')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\bios_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\boot_order_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\storage_policies.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/bios_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/boot_order_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/storage_policies.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Boot/Storage Configuration?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -3401,6 +3488,129 @@ class quick_start(object):
                 templateVars["single_drive_raid_configuration"] = {}
                 templateVars["unused_disks_state"] = 'No Change'
                 templateVars["use_jbod_for_vd_creation"] = True
+
+                # Write Policies to Template File
+                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                write_to_template(self, **templateVars)
+
+                # Close the Template file
+                templateVars["template_file"] = 'template_close.jinja2'
+                write_to_template(self, **templateVars)
+
+                configure_loop = True
+
+            elif configure == 'N':
+                configure_loop = True
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+    #================================================
+    # VMware PXE - BIOS, Boot and Storage Policies
+    #================================================
+    def vmware_pxe(self, **kwargs):
+        opSystem = kwargs['opSystem']
+        org = self.org
+        templateVars = {}
+        templateVars["org"] = org
+        tfDir = kwargs['tfDir']
+
+        configure_loop = False
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  The Quick Deployment Module - Boot/Storage, will configure policies for a UCS Server ')
+            print(f'  Profile connected to an IMM Domain.\n')
+            print(f'  This wizard will save the output for these pools in the following files:\n')
+            if opSystem == 'Windows':
+                print(f'  - {tfDir}\\{org}\\{self.type}\\bios_policies.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\boot_order_policies.auto.tfvars')
+            else:
+                print(f'  - {tfDir}/{org}/{self.type}/bios_policies.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/boot_order_policies.auto.tfvars')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to run the Quick Deployment Module - Boot/Storage Configuration?  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                # Trusted Platform Module
+                templateVars["Description"] = 'Flag to Determine if the Servers have a TPM Installed.'
+                templateVars["varInput"] = f'Will these servers have a TPM Module Installed?'
+                templateVars["varDefault"] = 'Y'
+                templateVars["varName"] = 'TPM Installed'
+                tpm_installed = varBoolLoop(**templateVars)
+
+                #_______________________________________________________________________
+                #
+                # Configure BIOS Policy
+                #_______________________________________________________________________
+
+                templateVars["initial_write"] = True
+                templateVars["policy_type"] = 'BIOS Policy'
+                templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                templateVars["template_file"] = 'template_open.jinja2'
+                templateVars["template_type"] = 'bios_policies'
+
+                # Open the Template file
+                write_to_template(self, **templateVars)
+                templateVars["initial_write"] = False
+
+                # Configure BIOS Policy
+                name = 'VMware'
+                templateVars["name"] = name
+                templateVars["descr"] = f'{name} BIOS Policy'
+                if tpm_installed == True:
+                    templateVars["policy_template"] = 'VMware_tpm'
+                else:
+                    templateVars["policy_template"] = 'VMware'
+
+                # Write Policies to Template File
+                templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
+                write_to_template(self, **templateVars)
+
+                # Close the Template file
+                templateVars["template_file"] = 'template_close.jinja2'
+                write_to_template(self, **templateVars)
+
+                #_______________________________________________________________________
+                #
+                # Configure Boot Order Policy
+                #_______________________________________________________________________
+
+                templateVars["initial_write"] = True
+                templateVars["policy_type"] = 'Boot Order Policy'
+                templateVars["header"] = '%s Variables' % (templateVars["policy_type"])
+                templateVars["template_file"] = 'template_open.jinja2'
+                templateVars["template_type"] = 'boot_order_policies'
+
+                # Open the Template file
+                write_to_template(self, **templateVars)
+                templateVars["initial_write"] = False
+
+                # Configure Boot Order Policy
+                name = 'VMware_PXE'
+                templateVars["name"] = name
+                templateVars["descr"] = f'{name} Boot Order Policy'
+                templateVars["boot_mode"] = 'Uefi'
+                templateVars["enable_secure_boot"] = False
+                templateVars["boot_mode"] = 'Uefi'
+                templateVars["boot_devices"] = [
+                    {
+                        'enabled':True,
+                        'device_name':'KVM-DVD',
+                        'device_type':'virtual_media',
+                        'object_type':'boot.VirtualMedia',
+                        'subtype':'kvm-mapped-dvd'
+                    },
+                    {
+                        'device_name':'PXE',
+                        'device_type':'pxe_boot',
+                        'enabled':True,
+                        'interface_name':'MGMT-A',
+                        'interface_source':'name',
+                        'ip_type':'IPv4',
+                        'object_type':'boot.Pxe',
+                        'slot':'MLOM'
+                    }
+                ]
 
                 # Write Policies to Template File
                 templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])

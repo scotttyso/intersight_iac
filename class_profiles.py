@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import jinja2
+import os
 import pkg_resources
+import platform
 import re
 import validating
 from class_policies_lan import policies_lan
@@ -248,6 +250,8 @@ class profiles(object):
             templateVars["storage_policy"] = 'M2_Raid'
         elif templateVars["boot_order_policy"] == 'VMware_Raid1':
             templateVars["storage_policy"] = 'MRAID'
+        elif templateVars["boot_order_policy"] == 'VMware_PXE':
+            templateVars["storage_policy"] = ''
         templateVars["lan_connectivity_policy"] = 'VMware_LAN'
         if len(templateVars["fc_ports"]) > 0:
             templateVars["san_connectivity_policy"] = 'VMware_SAN'
@@ -280,9 +284,10 @@ class profiles(object):
     #==============================================
     # UCS Chassis Profile Module
     #==============================================
-    def ucs_chassis_profiles(self, jsonData, easy_jsonData):
+    def ucs_chassis_profiles(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'chassis'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'UCS Chassis Profile'
         templateVars = {}
@@ -292,6 +297,7 @@ class profiles(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ucs_chassis_profiles'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -400,9 +406,10 @@ class profiles(object):
     #==============================================
     # UCS Domain Profile Module
     #==============================================
-    def ucs_domain_profiles(self, jsonData, easy_jsonData, policy_prefix):
+    def ucs_domain_profiles(self, jsonData, easy_jsonData, policy_prefix, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'ucs'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'UCS Domain Profile'
         templateVars = {}
@@ -412,6 +419,7 @@ class profiles(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ucs_domain_profiles'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -567,9 +575,10 @@ class profiles(object):
     #==============================================
     # UCS Server Profile Module
     #==============================================
-    def ucs_server_profiles(self, jsonData, easy_jsonData):
+    def ucs_server_profiles(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'server'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'UCS Server Profile'
         templateVars = {}
@@ -579,6 +588,7 @@ class profiles(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ucs_server_profiles'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -860,9 +870,10 @@ class profiles(object):
     #==============================================
     # UCS Server Profile Template Module
     #==============================================
-    def ucs_server_profile_templates(self, jsonData, easy_jsonData):
+    def ucs_server_profile_templates(self, jsonData, easy_jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'template'
+        opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'UCS Server Profile Template'
         templateVars = {}
@@ -872,6 +883,7 @@ class profiles(object):
         templateVars["policy_type"] = policy_type
         templateVars["template_file"] = 'template_open.jinja2'
         templateVars["template_type"] = 'ucs_server_profile_templates'
+        tfDir = kwargs['tfDir']
 
         # Open the Template file
         write_to_template(self, **templateVars)
@@ -1150,112 +1162,123 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateV
                 create_policy = False
                 return templateVars[inner_var],policyData
         if create_policy == True:
+            kwargs = {}
+            opSystem = platform.system()
+            if os.environ.get('TF_DEST_DIR') is None:
+                tfDir = 'Intersight'
+            else:
+                tfDir = os.environ.get('TF_DEST_DIR')
+            if tfDir[-1] == '\\' or tfDir[-1] == '/':
+                    tfDir = tfDir[:-1]
+
+            kwargs.update({'opSystem':opSystem,'tfDir':tfDir})
+
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Starting module to create {inner_policy}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             if inner_policy == 'ip_pools':
-                pools(name_prefix, templateVars["org"], inner_type).ip_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).ip_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'iqn_pools':
-                pools(name_prefix, templateVars["org"], inner_type).iqn_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).iqn_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'mac_pools':
-                pools(name_prefix, templateVars["org"], inner_type).mac_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).mac_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'uuid_pools':
-                pools(name_prefix, templateVars["org"], inner_type).uuid_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).uuid_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'wwnn_pools':
-                pools(name_prefix, templateVars["org"], inner_type).wwnn_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).wwnn_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'wwpn_pools':
-                pools(name_prefix, templateVars["org"], inner_type).wwpn_pools(jsonData, easy_jsonData)
+                pools(name_prefix, templateVars["org"], inner_type).wwpn_pools(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'adapter_configuration_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).adapter_configuration_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).adapter_configuration_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'bios_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).bios_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).bios_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'boot_order_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).boot_order_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).boot_order_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'certificate_management_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).certificate_management_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).certificate_management_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'device_connector_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).device_connector_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).device_connector_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_adapter_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_adapter_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_adapter_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_network_control_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_network_group_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_group_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_group_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_network_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_network_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ethernet_qos_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_qos_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).ethernet_qos_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'fibre_channel_adapter_policies':
-                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_adapter_policies(jsonData, easy_jsonData)
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_adapter_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'fibre_channel_network_policies':
-                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_network_policies(jsonData, easy_jsonData)
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_network_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'fibre_channel_qos_policies':
-                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_qos_policies(jsonData, easy_jsonData)
+                policies_san(name_prefix, templateVars["org"], inner_type).fibre_channel_qos_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'flow_control_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).flow_control_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).flow_control_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'imc_access_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).imc_access_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).imc_access_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ipmi_over_lan_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).ipmi_over_lan_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).ipmi_over_lan_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'iscsi_adapter_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_adapter_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_adapter_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'iscsi_boot_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_boot_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_boot_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'iscsi_static_target_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_static_target_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).iscsi_static_target_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'lan_connectivity_policies':
-                policies_lan(name_prefix, templateVars["org"], inner_type).lan_connectivity_policies(jsonData, easy_jsonData)
+                policies_lan(name_prefix, templateVars["org"], inner_type).lan_connectivity_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ldap_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).ldap_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).ldap_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'link_aggregation_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).link_aggregation_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).link_aggregation_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'link_control_policies':
-                policies_p1(name_prefix, templateVars["org"], inner_type).link_control_policies(jsonData, easy_jsonData)
+                policies_p1(name_prefix, templateVars["org"], inner_type).link_control_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'local_user_policies':
-                policies_p2(name_prefix, templateVars["org"], inner_type).local_user_policies(jsonData, easy_jsonData)
+                policies_p2(name_prefix, templateVars["org"], inner_type).local_user_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'multicast_policies':
-                policies_vxan(name_prefix, templateVars["org"], inner_type).multicast_policies(jsonData, easy_jsonData)
+                policies_vxan(name_prefix, templateVars["org"], inner_type).multicast_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'network_connectivity_policies':
-                policies_p2(name_prefix, templateVars["org"], inner_type).network_connectivity_policies(jsonData, easy_jsonData)
+                policies_p2(name_prefix, templateVars["org"], inner_type).network_connectivity_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ntp_policies':
-                policies_p2(name_prefix, templateVars["org"], inner_type).ntp_policies(jsonData, easy_jsonData)
+                policies_p2(name_prefix, templateVars["org"], inner_type).ntp_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'persistent_memory_policies':
-                policies_p2(name_prefix, templateVars["org"], inner_type).persistent_memory_policies(jsonData, easy_jsonData)
+                policies_p2(name_prefix, templateVars["org"], inner_type).persistent_memory_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'port_policies':
-                policies_p2(name_prefix, templateVars["org"], inner_type).port_policies(jsonData, easy_jsonData)
+                policies_p2(name_prefix, templateVars["org"], inner_type).port_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'power_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).power_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).power_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'san_connectivity_policies':
-                policies_san(name_prefix, templateVars["org"], inner_type).san_connectivity_policies(jsonData, easy_jsonData)
+                policies_san(name_prefix, templateVars["org"], inner_type).san_connectivity_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'sd_card_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).sd_card_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).sd_card_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'serial_over_lan_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).serial_over_lan_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).serial_over_lan_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'smtp_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).smtp_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).smtp_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'snmp_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).snmp_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).snmp_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ssh_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).ssh_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).ssh_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'storage_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).storage_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).storage_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'switch_control_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).switch_control_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).switch_control_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'syslog_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).syslog_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).syslog_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'system_qos_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'thermal_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).thermal_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).thermal_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ucs_server_profiles':
-                profiles(name_prefix, templateVars["org"], inner_type).ucs_server_profiles(jsonData, easy_jsonData)
+                profiles(name_prefix, templateVars["org"], inner_type).ucs_server_profiles(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'ucs_server_profile_templates':
-                profiles(name_prefix, templateVars["org"], inner_type).ucs_server_profile_templates(jsonData, easy_jsonData)
+                profiles(name_prefix, templateVars["org"], inner_type).ucs_server_profile_templates(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'virtual_kvm_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).virtual_kvm_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).virtual_kvm_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'virtual_media_policies':
-                policies_p3(name_prefix, templateVars["org"], inner_type).virtual_media_policies(jsonData, easy_jsonData)
+                policies_p3(name_prefix, templateVars["org"], inner_type).virtual_media_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'vlan_policies':
-                policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData)
+                policies_vxan(name_prefix, templateVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData, **kwargs)
             elif inner_policy == 'vsan_policies':
-                policies_vxan(name_prefix, templateVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData)
+                policies_vxan(name_prefix, templateVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData, **kwargs)
