@@ -150,7 +150,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Within Terraform Cloud, the Workspace will be configured with the directory where the ')
                 print(f'  configuration files are stored in the repo: {templateVars["vcsBaseRepo"]}.')
-                print(f'  For Example if the shortpath was "Intersight", The Repo URL end up like:\n')
+                print(f'  For Example if the shortpath was "Intersight", The Repo URL would end up like:\n')
                 print(f'    - {templateVars["vcsBaseRepo"]}\\Intersight\\policies')
                 print(f'    - {templateVars["vcsBaseRepo"]}\\Intersight\\pools')
                 print(f'    - {templateVars["vcsBaseRepo"]}\\Intersight\\profiles')
