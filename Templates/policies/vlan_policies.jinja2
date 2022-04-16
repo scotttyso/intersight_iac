@@ -19,7 +19,7 @@
   {%- for item in vlans %}
       "{{ loop.index }}" = {
     {%- if item['auto_allow_on_uplinks'] %}
-        auto_allow_on_uplinks = {{ v|lower }}
+        auto_allow_on_uplinks = {{ item['auto_allow_on_uplinks']|lower }}
     {%- elif item['native_vlan'] == True %}
         auto_allow_on_uplinks = true
     {%- else %}

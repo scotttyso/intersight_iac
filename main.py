@@ -504,7 +504,6 @@ def merge_easy_imm_repository(easy_jsonData, org):
             f'{tfDir}\\{org}\\profiles',
             f'{tfDir}\\{org}\\ucs_domain_profiles'
         ]
-        print('matched windows REgex')
     elif opSystem == 'Windows' and re.search (r'^\w+', tfDir):
         folder_list = [
             f'.\\{tfDir}\\{org}\\policies',
@@ -512,7 +511,6 @@ def merge_easy_imm_repository(easy_jsonData, org):
             f'.\\{tfDir}\\{org}\\profiles',
             f'.\\{tfDir}\\{org}\\ucs_domain_profiles'
         ]
-        print('default matched windows REgex')
     elif re.search(r'^(/.*[\w\-\.\:\/]+/|\.\..*/)$', tfDir):
         folder_list = [
             f'{tfDir}{org}/policies',
