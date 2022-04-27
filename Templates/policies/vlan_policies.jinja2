@@ -18,7 +18,9 @@
     vlans = {
   {%- for item in vlans %}
       "{{ loop.index }}" = {
-    {%- if item['auto_allow_on_uplinks'] %}
+    {%- if item['vlan_list'] == "1" %}
+        auto_allow_on_uplinks = true
+    {%- elif item['auto_allow_on_uplinks'] %}
         auto_allow_on_uplinks = {{ item['auto_allow_on_uplinks']|lower }}
     {%- elif item['native_vlan'] == True %}
         auto_allow_on_uplinks = true
@@ -32,10 +34,16 @@
         multicast_policy      = "{{ v }}",
       {%- elif k == 'name' %}
         name                  = "{{ v }}",
-      {%- elif k == 'native_vlan' %}
-        native_vlan           = {{ v|lower }}
       {%- endif %}
     {%- endfor %}
+    {%- if item['vlan_list'] == "1" %}
+    {%- elif k == 'native_vlan' %}
+        native_vlan           = true
+    {%- elif k == 'native_vlan' %}
+        native_vlan           = {{ v|lower }}
+    {%- else %}
+        native_vlan           = false
+    {%- endif %}
       },
   {%- endfor %}
     }
