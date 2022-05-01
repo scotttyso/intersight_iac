@@ -1291,7 +1291,15 @@ def main():
 
 
     if not args.json_file == None:
-        if os.path.isfile(args.json_file):
+        if not os.path.isfile(args.json_file):
+            print(folder)
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  !!ERROR!!')
+            print(f'  Did not find the file {args.json_file}.')
+            print(f'  Please Validate that you have specified the correct file and path.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            exit()
+        else:
             json_file = args.json_file
             json_open = open(json_file, 'r')
             json_data = json.load(json_open)
