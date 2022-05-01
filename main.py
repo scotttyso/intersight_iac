@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Intersight IAC - 
-This Wizard to Create Terraform HCL configuration from Question and Answer or the IMM Transition Tool.
+Use This Wizard to Create Terraform HCL configuration from Question and Answer or the IMM Transition Tool.
 It uses argparse to take in the following CLI arguments:
-    u or url:                The intersight root URL for the api endpoint. (The default is https://intersight.com)
+    a or api-key:            API client key id for the HTTP signature scheme
     d or dir:                Base Directory to use for creation of the HCL Configuration Files
     i or ignore-tls:         Ignores TLS server-side certificate verification
-    l or api-key-legacy:     Use legacy API client (v2) key
     j or json_file:          IMM Transition JSON export to convert to HCL
-    a or api-key:            API client key id for the HTTP signature scheme
+    l or api-key-legacy:     Use legacy API client (v2) key
     s or api-key-file:       Name of file containing secret key for the HTTP signature scheme
+    u or url:                The intersight root URL for the api endpoint. (The default is https://intersight.com)
 """
 
 import argparse
@@ -48,7 +48,6 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 home = Path.home()
-Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
 
 def create_terraform_workspaces(jsonData, easy_jsonData, org):
     opSystem = platform.system()
@@ -1228,33 +1227,48 @@ def process_wizard(easy_jsonData, jsonData):
 
 
 def main():
-    description = None
-    if description is not None:
-        Parser.description = description
+    Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
     Parser.add_argument(
-        '-a', '--api-key-id',
+        '-a',
+        '--api-key-id',
         default=os.getenv('TF_VAR_apikey'),
         help='The Intersight API client key id for HTTP signature scheme'
     )
     Parser.add_argument(
-        '-s', '--api-key-file',
+        '-d',
+        '--dir',
+        default='Intersight',
+        help='The Directory to Publish the Terraform Files to.'
+    )
+    Parser.add_argument(
+        '-i',
+        '--ignore-tls',
+        action='store_true',
+        help='Ignore TLS server-side certificate verification'
+    )
+    Parser.add_argument(
+        '-j',
+        '--json-file',
+        default=None,
+        help='The IMM Transition Tool JSON Dump File to Convert to HCL.'
+    )
+    Parser.add_argument(
+        '-s',
+        '--api-key-file',
         default='~/Downloads/SecretKey.txt',
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
     )
-    Parser.add_argument('--api-key-v3', action='store_true',
-                        help='Use New API client (v3) key'
+    Parser.add_argument(
+        '-u',
+        '--url',
+        default='https://intersight.com',
+        help='The Intersight root URL for the API endpoint. The default is https://intersight.com'
     )
-    Parser.add_argument('-d', '--dir', default='Intersight',
-                        help='The Directory to Publish the Terraform Files to.'
-    )
-    Parser.add_argument('-i', '--ignore-tls', action='store_true',
-                        help='Ignore TLS server-side certificate verification'
-    )
-    Parser.add_argument('-j', '--json_file', default=None,
-                        help='The IMM Transition Tool JSON Dump File to Convert to HCL.'
-    )
-    Parser.add_argument('-u', '--url', default='https://intersight.com',
-                        help='The Intersight root URL for the API endpoint. The default is https://intersight.com'
+    Parser.add_argument(
+        '-v',
+        '--api-key-v3',
+        action='store_true',
+        help='Flag for API Key Version 3.'
     )
     args = Parser.parse_args()
     args.api_key_id = api_key(args)
