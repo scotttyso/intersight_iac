@@ -4,9 +4,9 @@
     assignment_order = "{{ assignment_order }}"
 {%- endif %}
 {%- if wwpn_blocks %}
-    id_blocks        = {
+    id_blocks        = [
   {%- for item in wwpn_blocks %}
-      "{{ loop.index }}" = {
+      {
     {%- for k, v in item.items() %}
       {%- if k == 'from' %}
         from = "{{ v }}"
@@ -16,11 +16,15 @@
         # to   = "{{ v }}"
       {%- endif %}
     {%- endfor %}
+    {%- if not loop.last %}
       },
+    {%- else %}
+      }
+    {%- endif %}
   {%- endfor %}
-    }
+    ]
 {%- else %}
-    id_blocks        = {}
+    id_blocks        = []
 {%- endif %}
 {%- if tags %}
     tags = [

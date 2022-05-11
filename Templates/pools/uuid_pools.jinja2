@@ -5,9 +5,9 @@
 {%- endif %}
     prefix           = "{{ prefix }}"
 {%- if uuid_blocks %}
-    uuid_blocks = {
+    uuid_blocks = [
   {%- for item in uuid_blocks %}
-      "{{ loop.index }}" = {
+      {
     {%- for k, v in item.items() %}
       {%- if k == 'from' %}
         from = "{{ v }}"
@@ -17,11 +17,15 @@
         # to   = "{{ v }}"
       {%- endif %}
     {%- endfor %}
+    {%- if not loop.last %}
       },
+    {%- else %}
+      }
+    {%- endif %}
   {%- endfor %}
-    }
+    ]
 {%- else %}
-    uuid_blocks = {}
+    uuid_blocks = []
 {%- endif %}
 {%- if tags %}
     tags = [

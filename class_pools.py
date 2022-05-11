@@ -262,7 +262,7 @@ class pools(object):
                     print(f'    description      = "{templateVars["descr"]}"')
                     print(f'    name             = "{templateVars["name"]}"')
                     if config_ipv4 == 'Y' or config_ipv4 == '':
-                        print(f'    ipv4_blocks = ''{')
+                        print(f'    ipv4_blocks = ''[')
                         for item in templateVars["ipv4_blocks"]:
                             print('      {')
                             for k, v in item.items():
@@ -273,9 +273,9 @@ class pools(object):
                                 elif k == 'to':
                                     print(f'        to   = "{v}"')
                             print('      }')
-                        print(f'    ''}')
+                        print(f'    '']')
                         print('    ipv4_configuration = {')
-                        print('      config = {')
+                        print('      [')
                         for k, v in templateVars["ipv4_configuration"].items():
                             if k == 'gateway':
                                 print(f'        gateway       = "{v}"')
@@ -286,11 +286,11 @@ class pools(object):
                             elif k == 'secondary_dns':
                                 print(f'        secondary_dns = "{v}"')
                         print('      }')
-                        print('    }')
+                        print('    ]')
                     if config_ipv6 == 'Y':
                         print(f'    ipv6_blocks = ''{')
                         for item in templateVars["ipv6_blocks"]:
-                            print('      {')
+                            print('      [')
                             for k, v in item.items():
                                 if k == 'from':
                                     print(f'        from = "{v}"')
@@ -299,9 +299,9 @@ class pools(object):
                                 elif k == 'to':
                                     print(f'        to   = "{v}"')
                             print('      }')
-                        print(f'    ''}')
-                        print('    ipv6_configuration = {')
-                        print('      config = {')
+                        print(f'    '']')
+                        print('    ipv6_configuration = [')
+                        print('      {')
                         for k, v in templateVars["ipv6_configuration"].items():
                             if k == 'gateway':
                                 print(f'        gateway       = "{v}"')
@@ -312,7 +312,7 @@ class pools(object):
                             elif k == 'secondary_dns':
                                 print(f'        secondary_dns = "{v}"')
                         print('      }')
-                        print('    }')
+                        print('    ]')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
@@ -471,9 +471,9 @@ class pools(object):
                     print(f'    description      = "{templateVars["descr"]}"')
                     print(f'    name             = "{templateVars["name"]}"')
                     print(f'    prefix           = "{templateVars["prefix"]}"')
-                    print(f'    iqn_blocks = ''{')
+                    print(f'    iqn_blocks = ''[')
                     for i in templateVars["iqn_blocks"]:
-                        print(f'      ''"0" = {')
+                        print(f'      ''{')
                         for k, v in i.items():
                             if k == 'from':
                                 print(f'        from   = {v}')
@@ -484,7 +484,7 @@ class pools(object):
                             elif k == 'to':
                                 print(f'        to     = {v}')
                         print(f'      ''}')
-                    print(f'    ''}')
+                    print(f'    '']')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
@@ -619,9 +619,9 @@ class pools(object):
                 print(f'    assignment_order = "{templateVars["assignment_order"]}"')
                 print(f'    description      = "{templateVars["descr"]}"')
                 print(f'    name             = "{templateVars["name"]}"')
-                print(f'    mac_blocks = ''{')
+                print(f'    mac_blocks = ''[')
                 for item in templateVars["mac_blocks"]:
-                    print('      "0" = {')
+                    print('      {')
                     for k, v in item.items():
                         if k == 'from':
                             print(f'        from = "{v}" ')
@@ -630,7 +630,7 @@ class pools(object):
                         elif k == 'to':
                             print(f'        to   = "{v}"')
                     print('      }')
-                print(f'    ''}')
+                print(f'    '']')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:
@@ -890,7 +890,7 @@ class pools(object):
                     print(f'    description      = "{templateVars["descr"]}"')
                     print(f'    name             = "{templateVars["name"]}"')
                     print(f'    prefix           = "{templateVars["prefix"]}"')
-                    print(f'    uuid_blocks = ''{')
+                    print(f'    uuid_blocks = ''[')
                     for i in templateVars["uuid_blocks"]:
                         print(f'      ''{')
                         for k, v in i.items():
@@ -901,7 +901,7 @@ class pools(object):
                             elif k == 'to':
                                 print(f'        to   = "{v}"')
                         print(f'      ''}')
-                    print(f'    ''}')
+                    print(f'    '']')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
@@ -1037,9 +1037,9 @@ class pools(object):
                     print(f'    assignment_order = "{templateVars["assignment_order"]}"')
                     print(f'    description      = "{templateVars["descr"]}"')
                     print(f'    name             = "{templateVars["name"]}"')
-                    print(f'    id_blocks = ''{')
+                    print(f'    id_blocks = ''[')
                     for item in templateVars["wwnn_blocks"]:
-                        print('      "0" = {')
+                        print('      {')
                         for k, v in item.items():
                             if k == 'from':
                                 print(f'        from = "{v}" ')
@@ -1048,7 +1048,7 @@ class pools(object):
                             elif k == 'to':
                                 print(f'        to   = "{v}"')
                         print('      }')
-                    print(f'    ''}')
+                    print(f'    '']')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
@@ -1186,9 +1186,9 @@ class pools(object):
                     print(f'    assignment_order = "{templateVars["assignment_order"]}"')
                     print(f'    description      = "{templateVars["descr"]}"')
                     print(f'    name             = "{templateVars["name"]}"')
-                    print(f'    id_blocks = ''{')
+                    print(f'    id_blocks = ''[')
                     for item in templateVars["wwpn_blocks"]:
-                        print('      "0" = {')
+                        print('      {')
                         for k, v in item.items():
                             if k == 'from':
                                 print(f'        from = "{v}" ')
@@ -1197,7 +1197,7 @@ class pools(object):
                             elif k == 'to':
                                 print(f'        to   = "{v}"')
                         print('      }')
-                    print(f'    ''}')
+                    print(f'    '']')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:

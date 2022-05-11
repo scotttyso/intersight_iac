@@ -7,9 +7,9 @@
 {%- endif %}
     prefix           = "{{ prefix }}"
 {%- if iqn_blocks %}
-    iqn_blocks = {
+    iqn_blocks = [
   {%- for item in iqn_blocks %}
-      "{{ loop.index }}" = {
+      {
     {%- for k, v in item.items() %}
       {%- if k == 'from' %}
         from   = {{ v }}
@@ -21,11 +21,15 @@
         # to     = {{ v }}
       {%- endif %}
     {%- endfor %}
+    {%- if not loop.last %}
       },
+    {%- else %}
+      }
+    {%- endif %}
   {%- endfor %}
-    }
+    ]
 {%- else %}
-    iqn_blocks = {}
+    iqn_blocks = []
 {%- endif %}
 {%- if tags %}
     tags = [
