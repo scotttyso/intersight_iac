@@ -5,11 +5,6 @@
 {%- else %}
     action            = "No-op"
 {%- endif %}
-{%- if not serial_number == '' %}
-    assign_chassis    = true
-{%- else %}
-    assign_chassis    = false
-{%- endif %}
     description       = "{{ descr }}"
     imc_access_policy = "{{ imc_access_policy }}"
     power_policy      = "{{ power_policy }}"

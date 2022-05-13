@@ -1866,7 +1866,8 @@ class quick_start(object):
                 while policy_loop == False:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Below are the Questions that will be asked by the Policies Portion of the wizard.')
-                    print(f'   - VLAN ID for IMC Access Policy.')
+                    print(f'   - If the IMC Policy is Inband our Ooband.')
+                    print(f'     * If the IMC Policy is inband, VLAN ID for IMC Access Policy.')
                     print(f'   - Local User Policy (Required for direct KVM Access).')
                     print(f'     * user and role')
                     print(f'     * user password (strong passwords enforced)')
@@ -1888,20 +1889,30 @@ class quick_start(object):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Now Starting the IMC Access Policy Section.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    # IMC Access VLAN
-                    valid = False
-                    while valid == False:
-                        templateVars["Description"] = 'IMC Access VLAN Identifier'
-                        templateVars["varInput"] = 'Enter the VLAN ID for the IMC Access Policy.'
-                        templateVars["varDefault"] = 4
-                        templateVars["varName"] = 'IMC Access Policy VLAN ID'
-                        templateVars["minNum"] = 4
-                        templateVars["maxNum"] = 4094
-                        imc_vlan = varNumberLoop(**templateVars)
-                        if server_type == 'FIAttached':
-                            valid = validate_vlan_in_policy(vlan_policy_list, imc_vlan)
-                        else:
-                            valid = True
+
+                    # IMC Access Type
+                    jsonVars = jsonData['components']['schemas']['access.Policy']['allOf'][1]['properties']
+                    templateVars["var_description"] = jsonVars['ConfigurationType']['description']
+                    templateVars["jsonVars"] = ['inband', 'out_of_band']
+                    templateVars["defaultVar"] = 'Inband'
+                    templateVars["varType"] = 'IMC Access Type'
+                    imcBand = variablesFromAPI(**templateVars)
+
+                    if imcBand == 'inband':
+                        # IMC Access VLAN
+                        valid = False
+                        while valid == False:
+                            templateVars["Description"] = 'IMC Access VLAN Identifier'
+                            templateVars["varInput"] = 'Enter the VLAN ID for the IMC Access Policy.'
+                            templateVars["varDefault"] = 4
+                            templateVars["varName"] = 'IMC Access Policy VLAN ID'
+                            templateVars["minNum"] = 4
+                            templateVars["maxNum"] = 4094
+                            templateVars["inband_vlan_id"] = varNumberLoop(**templateVars)
+                            if server_type == 'FIAttached':
+                                valid = validate_vlan_in_policy(vlan_policy_list, templateVars["inband_vlan_id"])
+                            else:
+                                valid = True
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Need to obtain the IPMI Key for IPMI over LAN Policy Encryption.')
@@ -2051,7 +2062,9 @@ class quick_start(object):
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Policy Variables:')
-                    print(f'    IMC Access VLAN  = {imc_vlan}')
+                    print(f'    IMC Access Mode  = "{imcBand}"')
+                    if imcBand == 'Inband':
+                        print(f'    IMC Access VLAN  = {templateVars["inband_vlan_id"]}')
                     if len(templateVars["local_users"]) > 0:
                         print(f'    local_users = ''{')
                         for item in templateVars["local_users"]:
@@ -2152,8 +2165,7 @@ class quick_start(object):
                             name = org
                             templateVars["name"] = name
                             templateVars["descr"] = f'{name} IMC Access Policy'
-                            templateVars["inband_ip_pool"] = 'VMware_KVM'
-                            templateVars["inband_vlan_id"] = imc_vlan
+                            templateVars[f"{imcBand}_ip_pool"] = 'VMware_KVM'
                             templateVars["ipv4_address_configuration"] = True
                             templateVars["ipv6_address_configuration"] = False
 

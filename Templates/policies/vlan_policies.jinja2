@@ -22,8 +22,6 @@
         auto_allow_on_uplinks = true
     {%- elif item['auto_allow_on_uplinks'] %}
         auto_allow_on_uplinks = {{ item['auto_allow_on_uplinks']|lower }}
-    {%- elif item['native_vlan'] == True %}
-        auto_allow_on_uplinks = true
     {%- else %}
         auto_allow_on_uplinks = false
     {%- endif %}
@@ -37,10 +35,9 @@
       {%- endif %}
     {%- endfor %}
     {%- if item['vlan_list'] == "1" %}
-    {%- elif k == 'native_vlan' %}
         native_vlan           = true
-    {%- elif k == 'native_vlan' %}
-        native_vlan           = {{ v|lower }}
+    {%- elif item['native_vlan'] %}
+        native_vlan           = {{ item['native_vlan']|lower }}
     {%- else %}
         native_vlan           = false
     {%- endif %}

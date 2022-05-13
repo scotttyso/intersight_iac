@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import jinja2
+import json
 import os
 import pkg_resources
 import platform
@@ -13,9 +14,8 @@ from easy_functions import policy_descr, policy_name
 from easy_functions import varBoolLoop
 from easy_functions import variablesFromAPI
 from easy_functions import varStringLoop
-from easy_functions import vlan_list_full
+from easy_functions import vlan_list_format, vlan_list_full
 from easy_functions import write_to_template
-from itertools import groupby, count
 
 ucs_template_path = pkg_resources.resource_filename('class_policies_vxan', 'Templates/')
 
@@ -183,21 +183,18 @@ class policies_vxan(object):
         write_to_template(self, **templateVars)
         templateVars["initial_write"] = False
 
-        vlanListExpanded = vlan_list_full(templateVars["vlan_list"])
+        vlan_list_expanded = vlan_list_full(templateVars["vlan_list"])
 
         if not templateVars["native_vlan"] == '':
-            if int(templateVars["native_vlan"]) in vlanListExpanded:
-                while(int(templateVars["native_vlan"]) in vlanListExpanded):
-                    vlanListExpanded.remove(int(templateVars["native_vlan"]))
-        elif templateVars["native_vlan"] == '' and 1 in vlanListExpanded:
+            if int(templateVars["native_vlan"]) in vlan_list_expanded:
+                while(int(templateVars["native_vlan"]) in vlan_list_expanded):
+                    vlan_list_expanded.remove(int(templateVars["native_vlan"]))
+        elif templateVars["native_vlan"] == '' and 1 in vlan_list_expanded:
             templateVars["native_vlan"] == 1
-            while(1 in vlanListExpanded):
-                vlanListExpanded.remove(1)
+            while(1 in vlan_list_expanded):
+                vlan_list_expanded.remove(1)
 
-        vlanGroups = groupby(vlanListExpanded, key=lambda item, c=count():item-next(c))
-        tempvlans = [list(g) for k, g in vlanGroups]
-        vlanList = [str(x[0]) if len(x) == 1 else "{}-{}".format(x[0],x[-1]) for x in tempvlans]
-        templateVars["vlan_list"] = ",".join(vlanList)
+        templateVars["vlan_list"] = vlan_list_format(vlan_list_expanded)
 
         # print(f'vlan list final is {templateVars["vlan_list"]}')
         if not templateVars["native_vlan"] == '':
@@ -342,6 +339,19 @@ class policies_vxan(object):
                         print(f'     1-10,20-30 - Ranges and Lists of VLANs')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
+                if not native_vlan == '':
+                    if int(native_vlan) in vlan_list_expanded:
+                        while(int(native_vlan) in vlan_list_expanded):
+                            vlan_list_expanded.remove(int(native_vlan))
+                elif native_vlan == '' and 1 in vlan_list_expanded:
+                    native_vlan == 1
+                    while(1 in vlan_list_expanded):
+                        vlan_list_expanded.remove(1)
+
+                templateVars["vlan_list"] = vlan_list_format(vlan_list_expanded)
+
+                vlan_list = vlan_list_format(vlan_list_expanded)
+                
                 policy_list = [
                     'policies.multicast_policies.multicast_policy'
                 ]
@@ -352,9 +362,13 @@ class policies_vxan(object):
                     templateVars.update(policyData)
 
                 if not native_vlan == '' and len(vlan_list) > 1:
+                    if int(native_vlan) == 1:
+                        auto_native = True
+                    else:
+                        auto_native = False
                     templateVars["vlans"] = [
                         {
-                            'auto_allow_on_uplinks':False,
+                            'auto_allow_on_uplinks':auto_native,
                             'id':native_vlan,
                             'multicast_policy':templateVars["multicast_policy"],
                             'name':native_name,
@@ -369,9 +383,13 @@ class policies_vxan(object):
                         }
                     ]
                 elif not native_vlan == '' and len(vlan_list) == 1:
+                    if int(native_vlan) == 1:
+                        auto_native = True
+                    else:
+                        auto_native = False
                     templateVars["vlans"] = [
                         {
-                            'auto_allow_on_uplinks':False,
+                            'auto_allow_on_uplinks':auto_native,
                             'id':native_vlan,
                             'multicast_policy':templateVars["multicast_policy"],
                             'name':native_name,
@@ -389,6 +407,7 @@ class policies_vxan(object):
                         }
                     ]
 
+                print(json.dumps(templateVars, indent=4))
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'   description      = "{templateVars["descr"]}"')
                 print(f'   multicast_policy = "{templateVars["multicast_policy"]}"')

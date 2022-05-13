@@ -1394,7 +1394,7 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars):
                     if port_overlap_count == 0:
                         if templateVars["device_model"] == 'UCS-FI-64108': max_port = 108
                         else: max_port = 54
-                        if templateVars["fc_mode"] == 'Y': min_port = int(templateVars["fc_ports"][1])
+                        if templateVars["fc_mode"] == 'Y': min_port = int(templateVars["fc_ports"][1]) + 1
                         else: min_port = 1
                         for port in port_list:
                             valid_ports = validating.number_in_range('Port Range', port, min_port, max_port)
@@ -1623,7 +1623,7 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
     fill_pattern_descr = 'For Cisco UCS 6400 Series fabric interconnect, if the FC uplink speed is 8 Gbps, set the '\
         'fill pattern as IDLE on the uplink switch. If the fill pattern is not set as IDLE, FC '\
         'uplinks operating at 8 Gbps might go to an errDisabled state, lose SYNC intermittently, or '\
-        'notice errors or bad packets.  For speeds greater than 8 Gbps we recommend Arbff.  Below'\
+        'notice errors or bad packets.  For speeds greater than 8 Gbps we recommend Arbff.  Below '\
         'is a configuration example on MDS to match this setting:\n\n'\
         'mds-a(config-if)# switchport fill-pattern IDLE speed 8000\n'\
         'mds-a(config-if)# show port internal inf interface fc1/1 | grep FILL\n'\
@@ -1670,8 +1670,9 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **templateVars):
                     templateVars["multi_select"] = False
                     jsonVars = jsonData['components']['schemas']['fabric.FcUplinkPcRole']['allOf'][1]['properties']
                     templateVars["var_description"] = jsonVars['AdminSpeed']['description']
+                    jsonVars['AdminSpeed']['enum'].remove('Auto')
                     templateVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
-                    templateVars["defaultVar"] = jsonVars['AdminSpeed']['enum'][3]
+                    templateVars["defaultVar"] = jsonVars['AdminSpeed']['enum'][2]
                     templateVars["varType"] = 'Admin Speed'
                     templateVars["admin_speed"] = variablesFromAPI(**templateVars)
 

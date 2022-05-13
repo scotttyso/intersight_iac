@@ -2,6 +2,7 @@
 
 from openpyxl import load_workbook
 from ordered_set import OrderedSet
+import itertools
 import json
 import os
 import platform
@@ -1427,6 +1428,13 @@ def vars_from_list(var_options, **templateVars):
                 print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
     return selection
+
+def vlan_list_format(vlan_list_expanded):
+    vlanGroups = itertools.groupby(vlan_list_expanded, key=lambda item, c=itertools.count():item-next(c))
+    tempvlans = [list(g) for k, g in vlanGroups]
+    vlanList = [str(x[0]) if len(x) == 1 else "{}-{}".format(x[0],x[-1]) for x in tempvlans]
+    vlan_list = ",".join(vlanList)
+    return vlan_list
 
 def vlan_list_full(vlan_list):
     full_vlan_list = []

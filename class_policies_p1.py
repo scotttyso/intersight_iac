@@ -2,6 +2,7 @@
 
 import base64
 import jinja2
+import json
 import os
 import pkg_resources
 import platform
@@ -23,6 +24,7 @@ from easy_functions import varNumberLoop
 from easy_functions import varStringLoop
 from easy_functions import vlan_list_full
 from easy_functions import write_to_template
+from textwrap import fill
 
 ucs_template_path = pkg_resources.resource_filename('class_policies_p1', 'Templates/')
 
@@ -1195,55 +1197,63 @@ class policies_p1(object):
                 templateVars["varType"] = 'Target Platform'
                 templateVars["target_platform"] = variablesFromAPI(**templateVars)
 
+                # IMC Access Type
+                jsonVars = jsonData['components']['schemas']['access.Policy']['allOf'][1]['properties']
+                templateVars["var_description"] = jsonVars['ConfigurationType']['description']
+                templateVars["jsonVars"] = ['inband', 'out_of_band']
+                templateVars["defaultVar"] = 'inband'
+                templateVars["varType"] = 'IMC Access Type'
+                imcBand = variablesFromAPI(**templateVars)
+
                 policy_list = [
-                    'pools.ip_pools.inband_ip_pool'
+                    f'pools.ip_pools.{imcBand}_ip_pool'
                 ]
                 templateVars["allow_opt_out"] = False
                 for policy in policy_list:
-                    templateVars["inband_ip_pool"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                    policy_type = policy.split('.')[2]
+                    templateVars[policy_type],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
 
-                valid = False
-                while valid == False:
-                    templateVars["inband_vlan_id"] = input('What VLAN Do you want to Assign to this Policy? ')
-                    valid_vlan = validating.number_in_range('VLAN ID', templateVars["inband_vlan_id"], 1, 4094)
-                    if valid_vlan == True:
-                        if templateVars["target_platform"] == 'FIAttached':
-                            policy_list = [
-                                'policies.vlan_policies.vlan_policy',
-                            ]
-                            templateVars["allow_opt_out"] = False
-                            for policy in policy_list:
-                                vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
-                            vlan_list = []
-                            for item in policyData['vlan_policies']:
-                                for key, value in item.items():
+                if imcBand == 'inband':
+                    valid = False
+                    while valid == False:
+                        templateVars["inband_vlan_id"] = input('What VLAN Do you want to Assign to this Policy? ')
+                        valid_vlan = validating.number_in_range('VLAN ID', templateVars["inband_vlan_id"], 1, 4094)
+                        if valid_vlan == True:
+                            if templateVars["target_platform"] == 'FIAttached':
+                                policy_list = [
+                                    'policies.vlan_policies.vlan_policy',
+                                ]
+                                templateVars["allow_opt_out"] = False
+                                for policy in policy_list:
+                                    vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **templateVars)
+                                vlan_list = []
+                                print(json.dumps(policyData['vlan_policies'], indent=4))
+                                for key, value in policyData['vlan_policies'].items():
                                     if key == vlan_policy:
-                                        for i in value[0]['vlans']:
-                                            for k, v in i.items():
-                                                for x in v:
-                                                    for y, val in x.items():
-                                                        if y == 'vlan_list':
-                                                            vlan_list.append(val)
+                                        for k, v in value['vlans'].items():
+                                            vlan_list.append(v['vlan_list'])
 
-                            vlan_convert = ''
-                            for vlan in vlan_list:
-                                vlan = str(vlan)
-                                vlan_convert = vlan_convert + ',' + str(vlan)
-                            vlan_list = vlan_list_full(vlan_convert)
-                            vlan_count = 0
-                            for vlan in vlan_list:
-                                if int(templateVars["inband_vlan_id"]) == int(vlan):
-                                    vlan_count = 1
-                                    break
-                            if vlan_count == 0:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error with Inband VLAN Assignment!!  The VLAN {templateVars["inband_vlan_id"]} is not in the VLAN Policy')
-                                print(f'  {vlan_policy}.  VALID VLANs are:{vlan_list}')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                vlan_convert = ''
+                                for vlan in vlan_list:
+                                    vlan = str(vlan)
+                                    vlan_convert = vlan_convert + ',' + str(vlan)
+                                vlan_list = vlan_list_full(vlan_convert)
+                                vlan_count = 0
+                                for vlan in vlan_list:
+                                    if int(templateVars["inband_vlan_id"]) == int(vlan):
+                                        vlan_count = 1
+                                        break
+                                if vlan_count == 0:
+                                    vlan_string = ', '.join(map(str,vlan_list))
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                                    print(f'  Error with Inband VLAN Assignment!!  The VLAN {templateVars["inband_vlan_id"]} is not in the VLAN Policy')
+                                    print(f'  {vlan_policy}.  VALID VLANs are:')
+                                    print(fill(f'    {vlan_string}',width=88, subsequent_indent='    '))
+                                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                                else:
+                                    valid = True
                             else:
                                 valid = True
-                        else:
-                            valid = True
 
                 valid = False
                 while valid == False:
@@ -1267,10 +1277,13 @@ class policies_p1(object):
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'   description                = "{templateVars["descr"]}"')
-                print(f'   inband_ip_pool             = "{templateVars["inband_ip_pool"]}"')
-                print(f'   inband_vlan_id             = {templateVars["inband_vlan_id"]}')
+                if imcBand == 'inband':
+                    print(f'   inband_ip_pool             = "{templateVars["inband_ip_pool"]}"')
+                    print(f'   inband_vlan_id             = {templateVars["inband_vlan_id"]}')
                 print(f'   ipv4_address_configuration = {templateVars["ipv4_address_configuration"]}')
                 print(f'   ipv6_address_configuration = {templateVars["ipv6_address_configuration"]}')
+                if imcBand == 'out_of_band':
+                    print(f'   out_of_band_ip_pool        = "{templateVars["out_of_band_ip_pool"]}"')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:
