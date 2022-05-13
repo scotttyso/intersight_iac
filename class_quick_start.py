@@ -1894,7 +1894,7 @@ class quick_start(object):
                     jsonVars = jsonData['components']['schemas']['access.Policy']['allOf'][1]['properties']
                     templateVars["var_description"] = jsonVars['ConfigurationType']['description']
                     templateVars["jsonVars"] = ['inband', 'out_of_band']
-                    templateVars["defaultVar"] = 'Inband'
+                    templateVars["defaultVar"] = 'inband'
                     templateVars["varType"] = 'IMC Access Type'
                     imcBand = variablesFromAPI(**templateVars)
 
