@@ -107,7 +107,6 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         # This will get the anchor tags <a href...>
         refs = tree.xpath("//a")
         links = [link.get('href', '') for link in refs]
-        print(links)
         for i in links:
             if re.search(r'/terraform/[1-2]\.[0-9]+\.[0-9]+$', i):
                 tf_version = re.search(r'/terraform/([1-2]\.[0-9]+\.[0-9]+)', i).group(1)
