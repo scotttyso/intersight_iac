@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import jinja2
+import json
 import os
 import pkg_resources
 import re
@@ -1332,7 +1333,7 @@ class policies_p3(object):
                                     print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                                     print(f'\n------------------------------------------------------\n')
                     else:
-                        templateVars["drive_group"] = []
+                        templateVars["drive_groups"] = []
 
                     # Ask if M2 should be configured
                     templateVars["Description"] = jsonVars['M2VirtualDrive']['description']
@@ -1347,7 +1348,7 @@ class policies_p3(object):
 
                         templateVars["var_description"] = jsonVars['ControllerSlot']['description']
                         templateVars["jsonVars"] = sorted(jsonVars['ControllerSlot']['enum'])
-                        templateVars["defaultVar"] = 'MSTOR-RAID-1,MSTOR-RAID-2'
+                        templateVars["defaultVar"] = 'MSTOR-RAID-1'
                         templateVars["varType"] = 'Controller Slot'
                         ControllerSlot = variablesFromAPI(**templateVars)
 
@@ -1372,7 +1373,7 @@ class policies_p3(object):
                             # Obtain the Single Drive Raid Slots
                             jsonVars = jsonData['components']['schemas']['storage.R0Drive']['allOf'][1]['properties']
                             templateVars["Description"] = jsonVars['DriveSlots']['description']
-                            templateVars["varDefault"] = f'{Drive1}-{Drive2}'
+                            templateVars["varDefault"] = f'1-2'
                             templateVars["varInput"] = f'Enter the Drive Slots for Drive Array Span 0. [{templateVars["varDefault"]}]:'
                             templateVars["varName"] = 'Drive Slots'
                             templateVars["varRegex"] = jsonVars['DriveSlots']['pattern']
@@ -1431,7 +1432,7 @@ class policies_p3(object):
                             print(f'    "0" = ''{')
                             print(f'      access_policy = "{templateVars["single_drive_raid_configuration"]["access_policy"]}"')
                             print(f'      disk_cache    = "{templateVars["single_drive_raid_configuration"]["disk_cache"]}"')
-                            print(f'      drive_slots   = "{templateVars["single_drive_raid_configuration"]["expand_to_available"]}"')
+                            print(f'      drive_slots   = "{templateVars["single_drive_raid_configuration"]["drive_slots"]}"')
                             print(f'      enable        = {templateVars["single_drive_raid_configuration"]["enable"]}')
                             print(f'      read_policy   = "{templateVars["single_drive_raid_configuration"]["read_policy"]}"')
                             print(f'      strip_size    = "{templateVars["single_drive_raid_configuration"]["strip_size"]}"')

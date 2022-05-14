@@ -107,26 +107,25 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         # This will get the anchor tags <a href...>
         refs = tree.xpath("//a")
         links = [link.get('href', '') for link in refs]
+        print(links)
         for i in links:
-            if re.search(r'/terraform/[1-2]\.[0-9]+\.[0-9]+/', i):
-                tf_version = re.search(r'/terraform/([1-2]\.[0-9]+\.[0-9]+)/', i).group(1)
+            if re.search(r'/terraform/[1-2]\.[0-9]+\.[0-9]+$', i):
+                tf_version = re.search(r'/terraform/([1-2]\.[0-9]+\.[0-9]+)', i).group(1)
                 terraform_versions.append(tf_version)
 
         # Removing Deprecated Versions from the List
         deprecatedVersions = ["1.1.0", "1.1.1"]
         for depver in deprecatedVersions:
-            verCount = 0
             for Version in terraform_versions:
                 if str(depver) == str(Version):
-                    terraform_versions.pop(verCount)
-                verCount += 1
+                    terraform_versions.remove(depver)
         
         # Assign the Terraform Version from the Terraform Release URL Above
         templateVars["multi_select"] = False
         templateVars["var_description"] = "Terraform Version for Workspaces:"
         templateVars["jsonVars"] = terraform_versions
         templateVars["varType"] = 'Terraform Version'
-        templateVars["defaultVar"] = ''
+        templateVars["defaultVar"] = terraform_versions[0]
 
         # Obtain Terraform Workspace Version
         if os.environ.get('terraformVersion') is None:

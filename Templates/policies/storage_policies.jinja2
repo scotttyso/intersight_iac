@@ -1,19 +1,6 @@
 
   "{{ name }}" = {
     description              = "{{ descr }}"
-    global_hot_spares        = "{{ global_hot_spares }}"
-{%- if unused_disks_state == 'JBOD' %}
-    unused_disks_state       = "Jbod"
-{%- elif unused_disks_state == 'No Change' %}
-    unused_disks_state       = "NoChange"
-{%- elif unused_disks_state == 'Unconfigured Good' %}
-    unused_disks_state       = "UnconfiguredGood"
-{%- elif unused_disks_state %}
-    unused_disks_state       = "{{ unused_disks_state }}"
-{%- endif %}
-{%- if use_jbod_for_vd_creation %}
-    use_jbod_for_vd_creation = {{ use_jbod_for_vd_creation|lower }}
-{%- endif %}
 {%- if drive_group %}
     drive_group = {
   {%- for item in drive_group %}
@@ -109,78 +96,95 @@
 {%- else %}
     drive_group = {}
 {%- endif %}
+    global_hot_spares        = "{{ global_hot_spares }}"
 {%- if m2_configuration %}
-    m2_configuration = {
-      "0" = {
+    m2_configuration = [
+      {
         controller_slot = "{{ m2_configuration["controller_slot"] }}"
-  {%- if m2_configuration["enable"] %}
+  {%- if m2_configuration.get("enable") %}
         enable          = {{ m2_configuration["enable"]|lower }}
   {%- else %}
         enable          = true
   {%- endif %}
       }
-    }
+    ]
 {%- else %}
-    m2_configuration         = {}
+    m2_configuration         = []
 {%- endif %}
 {%- if single_drive_raid_configuration %}
-    single_drive_raid_configuration = {
-      "0" = {
-  {%- for k, v in item.items()|sort %}
-    {%- if k == 'access_policy' %}
-      {%- if value == 'Read Only' %}
+    single_drive_raid_configuration = [
+      {
+  {%- if single_drive_raid_configuration.get('access_policy') %}
+    {%- if single_drive_raid_configuration['access_policy'] == 'Read Only' %}
         access_policy = "ReadOnly"
-      {%- elif value == 'Read Write' %}
+    {%- elif single_drive_raid_configuration['access_policy'] == 'Read Write' %}
         access_policy = "ReadWrite"
-      {%- else %}
-        access_policy = "{{ value }}"
-      {%- endif %}
-    {%- elif k == 'disk_cache' %}
-      {%- if value == 'Disabled' %}
-        disk_cache    = "Disable"
-      {%- elif value == 'Enabled' %}
-        disk_cache    = "Enable"
-      {%- elif value == 'Unchanged' %}
-        disk_cache    = "NoChange"
-      {%- else %}
-        disk_cache    = "{{ value }}"
-      {%- endif %}
-    {%- elif k == 'drive_slots' %}
-        drive_slots   = "{{ drive_slots }}"
-    {%- elif k == 'enable' %}
-        enable        = {{ v|lower }}
-    {%- elif key == 'read_policy' %}
-      {%- if value == 'Always Read Ahead' %}
-        read_policy   = "ReadAhead"
-      {%- elif value == 'No Read Ahead' %}
-        read_policy   = "NoReadAhead"
-      {%- else %}
-        read_policy   = "{{ value }}"
-      {%- endif %}
-    {%- elif key == 'strip_size' %}
-      {%- if 'KiB' in value %}
-        strip_size    = {{ value }}.split('K')[0]
-      {%- elif value == '1MiB' %}
-        strip_size    = 1024
-      {%- else %}
-        strip_size    = {{ value }}
-      {%- endif %}
-    {%- elif key == 'write_policy' %}
-      {%- if value == 'Always Write Back' %}
-        write_policy  = "AlwaysWriteBack"
-      {%- elif value == 'Write Back Good BBU' %}
-        write_policy  = "WriteBackGoodBbu"
-      {%- elif value == 'Write Through' %}
-        write_policy  = "WriteThrough"
-      {%- else %}
-        write_policy  = "{{ value }}"
-      {%- endif %}
+    {%- else %}
+        access_policy = "{{ single_drive_raid_configuration['access_policy'] }}"
     {%- endif %}
-  {%- endfor %}
+  {%- endif %}
+  {%- if single_drive_raid_configuration.get('disk_cache') %}
+    {%- if single_drive_raid_configuration['disk_cache'] == 'Disabled' %}
+        disk_cache    = "Disable"
+    {%- elif single_drive_raid_configuration['disk_cache'] == 'Enabled' %}
+        disk_cache    = "Enable"
+    {%- elif single_drive_raid_configuration['disk_cache'] == 'Unchanged' %}
+        disk_cache    = "NoChange"
+    {%- else %}
+        disk_cache    = "{{ single_drive_raid_configuration['disk_cache'] }}"
+    {%- endif %}
+  {%- endif %}
+  {%- if single_drive_raid_configuration.get('drive_slots') %}
+        drive_slots   = "{{ single_drive_raid_configuration['drive_slots'] }}"
+  {%- endif %}
+  {%- if single_drive_raid_configuration.get('enable') %}
+        enable        = {{ single_drive_raid_configuration['enable']|lower }}
+  {%- endif %}
+  {%- if single_drive_raid_configuration.get('read_policy') %}
+    {%- if single_drive_raid_configuration['read_policy'] == 'Always Read Ahead' %}
+        read_policy   = "ReadAhead"
+    {%- elif single_drive_raid_configuration['read_policy'] == 'No Read Ahead' %}
+        read_policy   = "NoReadAhead"
+    {%- else %}
+        read_policy   = "{{ single_drive_raid_configuration['read_policy'] }}"
+    {%- endif %}
+  {%- endif %}
+  {%- if single_drive_raid_configuration.get('strip_size') %}
+    {%- if 'KiB' in single_drive_raid_configuration['strip_size']|string %}
+        strip_size    = {{ single_drive_raid_configuration['strip_size'] }}.split('K')[0]
+    {%- elif '1MiB' in single_drive_raid_configuration['strip_size']|string %}
+        strip_size    = 1024
+    {%- else %}
+        strip_size    = {{ single_drive_raid_configuration['strip_size'] }}
+    {%- endif %}
+  {%- endif %}
+  {%- if single_drive_raid_configuration.get('write_policy') %}
+    {%- if single_drive_raid_configuration['write_policy'] == 'Always Write Back' %}
+        write_policy  = "AlwaysWriteBack"
+    {%- elif single_drive_raid_configuration['write_policy'] == 'Write Back Good BBU' %}
+        write_policy  = "WriteBackGoodBbu"
+    {%- elif single_drive_raid_configuration['write_policy'] == 'Write Through' %}
+        write_policy  = "WriteThrough"
+    {%- else %}
+        write_policy  = "{{ single_drive_raid_configuration['write_policy'] }}"
+    {%- endif %}
+  {%- endif %}
       }
-    }
+    ]
 {%- else %}
-    single_drive_raid_configuration = {}
+    single_drive_raid_configuration = []
+{%- endif %}
+{%- if unused_disks_state == 'JBOD' %}
+    unused_disks_state       = "Jbod"
+{%- elif unused_disks_state == 'No Change' %}
+    unused_disks_state       = "NoChange"
+{%- elif unused_disks_state == 'Unconfigured Good' %}
+    unused_disks_state       = "UnconfiguredGood"
+{%- elif unused_disks_state %}
+    unused_disks_state       = "{{ unused_disks_state }}"
+{%- endif %}
+{%- if use_jbod_for_vd_creation %}
+    use_jbod_for_vd_creation = {{ use_jbod_for_vd_creation|lower }}
 {%- endif %}
 {%- if tags %}
     tags = [

@@ -176,7 +176,6 @@ class terraform_cloud(object):
         #--------------------------------------------------------------
 
         if status == 200:
-            # print(json.dumps(json_data, indent = 4))
             json_data = json_data['data']
             vcsProvider = []
             vcsAttributes = []
