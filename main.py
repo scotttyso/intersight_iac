@@ -11,18 +11,8 @@ It uses argparse to take in the following CLI arguments:
     u or url:                The intersight root URL for the api endpoint. (The default is https://intersight.com)
 """
 
-import argparse
-import credentials
-import json
-import subprocess
-import os
-import re
-import platform
-import requests
-import validating
-from easy_functions import api_key, api_secret
-from easy_functions import policies_parse
-from easy_functions import sensitive_var_value
+from easy_functions import api_key, api_secret, policies_parse
+from easy_functions import sensitive_var_value, tfc_sensitive_variables
 from easy_functions import varBoolLoop
 from easy_functions import variablesFromAPI
 from easy_functions import varStringLoop
@@ -37,13 +27,21 @@ from class_policies_vxan import policies_vxan
 from class_profiles import profiles
 from class_quick_start import quick_start
 from class_terraform import terraform_cloud
-from temp_coding import temp_coding
 from io import StringIO
 from intersight.api import organization_api
 from intersight.api import resource_api
 from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
 from lxml import etree
 from pathlib import Path
+import argparse
+import credentials
+import json
+import subprocess
+import os
+import re
+import platform
+import requests
+import validating
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -294,7 +292,6 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                     'snmp_policies.trap_community_string',
                     'virtual_media_policies.vmedia_password'
                 ]
-                sensitive_vars = []
                 for var in vars:
                     policy_type = 'policies'
                     policy = '%s' % (var.split('.')[0])
@@ -303,60 +300,48 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                     z = var.split('.')[1]
                     if y == 'persistent_memory_policies':
                         if len(policies) > 0:
-                            sensitive_vars.append(z)
+                            varValue = z
+                            tfc_sensitive_variables(varValue, jsonData, **templateVars)
                     else:
                         for keys, values in json_data.items():
                             for key, value in values.items():
+                                print(json.dumps(value, indent=4))
                                 for k, v in value.items():
+                                    if 'local_user' in keys and k == 'enforce_strong_password':
+                                        templateVars['enforce_strong_password'] = v
                                     if k == z:
                                         if not v == 0:
                                             if y == 'iscsi_boot_policies':
                                                 varValue = 'iscsi_boot_password'
                                             else:
                                                 varValue = '%s_%s' % (k, v)
-                                            sensitive_vars.append(varValue)
+                                            templateVars = tfc_sensitive_variables(varValue, jsonData, templateVars)
+                                            terraform_cloud().tfcVariables(**templateVars)
                                     elif k == 'binding_parameters':
                                         for ka, va in v.items():
                                             if ka == 'bind_method':
                                                 if va == 'ConfiguredCredentials':
-                                                    sensitive_vars.append('binding_parameters_password')
+                                                    varValue = 'binding_parameters_password'
+                                                    templateVars = tfc_sensitive_variables(varValue, jsonData, templateVars)
+                                                    terraform_cloud().tfcVariables(**templateVars)
                                     elif k == 'users' or k == 'vmedia_mappings':
                                         for ka, va in v.items():
                                             for kb, vb in va.items():
                                                 if kb == 'password':
                                                     varValue = '%s_%s' % (z, vb)
-                                                    sensitive_vars.append(varValue)
+                                                    templateVars = tfc_sensitive_variables(varValue, jsonData, templateVars)
+                                                    terraform_cloud().tfcVariables(**templateVars)
                                     elif k == 'snmp_users' and z == 'password':
                                         for ka, va in v.items():
                                             for kb, vb in va.items():
                                                 if kb == 'auth_password':
                                                     varValue = 'snmp_auth_%s_%s' % (z, vb)
-                                                    sensitive_vars.append(varValue)
+                                                    templateVars = tfc_sensitive_variables(varValue, jsonData, templateVars)
+                                                    terraform_cloud().tfcVariables(**templateVars)
                                                 elif kb == 'privacy_password':
                                                     varValue = 'snmp_privacy_%s_%s' % (z, vb)
-                                                    sensitive_vars.append(varValue)
-                for var in sensitive_vars:
-                    templateVars["Variable"] = var
-                    if 'ipmi_key' in var:
-                        templateVars["Description"] = 'IPMI over LAN Encryption Key'
-                    elif 'iscsi' in var:
-                        templateVars["Description"] = 'iSCSI Boot Password'
-                    elif 'local_user' in var:
-                        templateVars["Description"] = 'Local User Password'
-                    elif 'access_comm' in var:
-                        templateVars["Description"] = 'SNMP Access Community String'
-                    elif 'snmp_auth' in var:
-                        templateVars["Description"] = 'SNMP Authorization Password'
-                    elif 'snmp_priv' in var:
-                        templateVars["Description"] = 'SNMP Privacy Password'
-                    elif 'trap_comm' in var:
-                        templateVars["Description"] = 'SNMP Trap Community String'
-                    templateVars["varValue"] = sensitive_var_value(jsonData, **templateVars)
-                    templateVars["varId"] = var
-                    templateVars["varKey"] = var
-                    templateVars["Sensitive"] = True
-                    print(f'* Adding {templateVars["Description"]} to {templateVars["workspaceName"]}')
-                    terraform_cloud().tfcVariables(**templateVars)
+                                                    templateVars = tfc_sensitive_variables(varValue, jsonData, templateVars)
+                                                    terraform_cloud().tfcVariables(**templateVars)
 
         tfcb_config.append({'backend':'remote','org':org})
         name_prefix = 'dummy'

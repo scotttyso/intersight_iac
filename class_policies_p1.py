@@ -698,7 +698,7 @@ class policies_p1(object):
 
                                     elif confirm_config == 'N':
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Starting LDAP Group Configuration Over.')
+                                        print(f'  Starting Boot Order Configuration Over.')
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         valid_confirm = True
                                     else:

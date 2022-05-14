@@ -643,10 +643,10 @@ def sensitive_var_value(jsonData, **templateVars):
             else:
                 valid_pass = False
                 while valid_pass == False:
-                    secure1 = stdiomask.getpass(prompt=f'Enter the value for {templateVars["Variable"]}: ')
-                    secure2 = stdiomask.getpass(prompt=f'Re-Enter the value for {templateVars["Variable"]}: ')
-                    if secure1 == secure2:
-                        secure_value = secure1
+                    password1 = stdiomask.getpass(prompt=f'Enter the value for {templateVars["Variable"]}: ')
+                    password2 = stdiomask.getpass(prompt=f'Re-Enter the value for {templateVars["Variable"]}: ')
+                    if password1 == password2:
+                        secure_value = password1
                         valid_pass = True
 
             # Validate Sensitive Passwords
@@ -695,7 +695,16 @@ def sensitive_var_value(jsonData, **templateVars):
                 maxLength = jsonVars['Password']['maxLength']
                 rePattern = jsonVars['Password']['pattern']
                 varName = 'Local User Password'
-                valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                if templateVars.get('enforce_strong_password'):
+                    enforce_pass = templateVars['enforce_strong_password']
+                else:
+                    enforce_pass = False
+                if enforce_pass == True:
+                    minLength = 8
+                    maxLength = 20
+                    valid = validating.strong_password(templateVars['Variable'], secure_value, minLength, maxLength)
+                else:
+                    valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'secure_passphrase' in sensitive_var:
                 jsonVars = jsonData['components']['schemas']['memory.PersistentMemoryLocalSecurity']['allOf'][1]['properties']
                 minLength = jsonVars['SecurePassphrase']['minLength']
@@ -1132,6 +1141,29 @@ def syslog_servers(jsonData, **templateVars):
                 print(f'\n------------------------------------------------------\n')
 
     return remote_logging
+
+def tfc_sensitive_variables(varValue, jsonData, templateVars):
+    templateVars["Variable"] = varValue
+    if 'ipmi_key' in varValue:
+        templateVars["Description"] = 'IPMI over LAN Encryption Key'
+    elif 'iscsi' in varValue:
+        templateVars["Description"] = 'iSCSI Boot Password'
+    elif 'local_user' in varValue:
+        templateVars["Description"] = 'Local User Password'
+    elif 'access_comm' in varValue:
+        templateVars["Description"] = 'SNMP Access Community String'
+    elif 'snmp_auth' in varValue:
+        templateVars["Description"] = 'SNMP Authorization Password'
+    elif 'snmp_priv' in varValue:
+        templateVars["Description"] = 'SNMP Privacy Password'
+    elif 'trap_comm' in varValue:
+        templateVars["Description"] = 'SNMP Trap Community String'
+    templateVars["varValue"] = sensitive_var_value(jsonData, **templateVars)
+    templateVars["varId"] = varValue
+    templateVars["varKey"] = varValue
+    templateVars["Sensitive"] = True
+    print(f'* Adding {templateVars["Description"]} to {templateVars["workspaceName"]}')
+    return templateVars
 
 def ucs_domain_serials():
     print(f'\n-------------------------------------------------------------------------------------------\n')
