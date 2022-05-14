@@ -305,7 +305,6 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
                     else:
                         for keys, values in json_data.items():
                             for key, value in values.items():
-                                print(json.dumps(value, indent=4))
                                 for k, v in value.items():
                                     if 'local_user' in keys and k == 'enforce_strong_password':
                                         templateVars['enforce_strong_password'] = v
