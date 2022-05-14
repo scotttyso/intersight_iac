@@ -641,7 +641,13 @@ def sensitive_var_value(jsonData, **templateVars):
                 else:
                     secure_value = '\n'.join(lines)
             else:
-                secure_value = stdiomask.getpass(prompt=f'Enter the value for {templateVars["Variable"]}: ')
+                valid_pass = False
+                while valid_pass == False:
+                    secure1 = stdiomask.getpass(prompt=f'Enter the value for {templateVars["Variable"]}: ')
+                    secure2 = stdiomask.getpass(prompt=f'Re-Enter the value for {templateVars["Variable"]}: ')
+                    if secure1 == secure2:
+                        secure_value = secure1
+                        valid_pass = True
 
             # Validate Sensitive Passwords
             cert_regex = re.compile(r'^\-{5}BEGIN (CERTIFICATE|PRIVATE KEY)\-{5}.*\-{5}END (CERTIFICATE|PRIVATE KEY)\-{5}$')
