@@ -412,7 +412,7 @@ def intersight_org_check(home, org, args):
                 if rg_2nd_list.results:
                     rg_moid = rg_2nd_list.results[0].moid
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Organization {org}_rg has the Moid of {rg_moid},')
+                    print(f'  Resource Group {org}_rg has the Moid of {rg_moid},')
                     print(f'  which was just Created.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
             elif rg_list.results:
