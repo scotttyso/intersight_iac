@@ -430,8 +430,9 @@ def intersight_org_check(home, org, args):
             kwargs = dict(filter=query_filter)
             org_list = api_handle.get_organization_organization_list(**kwargs)
             if not org_list.results:
+                print('did not find the organization')
                 api_body = {
-                    "ClassId":"mo.MoRef",
+                    "ClassId":"organization.Organization",
                     "Name":org,
                     "ObjectType":"organization.Organization",
                     "ResourceGroups":[{
