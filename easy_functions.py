@@ -614,10 +614,8 @@ def sensitive_var_value(jsonData, **templateVars):
         print(f"  The Script did not find {sensitive_var} as an 'environment' variable.")
         print(f"  To not be prompted for the value of {templateVars['Variable']} each time")
         print(f"  add the following to your local environemnt:\n")
-        print(f"    For Linux:")
-        print(f"    - export {sensitive_var}='{templateVars['Variable']}_value'")
-        print(f"    For Windows:")
-        print(f"    - $env:{sensitive_var}='{templateVars['Variable']}_value'")
+        print(f"    - Linux: export {sensitive_var}='{templateVars['Variable']}_value'")
+        print(f"    - Windows: $env:{sensitive_var}='{templateVars['Variable']}_value'")
         print(f"\n----------------------------------------------------------------------------------\n")
 
     if os.environ.get(sensitive_var) is None:
