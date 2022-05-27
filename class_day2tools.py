@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
+from xmlrpc.client import DateTime
 from easy_functions import variablesFromAPI
 from easy_functions import vlan_list_format
 from intersight.api import asset_api
@@ -15,8 +16,10 @@ from intersight.exceptions import ApiException
 from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
 from pathlib import Path
 import credentials
+import datetime
 import json
 import pkg_resources
+import pprint
 import pytz
 import openpyxl
 import re
@@ -25,8 +28,18 @@ import validating
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+pp = pprint.PrettyPrinter(indent=4)
 home = Path.home()
 template_path = pkg_resources.resource_filename('class_vmware', 'Templates/')
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, z):
+        if isinstance(z, datetime.datetime):
+            return (str(z))
+        elif type('moTag'):
+            return (str(z))
+        else:
+            return super().default(z)
 
 class intersight(object):
     def __init__(self, type):
@@ -40,6 +53,29 @@ class intersight(object):
             jsonOpen = open(args.json_file, 'r')
             jsonData = json.load(jsonOpen)
         tags = [{'key': 'Module','value': 'day2tools'}]
+
+        def print_api_class(api_response):
+            datastr = str(api_response)
+            datastr = datastr.replace('\'', '\"')
+            datastr = datastr.replace(': None,', ': \"None\",')
+            datastr = datastr.replace('False', 'false')
+            datastr = datastr.replace('True', 'true')
+            ct = re.search('(\"create_time\": )(datetime.datetime\([0-9, ]+tzinfo=tzutc\(\)\))', datastr)
+            ctime = '%s"%s",' % (ct.group(1), ct.group(2))
+            datastr = re.sub(
+                '\"create_time\": datetime.datetime\([0-9, ]+tzinfo=tzutc\(\)\),',
+                ctime,
+                datastr
+            )
+            mt = re.search('(\"mod_time\": )(datetime.datetime\([0-9, ]+tzinfo=tzutc\(\)\))', datastr)
+            mtime = '%s"%s",' % (mt.group(1), mt.group(2))
+            datastr = re.sub(
+                '\"mod_time\": datetime.datetime\([0-9, ]+tzinfo=tzutc\(\)\),',
+                mtime,
+                datastr
+            )
+            data = json.loads(datastr)
+            print(json.dumps(data, indent=4))
 
         def process_results(apiQuery):
             api_dict = {}
@@ -62,20 +98,20 @@ class intersight(object):
                 exit()
 
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        print('    Beginning VLAN Addition...')
+        print('  Beginning VLAN Addition...')
         print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Prompt User for VLAN.
         valid = False
         while valid == False:
-            vlan_id = '%s' % (input(f'What is the VLAN ID: '))
+            vlan_id = '%s' % (input(f'    What is the VLAN ID: '))
             if re.search('^\d+$', vlan_id):
                 valid = validating.number_in_range('VLAN ID', vlan_id, 1, 4094)
 
         # Prompt User for VLAN Name.
         valid = False
         while valid == False:
-            vlan_name = '%s' % (input(f'What is the name you want to assign to VLAN {vlan_id}: '))
+            vlan_name = '%s' % (input(f'    What is the name you want to assign to VLAN {vlan_id}: '))
             valid = validating.name_rule('VLAN Name', vlan_name, 1, 62)
 
         # Query API for the Organization List
@@ -96,6 +132,9 @@ class intersight(object):
         else:
             organizations = jsonData['organizations']
         for org in organizations:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Starting Loop on Organization {org}.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
             # Query the API for the VLAN Policies
             api_handle = fabric_api.FabricApi(api_client)
             query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
@@ -116,7 +155,7 @@ class intersight(object):
                 vlan_policy = jsonData['vlan_policy']
 
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'    Checking VLAN Policy {vlan_policy} for VLAN {vlan_id}.')
+            print(f'  Checking VLAN Policy {vlan_policy} for VLAN {vlan_id}.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             vlan_policy_moid = vlan_policies[vlan_policy]['moid']
             query_filter = f"EthNetworkPolicy.Moid eq '{vlan_policy_moid}'"
@@ -131,13 +170,13 @@ class intersight(object):
                     if int(i['vlan_id']) == int(vlan_id):
                         match_count += 1
                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'    VLAN is already in the policy {vlan_policy}.')
+                        print(f'  VLAN is already in the policy {vlan_policy} and has moid {i["moid"]}.')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                 vlan_list.sort()
                 vlans = vlan_list_format(vlan_list)
                 if match_count == 0:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    VLAN {vlan_id} was not in VLAN Policy {vlan_policy}.  Adding VLAN...')
+                    print(f'  VLAN {vlan_id} was not in VLAN Policy {vlan_policy}.  Adding VLAN...')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     policy = {
                         'class_id':'fabric.Vlan',
@@ -158,7 +197,7 @@ class intersight(object):
                         }
                     try:
                         apiPost = api_handle.create_fabric_vlan(policy)
-                        print(apiPost)
+                        print_api_class(apiPost)
                     except ApiException as e:
                         print("Exception when calling FabricApi->create_fabric_vlan: %s\n" % e)
                         sys.exit(1)
@@ -184,7 +223,7 @@ class intersight(object):
 
             for i in ethernet_network_group_policies:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f"    Patching the Ethernet Network Group Policy '{i}' ...")
+                print(f"  Patching the Ethernet Network Group Policy '{i}' ...")
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 ethgroup_moid = eth_group_policies[i]['moid']
                 patch_body = {
@@ -197,21 +236,25 @@ class intersight(object):
                         fabric_eth_network_group_policy=patch_body,
                         moid=ethgroup_moid
                     )
-                    print(apiPatch)
+                    print_api_class(apiPatch)
                 except ApiException as e:
                     print("Exception when calling FabricApi->patch_fabric_eth_network_group_policy: %s\n" % e)
                     sys.exit(1)
 
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'    Checking if the Ethernet Network Group Policy {vlan_id}_NIC-A Already Exists.')
+            print(f'  Checking if the Ethernet Network Group Policy {vlan_id}_NIC-A Already Exists.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             ethgcount = 0
             for k, v in eth_group_policies.items():
                 if k == f'{vlan_id}_NIC-A':
                     ethgcount += 1
+                    vnic_eth_net_grp = v['moid']
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Ethernet Network Group Policy {vlan_id}_NIC-A Exists.  Moid is {vnic_eth_net_grp}')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
             if ethgcount == 0:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'    Ethernet Network Group Policy {vlan_id}_NIC-A does not exist.  Creating...')
+                print(f'  Ethernet Network Group Policy {vlan_id}_NIC-A does not exist.  Creating...')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 policy = {
                     'class_id': 'fabric.EthNetworkGroupPolicy',
@@ -233,7 +276,7 @@ class intersight(object):
                 }
                 try:
                     apiPost = api_handle.create_fabric_eth_network_group_policy(policy)
-                    # print(apiPost)
+                    print_api_class(apiPost)
                     vnic_eth_net_grp = apiPost.moid
                 except ApiException as e:
                     print("Exception when calling FabricApi->create_fabric_eth_network_group_policy: %s\n" % e)
@@ -321,15 +364,18 @@ class intersight(object):
             if empty == True: empty_results(apiQuery)
 
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'    Checking if the LAN Policy {vlan_id} Already Exists.')
+            print(f'  Checking if the LAN Policy {vlan_id} Already Exists.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             lcount = 0
             for k, v in lan_policies.items():
                 if k == vlan_id:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  LAN Policy {vlan_id} exists.  Moid is {v["moid"]}')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
                     lcount += 1
             if lcount == 0:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'    LAN Policy {vlan_id} does not exist.  Creating...')
+                print(f'  LAN Policy {vlan_id} does not exist.  Creating...')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 policy = {
                     'class_id':'vnic.LanConnectivityPolicy',
@@ -345,7 +391,7 @@ class intersight(object):
                     }
                 try:
                     apiPost = api_handle.create_vnic_lan_connectivity_policy(policy)
-                    # print(apiPost)
+                    print_api_class(apiPost)
                     lanp = {vlan_id:{'moid':apiPost.moid}}
                     lan_policies.update(lanp)
                 except ApiException as e:
@@ -353,7 +399,7 @@ class intersight(object):
                     sys.exit(1)
 
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print('    Checking if the LAN Connectivity vNIC "NIC-A" Exists...')
+            print('  Checking if the LAN Connectivity vNIC "NIC-A" Exists...')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             query_filter = f"LanConnectivityPolicy.Moid eq '{lan_policies[vlan_id]['moid']}'"
             qargs = dict(filter=query_filter)
@@ -361,7 +407,7 @@ class intersight(object):
             empty, vnics, vnic_names = process_results(apiQuery)
             if empty == True:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f"    vNIC 'NIC-A' was not attached to LAN Policy {vlan_id}.  Creating...")
+                print(f"  vNIC 'NIC-A' was not attached to LAN Policy {vlan_id}.  Creating...")
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 policy = {
                     'cdn': {
@@ -421,13 +467,21 @@ class intersight(object):
                 }
                 try:
                     apiPost = api_handle.create_vnic_eth_if(policy)
-                    print(apiPost)
+                    print_api_class(apiPost)
                 except ApiException as e:
                     print("Exception when calling VnicApi->create_vnic_lan_connectivity_policy: %s\n" % e)
                     sys.exit(1)
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  LAN Connectivity vNIC "NIC-A" exists.  Moid is {vnics["NIC-A"]["moid"]}')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Finished Loop on Organization {org}.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
 
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        print('    Finished VLAN Addition...')
+        print('  Finished VLAN Addition...')
         print(f'\n-------------------------------------------------------------------------------------------\n')
 
     def server_inventory(self, **kwargs):
