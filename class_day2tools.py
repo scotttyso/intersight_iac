@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
-from easy_functions import process_kwargs
-from easy_functions import process_method
+from easy_functions import variablesFromAPI
+from easy_functions import vlan_list_format
 from intersight.api import asset_api
 from intersight.api import compute_api
+from intersight.api import fabric_api
 from intersight.api import fcpool_api
+from intersight.api import macpool_api
+from intersight.api import organization_api
 from intersight.api import server_api
 from intersight.api import vnic_api
-from operator import itemgetter
+from intersight.exceptions import ApiException
 from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
 from pathlib import Path
 import credentials
-import jinja2
 import json
 import pkg_resources
 import pytz
 import openpyxl
-import os
 import re
+import sys
 import validating
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -26,36 +28,416 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 home = Path.home()
 template_path = pkg_resources.resource_filename('class_vmware', 'Templates/')
 
-# Exception Classes
-class InsufficientArgs(Exception):
-    pass
-
-class ErrException(Exception):
-    pass
-
-class InvalidArg(Exception):
-    pass
-
-class LoginFailed(Exception):
-    pass
-
-class servers(object):
+class intersight(object):
     def __init__(self, type):
-        # self.templateLoader = jinja2.FileSystemLoader(
-        #     searchpath=(template_path + f'{ws}/'))
-        # self.templateEnv = jinja2.Environment(loader=self.templateLoader)
-        # self.name_prefix = name_prefix
-        # self.org = org
         self.type = type
 
+    def add_vlan(self, **kwargs):
+        args = kwargs['args']
+        jsonFile = False
+        if not args.json_file == None:
+            jsonFile = True
+            jsonOpen = open(args.json_file, 'r')
+            jsonData = json.load(jsonOpen)
+        tags = [{'key': 'Module','value': 'day2tools'}]
+
+        def process_results(apiQuery):
+            api_dict = {}
+            api_list = []
+            empty = False
+            if apiQuery.results:
+                for i in apiQuery.results:
+                    iMoid = i.moid
+                    iName = i.name
+                    idict = {iName:{'moid':iMoid}}
+                    api_dict.update(idict)
+                    api_list.append(iName)
+                return empty, api_dict, api_list
+            else:
+                empty = True
+                return empty, api_dict, api_list
+        
+        def empty_results(apiQuery):
+                print(f'The API Query Results were empty for {apiQuery.object_type}.  Exiting...')
+                exit()
+
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print('    Beginning VLAN Addition...')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        # Prompt User for VLAN.
+        valid = False
+        while valid == False:
+            vlan_id = '%s' % (input(f'What is the VLAN ID: '))
+            if re.search('^\d+$', vlan_id):
+                valid = validating.number_in_range('VLAN ID', vlan_id, 1, 4094)
+
+        # Prompt User for VLAN Name.
+        valid = False
+        while valid == False:
+            vlan_name = '%s' % (input(f'What is the name you want to assign to VLAN {vlan_id}: '))
+            valid = validating.name_rule('VLAN Name', vlan_name, 1, 62)
+
+        # Query API for the Organization List
+        api_client = credentials.config_credentials(home, args)
+        api_handle = organization_api.OrganizationApi(api_client)
+        apiQuery = api_handle.get_organization_organization_list()
+        empty, orgs, org_names = process_results(apiQuery)
+        if empty == True: empty_results(apiQuery)
+
+        # Request from User Which Organizations to Apply this to.
+        if jsonFile == False:
+            kwargs["multi_select"] = True
+            kwargs["var_description"] = 'Select the Organizations to Apply this VLAN to.'
+            kwargs["jsonVars"] = org_names
+            kwargs["defaultVar"] = 'default'
+            kwargs["varType"] = 'Organizations'
+            organizations = variablesFromAPI(**kwargs)
+        else:
+            organizations = jsonData['organizations']
+        for org in organizations:
+            # Query the API for the VLAN Policies
+            api_handle = fabric_api.FabricApi(api_client)
+            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
+            qargs = dict(filter=query_filter)
+            apiQuery = api_handle.get_fabric_eth_network_policy_list(**qargs)
+            empty, vlan_policies,vlan_policies_names = process_results(apiQuery)
+            if empty == True: empty_results(apiQuery)
+
+            # Prompt the User to Select the VLAN Policy
+            if jsonFile == False:
+                kwargs["multi_select"] = False
+                kwargs["var_description"] = f'Select the VLAN Policy for Organization {org}.'
+                kwargs["jsonVars"] = vlan_policies_names
+                kwargs["defaultVar"] = ''
+                kwargs["varType"] = 'VLAN Policy'
+                vlan_policy = variablesFromAPI(**kwargs)
+            else:
+                vlan_policy = jsonData['vlan_policy']
+
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'    Checking VLAN Policy {vlan_policy} for VLAN {vlan_id}.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            vlan_policy_moid = vlan_policies[vlan_policy]['moid']
+            query_filter = f"EthNetworkPolicy.Moid eq '{vlan_policy_moid}'"
+            kwargs = dict(filter=query_filter,top=1000)
+            apiQuery = api_handle.get_fabric_vlan_list(**kwargs)
+            if apiQuery.results:
+                mcast_policy_moid = apiQuery.results[1]['multicast_policy']['moid']
+                match_count = 0
+                vlan_list = []
+                for i in apiQuery.results:
+                    vlan_list.append(i['vlan_id'])
+                    if int(i['vlan_id']) == int(vlan_id):
+                        match_count += 1
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                        print(f'    VLAN is already in the policy {vlan_policy}.')
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                vlan_list.sort()
+                vlans = vlan_list_format(vlan_list)
+                if match_count == 0:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'    VLAN {vlan_id} was not in VLAN Policy {vlan_policy}.  Adding VLAN...')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    policy = {
+                        'class_id':'fabric.Vlan',
+                        'eth_network_policy': {
+                            'class_id': 'mo.MoRef',
+                            'moid': vlan_policy_moid,
+                            'object_type': 'fabric.EthNetworkPolicy'
+                        },
+                        'is_native': False,
+                        'multicast_policy': {
+                            'class_id': 'mo.MoRef',
+                            'moid': mcast_policy_moid,
+                            'object_type': 'fabric.MulticastPolicy'
+                        },
+                        'name': vlan_name,
+                        'object_type': 'fabric.Vlan',
+                        'vlan_id': int(vlan_id)
+                        }
+                    try:
+                        apiPost = api_handle.create_fabric_vlan(policy)
+                        print(apiPost)
+                    except ApiException as e:
+                        print("Exception when calling FabricApi->create_fabric_vlan: %s\n" % e)
+                        sys.exit(1)
+
+            # Query the API for Ethernet Network Group Policies
+            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
+            qargs = dict(filter=query_filter)
+            apiQuery = api_handle.get_fabric_eth_network_group_policy_list(**qargs)
+            empty, eth_group_policies,eth_group_policies_names = process_results(apiQuery)
+            if empty == True: empty_results(apiQuery)
+
+            # Prompt the User to Select the Ethernet Network Group Policies
+            if jsonFile == False:
+                kwargs["multi_select"] = True
+                kwargs["var_description"] = f'Select the Ethernet Network Group Polices to append'\
+                    f'the VLAN to in Organization {org}.'
+                kwargs["jsonVars"] = eth_group_policies_names
+                kwargs["defaultVar"] = ''
+                kwargs["varType"] = 'VLAN Group Policies'
+                ethernet_network_group_policies = variablesFromAPI(**kwargs)
+            else:
+                ethernet_network_group_policies = jsonData['ethernet_network_group_policies']
+
+            for i in ethernet_network_group_policies:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f"    Patching the Ethernet Network Group Policy '{i}' ...")
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                ethgroup_moid = eth_group_policies[i]['moid']
+                patch_body = {
+                    'vlan_settings':{
+                        'allowed_vlans':vlans
+                    }
+                }
+                try:
+                    apiPatch = api_handle.patch_fabric_eth_network_group_policy(
+                        fabric_eth_network_group_policy=patch_body,
+                        moid=ethgroup_moid
+                    )
+                    print(apiPatch)
+                except ApiException as e:
+                    print("Exception when calling FabricApi->patch_fabric_eth_network_group_policy: %s\n" % e)
+                    sys.exit(1)
+
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'    Checking if the Ethernet Network Group Policy {vlan_id}_NIC-A Already Exists.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            ethgcount = 0
+            for k, v in eth_group_policies.items():
+                if k == f'{vlan_id}_NIC-A':
+                    ethgcount += 1
+            if ethgcount == 0:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'    Ethernet Network Group Policy {vlan_id}_NIC-A does not exist.  Creating...')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                policy = {
+                    'class_id': 'fabric.EthNetworkGroupPolicy',
+                    'description': f'{vlan_id}_NIC-A Ethernet Network Group',
+                    'name': f'{vlan_id}_NIC-A',
+                    'object_type': 'fabric.EthNetworkGroupPolicy',
+                    'organization': {
+                        'class_id': 'mo.MoRef',
+                        'moid':  orgs[org]['moid'],
+                        'object_type': 'organization.Organization'
+                    },
+                    'tags': tags,
+                    'vlan_settings': {
+                        'allowed_vlans': f'{vlan_id}',
+                        'class_id': 'fabric.VlanSettings',
+                        'native_vlan': int(vlan_id),
+                        'object_type': 'fabric.VlanSettings'
+                    }
+                }
+                try:
+                    apiPost = api_handle.create_fabric_eth_network_group_policy(policy)
+                    # print(apiPost)
+                    vnic_eth_net_grp = apiPost.moid
+                except ApiException as e:
+                    print("Exception when calling FabricApi->create_fabric_eth_network_group_policy: %s\n" % e)
+                    sys.exit(1)
+
+            # Query the API for the Ethernet Network Control Policies
+            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
+            qargs = dict(filter=query_filter)
+            apiQuery = api_handle.get_fabric_eth_network_control_policy_list(**qargs)
+            empty, eth_control_policies,eth_control_names = process_results(apiQuery)
+            if empty == True: empty_results(apiQuery)
+
+            # Prompt User for the Ethernet Network Control Policy
+            if jsonFile == False:
+                kwargs["multi_select"] = False
+                kwargs["var_description"] = f'Select the Ethernet Network Control Policy for Organization {org}.'
+                kwargs["jsonVars"] = eth_control_names
+                kwargs["defaultVar"] = ''
+                kwargs["varType"] = 'Ethernet Network Control Policies'
+                ethernet_network_control_policy = variablesFromAPI(**kwargs)
+            else:
+                ethernet_network_control_policy = jsonData['ethernet_network_control_policy']
+
+            # Query the API for MAC Pools
+            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
+            qargs = dict(filter=query_filter)
+            api_handle = macpool_api.MacpoolApi(api_client)
+            apiQuery = api_handle.get_macpool_pool_list(**qargs)
+            empty, mac_pools,mac_pools_names = process_results(apiQuery)
+            if empty == True: empty_results(apiQuery)
+
+            # Prompt User for MAC Pool
+            if jsonFile == False:
+                kwargs["var_description"] = f'Select the MAC Pool for Organization {org}.'
+                kwargs["jsonVars"] = mac_pools_names
+                kwargs["defaultVar"] = ''
+                kwargs["varType"] = 'MAC Pool'
+                mac_pool = variablesFromAPI(**kwargs)
+            else:
+                mac_pool = jsonData['mac_pool']
+
+            # Query the API for the Ethernet Adapter Policies
+            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
+            qargs = dict(filter=query_filter)
+            api_handle = vnic_api.VnicApi(api_client)
+            apiQuery = api_handle.get_vnic_eth_adapter_policy_list(**qargs)
+            empty, adapter_policies,adapter_policies_names = process_results(apiQuery)
+            if empty == True: empty_results(apiQuery)
+
+            # Prompt User for Ethernet Adapter Policy
+            if jsonFile == False:
+                kwargs["multi_select"] = False
+                kwargs["var_description"] = f'Select the Ethernet Adapter Policy for Organization {org}.'
+                kwargs["jsonVars"] = adapter_policies_names
+                kwargs["defaultVar"] = ''
+                kwargs["varType"] = 'Ethernet Adapter Policies'
+                ethernet_adapter_policy = variablesFromAPI(**kwargs)
+            else:
+                ethernet_adapter_policy = jsonData['ethernet_adapter_policy']
+
+
+            # Query the API for the Ethernet QoS Policies
+            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
+            qargs = dict(filter=query_filter)
+            apiQuery = api_handle.get_vnic_eth_qos_policy_list(**qargs)
+            empty, qos_policies,qos_policies_names = process_results(apiQuery)
+            if empty == True: empty_results(apiQuery)
+
+            # Prompt User for Ethernet Adapter Policy
+            if jsonFile == False:
+                kwargs["var_description"] = f'Select the Ethernet QoS Policy for Organization {org}.'
+                kwargs["jsonVars"] = qos_policies_names
+                kwargs["defaultVar"] = ''
+                kwargs["varType"] = 'Ethernet QoS Policies'
+                ethernet_qos_policy = variablesFromAPI(**kwargs)
+            else:
+                ethernet_qos_policy = jsonData['ethernet_qos_policy']
+
+
+            # Query the API for the Adapter Policies
+            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
+            qargs = dict(filter=query_filter)
+            apiQuery = api_handle.get_vnic_lan_connectivity_policy_list(**qargs)
+            empty, lan_policies,lan_policies_names = process_results(apiQuery)
+            if empty == True: empty_results(apiQuery)
+
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'    Checking if the LAN Policy {vlan_id} Already Exists.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            lcount = 0
+            for k, v in lan_policies.items():
+                if k == vlan_id:
+                    lcount += 1
+            if lcount == 0:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'    LAN Policy {vlan_id} does not exist.  Creating...')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                policy = {
+                    'class_id':'vnic.LanConnectivityPolicy',
+                    'name': str(vlan_id),
+                    'object_type': 'vnic.LanConnectivityPolicy',
+                    'organization': {
+                        'class_id': 'mo.MoRef',
+                        'moid': orgs[org]['moid'],
+                        'object_type': 'organization.Organization'
+                    },
+                    'tags': tags,
+                    'target_platform': 'FIAttached'
+                    }
+                try:
+                    apiPost = api_handle.create_vnic_lan_connectivity_policy(policy)
+                    # print(apiPost)
+                    lanp = {vlan_id:{'moid':apiPost.moid}}
+                    lan_policies.update(lanp)
+                except ApiException as e:
+                    print("Exception when calling VnicApi->create_vnic_lan_connectivity_policy: %s\n" % e)
+                    sys.exit(1)
+
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print('    Checking if the LAN Connectivity vNIC "NIC-A" Exists...')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            query_filter = f"LanConnectivityPolicy.Moid eq '{lan_policies[vlan_id]['moid']}'"
+            qargs = dict(filter=query_filter)
+            apiQuery = api_handle.get_vnic_eth_if_list(**qargs)
+            empty, vnics, vnic_names = process_results(apiQuery)
+            if empty == True:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f"    vNIC 'NIC-A' was not attached to LAN Policy {vlan_id}.  Creating...")
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                policy = {
+                    'cdn': {
+                        'class_id': 'vnic.Cdn',
+                        'object_type': 'vnic.Cdn',
+                        'source': 'vnic',
+                        'value': 'NIC-A'
+                    },
+                    'class_id': 'vnic.EthIf',
+                    'eth_adapter_policy': {
+                        'class_id': 'mo.MoRef',
+                        'moid': adapter_policies[ethernet_adapter_policy]['moid'],
+                        'object_type': 'vnic.EthAdapterPolicy'
+                    },
+                    'eth_network_policy': None,
+                    'eth_qos_policy': {
+                        'class_id': 'mo.MoRef',
+                        'moid': qos_policies[ethernet_qos_policy]['moid'],
+                        'object_type': 'vnic.EthQosPolicy'
+                    },
+                    'fabric_eth_network_control_policy': {
+                        'class_id': 'mo.MoRef',
+                        'moid': eth_control_policies[ethernet_network_control_policy]['moid'],
+                        'object_type': 'fabric.EthNetworkControlPolicy'
+                    },
+                    'fabric_eth_network_group_policy': [
+                        {
+                            'class_id': 'mo.MoRef',
+                            'moid': vnic_eth_net_grp,
+                            'object_type': 'fabric.EthNetworkGroupPolicy'
+                        }
+                    ],
+                    'failover_enabled': True,
+                    'lan_connectivity_policy': {
+                        'class_id': 'mo.MoRef',
+                        'moid': lan_policies[vlan_id]['moid'],
+                        'object_type': 'vnic.LanConnectivityPolicy'
+                    },
+                    'mac_address_type': 'POOL',
+                    'mac_lease': None,
+                    'mac_pool': {
+                        'class_id': 'mo.MoRef',
+                        'moid': mac_pools[mac_pool]['moid'],
+                        'object_type': 'macpool.Pool'
+                    },
+                    'name': 'NIC-A',
+                    'object_type': 'vnic.EthIf',
+                    'order': 3,
+                    'placement': {
+                        'class_id': 'vnic.PlacementSettings',
+                        'id': 'MLOM',
+                        'object_type': 'vnic.PlacementSettings',
+                        'pci_link': 0,
+                        'switch_id': 'A',
+                        'uplink': 0
+                    },
+                }
+                try:
+                    apiPost = api_handle.create_vnic_eth_if(policy)
+                    print(apiPost)
+                except ApiException as e:
+                    print("Exception when calling VnicApi->create_vnic_lan_connectivity_policy: %s\n" % e)
+                    sys.exit(1)
+
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print('    Finished VLAN Addition...')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
 
     def server_inventory(self, **kwargs):
         args = kwargs['args']
         pyDict = {}
         # Obtain Server Profile Data
         api_client = credentials.config_credentials(home, args)
+        kwargs = dict(top=1000)
         api_handle = server_api.ServerApi(api_client)
-        apiQuery = api_handle.get_server_profile_list()
+        apiQuery = api_handle.get_server_profile_list(**kwargs)
         if apiQuery.results:
             apiResults = apiQuery.results
             for i in apiResults:
@@ -210,5 +592,3 @@ class servers(object):
                         cell.style = 'even'
                 ws_row_count += 1
             wb.save(filename=workbook)
-
-

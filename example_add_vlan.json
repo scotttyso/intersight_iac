@@ -1,0 +1,9 @@
+{
+    "ethernet_adapter_policy":"Windows",
+    "ethernet_network_control_policy":"lldp_enabled",
+    "ethernet_network_group_policies":["ACI"],
+    "ethernet_qos_policy":"Gold",
+    "mac_pool":"FAILOVER",
+    "organizations":["Asgard"],
+    "vlan_policy":"asgard-ucs"
+}
