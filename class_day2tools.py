@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
-from xmlrpc.client import DateTime
 from easy_functions import variablesFromAPI
 from easy_functions import vlan_list_format
 from intersight.api import asset_api
@@ -16,7 +15,6 @@ from intersight.exceptions import ApiException
 from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
 from pathlib import Path
 import credentials
-import datetime
 import json
 import pkg_resources
 import pprint
@@ -31,15 +29,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 pp = pprint.PrettyPrinter(indent=4)
 home = Path.home()
 template_path = pkg_resources.resource_filename('class_vmware', 'Templates/')
-
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, z):
-        if isinstance(z, datetime.datetime):
-            return (str(z))
-        elif type('moTag'):
-            return (str(z))
-        else:
-            return super().default(z)
 
 class intersight(object):
     def __init__(self, type):
@@ -57,7 +46,7 @@ class intersight(object):
         def print_api_class(api_response):
             datastr = str(api_response)
             datastr = datastr.replace('\'', '\"')
-            datastr = datastr.replace(': None,', ': \"None\",')
+            datastr = datastr.replace('None,', 'null,')
             datastr = datastr.replace('False', 'false')
             datastr = datastr.replace('True', 'true')
             ct = re.search('(\"create_time\": )(datetime.datetime\([0-9, ]+tzinfo=tzutc\(\)\))', datastr)
@@ -481,7 +470,7 @@ class intersight(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        print('  Finished VLAN Addition...')
+        print('  Finished Adding VLAN...')
         print(f'\n-------------------------------------------------------------------------------------------\n')
 
     def server_inventory(self, **kwargs):
