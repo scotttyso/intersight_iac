@@ -649,6 +649,9 @@ def sensitive_var_value(jsonData, **templateVars):
                     if password1 == password2:
                         secure_value = password1
                         valid_pass = True
+                    else:
+                        print('!!!Error!!! Sensitive Values did not match.  Please re-enter...')
+
 
             # Validate Sensitive Passwords
             cert_regex = re.compile(r'^\-{5}BEGIN (CERTIFICATE|PRIVATE KEY)\-{5}.*\-{5}END (CERTIFICATE|PRIVATE KEY)\-{5}$')
