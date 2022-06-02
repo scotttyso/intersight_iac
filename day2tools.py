@@ -20,7 +20,7 @@ def main():
     )
     Parser.add_argument(
         '-s', '--api-key-file',
-        default='~/Downloads/SecretKey.txt',
+        default=os.getenv('TF_VAR_secfile'),
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
     )
     Parser.add_argument(
