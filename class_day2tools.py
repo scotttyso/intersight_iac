@@ -43,38 +43,15 @@ class intersight(object):
             jsonData = json.load(jsonOpen)
         tags = [{'key': 'Module','value': 'day2tools'}]
 
-        def print_api_class(api_response):
-            datastr = str(api_response)
-            datastr = datastr.replace('\'', '\"')
-            datastr = datastr.replace('None,', 'null,')
-            datastr = datastr.replace('False', 'false')
-            datastr = datastr.replace('True', 'true')
-            ct = re.search('(\"create_time\": )(datetime.datetime\([0-9, ]+tzinfo=tzutc\(\)\))', datastr)
-            ctime = '%s"%s",' % (ct.group(1), ct.group(2))
-            datastr = re.sub(
-                '\"create_time\": datetime.datetime\([0-9, ]+tzinfo=tzutc\(\)\),',
-                ctime,
-                datastr
-            )
-            mt = re.search('(\"mod_time\": )(datetime.datetime\([0-9, ]+tzinfo=tzutc\(\)\))', datastr)
-            mtime = '%s"%s",' % (mt.group(1), mt.group(2))
-            datastr = re.sub(
-                '\"mod_time\": datetime.datetime\([0-9, ]+tzinfo=tzutc\(\)\),',
-                mtime,
-                datastr
-            )
-            data = json.loads(datastr)
-            print(json.dumps(data, indent=4))
-
         def process_results(apiQuery):
             api_dict = {}
             api_list = []
             empty = False
-            if apiQuery.results:
-                for i in apiQuery.results:
-                    iMoid = i.moid
-                    iName = i.name
-                    idict = {iName:{'moid':iMoid}}
+            if apiQuery.get('Results'):
+                for i in apiQuery['Results']:
+                    iMoid = i['Moid']
+                    iName = i['Name']
+                    idict = {iName:{'Moid':iMoid}}
                     api_dict.update(idict)
                     api_list.append(iName)
                 return empty, api_dict, api_list
@@ -83,7 +60,7 @@ class intersight(object):
                 return empty, api_dict, api_list
         
         def empty_results(apiQuery):
-                print(f'The API Query Results were empty for {apiQuery.object_type}.  Exiting...')
+                print(f'The API Query Results were empty for {apiQuery["ObjectType"]}.  Exiting...')
                 exit()
 
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -106,7 +83,8 @@ class intersight(object):
         # Query API for the Organization List
         api_client = credentials.config_credentials(home, args)
         api_handle = organization_api.OrganizationApi(api_client)
-        apiQuery = api_handle.get_organization_organization_list()
+        kwargs = dict(_preload_content = False)
+        apiQuery = json.loads(api_handle.get_organization_organization_list(**kwargs).data)
         empty, orgs, org_names = process_results(apiQuery)
         if empty == True: empty_results(apiQuery)
 
@@ -126,9 +104,9 @@ class intersight(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             # Query the API for the VLAN Policies
             api_handle = fabric_api.FabricApi(api_client)
-            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
-            qargs = dict(filter=query_filter)
-            apiQuery = api_handle.get_fabric_eth_network_policy_list(**qargs)
+            query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}'"
+            qargs = dict(filter=query_filter, _preload_content = False)
+            apiQuery = json.loads(api_handle.get_fabric_eth_network_policy_list(**qargs).data)
             empty, vlan_policies,vlan_policies_names = process_results(apiQuery)
             if empty == True: empty_results(apiQuery)
 
@@ -146,20 +124,21 @@ class intersight(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Checking VLAN Policy {vlan_policy} for VLAN {vlan_id}.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            vlan_policy_moid = vlan_policies[vlan_policy]['moid']
+            vlan_policy_moid = vlan_policies[vlan_policy]['Moid']
             query_filter = f"EthNetworkPolicy.Moid eq '{vlan_policy_moid}'"
-            kwargs = dict(filter=query_filter,top=1000)
-            apiQuery = api_handle.get_fabric_vlan_list(**kwargs)
-            if apiQuery.results:
-                mcast_policy_moid = apiQuery.results[1]['multicast_policy']['moid']
+            kwargs = dict(filter = query_filter, top = 1000, _preload_content = False)
+            apiQuery = json.loads(api_handle.get_fabric_vlan_list(**kwargs).data)
+            if apiQuery.get('Results'):
+                mcast_policy_moid = apiQuery['Results'][1]['MulticastPolicy']['Moid']
                 match_count = 0
                 vlan_list = []
-                for i in apiQuery.results:
-                    vlan_list.append(i['vlan_id'])
-                    if int(i['vlan_id']) == int(vlan_id):
+                for i in apiQuery['Results']:
+                    print(json.dumps(i, indent=4))
+                    vlan_list.append(i['VlanId'])
+                    if int(i['VlanId']) == int(vlan_id):
                         match_count += 1
                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  VLAN is already in the policy {vlan_policy} and has moid {i["moid"]}.')
+                        print(f'  VLAN is already in the policy {vlan_policy} and has moid {i["Moid"]}.')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                 vlan_list.sort()
                 vlans = vlan_list_format(vlan_list)
@@ -185,16 +164,17 @@ class intersight(object):
                         'vlan_id': int(vlan_id)
                         }
                     try:
-                        apiPost = api_handle.create_fabric_vlan(policy)
-                        print_api_class(apiPost)
+                        kwargs = dict(_preload_content = False)
+                        apiPost = json.loads(api_handle.create_fabric_vlan(policy, **kwargs).data)
+                        print(json.dumps(apiPost, indent=4))
                     except ApiException as e:
                         print("Exception when calling FabricApi->create_fabric_vlan: %s\n" % e)
                         sys.exit(1)
 
             # Query the API for Ethernet Network Group Policies
-            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
-            qargs = dict(filter=query_filter)
-            apiQuery = api_handle.get_fabric_eth_network_group_policy_list(**qargs)
+            query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}'"
+            qargs = dict(filter=query_filter, _preload_content = False)
+            apiQuery = json.loads(api_handle.get_fabric_eth_network_group_policy_list(**qargs).data)
             empty, eth_group_policies,eth_group_policies_names = process_results(apiQuery)
             if empty == True: empty_results(apiQuery)
 
@@ -214,18 +194,20 @@ class intersight(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f"  Patching the Ethernet Network Group Policy '{i}' ...")
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                ethgroup_moid = eth_group_policies[i]['moid']
+                ethgroup_moid = eth_group_policies[i]['Moid']
                 patch_body = {
                     'vlan_settings':{
                         'allowed_vlans':vlans
                     }
                 }
                 try:
-                    apiPatch = api_handle.patch_fabric_eth_network_group_policy(
+                    kwargs = dict(_preload_content = False)
+                    apiPatch = json.loads(api_handle.patch_fabric_eth_network_group_policy(
                         fabric_eth_network_group_policy=patch_body,
-                        moid=ethgroup_moid
-                    )
-                    print_api_class(apiPatch)
+                        moid=ethgroup_moid,
+                        **kwargs
+                    ).data)
+                    print(json.dumps(apiPatch, indent=4))
                 except ApiException as e:
                     print("Exception when calling FabricApi->patch_fabric_eth_network_group_policy: %s\n" % e)
                     sys.exit(1)
@@ -237,7 +219,7 @@ class intersight(object):
             for k, v in eth_group_policies.items():
                 if k == f'{vlan_id}_NIC-A':
                     ethgcount += 1
-                    vnic_eth_net_grp = v['moid']
+                    vnic_eth_net_grp = v['Moid']
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Ethernet Network Group Policy {vlan_id}_NIC-A Exists.  Moid is {vnic_eth_net_grp}')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -252,7 +234,7 @@ class intersight(object):
                     'object_type': 'fabric.EthNetworkGroupPolicy',
                     'organization': {
                         'class_id': 'mo.MoRef',
-                        'moid':  orgs[org]['moid'],
+                        'moid':  orgs[org]['Moid'],
                         'object_type': 'organization.Organization'
                     },
                     'tags': tags,
@@ -264,17 +246,18 @@ class intersight(object):
                     }
                 }
                 try:
-                    apiPost = api_handle.create_fabric_eth_network_group_policy(policy)
-                    print_api_class(apiPost)
-                    vnic_eth_net_grp = apiPost.moid
+                    kwargs = dict(_preload_content = False)
+                    apiPost = json.loads(api_handle.create_fabric_eth_network_group_policy(policy, **kwargs).data)
+                    print(json.dumps(apiPost, indent=4))
+                    vnic_eth_net_grp = apiPost['Moid']
                 except ApiException as e:
                     print("Exception when calling FabricApi->create_fabric_eth_network_group_policy: %s\n" % e)
                     sys.exit(1)
 
             # Query the API for the Ethernet Network Control Policies
-            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
-            qargs = dict(filter=query_filter)
-            apiQuery = api_handle.get_fabric_eth_network_control_policy_list(**qargs)
+            query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}'"
+            qargs = dict(filter=query_filter, _preload_content = False)
+            apiQuery = json.loads(api_handle.get_fabric_eth_network_control_policy_list(**qargs).data)
             empty, eth_control_policies,eth_control_names = process_results(apiQuery)
             if empty == True: empty_results(apiQuery)
 
@@ -290,10 +273,10 @@ class intersight(object):
                 ethernet_network_control_policy = jsonData['ethernet_network_control_policy']
 
             # Query the API for MAC Pools
-            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
-            qargs = dict(filter=query_filter)
+            query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}'"
+            qargs = dict(filter=query_filter, _preload_content = False)
             api_handle = macpool_api.MacpoolApi(api_client)
-            apiQuery = api_handle.get_macpool_pool_list(**qargs)
+            apiQuery = json.loads(api_handle.get_macpool_pool_list(**qargs).data)
             empty, mac_pools,mac_pools_names = process_results(apiQuery)
             if empty == True: empty_results(apiQuery)
 
@@ -308,10 +291,10 @@ class intersight(object):
                 mac_pool = jsonData['mac_pool']
 
             # Query the API for the Ethernet Adapter Policies
-            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
-            qargs = dict(filter=query_filter)
+            query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}'"
+            qargs = dict(filter=query_filter, _preload_content = False)
             api_handle = vnic_api.VnicApi(api_client)
-            apiQuery = api_handle.get_vnic_eth_adapter_policy_list(**qargs)
+            apiQuery = json.loads(api_handle.get_vnic_eth_adapter_policy_list(**qargs).data)
             empty, adapter_policies,adapter_policies_names = process_results(apiQuery)
             if empty == True: empty_results(apiQuery)
 
@@ -328,9 +311,9 @@ class intersight(object):
 
 
             # Query the API for the Ethernet QoS Policies
-            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
-            qargs = dict(filter=query_filter)
-            apiQuery = api_handle.get_vnic_eth_qos_policy_list(**qargs)
+            query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}'"
+            qargs = dict(filter=query_filter, _preload_content = False)
+            apiQuery = json.loads(api_handle.get_vnic_eth_qos_policy_list(**qargs).data)
             empty, qos_policies,qos_policies_names = process_results(apiQuery)
             if empty == True: empty_results(apiQuery)
 
@@ -346,9 +329,9 @@ class intersight(object):
 
 
             # Query the API for the Adapter Policies
-            query_filter = f"Organization.Moid eq '{orgs[org]['moid']}'"
-            qargs = dict(filter=query_filter)
-            apiQuery = api_handle.get_vnic_lan_connectivity_policy_list(**qargs)
+            query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}'"
+            qargs = dict(filter=query_filter, _preload_content = False)
+            apiQuery = json.loads(api_handle.get_vnic_lan_connectivity_policy_list(**qargs).data)
             empty, lan_policies,lan_policies_names = process_results(apiQuery)
             if empty == True: empty_results(apiQuery)
 
@@ -359,7 +342,7 @@ class intersight(object):
             for k, v in lan_policies.items():
                 if k == vlan_id:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  LAN Policy {vlan_id} exists.  Moid is {v["moid"]}')
+                    print(f'  LAN Policy {vlan_id} exists.  Moid is {v["Moid"]}')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     lcount += 1
             if lcount == 0:
@@ -372,16 +355,17 @@ class intersight(object):
                     'object_type': 'vnic.LanConnectivityPolicy',
                     'organization': {
                         'class_id': 'mo.MoRef',
-                        'moid': orgs[org]['moid'],
+                        'moid': orgs[org]['Moid'],
                         'object_type': 'organization.Organization'
                     },
                     'tags': tags,
                     'target_platform': 'FIAttached'
                     }
                 try:
-                    apiPost = api_handle.create_vnic_lan_connectivity_policy(policy)
-                    print_api_class(apiPost)
-                    lanp = {vlan_id:{'moid':apiPost.moid}}
+                    kwargs = dict(_preload_content = False)
+                    apiPost = json.loads(api_handle.create_vnic_lan_connectivity_policy(policy, **kwargs).data)
+                    print(json.dumps(apiPost, indent=4))
+                    lanp = {vlan_id:{'Moid':apiPost['Moid']}}
                     lan_policies.update(lanp)
                 except ApiException as e:
                     print("Exception when calling VnicApi->create_vnic_lan_connectivity_policy: %s\n" % e)
@@ -390,9 +374,9 @@ class intersight(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print('  Checking if the LAN Connectivity vNIC "NIC-A" Exists...')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            query_filter = f"LanConnectivityPolicy.Moid eq '{lan_policies[vlan_id]['moid']}'"
-            qargs = dict(filter=query_filter)
-            apiQuery = api_handle.get_vnic_eth_if_list(**qargs)
+            query_filter = f"LanConnectivityPolicy.Moid eq '{lan_policies[vlan_id]['Moid']}'"
+            qargs = dict(filter=query_filter, _preload_content = False)
+            apiQuery = json.loads(api_handle.get_vnic_eth_if_list(**qargs).data)
             empty, vnics, vnic_names = process_results(apiQuery)
             if empty == True:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -408,18 +392,18 @@ class intersight(object):
                     'class_id': 'vnic.EthIf',
                     'eth_adapter_policy': {
                         'class_id': 'mo.MoRef',
-                        'moid': adapter_policies[ethernet_adapter_policy]['moid'],
+                        'moid': adapter_policies[ethernet_adapter_policy]['Moid'],
                         'object_type': 'vnic.EthAdapterPolicy'
                     },
                     'eth_network_policy': None,
                     'eth_qos_policy': {
                         'class_id': 'mo.MoRef',
-                        'moid': qos_policies[ethernet_qos_policy]['moid'],
+                        'moid': qos_policies[ethernet_qos_policy]['Moid'],
                         'object_type': 'vnic.EthQosPolicy'
                     },
                     'fabric_eth_network_control_policy': {
                         'class_id': 'mo.MoRef',
-                        'moid': eth_control_policies[ethernet_network_control_policy]['moid'],
+                        'moid': eth_control_policies[ethernet_network_control_policy]['Moid'],
                         'object_type': 'fabric.EthNetworkControlPolicy'
                     },
                     'fabric_eth_network_group_policy': [
@@ -432,14 +416,14 @@ class intersight(object):
                     'failover_enabled': True,
                     'lan_connectivity_policy': {
                         'class_id': 'mo.MoRef',
-                        'moid': lan_policies[vlan_id]['moid'],
+                        'moid': lan_policies[vlan_id]['Moid'],
                         'object_type': 'vnic.LanConnectivityPolicy'
                     },
                     'mac_address_type': 'POOL',
                     'mac_lease': None,
                     'mac_pool': {
                         'class_id': 'mo.MoRef',
-                        'moid': mac_pools[mac_pool]['moid'],
+                        'moid': mac_pools[mac_pool]['Moid'],
                         'object_type': 'macpool.Pool'
                     },
                     'name': 'NIC-A',
@@ -455,14 +439,15 @@ class intersight(object):
                     },
                 }
                 try:
-                    apiPost = api_handle.create_vnic_eth_if(policy)
-                    print_api_class(apiPost)
+                    kwargs = dict(_preload_content = False)
+                    apiPost = json.loads(api_handle.create_vnic_eth_if(policy, **kwargs).data)
+                    print(json.dumps(apiPost, indent=4))
                 except ApiException as e:
                     print("Exception when calling VnicApi->create_vnic_lan_connectivity_policy: %s\n" % e)
                     sys.exit(1)
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  LAN Connectivity vNIC "NIC-A" exists.  Moid is {vnics["NIC-A"]["moid"]}')
+                print(f'  LAN Connectivity vNIC "NIC-A" exists.  Moid is {vnics["NIC-A"]["Moid"]}')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -478,85 +463,91 @@ class intersight(object):
         pyDict = {}
         # Obtain Server Profile Data
         api_client = credentials.config_credentials(home, args)
-        kwargs = dict(top=1000)
+        kwargs = dict(top = 1000, _preload_content = False)
         api_handle = server_api.ServerApi(api_client)
-        apiQuery = api_handle.get_server_profile_list(**kwargs)
-        if apiQuery.results:
-            apiResults = apiQuery.results
-            for i in apiResults:
-                profileMoid = i.moid
-                profileName = i.name
-                print(f'Obtaining Data for Server Profile {profileName}')
-                if i.target_platform == 'FIAttached':
-                    if i.associated_server:
-                        api_handle = fcpool_api.FcpoolApi(api_client)
-                        query_filter = f"PoolPurpose eq 'WWNN' and AssignedToEntity.Moid eq '{profileMoid}'"
-                        kwargs = dict(filter=query_filter)
-                        fcPool = api_handle.get_fcpool_lease_list(**kwargs)
-                        wwnn_address = fcPool.results[0].wwn_id
+        apiQuery = json.loads((api_handle.get_server_profile_list(**kwargs)).data)
+        if not apiQuery.get('Results'):
+            print('empty results.  Exiting script...')
+        for i in apiQuery['Results']:
+            profileMoid = i['Moid']
+            profileName = i['Name']
+            print(f'Obtaining Data for Server Profile {profileName}')
+            if i['TargetPlatform'] == 'FIAttached':
+                if i['AssociatedServer']:
+                    api_handle = fcpool_api.FcpoolApi(api_client)
+                    query_filter = f"PoolPurpose eq 'WWNN' and AssignedToEntity.Moid eq '{profileMoid}'"
+                    kwargs = dict(filter = query_filter, _preload_content = False)
+                    fcPool = json.loads(api_handle.get_fcpool_lease_list(**kwargs).data)
+                    wwnn_address = fcPool['Results'][0]['WwnId']
 
-                        # Obtain Physical UCS Server Information
-                        serverMoid = i.associated_server.moid
-                        serverType = i.associated_server.object_type
-                        api_handle = compute_api.ComputeApi(api_client)
-                        if serverType == 'compute.Blade':
-                            apiQuery = api_handle.get_compute_blade_by_moid(serverMoid)
-                            serverDn = 'chassis-' + str(apiQuery.chassis_id) + "/blade-" + str(apiQuery.slot_id)
-                        else:
-                            apiQuery = api_handle.get_compute_rack_unit_by_moid(serverMoid)
-                            serverDn = 'rackunit-' + str(apiQuery.server_id)
-                        serverSerial = apiQuery.serial
-                        api_handle = asset_api.AssetApi(api_client)
-                        serverReg = api_handle.get_asset_device_registration_by_moid(apiQuery.registered_device.moid)
-                        domainParent = api_handle.get_asset_device_registration_by_moid(serverReg.parent_connection.moid)
-                        # Obtain Server vNICs (Ethernet/Fibre-Channel)
+                    # Obtain Physical UCS Server Information
+                    serverMoid = i['AssociatedServer']['Moid']
+                    serverType = i['AssociatedServer']['ObjectType']
+                    api_handle = compute_api.ComputeApi(api_client)
+                    kwargs = dict(_preload_content = False)
+                    if serverType == 'compute.Blade':
+                        apiQuery = json.loads(api_handle.get_compute_blade_by_moid(serverMoid, **kwargs).data)
+                        serverDn = 'chassis-' + str(apiQuery['ChassisId']) + "/blade-" + str(apiQuery['SlotId'])
+                    else:
+                        apiQuery = json.loads(api_handle.get_compute_rack_unit_by_moid(serverMoid, **kwargs).data)
+                        serverDn = 'rackunit-' + str(apiQuery['ServerId'])
+                    serverSerial = apiQuery['Serial']
+                    api_handle = asset_api.AssetApi(api_client)
+                    serverReg = json.loads(api_handle.get_asset_device_registration_by_moid(
+                        apiQuery["RegisteredDevice"]['Moid'], **kwargs).data
+                    )
+                    domainParent = json.loads(api_handle.get_asset_device_registration_by_moid(
+                        serverReg['ParentConnection']['Moid'], **kwargs).data
+                    )
+                    # Obtain Server vNICs (Ethernet/Fibre-Channel)
+                    api_handle = vnic_api.VnicApi(api_client)
+                    query_filter = f"Profile.Moid eq '{profileMoid}'"
+                    kwargs = dict(filter = query_filter, _preload_content = False)
+                    ethapiQuery = json.loads(api_handle.get_vnic_eth_if_list(**kwargs).data)
+                    fcapiQuery  = json.loads(api_handle.get_vnic_fc_if_list(**kwargs).data)
+                    vnics = {}
+                    for item in ethapiQuery['Results']:
+                        vnic_name = item['Name']
+                        mac_address = item['MacAddress']
+                        ngpMoid = item['FabricEthNetworkGroupPolicy'][0]['Moid']
+                        qosMoid = item['EthQosPolicy']['Moid']
                         api_handle = vnic_api.VnicApi(api_client)
-                        query_filter = f"Profile.Moid eq '{profileMoid}'"
-                        kwargs = dict(filter=query_filter)
-                        eth_apiQuery = api_handle.get_vnic_eth_if_list(**kwargs)
-                        fc_apiQuery = api_handle.get_vnic_fc_if_list(**kwargs)
-                        vnics = {}
-                        for item in eth_apiQuery.results:
-                            vnic_name = item['name']
-                            mac_address = item['mac_address']
-                            ngpMoid = item['fabric_eth_network_group_policy'][0].moid
-                            qosMoid = item['eth_qos_policy']['moid']
-                            api_handle = vnic_api.VnicApi(api_client)
-                            qosPolicy = api_handle.get_vnic_eth_qos_policy_by_moid(qosMoid)
-                            mTu = qosPolicy.mtu
-                            vnic = {
-                                vnic_name: {
-                                    'mac_address':mac_address,
-                                    'mtu':mTu,
-                                }
-                            }
-                            vnics.update(vnic)
-
-                        vhbas = {'A':{},'B':{}}
-                        for item in fc_apiQuery.results:
-                            vhba_name = item['name']
-                            if item['wwpn_address_type'] == 'STATIC':
-                                wwpn_address = item['static_wwpn_address']
-                            else:
-                                wwpn_address = item['wwpn']
-                            switch_id = item['placement']['switch_id']
-                            fcnpMoid = item['fc_network_policy'].moid
-                            vhbas[switch_id] = {
-                                'vhba':vhba_name,
-                                'wwpn_address':wwpn_address
-                            }
-                        hostResults = {
-                            profileName:{
-                                'domain_name':domainParent.device_hostname[0],
-                                'moid':profileMoid,
-                                'serial':serverSerial,
-                                'server_dn':serverDn,
-                                'vhbas':vhbas,
-                                'vnics':vnics,
-                                'wwnn':wwnn_address
+                        kwargs = dict(_preload_content = False)
+                        qosPolicy = json.loads(api_handle.get_vnic_eth_qos_policy_by_moid(qosMoid, **kwargs).data)
+                        mTu = qosPolicy['Mtu']
+                        vnic = {
+                            vnic_name: {
+                                'mac_address':mac_address,
+                                'mtu':mTu,
                             }
                         }
-                        pyDict.update(hostResults)
+                        vnics.update(vnic)
+
+                    vhbas = {'A':{},'B':{}}
+                    for item in fcapiQuery['Results']:
+                        vhba_name = item['Name']
+                        if item['WwpnAddressType'] == 'STATIC':
+                            wwpn_address = item['StaticWwpnAddress']
+                        else:
+                            wwpn_address = item['Wwpn']
+                        switch_id = item['Placement']['SwitchId']
+                        fcnpMoid = item['FcNetworkPolicy']['Moid']
+                        vhbas[switch_id] = {
+                            'vhba':vhba_name,
+                            'wwpn_address':wwpn_address
+                        }
+                    hostResults = {
+                        profileName:{
+                            'domain_name':domainParent['DeviceHostname'][0],
+                            'moid':profileMoid,
+                            'serial':serverSerial,
+                            'server_dn':serverDn,
+                            'vhbas':vhbas,
+                            'vnics':vnics,
+                            'wwnn':wwnn_address
+                        }
+                    }
+                    pyDict.update(hostResults)
 
             # print(json.dumps(pyDict, indent=4))
             # Build Named Style Sheets for Workbook

@@ -1,6 +1,6 @@
 argparse
-ipaddress
 intersight
+ipaddress
 jinja2
 simplejson
 lxml
