@@ -1,5 +1,6 @@
+# pip freeze
 argparse
-intersight
+intersight==1.0.9.6484
 ipaddress
 jinja2
 simplejson
@@ -7,7 +8,3 @@ lxml
 openpyxl
 ordered_set
 phonenumbers
-pytz
-requests
-stdiomask
-validators
