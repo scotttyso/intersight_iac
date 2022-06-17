@@ -52,7 +52,11 @@ def main():
     )
     args = Parser.parse_args()
     args.api_key_id = api_key(args)
-    args.api_key_file = api_secret(args)
+    if not args.api_key_file == None:
+        args.api_key_file = api_secret(args)
+    else:
+        args.api_key_file = '~/Downloads/SecretKey.txt'
+        args.api_key_file = api_secret(args)
 
     kwargs = {}
     kwargs['args'] = args

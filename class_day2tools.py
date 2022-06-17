@@ -133,7 +133,6 @@ class intersight(object):
                 match_count = 0
                 vlan_list = []
                 for i in apiQuery['Results']:
-                    print(json.dumps(i, indent=4))
                     vlan_list.append(i['VlanId'])
                     if int(i['VlanId']) == int(vlan_id):
                         match_count += 1
@@ -428,7 +427,7 @@ class intersight(object):
                     },
                     'name': 'NIC-A',
                     'object_type': 'vnic.EthIf',
-                    'order': 3,
+                    'order': 2,
                     'placement': {
                         'class_id': 'vnic.PlacementSettings',
                         'id': 'MLOM',

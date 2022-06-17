@@ -1,4 +1,4 @@
-# pip freeze
+# pip freeze -q -r requirements.txt
 argparse
 intersight==1.0.9.6484
 ipaddress
