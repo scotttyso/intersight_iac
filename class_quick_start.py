@@ -208,8 +208,8 @@ class quick_start(object):
                     templateVars["name"] = name
                     templateVars["descr"] = f'{name} Flow Control Policy'
                     templateVars["priority"] = 'auto'
-                    templateVars["receive"] = 'Enabled'
-                    templateVars["send"] = 'Enabled'
+                    templateVars["receive"] = 'Disabled'
+                    templateVars["send"] = 'Disabled'
 
                     # Write Policies to Template File
                     templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])

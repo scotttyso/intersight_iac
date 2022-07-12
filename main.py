@@ -106,7 +106,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         refs = tree.xpath("//a")
         links = [link.get('href', '') for link in refs]
         for i in links:
-            if re.search(r'/terraform/[1-2]\.[0-9]+\.[0-9]+$', i):
+            if re.search(r'/terraform/[1-2]\.[0-9]+\.[0-9]+/', i):
                 tf_version = re.search(r'/terraform/([1-2]\.[0-9]+\.[0-9]+)', i).group(1)
                 terraform_versions.append(tf_version)
 

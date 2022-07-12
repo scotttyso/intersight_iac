@@ -1106,8 +1106,8 @@ class policies_p1(object):
                 templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
 
                 templateVars["priority"] = 'auto'
-                templateVars["receive"] = 'Enabled'
-                templateVars["send"] = 'Enabled'
+                templateVars["receive"] = 'Disabled'
+                templateVars["send"] = 'Disabled'
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'    description = "{templateVars["descr"]}"')

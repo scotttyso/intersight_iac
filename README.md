@@ -47,9 +47,6 @@ git config --global user.name "<username>"
 git config --global user.email "<email>"
 ```
 
-### Fork this Repository to your own Repository
-
-
 ### Install the Go Compiler - Linux (Ubuntu Example)
 
 ```bash
@@ -117,10 +114,11 @@ Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Co
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 ```
 
-### Clone the Forked Repository to Local Machine
+### Clone this Repository
 
 ```bash
-git clone https://github.com/<your-username>/intersight_iac
+git clone https://github.com/scotttyso/intersight_iac
+cd intersight_iac
 ```
 
 - Install the Requirements File
