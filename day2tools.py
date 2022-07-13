@@ -40,7 +40,7 @@ def main():
     Parser.add_argument(
         '-p', '--process',
         default='server_inventory',
-        help='Which Process to run with the Script.  Options are 1. add_vlan 2. server_inventory.'
+        help='Which Process to run with the Script.  Options are 1. add_vlan 2. server_inventory 3. hcl_status.'
     )
     Parser.add_argument(
         '-u', '--url', default='https://intersight.com',
@@ -63,9 +63,12 @@ def main():
     if args.process == 'server_inventory':
         type = 'server_inventory'
         class_day2tools.intersight(type).server_inventory(**kwargs)
-    if args.process == 'add_vlan':
+    elif args.process == 'add_vlan':
         type = 'add_vlan'
         class_day2tools.intersight(type).add_vlan(**kwargs)
+    elif args.process == 'hcl_status':
+        type = 'hcl_status'
+        class_day2tools.intersight(type).hcl_status(**kwargs)
 
 if __name__ == '__main__':
     main()
