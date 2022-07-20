@@ -1363,7 +1363,10 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **templateVars):
         default_answer = 'N'
     valid = False
     while valid == False:
-        question = input(f'Do you want to configure an {templateVars["port_type"]}?  Enter "Y" or "N" [{default_answer}]: ')
+        if templateVars["port_type"] == 'Server Ports':
+            question = input(f'Do you want to configure {templateVars["port_type"]}?  Enter "Y" or "N" [{default_answer}]: ')
+        else:
+            question = input(f'Do you want to configure an {templateVars["port_type"]}?  Enter "Y" or "N" [{default_answer}]: ')
         if question == 'Y' or (default_answer == 'Y' and question == ''):
             configure_valid = False
             while configure_valid == False:
