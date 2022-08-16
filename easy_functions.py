@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from git import cmd, Repo
 from openpyxl import load_workbook
 from ordered_set import OrderedSet
 import itertools
@@ -7,6 +8,7 @@ import json
 import os
 import platform
 import re
+import shutil
 import subprocess
 import sys
 import stdiomask
@@ -30,6 +32,9 @@ class InvalidArg(Exception):
 class LoginFailed(Exception):
     pass
 
+#======================================================
+# Function - Prompt User for the api_key
+#======================================================
 def api_key(args):
     if args.api_key_id == None:
         key_loop = False
@@ -47,6 +52,9 @@ def api_key(args):
 
     return args.api_key_id
 
+#======================================================
+# Function - Prompt User for the api_secret
+#======================================================
 def api_secret(args):
     secret_loop = False
     while secret_loop == False:
@@ -69,6 +77,9 @@ def api_secret(args):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
     return secret_path
 
+#======================================================
+# Function - Format Policy Description
+#======================================================
 def choose_policy(policy, **templateVars):
 
     if 'policies' in policy:
@@ -96,7 +107,9 @@ def choose_policy(policy, **templateVars):
         policy_short = ""
     return policy_short
 
-# Function to Count the Number of Keys
+#======================================================
+# Function - Count the Number of Keys
+#======================================================
 def countKeys(ws, func):
     count = 0
     for i in ws.rows:
@@ -105,6 +118,9 @@ def countKeys(ws, func):
                 count += 1
     return count
 
+#======================================================
+# Function - Prompt User with question - default No
+#======================================================
 def exit_default_no(policy_type):
     valid_exit = False
     while valid_exit == False:
@@ -123,6 +139,9 @@ def exit_default_no(policy_type):
             print(f'\n------------------------------------------------------\n')
     return configure_loop, policy_loop
 
+#======================================================
+# Function - Prompt User with question - default Yes
+#======================================================
 def exit_default_yes(policy_type):
     valid_exit = False
     while valid_exit == False:
@@ -141,6 +160,9 @@ def exit_default_yes(policy_type):
             print(f'\n------------------------------------------------------\n')
     return configure_loop, policy_loop
 
+#======================================================
+# Function - Prompt User with question
+#======================================================
 def exit_loop_default_yes(loop_count, policy_type):
     valid_exit = False
     while valid_exit == False:
@@ -167,7 +189,9 @@ def exit_loop_default_yes(loop_count, policy_type):
             print(f'\n------------------------------------------------------\n')
     return configure_loop, loop_count, policy_loop
 
-# Function to find the Keys for each Section
+#======================================================
+# Function - find the Keys for each Section
+#======================================================
 def findKeys(ws, func_regex):
     func_list = OrderedSet()
     for i in ws.rows:
@@ -176,7 +200,9 @@ def findKeys(ws, func_regex):
                 func_list.add(str(i[0].value))
     return func_list
 
-# Function to Assign the Variables to the Keys
+#======================================================
+# Function - Assign the Variables to the Keys
+#======================================================
 def findVars(ws, func, rows, count):
     var_list = []
     var_dict = {}
@@ -203,6 +229,9 @@ def findVars(ws, func, rows, count):
         vcount += 1
     return var_dict
 
+#======================================================
+# Function - ipmi_key Function
+#======================================================
 def ipmi_key_function(**templateVars):
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  The ipmi_key Must be in Hexidecimal Format [a-fA-F0-9] and no longer than 40 characters.')
@@ -228,6 +257,9 @@ def ipmi_key_function(**templateVars):
 
     return templateVars["ipmi_key"]
 
+#======================================================
+# Function - Local User Policy
+#======================================================
 def local_users_function(jsonData, easy_jsonData, inner_loop_count, **templateVars):
     local_users = []
     valid_users = False
@@ -332,6 +364,63 @@ def local_users_function(jsonData, easy_jsonData, inner_loop_count, **templateVa
 
     return local_users,user_loop
 
+#======================================================
+# Function - Merge Easy IMM Repository to Dest Folder
+#======================================================
+def merge_easy_imm_repository(args, easy_jsonData, org):
+    baseRepo = args.dir
+
+    # Setup Operating Environment
+    opSystem = platform.system()
+    tfe_dir = 'tfe_modules'
+    if opSystem == 'Windows': path_sep = '\\'
+    else: path_sep = '/'
+    git_url = "https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm"
+    if not os.path.isdir(tfe_dir):
+        os.mkdir(tfe_dir)
+        Repo.clone_from(git_url, tfe_dir)
+    else:
+        g = cmd.Git(tfe_dir)
+        g.pull()
+
+    folder_list = [
+        f'{baseRepo}{path_sep}{org}{path_sep}policies',
+        f'{baseRepo}{path_sep}{org}{path_sep}pools',
+        f'{baseRepo}{path_sep}{org}{path_sep}profiles',
+        f'{baseRepo}{path_sep}{org}{path_sep}ucs_domain_profiles'
+    ]
+
+    removeList = [
+        'data_sources.tf',
+        'locals.tf',
+        'main.tf',
+        'output.tf',
+        'outputs.tf',
+        'provider.tf',
+        'README.md',
+        'variables.tf',
+    ]
+    # Now Loop over the folders and merge the module files
+    module_folders = ['policies', 'pools', 'profiles', 'ucs_domain_profiles']
+    for folder in folder_list:
+        for mod in module_folders:
+            if mod in folder:
+                src_dir = os.path.join(tfe_dir, 'modules', mod)
+                copy_files = os.listdir(src_dir)
+                for fname in copy_files:
+                    if not os.path.isdir(os.path.join(src_dir, fname)):
+                        shutil.copy2(os.path.join(src_dir, fname), folder)
+                
+                # Identify the files 
+                files = easy_jsonData['wizard']['files'][mod]
+                for xRemove in removeList:
+                    if xRemove in files:
+                        files.remove(xRemove)
+                terraform_fmt(files, folder, path_sep)
+
+#======================================================
+# Function - Naming Rule
+#======================================================
 def naming_rule(name_prefix, name_suffix, org):
     if not name_prefix == '':
         name = '%s_%s' % (name_prefix, name_suffix)
@@ -339,6 +428,9 @@ def naming_rule(name_prefix, name_suffix, org):
         name = '%s_%s' % (org, name_suffix)
     return name
 
+#======================================================
+# Function - Naming Rule Fabric Policy
+#======================================================
 def naming_rule_fabric(loop_count, name_prefix, org):
     if loop_count % 2 == 0:
         if not name_prefix == '':
@@ -356,6 +448,9 @@ def naming_rule_fabric(loop_count, name_prefix, org):
             name = 'Fabric_B'
     return name
 
+#======================================================
+# Function - NTP
+#======================================================
 def ntp_alternate():
     valid = False
     while valid == False:
@@ -377,6 +472,9 @@ def ntp_alternate():
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return alternate_ntp
 
+#======================================================
+# Function - NTP
+#======================================================
 def ntp_primary():
     valid = False
     while valid == False:
@@ -1145,6 +1243,48 @@ def syslog_servers(jsonData, **templateVars):
                 print(f'\n------------------------------------------------------\n')
 
     return remote_logging
+
+#======================================================
+# Function to Format Terraform Files
+#======================================================
+def terraform_fmt(files, folder, path_sep):
+    # Create the Empty_variable_maps.auto.tfvars to house all the unused variables
+    empty_auto_tfvars = f'{folder}{path_sep}Empty_variable_maps.auto.tfvars'
+    wr_file = open(empty_auto_tfvars, 'w')
+    wrString = f'#______________________________________________'\
+              '\n#'\
+              '\n# UNUSED Variables'\
+              '\n#______________________________________________\n\n'
+    wr_file.write(wrString)
+    for file in files:
+        varFiles = f"{file.split('.')[0]}.auto.tfvars"
+        dest_file = f'{folder}{path_sep}{varFiles}'
+        if not os.path.isfile(dest_file):
+            x = file.split('.')
+            if re.search('(ndo_sites|ndo_users)', x[0]):
+                wrString = f'{x[0]} = ''[]\n'
+            else:
+                wrString = f'{x[0]} = ''{}\n'
+            wr_file.write(wrString)
+
+    # Close the Unused Variables File
+    wr_file.close()
+
+    # Run terraform fmt to cleanup the formating for all of the auto.tfvar files and tf files if needed
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  Running "terraform fmt" in folder "{folder}",')
+    print(f'  to correct variable formatting!')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    p = subprocess.Popen(
+        ['terraform', 'fmt', folder],
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE
+    )
+    print('Format updated for the following Files:')
+    for line in iter(p.stdout.readline, b''):
+        line = line.decode("utf-8")
+        line = line.strip()
+        print(f'- {line}')
 
 def tfc_sensitive_variables(varValue, jsonData, templateVars):
     templateVars["Variable"] = varValue

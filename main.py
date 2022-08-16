@@ -11,11 +11,6 @@ It uses argparse to take in the following CLI arguments:
     u or url:                The intersight root URL for the api endpoint. (The default is https://intersight.com)
 """
 
-from easy_functions import api_key, api_secret, policies_parse
-from easy_functions import sensitive_var_value, tfc_sensitive_variables
-from easy_functions import varBoolLoop
-from easy_functions import variablesFromAPI
-from easy_functions import varStringLoop
 from class_imm_transition import imm_transition
 from class_pools import pools
 from class_policies_lan import policies_lan
@@ -27,6 +22,10 @@ from class_policies_vxan import policies_vxan
 from class_profiles import profiles
 from class_quick_start import quick_start
 from class_terraform import terraform_cloud
+from easy_functions import api_key, api_secret, policies_parse
+from easy_functions import merge_easy_imm_repository, sensitive_var_value
+from easy_functions import tfc_sensitive_variables, varBoolLoop
+from easy_functions import variablesFromAPI, varStringLoop
 from io import StringIO
 from intersight.api import organization_api
 from intersight.api import resource_api
@@ -36,7 +35,6 @@ from pathlib import Path
 import argparse
 import credentials
 import json
-import subprocess
 import os
 import re
 import platform
@@ -463,221 +461,6 @@ def intersight_org_check(home, org, args):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-
-def merge_easy_imm_repository(easy_jsonData, org):
-    opSystem = platform.system()
-    if os.environ.get('TF_DEST_DIR') is None:
-        tfDir = 'Intersight'
-    else:
-        tfDir = os.environ.get('TF_DEST_DIR')
-
-    if opSystem == 'Windows' and re.search(r'^(.+\\.*[\w\-\.\:\\]+\\|\.\\)$', tfDir):
-        folder_list = [
-            f'{tfDir}{org}\\policies',
-            f'{tfDir}{org}\\pools',
-            f'{tfDir}{org}\\profiles',
-            f'{tfDir}{org}\\ucs_domain_profiles'
-        ]
-    elif opSystem == 'Windows' and re.search(r'^(.+\\.*[\w\-\.\:\\]+|\.\\)$', tfDir):
-        folder_list = [
-            f'{tfDir}\\{org}\\policies',
-            f'{tfDir}\\{org}\\pools',
-            f'{tfDir}\\{org}\\profiles',
-            f'{tfDir}\\{org}\\ucs_domain_profiles'
-        ]
-    elif opSystem == 'Windows' and re.search (r'^\w+', tfDir):
-        folder_list = [
-            f'.\\{tfDir}\\{org}\\policies',
-            f'.\\{tfDir}\\{org}\\pools',
-            f'.\\{tfDir}\\{org}\\profiles',
-            f'.\\{tfDir}\\{org}\\ucs_domain_profiles'
-        ]
-    elif re.search(r'^(/.*[\w\-\.\:\/]+/|\.\..*/)$', tfDir):
-        folder_list = [
-            f'{tfDir}{org}/policies',
-            f'{tfDir}{org}/pools',
-            f'{tfDir}{org}/profiles',
-            f'{tfDir}{org}/ucs_domain_profiles'
-        ]
-    elif re.search(r'^(/.*[\w\-\.\:\/]+|\.\..*[\w\-\.\:\/]+)$', tfDir):
-        folder_list = [
-            f'{tfDir}/{org}/policies',
-            f'{tfDir}/{org}/pools',
-            f'{tfDir}/{org}/profiles',
-            f'{tfDir}/{org}/ucs_domain_profiles'
-        ]
-    elif re.search (r'^\w+', tfDir):
-        folder_list = [
-            f'./{tfDir}/{org}/policies',
-            f'./{tfDir}/{org}/pools',
-            f'./{tfDir}/{org}/profiles',
-            f'./{tfDir}/{org}/ucs_domain_profiles'
-        ]
-    
-    # Get the Latest Release Tag for the terraform-intersight-imm repository
-    url = f'https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm/tags/'
-    r = requests.get(url, stream=True)
-    repoVer = 'BLANK'
-    stringMatch = False
-    while stringMatch == False:
-        for line in r.iter_lines():
-            toString = line.decode("utf-8")
-            if re.search('/releases/tag/(\d+\.\d+\.\d+)', toString):
-                repoVer = re.search('/releases/tag/(\d+\.\d+\.\d+)', toString).group(1)
-                break
-        stringMatch = True
-
-    for folder in folder_list:
-
-        folderVer = "0.0.0"
-        if opSystem == 'Windows':
-            if os.path.isfile(f'{folder}\\version.txt'):
-                with open(f'{folder}\\version.txt') as f:
-                    folderVer = f.readline().rstrip()
-        else:
-            if os.path.isfile(f'{folder}/version.txt'):
-                with open(f'{folder}/version.txt') as f:
-                    folderVer = f.readline().rstrip()
-
-        if os.path.isdir(folder):
-            if opSystem == 'Windows':
-                folder_length = len(folder.split('\\'))
-                folder_type = folder.split('\\')[folder_length -1]
-            else:
-                folder_length = len(folder.split('/'))
-                folder_type = folder.split('/')[folder_length -1]
-            files = easy_jsonData['wizard']['files'][folder_type]
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'\n  Beginning Easy IMM Module Downloads for "{folder}"\n')
-
-            for file in files:
-                if opSystem == 'Windows':
-                    dest_file = f'{folder}\\{file}'
-                else:
-                    dest_file = f'{folder}/{file}'
-                if not os.path.isfile(dest_file):
-                    print(f'  Downloading "{file}"')
-                    url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
-                    r = requests.get(url)
-                    open(dest_file, 'wb').write(r.content)
-                    print(f'  "{file}" Download Complete!\n')
-                else:
-                    if opSystem == 'Windows':
-                        if not os.path.isfile(f'{folder}\\version.txt'):
-                            print(f'  Downloading "{file}"')
-                            url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
-                            r = requests.get(url)
-                            open(dest_file, 'wb').write(r.content)
-                            print(f'  "{file}" Download Complete!\n')
-                        elif not os.path.isfile(f'{folder}\\version.txt'):
-                            print(f'  Downloading "{file}"')
-                            url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
-                            r = requests.get(url)
-                            open(dest_file, 'wb').write(r.content)
-                            print(f'  "{file}" Download Complete!\n')
-                        elif os.path.isfile(f'{folder}\\version.txt'):
-                            if not folderVer == repoVer:
-                                print(f'  Downloading "{file}"')
-                                url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
-                                r = requests.get(url)
-                                open(dest_file, 'wb').write(r.content)
-                                print(f'  "{file}" Download Complete!\n')
-                    else:
-                        if not os.path.isfile(f'{folder}/version.txt'):
-                            print(f'  Downloading "{file}"')
-                            url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
-                            r = requests.get(url)
-                            open(dest_file, 'wb').write(r.content)
-                            print(f'  "{file}" Download Complete!\n')
-                        elif not os.path.isfile(f'{folder}/version.txt'):
-                            print(f'  Downloading "{file}"')
-                            url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
-                            r = requests.get(url)
-                            open(dest_file, 'wb').write(r.content)
-                            print(f'  "{file}" Download Complete!\n')
-                        elif os.path.isfile(f'{folder}/version.txt'):
-                            if not folderVer == repoVer:
-                                print(f'  Downloading "{file}"')
-                                url = f'https://raw.github.com/terraform-cisco-modules/terraform-intersight-easy-imm/master/modules/{folder_type}/{file}'
-                                r = requests.get(url)
-                                open(dest_file, 'wb').write(r.content)
-                                print(f'  "{file}" Download Complete!\n')
-
-            if not os.path.isfile(f'{folder}/version.txt'):
-                print(f'* Creating the repo "terraform-intersight-easy-imm" version check file\n "{folder}/version.txt"')
-                open(f'{folder}/version.txt', 'w').write('%s\n' % (repoVer))
-            elif not folderVer == repoVer:
-                print(f'* Updating the repo "terraform-intersight-easy-imm" version check file\n "{folder}/version.txt"')
-                open(f'{folder}/version.txt', 'w').write('%s\n' % (repoVer))
-
-            print(f'\n  Completed Easy IMM Module Downloads for "{folder}"')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-
-    for folder in folder_list:
-        if os.path.isdir(folder):
-            if opSystem == 'Windows':
-                folder_length = len(folder.split('\\'))
-                folder_type = folder.split('\\')[folder_length -1]
-            else:
-                folder_length = len(folder.split('/'))
-                folder_type = folder.split('/')[folder_length -1]
-            files = easy_jsonData['wizard']['files'][folder_type]
-            removeList = [
-                'data_sources.tf',
-                'locals.tf',
-                'main.tf',
-                'output.tf',
-                'outputs.tf',
-                'provider.tf',
-                'README.md',
-                'variables.tf',
-            ]
-            for xRemove in removeList:
-                if xRemove in files:
-                    files.remove(xRemove)
-            for file in files:
-                varFiles = f"{file.split('.')[0]}.auto.tfvars"
-                if opSystem == 'Windows':
-                    dest_file = f'{folder}\\{varFiles}'
-                else:    
-                    dest_file = f'{folder}/{varFiles}'
-                if not os.path.isfile(dest_file):
-                    wr_file = open(dest_file, 'w')
-                    x = file.split('.')
-                    x2 = x[0].split('_')
-                    varList = []
-                    for var in x2:
-                        var = var.capitalize()
-                        if var == 'Policies':
-                            var = 'Policy'
-                        elif var == 'Pools':
-                            var = 'Pool'
-                        elif var == 'Profiles':
-                            var = 'Profile'
-                        varList.append(var)
-                    varDescr = ' '.join(varList)
-                    varDescr = varDescr + ' Variables'
-
-                    wrString = f'#______________________________________________\n#\n# {varDescr}\n'\
-                        '#______________________________________________\n'\
-                        '\n%s = {\n}\n' % (file.split('.')[0])
-                    wr_file.write(wrString)
-                    wr_file.close()
-
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Running "terraform fmt" in folder "{folder}",')
-            print(f'  to correct variable formatting!')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            p = subprocess.Popen(
-                ['terraform', 'fmt', folder],
-                stdout = subprocess.PIPE,
-                stderr = subprocess.PIPE
-            )
-            print('Format updated for the following Files:')
-            for line in iter(p.stdout.readline, b''):
-                line = line.decode("utf-8")
-                line = line.strip()
-                print(f'- {line}')
 
 def process_imm_transition(json_data):
     print(f'\n---------------------------------------------------------------------------------------\n')
@@ -1299,13 +1082,25 @@ def main():
             json_file = args.json_file
             json_open = open(json_file, 'r')
             json_data = json.load(json_open)
+            device_type = json_data['easyucs']['metadata'][0]['device_type']
+            if not device_type == 'intersight':
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  !!ERROR!!')
+                print(f'  The File "{args.json_file}" device_type is "{device_type}".')
+                print(f'  This file is the UCSM Configuration converted from XML to JSON.')
+                print(f'  The device_type is found on line 10 of the json config file.')
+                print(f'  The Script is looking for the file that has been converted to Intersight Managed Mode.')
+                print(f'  The JSON file should be downloaded at the last step of the IMM Transition tool where the')
+                print(f'  API Key and Secret would be entered to upload to Intersight.  Exiting Wizard.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                exit()
             orgs = process_imm_transition(json_data)
     else:
         org = process_wizard(easy_jsonData, jsonData)
         orgs = []
         orgs.append(org)
     for org in orgs:
-        merge_easy_imm_repository(easy_jsonData, org)
+        merge_easy_imm_repository(args, easy_jsonData, org)
         create_terraform_workspaces(jsonData, easy_jsonData, org)
         intersight_org_check(home, org, args)
 

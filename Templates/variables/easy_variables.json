@@ -276,6 +276,7 @@
                 "ethernet_network_group_policies.tf",
                 "ethernet_network_policies.tf",
                 "ethernet_qos_policies.tf",
+                "fc_zone_policies.tf",
                 "fibre_channel_adapter_policies.tf",
                 "fibre_channel_network_policies.tf",
                 "fibre_channel_qos_policies.tf",
