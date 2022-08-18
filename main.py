@@ -48,20 +48,44 @@ home = Path.home()
 def create_terraform_workspaces(jsonData, easy_jsonData, org):
     opSystem = platform.system()
     tfcb_config = []
-    valid = False
-    while valid == False:
-        templateVars = {}
-        templateVars["Description"] = f'Terraform Cloud Workspaces for Organization {org}'
-        templateVars["varInput"] = f'Do you want to Proceed with creating Workspaces in Terraform Cloud?'
-        templateVars["varDefault"] = 'Y'
-        templateVars["varName"] = 'Terraform Cloud Workspaces'
-        runTFCB = varBoolLoop(**templateVars)
-        valid = True
+    templateVars = {}
+    templateVars["Description"] = f'Terraform Cloud Workspaces for Organization {org}'
+    templateVars["varInput"] = f'Do you want to Proceed with creating Workspaces in Terraform Cloud or Enterprise?'
+    templateVars["varDefault"] = 'Y'
+    templateVars["varName"] = 'Terraform Cloud Workspaces'
+    runTFCB = varBoolLoop(**templateVars)
     if runTFCB == True:
-        templateVars = {}
+        kwargs = {}
+        kwargs["multi_select"] = True
+        kwargs["var_description"] = f'Select the Terraform Target.'
+        kwargs["jsonVars"] = ['Terraform Cloud', 'Terraform Enterprise']
+        kwargs["defaultVar"] = 'Terraform Cloud'
+        kwargs["varType"] = 'Target'
+        terraform_target = variablesFromAPI(**kwargs)
+
+        if terraform_target == 'Terraform Enterprise':
+            templateVars["Description"] = f'Hostname of the Terraform Enterprise Instance'
+            templateVars["varDefault"] = f'app.terraform.io'
+            templateVars["varInput"] = f'What is the Hostname of the TFE Instance? [app.terraform.io]: '
+            templateVars["varName"] = f'Terraform Target Name'
+            templateVars["varRegex"] = '^[a-zA-Z0-9\\-\\.\\:]+$'
+            templateVars["minLength"] = 1
+            templateVars["maxLength"] = 90
+            templateVars["tfc_host"] = varStringLoop(**templateVars)
+            if re.search(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", templateVars["tfc_host"]):
+                validating.ip_address('Terraform Target', templateVars["tfc_host"])
+            elif ':' in templateVars["tfc_host"]:
+                validating.ip_address('Terraform Target', templateVars["tfc_host"])
+            else:
+                validating.dns_name('Terraform Target', templateVars["tfc_host"])
+        else:
+            templateVars['tfc_host'] = 'app.terraform.io'
+
+        #templateVars = {}
         templateVars["terraform_cloud_token"] = terraform_cloud().terraform_token()
         
         # Obtain Terraform Cloud Organization
+        print(templateVars)
         if os.environ.get('tfc_organization') is None:
             templateVars["tfc_organization"] = terraform_cloud().tfc_organization(**templateVars)
             os.environ['tfc_organization'] = templateVars["tfc_organization"]

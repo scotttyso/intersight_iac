@@ -3,12 +3,12 @@
 from datetime import datetime
 from easy_functions import variablesFromAPI
 from easy_functions import vlan_list_format
-# from intersight.api import access_api
-# from intersight.api import adapter_api
+from intersight.api import access_api
+from intersight.api import adapter_api
 from intersight.api import asset_api
-# from intersight.api import bios_api
-# from intersight.api import boot_api
-# from intersight.api import certificatemanagement_api
+from intersight.api import bios_api
+from intersight.api import boot_api
+from intersight.api import certificatemanagement_api
 from intersight.api import compute_api
 from intersight.api import cond_api
 from intersight.api import deviceconnector_api
@@ -34,7 +34,6 @@ from intersight.api import syslog_api
 from intersight.api import vmedia_api
 from intersight.api import vnic_api
 from intersight.exceptions import ApiException
-from operator import itemgetter
 from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
 from pathlib import Path
 import credentials
@@ -144,7 +143,7 @@ class intersight_api(object):
 
             # Query API for the List of Policies
             policy_api = easy_jsonData['components']['schemas']['api_calls']['allOf'][1]['properties'][policy_type]
-            api_handle = eval(f"intersight.api.{policy_api['enum'][0]}(api_client)")
+            api_handle = eval(f"{policy_api['enum'][0]}(api_client)")
             print(api_handle)
             query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}'"
             kwargs = dict(filter=query_filter, _preload_content = False)

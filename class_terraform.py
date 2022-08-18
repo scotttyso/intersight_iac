@@ -63,7 +63,7 @@ class terraform_cloud(object):
             # Request the TF_VAR_terraform_cloud_token Value from the User
             while True:
                 try:
-                    secure_value = stdiomask.getpass(prompt=f'Enter the value for the Terraform Cloud Token: ')
+                    secure_value = stdiomask.getpass(prompt=f'Enter the value for the Terraform Enterprise/Cloud Token: ')
                     break
                 except Exception as e:
                     print('Something went wrong. Error received: {}'.format(e))
@@ -80,7 +80,7 @@ class terraform_cloud(object):
         #-------------------------------
         # Configure the Variables URL
         #-------------------------------
-        url = 'https://app.terraform.io/api/v2/organizations'
+        url = f'https://{templateVars["tfc_host"]}/api/v2/organizations'
         tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
@@ -120,7 +120,8 @@ class terraform_cloud(object):
         # Configure the Variables URL
         #-------------------------------
         oauth_token = templateVars["tfc_oath_token"]
-        url = 'https://app.terraform.io/api/v2/oauth-tokens/%s/authorized-repos?oauth_token_id=%s' % (oauth_token, oauth_token)
+        tfc_host = templateVars["tfc_host"]
+        url = f'https://{tfc_host}/api/v2/oauth-tokens/{oauth_token}/authorized-repos?oauth_token_id={oauth_token}'
         tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
@@ -160,7 +161,9 @@ class terraform_cloud(object):
         #-------------------------------
         # Configure the Variables URL
         #-------------------------------
-        url = 'https://app.terraform.io/api/v2/organizations/%s/oauth-clients' % (templateVars["tfc_organization"])
+        tfc_host = templateVars["tfc_host"]
+        tfc_organization = templateVars["tfc_organization"]
+        url = f'https://{tfc_host}/api/v2/organizations/{tfc_organization}/oauth-clients'
         tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
@@ -216,7 +219,10 @@ class terraform_cloud(object):
         #-------------------------------
         # Configure the Workspace URL
         #-------------------------------
-        url = 'https://app.terraform.io/api/v2/organizations/%s/workspaces/%s' %  (templateVars['tfc_organization'], templateVars['workspaceName'])
+        tfc_host = templateVars["tfc_host"]
+        tfc_organization = templateVars["tfc_organization"]
+        workspaceName = templateVars['workspaceName']
+        url = f'https://{tfc_host}/api/v2/organizations/{tfc_organization}/workspaces/{workspaceName}'
         tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
@@ -263,7 +269,7 @@ class terraform_cloud(object):
             #-------------------------------
             # Get Workspaces the Workspace URL
             #-------------------------------
-            url = 'https://app.terraform.io/api/v2/organizations/%s/workspaces/' %  (templateVars['tfc_organization'])
+            url = f'https://{tfc_host}/api/v2/organizations/{tfc_organization}/workspaces/'
             tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
             tf_header = {'Authorization': tf_token,
                     'Content-Type': 'application/vnd.api+json'
@@ -290,7 +296,7 @@ class terraform_cloud(object):
             #-----------------------------------
             # Configure the PATCH Variables URL
             #-----------------------------------
-            url = 'https://app.terraform.io/api/v2/workspaces/%s/' %  (workspace_id)
+            url = f'https://{tfc_host}/api/v2/workspaces/{workspace_id}/'
             tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
             tf_header = {'Authorization': tf_token,
                     'Content-Type': 'application/vnd.api+json'
@@ -326,7 +332,10 @@ class terraform_cloud(object):
         #-------------------------------
         # Configure the Workspace URL
         #-------------------------------
-        url = 'https://app.terraform.io/api/v2/organizations/%s/workspaces/%s' %  (templateVars['tfc_organization'], templateVars['workspaceName'])
+        tfc_host = templateVars["tfc_host"]
+        tfc_organization = templateVars["tfc_organization"]
+        workspaceName = templateVars['workspaceName']
+        url = f'https://{tfc_host}/api/v2/organizations/{tfc_organization}/workspaces/{workspaceName}'
         tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
@@ -346,18 +355,18 @@ class terraform_cloud(object):
         # print(json.dumps(json_data, indent = 4))
         if response.status_code == 200:
             print(f'\n-----------------------------------------------------------------------------\n')
-            print(f'    Successfully Deleted Workspace "{templateVars["workspaceName"]}".')
+            print(f'    Successfully Deleted Workspace "{workspaceName}".')
             print(f'\n-----------------------------------------------------------------------------\n')
             del_count =+ 1
         elif response.status_code == 204:
             print(f'\n-----------------------------------------------------------------------------\n')
-            print(f'    Successfully Deleted Workspace "{templateVars["workspaceName"]}".')
+            print(f'    Successfully Deleted Workspace "{workspaceName}".')
             print(f'\n-----------------------------------------------------------------------------\n')
             del_count =+ 1
 
         if not del_count > 0:
             print(f'\n-----------------------------------------------------------------------------\n')
-            print(f'    Unable to Determine the Workspace ID for "{templateVars["workspaceName"]}".')
+            print(f'    Unable to Determine the Workspace ID for "{workspaceName}".')
             print(f'\n-----------------------------------------------------------------------------\n')
             # exit()
 
@@ -367,7 +376,9 @@ class terraform_cloud(object):
         #-------------------------------
         # Configure the Variables URL
         #-------------------------------
-        url = 'https://app.terraform.io/api/v2/workspaces/%s/vars' %  (templateVars['workspace_id'])
+        tfc_host = templateVars["tfc_host"]
+        workspace_id = templateVars['workspace_id']
+        url = f'https://{tfc_host}/api/v2/workspaces/{workspace_id}/vars'
         tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
@@ -417,7 +428,7 @@ class terraform_cloud(object):
             #-----------------------------------
             # Configure the PATCH Variables URL
             #-----------------------------------
-            url = 'https://app.terraform.io/api/v2/workspaces/%s/vars/%s' %  (templateVars['workspace_id'], var_id)
+            url = f'https://{tfc_host}/api/v2/workspaces/{workspace_id}/vars/{var_id}'
             tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
             tf_header = {'Authorization': tf_token,
                     'Content-Type': 'application/vnd.api+json'
