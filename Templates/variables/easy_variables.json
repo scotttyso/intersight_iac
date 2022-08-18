@@ -1,4 +1,341 @@
 {
+    "components": {
+        "schemas": {
+            "api_calls": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "Adapter Configuration": {
+                                "description": "List of API Calls for Adapter Configuration Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "adapter_api.AdapterApi",
+                                    "get_adapter_config_policy_list",
+                                    "adapter.ConfigPolicy",
+                                    "adapter/ConfigPolicies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "BIOS": {
+                                "description": "List of API Calls for BIOS Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "bios_api.BiosApi",
+                                    "get_bios_policy_list",
+                                    "bios.Policy",
+                                    "bios/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Boot Order": {
+                                "description": "List of API Calls for Boot Order Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "boot_api.BootApi",
+                                    "get_boot_precision_policy_list",
+                                    "boot.PrecisionPolicy",
+                                    "boot/PrecisionPolicies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Certificate Management": {
+                                "description": "List of API Calls for Certificate Management Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "certificatemanagement_api.CertificatemanagementApi",
+                                    "get_certificatemanagement_policy_list",
+                                    "certificatemanagement.Policy",
+                                    "certificatemanagement/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Device Connector": {
+                                "description": "List of API Calls for Device Connector Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "deviceconnector_api.DeviceconnectorApi",
+                                    "get_deviceconnector_policy_list",
+                                    "deviceconnector.Policy",
+                                    "deviceconnector/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "IMC Access": {
+                                "description": "List of API Calls for IMC Access Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "access_api.AccessApi",
+                                    "get_access_policy_list",
+                                    "access.Policy",
+                                    "access/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "IPMI Over LAN": {
+                                "description": "List of API Calls for IPMI Over LAN Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "ipmioverlan_api.IpmioverlanApi",
+                                    "get_ipmioverlan_policy_list",
+                                    "ipmioverlan.Policy",
+                                    "ipmioverlan/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "LAN Connectivity": {
+                                "description": "List of API Calls for LAN Connectivity Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "vnic_api.VnicApi",
+                                    "get_vnic_lan_connectivity_policy_list",
+                                    "vnic.LanConnectivityPolicy",
+                                    "vnic/LanConnectivityPolicies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "LDAP": {
+                                "description": "List of API Calls for LDAP Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "iam_api.IamApi",
+                                    "get_iam_ldap_policy_list",
+                                    "iam.LdapPolicy",
+                                    "iam/LdapPolicies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Local User": {
+                                "description": "List of API Calls for Local User Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "iam_api.IamApi",
+                                    "get_iam_end_point_user_policy_list",
+                                    "iam.EndPointUserPolicy",
+                                    "iam/EndPointUserPolicies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Network Connectivity": {
+                                "description": "List of API Calls for Network Connectivity Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "networkconfig_api.NetworkconfigApi",
+                                    "get_networkconfig_policy_list",
+                                    "networkconfig.Policy",
+                                    "networkconfig/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "NTP": {
+                                "description": "List of API Calls for NTP Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "ntp_api.NtpApi",
+                                    "get_ntp_policy_list",
+                                    "ntp.Policy",
+                                    "ntp/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Persistent Memory": {
+                                "description": "List of API Calls for Persistent Memory Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "memory_api.MemoryApi",
+                                    "get_memory_persistent_memory_policy_list",
+                                    "memory.PersistentMemoryPolicy",
+                                    "memory/PersistentMemoryPolicies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Power": {
+                                "description": "List of API Calls for Power Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "power_api.PowerApi",
+                                    "get_power_policy_list",
+                                    "power.Policy",
+                                    "power/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "SAN Connectivity": {
+                                "description": "List of API Calls for SAN Connectivity Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "vnic_api.VnicApi",
+                                    "get_vnic_san_connectivity_policy_list",
+                                    "vnic.SanConnectivityPolicy",
+                                    "vnic/SanConnectivityPolicies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "SD Card": {
+                                "description": "List of API Calls for SD Card Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "sdcard_api.SdcardApi",
+                                    "get_sdcard_policy_list",
+                                    "MISSING",
+                                    "MISSING"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Serial Over LAN": {
+                                "description": "List of API Calls for Serial Over LAN Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "sol_api.SolApi",
+                                    "get_sol_policy_list",
+                                    "sol.Policy",
+                                    "syslog/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "SMTP": {
+                                "description": "List of API Calls for SMTP Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "smtp_api.SmtpApi",
+                                    "get_smtp_policy_list",
+                                    "smtp.Policy",
+                                    "smtp/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "SNMP": {
+                                "description": "List of API Calls for SNMP Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "snmp_api.SnmpApi",
+                                    "get_snmp_policy_list",
+                                    "snmp.Policy",
+                                    "snmp/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "SSH": {
+                                "description": "List of API Calls for SSH Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "ssh_api.SshApi",
+                                    "get_ssh_policy_list",
+                                    "ssh.Policy",
+                                    "ssh/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Storage": {
+                                "description": "List of API Calls for Storage Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "storage_api.StorageApi",
+                                    "get_storage_storage_policy_list",
+                                    "storage.StoragePolicy",
+                                    "bios/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Syslog": {
+                                "description": "List of API Calls for Syslog Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "syslog_api.SyslogApi",
+                                    "get_syslog_policy_list",
+                                    "syslog.Policy",
+                                    "syslog/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Virtual KVM": {
+                                "description": "List of API Calls for Virtual KVM Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "kvm_api.KvmApi",
+                                    "get_kvm_policy_list",
+                                    "kvm.Policy",
+                                    "kvm/Policies"
+                                ],
+                                "x-omitempty": true
+                            },
+                            "Virtual Media": {
+                                "description": "List of API Calls for Virtual Media Policies.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "vmedia_api.VmediaApi",
+                                    "get_vmedia_policy_list",
+                                    "vmedia.Policy",
+                                    "vmedia/Policies"
+                                ],
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "policies": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "FIAttached": {
+                                "description": "List of Policies for an FIAttached Profile.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "BIOS",
+                                    "Boot Order",
+                                    "Certificate Management",
+                                    "IMC Access",
+                                    "IPMI Over LAN",
+                                    "LAN Connectivity",
+                                    "Local User",
+                                    "Persistent Memory",
+                                    "Power",
+                                    "SAN Connectivity",
+                                    "SD Card",
+                                    "Serial Over LAN",
+                                    "SNMP",
+                                    "Storage",
+                                    "Syslog",
+                                    "Virtual KVM",
+                                    "Virtual Media"
+                                ],
+                                "default": "BIOS",
+                                "x-omitempty": true
+                            },
+                            "Standalone": {
+                                "enum": [
+                                    "Adapter Configuration",
+                                    "BIOS",
+                                    "Boot Order",
+                                    "Device Connector",
+                                    "IMC Access",
+                                    "IPMI Over LAN",
+                                    "LAN Connectivity",
+                                    "LDAP",
+                                    "Local User",
+                                    "Network Connectivity",
+                                    "NTP",
+                                    "Persistent Memory",
+                                    "SAN Connectivity",
+                                    "SD Card",
+                                    "Serial Over LAN",
+                                    "SMTP",
+                                    "SNMP",
+                                    "SSH",
+                                    "Storage",
+                                    "Syslog",
+                                    "Virtual KVM",
+                                    "Virtual Media"
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
     "pools":{
         "resourcepool.Pool":{
             "server_type":{

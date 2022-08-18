@@ -3,16 +3,38 @@
 from datetime import datetime
 from easy_functions import variablesFromAPI
 from easy_functions import vlan_list_format
+# from intersight.api import access_api
+# from intersight.api import adapter_api
 from intersight.api import asset_api
+# from intersight.api import bios_api
+# from intersight.api import boot_api
+# from intersight.api import certificatemanagement_api
 from intersight.api import compute_api
 from intersight.api import cond_api
+from intersight.api import deviceconnector_api
 from intersight.api import fabric_api
 from intersight.api import fcpool_api
+from intersight.api import iam_api
+from intersight.api import ipmioverlan_api
+from intersight.api import kvm_api
 from intersight.api import macpool_api
+from intersight.api import memory_api
+from intersight.api import networkconfig_api
+from intersight.api import ntp_api
 from intersight.api import organization_api
+from intersight.api import power_api
+from intersight.api import sdcard_api
 from intersight.api import server_api
+from intersight.api import smtp_api
+from intersight.api import snmp_api
+from intersight.api import sol_api
+from intersight.api import ssh_api
+from intersight.api import storage_api
+from intersight.api import syslog_api
+from intersight.api import vmedia_api
 from intersight.api import vnic_api
 from intersight.exceptions import ApiException
+from operator import itemgetter
 from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
 from pathlib import Path
 import credentials
@@ -31,9 +53,190 @@ pp = pprint.PrettyPrinter(indent=4)
 home = Path.home()
 template_path = pkg_resources.resource_filename('class_vmware', 'Templates/')
 
-class intersight(object):
+class intersight_api(object):
     def __init__(self, type):
         self.type = type
+
+    def add_policies(self, **kwargs):
+        args = kwargs['args']
+        jsonArg = False
+        jsonFile = 'Templates/variables/easy_variables.json'
+        jsonOpen = open(jsonFile, 'r')
+        easy_jsonData = json.load(jsonOpen)
+        jsonOpen.close()
+
+        if not args.json_file == None:
+            jsonArg = True
+            jsonOpen = open(args.json_file, 'r')
+            jsonData = json.load(jsonOpen)
+        tags = [{'key': 'Module','value': 'day2tools'}]
+
+        def process_results(apiQuery):
+            api_dict = {}
+            api_list = []
+            empty = False
+            if apiQuery.get('Results'):
+                for i in apiQuery['Results']:
+                    iMoid = i['Moid']
+                    iName = i['Name']
+                    idict = {iName:{'Moid':iMoid}}
+                    api_dict.update(idict)
+                    api_list.append(iName)
+                return empty, api_dict, api_list
+            else:
+                empty = True
+                return empty, api_dict, api_list
+        
+        def empty_results(apiQuery):
+                print(f'The API Query Results were empty for {apiQuery["ObjectType"]}.  Exiting...')
+                exit()
+
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print('  Beginning Policy Append to Profiles...')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        # Determine if the Profiles are for FI-attached or Standalone Servers
+        if jsonArg == False:
+            kwargs["multi_select"] = False
+            kwargs["var_description"] = 'Select the Profile Type.'
+            kwargs["jsonVars"] = ['FIAttached', 'Standalone']
+            kwargs["defaultVar"] = 'FIAttached'
+            kwargs["varType"] = 'Profile Type'
+            profile_type = variablesFromAPI(**kwargs)
+        else:
+            profile_type = jsonData['profile_type']
+
+        # Prompt User for the Type of Policy to Attach to the Profiles
+        if jsonArg == False:
+            policy_list = easy_jsonData['components']['schemas']['policies']['allOf'][1]['properties'][profile_type]
+            kwargs["multi_select"] = False
+            kwargs["var_description"] = 'Select the Policy Type.'
+            kwargs["jsonVars"] = policy_list['enum']
+            kwargs["defaultVar"] = policy_list['default']
+            kwargs["varType"] = 'Policy Type'
+            policy_type = variablesFromAPI(**kwargs)
+        else:
+            policy_type = jsonData['policy_type']
+
+        # Query API for the Organization List
+        api_client = credentials.config_credentials(home, args)
+        api_handle = organization_api.OrganizationApi(api_client)
+        kwargs = dict(_preload_content = False)
+        apiQuery = json.loads(api_handle.get_organization_organization_list(**kwargs).data)
+        empty, orgs, org_names = process_results(apiQuery)
+        if empty == True: empty_results(apiQuery)
+
+        # Request from User Which Organizations to Apply this to if not provided with jsonArg.
+        if jsonArg == False:
+            kwargs["multi_select"] = True
+            kwargs["var_description"] = f'Select the Organizations to Apply the {policy_type} to.'
+            kwargs["jsonVars"] = org_names
+            kwargs["defaultVar"] = 'default'
+            kwargs["varType"] = 'Organizations'
+            organizations = variablesFromAPI(**kwargs)
+        else:
+            organizations = jsonData['organizations']
+
+        for org in organizations:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Starting Loop on Organization {org}.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+
+            # Query API for the List of Policies
+            policy_api = easy_jsonData['components']['schemas']['api_calls']['allOf'][1]['properties'][policy_type]
+            api_handle = eval(f"intersight.api.{policy_api['enum'][0]}(api_client)")
+            print(api_handle)
+            query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}'"
+            kwargs = dict(filter=query_filter, _preload_content = False)
+            apiQuery = eval(f"json.loads(api_handle.{policy_api['enum'][1]}(**kwargs).data)")
+            empty, policyDict, policyNames = process_results(apiQuery)
+            if empty == True: empty_results(apiQuery)
+
+            # Prompt User for Policy to Attach.
+            kwargs["multi_select"] = False
+            kwargs["var_description"] = f'Select the {policy_type} Policy to attach to the Server Profile.'
+            kwargs["jsonVars"] = policyNames
+            kwargs["defaultVar"] = policyNames[0]
+            kwargs["varType"] = f'{policy_type} Policy Name'
+            policy_name = variablesFromAPI(**kwargs)
+
+            # Obtain Server Profile Data
+            query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}' and TargetPlatform eq '{profile_type}'"
+            kwargs = dict(filter=query_filter, top = 1000, _preload_content = False)
+            api_handle = server_api.ServerApi(api_client)
+            apiQuery = json.loads((api_handle.get_server_profile_list(**kwargs)).data)
+            empty, profileDict, profileNames = process_results(apiQuery)
+            if empty == True: empty_results(apiQuery)
+
+            # Request from User Which Profiles to Apply this to if not provided with jsonArg.
+            if jsonArg == False:
+                kwargs["multi_select"] = True
+                kwargs["var_description"] = f'Select the Server Profiles to Apply the {policy_type} to.'
+                kwargs["jsonVars"] = profileNames
+                kwargs["defaultVar"] = profileNames[0]
+                kwargs["varType"] = 'Server Profiles'
+                profile_names = variablesFromAPI(**kwargs)
+            else:
+                profile_names = jsonData['server_profiles']
+            
+            # Attach the Policy to the Selected Server Profiles
+            for profilex in profile_names:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Starting on Server Profile {profilex}.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                policyMoid = policyDict[policy_name]['Moid']
+                profileMoid = profileDict[profilex]['Moid']
+                object_type = policy_api['enum'][2]
+
+                # Index the Server List to find the Server Profile and pull the Policy Bucket
+                name_index = dict((d['Name'], i) for i, d in enumerate(apiQuery['Results']))
+                server_index = name_index.get(profilex, -1)
+                policy_bucket = apiQuery['Results'][server_index]['PolicyBucket']
+
+                # See if the Policy Type is Already Attached
+                # If attached Update to the new Moid
+                # If not attached the Policy
+                object_index = dict((d['ObjectType'], i) for i, d in enumerate(policy_bucket))
+                if object_index.get(object_type):
+                    type_index = object_index.get(object_type, -1)
+                    policy_link = f"https://www.intersight.com/api/v1/{policy_api['enum'][3]}/{policyMoid}"
+                    policy_bucket[type_index].update({
+                        "Moid":policyMoid,
+                        "link": policy_link
+                    })
+                    json_payload = {"PolicyBucket":policy_bucket}
+                    print('matched')
+                else:
+                    policy_bucket.append({
+                        "classId": "mo.MoRef",
+                        "Moid": policyMoid,
+                        "ObjectType": object_type
+                    })
+                    json_payload = {"PolicyBucket":policy_bucket}
+                    print('not matched')
+
+                # print(json.dumps(json_payload, indent=4))
+                # print(f'Policy "{policy_name}" Moid is "{policyMoid}"')
+                # print(f'Server Profile "{profilex}" Moid is "{profileMoid}"')
+                try:
+                    kwargs = dict(_preload_content = False)
+                    apiPost = json.loads(api_handle.patch_server_profile(profileMoid, json_payload, **kwargs).data)
+                    print(json.dumps(apiPost, indent=4))
+                except ApiException as e:
+                    print("Exception when calling ServerApi->patch_server_profile: %s\n" % e)
+                    sys.exit(1)
+
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Finished Server Profile {profilex}.')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Finished Loop on Organization {org}.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print('  Finished Updating Server Profiles...')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
 
     def add_vlan(self, **kwargs):
         args = kwargs['args']

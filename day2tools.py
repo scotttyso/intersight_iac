@@ -63,6 +63,9 @@ def main():
     if args.process == 'server_inventory':
         type = 'server_inventory'
         class_day2tools.intersight(type).server_inventory(**kwargs)
+    elif args.process == 'add_policies':
+        type = 'add_policies'
+        class_day2tools.intersight(type).add_policies(**kwargs)
     elif args.process == 'add_vlan':
         type = 'add_vlan'
         class_day2tools.intersight(type).add_vlan(**kwargs)
