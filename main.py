@@ -63,7 +63,7 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         kwargs["varType"] = 'Target'
         terraform_target = variablesFromAPI(**kwargs)
 
-        if terraform_target == 'Terraform Enterprise':
+        if terraform_target[0] == 'Terraform Enterprise':
             templateVars["Description"] = f'Hostname of the Terraform Enterprise Instance'
             templateVars["varDefault"] = f'app.terraform.io'
             templateVars["varInput"] = f'What is the Hostname of the TFE Instance? [app.terraform.io]: '
@@ -85,7 +85,6 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
         templateVars["terraform_cloud_token"] = terraform_cloud().terraform_token()
         
         # Obtain Terraform Cloud Organization
-        print(templateVars)
         if os.environ.get('tfc_organization') is None:
             templateVars["tfc_organization"] = terraform_cloud().tfc_organization(**templateVars)
             os.environ['tfc_organization'] = templateVars["tfc_organization"]
