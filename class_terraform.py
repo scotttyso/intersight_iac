@@ -466,7 +466,7 @@ def get(url, site_header, section=''):
     r = ''
     while r == '':
         try:
-            r = requests.get(url, headers=site_header)
+            r = requests.get(url, headers=site_header, verify=False)
             status = r.status_code
 
             # Use this for Troubleshooting
@@ -492,7 +492,7 @@ def patch(url, payload, site_header, section=''):
     r = ''
     while r == '':
         try:
-            r = requests.patch(url, data=payload, headers=site_header)
+            r = requests.patch(url, data=payload, headers=site_header, verify=False)
 
             # Use this for Troubleshooting
             if print_response_always:
@@ -517,7 +517,7 @@ def post(url, payload, site_header, section=''):
     r = ''
     while r == '':
         try:
-            r = requests.post(url, data=payload, headers=site_header)
+            r = requests.post(url, data=payload, headers=site_header, verify=False)
 
             # Use this for Troubleshooting
             if print_response_always:
