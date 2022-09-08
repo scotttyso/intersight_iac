@@ -404,7 +404,8 @@ def merge_easy_imm_repository(args, easy_jsonData, org):
     module_folders = ['policies', 'pools', 'profiles', 'ucs_domain_profiles']
     for folder in folder_list:
         for mod in module_folders:
-            if mod in folder:
+            fsplit = folder.split(path_sep)
+            if fsplit[-1] == mod:
                 src_dir = os.path.join(tfe_dir, 'modules', mod)
                 copy_files = os.listdir(src_dir)
                 for fname in copy_files:
