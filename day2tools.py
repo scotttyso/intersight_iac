@@ -4,6 +4,8 @@ from easy_functions import api_key, api_secret
 import argparse
 import class_day2tools
 import os
+import platform
+import sys
 
 # Global Variables
 excel_workbook = None
@@ -52,14 +54,23 @@ def main():
     )
     args = Parser.parse_args()
     args.api_key_id = api_key(args)
+
+    # Determine the Operating System
+    opSystem = platform.system()
+    kwargs = {}
+    kwargs['args'] = args
+    kwargs['get_script_path'] = os.path.dirname(os.path.realpath(sys.argv[0]))
+    if opSystem == 'Windows': kwargs['path_sep'] = '\\'
+    else: kwargs['path_sep'] = '/'
+
+    # Verify the SecretKey
     if not args.api_key_file == None:
         args.api_key_file = api_secret(args)
     else:
-        args.api_key_file = '~/Downloads/SecretKey.txt'
+        if opSystem == 'Windows': args.api_key_file = '$HOME\Downloads\SecretKey.txt'
+        else: args.api_key_file = '~/Downloads/SecretKey.txt'
         args.api_key_file = api_secret(args)
 
-    kwargs = {}
-    kwargs['args'] = args
     if args.process == 'server_inventory':
         type = 'server_inventory'
         class_day2tools.intersight_api(type).server_inventory(**kwargs)
