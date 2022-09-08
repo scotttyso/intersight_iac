@@ -61,7 +61,7 @@ class intersight_api(object):
         path_sep = kwargs['path_sep']
         script_path = kwargs['get_script_path']
         jsonArg = False
-        jsonFile = f'{script_path}Templates{path_sep}variables{path_sep}easy_variables.json'
+        jsonFile = f'{script_path}{path_sep}Templates{path_sep}variables{path_sep}easy_variables.json'
         jsonOpen = open(jsonFile, 'r')
         easy_jsonData = json.load(jsonOpen)
         jsonOpen.close()
