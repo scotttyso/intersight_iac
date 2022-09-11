@@ -36,9 +36,10 @@ import argparse
 import credentials
 import json
 import os
-import re
 import platform
+import re
 import requests
+import sys
 import validating
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -1062,12 +1063,20 @@ def main():
     args.api_key_id = api_key(args)
     args.api_key_file = api_secret(args)
 
-    jsonFile = 'Templates/variables/intersight-openapi.json'
+    # Determine the Operating System
+    opSystem = platform.system()
+    kwargs = {}
+    kwargs['args'] = args
+    script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+    if opSystem == 'Windows': path_sep = '\\'
+    else: path_sep = '/'
+
+    jsonFile = f'{script_path}{path_sep}Templates{path_sep}variables{path_sep}intersight-openapi.json'
     jsonOpen = open(jsonFile, 'r')
     jsonData = json.load(jsonOpen)
     jsonOpen.close()
 
-    jsonFile = 'Templates/variables/easy_variables.json'
+    jsonFile = f'{script_path}{path_sep}Templates{path_sep}variables{path_sep}easy_variables.json'
     jsonOpen = open(jsonFile, 'r')
     easy_jsonData = json.load(jsonOpen)
     jsonOpen.close()

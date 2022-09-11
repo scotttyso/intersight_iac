@@ -4,6 +4,9 @@
 
 ## Updates/News
 
+09-11-2022
+* Renamed main.py to ezimm.py to allow execution from remote directory
+
 03-08-2022
 * Added Windows Support
 
@@ -174,20 +177,20 @@ $env:TF_VAR_terraform_cloud_token="<your_terraform_cloud_token>"
 - Running the wizard to use a configuration migrated from UCS Manager using the IMM Transition Tool
 
 ```bash
-./main.py -j {json_file_name.json}
+./ezimm.py -j {json_file_name.json}
 ```
 
 ### Running the Wizard for Greenfield Deployment
 - Running the Wizard to generate IaC through a Question and Answer Wizard
 
 ```bash
-./main.py
+./ezimm.py
 ```
 
 ## Wizard Help Menu
 
 ```bash
-./main.py -h
+./ezimm.py -h
 
 Intersight Easy IMM Deployment Module
 
