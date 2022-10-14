@@ -207,7 +207,6 @@ class intersight_api(object):
                         "link": policy_link
                     })
                     json_payload = {"PolicyBucket":policy_bucket}
-                    print('matched')
                 else:
                     policy_bucket.append({
                         "classId": "mo.MoRef",
@@ -215,7 +214,6 @@ class intersight_api(object):
                         "ObjectType": object_type
                     })
                     json_payload = {"PolicyBucket":policy_bucket}
-                    print('not matched')
 
                 # print(json.dumps(json_payload, indent=4))
                 # print(f'Policy "{policy_name}" Moid is "{policyMoid}"')
@@ -934,7 +932,6 @@ class intersight_api(object):
                             if not k in column_headers:
                                 column_headers.append(k)
                     if value.get('vnics'):
-                        print('matched vnics')
                         for k, v in value['vnics'].items():
                             if not k in column_headers:
                                 column_headers.append(k)
@@ -947,7 +944,7 @@ class intersight_api(object):
                 ws.merge_cells(f'A1:{chr(ord("@")+cLength)}1')
                 for cell in ws['1:1']:
                     cell.style = 'heading_1'
-                ws.append(data)
+                ws.append(column_headers)
                 for cell in ws['2:2']:
                     cell.style = 'heading_2'
                 ws_row_count = 3
@@ -973,12 +970,12 @@ class intersight_api(object):
                             data.append(v['wwnn'])
                             column_count += 1
                         else:
-                            if v.get(v['vhbas']):
+                            if v.get('vhbas'):
                                 for key, value in v['vhbas'].items():
                                     if i == key:
                                         data.append(value['wwpn_address'])
                                         column_count += 1
-                            if v.get(v['vnics']):
+                            if v.get('vnics'):
                                 for key, value in v['vnics'].items():
                                     if i == key:
                                         data.append(value['mac_address'])
@@ -1045,7 +1042,7 @@ class intersight_api(object):
                             data.append(v['wwnn'])
                             column_count += 1
                         else:
-                            if v.get(v['vhbas']):
+                            if v.get('vhbas'):
                                 for key, value in v['vhbas'].items():
                                     if i == key:
                                         data.append(value['wwpn_address'])
