@@ -30,6 +30,10 @@ def main():
         help='Use New API client (v3) key'
     )
     Parser.add_argument(
+        '-f', '--full-inventory', action='store_true',
+        help='For Spreadsheet Pull the Full Server Inventory'
+    )
+    Parser.add_argument(
         '-i', '--ignore-tls', action='store_true',
         help='Ignore TLS server-side certificate verification'
     )

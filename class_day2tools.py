@@ -168,6 +168,7 @@ class intersight_api(object):
             apiQuery = json.loads((api_handle.get_server_profile_list(**kwargs)).data)
             empty, profileDict, profileNames = process_results(apiQuery)
             if empty == True: empty_results(apiQuery)
+            profileNames.sort()
 
             # Request from User Which Profiles to Apply this to if not provided with jsonArg.
             if jsonArg == False:
@@ -825,6 +826,7 @@ class intersight_api(object):
                     domainParent = json.loads(api_handle.get_asset_device_registration_by_moid(
                         serverReg['ParentConnection']['Moid'], **kwargs).data
                     )
+
                     # Obtain Server vNICs (Ethernet/Fibre-Channel)
                     api_handle = vnic_api.VnicApi(api_client)
                     query_filter = f"Profile.Moid eq '{profileMoid}'"
@@ -849,7 +851,7 @@ class intersight_api(object):
                         }
                         vnics.update(vnic)
 
-                    vhbas = {'A':{},'B':{}}
+                    vhbas = {}
                     for item in fcapiQuery['Results']:
                         vhba_name = item['Name']
                         if item['WwpnAddressType'] == 'STATIC':
@@ -858,23 +860,30 @@ class intersight_api(object):
                             wwpn_address = item['Wwpn']
                         switch_id = item['Placement']['SwitchId']
                         fcnpMoid = item['FcNetworkPolicy']['Moid']
-                        vhbas[switch_id] = {
-                            'vhba':vhba_name,
+                        vhbas[vhba_name] = {
+                            'switch_id':switch_id,
                             'wwpn_address':wwpn_address
                         }
+                    sorted_vhbas = {}
+                    for key in sorted(vhbas):
+                        sorted_vhbas[key] = vhbas[key]
+                    sorted_vnics = {}
+                    for key in sorted(vnics):
+                        sorted_vnics[key] = vnics[key]
                     hostResults = {
                         profileName:{
                             'domain_name':domainParent['DeviceHostname'][0],
                             'moid':profileMoid,
                             'serial':serverSerial,
                             'server_dn':serverDn,
-                            'vhbas':vhbas,
-                            'vnics':vnics,
+                            'vhbas':sorted_vhbas,
+                            'vnics':sorted_vnics,
                             'wwnn':wwnn_address
                         }
                     }
                     pyDict.update(hostResults)
 
+        if len(pyDict) > 0:
             # print(json.dumps(pyDict, indent=4))
             # Build Named Style Sheets for Workbook
             bd1 = Side(style="thick", color="0070C0")
@@ -902,53 +911,156 @@ class intersight_api(object):
             datetime_est = datetime.now(Est)
             Est1 = datetime_est.strftime('%Y-%m-%d_%H-%M')
             Est2 = datetime_est.strftime('%Y-%m-%d %H:%M:%S %Z %z')
-            workbook = f'UCS_WWPN_Collector-{Est1}.xlsx'
-            wb = openpyxl.Workbook()
-            wb.add_named_style(heading_1)
-            wb.add_named_style(heading_2)
-            wb.add_named_style(even)
-            wb.add_named_style(odd)
-            ws = wb.active
-            ws.title = 'WWPN List'
-            ws.column_dimensions['A'].width = 30
-            ws.column_dimensions['B'].width = 30
-            ws.column_dimensions['C'].width = 30
-            ws.column_dimensions['D'].width = 30
-            ws_header = f'Collected UCS Data on {Est2}'
-            data = [ws_header]
-            ws.append(data)
-            ws.merge_cells('A1:D1')
-            for cell in ws['1:1']:
-                cell.style = 'heading_1'
-            data = [
-                'Server Profile','WWNN','WWPN for Fabric A','WWPN for Fabric B'
-            ]
-            ws.append(data)
-            for cell in ws['2:2']:
-                cell.style = 'heading_2'
-            ws_row_count = 3
-            for k, v in pyDict.items():
-                if v['wwnn']: wwnn = v['wwnn']
-                else: wwnn = 'Not Configured'
-                if v['vhbas']['A'].get('wwpn_address'):
-                    vhba1_wwpn = v['vhbas']['A']['wwpn_address']
-                else:
-                    vhba1_wwpn = 'Not Configured'
-                if v['vhbas']['B'].get('wwpn_address'):
-                    vhba2_wwpn = v['vhbas']['B']['wwpn_address']
-                else:
-                    vhba2_wwpn = 'Not Configured'
-                data = [
-                    k,
-                    wwnn,
-                    vhba1_wwpn,
-                    vhba2_wwpn
-                ]
+
+            if args.full_inventory:
+                workbook = f'UCS-Inventory-Collector-{Est1}.xlsx'
+                wb = openpyxl.Workbook()
+                wb.add_named_style(heading_1)
+                wb.add_named_style(heading_2)
+                wb.add_named_style(even)
+                wb.add_named_style(odd)
+                ws = wb.active
+                ws.title = 'Inventory List'
+
+                # Read Server Inventory to Create Column Headers
+                column_headers = ['Domain','Profile','Server','Serial']
+                # print(json.dumps(pyDict, indent=4))
+                for key, value in pyDict.items():
+                    if value.get('wwnn'):
+                        if not 'WWNN' in column_headers:
+                            column_headers.append('WWNN')
+                    if value.get('vhbas'):
+                        for k, v in value['vhbas'].items():
+                            if not k in column_headers:
+                                column_headers.append(k)
+                    if value.get('vnics'):
+                        print('matched vnics')
+                        for k, v in value['vnics'].items():
+                            if not k in column_headers:
+                                column_headers.append(k)
+                for i in range(len(column_headers)):
+                    ws.column_dimensions[chr(ord('@')+i+1)].width = 30
+                cLength = len(column_headers)
+                ws_header = f'Collected UCS Data on {Est2}'
+                data = [ws_header]
                 ws.append(data)
-                for cell in ws[ws_row_count:ws_row_count]:
-                    if ws_row_count % 2 == 0:
-                        cell.style = 'odd'
-                    else:
-                        cell.style = 'even'
-                ws_row_count += 1
-            wb.save(filename=workbook)
+                ws.merge_cells(f'A1:{chr(ord("@")+cLength)}1')
+                for cell in ws['1:1']:
+                    cell.style = 'heading_1'
+                ws.append(data)
+                for cell in ws['2:2']:
+                    cell.style = 'heading_2'
+                ws_row_count = 3
+                
+                # Populate the Columns with Server Inventory
+                for k, v in pyDict.items():
+                    data = []
+                    for i in column_headers:
+                        column_count = 0
+                        if i == 'Domain':
+                            data.append(v['domain_name'])
+                            column_count += 1
+                        elif i == 'Profile':
+                            data.append(k)
+                            column_count += 1
+                        elif i == 'Server':
+                            data.append(v['server_dn'])
+                            column_count += 1
+                        elif i == 'Serial':
+                            data.append(v['serial'])
+                            column_count += 1
+                        elif i == 'WWNN':
+                            data.append(v['wwnn'])
+                            column_count += 1
+                        else:
+                            if v.get(v['vhbas']):
+                                for key, value in v['vhbas'].items():
+                                    if i == key:
+                                        data.append(value['wwpn_address'])
+                                        column_count += 1
+                            if v.get(v['vnics']):
+                                for key, value in v['vnics'].items():
+                                    if i == key:
+                                        data.append(value['mac_address'])
+                                        column_count += 1
+                        if column_count == 0:
+                            data.append('Not Configured')
+                        
+                    # Add the Columns to the Spreadsheet
+                    ws.append(data)
+                    for cell in ws[ws_row_count:ws_row_count]:
+                        if ws_row_count % 2 == 0:
+                            cell.style = 'odd'
+                        else:
+                            cell.style = 'even'
+                    ws_row_count += 1
+                
+                # Save the Workbook
+                wb.save(filename=workbook)
+            else:
+                workbook = f'UCS-WWPN-Collector-{Est1}.xlsx'
+                wb = openpyxl.Workbook()
+                wb.add_named_style(heading_1)
+                wb.add_named_style(heading_2)
+                wb.add_named_style(even)
+                wb.add_named_style(odd)
+                ws = wb.active
+                ws.title = 'WWPN List'
+
+
+                # Read Server Inventory to Create Column Headers
+                column_headers = ['Profile']
+                # print(json.dumps(pyDict, indent=4))
+                for key, value in pyDict.items():
+                    if value.get('wwnn'):
+                        if not 'WWNN' in column_headers:
+                            column_headers.append('WWNN')
+                    if value.get('vhbas'):
+                        for k, v in value['vhbas'].items():
+                            if not k in column_headers:
+                                column_headers.append(k)
+                for i in range(len(column_headers)):
+                    ws.column_dimensions[chr(ord('@')+i+1)].width = 30
+                cLength = len(column_headers)
+                ws_header = f'Collected UCS Data on {Est2}'
+                data = [ws_header]
+                ws.append(data)
+                ws.merge_cells(f'A1:{chr(ord("@")+cLength)}1')
+                for cell in ws['1:1']:
+                    cell.style = 'heading_1'
+                ws.append(data)
+                for cell in ws['2:2']:
+                    cell.style = 'heading_2'
+                ws_row_count = 3
+                
+                # Populate the Columns with Server Inventory
+                for k, v in pyDict.items():
+                    data = []
+                    for i in column_headers:
+                        column_count = 0
+                        if i == 'Profile':
+                            data.append(k)
+                            column_count += 1
+                        elif i == 'WWNN':
+                            data.append(v['wwnn'])
+                            column_count += 1
+                        else:
+                            if v.get(v['vhbas']):
+                                for key, value in v['vhbas'].items():
+                                    if i == key:
+                                        data.append(value['wwpn_address'])
+                                        column_count += 1
+                        if column_count == 0:
+                            data.append('Not Configured')
+                        
+                    # Add the Columns to the Spreadsheet
+                    ws.append(data)
+                    for cell in ws[ws_row_count:ws_row_count]:
+                        if ws_row_count % 2 == 0:
+                            cell.style = 'odd'
+                        else:
+                            cell.style = 'even'
+                    ws_row_count += 1
+                
+                # Save the Workbook
+                wb.save(filename=workbook)
