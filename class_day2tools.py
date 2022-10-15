@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from collections import OrderedDict
 from datetime import datetime
 from easy_functions import variablesFromAPI
 from easy_functions import vlan_list_format
@@ -882,6 +883,7 @@ class intersight_api(object):
                     pyDict.update(hostResults)
 
         if len(pyDict) > 0:
+            pyDict = OrderedDict(sorted(pyDict))
             # print(json.dumps(pyDict, indent=4))
             # Build Named Style Sheets for Workbook
             bd1 = Side(style="thick", color="0070C0")

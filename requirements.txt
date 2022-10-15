@@ -1,5 +1,6 @@
 # pip freeze -q -r requirements.txt
 argparse
+collection
 GitPython
 git_status_checker
 intersight==1.0.9.6484
