@@ -923,6 +923,8 @@ class intersight_api(object):
                 # Read Server Inventory to Create Column Headers
                 column_headers = ['Domain','Profile','Server','Serial']
                 # print(json.dumps(pyDict, indent=4))
+                vhba_list = []
+                vnic_list = []
                 for key, value in pyDict.items():
                     if value.get('wwnn'):
                         if not 'WWNN' in column_headers:
@@ -930,11 +932,15 @@ class intersight_api(object):
                     if value.get('vhbas'):
                         for k, v in value['vhbas'].items():
                             if not k in column_headers:
-                                column_headers.append(k)
+                                vhba_list.append(k)
                     if value.get('vnics'):
                         for k, v in value['vnics'].items():
                             if not k in column_headers:
-                                column_headers.append(k)
+                                vnic_list.append(k)
+                vhba_list.sort()
+                vnic_list.sort()
+                column_headers.append(vhba_list)
+                column_headers.append(vnic_list)
                 for i in range(len(column_headers)):
                     ws.column_dimensions[chr(ord('@')+i+1)].width = 30
                 cLength = len(column_headers)
@@ -1008,6 +1014,7 @@ class intersight_api(object):
                 # Read Server Inventory to Create Column Headers
                 column_headers = ['Profile']
                 # print(json.dumps(pyDict, indent=4))
+                vhba_list = []
                 for key, value in pyDict.items():
                     if value.get('wwnn'):
                         if not 'WWNN' in column_headers:
@@ -1015,7 +1022,9 @@ class intersight_api(object):
                     if value.get('vhbas'):
                         for k, v in value['vhbas'].items():
                             if not k in column_headers:
-                                column_headers.append(k)
+                                vhba_list.append(k)
+                vhba_list.sort()
+                column_headers.append(vhba_list)
                 for i in range(len(column_headers)):
                     ws.column_dimensions[chr(ord('@')+i+1)].width = 30
                 cLength = len(column_headers)
