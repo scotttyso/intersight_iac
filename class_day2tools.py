@@ -883,8 +883,8 @@ class intersight_api(object):
                     pyDict.update(hostResults)
 
         if len(pyDict) > 0:
-            pyDict = OrderedDict(sorted(pyDict))
-            # print(json.dumps(pyDict, indent=4))
+            pyDict = OrderedDict(sorted(pyDict.items()))
+
             # Build Named Style Sheets for Workbook
             bd1 = Side(style="thick", color="0070C0")
             bd2 = Side(style="medium", color="0070C0")
@@ -933,16 +933,15 @@ class intersight_api(object):
                             column_headers.append('WWNN')
                     if value.get('vhbas'):
                         for k, v in value['vhbas'].items():
-                            if not k in column_headers:
+                            if not k in vhba_list:
                                 vhba_list.append(k)
                     if value.get('vnics'):
                         for k, v in value['vnics'].items():
-                            if not k in column_headers:
+                            if not k in vnic_list:
                                 vnic_list.append(k)
                 vhba_list.sort()
                 vnic_list.sort()
-                column_headers.append(vhba_list)
-                column_headers.append(vnic_list)
+                column_headers = column_headers + vhba_list + vnic_list
                 for i in range(len(column_headers)):
                     ws.column_dimensions[chr(ord('@')+i+1)].width = 30
                 cLength = len(column_headers)
@@ -1023,10 +1022,10 @@ class intersight_api(object):
                             column_headers.append('WWNN')
                     if value.get('vhbas'):
                         for k, v in value['vhbas'].items():
-                            if not k in column_headers:
+                            if not k in vhba_list:
                                 vhba_list.append(k)
                 vhba_list.sort()
-                column_headers.append(vhba_list)
+                column_headers= column_headers + vhba_list
                 for i in range(len(column_headers)):
                     ws.column_dimensions[chr(ord('@')+i+1)].width = 30
                 cLength = len(column_headers)
