@@ -22,7 +22,7 @@ def main():
     )
     Parser.add_argument(
         '-s', '--api-key-file',
-        default=os.getenv('TF_VAR_secret_file'),
+        default=os.getenv('TF_VAR_secretkeyfile'),
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
     )
     Parser.add_argument(

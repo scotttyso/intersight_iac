@@ -3,12 +3,11 @@ argparse
 collection
 GitPython
 git_status_checker
-intersight==1.0.9.6484
+intersight
 ipaddress
 jinja2
 simplejson
 stdiomask
-lxml
 openpyxl
 ordered_set
 phonenumbers

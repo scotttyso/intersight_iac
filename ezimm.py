@@ -26,11 +26,11 @@ from easy_functions import api_key, api_secret, policies_parse
 from easy_functions import merge_easy_imm_repository, sensitive_var_value
 from easy_functions import tfc_sensitive_variables, varBoolLoop
 from easy_functions import variablesFromAPI, varStringLoop
+from html.parser import HTMLParser
 from io import StringIO
 from intersight.api import organization_api
 from intersight.api import resource_api
 from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
-from lxml import etree
 from pathlib import Path
 import argparse
 import credentials
@@ -119,18 +119,16 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
 
         # Query the Terraform Versions from the Release URL
         terraform_versions = []
-        url = f'https://releases.hashicorp.com/terraform/'
-        r = requests.get(url)
-        html = r.content.decode("utf-8")
-        parser = etree.HTMLParser()
-        tree = etree.parse(StringIO(html), parser=parser)
-        # This will get the anchor tags <a href...>
-        refs = tree.xpath("//a")
-        links = [link.get('href', '') for link in refs]
-        for i in links:
-            if re.search(r'/terraform/[1-2]\.[0-9]+\.[0-9]+/', i):
-                tf_version = re.search(r'/terraform/([1-2]\.[0-9]+\.[0-9]+)', i).group(1)
-                terraform_versions.append(tf_version)
+        url = f'https://github.com/hashicorp/terraform/releases'
+        # Get the Latest Release Tag for Terraform
+        url = f'https://github.com/hashicorp/terraform/tags'
+        r = requests.get(url, stream=True)
+        for line in r.iter_lines():
+            # print(line)
+            toString = line.decode("utf-8")
+            if re.search(r'/releases/tag/v(\d+\.\d+\.\d+)\"', toString):
+                terraform_versions.append(re.search('/releases/tag/v(\d+\.\d+\.\d+)', toString).group(1))
+
 
         # Removing Deprecated Versions from the List
         deprecatedVersions = ["1.1.0", "1.1.1"]
@@ -138,7 +136,8 @@ def create_terraform_workspaces(jsonData, easy_jsonData, org):
             for Version in terraform_versions:
                 if str(depver) == str(Version):
                     terraform_versions.remove(depver)
-        
+        terraform_versions = list(set(terraform_versions))
+        terraform_versions.sort(reverse=True)
         # Assign the Terraform Version from the Terraform Release URL Above
         templateVars["multi_select"] = False
         templateVars["var_description"] = "Terraform Version for Workspaces:"

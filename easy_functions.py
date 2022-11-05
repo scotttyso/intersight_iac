@@ -379,6 +379,8 @@ def merge_easy_imm_repository(args, easy_jsonData, org):
     if not os.path.isdir(tfe_dir):
         os.mkdir(tfe_dir)
         Repo.clone_from(git_url, tfe_dir)
+    if not os.path.isfile(os.path.join(tfe_dir, 'README.md')):
+        Repo.clone_from(git_url, tfe_dir)
     else:
         g = cmd.Git(tfe_dir)
         g.pull()
