@@ -17,6 +17,7 @@ from intersight.model.organization_organization_relationship import Organization
 from pathlib import Path
 import argparse
 import classes.ezfunctions
+import classes.validating
 import credentials
 import json
 import os
@@ -24,7 +25,6 @@ import platform
 import re
 import requests
 import sys
-import validating
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -76,11 +76,11 @@ def create_terraform_workspaces(**kwargs):
             polVars["maxLength"] = 90
             polVars["tfc_host"] = classes.ezfunctions.varStringLoop(**polVars)
             if re.search(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", polVars["tfc_host"]):
-                validating.ip_address('Terraform Target', polVars["tfc_host"])
+                classes.validating.ip_address('Terraform Target', polVars["tfc_host"])
             elif ':' in polVars["tfc_host"]:
-                validating.ip_address('Terraform Target', polVars["tfc_host"])
+                classes.validating.ip_address('Terraform Target', polVars["tfc_host"])
             else:
-                validating.dns_name('Terraform Target', polVars["tfc_host"])
+                classes.validating.dns_name('Terraform Target', polVars["tfc_host"])
         else:
             polVars['tfc_host'] = 'app.terraform.io'
 
@@ -496,7 +496,7 @@ def prompt_org(**kwargs):
         org = input('What is your Intersight Organization Name?  [default]: ')
         if org == '':
             org = 'default'
-        valid = validating.org_rule('Intersight Organization', org, 1, 62)
+        valid = classes.validating.org_rule('Intersight Organization', org, 1, 62)
     kwargs['org'] = org
     return kwargs
 
@@ -521,14 +521,14 @@ def process_wizard(**kwargs):
                 if domain_prefix == '':
                     valid = True
                 else:
-                    valid = validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
+                    valid = classes.validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
             valid = False
             while valid == False:
                 name_prefix = input('Enter a Name Prefix for Pools and Server Policies.  [press enter to skip]: ')
                 if name_prefix == '':
                     valid = True
                 else:
-                    valid = validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
+                    valid = classes.validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
         else:
             domain_prefix = 'default'
             name_prefix = 'default'
