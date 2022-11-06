@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from easy_functions import api_key, api_secret
 import argparse
-import class_day2tools
+import classes.day2tools
+import classes.ezfunctions
 import os
 import platform
 import sys
@@ -57,7 +57,7 @@ def main():
         help='The Worksheet Containing the Server Configuration Data.'
     )
     args = Parser.parse_args()
-    args.api_key_id = api_key(args)
+    args.api_key_id = classes.ezfunctions.api_key(args)
 
     # Determine the Operating System
     opSystem = platform.system()
@@ -69,24 +69,24 @@ def main():
 
     # Verify the SecretKey
     if not args.api_key_file == None:
-        args.api_key_file = api_secret(args)
+        args.api_key_file = classes.ezfunctions.api_secret(args)
     else:
         if opSystem == 'Windows': args.api_key_file = '$HOME\Downloads\SecretKey.txt'
         else: args.api_key_file = '~/Downloads/SecretKey.txt'
-        args.api_key_file = api_secret(args)
+        args.api_key_file = classes.ezfunctions.api_secret(args)
 
     if args.process == 'server_inventory':
         type = 'server_inventory'
-        class_day2tools.intersight_api(type).server_inventory(**kwargs)
+        classes.day2tools.intersight_api(type).server_inventory(**kwargs)
     elif args.process == 'add_policies':
         type = 'add_policies'
-        class_day2tools.intersight_api(type).add_policies(**kwargs)
+        classes.day2tools.intersight_api(type).add_policies(**kwargs)
     elif args.process == 'add_vlan':
         type = 'add_vlan'
-        class_day2tools.intersight_api(type).add_vlan(**kwargs)
+        classes.day2tools.intersight_api(type).add_vlan(**kwargs)
     elif args.process == 'hcl_status':
         type = 'hcl_status'
-        class_day2tools.intersight_api(type).hcl_status(**kwargs)
+        classes.day2tools.intersight_api(type).hcl_status(**kwargs)
 
 if __name__ == '__main__':
     main()

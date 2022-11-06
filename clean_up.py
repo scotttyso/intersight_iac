@@ -9,18 +9,15 @@ It uses argparse to take in the following CLI arguments:
     f or api-key-file:       Name of file containing secret key for the HTTP signature scheme
 """
 
-import argparse
-import credentials
-import os
-import re
-from easy_functions import policies_parse
-from easy_functions import varBoolLoop
-from easy_functions import variablesFromAPI
-from easy_functions import varStringLoop
-from class_terraform import terraform_cloud
 from intersight.api import organization_api
 from intersight.api import resource_api
 from pathlib import Path
+import argparse
+import classes.tf
+import credentials
+import classes.ezfunctions
+import os
+import re
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -36,17 +33,17 @@ def delete_terraform_workspaces(org):
         templateVars["varInput"] = f'Do you want to Proceed with Deleting Workspaces in Terraform Cloud?'
         templateVars["varDefault"] = 'Y'
         templateVars["varName"] = 'Terraform Cloud Workspaces'
-        runTFCB = varBoolLoop(**templateVars)
+        runTFCB = classes.ezfunctions.varBoolLoop(**templateVars)
         valid = True
     if runTFCB == True:
         templateVars = {}
-        templateVars["terraform_cloud_token"] = terraform_cloud().terraform_token()
-        templateVars["tfc_organization"] = terraform_cloud().tfc_organization(**templateVars)
+        templateVars["class_terraform.terraform_cloud_token"] = classes.tf.terraform_cloud().terraform_token()
+        templateVars["tfc_organization"] = classes.tf.terraform_cloud().tfc_organization(**templateVars)
         tfcb_config.append({'tfc_organization':templateVars["tfc_organization"]})
 
         # Obtain Version Control Provider
         if os.environ.get('tfc_vcs_provider') is None:
-            tfc_vcs_provider,templateVars["tfc_oath_token"] = terraform_cloud().tfc_vcs_providers(**templateVars)
+            tfc_vcs_provider,templateVars["tfc_oath_token"] = classes.tf.terraform_cloud().tfc_vcs_providers(**templateVars)
             templateVars["tfc_vcs_provider"] = tfc_vcs_provider
             os.environ['tfc_vcs_provider'] = tfc_vcs_provider
             os.environ['tfc_oath_token'] = templateVars["tfc_oath_token"]
@@ -56,7 +53,7 @@ def delete_terraform_workspaces(org):
 
         # Obtain Version Control Base Repo
         if os.environ.get('vcsBaseRepo') is None:
-            templateVars["vcsBaseRepo"] = terraform_cloud().tfc_vcs_repository(**templateVars)
+            templateVars["vcsBaseRepo"] = classes.tf.terraform_cloud().tfc_vcs_repository(**templateVars)
             os.environ['vcsBaseRepo'] = templateVars["vcsBaseRepo"]
         else:
             templateVars["vcsBaseRepo"] = os.environ.get('vcsBaseRepo')
@@ -128,9 +125,9 @@ def delete_terraform_workspaces(org):
             templateVars["varRegex"] = '^[a-zA-Z0-9\\-\\_]+$'
             templateVars["minLength"] = 1
             templateVars["maxLength"] = 90
-            templateVars["workspaceName"] = varStringLoop(**templateVars)
+            templateVars["workspaceName"] = classes.ezfunctions.varStringLoop(**templateVars)
             tfcb_config.append({folder_value:templateVars["workspaceName"]})
-            terraform_cloud().tfcWorkspace_remove(**templateVars)
+            classes.tf.terraform_cloud().tfcWorkspace_remove(**templateVars)
 
     else:
         print(f'\n-------------------------------------------------------------------------------------------\n')

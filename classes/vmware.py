@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
-
-from easy_functions import process_kwargs
-from easy_functions import process_method
 from intersight.api import asset_api
 from intersight.api import compute_api
-from intersight.api import fabric_api
 from intersight.api import server_api
 from intersight.api import vnic_api
 from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
-from operator import itemgetter
 from pathlib import Path
 import credentials
+import ezfunctions
 import jinja2
 import json
 import pkg_resources
@@ -20,7 +16,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 home = Path.home()
-template_path = pkg_resources.resource_filename('class_vmware', 'Templates/')
+template_path = pkg_resources.resource_filename('vmware', '../templates/')
 
 # Exception Classes
 class InsufficientArgs(Exception):
@@ -59,30 +55,30 @@ class Servers(object):
                          'ntp2': ''}
 
         # Validate inputs, return dict of template vars
-        templateVars = process_kwargs(required_args, optional_args, **kwargs)
+        polVars = ezfunctions.process_kwargs(required_args, optional_args, **kwargs)
 
         try:
             # Validate DNS Servers
-            validating.ws_ip_address(row_num, ws, 'DNS', templateVars['dns1'])
-            dns_servers = [templateVars['dns1']]
-            validating.ws_ip_address(row_num, ws, 'NTP', templateVars['ntp1'])
-            ntp_servers = [templateVars['ntp1']]
-            if templateVars['dns2']:
-                validating.ws_ip_address(row_num, ws, 'DNS', templateVars['dns2'])
-                dns_servers.append(templateVars['dns2'])
-            if templateVars['ntp2']:
-                validating.ws_ip_address(row_num, ws, 'NTP', templateVars['ntp2'])
-                ntp_servers.append(templateVars['ntp2'])
+            validating.ws_ip_address(row_num, ws, 'DNS', polVars['dns1'])
+            dns_servers = [polVars['dns1']]
+            validating.ws_ip_address(row_num, ws, 'NTP', polVars['ntp1'])
+            ntp_servers = [polVars['ntp1']]
+            if polVars['dns2']:
+                validating.ws_ip_address(row_num, ws, 'DNS', polVars['dns2'])
+                dns_servers.append(polVars['dns2'])
+            if polVars['ntp2']:
+                validating.ws_ip_address(row_num, ws, 'NTP', polVars['ntp2'])
+                ntp_servers.append(polVars['ntp2'])
         except Exception as err:
             Error_Return = '%s\nError on Worksheet %s Row %s.  Please verify Input Information.' % (SystemExit(err), ws, row_num)
             raise ErrException(Error_Return)
 
         sectSettings = {
-            templateVars['instance']:{
-                'domain':templateVars['domain'],
+            polVars['instance']:{
+                'domain':polVars['domain'],
                 'dns_servers':dns_servers,
                 'ntp_servers':ntp_servers,
-                'timezone':templateVars['timezone']
+                'timezone':polVars['timezone']
             }
         }
         pydict['global_settings'].update(sectSettings)
@@ -110,11 +106,11 @@ class Servers(object):
                          'vnic4': ''}
 
         # Validate inputs, return dict of template vars
-        templateVars = process_kwargs(required_args, optional_args, **kwargs)
+        polVars = ezfunctions.process_kwargs(required_args, optional_args, **kwargs)
 
         try:
             # Validate Required Arguments
-            hosts = [templateVars['hostname'], templateVars['vcenter']]
+            hosts = [polVars['hostname'], polVars['vcenter']]
             for host in hosts:
                 if re.search('(^\d+\.{3}\d+$|^[a-fA-F0-9]{1,4}\:)', host):
                     validating.ws_ip_address(row_num, ws, 'Name', host)
@@ -122,9 +118,9 @@ class Servers(object):
                     validating.ws_hostname(row_num, ws, 'Name', host)
             
             # Validate VMKernel IP Addresses
-            ipAddresses = [templateVars['vmk0'], templateVars['vmk1']]
-            if templateVars['vmk2']:
-                ipAddresses.append(templateVars['vmk2'])
+            ipAddresses = [polVars['vmk0'], polVars['vmk1']]
+            if polVars['vmk2']:
+                ipAddresses.append(polVars['vmk2'])
             for ipAddress in ipAddresses:
                 validating.ws_ip_address(row_num, ws, 'IP Address', ipAddress)
 
@@ -135,7 +131,7 @@ class Servers(object):
         # Obtain Server Profile Data
         api_client = credentials.config_credentials(home, args)
         api_handle = server_api.ServerApi(api_client)
-        query_filter = f"Name eq '{templateVars['hostname']}'"
+        query_filter = f"Name eq '{polVars['hostname']}'"
         kwargs = dict(filter=query_filter)
         apiQuery = api_handle.get_server_profile_list(**kwargs)
         if apiQuery.results:
@@ -196,13 +192,13 @@ class Servers(object):
 
             # Obtain Server vHBAs
             # vnicsSorted = sorted(vnics, key = itemgetter('name'))
-            gins = templateVars['global_settings']
-            vcin = templateVars['vcenter']
+            gins = polVars['global_settings']
+            vcin = polVars['vcenter']
             
             vswitches = []
             for x in range(1,5):
-                if templateVars[f'vnic{x}']:
-                    vni = templateVars[f'vnic{x}']
+                if polVars[f'vnic{x}']:
+                    vni = polVars[f'vnic{x}']
                     vnic_name = pydict['vnic_dict'][vni]['vnic_name']
                     vsw_name = pydict['vnic_dict'][vni]['vswitch']
                     vswitch = {
@@ -215,10 +211,10 @@ class Servers(object):
                     }
                     vmk_list = ['vmk0', 'vmk1', 'vmk2']
                     for vmk in vmk_list:
-                        if templateVars[vmk]:
-                            vki = templateVars[f'{vmk}_instance']
+                        if polVars[vmk]:
+                            vki = polVars[f'{vmk}_instance']
                             vmkernel = {vmk:{
-                                'ip':templateVars[vmk],
+                                'ip':polVars[vmk],
                                 'management': pydict['vmk_dict'][vki]['management'],
                                 'name':vmk,
                                 'netmask': pydict['vmk_dict'][vki]['netmask'],
@@ -239,7 +235,7 @@ class Servers(object):
                     'domain':pydict['global_settings'][gins]['domain'],
                     'dns_servers': pydict['global_settings'][gins]['dns_servers'],
                     # 'netpolicy': netGroupP,
-                    'license_type':templateVars['license_type'],
+                    'license_type':polVars['license_type'],
                     'ntp_servers': pydict['global_settings'][gins]['ntp_servers'],
                     'serial': UcsSerial,
                     'timezone': pydict['global_settings'][gins]['timezone'],
@@ -278,32 +274,32 @@ class Servers(object):
                          'sw4_type': '',}
 
         # Validate inputs, return dict of template vars
-        templateVars = process_kwargs(required_args, optional_args, **kwargs)
+        polVars = ezfunctions.process_kwargs(required_args, optional_args, **kwargs)
 
         try:
-            if re.search('(^\d+\.{3}\d+$|^[a-fA-F0-9]{1,4}\:)', templateVars['name']):
-                validating.ws_ip_address(row_num, ws, 'vCenter', templateVars['name'])
-                vcenter_name = templateVars['name']
+            if re.search('(^\d+\.{3}\d+$|^[a-fA-F0-9]{1,4}\:)', polVars['name']):
+                validating.ws_ip_address(row_num, ws, 'vCenter', polVars['name'])
+                vcenter_name = polVars['name']
             else:
-                validating.ws_hostname(row_num, ws, 'vCenter', templateVars['name'])
-                gins = templateVars['global_settings']
-                vcenter_name = f"{templateVars['name']}.{pydict['global_settings'][gins]['domain']}"
+                validating.ws_hostname(row_num, ws, 'vCenter', polVars['name'])
+                gins = polVars['global_settings']
+                vcenter_name = f"{polVars['name']}.{pydict['global_settings'][gins]['domain']}"
 
         except Exception as err:
             Error_Return = '%s\nError on Worksheet %s Row %s.  Please verify Input Information.' % (SystemExit(err), ws, row_num)
             raise ErrException(Error_Return)
         
         vsw_dict = {
-            templateVars['vswitch1']:{'type':templateVars['sw1_type']},
-            templateVars['vswitch2']:{'type':templateVars['sw2_type']}
+            polVars['vswitch1']:{'type':polVars['sw1_type']},
+            polVars['vswitch2']:{'type':polVars['sw2_type']}
         }
-        if templateVars['vswitch3']:
-            vsw_dict.update({templateVars['vswitch3']:{'type':templateVars['sw3_type']}})
-        if templateVars['vswitch4']:
-            vsw_dict.update({templateVars['vswitch4']:{'type':templateVars['sw4_type']}})
+        if polVars['vswitch3']:
+            vsw_dict.update({polVars['vswitch3']:{'type':polVars['sw3_type']}})
+        if polVars['vswitch4']:
+            vsw_dict.update({polVars['vswitch4']:{'type':polVars['sw4_type']}})
         
         sectSettings = {
-            templateVars['instance']: {
+            polVars['instance']: {
                 'name':vcenter_name,
                 'vswitches':vsw_dict
             }
@@ -325,18 +321,18 @@ class Servers(object):
         optional_args = {'vlan_id': ''}
 
         # Validate inputs, return dict of template vars
-        templateVars = process_kwargs(required_args, optional_args, **kwargs)
+        polVars = ezfunctions.process_kwargs(required_args, optional_args, **kwargs)
 
-        if not templateVars['vlan_id']:
-            templateVars['vlan_id'] = ''
+        if not polVars['vlan_id']:
+            polVars['vlan_id'] = ''
         sectSettings = {
-            templateVars['instance']:{
-                'management':templateVars['management'],
-                'netmask':templateVars['netmask'],
-                'port_group':templateVars['port_group'],
-                'vlan_id':templateVars['vlan_id'],
-                'vmotion':templateVars['vmotion'],
-                'vswitch':templateVars['vswitch']
+            polVars['instance']:{
+                'management':polVars['management'],
+                'netmask':polVars['netmask'],
+                'port_group':polVars['port_group'],
+                'vlan_id':polVars['vlan_id'],
+                'vmotion':polVars['vmotion'],
+                'vswitch':polVars['vswitch']
             }
         }
         pydict['vmk_dict'].update(sectSettings)
@@ -353,12 +349,12 @@ class Servers(object):
         optional_args = {}
 
         # Validate inputs, return dict of template vars
-        templateVars = process_kwargs(required_args, optional_args, **kwargs)
+        polVars = ezfunctions.process_kwargs(required_args, optional_args, **kwargs)
 
         sectSettings = {
-            templateVars['instance']:{
-                'vnic_name':templateVars['vnic_name'],
-                'vswitch':templateVars['vswitch']
+            polVars['instance']:{
+                'vnic_name':polVars['vnic_name'],
+                'vswitch':polVars['vswitch']
             }
         }
         pydict['vnic_dict'].update(sectSettings)

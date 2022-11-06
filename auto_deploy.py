@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
-
-from easy_functions import api_key, api_secret
-from easy_functions import countKeys
-from easy_functions import findKeys
-from easy_functions import findVars
-from easy_functions import read_in
-from easy_functions import stdout_log
 import argparse
-import class_vmware
+import classes.ezfunctions
 import json
 import os
 import re
@@ -30,19 +23,19 @@ def process_servers(args, wb, pydict):
 
 def read_worksheet(args, class_ref, func_regex, pydict, wb, ws):
     rows = ws.max_row
-    func_list = findKeys(ws, func_regex)
+    func_list = classes.ezfunctions.findKeys(ws, func_regex)
     class_init = '%s(ws)' % (class_ref)
-    stdout_log(ws, None)
+    classes.ezfunctions.stdout_log(ws, None)
     for func in func_list:
-        count = countKeys(ws, func)
-        var_dict = findVars(ws, func, rows, count)
+        count = classes.ezfunctions.countKeys(ws, func)
+        var_dict = classes.ezfunctions.findVars(ws, func, rows, count)
         for pos in var_dict:
             row_num = var_dict[pos]['row']
             del var_dict[pos]['row']
             for x in list(var_dict[pos].keys()):
                 if var_dict[pos][x] == '':
                     del var_dict[pos][x]
-            stdout_log(ws, row_num)
+            classes.ezfunctions.stdout_log(ws, row_num)
             pydict = eval(f"{class_init}.{func}(args, pydict, row_num, wb, ws, **var_dict[pos])")
     return pydict
 
@@ -75,8 +68,8 @@ def main():
                         help='The Worksheet Containing the Server Configuration Data.'
     )
     args = Parser.parse_args()
-    args.api_key_id = api_key(args)
-    args.api_key_file = api_secret(args)
+    args.api_key_id = classes.ezfunctions.api_key(args)
+    args.api_key_file = classes.ezfunctions.api_secret(args)
 
     if os.path.isfile(args.worksheet):
         excel_workbook = args.worksheet
@@ -94,7 +87,7 @@ def main():
                 print('\nWorkbook not Found.  Please enter a valid /path/filename for the source you will be using.')
 
     # Load Workbook
-    wb = read_in(excel_workbook)
+    wb = classes.ezfunctions.read_in(excel_workbook)
 
     # Run Proceedures for Worksheets in the Workbook
     pydict = {

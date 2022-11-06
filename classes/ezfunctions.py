@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-
 from git import cmd, Repo
 from openpyxl import load_workbook
 from ordered_set import OrderedSet
+from textwrap import fill
 import itertools
 import json
 import os
@@ -13,8 +13,6 @@ import subprocess
 import sys
 import stdiomask
 import validating
-# from class_policies_domain import policies_domain
-from textwrap import fill
 
 # Log levels 0 = None, 1 = Class only, 2 = Line
 log_level = 2
@@ -80,7 +78,7 @@ def api_secret(args):
 #======================================================
 # Function - Format Policy Description
 #======================================================
-def choose_policy(policy, **templateVars):
+def choose_policy(policy, **polVars):
 
     if 'policies' in policy:
         policy_short = policy.replace('policies', 'policy')
@@ -101,8 +99,8 @@ def choose_policy(policy, **templateVars):
     policy_description = policy_description.replace('Wwpn', 'WWPN')
 
     if len(policy) > 0:
-        templateVars["policy"] = policy_description
-        policy_short = policies_list(templateVars["policies"], **templateVars)
+        polVars["policy"] = policy_description
+        policy_short = policies_list(polVars["policies"], **polVars)
     else:
         policy_short = ""
     return policy_short
@@ -232,7 +230,7 @@ def findVars(ws, func, rows, count):
 #======================================================
 # Function - ipmi_key Function
 #======================================================
-def ipmi_key_function(**templateVars):
+def ipmi_key_function(**polVars):
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  The ipmi_key Must be in Hexidecimal Format [a-fA-F0-9] and no longer than 40 characters.')
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -244,7 +242,7 @@ def ipmi_key_function(**templateVars):
             if password1 == password2:
                 TF_VAR = 'TF_VAR_ipmi_key_1'
                 os.environ[TF_VAR] = '%s' % (password1)
-                templateVars["ipmi_key"] = 1
+                polVars["ipmi_key"] = 1
                 valid = validating.ipmi_key_check(password1)
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -255,36 +253,36 @@ def ipmi_key_function(**templateVars):
             print(f'  Error!! Invalid Value.  Please Re-enter the IPMI Key.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
-    return templateVars["ipmi_key"]
+    return polVars["ipmi_key"]
 
 #======================================================
 # Function - Local User Policy
 #======================================================
-def local_users_function(jsonData, easy_jsonData, inner_loop_count, **templateVars):
+def local_users_function(jsonData, easy_jsonData, inner_loop_count, **polVars):
     local_users = []
     valid_users = False
     while valid_users == False:
-        templateVars["multi_select"] = False
+        polVars["multi_select"] = False
         jsonVars = jsonData['components']['schemas']['iam.EndPointUser']['allOf'][1]['properties']
 
-        templateVars["Description"] = jsonVars['Name']['description']
-        templateVars["varDefault"] = 'admin'
-        templateVars["varInput"] = 'What is the Local username?'
-        templateVars["varName"] = 'Local User'
-        templateVars["varRegex"] = jsonVars['Name']['pattern']
-        templateVars["minLength"] = 1
-        templateVars["maxLength"] = jsonVars['Name']['maxLength']
-        username = varStringLoop(**templateVars)
+        polVars["Description"] = jsonVars['Name']['description']
+        polVars["varDefault"] = 'admin'
+        polVars["varInput"] = 'What is the Local username?'
+        polVars["varName"] = 'Local User'
+        polVars["varRegex"] = jsonVars['Name']['pattern']
+        polVars["minLength"] = 1
+        polVars["maxLength"] = jsonVars['Name']['maxLength']
+        username = varStringLoop(**polVars)
 
-        templateVars["multi_select"] = False
+        polVars["multi_select"] = False
         jsonVars = easy_jsonData['policies']['iam.LocalUserPasswordPolicy']
-        templateVars["var_description"] = jsonVars['role']['description']
-        templateVars["jsonVars"] = sorted(jsonVars['role']['enum'])
-        templateVars["defaultVar"] = jsonVars['role']['default']
-        templateVars["varType"] = 'User Role'
-        role = variablesFromAPI(**templateVars)
+        polVars["var_description"] = jsonVars['role']['description']
+        polVars["jsonVars"] = sorted(jsonVars['role']['enum'])
+        polVars["defaultVar"] = jsonVars['role']['default']
+        polVars["varType"] = 'User Role'
+        role = variablesFromAPI(**polVars)
 
-        if templateVars["enforce_strong_password"] == True:
+        if polVars["enforce_strong_password"] == True:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print('Enforce Strong Password is enabled so the following rules must be followed:')
             print('  - The password must have a minimum of 8 and a maximum of 20 characters.')
@@ -300,7 +298,7 @@ def local_users_function(jsonData, easy_jsonData, inner_loop_count, **templateVa
             password2 = stdiomask.getpass(f'Please re-enter the password for {username}? ')
             if not password1 == '':
                 if password1 == password2:
-                    if templateVars["enforce_strong_password"] == True:
+                    if polVars["enforce_strong_password"] == True:
                         valid = validating.strong_password(f"{username}'s password", password1, 8, 20)
 
                     else:
@@ -490,24 +488,24 @@ def ntp_primary():
             valid = validating.ip_address('Primary NTP Server', primary_ntp)
     return primary_ntp
 
-def policies_list(policies_list, **templateVars):
+def policies_list(policies_list, **polVars):
     valid = False
     while valid == False:
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        if templateVars.get('optional_message'):
-            print(templateVars["optional_message"])
-        print(f'  {templateVars["policy"]} Options:')
+        if polVars.get('optional_message'):
+            print(polVars["optional_message"])
+        print(f'  {polVars["policy"]} Options:')
         for i, v in enumerate(policies_list):
             i += 1
             if i < 10:
                 print(f'     {i}. {v}')
             else:
                 print(f'    {i}. {v}')
-        if templateVars["allow_opt_out"] == True:
-            print(f'     99. Do not assign a(n) {templateVars["policy"]}.')
-        print(f'     100. Create a New {templateVars["policy"]}.')
+        if polVars["allow_opt_out"] == True:
+            print(f'     99. Do not assign a(n) {polVars["policy"]}.')
+        print(f'     100. Create a New {polVars["policy"]}.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        policyOption = input(f'Select the Option Number for the {templateVars["policy"]} to Assign to {templateVars["name"]}: ')
+        policyOption = input(f'Select the Option Number for the {polVars["policy"]} to Assign to {polVars["name"]}: ')
         if re.search(r'^[0-9]{1,3}$', policyOption):
             for i, v in enumerate(policies_list):
                 i += 1
@@ -586,7 +584,7 @@ def policy_descr(name, policy_type):
         descr = input(f'What is the Description for the {policy_type}?  [{name} {policy_type}]: ')
         if descr == '':
             descr = '%s %s' % (name, policy_type)
-        valid = validating.description(f'{policy_type} templateVars["descr"]', descr, 1, 62)
+        valid = validating.description(f'{policy_type} polVars["descr"]', descr, 1, 62)
         if valid == True:
             return descr
 
@@ -644,10 +642,10 @@ def process_kwargs(required_args, optional_args, **kwargs):
         if item in optional_args.keys():
             optional_args[item] = kwargs[item]
     # Combine option and required dicts for Jinja template render
-    templateVars = {**required_args, **optional_args}
-    return(templateVars)
+    polVars = {**required_args, **optional_args}
+    return(polVars)
 
-def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
+def process_method(wr_method, dest_dir, dest_file, template, **polVars):
     opSystem = platform.system()
     if opSystem == 'Windows':
         if os.environ.get('TF_DEST_DIR') is None:
@@ -655,11 +653,11 @@ def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
         else:
             tfDir = os.environ.get('TF_DEST_DIR')
         if re.search(r'^\\.*\\$', tfDir):
-            dest_dir = '%s%s\%s' % (tfDir, templateVars["org"], dest_dir)
+            dest_dir = '%s%s\%s' % (tfDir, polVars["org"], dest_dir)
         elif re.search(r'^\\.*\w', tfDir):
-            dest_dir = '%s\%s\%s' % (tfDir, templateVars["org"], dest_dir)
+            dest_dir = '%s\%s\%s' % (tfDir, polVars["org"], dest_dir)
         else:
-            dest_dir = '.\%s\%s\%s' % (tfDir, templateVars["org"], dest_dir)
+            dest_dir = '.\%s\%s\%s' % (tfDir, polVars["org"], dest_dir)
         if not os.path.isdir(dest_dir):
             mk_dir = 'mkdir %s' % (dest_dir)
             os.system(mk_dir)
@@ -675,11 +673,11 @@ def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
         else:
             tfDir = os.environ.get('TF_DEST_DIR')
         if re.search(r'^\/.*\/$', tfDir):
-            dest_dir = '%s%s/%s' % (tfDir, templateVars["org"], dest_dir)
+            dest_dir = '%s%s/%s' % (tfDir, polVars["org"], dest_dir)
         elif re.search(r'^\/.*\w', tfDir):
-            dest_dir = '%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
+            dest_dir = '%s/%s/%s' % (tfDir, polVars["org"], dest_dir)
         else:
-            dest_dir = './%s/%s/%s' % (tfDir, templateVars["org"], dest_dir)
+            dest_dir = './%s/%s/%s' % (tfDir, polVars["org"], dest_dir)
         if not os.path.isdir(dest_dir):
             mk_dir = 'mkdir -p %s' % (dest_dir)
             os.system(mk_dir)
@@ -691,7 +689,7 @@ def process_method(wr_method, dest_dir, dest_file, template, **templateVars):
         wr_file = open(tf_file, wr_method)
 
     # Render Payload and Write to File
-    payload = template.render(templateVars)
+    payload = template.render(polVars)
     wr_file.write(payload)
     wr_file.close()
 
@@ -705,18 +703,18 @@ def read_in(excel_workbook):
         sys.exit(e)
     return wb
 
-def sensitive_var_value(jsonData, **templateVars):
-    sensitive_var = 'TF_VAR_%s' % (templateVars['Variable'])
+def sensitive_var_value(jsonData, **polVars):
+    sensitive_var = 'TF_VAR_%s' % (polVars['Variable'])
     # -------------------------------------------------------------------------------------------------------------------------
     # Check to see if the Variable is already set in the Environment, and if not prompt the user for Input.
     #--------------------------------------------------------------------------------------------------------------------------
     if os.environ.get(sensitive_var) is None:
         print(f"\n----------------------------------------------------------------------------------\n")
         print(f"  The Script did not find {sensitive_var} as an 'environment' variable.")
-        print(f"  To not be prompted for the value of {templateVars['Variable']} each time")
+        print(f"  To not be prompted for the value of {polVars['Variable']} each time")
         print(f"  add the following to your local environemnt:\n")
-        print(f"    - Linux: export {sensitive_var}='{templateVars['Variable']}_value'")
-        print(f"    - Windows: $env:{sensitive_var}='{templateVars['Variable']}_value'")
+        print(f"    - Linux: export {sensitive_var}='{polVars['Variable']}_value'")
+        print(f"    - Windows: $env:{sensitive_var}='{polVars['Variable']}_value'")
         print(f"\n----------------------------------------------------------------------------------\n")
 
     if os.environ.get(sensitive_var) is None:
@@ -728,8 +726,8 @@ def sensitive_var_value(jsonData, **templateVars):
 
         valid = False
         while valid == False:
-            if templateVars.get('Multi_Line_Input'):
-                print(f'Enter the value for {templateVars["Variable"]}:')
+            if polVars.get('Multi_Line_Input'):
+                print(f'Enter the value for {polVars["Variable"]}:')
                 lines = []
                 while True:
                     # line = input('')
@@ -745,8 +743,8 @@ def sensitive_var_value(jsonData, **templateVars):
             else:
                 valid_pass = False
                 while valid_pass == False:
-                    password1 = stdiomask.getpass(prompt=f'Enter the value for {templateVars["Variable"]}: ')
-                    password2 = stdiomask.getpass(prompt=f'Re-Enter the value for {templateVars["Variable"]}: ')
+                    password1 = stdiomask.getpass(prompt=f'Enter the value for {polVars["Variable"]}: ')
+                    password2 = stdiomask.getpass(prompt=f'Re-Enter the value for {polVars["Variable"]}: ')
                     if password1 == password2:
                         secure_value = password1
                         valid_pass = True
@@ -800,14 +798,14 @@ def sensitive_var_value(jsonData, **templateVars):
                 maxLength = jsonVars['Password']['maxLength']
                 rePattern = jsonVars['Password']['pattern']
                 varName = 'Local User Password'
-                if templateVars.get('enforce_strong_password'):
-                    enforce_pass = templateVars['enforce_strong_password']
+                if polVars.get('enforce_strong_password'):
+                    enforce_pass = polVars['enforce_strong_password']
                 else:
                     enforce_pass = False
                 if enforce_pass == True:
                     minLength = 8
                     maxLength = 20
-                    valid = validating.strong_password(templateVars['Variable'], secure_value, minLength, maxLength)
+                    valid = validating.strong_password(polVars['Variable'], secure_value, minLength, maxLength)
                 else:
                     valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'secure_passphrase' in sensitive_var:
@@ -841,7 +839,7 @@ def sensitive_var_value(jsonData, **templateVars):
 
     else:
         # Add the Variable to the Environment
-        if templateVars.get('Multi_Line_Input'):
+        if polVars.get('Multi_Line_Input'):
             var_value = os.environ.get(sensitive_var)
             var_value = var_value.replace('\n', '\\n')
         else:
@@ -849,11 +847,11 @@ def sensitive_var_value(jsonData, **templateVars):
 
     return var_value
 
-def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **templateVars):
+def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
     trap_servers = []
     valid_traps = False
     while valid_traps == False:
-        templateVars["multi_select"] = False
+        polVars["multi_select"] = False
         jsonVars = jsonData['components']['schemas']['snmp.Trap']['allOf'][1]['properties']
         if len(snmp_user_list) == 0:
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -861,11 +859,11 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **templateVars
             print(f'\n-------------------------------------------------------------------------------------------\n')
             snmp_version = 'V2'
         else:
-            templateVars["var_description"] = jsonVars['Version']['description']
-            templateVars["jsonVars"] = sorted(jsonVars['Version']['enum'])
-            templateVars["defaultVar"] = jsonVars['Version']['default']
-            templateVars["varType"] = 'SNMP Version'
-            snmp_version = variablesFromAPI(**templateVars)
+            polVars["var_description"] = jsonVars['Version']['description']
+            polVars["jsonVars"] = sorted(jsonVars['Version']['enum'])
+            polVars["defaultVar"] = jsonVars['Version']['default']
+            polVars["varType"] = 'SNMP Version'
+            snmp_version = variablesFromAPI(**polVars)
 
         if snmp_version == 'V2':
             valid = False
@@ -882,21 +880,21 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **templateVars
             community_string = inner_loop_count
 
         if snmp_version == 'V3':
-            templateVars["multi_select"] = False
-            templateVars["var_description"] = '    Please Select the SNMP User to assign to this Destination:\n'
-            templateVars["var_type"] = 'SNMP User'
+            polVars["multi_select"] = False
+            polVars["var_description"] = '    Please Select the SNMP User to assign to this Destination:\n'
+            polVars["var_type"] = 'SNMP User'
             snmp_users = []
             for item in snmp_user_list:
                 snmp_users.append(item['name'])
-            snmp_user = vars_from_list(snmp_users, **templateVars)
+            snmp_user = vars_from_list(snmp_users, **polVars)
             snmp_user = snmp_user[0]
 
         if snmp_version == 'V2':
-            templateVars["var_description"] = jsonVars['Type']['description']
-            templateVars["jsonVars"] = sorted(jsonVars['Type']['enum'])
-            templateVars["defaultVar"] = jsonVars['Type']['default']
-            templateVars["varType"] = 'SNMP Trap Type'
-            trap_type = variablesFromAPI(**templateVars)
+            polVars["var_description"] = jsonVars['Type']['description']
+            polVars["jsonVars"] = sorted(jsonVars['Type']['enum'])
+            polVars["defaultVar"] = jsonVars['Type']['default']
+            polVars["varType"] = 'SNMP Trap Type'
+            trap_type = variablesFromAPI(**polVars)
         else:
             trap_type = 'Trap'
 
@@ -989,23 +987,23 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **templateVars
 
     return trap_servers,snmp_loop
 
-def snmp_users(jsonData, inner_loop_count, **templateVars):
+def snmp_users(jsonData, inner_loop_count, **polVars):
     snmp_user_list = []
     valid_users = False
     while valid_users == False:
-        templateVars["multi_select"] = False
+        polVars["multi_select"] = False
         jsonVars = jsonData['components']['schemas']['snmp.User']['allOf'][1]['properties']
 
         snmpUser = False
         while snmpUser == False:
-            templateVars["Description"] = jsonVars['Name']['description']
-            templateVars["varDefault"] = 'admin'
-            templateVars["varInput"] = 'What is the SNMPv3 Username:'
-            templateVars["varName"] = 'SNMP User'
-            templateVars["varRegex"] = '^([a-zA-Z]+[a-zA-Z0-9\\-\\_\\.\\@]+)$'
-            templateVars["minLength"] = jsonVars['Name']['minLength']
-            templateVars["maxLength"] = jsonVars['Name']['maxLength']
-            snmp_user = varStringLoop(**templateVars)
+            polVars["Description"] = jsonVars['Name']['description']
+            polVars["varDefault"] = 'admin'
+            polVars["varInput"] = 'What is the SNMPv3 Username:'
+            polVars["varName"] = 'SNMP User'
+            polVars["varRegex"] = '^([a-zA-Z]+[a-zA-Z0-9\\-\\_\\.\\@]+)$'
+            polVars["minLength"] = jsonVars['Name']['minLength']
+            polVars["maxLength"] = jsonVars['Name']['maxLength']
+            snmp_user = varStringLoop(**polVars)
             if snmp_user == 'admin':
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  admin may not be used for the snmp user value.')
@@ -1013,19 +1011,19 @@ def snmp_users(jsonData, inner_loop_count, **templateVars):
             else:
                 snmpUser = True
 
-        templateVars["var_description"] = jsonVars['SecurityLevel']['description']
-        templateVars["jsonVars"] = sorted(jsonVars['SecurityLevel']['enum'])
-        templateVars["defaultVar"] = jsonVars['SecurityLevel']['default']
-        templateVars["varType"] = 'SNMP Security Level'
-        security_level = variablesFromAPI(**templateVars)
+        polVars["var_description"] = jsonVars['SecurityLevel']['description']
+        polVars["jsonVars"] = sorted(jsonVars['SecurityLevel']['enum'])
+        polVars["defaultVar"] = jsonVars['SecurityLevel']['default']
+        polVars["varType"] = 'SNMP Security Level'
+        security_level = variablesFromAPI(**polVars)
 
         if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
-            templateVars["var_description"] = jsonVars['AuthType']['description']
-            templateVars["jsonVars"] = sorted(jsonVars['AuthType']['enum'])
-            templateVars["defaultVar"] = 'SHA'
-            templateVars["popList"] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
-            templateVars["varType"] = 'SNMP Auth Type'
-            auth_type = variablesFromAPI(**templateVars)
+            polVars["var_description"] = jsonVars['AuthType']['description']
+            polVars["jsonVars"] = sorted(jsonVars['AuthType']['enum'])
+            polVars["defaultVar"] = 'SHA'
+            polVars["popList"] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
+            polVars["varType"] = 'SNMP Auth Type'
+            auth_type = variablesFromAPI(**polVars)
 
         if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
             valid = False
@@ -1048,12 +1046,12 @@ def snmp_users(jsonData, inner_loop_count, **templateVars):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
 
         if security_level == 'AuthPriv':
-            templateVars["var_description"] = jsonVars['PrivacyType']['description']
-            templateVars["jsonVars"] = sorted(jsonVars['PrivacyType']['enum'])
-            templateVars["defaultVar"] = 'AES'
-            templateVars["popList"] = ['NA']
-            templateVars["varType"] = 'SNMP Auth Type'
-            privacy_type = variablesFromAPI(**templateVars)
+            polVars["var_description"] = jsonVars['PrivacyType']['description']
+            polVars["jsonVars"] = sorted(jsonVars['PrivacyType']['enum'])
+            polVars["defaultVar"] = 'AES'
+            polVars["popList"] = ['NA']
+            polVars["varType"] = 'SNMP Auth Type'
+            privacy_type = variablesFromAPI(**polVars)
 
             valid = False
             while valid == False:
@@ -1149,7 +1147,7 @@ def stdout_log(sheet, line):
     else:
         return
 
-def syslog_servers(jsonData, **templateVars):
+def syslog_servers(jsonData, **polVars):
     remote_logging = {}
     syslog_count = 1
     syslog_loop = False
@@ -1163,17 +1161,17 @@ def syslog_servers(jsonData, **templateVars):
                 valid = validating.ip_address('Remote Logging Server', hostname)
 
         jsonVars = jsonData['components']['schemas']['syslog.RemoteClientBase']['allOf'][1]['properties']
-        templateVars["var_description"] = jsonVars['MinSeverity']['description']
-        templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
-        templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
-        templateVars["varType"] = 'Syslog Remote Minimum Severity'
-        min_severity = variablesFromAPI(**templateVars)
+        polVars["var_description"] = jsonVars['MinSeverity']['description']
+        polVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+        polVars["defaultVar"] = jsonVars['MinSeverity']['default']
+        polVars["varType"] = 'Syslog Remote Minimum Severity'
+        min_severity = variablesFromAPI(**polVars)
 
-        templateVars["var_description"] = jsonVars['Protocol']['description']
-        templateVars["jsonVars"] = sorted(jsonVars['Protocol']['enum'])
-        templateVars["defaultVar"] = jsonVars['Protocol']['default']
-        templateVars["varType"] = 'Syslog Protocol'
-        templateVars["protocol"] = variablesFromAPI(**templateVars)
+        polVars["var_description"] = jsonVars['Protocol']['description']
+        polVars["jsonVars"] = sorted(jsonVars['Protocol']['enum'])
+        polVars["defaultVar"] = jsonVars['Protocol']['default']
+        polVars["varType"] = 'Syslog Protocol'
+        polVars["protocol"] = variablesFromAPI(**polVars)
 
         valid = False
         while valid == False:
@@ -1192,13 +1190,13 @@ def syslog_servers(jsonData, **templateVars):
             'hostname':hostname,
             'min_severity':min_severity,
             'port':port,
-            'protocol':templateVars["protocol"]
+            'protocol':polVars["protocol"]
         }
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'   hostname     = "{hostname}"')
         print(f'   min_severity = "{min_severity}"')
         print(f'   port         = {port}')
-        print(f'   protocol     = "{templateVars["protocol"]}"')
+        print(f'   protocol     = "{polVars["protocol"]}"')
         print(f'\n-------------------------------------------------------------------------------------------\n')
         valid_confirm = False
         while valid_confirm == False:
@@ -1289,28 +1287,28 @@ def terraform_fmt(files, folder, path_sep):
         line = line.strip()
         print(f'- {line}')
 
-def tfc_sensitive_variables(varValue, jsonData, templateVars):
-    templateVars["Variable"] = varValue
+def tfc_sensitive_variables(varValue, jsonData, polVars):
+    polVars["Variable"] = varValue
     if 'ipmi_key' in varValue:
-        templateVars["Description"] = 'IPMI over LAN Encryption Key'
+        polVars["Description"] = 'IPMI over LAN Encryption Key'
     elif 'iscsi' in varValue:
-        templateVars["Description"] = 'iSCSI Boot Password'
+        polVars["Description"] = 'iSCSI Boot Password'
     elif 'local_user' in varValue:
-        templateVars["Description"] = 'Local User Password'
+        polVars["Description"] = 'Local User Password'
     elif 'access_comm' in varValue:
-        templateVars["Description"] = 'SNMP Access Community String'
+        polVars["Description"] = 'SNMP Access Community String'
     elif 'snmp_auth' in varValue:
-        templateVars["Description"] = 'SNMP Authorization Password'
+        polVars["Description"] = 'SNMP Authorization Password'
     elif 'snmp_priv' in varValue:
-        templateVars["Description"] = 'SNMP Privacy Password'
+        polVars["Description"] = 'SNMP Privacy Password'
     elif 'trap_comm' in varValue:
-        templateVars["Description"] = 'SNMP Trap Community String'
-    templateVars["varValue"] = sensitive_var_value(jsonData, **templateVars)
-    templateVars["varId"] = varValue
-    templateVars["varKey"] = varValue
-    templateVars["Sensitive"] = True
-    print(f'* Adding {templateVars["Description"]} to {templateVars["workspaceName"]}')
-    return templateVars
+        polVars["Description"] = 'SNMP Trap Community String'
+    polVars["varValue"] = sensitive_var_value(jsonData, **polVars)
+    polVars["varId"] = varValue
+    polVars["varKey"] = varValue
+    polVars["Sensitive"] = True
+    print(f'* Adding {polVars["Description"]} to {polVars["workspaceName"]}')
+    return polVars
 
 def ucs_domain_serials():
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -1319,20 +1317,20 @@ def ucs_domain_serials():
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        templateVars = {}
+        polVars = {}
         fabrics = ['A','B']
         for x in fabrics:
-            templateVars[f"serial_{x}"] = input(f'What is the Serial Number of Fabric {x}? [press enter to skip]: ')
-            if templateVars[f"serial_{x}"] == '':
+            polVars[f"serial_{x}"] = input(f'What is the Serial Number of Fabric {x}? [press enter to skip]: ')
+            if polVars[f"serial_{x}"] == '':
                 valid = True
-            elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', templateVars[f"serial_{x}"]):
+            elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', polVars[f"serial_{x}"]):
                 valid = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Serial Number.  "templateVars["serial_{x}"]" is not a valid serial.')
+                print(f'  Error!! Invalid Serial Number.  "polVars["serial_{x}"]" is not a valid serial.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-    serial_a = templateVars["serial_A"]
-    serial_b = templateVars["serial_B"]
+    serial_a = polVars["serial_A"]
+    serial_b = polVars["serial_B"]
     return serial_a,serial_b
 
 def validate_vlan_in_policy(vlan_policy_list, vlan_id):
@@ -1351,20 +1349,20 @@ def validate_vlan_in_policy(vlan_policy_list, vlan_id):
         print(f'\n-------------------------------------------------------------------------------------------\n')
     return valid
 
-def variablesFromAPI(**templateVars):
+def variablesFromAPI(**polVars):
     valid = False
     while valid == False:
-        json_vars = templateVars["jsonVars"]
-        if 'popList' in templateVars:
-            if len(templateVars["popList"]) > 0:
-                for x in templateVars["popList"]:
+        json_vars = polVars["jsonVars"]
+        if 'popList' in polVars:
+            if len(polVars["popList"]) > 0:
+                for x in polVars["popList"]:
                     varsCount = len(json_vars)
                     for r in range(0, varsCount):
                         if json_vars[r] == x:
                             json_vars.pop(r)
                             break
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        newDescr = templateVars["var_description"]
+        newDescr = polVars["var_description"]
         if '\n' in newDescr:
             newDescr = newDescr.split('\n')
             for line in newDescr:
@@ -1373,37 +1371,37 @@ def variablesFromAPI(**templateVars):
                 else:
                     print(fill(f'{line}',88))
         else:
-            print(fill(f'{templateVars["var_description"]}',88))
+            print(fill(f'{polVars["var_description"]}',88))
         print(f'\n    Select an Option Below:')
         for index, value in enumerate(json_vars):
             index += 1
-            if value == templateVars["defaultVar"]:
+            if value == polVars["defaultVar"]:
                 defaultIndex = index
             if index < 10:
                 print(f'     {index}. {value}')
             else:
                 print(f'    {index}. {value}')
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        if templateVars["multi_select"] == True:
-            if not templateVars["defaultVar"] == '':
-                var_selection = input(f'Please Enter the Option Number(s) to Select for {templateVars["varType"]}.  [{defaultIndex}]: ')
+        if polVars["multi_select"] == True:
+            if not polVars["defaultVar"] == '':
+                var_selection = input(f'Please Enter the Option Number(s) to Select for {polVars["varType"]}.  [{defaultIndex}]: ')
             else:
-                var_selection = input(f'Please Enter the Option Number(s) to Select for {templateVars["varType"]}: ')
+                var_selection = input(f'Please Enter the Option Number(s) to Select for {polVars["varType"]}: ')
         else:
-            if not templateVars["defaultVar"] == '':
-                var_selection = input(f'Please Enter the Option Number to Select for {templateVars["varType"]}.  [{defaultIndex}]: ')
+            if not polVars["defaultVar"] == '':
+                var_selection = input(f'Please Enter the Option Number to Select for {polVars["varType"]}.  [{defaultIndex}]: ')
             else:
-                var_selection = input(f'Please Enter the Option Number to Select for {templateVars["varType"]}: ')
-        if not templateVars["defaultVar"] == '' and var_selection == '':
+                var_selection = input(f'Please Enter the Option Number to Select for {polVars["varType"]}: ')
+        if not polVars["defaultVar"] == '' and var_selection == '':
             var_selection = defaultIndex
 
-        if templateVars["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
+        if polVars["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
             for index, value in enumerate(json_vars):
                 index += 1
                 if int(var_selection) == index:
                     selection = value
                     valid = True
-        elif templateVars["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
+        elif polVars["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
             var_list = vlan_list_full(var_selection)
             var_length = int(len(var_list))
             var_count = 0
@@ -1426,9 +1424,9 @@ def variablesFromAPI(**templateVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return selection
 
-def varBoolLoop(**templateVars):
+def varBoolLoop(**polVars):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = templateVars["Description"]
+    newDescr = polVars["Description"]
     if '\n' in newDescr:
         newDescr = newDescr.split('\n')
         for line in newDescr:
@@ -1437,15 +1435,15 @@ def varBoolLoop(**templateVars):
             else:
                 print(fill(f'{line}',88))
     else:
-        print(fill(f'{templateVars["Description"]}',88))
+        print(fill(f'{polVars["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{templateVars["varInput"]}  [{templateVars["varDefault"]}]: ')
+        varValue = input(f'{polVars["varInput"]}  [{polVars["varDefault"]}]: ')
         if varValue == '':
-            if templateVars["varDefault"] == 'Y':
+            if polVars["varDefault"] == 'Y':
                 varValue = True
-            elif templateVars["varDefault"] == 'N':
+            elif polVars["varDefault"] == 'N':
                 varValue = False
             valid = True
         elif varValue == 'N':
@@ -1456,17 +1454,17 @@ def varBoolLoop(**templateVars):
             valid = True
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {templateVars["varName"]} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
+            print(f'   {polVars["varName"]} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def varNumberLoop(**templateVars):
-    maxNum = templateVars["maxNum"]
-    minNum = templateVars["minNum"]
-    varName = templateVars["varName"]
+def varNumberLoop(**polVars):
+    maxNum = polVars["maxNum"]
+    minNum = polVars["minNum"]
+    varName = polVars["varName"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = templateVars["Description"]
+    newDescr = polVars["Description"]
     if '\n' in newDescr:
         newDescr = newDescr.split('\n')
         for line in newDescr:
@@ -1475,13 +1473,13 @@ def varNumberLoop(**templateVars):
             else:
                 print(fill(f'{line}',88))
     else:
-        print(fill(f'{templateVars["Description"]}',88))
+        print(fill(f'{polVars["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{templateVars["varInput"]}  [{templateVars["varDefault"]}]: ')
+        varValue = input(f'{polVars["varInput"]}  [{polVars["varDefault"]}]: ')
         if varValue == '':
-            varValue = templateVars["varDefault"]
+            varValue = polVars["varDefault"]
         if re.fullmatch(r'^[0-9]+$', str(varValue)):
             valid = validating.number_in_range(varName, varValue, minNum, maxNum)
         else:
@@ -1491,14 +1489,14 @@ def varNumberLoop(**templateVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def varSensitiveStringLoop(**templateVars):
-    maxLength = templateVars["maxLength"]
-    minLength = templateVars["minLength"]
-    varName = templateVars["varName"]
-    varRegex = templateVars["varRegex"]
+def varSensitiveStringLoop(**polVars):
+    maxLength = polVars["maxLength"]
+    minLength = polVars["minLength"]
+    varName = polVars["varName"]
+    varRegex = polVars["varRegex"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = templateVars["Description"]
+    newDescr = polVars["Description"]
     if '\n' in newDescr:
         newDescr = newDescr.split('\n')
         for line in newDescr:
@@ -1507,11 +1505,11 @@ def varSensitiveStringLoop(**templateVars):
             else:
                 print(fill(f'{line}',88))
     else:
-        print(fill(f'{templateVars["Description"]}',88))
+        print(fill(f'{polVars["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = stdiomask.getpass(f'{templateVars["varInput"]} ')
+        varValue = stdiomask.getpass(f'{polVars["varInput"]} ')
         if not varValue == '':
             valid = validating.length_and_regex_sensitive(varRegex, varName, varValue, minLength, maxLength)
         else:
@@ -1520,14 +1518,14 @@ def varSensitiveStringLoop(**templateVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def varStringLoop(**templateVars):
-    maxLength = templateVars["maxLength"]
-    minLength = templateVars["minLength"]
-    varName = templateVars["varName"]
-    varRegex = templateVars["varRegex"]
+def varStringLoop(**polVars):
+    maxLength = polVars["maxLength"]
+    minLength = polVars["minLength"]
+    varName = polVars["varName"]
+    varRegex = polVars["varRegex"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = templateVars["Description"]
+    newDescr = polVars["Description"]
     if '\n' in newDescr:
         newDescr = newDescr.split('\n')
         for line in newDescr:
@@ -1536,15 +1534,15 @@ def varStringLoop(**templateVars):
             else:
                 print(fill(f'{line}',88))
     else:
-        print(fill(f'{templateVars["Description"]}',88))
+        print(fill(f'{polVars["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{templateVars["varInput"]} ')
-        if 'press enter to skip' in templateVars["varInput"] and varValue == '':
+        varValue = input(f'{polVars["varInput"]} ')
+        if 'press enter to skip' in polVars["varInput"] and varValue == '':
             valid = True
-        elif not templateVars["varDefault"] == '' and varValue == '':
-            varValue = templateVars["varDefault"]
+        elif not polVars["varDefault"] == '' and varValue == '':
+            varValue = polVars["varDefault"]
             valid = True
         elif not varValue == '':
             valid = validating.length_and_regex(varRegex, varName, varValue, minLength, maxLength)
@@ -1554,13 +1552,13 @@ def varStringLoop(**templateVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def vars_from_list(var_options, **templateVars):
+def vars_from_list(var_options, **polVars):
     selection = []
     selection_count = 0
     valid = False
     while valid == False:
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'{templateVars["var_description"]}')
+        print(f'{polVars["var_description"]}')
         for index, value in enumerate(var_options):
             index += 1
             if index < 10:
@@ -1570,7 +1568,7 @@ def vars_from_list(var_options, **templateVars):
         print(f'\n-------------------------------------------------------------------------------------------\n')
         exit_answer = False
         while exit_answer == False:
-            var_selection = input(f'Please Enter the Option Number to Select for {templateVars["var_type"]}: ')
+            var_selection = input(f'Please Enter the Option Number to Select for {polVars["var_type"]}: ')
             if not var_selection == '':
                 if re.search(r'[0-9]+', str(var_selection)):
                     xcount = 1
@@ -1580,11 +1578,11 @@ def vars_from_list(var_options, **templateVars):
                             selection.append(value)
                             xcount = 0
                     if xcount == 0:
-                        if selection_count % 2 == 0 and templateVars["multi_select"] == True:
-                            answer_finished = input(f'Would you like to add another port to the {templateVars["port_type"]}?  Enter "Y" or "N" [Y]: ')
-                        elif templateVars["multi_select"] == True:
-                            answer_finished = input(f'Would you like to add another port to the {templateVars["port_type"]}?  Enter "Y" or "N" [N]: ')
-                        elif templateVars["multi_select"] == False:
+                        if selection_count % 2 == 0 and polVars["multi_select"] == True:
+                            answer_finished = input(f'Would you like to add another port to the {polVars["port_type"]}?  Enter "Y" or "N" [Y]: ')
+                        elif polVars["multi_select"] == True:
+                            answer_finished = input(f'Would you like to add another port to the {polVars["port_type"]}?  Enter "Y" or "N" [N]: ')
+                        elif polVars["multi_select"] == False:
                             answer_finished = 'N'
                         if (selection_count % 2 == 0 and answer_finished == '') or answer_finished == 'Y':
                             exit_answer = True
@@ -1592,7 +1590,7 @@ def vars_from_list(var_options, **templateVars):
                         elif answer_finished == '' or answer_finished == 'N':
                             exit_answer = True
                             valid = True
-                        elif templateVars["multi_select"] == False:
+                        elif polVars["multi_select"] == False:
                             exit_answer = True
                             valid = True
                         else:
@@ -1686,15 +1684,15 @@ def vlan_pool():
     
     return VlanList,vlanListExpanded
 
-def write_to_template(self, **templateVars):
+def write_to_template(self, **polVars):
     # Define the Template Source
-    template = self.templateEnv.get_template(templateVars["template_file"])
+    template = self.templateEnv.get_template(polVars["template_file"])
 
     # Process the template
     dest_dir = '%s' % (self.type)
-    dest_file = '%s.auto.tfvars' % (templateVars["template_type"])
-    if templateVars["initial_write"] == True:
+    dest_file = '%s.auto.tfvars' % (polVars["template_type"])
+    if polVars["initial_write"] == True:
         write_method = 'w'
     else:
         write_method = 'a'
-    process_method(write_method, dest_dir, dest_file, template, **templateVars)
+    process_method(write_method, dest_dir, dest_file, template, **polVars)

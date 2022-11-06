@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-
+import ezfunctions
 import copy
 import ipaddress
 import jinja2
 import pkg_resources
 import re
-from easy_functions import process_method
 
-ucs_template_path = pkg_resources.resource_filename('class_imm_transition', 'Templates/')
+ucs_template_path = pkg_resources.resource_filename('imm_transition', '../templates/')
 
 class imm_transition(object):
     def __init__(self, json_data, type):
@@ -15,7 +14,7 @@ class imm_transition(object):
         self.templateLoader = jinja2.FileSystemLoader(
             searchpath=(ucs_template_path + '%s/') % (type))
         self.templateEnv = jinja2.Environment(loader=self.templateLoader)
-        self.templateVars = {}
+        self.polVars = {}
         self.type = type
         self.orgs = []
         for item in json_data["config"]["orgs"]:
@@ -189,12 +188,12 @@ class imm_transition(object):
         for org in self.orgs:
 
             # Pull in Variables from Class
-            templateVars = self.templateVars
-            templateVars["org"] = org
+            polVars = self.polVars
+            polVars["org"] = org
 
             # Define the Template Source
-            templateVars["header"] = header
-            templateVars["template_type"] = template_type
+            polVars["header"] = header
+            polVars["template_type"] = template_type
             template_file = "template_open.jinja2"
             template = self.templateEnv.get_template(template_file)
 
@@ -205,7 +204,7 @@ class imm_transition(object):
                 write_method = 'w'
             else:
                 write_method = 'a'
-            process_method(write_method, dest_dir, dest_file, template, **templateVars)
+            ezfunctions.process_method(write_method, dest_dir, dest_file, template, **polVars)
 
             # Define the Template Source
             template_file = '%s.jinja2' % (template_type)
@@ -213,15 +212,15 @@ class imm_transition(object):
 
             if template_type in self.json_data["config"]["orgs"][org_count]:
                 for item in self.json_data["config"]["orgs"][org_count][template_type]:
-                    # Reset TemplateVars to Default for each Loop
-                    templateVars = {}
-                    templateVars["org"] = org
+                    # Reset polVars to Default for each Loop
+                    polVars = {}
+                    polVars["org"] = org
 
                     # Define the Template Source
-                    templateVars["header"] = header
+                    polVars["header"] = header
                     for k, v in item.items():
                         if re.search(r'(_port_channels)', k):
-                            templateVars[k] = []
+                            polVars[k] = []
                             attribute_list = {}
                             for i in v:
                                 interface_list = []
@@ -230,12 +229,12 @@ class imm_transition(object):
 
                                 attribute_list = dict(sorted(attribute_list.items()))
                                 xdeep = copy.deepcopy(attribute_list)
-                                templateVars[k].append(xdeep)
+                                polVars[k].append(xdeep)
 
                         elif re.search(r'(server_ports)', k):
                             aggr_ids = []
                             ports_count = 0
-                            templateVars[k] = []
+                            polVars[k] = []
                             slot_ids = []
                             for i in v:
                                 for key, value in i.items():
@@ -260,7 +259,7 @@ class imm_transition(object):
                                     attribute_list.update({'port_list': port_list})
                                     attribute_list = dict(sorted(attribute_list.items()))
                                     xdeep = copy.deepcopy(attribute_list)
-                                    templateVars[k].append(xdeep)
+                                    polVars[k].append(xdeep)
                                     ports_count += 1
                             else:
                                 attribute_list = {}
@@ -279,8 +278,8 @@ class imm_transition(object):
                                 attribute_list.update({'port_list': port_list})
                                 attribute_list = dict(sorted(attribute_list.items()))
                                 xdeep = copy.deepcopy(attribute_list)
-                                templateVars[k].append(xdeep)
-                            # print(k, templateVars[k])
+                                polVars[k].append(xdeep)
+                            # print(k, polVars[k])
                         elif re.search(r'(san_unified_ports)', k):
                             for key, value in v.items():
                                 if key == 'port_id_start':
@@ -289,10 +288,10 @@ class imm_transition(object):
                                     end = value
                                 elif key == 'slot_id':
                                     slot_id = value
-                            templateVars["port_modes"] = {'port_list': [begin, end], 'slot_id': slot_id}
+                            polVars["port_modes"] = {'port_list': [begin, end], 'slot_id': slot_id}
                         elif re.search(r'(_ports)$', k):
                             ports_count = 0
-                            templateVars[k] = []
+                            polVars[k] = []
                             attribute_list = {}
                             for i in v:
                                 for key, value in i.items():
@@ -300,48 +299,48 @@ class imm_transition(object):
                                 attribute_list.update({'key_id': ports_count})
                                 attribute_list = dict(sorted(attribute_list.items()))
                                 xdeep = copy.deepcopy(attribute_list)
-                                templateVars[k].append(xdeep)
+                                polVars[k].append(xdeep)
                                 ports_count += 1
                         else:
-                            templateVars[k] = v
-                    if 'appliance_port_channels' in templateVars:
-                        templateVars["port_channel_appliances"] = templateVars["appliance_port_channels"]
-                        del templateVars["appliance_port_channels"]
-                    if 'lan_port_channels' in templateVars:
-                        templateVars["port_channel_ethernet_uplinks"] = templateVars["lan_port_channels"]
-                        del templateVars["lan_port_channels"]
-                    if 'san_port_channels' in templateVars:
-                        templateVars["port_channel_fc_uplinks"] = templateVars["san_port_channels"]
-                        del templateVars["san_port_channels"]
-                    if 'fcoe_port_channels' in templateVars:
-                        templateVars["port_channel_fcoe_uplinks"] = templateVars["fcoe_port_channels"]
-                        del templateVars["fcoe_port_channels"]
-                    if 'appliance_ports' in templateVars:
-                        templateVars["port_role_appliances"] = templateVars["appliance_ports"]
-                        del templateVars["appliance_ports"]
-                    if 'lan_uplink_ports' in templateVars:
-                        templateVars["port_role_ethernet_uplinks"] = templateVars["lan_uplink_ports"]
-                        del templateVars["lan_uplink_ports"]
-                    if 'storage_ports' in templateVars:
-                        templateVars["port_role_fc_storage"] = templateVars["storage_ports"]
-                        del templateVars["storage_ports"]
-                    if 'san_uplink_ports' in templateVars:
-                        templateVars["port_role_fc_uplinks"] = templateVars["san_uplink_ports"]
-                        del templateVars["san_uplink_ports"]
-                    if 'fcoe_uplink_ports' in templateVars:
-                        templateVars["port_role_fcoe_uplinks"] = templateVars["fcoe_uplink_ports"]
-                        del templateVars["fcoe_uplink_ports"]
-                    if 'server_ports' in templateVars:
-                        templateVars["port_role_servers"] = templateVars["server_ports"]
-                        del templateVars["server_ports"]
+                            polVars[k] = v
+                    if 'appliance_port_channels' in polVars:
+                        polVars["port_channel_appliances"] = polVars["appliance_port_channels"]
+                        del polVars["appliance_port_channels"]
+                    if 'lan_port_channels' in polVars:
+                        polVars["port_channel_ethernet_uplinks"] = polVars["lan_port_channels"]
+                        del polVars["lan_port_channels"]
+                    if 'san_port_channels' in polVars:
+                        polVars["port_channel_fc_uplinks"] = polVars["san_port_channels"]
+                        del polVars["san_port_channels"]
+                    if 'fcoe_port_channels' in polVars:
+                        polVars["port_channel_fcoe_uplinks"] = polVars["fcoe_port_channels"]
+                        del polVars["fcoe_port_channels"]
+                    if 'appliance_ports' in polVars:
+                        polVars["port_role_appliances"] = polVars["appliance_ports"]
+                        del polVars["appliance_ports"]
+                    if 'lan_uplink_ports' in polVars:
+                        polVars["port_role_ethernet_uplinks"] = polVars["lan_uplink_ports"]
+                        del polVars["lan_uplink_ports"]
+                    if 'storage_ports' in polVars:
+                        polVars["port_role_fc_storage"] = polVars["storage_ports"]
+                        del polVars["storage_ports"]
+                    if 'san_uplink_ports' in polVars:
+                        polVars["port_role_fc_uplinks"] = polVars["san_uplink_ports"]
+                        del polVars["san_uplink_ports"]
+                    if 'fcoe_uplink_ports' in polVars:
+                        polVars["port_role_fcoe_uplinks"] = polVars["fcoe_uplink_ports"]
+                        del polVars["fcoe_uplink_ports"]
+                    if 'server_ports' in polVars:
+                        polVars["port_role_servers"] = polVars["server_ports"]
+                        del polVars["server_ports"]
 
-                    templateVars = dict(sorted(templateVars.items()))
-                    # print(templateVars)
+                    polVars = dict(sorted(polVars.items()))
+                    # print(polVars)
 
                     # Process the template
                     dest_dir = '%s' % (self.type)
                     dest_file = '%s.auto.tfvars' % (template_type)
-                    process_method('a', dest_dir, dest_file, template, **templateVars)
+                    ezfunctions.process_method('a', dest_dir, dest_file, template, **polVars)
 
             # Define the Template Source
             template_file = "template_close.jinja2"
@@ -350,7 +349,7 @@ class imm_transition(object):
             # Process the template
             dest_dir = '%s' % (self.type)
             dest_file = '%s.auto.tfvars' % (template_type)
-            process_method('a', dest_dir, dest_file, template, **templateVars)
+            ezfunctions.process_method('a', dest_dir, dest_file, template, **polVars)
 
             # Increment the org_count for the next Organization Loop
             org_count += 1
@@ -489,12 +488,12 @@ def policy_loop_standard(self, header, initial_policy, template_type):
     for org in self.orgs:
 
         # Pull in Variables from Class
-        templateVars = self.templateVars
-        templateVars["org"] = org
+        polVars = self.polVars
+        polVars["org"] = org
 
         # Define the Template Source
-        templateVars["header"] = header
-        templateVars["template_type"] = template_type
+        polVars["header"] = header
+        polVars["template_type"] = template_type
         template_file = "template_open.jinja2"
         template = self.templateEnv.get_template(template_file)
 
@@ -506,7 +505,7 @@ def policy_loop_standard(self, header, initial_policy, template_type):
             write_method = 'w'
         else:
             write_method = 'a'
-        process_method(write_method, dest_dir, dest_file, template, **templateVars)
+        ezfunctions.process_method(write_method, dest_dir, dest_file, template, **polVars)
 
         # Define the Template Source
         template_file = '%s.jinja2' % (template_type)
@@ -518,150 +517,150 @@ def policy_loop_standard(self, header, initial_policy, template_type):
             imm_template_type = template_type
         if imm_template_type in self.json_data["config"]["orgs"][org_count]:
             for item in self.json_data["config"]["orgs"][org_count][imm_template_type]:
-                # Reset TemplateVars to Default for each Loop
-                templateVars = {}
-                templateVars["org"] = org
+                # Reset polVars to Default for each Loop
+                polVars = {}
+                polVars["org"] = org
 
                 # Define the Template Source
-                templateVars["header"] = header
+                polVars["header"] = header
 
-                # Loop Through Json Items to Create templateVars Blocks
+                # Loop Through Json Items to Create polVars Blocks
                 if template_type == 'bios_policies':
                     for k, v in item.items():
                         if (k == 'name' or k == 'descr' or k == 'tags'):
-                            templateVars[k] = v
+                            polVars[k] = v
 
-                    templateVars["bios_settings"] = {}
+                    polVars["bios_settings"] = {}
                     for k, v in item.items():
                         if not (k == 'name' or k == 'descr' or k == 'tags'):
-                            templateVars["bios_settings"][k] = v
+                            polVars["bios_settings"][k] = v
                 elif template_type == 'system_qos_policies':
                     for k, v in item.items():
                         if (k == 'name' or k == 'descr' or k == 'tags'):
-                            templateVars[k] = v
+                            polVars[k] = v
 
-                    templateVars["classes"] = [{},{},{},{},{},{}]
+                    polVars["classes"] = [{},{},{},{},{},{}]
                     for key, value in item.items():
                         if key == 'classes':
                             class_count = 0
                             for i in value:
                                 for k, v in i.items():
-                                    templateVars["classes"][class_count][k] = v
+                                    polVars["classes"][class_count][k] = v
                                 class_count += 1
                 else:
                     for k, v in item.items():
-                        templateVars[k] = v
+                        polVars[k] = v
 
                 if template_type == 'ip_pools':
-                    if 'ipv4_blocks' in templateVars:
+                    if 'ipv4_blocks' in polVars:
                         index_count = 0
-                        for i in templateVars["ipv4_blocks"]:
+                        for i in polVars["ipv4_blocks"]:
                              index_count += 1
                         for r in range(0,index_count):
-                            if 'to' in templateVars["ipv4_blocks"][r]:
-                                templateVars["ipv4_blocks"][r]["size"] = int(
-                                    ipaddress.IPv4Address(templateVars["ipv4_blocks"][r]["to"])
-                                    ) - int(ipaddress.IPv4Address(templateVars["ipv4_blocks"][r]["from"])) + 1
-                                ipv4_to = templateVars["ipv4_blocks"][r]['to']
-                                templateVars["ipv4_blocks"][r].pop('to')
-                                templateVars["ipv4_blocks"][r]['to'] = ipv4_to
+                            if 'to' in polVars["ipv4_blocks"][r]:
+                                polVars["ipv4_blocks"][r]["size"] = int(
+                                    ipaddress.IPv4Address(polVars["ipv4_blocks"][r]["to"])
+                                    ) - int(ipaddress.IPv4Address(polVars["ipv4_blocks"][r]["from"])) + 1
+                                ipv4_to = polVars["ipv4_blocks"][r]['to']
+                                polVars["ipv4_blocks"][r].pop('to')
+                                polVars["ipv4_blocks"][r]['to'] = ipv4_to
 
-                    if 'ipv6_blocks' in templateVars:
+                    if 'ipv6_blocks' in polVars:
                         index_count = 0
-                        for i in templateVars["ipv6_blocks"]:
+                        for i in polVars["ipv6_blocks"]:
                              index_count += 1
                         for r in range(0,index_count):
-                            if 'to' in templateVars["ipv6_blocks"][r]:
-                                templateVars["ipv6_blocks"][r]["size"] = int(
-                                    ipaddress.IPv6Address(templateVars["ipv6_blocks"][r]["to"])
-                                    ) - int(ipaddress.IPv6Address(templateVars["ipv6_blocks"][r]["from"])) + 1
-                                ipv6_to = templateVars["ipv6_blocks"][r]['to']
-                                templateVars["ipv6_blocks"][r].pop('to')
-                                templateVars["ipv6_blocks"][r]['to'] = ipv6_to
+                            if 'to' in polVars["ipv6_blocks"][r]:
+                                polVars["ipv6_blocks"][r]["size"] = int(
+                                    ipaddress.IPv6Address(polVars["ipv6_blocks"][r]["to"])
+                                    ) - int(ipaddress.IPv6Address(polVars["ipv6_blocks"][r]["from"])) + 1
+                                ipv6_to = polVars["ipv6_blocks"][r]['to']
+                                polVars["ipv6_blocks"][r].pop('to')
+                                polVars["ipv6_blocks"][r]['to'] = ipv6_to
                 elif template_type == 'iqn_pools':
-                    if 'iqn_blocks' in templateVars:
+                    if 'iqn_blocks' in polVars:
                         index_count = 0
-                        for i in templateVars["iqn_blocks"]:
+                        for i in polVars["iqn_blocks"]:
                              index_count += 1
                         for r in range(0,index_count):
-                            if 'to' in templateVars["iqn_blocks"][r]:
-                                templateVars["iqn_blocks"][r]["size"] = int(
-                                    templateVars["iqn_blocks"][r]["to"]
-                                    ) - int(templateVars["iqn_blocks"][r]["from"]) + 1
-                                iqn_to = templateVars["iqn_blocks"][r]["to"]
-                                templateVars["iqn_blocks"][r].pop('to')
-                                templateVars["iqn_blocks"][r]["to"] = iqn_to
+                            if 'to' in polVars["iqn_blocks"][r]:
+                                polVars["iqn_blocks"][r]["size"] = int(
+                                    polVars["iqn_blocks"][r]["to"]
+                                    ) - int(polVars["iqn_blocks"][r]["from"]) + 1
+                                iqn_to = polVars["iqn_blocks"][r]["to"]
+                                polVars["iqn_blocks"][r].pop('to')
+                                polVars["iqn_blocks"][r]["to"] = iqn_to
                 elif template_type == 'mac_pools':
-                    if 'mac_blocks' in templateVars:
+                    if 'mac_blocks' in polVars:
                         index_count = 0
-                        for i in templateVars["mac_blocks"]:
+                        for i in polVars["mac_blocks"]:
                              index_count += 1
                         for r in range(0,index_count):
-                            if 'to' in templateVars["mac_blocks"][r]:
-                                int_from = int(templateVars["mac_blocks"][r]["from"].replace(':', ''), 16)
-                                int_to = int(templateVars["mac_blocks"][r]["to"].replace(':', ''), 16)
-                                templateVars["mac_blocks"][r]["size"] = int_to - int_from + 1
-                                mac_to = templateVars["mac_blocks"][r]["to"]
-                                templateVars["mac_blocks"][r].pop('to')
-                                templateVars["mac_blocks"][r]["to"] = mac_to
+                            if 'to' in polVars["mac_blocks"][r]:
+                                int_from = int(polVars["mac_blocks"][r]["from"].replace(':', ''), 16)
+                                int_to = int(polVars["mac_blocks"][r]["to"].replace(':', ''), 16)
+                                polVars["mac_blocks"][r]["size"] = int_to - int_from + 1
+                                mac_to = polVars["mac_blocks"][r]["to"]
+                                polVars["mac_blocks"][r].pop('to')
+                                polVars["mac_blocks"][r]["to"] = mac_to
                 elif template_type == 'system_qos_policies':
                     total_weight = 0
                     for r in range(0,6):
-                        if templateVars["classes"][r]["state"] == 'Enabled':
-                            total_weight += int(templateVars["classes"][r]["weight"])
+                        if polVars["classes"][r]["state"] == 'Enabled':
+                            total_weight += int(polVars["classes"][r]["weight"])
                     for r in range(0,6):
-                        if templateVars["classes"][r]["state"] == 'Enabled':
-                            x = ((int(templateVars["classes"][r]["weight"]) / total_weight) * 100)
-                            templateVars["classes"][r]["bandwidth_percent"] = str(x).split('.')[0]
+                        if polVars["classes"][r]["state"] == 'Enabled':
+                            x = ((int(polVars["classes"][r]["weight"]) / total_weight) * 100)
+                            polVars["classes"][r]["bandwidth_percent"] = str(x).split('.')[0]
                         else:
-                            templateVars["classes"][r]["bandwidth_percent"] = 0
+                            polVars["classes"][r]["bandwidth_percent"] = 0
                 elif template_type == 'uuid_pools':
-                    if 'uuid_blocks' in templateVars:
+                    if 'uuid_blocks' in polVars:
                         index_count = 0
-                        for i in templateVars["uuid_blocks"]:
+                        for i in polVars["uuid_blocks"]:
                              index_count += 1
                         for r in range(0,index_count):
-                            if 'to' in templateVars["uuid_blocks"][r]:
-                                if re.search('[a-zA-Z]', templateVars["uuid_blocks"][r]["from"].split('-')[1]) or re.search('[a-zA-Z]', templateVars["uuid_blocks"][r]["to"].split('-')[1]):
-                                    int_from = int(templateVars["uuid_blocks"][r]["from"].split('-')[1], 16)
-                                    int_to = int(templateVars["uuid_blocks"][r]["to"].split('-')[1], 16)
+                            if 'to' in polVars["uuid_blocks"][r]:
+                                if re.search('[a-zA-Z]', polVars["uuid_blocks"][r]["from"].split('-')[1]) or re.search('[a-zA-Z]', polVars["uuid_blocks"][r]["to"].split('-')[1]):
+                                    int_from = int(polVars["uuid_blocks"][r]["from"].split('-')[1], 16)
+                                    int_to = int(polVars["uuid_blocks"][r]["to"].split('-')[1], 16)
                                 else:
-                                    int_from = int(templateVars["uuid_blocks"][r]["from"].split('-')[1])
-                                    int_to = int(templateVars["uuid_blocks"][r]["to"].split('-')[1])
-                                templateVars["uuid_blocks"][r]["size"] = int_to - int_from + 1
-                                uuid_to = templateVars["uuid_blocks"][r]["to"]
-                                templateVars["uuid_blocks"][r].pop('to')
-                                templateVars["uuid_blocks"][r]["to"] = uuid_to
+                                    int_from = int(polVars["uuid_blocks"][r]["from"].split('-')[1])
+                                    int_to = int(polVars["uuid_blocks"][r]["to"].split('-')[1])
+                                polVars["uuid_blocks"][r]["size"] = int_to - int_from + 1
+                                uuid_to = polVars["uuid_blocks"][r]["to"]
+                                polVars["uuid_blocks"][r].pop('to')
+                                polVars["uuid_blocks"][r]["to"] = uuid_to
                 elif template_type == 'wwnn_pools':
-                    if 'wwnn_blocks' in templateVars:
+                    if 'wwnn_blocks' in polVars:
                         index_count = 0
-                        for i in templateVars["wwnn_blocks"]:
+                        for i in polVars["wwnn_blocks"]:
                              index_count += 1
                         for r in range(0,index_count):
-                            if 'to' in templateVars["wwnn_blocks"][r]:
-                                int_from = int(templateVars["wwnn_blocks"][r]["from"].replace(':', ''), 16)
-                                int_to = int(templateVars["wwnn_blocks"][r]["to"].replace(':', ''), 16)
-                                templateVars["wwnn_blocks"][r]["size"] = int_to - int_from + 1
-                                wwxn_to = templateVars["wwnn_blocks"][r]["to"]
-                                templateVars["wwnn_blocks"][r].pop('to')
-                                templateVars["wwnn_blocks"][r]["to"] = wwxn_to
+                            if 'to' in polVars["wwnn_blocks"][r]:
+                                int_from = int(polVars["wwnn_blocks"][r]["from"].replace(':', ''), 16)
+                                int_to = int(polVars["wwnn_blocks"][r]["to"].replace(':', ''), 16)
+                                polVars["wwnn_blocks"][r]["size"] = int_to - int_from + 1
+                                wwxn_to = polVars["wwnn_blocks"][r]["to"]
+                                polVars["wwnn_blocks"][r].pop('to')
+                                polVars["wwnn_blocks"][r]["to"] = wwxn_to
                 elif template_type == 'wwpn_pools':
-                    if 'wwpn_blocks' in templateVars:
+                    if 'wwpn_blocks' in polVars:
                         index_count = 0
-                        for i in templateVars["wwpn_blocks"]:
+                        for i in polVars["wwpn_blocks"]:
                              index_count += 1
                         for r in range(0,index_count):
-                            if 'to' in templateVars["wwpn_blocks"][r]:
-                                int_from = int(templateVars["wwpn_blocks"][r]["from"].replace(':', ''), 16)
-                                int_to = int(templateVars["wwpn_blocks"][r]["to"].replace(':', ''), 16)
-                                templateVars["wwpn_blocks"][r]["size"] = int_to - int_from + 1
-                                wwxn_to = templateVars["wwpn_blocks"][r]["to"]
-                                templateVars["wwpn_blocks"][r].pop('to')
-                                templateVars["wwpn_blocks"][r]["to"] = wwxn_to
+                            if 'to' in polVars["wwpn_blocks"][r]:
+                                int_from = int(polVars["wwpn_blocks"][r]["from"].replace(':', ''), 16)
+                                int_to = int(polVars["wwpn_blocks"][r]["to"].replace(':', ''), 16)
+                                polVars["wwpn_blocks"][r]["size"] = int_to - int_from + 1
+                                wwxn_to = polVars["wwpn_blocks"][r]["to"]
+                                polVars["wwpn_blocks"][r].pop('to')
+                                polVars["wwpn_blocks"][r]["to"] = wwxn_to
                 # Process the template
                 dest_dir = '%s' % (self.type)
                 dest_file = '%s.auto.tfvars' % (template_type)
-                process_method('a', dest_dir, dest_file, template, **templateVars)
+                ezfunctions.process_method('a', dest_dir, dest_file, template, **polVars)
 
         # Define the Template Source
         template_file = "template_close.jinja2"
@@ -670,7 +669,7 @@ def policy_loop_standard(self, header, initial_policy, template_type):
         # Process the template
         dest_dir = '%s' % (self.type)
         dest_file = '%s.auto.tfvars' % (template_type)
-        process_method('a', dest_dir, dest_file, template, **templateVars)
+        ezfunctions.process_method('a', dest_dir, dest_file, template, **polVars)
 
         # Increment the org_count for the next Organization Loop
         org_count += 1

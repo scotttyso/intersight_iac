@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 """Intersight Device Connector API configuration and device claim via the Intersight API."""
-# from datetime import datetime, timedelta
-# from helpers import format_time, print_results_to_table
-# from pprint import pformat
+from intersight.api import asset_api
+from intersight.api import resource_api
 from time import sleep
-# from typing import Text, Type
-
-# import argparse
 import credentials
 import device_connector
 import json
@@ -18,10 +14,6 @@ import re
 import sys
 import stdiomask
 import validators
-
-from intersight.api import asset_api
-from intersight.api import resource_api
-
 
 FORMAT = '%(asctime)-15s [%(levelname)s] [%(filename)s:%(lineno)s] %(message)s'
 logging.basicConfig(format=FORMAT, level=logging.DEBUG)

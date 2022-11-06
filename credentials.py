@@ -1,8 +1,6 @@
 import os
 import datetime
 import intersight
-import stdiomask
-from pathlib import Path
 
 # This argument parser instance should be used within scripts where additional CLI arguments are required
 
@@ -47,7 +45,6 @@ def config_credentials(home, args):
     api_client.set_default_header('Content-Type', 'application/json')
 
     return api_client
-
 
 if __name__ == "__main__":
     config_credentials()

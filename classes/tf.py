@@ -1,3 +1,5 @@
+from requests.api import delete
+import ezfunctions
 import jinja2
 import json
 import os
@@ -8,8 +10,6 @@ import requests
 import stdiomask
 import time
 import validating
-from easy_functions import variablesFromAPI
-from requests.api import delete, request
 
 # Global options for debugging
 print_payload = False
@@ -20,7 +20,7 @@ print_response_on_fail = True
 log_level = 2
 
 # Global path to main Template directory
-tf_template_path = pkg_resources.resource_filename('class_terraform', './')
+tf_template_path = pkg_resources.resource_filename('tf', '../templates/')
 
 # Exception Classes
 class InsufficientArgs(Exception):
@@ -76,12 +76,12 @@ class terraform_cloud(object):
 
         return terraform_cloud_token
 
-    def tfc_organization(self, **templateVars):
+    def tfc_organization(self, **polVars):
         #-------------------------------
         # Configure the Variables URL
         #-------------------------------
-        url = f'https://{templateVars["tfc_host"]}/api/v2/organizations'
-        tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+        url = f'https://{polVars["tfc_host"]}/api/v2/organizations'
+        tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
         }
@@ -105,24 +105,24 @@ class terraform_cloud(object):
                         tfcOrgs.append(v)
 
             # print(tfcOrgs)
-            templateVars["multi_select"] = False
-            templateVars["var_description"] = 'Terraform Cloud Organizations:'
-            templateVars["jsonVars"] = tfcOrgs
-            templateVars["varType"] = 'Terraform Cloud Organization'
-            templateVars["defaultVar"] = ''
-            tfc_organization = variablesFromAPI(**templateVars)
+            polVars["multi_select"] = False
+            polVars["var_description"] = 'Terraform Cloud Organizations:'
+            polVars["jsonVars"] = tfcOrgs
+            polVars["varType"] = 'Terraform Cloud Organization'
+            polVars["defaultVar"] = ''
+            tfc_organization = ezfunctions.variablesFromAPI(**polVars)
             return tfc_organization
         else:
             print(status)
 
-    def tfc_vcs_repository(self, **templateVars):
+    def tfc_vcs_repository(self, **polVars):
         #-------------------------------
         # Configure the Variables URL
         #-------------------------------
-        oauth_token = templateVars["tfc_oath_token"]
-        tfc_host = templateVars["tfc_host"]
+        oauth_token = polVars["tfc_oath_token"]
+        tfc_host = polVars["tfc_host"]
         url = f'https://{tfc_host}/api/v2/oauth-tokens/{oauth_token}/authorized-repos?oauth_token_id={oauth_token}'
-        tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+        tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
         }
@@ -146,25 +146,25 @@ class terraform_cloud(object):
                         repo_list.append(v)
 
             # print(vcsProvider)
-            templateVars["multi_select"] = False
-            templateVars["var_description"] = "Terraform Cloud VCS Base Repository:"
-            templateVars["jsonVars"] = sorted(repo_list)
-            templateVars["varType"] = 'VCS Base Repository'
-            templateVars["defaultVar"] = ''
-            vcsBaseRepo = variablesFromAPI(**templateVars)
+            polVars["multi_select"] = False
+            polVars["var_description"] = "Terraform Cloud VCS Base Repository:"
+            polVars["jsonVars"] = sorted(repo_list)
+            polVars["varType"] = 'VCS Base Repository'
+            polVars["defaultVar"] = ''
+            vcsBaseRepo = ezfunctions.variablesFromAPI(**polVars)
 
             return vcsBaseRepo
         else:
             print(status)
 
-    def tfc_vcs_providers(self, **templateVars):
+    def tfc_vcs_providers(self, **polVars):
         #-------------------------------
         # Configure the Variables URL
         #-------------------------------
-        tfc_host = templateVars["tfc_host"]
-        tfc_organization = templateVars["tfc_organization"]
+        tfc_host = polVars["tfc_host"]
+        tfc_organization = polVars["tfc_organization"]
         url = f'https://{tfc_host}/api/v2/organizations/{tfc_organization}/oauth-clients'
-        tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+        tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
         }
@@ -199,12 +199,12 @@ class terraform_cloud(object):
                 vcsAttributes.append(vcs_repo)
 
             # print(vcsProvider)
-            templateVars["multi_select"] = False
-            templateVars["var_description"] = "Terraform Cloud VCS Provider:"
-            templateVars["jsonVars"] = vcsProvider
-            templateVars["varType"] = 'VCS Provider'
-            templateVars["defaultVar"] = ''
-            vcsRepoName = variablesFromAPI(**templateVars)
+            polVars["multi_select"] = False
+            polVars["var_description"] = "Terraform Cloud VCS Provider:"
+            polVars["jsonVars"] = vcsProvider
+            polVars["varType"] = 'VCS Provider'
+            polVars["defaultVar"] = ''
+            vcsRepoName = ezfunctions.variablesFromAPI(**polVars)
 
             for i in vcsAttributes:
                 if i["name"] == vcsRepoName:
@@ -215,15 +215,15 @@ class terraform_cloud(object):
         else:
             print(status)
 
-    def tfcWorkspace(self, **templateVars):
+    def tfcWorkspace(self, **polVars):
         #-------------------------------
         # Configure the Workspace URL
         #-------------------------------
-        tfc_host = templateVars["tfc_host"]
-        tfc_organization = templateVars["tfc_organization"]
-        workspaceName = templateVars['workspaceName']
+        tfc_host = polVars["tfc_host"]
+        tfc_organization = polVars["tfc_organization"]
+        workspaceName = polVars['workspaceName']
         url = f'https://{tfc_host}/api/v2/organizations/{tfc_organization}/workspaces/{workspaceName}'
-        tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+        tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
         }
@@ -240,12 +240,12 @@ class terraform_cloud(object):
         workspace_id = ''
         # print(json.dumps(json_data, indent = 4))
         if status == 200:
-            if json_data['data']['attributes']['name'] == templateVars['workspaceName']:
+            if json_data['data']['attributes']['name'] == polVars['workspaceName']:
                 workspace_id = json_data['data']['id']
                 key_count =+ 1
         # for key in json_data['data']:
         #     print(key['attributes']['name'])
-        #     if key['attributes']['name'] == templateVars['Workspace_Name']:
+        #     if key['attributes']['name'] == polVars['Workspace_Name']:
         #         workspace_id = key['id']
         #         key_count =+ 1
 
@@ -255,22 +255,22 @@ class terraform_cloud(object):
 
         opSystem = platform.system()
         if opSystem == 'Windows':
-            workingDir = templateVars["workingDirectory"]
-            templateVars["workingDirectory"] = workingDir.replace('\\', '/')
+            workingDir = polVars["workingDirectory"]
+            polVars["workingDirectory"] = workingDir.replace('\\', '/')
 
-        if re.search(r'^\/', templateVars["workingDirectory"]):
-            workingDir = templateVars["workingDirectory"]
-            templateVars["workingDirectory"] = workingDir[1 : ]
-        elif re.search(r'^\.\/', templateVars["workingDirectory"]):
-            workingDir = templateVars["workingDirectory"]
-            templateVars["workingDirectory"] = workingDir[2 : ]
+        if re.search(r'^\/', polVars["workingDirectory"]):
+            workingDir = polVars["workingDirectory"]
+            polVars["workingDirectory"] = workingDir[1 : ]
+        elif re.search(r'^\.\/', polVars["workingDirectory"]):
+            workingDir = polVars["workingDirectory"]
+            polVars["workingDirectory"] = workingDir[2 : ]
         
         if not key_count > 0:
             #-------------------------------
             # Get Workspaces the Workspace URL
             #-------------------------------
             url = f'https://{tfc_host}/api/v2/organizations/{tfc_organization}/workspaces/'
-            tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+            tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
             tf_header = {'Authorization': tf_token,
                     'Content-Type': 'application/vnd.api+json'
             }
@@ -280,7 +280,7 @@ class terraform_cloud(object):
             template = self.templateEnv.get_template(template_file)
 
             # Create the Payload
-            payload = template.render(templateVars)
+            payload = template.render(polVars)
 
             if print_payload:
                 print(payload)
@@ -297,7 +297,7 @@ class terraform_cloud(object):
             # Configure the PATCH Variables URL
             #-----------------------------------
             url = f'https://{tfc_host}/api/v2/workspaces/{workspace_id}/'
-            tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+            tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
             tf_header = {'Authorization': tf_token,
                     'Content-Type': 'application/vnd.api+json'
             }
@@ -307,7 +307,7 @@ class terraform_cloud(object):
             template = self.templateEnv.get_template(template_file)
 
             # Create the Payload
-            payload = template.render(templateVars)
+            payload = template.render(polVars)
 
             if print_payload:
                 print(payload)
@@ -320,7 +320,7 @@ class terraform_cloud(object):
 
         if not key_count > 0:
             print(f'\n-----------------------------------------------------------------------------\n')
-            print(f'\n   Unable to Determine the Workspace ID for "{templateVars["workspaceName"]}".')
+            print(f'\n   Unable to Determine the Workspace ID for "{polVars["workspaceName"]}".')
             print(f'\n   Exiting...')
             print(f'\n-----------------------------------------------------------------------------\n')
             exit()
@@ -328,15 +328,15 @@ class terraform_cloud(object):
         # print(json.dumps(json_data, indent = 4))
         return workspace_id
 
-    def tfcWorkspace_remove(self, **templateVars):
+    def tfcWorkspace_remove(self, **polVars):
         #-------------------------------
         # Configure the Workspace URL
         #-------------------------------
-        tfc_host = templateVars["tfc_host"]
-        tfc_organization = templateVars["tfc_organization"]
-        workspaceName = templateVars['workspaceName']
+        tfc_host = polVars["tfc_host"]
+        tfc_organization = polVars["tfc_organization"]
+        workspaceName = polVars['workspaceName']
         url = f'https://{tfc_host}/api/v2/organizations/{tfc_organization}/workspaces/{workspaceName}'
-        tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+        tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
         }
@@ -372,14 +372,14 @@ class terraform_cloud(object):
 
         # print(json.dumps(json_data, indent = 4))
 
-    def tfcVariables(self, **templateVars):
+    def tfcVariables(self, **polVars):
         #-------------------------------
         # Configure the Variables URL
         #-------------------------------
-        tfc_host = templateVars["tfc_host"]
-        workspace_id = templateVars['workspace_id']
+        tfc_host = polVars["tfc_host"]
+        workspace_id = polVars['workspace_id']
         url = f'https://{tfc_host}/api/v2/workspaces/{workspace_id}/vars'
-        tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+        tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
         tf_header = {'Authorization': tf_token,
                 'Content-Type': 'application/vnd.api+json'
         }
@@ -398,7 +398,7 @@ class terraform_cloud(object):
         var_id = ''
         if 'id' in json_text:
             for keys in json_data['data']:
-                if keys['attributes']['key'] == templateVars['Variable']:
+                if keys['attributes']['key'] == polVars['Variable']:
                     var_id = keys['id']
                     key_count =+ 1
 
@@ -412,7 +412,7 @@ class terraform_cloud(object):
             template = self.templateEnv.get_template(template_file)
 
             # Create the Payload
-            payload = template.render(templateVars)
+            payload = template.render(polVars)
 
             if print_payload:
                 print(payload)
@@ -429,7 +429,7 @@ class terraform_cloud(object):
             # Configure the PATCH Variables URL
             #-----------------------------------
             url = f'https://{tfc_host}/api/v2/workspaces/{workspace_id}/vars/{var_id}'
-            tf_token = 'Bearer %s' % (templateVars['terraform_cloud_token'])
+            tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
             tf_header = {'Authorization': tf_token,
                     'Content-Type': 'application/vnd.api+json'
             }
@@ -439,8 +439,8 @@ class terraform_cloud(object):
             template = self.templateEnv.get_template(template_file)
 
             # Create the Payload
-            templateVars.pop('varId')
-            payload = template.render(templateVars)
+            polVars.pop('varId')
+            payload = template.render(polVars)
 
             if print_payload:
                 print(payload)
@@ -453,7 +453,7 @@ class terraform_cloud(object):
 
         if not key_count > 0:
             print(f'\n-----------------------------------------------------------------------------\n')
-            print(f"\n   Unable to Determine the Variable ID for {templateVars['Variable']}.")
+            print(f"\n   Unable to Determine the Variable ID for {polVars['Variable']}.")
             print(f"\n   Exiting...")
             print(f'\n-----------------------------------------------------------------------------\n')
             exit()

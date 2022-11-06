@@ -1,25 +1,15 @@
 #!/usr/bin/env python3
-
+import ezfunctions
 import jinja2
-import json
 import os
 import pkg_resources
 import re
 import stdiomask
 import validating
-from easy_functions import exit_default_no, exit_default_yes
-from easy_functions import policy_descr, policy_name
-from easy_functions import snmp_trap_servers, snmp_users
-from easy_functions import syslog_servers
-from easy_functions import varBoolLoop
-from easy_functions import variablesFromAPI
-from easy_functions import varNumberLoop
-from easy_functions import varStringLoop
-from easy_functions import write_to_template
 
-ucs_template_path = pkg_resources.resource_filename('class_policies_p3', 'Templates/')
+ucs_template_path = pkg_resources.resource_filename('p3', '../templates/')
 
-class policies_p3(object):
+class policies(object):
     def __init__(self, name_prefix, org, type):
         self.templateLoader = jinja2.FileSystemLoader(
             searchpath=(ucs_template_path + '%s/') % (type))
@@ -36,18 +26,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Power Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'power_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'power_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -56,100 +46,100 @@ class policies_p3(object):
             print(f'  For Servers it will configure the Power Restore State.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 1
             policy_loop = False
             while policy_loop == False:
 
                 print('staring loop again')
-                templateVars["multi_select"] = False
-                templateVars["var_description"] = easy_jsonData['policies']['power.Policy']['systemType']['description']
-                templateVars["jsonVars"] = sorted(easy_jsonData['policies']['power.Policy']['systemType']['enum'])
-                templateVars["defaultVar"] = easy_jsonData['policies']['power.Policy']['systemType']['default']
-                templateVars["varType"] = 'System Type'
-                system_type = variablesFromAPI(**templateVars)
+                polVars["multi_select"] = False
+                polVars["var_description"] = easy_jsonData['policies']['power.Policy']['systemType']['description']
+                polVars["jsonVars"] = sorted(easy_jsonData['policies']['power.Policy']['systemType']['enum'])
+                polVars["defaultVar"] = easy_jsonData['policies']['power.Policy']['systemType']['default']
+                polVars["varType"] = 'System Type'
+                system_type = ezfunctions.variablesFromAPI(**polVars)
 
                 if not name_prefix == '':
                     name = '%s_%s' % (name_prefix, system_type)
                 else:
                     name = '%s_%s' % (org, system_type)
 
-                templateVars["name"] = policy_name(name, policy_type)
-                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+                polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
-                templateVars["multi_select"] = False
+                polVars["multi_select"] = False
                 jsonVars = jsonData['components']['schemas']['power.Policy']['allOf'][1]['properties']
 
                 if system_type == '9508':
                     valid = False
                     while valid == False:
-                        templateVars["power_allocation"] = input('What is the Power Budget you would like to Apply?\n'
+                        polVars["power_allocation"] = input('What is the Power Budget you would like to Apply?\n'
                             'This should be a value between 2800 Watts and 16800 Watts. [5600]: ')
-                        if templateVars["power_allocation"] == '':
-                            templateVars["power_allocation"] = 5600
-                        valid = validating.number_in_range('Chassis Power Budget', templateVars["power_allocation"], 2800, 16800)
+                        if polVars["power_allocation"] == '':
+                            polVars["power_allocation"] = 5600
+                        valid = validating.number_in_range('Chassis Power Budget', polVars["power_allocation"], 2800, 16800)
 
-                    templateVars["var_description"] = jsonVars['DynamicRebalancing']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['DynamicRebalancing']['enum'])
-                    templateVars["defaultVar"] = jsonVars['DynamicRebalancing']['default']
-                    templateVars["varType"] = 'Dynamic Power Rebalancing'
-                    templateVars["dynamic_power_rebalancing"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['DynamicRebalancing']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['DynamicRebalancing']['enum'])
+                    polVars["defaultVar"] = jsonVars['DynamicRebalancing']['default']
+                    polVars["varType"] = 'Dynamic Power Rebalancing'
+                    polVars["dynamic_power_rebalancing"] = ezfunctions.variablesFromAPI(**polVars)
 
-                    templateVars["var_description"] = jsonVars['PowerSaveMode']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['PowerSaveMode']['enum'])
-                    templateVars["defaultVar"] = jsonVars['PowerSaveMode']['default']
-                    templateVars["varType"] = 'Power Save Mode'
-                    templateVars["power_save_mode"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['PowerSaveMode']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['PowerSaveMode']['enum'])
+                    polVars["defaultVar"] = jsonVars['PowerSaveMode']['default']
+                    polVars["varType"] = 'Power Save Mode'
+                    polVars["power_save_mode"] = ezfunctions.variablesFromAPI(**polVars)
 
                 else:
-                    templateVars["power_allocation"] = 0
-                    templateVars["dynamic_power_rebalancing"] = 'Enabled'
-                    templateVars["power_save_mode"] = 'Enabled'
+                    polVars["power_allocation"] = 0
+                    polVars["dynamic_power_rebalancing"] = 'Enabled'
+                    polVars["power_save_mode"] = 'Enabled'
 
                 if system_type == 'Server':
-                    templateVars["var_description"] = jsonVars['PowerPriority']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['PowerPriority']['enum'])
-                    templateVars["defaultVar"] = jsonVars['PowerPriority']['default']
-                    templateVars["varType"] = 'Power Priority'
-                    templateVars["power_priority"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['PowerPriority']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['PowerPriority']['enum'])
+                    polVars["defaultVar"] = jsonVars['PowerPriority']['default']
+                    polVars["varType"] = 'Power Priority'
+                    polVars["power_priority"] = ezfunctions.variablesFromAPI(**polVars)
 
-                    templateVars["var_description"] = jsonVars['PowerProfiling']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['PowerProfiling']['enum'])
-                    templateVars["defaultVar"] = jsonVars['PowerProfiling']['default']
-                    templateVars["varType"] = 'Power Profiling'
-                    templateVars["power_profiling"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['PowerProfiling']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['PowerProfiling']['enum'])
+                    polVars["defaultVar"] = jsonVars['PowerProfiling']['default']
+                    polVars["varType"] = 'Power Profiling'
+                    polVars["power_profiling"] = ezfunctions.variablesFromAPI(**polVars)
 
-                    templateVars["var_description"] = jsonVars['PowerRestoreState']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['PowerRestoreState']['enum'])
-                    templateVars["defaultVar"] = jsonVars['PowerRestoreState']['default']
-                    templateVars["varType"] = 'Power Restore'
-                    templateVars["power_restore"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['PowerRestoreState']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['PowerRestoreState']['enum'])
+                    polVars["defaultVar"] = jsonVars['PowerRestoreState']['default']
+                    polVars["varType"] = 'Power Restore'
+                    polVars["power_restore"] = ezfunctions.variablesFromAPI(**polVars)
 
                 if system_type == '5108':
-                    templateVars["popList"] = ['N+2']
+                    polVars["popList"] = ['N+2']
                 elif system_type == 'Server':
-                    templateVars["popList"] = ['N+1','N+2']
-                templateVars["var_description"] = jsonVars['RedundancyMode']['description']
-                templateVars["jsonVars"] = sorted(jsonVars['RedundancyMode']['enum'])
-                templateVars["defaultVar"] = jsonVars['RedundancyMode']['default']
-                templateVars["varType"] = 'Power Redundancy Mode'
-                templateVars["power_redundancy"] = variablesFromAPI(**templateVars)
+                    polVars["popList"] = ['N+1','N+2']
+                polVars["var_description"] = jsonVars['RedundancyMode']['description']
+                polVars["jsonVars"] = sorted(jsonVars['RedundancyMode']['enum'])
+                polVars["defaultVar"] = jsonVars['RedundancyMode']['default']
+                polVars["varType"] = 'Power Redundancy Mode'
+                polVars["power_redundancy"] = ezfunctions.variablesFromAPI(**polVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'   description               = "{templateVars["descr"]}"')
-                print(f'   name                      = "{templateVars["name"]}"')
+                print(f'   description               = "{polVars["descr"]}"')
+                print(f'   name                      = "{polVars["name"]}"')
                 if system_type == '9508':
-                    # print(f'   dynamic_power_rebalancing = "{templateVars["dynamic_power_rebalancing"]}"')
-                    print(f'   power_allocation          = {templateVars["power_allocation"]}')
-                    # print(f'   power_save_mode           = "{templateVars["power_save_mode"]}"')
+                    # print(f'   dynamic_power_rebalancing = "{polVars["dynamic_power_rebalancing"]}"')
+                    print(f'   power_allocation          = {polVars["power_allocation"]}')
+                    # print(f'   power_save_mode           = "{polVars["power_save_mode"]}"')
                 if system_type == 'Server':
-                    # print(f'   power_priority            = "{templateVars["power_priority"]}"')
-                    print(f'   power_profiling           = "{templateVars["power_profiling"]}"')
-                    print(f'   power_restore             = "{templateVars["power_restore"]}"')
-                print(f'   power_redundancy          = "{templateVars["power_redundancy"]}"')
+                    # print(f'   power_priority            = "{polVars["power_priority"]}"')
+                    print(f'   power_profiling           = "{polVars["power_profiling"]}"')
+                    print(f'   power_restore             = "{polVars["power_restore"]}"')
+                print(f'   power_redundancy          = "{polVars["power_redundancy"]}"')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:
@@ -158,19 +148,19 @@ class policies_p3(object):
                         confirm_policy = 'Y'
 
                         # Write Policies to Template File
-                        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                        write_to_template(self, **templateVars)
+                        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                        ezfunctions.write_to_template(self, **polVars)
 
                         if loop_count < 3:
-                            configure_loop, policy_loop = exit_default_yes(templateVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default_yes(polVars["policy_type"])
                         else:
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                         loop_count += 1
                         valid_confirm = True
 
                     elif confirm_policy == 'N':
                         print(f'\n------------------------------------------------------\n')
-                        print(f'  Starting {templateVars["policy_type"]} Section over.')
+                        print(f'  Starting {polVars["policy_type"]} Section over.')
                         print(f'\n------------------------------------------------------\n')
                         valid_confirm = True
 
@@ -180,8 +170,8 @@ class policies_p3(object):
                         print(f'\n------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # SD Card Policy Module
@@ -192,18 +182,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'SD Card Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'sd_card_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'sd_card_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -218,16 +208,16 @@ class policies_p3(object):
                     else:
                         name = '%s_%s' % (org, name_suffix)
 
-                    templateVars["name"] = policy_name(name, policy_type)
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
-                    templateVars["priority"] = 'auto'
-                    templateVars["receive"] = 'Disabled'
-                    templateVars["send"] = 'Disabled'
+                    polVars["priority"] = 'auto'
+                    polVars["receive"] = 'Disabled'
+                    polVars["send"] = 'Disabled'
 
                     # Write Policies to Template File
-                    templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                    write_to_template(self, **templateVars)
+                    polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                    ezfunctions.write_to_template(self, **polVars)
 
                     exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [N]: ')
                     if exit_answer == 'N' or exit_answer == '':
@@ -241,8 +231,8 @@ class policies_p3(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # Serial over LAN Policy Module
@@ -253,18 +243,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Serial over LAN Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'serial_over_lan_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'serial_over_lan_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -277,9 +267,9 @@ class policies_p3(object):
             print(f'  This Policy is not required to standup a server but is a good practice for day 2 support.')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -291,39 +281,39 @@ class policies_p3(object):
                     else:
                         name = '%s_%s' % (org, name_suffix)
 
-                    templateVars["name"] = policy_name(name, policy_type)
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
-                    templateVars["enabled"] = True
+                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["enabled"] = True
 
-                    templateVars["multi_select"] = False
+                    polVars["multi_select"] = False
                     jsonVars = jsonData['components']['schemas']['sol.Policy']['allOf'][1]['properties']
-                    templateVars["var_description"] = jsonVars['BaudRate']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['BaudRate']['enum'])
-                    templateVars["defaultVar"] = jsonVars['BaudRate']['default']
-                    templateVars["varType"] = 'Baud Rate'
-                    templateVars["baud_rate"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['BaudRate']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['BaudRate']['enum'])
+                    polVars["defaultVar"] = jsonVars['BaudRate']['default']
+                    polVars["varType"] = 'Baud Rate'
+                    polVars["baud_rate"] = ezfunctions.variablesFromAPI(**polVars)
 
-                    templateVars["var_description"] = jsonVars['ComPort']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['ComPort']['enum'])
-                    templateVars["defaultVar"] = jsonVars['ComPort']['default']
-                    templateVars["varType"] = 'Com Port'
-                    templateVars["com_port"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['ComPort']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['ComPort']['enum'])
+                    polVars["defaultVar"] = jsonVars['ComPort']['default']
+                    polVars["varType"] = 'Com Port'
+                    polVars["com_port"] = ezfunctions.variablesFromAPI(**polVars)
 
                     valid = False
                     while valid == False:
-                        templateVars["ssh_port"] = input('What is the SSH Port you would like to assign?\n'
+                        polVars["ssh_port"] = input('What is the SSH Port you would like to assign?\n'
                             'This should be a value between 1024-65535. [2400]: ')
-                        if templateVars["ssh_port"] == '':
-                            templateVars["ssh_port"] = 2400
-                        valid = validating.number_in_range('SSH Port', templateVars["ssh_port"], 1024, 65535)
+                        if polVars["ssh_port"] == '':
+                            polVars["ssh_port"] = 2400
+                        valid = validating.number_in_range('SSH Port', polVars["ssh_port"], 1024, 65535)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'   baud_rate   = "{templateVars["baud_rate"]}"')
-                    print(f'   com_port    = "{templateVars["com_port"]}"')
-                    print(f'   description = "{templateVars["descr"]}"')
-                    print(f'   enabled     = "{templateVars["enabled"]}"')
-                    print(f'   name        = "{templateVars["name"]}"')
-                    print(f'   ssh_port    = "{templateVars["ssh_port"]}"')
+                    print(f'   baud_rate   = "{polVars["baud_rate"]}"')
+                    print(f'   com_port    = "{polVars["com_port"]}"')
+                    print(f'   description = "{polVars["descr"]}"')
+                    print(f'   enabled     = "{polVars["enabled"]}"')
+                    print(f'   name        = "{polVars["name"]}"')
+                    print(f'   ssh_port    = "{polVars["ssh_port"]}"')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
@@ -332,15 +322,15 @@ class policies_p3(object):
                             confirm_policy = 'Y'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
+                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                            ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'  Starting {polVars["policy_type"]} Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
 
@@ -357,8 +347,8 @@ class policies_p3(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # SMTP Policy Module
@@ -369,18 +359,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'SMTP Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'smtp_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'smtp_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -390,9 +380,9 @@ class policies_p3(object):
             print(f'  severity level to report and the mail recipients.\n\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -404,9 +394,9 @@ class policies_p3(object):
                     else:
                         name = '%s_%s' % (org, name_suffix)
 
-                    templateVars["name"] = policy_name(name, policy_type)
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
-                    templateVars["enable_smtp"] = True
+                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["enable_smtp"] = True
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  IP address or hostname of the SMTP server. The SMTP server is used by the managed device ')
@@ -414,16 +404,16 @@ class policies_p3(object):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid = False
                     while valid == False:
-                        templateVars["smtp_server_address"] = input('What is the SMTP Server Address? ')
-                        if re.search(r'^[a-zA-Z0-9]:', templateVars["smtp_server_address"]):
-                            valid = validating.ip_address('SMTP Server Address', templateVars["smtp_server_address"])
-                        if re.search(r'[a-zA-Z]', templateVars["smtp_server_address"]):
-                            valid = validating.dns_name('SMTP Server Address', templateVars["smtp_server_address"])
+                        polVars["smtp_server_address"] = input('What is the SMTP Server Address? ')
+                        if re.search(r'^[a-zA-Z0-9]:', polVars["smtp_server_address"]):
+                            valid = validating.ip_address('SMTP Server Address', polVars["smtp_server_address"])
+                        if re.search(r'[a-zA-Z]', polVars["smtp_server_address"]):
+                            valid = validating.dns_name('SMTP Server Address', polVars["smtp_server_address"])
                         elif re.search (r'^([0-9]{1,3}\.){3}[0-9]{1,3}$'):
-                            valid = validating.ip_address('SMTP Server Address', templateVars["smtp_server_address"])
+                            valid = validating.ip_address('SMTP Server Address', polVars["smtp_server_address"])
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  "{templateVars["smtp_server_address"]}" is not a valid address.')
+                            print(f'  "{polVars["smtp_server_address"]}" is not a valid address.')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -431,23 +421,23 @@ class policies_p3(object):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid = False
                     while valid == False:
-                        templateVars["smtp_port"] = input('What is the SMTP Port?  [25]: ')
-                        if templateVars["smtp_port"] == '':
-                            templateVars["smtp_port"] = 25
-                        if re.search(r'[\d]+', str(templateVars["smtp_port"])):
-                            valid = validating.number_in_range('SMTP Port', templateVars["smtp_port"], 1, 65535)
+                        polVars["smtp_port"] = input('What is the SMTP Port?  [25]: ')
+                        if polVars["smtp_port"] == '':
+                            polVars["smtp_port"] = 25
+                        if re.search(r'[\d]+', str(polVars["smtp_port"])):
+                            valid = validating.number_in_range('SMTP Port', polVars["smtp_port"], 1, 65535)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  "{templateVars["smtp_port"]}" is not a valid port.')
+                            print(f'  "{polVars["smtp_port"]}" is not a valid port.')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    templateVars["multi_select"] = False
+                    polVars["multi_select"] = False
                     jsonVars = jsonData['components']['schemas']['smtp.Policy']['allOf'][1]['properties']
-                    templateVars["var_description"] = jsonVars['MinSeverity']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
-                    templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
-                    templateVars["varType"] = 'Minimum Severity'
-                    templateVars["minimum_severity"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['MinSeverity']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+                    polVars["defaultVar"] = jsonVars['MinSeverity']['default']
+                    polVars["varType"] = 'Minimum Severity'
+                    polVars["minimum_severity"] = ezfunctions.variablesFromAPI(**polVars)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  The email address entered here will be displayed as the from address (mail received from ')
@@ -456,24 +446,24 @@ class policies_p3(object):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid = False
                     while valid == False:
-                        templateVars["smtp_alert_sender_address"] = input(f'What is the SMTP Alert Sender Address?  '\
+                        polVars["smtp_alert_sender_address"] = input(f'What is the SMTP Alert Sender Address?  '\
                             '[press enter to use server hostname]: ')
-                        if templateVars["smtp_alert_sender_address"] == '':
-                            templateVars["smtp_alert_sender_address"] = ''
+                        if polVars["smtp_alert_sender_address"] == '':
+                            polVars["smtp_alert_sender_address"] = ''
                             valid = True
                         else:
-                            valid = validating.email('SMTP Alert Sender Address', templateVars["smtp_alert_sender_address"])
+                            valid = validating.email('SMTP Alert Sender Address', polVars["smtp_alert_sender_address"])
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  List of email addresses that will receive notifications for faults.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    templateVars["mail_alert_recipients"] = []
+                    polVars["mail_alert_recipients"] = []
                     valid = False
                     while valid == False:
                         mail_recipient = input(f'What is address you would like to send these notifications to?  ')
                         valid_email = validating.email('Mail Alert Recipient', mail_recipient)
                         if valid_email == True:
-                            templateVars["mail_alert_recipients"].append(mail_recipient)
+                            polVars["mail_alert_recipients"].append(mail_recipient)
                             valid_answer = False
                             while valid_answer == False:
                                 add_another = input(f'Would you like to add another E-mail?  Enter "Y" or "N" [N]: ')
@@ -488,17 +478,17 @@ class policies_p3(object):
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    description               = "{templateVars["descr"]}"')
-                    print(f'    enable_smtp                   = {templateVars["enable_smtp"]}')
+                    print(f'    description               = "{polVars["descr"]}"')
+                    print(f'    enable_smtp                   = {polVars["enable_smtp"]}')
                     print(f'    mail_alert_recipients     = [')
-                    for x in templateVars["mail_alert_recipients"]:
+                    for x in polVars["mail_alert_recipients"]:
                         print(f'      "{x}",')
                     print(f'    ]')
-                    print(f'    minimum_severity          = "{templateVars["minimum_severity"]}"')
-                    print(f'    name                      = "{templateVars["name"]}"')
-                    print(f'    smtp_alert_sender_address = "{templateVars["smtp_alert_sender_address"]}"')
-                    print(f'    smtp_port                 = {templateVars["smtp_port"]}')
-                    print(f'    smtp_server_address       = "{templateVars["smtp_server_address"]}"')
+                    print(f'    minimum_severity          = "{polVars["minimum_severity"]}"')
+                    print(f'    name                      = "{polVars["name"]}"')
+                    print(f'    smtp_alert_sender_address = "{polVars["smtp_alert_sender_address"]}"')
+                    print(f'    smtp_port                 = {polVars["smtp_port"]}')
+                    print(f'    smtp_server_address       = "{polVars["smtp_server_address"]}"')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
@@ -507,15 +497,15 @@ class policies_p3(object):
                             confirm_policy = 'Y'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
+                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                            ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'  Starting {polVars["policy_type"]} Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
 
@@ -532,8 +522,8 @@ class policies_p3(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # SNMP Policy Module
@@ -544,18 +534,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'SNMP Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'snmp_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'snmp_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -564,9 +554,9 @@ class policies_p3(object):
             print(f'  This Policy is not required to standup a server but is a good practice for day 2 support.')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -579,48 +569,48 @@ class policies_p3(object):
                     else:
                         name = '%s_%s' % (org, name_suffix)
 
-                    templateVars["name"] = policy_name(name, policy_type)
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
-                    templateVars["enabled"] = True
+                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["enabled"] = True
 
                     valid = False
                     while valid == False:
-                        templateVars["port"] = input(f'Note: The following Ports cannot be chosen: [22, 23, 80, 123, 389, 443, 623, 636, 2068, 3268, 3269]\n'\
+                        polVars["port"] = input(f'Note: The following Ports cannot be chosen: [22, 23, 80, 123, 389, 443, 623, 636, 2068, 3268, 3269]\n'\
                             'Enter the Port to Assign to this SNMP Policy.  Valid Range is 1-65535.  [161]: ')
-                        if templateVars["port"] == '':
-                            templateVars["port"] = 161
-                        if re.search(r'[0-9]{1,4}', str(templateVars["port"])):
-                            valid = validating.snmp_port('SNMP Port', templateVars["port"], 1, 65535)
+                        if polVars["port"] == '':
+                            polVars["port"] = 161
+                        if re.search(r'[0-9]{1,4}', str(polVars["port"])):
+                            valid = validating.snmp_port('SNMP Port', polVars["port"], 1, 65535)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
                             print(f'  Excluding [22, 23, 80, 123, 389, 443, 623, 636, 2068, 3268, 3269].')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    templateVars["multi_select"] = False
+                    polVars["multi_select"] = False
                     jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
 
                     # SNMP Contact
-                    templateVars["Description"] = jsonVars['SysContact']['description']
-                    templateVars["varDefault"] = 'UCS Admins'
-                    templateVars["varInput"] = 'SNMP System Contact:'
-                    templateVars["varName"] = 'SNMP System Contact'
-                    templateVars["varRegex"] = '.*'
-                    templateVars["minLength"] = 1
-                    templateVars["maxLength"] = jsonVars['SysContact']['maxLength']
-                    templateVars["system_contact"] = varStringLoop(**templateVars)
+                    polVars["Description"] = jsonVars['SysContact']['description']
+                    polVars["varDefault"] = 'UCS Admins'
+                    polVars["varInput"] = 'SNMP System Contact:'
+                    polVars["varName"] = 'SNMP System Contact'
+                    polVars["varRegex"] = '.*'
+                    polVars["minLength"] = 1
+                    polVars["maxLength"] = jsonVars['SysContact']['maxLength']
+                    polVars["system_contact"] = ezfunctions.varStringLoop(**polVars)
 
                     # SNMP Location
-                    templateVars["Description"] = jsonVars['SysLocation']['description']
-                    templateVars["varDefault"] = 'Data Center'
-                    templateVars["varInput"] = 'What is the Location of the host on which the SNMP agent (server) runs?'
-                    templateVars["varName"] = 'System Location'
-                    templateVars["varRegex"] = '.*'
-                    templateVars["minLength"] = 1
-                    templateVars["maxLength"] = jsonVars['SysLocation']['maxLength']
-                    templateVars["system_location"] = varStringLoop(**templateVars)
+                    polVars["Description"] = jsonVars['SysLocation']['description']
+                    polVars["varDefault"] = 'Data Center'
+                    polVars["varInput"] = 'What is the Location of the host on which the SNMP agent (server) runs?'
+                    polVars["varName"] = 'System Location'
+                    polVars["varRegex"] = '.*'
+                    polVars["minLength"] = 1
+                    polVars["maxLength"] = jsonVars['SysLocation']['maxLength']
+                    polVars["system_location"] = ezfunctions.varStringLoop(**polVars)
 
-                    templateVars["access_community_string"] = ''
+                    polVars["access_community_string"] = ''
                     valid = False
                     while valid == False:
                         question = input(f'Would you like to configure an SNMP Access Community String?  Enter "Y" or "N" [N]: ')
@@ -634,7 +624,7 @@ class policies_p3(object):
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Access Community String.')
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                            templateVars["access_community_string"] = loop_count
+                            polVars["access_community_string"] = loop_count
                             TF_VAR = 'TF_VAR_access_community_string_%s' % (loop_count)
                             os.environ[TF_VAR] = '%s' % (input_string)
                             valid = True
@@ -645,16 +635,16 @@ class policies_p3(object):
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
 
-                    if not templateVars["access_community_string"] == '':
-                        templateVars["var_description"] = jsonVars['CommunityAccess']['description']
-                        templateVars["jsonVars"] = sorted(jsonVars['CommunityAccess']['enum'])
-                        templateVars["defaultVar"] = jsonVars['CommunityAccess']['default']
-                        templateVars["varType"] = 'Community Access'
-                        templateVars["community_access"] = variablesFromAPI(**templateVars)
+                    if not polVars["access_community_string"] == '':
+                        polVars["var_description"] = jsonVars['CommunityAccess']['description']
+                        polVars["jsonVars"] = sorted(jsonVars['CommunityAccess']['enum'])
+                        polVars["defaultVar"] = jsonVars['CommunityAccess']['default']
+                        polVars["varType"] = 'Community Access'
+                        polVars["community_access"] = ezfunctions.variablesFromAPI(**polVars)
                     else:
-                        templateVars["community_access"] = 'Disabled'
+                        polVars["community_access"] = 'Disabled'
 
-                    templateVars["trap_community_string"] = ''
+                    polVars["trap_community_string"] = ''
                     valid = False
                     while valid == False:
                         question = input(f'Would you like to configure an SNMP Trap Community String?  Enter "Y" or "N" [N]: ')
@@ -668,7 +658,7 @@ class policies_p3(object):
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Trap Community String.')
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                            templateVars["trap_community_string"] = loop_count
+                            polVars["trap_community_string"] = loop_count
                             TF_VAR = 'TF_VAR_snmp_trap_community_%s' % (loop_count)
                             os.environ[TF_VAR] = '%s' % (input_string)
                             valid = True
@@ -679,7 +669,7 @@ class policies_p3(object):
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
 
-                    templateVars["engine_input_id"] = ''
+                    polVars["engine_input_id"] = ''
                     valid = False
                     while valid == False:
                         question = input(f'Note: By default this is derived from the BMC serial number.\n'\
@@ -694,7 +684,7 @@ class policies_p3(object):
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Engine Input ID.')
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                            templateVars["snmp_engine_input_id"] = input_string
+                            polVars["snmp_engine_input_id"] = input_string
                             valid = True
                         elif question == '' or question == 'N':
                             valid = True
@@ -706,15 +696,15 @@ class policies_p3(object):
                     # SNMP Users
                     ilCount = 1
                     snmp_user_list = []
-                    templateVars["Description"] = 'Configure SNMP Users'
-                    templateVars["varInput"] = f'Would you like to configure an SNMPv3 User?'
-                    templateVars["varDefault"] = 'Y'
-                    templateVars["varName"] = 'Enable Trunking'
-                    configure_snmp_users = varBoolLoop(**templateVars)
+                    polVars["Description"] = 'Configure SNMP Users'
+                    polVars["varInput"] = f'Would you like to configure an SNMPv3 User?'
+                    polVars["varDefault"] = 'Y'
+                    polVars["varName"] = 'Enable Trunking'
+                    configure_snmp_users = ezfunctions.varBoolLoop(**polVars)
                     if configure_snmp_users == True:
                         snmp_loop = False
                         while snmp_loop == False:
-                            snmp_user_list,snmp_loop = snmp_users(jsonData, ilCount, **templateVars)
+                            snmp_user_list,snmp_loop = ezfunctions.snmp_users(jsonData, ilCount, **polVars)
 
                     # SNMP Trap Destinations
                     ilCount = 1
@@ -723,27 +713,27 @@ class policies_p3(object):
                     while snmp_loop == False:
                         question = input(f'Would you like to configure SNMP Trap Destionations?  Enter "Y" or "N" [Y]: ')
                         if question == '' or question == 'Y':
-                            snmp_dests,snmp_loop = snmp_trap_servers(jsonData, ilCount, snmp_user_list, **templateVars)
+                            snmp_dests,snmp_loop = ezfunctions.snmp_trap_servers(jsonData, ilCount, snmp_user_list, **polVars)
                         elif question == 'N':
                             snmp_loop = True
                         else:
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
-                    templateVars["trap_destinations"] = snmp_dests
+                    polVars["trap_destinations"] = snmp_dests
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    if not templateVars["access_community_string"] == '':
+                    if not polVars["access_community_string"] == '':
                         print(f'    access_community_string = "Sensitive"')
-                    print(f'    description             = "{templateVars["descr"]}"')
-                    print(f'    enable_snmp             = {templateVars["enabled"]}')
-                    print(f'    name                    = "{templateVars["name"]}"')
-                    print(f'    snmp_community_access   = "{templateVars["community_access"]}"')
-                    print(f'    snmp_engine_input_id    = "{templateVars["engine_input_id"]}"')
-                    print(f'    snmp_port               = {templateVars["port"]}')
-                    if len(templateVars["trap_destinations"]) > 0:
+                    print(f'    description             = "{polVars["descr"]}"')
+                    print(f'    enable_snmp             = {polVars["enabled"]}')
+                    print(f'    name                    = "{polVars["name"]}"')
+                    print(f'    snmp_community_access   = "{polVars["community_access"]}"')
+                    print(f'    snmp_engine_input_id    = "{polVars["engine_input_id"]}"')
+                    print(f'    snmp_port               = {polVars["port"]}')
+                    if len(polVars["trap_destinations"]) > 0:
                         print(f'    snmp_trap_destinations = ''{')
-                        for item in templateVars["trap_destinations"]:
+                        for item in polVars["trap_destinations"]:
                             for k, v in item.items():
                                 if k == 'destination_address':
                                     print(f'      "{v}" = ''{')
@@ -764,9 +754,9 @@ class policies_p3(object):
                                     print(f'        snmp_server         = "{v}"')
                             print(f'      ''}')
                         print(f'    ''}')
-                    if len(templateVars["users"]) > 0:
+                    if len(polVars["users"]) > 0:
                         print(f'    snmp_users = ''{')
-                        for item in templateVars["users"]:
+                        for item in polVars["users"]:
                             for k, v in item.items():
                                 if k == 'name':
                                     print(f'      "{v}" = ''{')
@@ -783,7 +773,7 @@ class policies_p3(object):
                                     print(f'        security_level   = "{v}"')
                             print(f'      ''}')
                         print(f'    ''}')
-                    if not templateVars["trap_community_string"] == '':
+                    if not polVars["trap_community_string"] == '':
                         print(f'    trap_community_string   = "Sensitive"')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
@@ -793,15 +783,15 @@ class policies_p3(object):
                             confirm_policy = 'Y'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
+                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                            ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'  Starting {polVars["policy_type"]} Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
 
@@ -818,8 +808,8 @@ class policies_p3(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # SSH Policy Module
@@ -830,18 +820,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'SSH Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'ssh_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'ssh_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -851,9 +841,9 @@ class policies_p3(object):
             print(f'  server or a set of servers.\n\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -865,23 +855,23 @@ class policies_p3(object):
                     else:
                         name = '%s_%s' % (org, name_suffix)
 
-                    templateVars["name"] = policy_name(name, policy_type)
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
-                    templateVars["enable_ssh"] = True
+                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["enable_ssh"] = True
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Port used for secure shell access.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid = False
                     while valid == False:
-                        templateVars["ssh_port"] = input('What is the SSH Port?  [22]: ')
-                        if templateVars["ssh_port"] == '':
-                            templateVars["ssh_port"] = 22
-                        if re.search(r'[\d]+', str(templateVars["ssh_port"])):
-                            valid = validating.number_in_range('SSH Port', templateVars["ssh_port"], 1, 65535)
+                        polVars["ssh_port"] = input('What is the SSH Port?  [22]: ')
+                        if polVars["ssh_port"] == '':
+                            polVars["ssh_port"] = 22
+                        if re.search(r'[\d]+', str(polVars["ssh_port"])):
+                            valid = validating.number_in_range('SSH Port', polVars["ssh_port"], 1, 65535)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  "{templateVars["ssh_port"]}" is not a valid port.')
+                            print(f'  "{polVars["ssh_port"]}" is not a valid port.')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -889,23 +879,23 @@ class policies_p3(object):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid = False
                     while valid == False:
-                        templateVars["ssh_timeout"] = input('What value do you want to set for the SSH Timeout?  [1800]: ')
-                        if templateVars["ssh_timeout"] == '':
-                            templateVars["ssh_timeout"] = 1800
-                        if re.search(r'[\d]+', str(templateVars["ssh_timeout"])):
-                            valid = validating.number_in_range('SSH Timeout', templateVars["ssh_timeout"], 60, 10800)
+                        polVars["ssh_timeout"] = input('What value do you want to set for the SSH Timeout?  [1800]: ')
+                        if polVars["ssh_timeout"] == '':
+                            polVars["ssh_timeout"] = 1800
+                        if re.search(r'[\d]+', str(polVars["ssh_timeout"])):
+                            valid = validating.number_in_range('SSH Timeout', polVars["ssh_timeout"], 60, 10800)
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  "{templateVars["ssh_timeout"]}" is not a valid value.  Must be between 60 and 10800')
+                            print(f'  "{polVars["ssh_timeout"]}" is not a valid value.  Must be between 60 and 10800')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    description = "{templateVars["descr"]}"')
-                    print(f'    enable_ssh  = {templateVars["enable_ssh"]}')
-                    print(f'    name        = "{templateVars["name"]}"')
-                    print(f'    ssh_port    = {templateVars["ssh_port"]}')
-                    print(f'    ssh_timeout = "{templateVars["ssh_timeout"]}"')
+                    print(f'    description = "{polVars["descr"]}"')
+                    print(f'    enable_ssh  = {polVars["enable_ssh"]}')
+                    print(f'    name        = "{polVars["name"]}"')
+                    print(f'    ssh_port    = {polVars["ssh_port"]}')
+                    print(f'    ssh_timeout = "{polVars["ssh_timeout"]}"')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
@@ -914,15 +904,15 @@ class policies_p3(object):
                             confirm_policy = 'Y'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
+                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                            ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'  Starting {polVars["policy_type"]} Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
 
@@ -939,8 +929,8 @@ class policies_p3(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #========================================
     # Storage Policy Module
@@ -950,20 +940,20 @@ class policies_p3(object):
         name_suffix = 'storage'
         opSystem = kwargs['opSystem']
         org = self.org
-        policy_names = []
+        ezfunctions.policy_names = []
         policy_type = 'Storage Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'storage_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'storage_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -972,9 +962,9 @@ class policies_p3(object):
             print(f'  storage capacity of a virtual drive, and configure the M.2 RAID controllers.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -988,50 +978,50 @@ class policies_p3(object):
                         name = '%s_%s' % (org, name_suffix)
 
                     # Obtain Policy Name
-                    templateVars["name"] = policy_name(name, policy_type)
+                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
                     # Obtain Policy Description
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     # Configure the Global Host Spares Setting
-                    templateVars["multi_select"] = False
+                    polVars["multi_select"] = False
                     jsonVars = jsonData['components']['schemas']['storage.StoragePolicy']['allOf'][1]['properties']
 
                     # Configure the Global Host Spares Setting
-                    templateVars["Description"] = jsonVars['GlobalHotSpares']['description']
-                    templateVars["varDefault"] = ''
-                    templateVars["varInput"] = 'Specify the disks that are to be used as hot spares,\n globally,'\
+                    polVars["Description"] = jsonVars['GlobalHotSpares']['description']
+                    polVars["varDefault"] = ''
+                    polVars["varInput"] = 'Specify the disks that are to be used as hot spares,\n globally,'\
                         ' for all the Drive Groups. [press enter to skip]:'
-                    templateVars["varName"] = 'Global Hot Spares'
-                    templateVars["varRegex"] = jsonVars['GlobalHotSpares']['pattern']
-                    templateVars["minLength"] = 0
-                    templateVars["maxLength"] = 128
-                    templateVars["global_hot_spares"] = varStringLoop(**templateVars)
+                    polVars["varName"] = 'Global Hot Spares'
+                    polVars["varRegex"] = jsonVars['GlobalHotSpares']['pattern']
+                    polVars["minLength"] = 0
+                    polVars["maxLength"] = 128
+                    polVars["global_hot_spares"] = ezfunctions.varStringLoop(**polVars)
 
                     # Obtain Unused Disks State
-                    templateVars["var_description"] = jsonVars['UnusedDisksState']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['UnusedDisksState']['enum'])
-                    templateVars["defaultVar"] = jsonVars['UnusedDisksState']['default']
-                    templateVars["varType"] = 'Unused Disks State'
-                    templateVars["unused_disks_state"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['UnusedDisksState']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['UnusedDisksState']['enum'])
+                    polVars["defaultVar"] = jsonVars['UnusedDisksState']['default']
+                    polVars["varType"] = 'Unused Disks State'
+                    polVars["unused_disks_state"] = ezfunctions.variablesFromAPI(**polVars)
 
                     # Configure the Global Host Spares Setting
-                    templateVars["Description"] = jsonVars['UseJbodForVdCreation']['description']
-                    templateVars["varInput"] = f'Do you want to Use JBOD drives for Virtual Drive creation?'
-                    templateVars["varDefault"] = 'N'
-                    templateVars["varName"] = 'Use Jbod For Vd Creation'
-                    templateVars["use_jbod_for_vd_creation"] = varBoolLoop(**templateVars)
+                    polVars["Description"] = jsonVars['UseJbodForVdCreation']['description']
+                    polVars["varInput"] = f'Do you want to Use JBOD drives for Virtual Drive creation?'
+                    polVars["varDefault"] = 'N'
+                    polVars["varName"] = 'Use Jbod For Vd Creation'
+                    polVars["use_jbod_for_vd_creation"] = ezfunctions.varBoolLoop(**polVars)
 
                     # Ask if Drive Groups should be configured
-                    templateVars["Description"] = 'Drive Group Configuration - Enable to add RAID drive groups that can be used to create'\
+                    polVars["Description"] = 'Drive Group Configuration - Enable to add RAID drive groups that can be used to create'\
                         ' virtual drives.  You can also specify the Global Hot Spares information.'
-                    templateVars["varInput"] = f'Do you want to Configure Drive Groups?'
-                    templateVars["varDefault"] = 'N'
-                    templateVars["varName"] = 'Drive Groups'
-                    driveGroups = varBoolLoop(**templateVars)
+                    polVars["varInput"] = f'Do you want to Configure Drive Groups?'
+                    polVars["varDefault"] = 'N'
+                    polVars["varName"] = 'Drive Groups'
+                    driveGroups = ezfunctions.varBoolLoop(**polVars)
 
                     # If True configure Drive Groups
                     if driveGroups == True:
-                        templateVars["drive_groups"] = []
+                        polVars["drive_groups"] = []
                         inner_loop_count = 1
                         drive_group = []
                         drive_group_loop = False
@@ -1039,33 +1029,33 @@ class policies_p3(object):
                             jsonVars = jsonData['components']['schemas']['storage.DriveGroup']['allOf'][1]['properties']
 
                             # Request Drive Group Name
-                            templateVars["Description"] = jsonVars['Name']['description']
-                            templateVars["varDefault"] = f'dg{inner_loop_count - 1}'
-                            templateVars["varInput"] = f'Enter the Drive Group Name.  [{templateVars["varDefault"]}]:'
-                            templateVars["varName"] = 'Drive Group Name'
-                            templateVars["varRegex"] = jsonVars['Name']['pattern']
-                            templateVars["minLength"] = 1
-                            templateVars["maxLength"] = 60
-                            dgName = varStringLoop(**templateVars)
+                            polVars["Description"] = jsonVars['Name']['description']
+                            polVars["varDefault"] = f'dg{inner_loop_count - 1}'
+                            polVars["varInput"] = f'Enter the Drive Group Name.  [{polVars["varDefault"]}]:'
+                            polVars["varName"] = 'Drive Group Name'
+                            polVars["varRegex"] = jsonVars['Name']['pattern']
+                            polVars["minLength"] = 1
+                            polVars["maxLength"] = 60
+                            dgName = ezfunctions.varStringLoop(**polVars)
 
                             # Obtain Raid Level for Drive Group
-                            templateVars["var_description"] = jsonVars['RaidLevel']['description']
-                            templateVars["jsonVars"] = sorted(jsonVars['RaidLevel']['enum'])
-                            templateVars["defaultVar"] = jsonVars['RaidLevel']['default']
-                            templateVars["varType"] = 'Raid Level'
-                            RaidLevel = variablesFromAPI(**templateVars)
+                            polVars["var_description"] = jsonVars['RaidLevel']['description']
+                            polVars["jsonVars"] = sorted(jsonVars['RaidLevel']['enum'])
+                            polVars["defaultVar"] = jsonVars['RaidLevel']['default']
+                            polVars["varType"] = 'Raid Level'
+                            RaidLevel = ezfunctions.variablesFromAPI(**polVars)
 
                             jsonVars = jsonData['components']['schemas']['storage.ManualDriveGroup']['allOf'][1]['properties']
 
                             # If Raid Level is anything other than Raid0 ask for Hot Spares
                             if not RaidLevel == 'Raid0':
-                                templateVars["Description"] = jsonVars['DedicatedHotSpares']['description']
-                                templateVars["varInput"] = 'Enter the Drives to add as Dedicated Hot Spares [press enter to skip]:'
-                                templateVars["varName"] = 'Dedicated Hot Spares'
-                                templateVars["varRegex"] = jsonVars['DedicatedHotSpares']['pattern']
-                                templateVars["minLength"] = 1
-                                templateVars["maxLength"] = 60
-                                DedicatedHotSpares = varStringLoop(**templateVars)
+                                polVars["Description"] = jsonVars['DedicatedHotSpares']['description']
+                                polVars["varInput"] = 'Enter the Drives to add as Dedicated Hot Spares [press enter to skip]:'
+                                polVars["varName"] = 'Dedicated Hot Spares'
+                                polVars["varRegex"] = jsonVars['DedicatedHotSpares']['pattern']
+                                polVars["minLength"] = 1
+                                polVars["maxLength"] = 60
+                                DedicatedHotSpares = ezfunctions.varStringLoop(**polVars)
                             else:
                                 DedicatedHotSpares = ''
 
@@ -1073,11 +1063,11 @@ class policies_p3(object):
                             SpanSlots = []
                             # If Riad is 10, 50 or 60 allow multiple Span Slots
                             if re.fullmatch('^Raid(10|50|60)$', RaidLevel):
-                                templateVars["var_description"] = jsonVars['SpanGroups']['items']['description']
-                                templateVars["jsonVars"] = [2, 4, 6, 8]
-                                templateVars["defaultVar"] = 2
-                                templateVars["varType"] = 'Span Groups'
-                                SpanGroups = variablesFromAPI(**templateVars)
+                                polVars["var_description"] = jsonVars['SpanGroups']['items']['description']
+                                polVars["jsonVars"] = [2, 4, 6, 8]
+                                polVars["defaultVar"] = 2
+                                polVars["varType"] = 'Span Groups'
+                                SpanGroups = ezfunctions.variablesFromAPI(**polVars)
                                 if SpanGroups == 2:
                                     SpanGroups = [0, 1]
                                 elif SpanGroups == 4:
@@ -1090,46 +1080,46 @@ class policies_p3(object):
 
                                 for span in SpanGroups:
                                     jsonVars = jsonData['components']['schemas']['storage.SpanDrives']['allOf'][1]['properties']
-                                    templateVars["Description"] = jsonVars['Slots']['description']
+                                    polVars["Description"] = jsonVars['Slots']['description']
                                     if re.fullmatch('^Raid10$', RaidLevel):
                                         Drive1 = (inner_loop_count * 2) - 1
                                         Drive2 = (inner_loop_count * 2)
-                                        templateVars["varDefault"] = f'{Drive1}-{Drive2}'
+                                        polVars["varDefault"] = f'{Drive1}-{Drive2}'
                                     elif re.fullmatch('^Raid50$', RaidLevel):
                                         Drive1 = (inner_loop_count * 3) - 2
                                         Drive2 = (inner_loop_count * 3)
-                                        templateVars["varDefault"] = f'{Drive1}-{Drive2}'
+                                        polVars["varDefault"] = f'{Drive1}-{Drive2}'
                                     elif re.fullmatch('^Raid60$', RaidLevel):
                                         Drive1 = (inner_loop_count * 4) - 3
                                         Drive2 = (inner_loop_count * 4)
-                                        templateVars["varDefault"] = f'{Drive1}-{Drive2}'
-                                    templateVars["varInput"] = f'Enter the Drive Slots for Drive Array Span {span}. [{templateVars["varDefault"]}]:'
-                                    templateVars["varName"] = 'Drive Slots'
-                                    templateVars["varRegex"] = jsonVars['Slots']['pattern']
-                                    templateVars["minLength"] = 1
-                                    templateVars["maxLength"] = 10
-                                    SpanSlots.append({'slots':varStringLoop(**templateVars)})
+                                        polVars["varDefault"] = f'{Drive1}-{Drive2}'
+                                    polVars["varInput"] = f'Enter the Drive Slots for Drive Array Span {span}. [{polVars["varDefault"]}]:'
+                                    polVars["varName"] = 'Drive Slots'
+                                    polVars["varRegex"] = jsonVars['Slots']['pattern']
+                                    polVars["minLength"] = 1
+                                    polVars["maxLength"] = 10
+                                    SpanSlots.append({'slots':ezfunctions.varStringLoop(**polVars)})
                             elif re.fullmatch('^Raid(0|1|5|6)$', RaidLevel):
                                 jsonVars = jsonData['components']['schemas']['storage.SpanDrives']['allOf'][1]['properties']
-                                templateVars["Description"] = jsonVars['Slots']['description']
+                                polVars["Description"] = jsonVars['Slots']['description']
                                 if re.fullmatch('^Raid(0|1)$', RaidLevel):
                                     Drive1 = (inner_loop_count * 2) - 1
                                     Drive2 = (inner_loop_count * 2)
-                                    templateVars["varDefault"] = f'{Drive1}-{Drive2}'
+                                    polVars["varDefault"] = f'{Drive1}-{Drive2}'
                                 elif re.fullmatch('^Raid5$', RaidLevel):
                                     Drive1 = (inner_loop_count * 3) - 2
                                     Drive2 = (inner_loop_count * 3)
-                                    templateVars["varDefault"] = f'{Drive1}-{Drive2}'
+                                    polVars["varDefault"] = f'{Drive1}-{Drive2}'
                                 elif re.fullmatch('^Raid6$', RaidLevel):
                                     Drive1 = (inner_loop_count * 4) - 3
                                     Drive2 = (inner_loop_count * 4)
-                                    templateVars["varDefault"] = f'{Drive1}-{Drive2}'
-                                templateVars["varInput"] = f'Enter the Drive Slots for Drive Array Span 0. [{templateVars["varDefault"]}]:'
-                                templateVars["varName"] = 'Drive Slots'
-                                templateVars["varRegex"] = jsonVars['Slots']['pattern']
-                                templateVars["minLength"] = 1
-                                templateVars["maxLength"] = 10
-                                SpanSlots.append({'slots':varStringLoop(**templateVars)})
+                                    polVars["varDefault"] = f'{Drive1}-{Drive2}'
+                                polVars["varInput"] = f'Enter the Drive Slots for Drive Array Span 0. [{polVars["varDefault"]}]:'
+                                polVars["varName"] = 'Drive Slots'
+                                polVars["varRegex"] = jsonVars['Slots']['pattern']
+                                polVars["minLength"] = 1
+                                polVars["maxLength"] = 10
+                                SpanSlots.append({'slots':ezfunctions.varStringLoop(**polVars)})
                                 
                             virtualDrives = []
                             sub_loop_count = 0
@@ -1137,71 +1127,71 @@ class policies_p3(object):
                             while sub_loop == False:
                                 jsonVars = jsonData['components']['schemas']['storage.VirtualDriveConfiguration']['allOf'][1]['properties']
 
-                                templateVars["Description"] = jsonVars['Name']['description']
-                                templateVars["varDefault"] = f'vd{sub_loop_count}'
-                                templateVars["varInput"] = f'Enter the name of the Virtual Drive.  [vd{sub_loop_count}]'
-                                templateVars["varName"] = 'Drive Group Name'
-                                templateVars["varRegex"] = jsonVars['Name']['pattern']
-                                templateVars["minLength"] = 1
-                                templateVars["maxLength"] = 60
-                                vd_name = varStringLoop(**templateVars)
+                                polVars["Description"] = jsonVars['Name']['description']
+                                polVars["varDefault"] = f'vd{sub_loop_count}'
+                                polVars["varInput"] = f'Enter the name of the Virtual Drive.  [vd{sub_loop_count}]'
+                                polVars["varName"] = 'Drive Group Name'
+                                polVars["varRegex"] = jsonVars['Name']['pattern']
+                                polVars["minLength"] = 1
+                                polVars["maxLength"] = 60
+                                vd_name = ezfunctions.varStringLoop(**polVars)
 
-                                templateVars["Description"] = jsonVars['ExpandToAvailable']['description']
-                                templateVars["varInput"] = f'Do you want to expand to all the space in the drive group?'
-                                templateVars["varDefault"] = 'Y'
-                                templateVars["varName"] = 'Expand To Available'
-                                ExpandToAvailable = varBoolLoop(**templateVars)
+                                polVars["Description"] = jsonVars['ExpandToAvailable']['description']
+                                polVars["varInput"] = f'Do you want to expand to all the space in the drive group?'
+                                polVars["varDefault"] = 'Y'
+                                polVars["varName"] = 'Expand To Available'
+                                ExpandToAvailable = ezfunctions.varBoolLoop(**polVars)
 
                                 # If Expand to Available is Disabled obtain Virtual Drive disk size
                                 if ExpandToAvailable == False:
-                                    templateVars["Description"] = jsonVars['Size']['description']
-                                    templateVars["varDefault"] =  '1'
-                                    templateVars["varInput"] = 'What is the Size for this Virtual Drive?'
-                                    templateVars["varName"] = 'Size'
-                                    templateVars["varRegex"] = '[0-9]+'
-                                    templateVars["minNum"] = jsonVars['Size']['minimum']
-                                    templateVars["maxNum"] = 9999999999
-                                    vdSize = varNumberLoop(**templateVars)
+                                    polVars["Description"] = jsonVars['Size']['description']
+                                    polVars["varDefault"] =  '1'
+                                    polVars["varInput"] = 'What is the Size for this Virtual Drive?'
+                                    polVars["varName"] = 'Size'
+                                    polVars["varRegex"] = '[0-9]+'
+                                    polVars["minNum"] = jsonVars['Size']['minimum']
+                                    polVars["maxNum"] = 9999999999
+                                    vdSize = ezfunctions.varNumberLoop(**polVars)
                                 else:
                                     vdSize = 1
                                 
-                                templateVars["Description"] = jsonVars['BootDrive']['description']
-                                templateVars["varInput"] = f'Do you want to configure {vd_name} as a boot drive?'
-                                templateVars["varDefault"] = 'Y'
-                                templateVars["varName"] = 'Boot Drive'
-                                BootDrive = varBoolLoop(**templateVars)
+                                polVars["Description"] = jsonVars['BootDrive']['description']
+                                polVars["varInput"] = f'Do you want to configure {vd_name} as a boot drive?'
+                                polVars["varDefault"] = 'Y'
+                                polVars["varName"] = 'Boot Drive'
+                                BootDrive = ezfunctions.varBoolLoop(**polVars)
 
                                 jsonVars = jsonData['components']['schemas']['storage.VirtualDrivePolicy']['allOf'][1]['properties']
 
-                                templateVars["var_description"] = jsonVars['AccessPolicy']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['AccessPolicy']['enum'])
-                                templateVars["defaultVar"] = jsonVars['AccessPolicy']['default']
-                                templateVars["varType"] = 'Access Policy'
-                                AccessPolicy = variablesFromAPI(**templateVars)
+                                polVars["var_description"] = jsonVars['AccessPolicy']['description']
+                                polVars["jsonVars"] = sorted(jsonVars['AccessPolicy']['enum'])
+                                polVars["defaultVar"] = jsonVars['AccessPolicy']['default']
+                                polVars["varType"] = 'Access Policy'
+                                AccessPolicy = ezfunctions.variablesFromAPI(**polVars)
 
-                                templateVars["var_description"] = jsonVars['DriveCache']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['DriveCache']['enum'])
-                                templateVars["defaultVar"] = jsonVars['DriveCache']['default']
-                                templateVars["varType"] = 'Drive Cache'
-                                DriveCache = variablesFromAPI(**templateVars)
+                                polVars["var_description"] = jsonVars['DriveCache']['description']
+                                polVars["jsonVars"] = sorted(jsonVars['DriveCache']['enum'])
+                                polVars["defaultVar"] = jsonVars['DriveCache']['default']
+                                polVars["varType"] = 'Drive Cache'
+                                DriveCache = ezfunctions.variablesFromAPI(**polVars)
 
-                                templateVars["var_description"] = jsonVars['ReadPolicy']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['ReadPolicy']['enum'])
-                                templateVars["defaultVar"] = jsonVars['ReadPolicy']['default']
-                                templateVars["varType"] = 'Read Policy'
-                                ReadPolicy = variablesFromAPI(**templateVars)
+                                polVars["var_description"] = jsonVars['ReadPolicy']['description']
+                                polVars["jsonVars"] = sorted(jsonVars['ReadPolicy']['enum'])
+                                polVars["defaultVar"] = jsonVars['ReadPolicy']['default']
+                                polVars["varType"] = 'Read Policy'
+                                ReadPolicy = ezfunctions.variablesFromAPI(**polVars)
 
-                                templateVars["var_description"] = jsonVars['StripSize']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['StripSize']['enum'])
-                                templateVars["defaultVar"] = jsonVars['StripSize']['default']
-                                templateVars["varType"] = 'Strip Size'
-                                StripSize = variablesFromAPI(**templateVars)
+                                polVars["var_description"] = jsonVars['StripSize']['description']
+                                polVars["jsonVars"] = sorted(jsonVars['StripSize']['enum'])
+                                polVars["defaultVar"] = jsonVars['StripSize']['default']
+                                polVars["varType"] = 'Strip Size'
+                                StripSize = ezfunctions.variablesFromAPI(**polVars)
 
-                                templateVars["var_description"] = jsonVars['WritePolicy']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['WritePolicy']['enum'])
-                                templateVars["defaultVar"] = jsonVars['WritePolicy']['default']
-                                templateVars["varType"] = 'Write Policy'
-                                WritePolicy = variablesFromAPI(**templateVars)
+                                polVars["var_description"] = jsonVars['WritePolicy']['description']
+                                polVars["jsonVars"] = sorted(jsonVars['WritePolicy']['enum'])
+                                polVars["defaultVar"] = jsonVars['WritePolicy']['default']
+                                polVars["varType"] = 'Write Policy'
+                                WritePolicy = ezfunctions.variablesFromAPI(**polVars)
 
                                 virtual_drive = {
                                     'access_policy':AccessPolicy,
@@ -1306,7 +1296,7 @@ class policies_p3(object):
                             while valid_confirm == False:
                                 confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                                 if confirm_v == 'Y' or confirm_v == '':
-                                    templateVars["drive_groups"].append(drive_group)
+                                    polVars["drive_groups"].append(drive_group)
                                     valid_exit = False
                                     while valid_exit == False:
                                         loop_exit = input(f'Would You like to Configure another Drive Group?  Enter "Y" or "N" [N]: ')
@@ -1333,38 +1323,38 @@ class policies_p3(object):
                                     print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                                     print(f'\n------------------------------------------------------\n')
                     else:
-                        templateVars["drive_groups"] = []
+                        polVars["drive_groups"] = []
 
                     # Ask if M2 should be configured
-                    templateVars["Description"] = jsonVars['M2VirtualDrive']['description']
-                    templateVars["varInput"] = f'Do you want to Enable the M.2 Virtual Drive Configuration?'
-                    templateVars["varDefault"] = 'Y'
-                    templateVars["varName"] = 'M.2 Virtual Drive'
-                    M2VirtualDrive = varBoolLoop(**templateVars)
+                    polVars["Description"] = jsonVars['M2VirtualDrive']['description']
+                    polVars["varInput"] = f'Do you want to Enable the M.2 Virtual Drive Configuration?'
+                    polVars["varDefault"] = 'Y'
+                    polVars["varName"] = 'M.2 Virtual Drive'
+                    M2VirtualDrive = ezfunctions.varBoolLoop(**polVars)
 
                     # Configure M2 if it is True if not Pop it from the list
                     if M2VirtualDrive == True:
                         jsonVars = jsonData['components']['schemas']['storage.M2VirtualDriveConfig']['allOf'][1]['properties']
 
-                        templateVars["var_description"] = jsonVars['ControllerSlot']['description']
-                        templateVars["jsonVars"] = sorted(jsonVars['ControllerSlot']['enum'])
-                        templateVars["defaultVar"] = 'MSTOR-RAID-1'
-                        templateVars["varType"] = 'Controller Slot'
-                        ControllerSlot = variablesFromAPI(**templateVars)
+                        polVars["var_description"] = jsonVars['ControllerSlot']['description']
+                        polVars["jsonVars"] = sorted(jsonVars['ControllerSlot']['enum'])
+                        polVars["defaultVar"] = 'MSTOR-RAID-1'
+                        polVars["varType"] = 'Controller Slot'
+                        ControllerSlot = ezfunctions.variablesFromAPI(**polVars)
 
-                        templateVars["m2_configuration"] = {
+                        polVars["m2_configuration"] = {
                             'controller_slot':ControllerSlot,
                             'enable':True
                         }
                     else:
-                        templateVars.pop('m2_configuration')
+                        polVars.pop('m2_configuration')
 
                     # Ask if Drive Groups should be configured
-                    templateVars["Description"] = 'Enable to create RAID0 virtual drives on each physical drive..'
-                    templateVars["varInput"] = f"Do you want to Configure Single Drive RAID's?"
-                    templateVars["varDefault"] = 'N'
-                    templateVars["varName"] = 'Single Drive RAID'
-                    singledriveRaid = varBoolLoop(**templateVars)
+                    polVars["Description"] = 'Enable to create RAID0 virtual drives on each physical drive..'
+                    polVars["varInput"] = f"Do you want to Configure Single Drive RAID's?"
+                    polVars["varDefault"] = 'N'
+                    polVars["varName"] = 'Single Drive RAID'
+                    singledriveRaid = ezfunctions.varBoolLoop(**polVars)
 
                     # If True configure Drive Groups
                     if singledriveRaid == True:
@@ -1372,54 +1362,54 @@ class policies_p3(object):
                         while single_drive_loop == False:
                             # Obtain the Single Drive Raid Slots
                             jsonVars = jsonData['components']['schemas']['storage.R0Drive']['allOf'][1]['properties']
-                            templateVars["Description"] = jsonVars['DriveSlots']['description']
-                            templateVars["varDefault"] = f'1-2'
-                            templateVars["varInput"] = f'Enter the Drive Slots for Drive Array Span 0. [{templateVars["varDefault"]}]:'
-                            templateVars["varName"] = 'Drive Slots'
-                            templateVars["varRegex"] = jsonVars['DriveSlots']['pattern']
-                            templateVars["minLength"] = 1
-                            templateVars["maxLength"] = 64
-                            DriveSlots = varStringLoop(**templateVars)
+                            polVars["Description"] = jsonVars['DriveSlots']['description']
+                            polVars["varDefault"] = f'1-2'
+                            polVars["varInput"] = f'Enter the Drive Slots for Drive Array Span 0. [{polVars["varDefault"]}]:'
+                            polVars["varName"] = 'Drive Slots'
+                            polVars["varRegex"] = jsonVars['DriveSlots']['pattern']
+                            polVars["minLength"] = 1
+                            polVars["maxLength"] = 64
+                            DriveSlots = ezfunctions.varStringLoop(**polVars)
                                 
                             # Obtain the Virtual Drive Policies
                             jsonVars = jsonData['components']['schemas']['storage.VirtualDrivePolicy']['allOf'][1]['properties']
 
                             # Access Policy
-                            templateVars["var_description"] = jsonVars['AccessPolicy']['description']
-                            templateVars["jsonVars"] = sorted(jsonVars['AccessPolicy']['enum'])
-                            templateVars["defaultVar"] = jsonVars['AccessPolicy']['default']
-                            templateVars["varType"] = 'Access Policy'
-                            AccessPolicy = variablesFromAPI(**templateVars)
+                            polVars["var_description"] = jsonVars['AccessPolicy']['description']
+                            polVars["jsonVars"] = sorted(jsonVars['AccessPolicy']['enum'])
+                            polVars["defaultVar"] = jsonVars['AccessPolicy']['default']
+                            polVars["varType"] = 'Access Policy'
+                            AccessPolicy = ezfunctions.variablesFromAPI(**polVars)
 
                             # Drive Cache
-                            templateVars["var_description"] = jsonVars['DriveCache']['description']
-                            templateVars["jsonVars"] = sorted(jsonVars['DriveCache']['enum'])
-                            templateVars["defaultVar"] = jsonVars['DriveCache']['default']
-                            templateVars["varType"] = 'Drive Cache'
-                            DriveCache = variablesFromAPI(**templateVars)
+                            polVars["var_description"] = jsonVars['DriveCache']['description']
+                            polVars["jsonVars"] = sorted(jsonVars['DriveCache']['enum'])
+                            polVars["defaultVar"] = jsonVars['DriveCache']['default']
+                            polVars["varType"] = 'Drive Cache'
+                            DriveCache = ezfunctions.variablesFromAPI(**polVars)
 
                             # Read Policy
-                            templateVars["var_description"] = jsonVars['ReadPolicy']['description']
-                            templateVars["jsonVars"] = sorted(jsonVars['ReadPolicy']['enum'])
-                            templateVars["defaultVar"] = jsonVars['ReadPolicy']['default']
-                            templateVars["varType"] = 'Read Policy'
-                            ReadPolicy = variablesFromAPI(**templateVars)
+                            polVars["var_description"] = jsonVars['ReadPolicy']['description']
+                            polVars["jsonVars"] = sorted(jsonVars['ReadPolicy']['enum'])
+                            polVars["defaultVar"] = jsonVars['ReadPolicy']['default']
+                            polVars["varType"] = 'Read Policy'
+                            ReadPolicy = ezfunctions.variablesFromAPI(**polVars)
 
                             # Strip Size
-                            templateVars["var_description"] = jsonVars['StripSize']['description']
-                            templateVars["jsonVars"] = sorted(jsonVars['StripSize']['enum'])
-                            templateVars["defaultVar"] = jsonVars['StripSize']['default']
-                            templateVars["varType"] = 'Strip Size'
-                            StripSize = variablesFromAPI(**templateVars)
+                            polVars["var_description"] = jsonVars['StripSize']['description']
+                            polVars["jsonVars"] = sorted(jsonVars['StripSize']['enum'])
+                            polVars["defaultVar"] = jsonVars['StripSize']['default']
+                            polVars["varType"] = 'Strip Size'
+                            StripSize = ezfunctions.variablesFromAPI(**polVars)
 
                             # Write Policy
-                            templateVars["var_description"] = jsonVars['WritePolicy']['description']
-                            templateVars["jsonVars"] = sorted(jsonVars['WritePolicy']['enum'])
-                            templateVars["defaultVar"] = jsonVars['WritePolicy']['default']
-                            templateVars["varType"] = 'Write Policy'
-                            WritePolicy = variablesFromAPI(**templateVars)
+                            polVars["var_description"] = jsonVars['WritePolicy']['description']
+                            polVars["jsonVars"] = sorted(jsonVars['WritePolicy']['enum'])
+                            polVars["defaultVar"] = jsonVars['WritePolicy']['default']
+                            polVars["varType"] = 'Write Policy'
+                            WritePolicy = ezfunctions.variablesFromAPI(**polVars)
 
-                            templateVars["single_drive_raid_configuration"] = {
+                            polVars["single_drive_raid_configuration"] = {
                                 'access_policy':AccessPolicy,
                                 'disk_cache':DriveCache,
                                 'drive_slots':DriveSlots,
@@ -1430,13 +1420,13 @@ class policies_p3(object):
                             }
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'    "0" = ''{')
-                            print(f'      access_policy = "{templateVars["single_drive_raid_configuration"]["access_policy"]}"')
-                            print(f'      disk_cache    = "{templateVars["single_drive_raid_configuration"]["disk_cache"]}"')
-                            print(f'      drive_slots   = "{templateVars["single_drive_raid_configuration"]["drive_slots"]}"')
-                            print(f'      enable        = {templateVars["single_drive_raid_configuration"]["enable"]}')
-                            print(f'      read_policy   = "{templateVars["single_drive_raid_configuration"]["read_policy"]}"')
-                            print(f'      strip_size    = "{templateVars["single_drive_raid_configuration"]["strip_size"]}"')
-                            print(f'      write_policy  = "{templateVars["single_drive_raid_configuration"]["write_policy"]}"')
+                            print(f'      access_policy = "{polVars["single_drive_raid_configuration"]["access_policy"]}"')
+                            print(f'      disk_cache    = "{polVars["single_drive_raid_configuration"]["disk_cache"]}"')
+                            print(f'      drive_slots   = "{polVars["single_drive_raid_configuration"]["drive_slots"]}"')
+                            print(f'      enable        = {polVars["single_drive_raid_configuration"]["enable"]}')
+                            print(f'      read_policy   = "{polVars["single_drive_raid_configuration"]["read_policy"]}"')
+                            print(f'      strip_size    = "{polVars["single_drive_raid_configuration"]["strip_size"]}"')
+                            print(f'      write_policy  = "{polVars["single_drive_raid_configuration"]["write_policy"]}"')
                             print(f'    ''}')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             valid_confirm = False
@@ -1457,14 +1447,14 @@ class policies_p3(object):
                                     print(f'\n------------------------------------------------------\n')
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    description              = "{templateVars["descr"]}"')
-                    print(f'    global_hot_spares        = "{templateVars["global_hot_spares"]}"')
-                    print(f'    unused_disks_state       = "{templateVars["unused_disks_state"]}"')
-                    print(f'    use_jbod_for_vd_creation = "{templateVars["use_jbod_for_vd_creation"]}"')
+                    print(f'    description              = "{polVars["descr"]}"')
+                    print(f'    global_hot_spares        = "{polVars["global_hot_spares"]}"')
+                    print(f'    unused_disks_state       = "{polVars["unused_disks_state"]}"')
+                    print(f'    use_jbod_for_vd_creation = "{polVars["use_jbod_for_vd_creation"]}"')
                     dg_count = 0
-                    if len(templateVars["drive_groups"]) > 0:
+                    if len(polVars["drive_groups"]) > 0:
                         print(f'    drive_groups = ''{')
-                        for drive_group in templateVars["drive_groups"]:
+                        for drive_group in polVars["drive_groups"]:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'      "{drive_group["drive_group_name"]}" = ''{')
                             print(f'        manual_drive_group = ''{')
@@ -1500,24 +1490,24 @@ class policies_p3(object):
                         print(f'    ''}')
                     else:
                         print(f'    drive_groups = ''{}')
-                    if templateVars.get("m2_configuration"):
+                    if polVars.get("m2_configuration"):
                         print(f'    m2_configuration = ''{')
                         print(f'      "0" = ''{')
-                        print(f'        controller_slot = "{templateVars["m2_configuration"]["controller_slot"]}"')
+                        print(f'        controller_slot = "{polVars["m2_configuration"]["controller_slot"]}"')
                         print(f'      ''}')
                         print(f'    ''}')
                     else:
                         print(f'    m2_configuration = ''{}')
-                    if templateVars.get("single_drive_raid_configuration"):
+                    if polVars.get("single_drive_raid_configuration"):
                         print(f'    single_drive_raid_configuration = ''{')
                         print(f'    "0" = ''{')
-                        print(f'      access_policy = "{templateVars["single_drive_raid_configuration"]["access_policy"]}"')
-                        print(f'      disk_cache    = "{templateVars["single_drive_raid_configuration"]["disk_cache"]}"')
-                        print(f'      drive_slots   = "{templateVars["single_drive_raid_configuration"]["drive_slots"]}"')
-                        print(f'      enable        = {templateVars["single_drive_raid_configuration"]["enable"]}')
-                        print(f'      read_policy   = "{templateVars["single_drive_raid_configuration"]["read_policy"]}"')
-                        print(f'      strip_size    = "{templateVars["single_drive_raid_configuration"]["strip_size"]}"')
-                        print(f'      write_policy  = "{templateVars["single_drive_raid_configuration"]["write_policy"]}"')
+                        print(f'      access_policy = "{polVars["single_drive_raid_configuration"]["access_policy"]}"')
+                        print(f'      disk_cache    = "{polVars["single_drive_raid_configuration"]["disk_cache"]}"')
+                        print(f'      drive_slots   = "{polVars["single_drive_raid_configuration"]["drive_slots"]}"')
+                        print(f'      enable        = {polVars["single_drive_raid_configuration"]["enable"]}')
+                        print(f'      read_policy   = "{polVars["single_drive_raid_configuration"]["read_policy"]}"')
+                        print(f'      strip_size    = "{polVars["single_drive_raid_configuration"]["strip_size"]}"')
+                        print(f'      write_policy  = "{polVars["single_drive_raid_configuration"]["write_policy"]}"')
                         print(f'    ''}')
                     else:
                         print(f'    single_drive_raid_configuration = ''{}')
@@ -1529,18 +1519,18 @@ class policies_p3(object):
                             confirm_policy = 'Y'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
+                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                            ezfunctions.write_to_template(self, **polVars)
 
                             # Add Template Name to Policies Output
-                            policy_names.append(templateVars["name"])
+                            ezfunctions.policy_names.append(polVars["name"])
 
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'  Starting {polVars["policy_type"]} Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
 
@@ -1557,8 +1547,8 @@ class policies_p3(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # Switch Control Policy Module
@@ -1569,18 +1559,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Switch Control Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'switch_control_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'switch_control_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -1592,9 +1582,9 @@ class policies_p3(object):
             print(f'  Organization {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1604,43 +1594,43 @@ class policies_p3(object):
                 else:
                     name = '%s_%s' % (org, name_suffix)
 
-                templateVars["name"] = policy_name(name, policy_type)
-                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+                polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
-                templateVars["mac_address_table_aging"] = 'Default'
-                templateVars["mac_aging_time"] = 14500
-                templateVars["udld_message_interval"] = 15
-                templateVars["udld_recovery_action"] = "reset"
-                templateVars["vlan_port_count_optimization"] = False
+                polVars["mac_address_table_aging"] = 'Default'
+                polVars["mac_aging_time"] = 14500
+                polVars["udld_message_interval"] = 15
+                polVars["udld_recovery_action"] = "reset"
+                polVars["vlan_port_count_optimization"] = False
 
                 # Pull Information from the API
-                templateVars["multi_select"] = False
+                polVars["multi_select"] = False
                 jsonVars = jsonData['components']['schemas']['fabric.FcNetworkPolicy']['allOf'][1]['properties']
 
                 # Ethernet Switching Mode
-                templateVars["var_description"] = jsonVars['EthernetSwitchingMode']['description']
-                templateVars["jsonVars"] = sorted(jsonVars['EthernetSwitchingMode']['enum'])
-                templateVars["defaultVar"] = jsonVars['EthernetSwitchingMode']['default']
-                templateVars["varType"] = 'Ethernet Switching Mode'
-                templateVars["ethernet_switching_mode"] = variablesFromAPI(**templateVars)
+                polVars["var_description"] = jsonVars['EthernetSwitchingMode']['description']
+                polVars["jsonVars"] = sorted(jsonVars['EthernetSwitchingMode']['enum'])
+                polVars["defaultVar"] = jsonVars['EthernetSwitchingMode']['default']
+                polVars["varType"] = 'Ethernet Switching Mode'
+                polVars["ethernet_switching_mode"] = ezfunctions.variablesFromAPI(**polVars)
 
                 # Ethernet Switching Mode
-                templateVars["var_description"] = jsonVars['FcSwitchingMode']['description']
-                templateVars["jsonVars"] = sorted(jsonVars['FcSwitchingMode']['enum'])
-                templateVars["defaultVar"] = jsonVars['FcSwitchingMode']['default']
-                templateVars["varType"] = 'FC Switching Mode'
-                templateVars["fc_switching_mode"] = variablesFromAPI(**templateVars)
+                polVars["var_description"] = jsonVars['FcSwitchingMode']['description']
+                polVars["jsonVars"] = sorted(jsonVars['FcSwitchingMode']['enum'])
+                polVars["defaultVar"] = jsonVars['FcSwitchingMode']['default']
+                polVars["varType"] = 'FC Switching Mode'
+                polVars["fc_switching_mode"] = ezfunctions.variablesFromAPI(**polVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'    description                  = "{templateVars["descr"]}"')
-                print(f'    ethernet_switching_mode      = "{templateVars["ethernet_switching_mode"]}"')
-                print(f'    fc_switching_mode            = "{templateVars["fc_switching_mode"]}"')
-                print(f'    mac_address_table_aging      = "{templateVars["mac_address_table_aging"]}"')
-                print(f'    mac_aging_time               = {templateVars["mac_aging_time"]}')
-                print(f'    name                         = "{templateVars["name"]}"')
-                print(f'    udld_message_interval        = {templateVars["udld_message_interval"]}')
-                print(f'    udld_recovery_action         = "{templateVars["udld_recovery_action"]}"')
-                print(f'    vlan_port_count_optimization = {templateVars["vlan_port_count_optimization"]}')
+                print(f'    description                  = "{polVars["descr"]}"')
+                print(f'    ethernet_switching_mode      = "{polVars["ethernet_switching_mode"]}"')
+                print(f'    fc_switching_mode            = "{polVars["fc_switching_mode"]}"')
+                print(f'    mac_address_table_aging      = "{polVars["mac_address_table_aging"]}"')
+                print(f'    mac_aging_time               = {polVars["mac_aging_time"]}')
+                print(f'    name                         = "{polVars["name"]}"')
+                print(f'    udld_message_interval        = {polVars["udld_message_interval"]}')
+                print(f'    udld_recovery_action         = "{polVars["udld_recovery_action"]}"')
+                print(f'    vlan_port_count_optimization = {polVars["vlan_port_count_optimization"]}')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:
@@ -1649,15 +1639,15 @@ class policies_p3(object):
                         confirm_policy = 'Y'
 
                         # Write Policies to Template File
-                        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                        write_to_template(self, **templateVars)
+                        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                        ezfunctions.write_to_template(self, **polVars)
 
-                        configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                        configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                         valid_confirm = True
 
                     elif confirm_policy == 'N':
                         print(f'\n------------------------------------------------------\n')
-                        print(f'  Starting {templateVars["policy_type"]} Section over.')
+                        print(f'  Starting {polVars["policy_type"]} Section over.')
                         print(f'\n------------------------------------------------------\n')
                         valid_confirm = True
 
@@ -1667,8 +1657,8 @@ class policies_p3(object):
                         print(f'\n------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # Syslog Policy Module
@@ -1679,18 +1669,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Syslog Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'syslog_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'syslog_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -1700,9 +1690,9 @@ class policies_p3(object):
             print(f'  This Policy is not required to standup a server but is a good practice for day 2 support.')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1714,45 +1704,45 @@ class policies_p3(object):
                     else:
                         name = '%s_%s' % (org, name_suffix)
 
-                    templateVars["name"] = policy_name(name, policy_type)
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     # Syslog Local Logging
-                    templateVars["multi_select"] = False
+                    polVars["multi_select"] = False
                     jsonVars = jsonData['components']['schemas']['syslog.LocalClientBase']['allOf'][1]['properties']
-                    templateVars["var_description"] = jsonVars['MinSeverity']['description']
-                    templateVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
-                    templateVars["defaultVar"] = jsonVars['MinSeverity']['default']
-                    templateVars["varType"] = 'Syslog Local Minimum Severity'
-                    templateVars["min_severity"] = variablesFromAPI(**templateVars)
+                    polVars["var_description"] = jsonVars['MinSeverity']['description']
+                    polVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+                    polVars["defaultVar"] = jsonVars['MinSeverity']['default']
+                    polVars["varType"] = 'Syslog Local Minimum Severity'
+                    polVars["min_severity"] = ezfunctions.variablesFromAPI(**polVars)
 
-                    templateVars["local_logging"] = {'file':{'min_severity':templateVars["min_severity"]}}
+                    polVars["local_logging"] = {'file':{'min_severity':polVars["min_severity"]}}
 
-                    remote_logging = syslog_servers(jsonData, **templateVars)
-                    templateVars['remote_logging'] = remote_logging
+                    remote_logging = ezfunctions.syslog_servers(jsonData, **polVars)
+                    polVars['remote_logging'] = remote_logging
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    description        = "{templateVars["descr"]}"')
-                    print(f'    local_min_severity = "{templateVars["min_severity"]}"')
-                    print(f'    name               = "{templateVars["name"]}"')
+                    print(f'    description        = "{polVars["descr"]}"')
+                    print(f'    local_min_severity = "{polVars["min_severity"]}"')
+                    print(f'    name               = "{polVars["name"]}"')
                     print(f'    remote_clients = [')
                     item_count = 1
-                    if templateVars["remote_logging"].get("server1"):
+                    if polVars["remote_logging"].get("server1"):
                         print(f'      ''{')
-                        print(f'        enabled      = {"%s".lower() % (templateVars["remote_logging"]["server1"]["enable"])}')
-                        print(f'        hostname     = "{templateVars["remote_logging"]["server1"]["hostname"]}"')
-                        print(f'        min_severity = "{templateVars["remote_logging"]["server1"]["min_severity"]}"')
-                        print(f'        port         = {templateVars["remote_logging"]["server1"]["port"]}')
-                        print(f'        protocol     = "{templateVars["remote_logging"]["server1"]["protocol"]}"')
+                        print(f'        enabled      = {"%s".lower() % (polVars["remote_logging"]["server1"]["enable"])}')
+                        print(f'        hostname     = "{polVars["remote_logging"]["server1"]["hostname"]}"')
+                        print(f'        min_severity = "{polVars["remote_logging"]["server1"]["min_severity"]}"')
+                        print(f'        port         = {polVars["remote_logging"]["server1"]["port"]}')
+                        print(f'        protocol     = "{polVars["remote_logging"]["server1"]["protocol"]}"')
                         print(f'      ''}')
                         item_count += 1
-                    if templateVars["remote_logging"].get("server2"):
+                    if polVars["remote_logging"].get("server2"):
                         print(f'      ''{')
-                        print(f'        enabled      = {"%s".lower() % (templateVars["remote_logging"]["server2"]["enable"])}')
-                        print(f'        hostname     = "{templateVars["remote_logging"]["server2"]["hostname"]}"')
-                        print(f'        min_severity = "{templateVars["remote_logging"]["server2"]["min_severity"]}"')
-                        print(f'        port         = {templateVars["remote_logging"]["server2"]["port"]}')
-                        print(f'        protocol     = "{templateVars["remote_logging"]["server2"]["protocol"]}"')
+                        print(f'        enabled      = {"%s".lower() % (polVars["remote_logging"]["server2"]["enable"])}')
+                        print(f'        hostname     = "{polVars["remote_logging"]["server2"]["hostname"]}"')
+                        print(f'        min_severity = "{polVars["remote_logging"]["server2"]["min_severity"]}"')
+                        print(f'        port         = {polVars["remote_logging"]["server2"]["port"]}')
+                        print(f'        protocol     = "{polVars["remote_logging"]["server2"]["protocol"]}"')
                         print(f'      ''}')
                         item_count += 1
                     print(f'    ]')
@@ -1764,15 +1754,15 @@ class policies_p3(object):
                             confirm_policy = 'Y'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
+                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                            ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'  Starting {polVars["policy_type"]} Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
 
@@ -1789,8 +1779,8 @@ class policies_p3(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # System QoS Policy Module
@@ -1801,18 +1791,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'System QoS Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'system_qos_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'system_qos_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -1832,9 +1822,9 @@ class policies_p3(object):
             print(f'  You only need one of these policies for Organization {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1844,46 +1834,46 @@ class policies_p3(object):
                 else:
                     name = '%s_%s' % (org, name_suffix)
 
-                templateVars["name"] = policy_name(name, policy_type)
-                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+                polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                 valid = False
                 while valid == False:
                     mtu = input('Do you want to enable Jumbo MTU?  Enter "Y" or "N" [Y]: ')
                     if mtu == '' or mtu == 'Y':
-                        templateVars["mtu"] = 9216
+                        polVars["mtu"] = 9216
                         valid = True
                     elif mtu == 'N':
-                        templateVars["mtu"] = 1500
+                        polVars["mtu"] = 1500
                         valid = True
                     else:
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  Error!! Invalid Option.  Please enter "Y" or "N".')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                domain_mtu = templateVars["mtu"]
+                domain_mtu = polVars["mtu"]
 
-                templateVars["Platinum"] = {
+                polVars["Platinum"] = {
                     'bandwidth_percent':20,
                     'cos':5,
-                    'mtu':templateVars["mtu"],
+                    'mtu':polVars["mtu"],
                     'multicast_optimize':False,
                     'packet_drop':False,
                     'priority':'Platinum',
                     'state':'Enabled',
                     'weight':10,
                 }
-                templateVars["Gold"] = {
+                polVars["Gold"] = {
                     'bandwidth_percent':18,
                     'cos':4,
-                    'mtu':templateVars["mtu"],
+                    'mtu':polVars["mtu"],
                     'multicast_optimize':False,
                     'packet_drop':True,
                     'priority':'Gold',
                     'state':'Enabled',
                     'weight':9,
                 }
-                templateVars["FC"] = {
+                polVars["FC"] = {
                     'bandwidth_percent':20,
                     'cos':3,
                     'mtu':2240,
@@ -1893,30 +1883,30 @@ class policies_p3(object):
                     'state':'Enabled',
                     'weight':10,
                 }
-                templateVars["Silver"] = {
+                polVars["Silver"] = {
                     'bandwidth_percent':18,
                     'cos':2,
-                    'mtu':templateVars["mtu"],
+                    'mtu':polVars["mtu"],
                     'multicast_optimize':False,
                     'packet_drop':True,
                     'priority':'Silver',
                     'state':'Enabled',
                     'weight':8,
                 }
-                templateVars["Bronze"] = {
+                polVars["Bronze"] = {
                     'bandwidth_percent':14,
                     'cos':1,
-                    'mtu':templateVars["mtu"],
+                    'mtu':polVars["mtu"],
                     'multicast_optimize':False,
                     'packet_drop':True,
                     'priority':'Bronze',
                     'state':'Enabled',
                     'weight':7,
                 }
-                templateVars["Best Effort"] = {
+                polVars["Best Effort"] = {
                     'bandwidth_percent':10,
                     'cos':255,
-                    'mtu':templateVars["mtu"],
+                    'mtu':polVars["mtu"],
                     'multicast_optimize':False,
                     'packet_drop':True,
                     'priority':'Best Effort',
@@ -1924,16 +1914,16 @@ class policies_p3(object):
                     'weight':5,
                 }
 
-                templateVars["classes"] = []
+                polVars["classes"] = []
                 priorities = ['Platinum', 'Gold', 'FC', 'Silver', 'Bronze', 'Best Effort']
 
                 for priority in priorities:
-                    templateVars["classes"].append(templateVars[priority])
+                    polVars["classes"].append(polVars[priority])
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'    description = "{templateVars["descr"]}"')
-                print(f'    name        = "{templateVars["name"]}"')
+                print(f'    description = "{polVars["descr"]}"')
+                print(f'    name        = "{polVars["name"]}"')
                 print('    classes = {')
-                for item in templateVars["classes"]:
+                for item in polVars["classes"]:
                     for k, v in item.items():
                         if k == 'priority':
                             print(f'      "{v}" = ''{')
@@ -1962,15 +1952,15 @@ class policies_p3(object):
                         confirm_policy = 'Y'
 
                         # Write Policies to Template File
-                        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                        write_to_template(self, **templateVars)
+                        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                        ezfunctions.write_to_template(self, **polVars)
 
-                        configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                        configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                         valid_confirm = True
 
                     elif confirm_policy == 'N':
                         print(f'\n------------------------------------------------------\n')
-                        print(f'  Starting {templateVars["policy_type"]} Section over.')
+                        print(f'  Starting {polVars["policy_type"]} Section over.')
                         print(f'\n------------------------------------------------------\n')
                         valid_confirm = True
 
@@ -1980,8 +1970,8 @@ class policies_p3(object):
                         print(f'\n------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # Thermal Policy Module
@@ -1991,18 +1981,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Thermal Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'thermal_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'thermal_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -2011,44 +2001,44 @@ class policies_p3(object):
             print(f'  Balanced for a 5108 and Acoustic for a 9508 Chassis, as of this writing.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
 
-                templateVars["multi_select"] = False
+                polVars["multi_select"] = False
                 jsonVars = easy_jsonData['policies']['thermal.Policy']
-                templateVars["var_description"] = jsonVars['chassisType']['description']
-                templateVars["jsonVars"] = sorted(jsonVars['chassisType']['enum'])
-                templateVars["defaultVar"] = jsonVars['chassisType']['default']
-                templateVars["varType"] = 'Chassis Type'
-                templateVars["chassis_type"] = variablesFromAPI(**templateVars)
+                polVars["var_description"] = jsonVars['chassisType']['description']
+                polVars["jsonVars"] = sorted(jsonVars['chassisType']['enum'])
+                polVars["defaultVar"] = jsonVars['chassisType']['default']
+                polVars["varType"] = 'Chassis Type'
+                polVars["chassis_type"] = ezfunctions.variablesFromAPI(**polVars)
 
                 if not name_prefix == '':
-                    name = '%s_%s' % (name_prefix, templateVars["chassis_type"])
+                    name = '%s_%s' % (name_prefix, polVars["chassis_type"])
                 else:
-                    name = '%s_%s' % (org, templateVars["chassis_type"])
+                    name = '%s_%s' % (org, polVars["chassis_type"])
 
-                templateVars["name"] = policy_name(name, policy_type)
-                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+                polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
-                if templateVars["chassis_type"] == '5108':
-                    templateVars["popList"] = ['Acoustic', 'HighPower', 'MaximumPower']
-                if templateVars["chassis_type"] == '9508':
-                    templateVars["popList"] = []
+                if polVars["chassis_type"] == '5108':
+                    polVars["popList"] = ['Acoustic', 'HighPower', 'MaximumPower']
+                if polVars["chassis_type"] == '9508':
+                    polVars["popList"] = []
                 jsonVars = jsonData['components']['schemas']['thermal.Policy']['allOf'][1]['properties']
-                templateVars["var_description"] = jsonVars['FanControlMode']['description']
-                templateVars["jsonVars"] = sorted(jsonVars['FanControlMode']['enum'])
-                templateVars["defaultVar"] = jsonVars['FanControlMode']['default']
-                templateVars["varType"] = 'Fan Control Mode'
-                templateVars["fan_control_mode"] = variablesFromAPI(**templateVars)
+                polVars["var_description"] = jsonVars['FanControlMode']['description']
+                polVars["jsonVars"] = sorted(jsonVars['FanControlMode']['enum'])
+                polVars["defaultVar"] = jsonVars['FanControlMode']['default']
+                polVars["varType"] = 'Fan Control Mode'
+                polVars["fan_control_mode"] = ezfunctions.variablesFromAPI(**polVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'   description      = "{templateVars["descr"]}"')
-                print(f'   name             = "{templateVars["name"]}"')
-                print(f'   fan_control_mode = "{templateVars["fan_control_mode"]}"')
+                print(f'   description      = "{polVars["descr"]}"')
+                print(f'   name             = "{polVars["name"]}"')
+                print(f'   fan_control_mode = "{polVars["fan_control_mode"]}"')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:
@@ -2057,15 +2047,15 @@ class policies_p3(object):
                         confirm_policy = 'Y'
 
                         # Write Policies to Template File
-                        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                        write_to_template(self, **templateVars)
+                        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                        ezfunctions.write_to_template(self, **polVars)
 
-                        configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                        configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                         valid_confirm = True
 
                     elif confirm_policy == 'N':
                         print(f'\n------------------------------------------------------\n')
-                        print(f'  Starting {templateVars["policy_type"]} Section over.')
+                        print(f'  Starting {polVars["policy_type"]} Section over.')
                         print(f'\n------------------------------------------------------\n')
                         valid_confirm = True
 
@@ -2075,8 +2065,8 @@ class policies_p3(object):
                         print(f'\n------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # Virtual KVM Policy Module
@@ -2087,18 +2077,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Virtual KVM Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'virtual_kvm_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'virtual_kvm_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -2109,9 +2099,9 @@ class policies_p3(object):
             print(f'   - Remote Port - The port used for KVM communication. Range is 1 to 65535.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -2121,57 +2111,57 @@ class policies_p3(object):
                 else:
                     name = '%s_%s' % (org, name_suffix)
 
-                templateVars["name"] = policy_name(name, policy_type)
-                templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
-                templateVars["enable_virtual_kvm"] = True
-                templateVars["maximum_sessions"] = 4
+                polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                polVars["enable_virtual_kvm"] = True
+                polVars["maximum_sessions"] = 4
 
                 # Pull in the Policies for Virtual KVM
                 jsonVars = jsonData['components']['schemas']['kvm.Policy']['allOf'][1]['properties']
-                templateVars["multi_select"] = False
+                polVars["multi_select"] = False
 
                 # Enable Local Server Video
-                templateVars["Description"] = 'Enables Tunneled vKVM on the endpoint. Applicable only for Device Connectors that support Tunneled vKVM'
-                templateVars["varInput"] = f'Do you want to Tunneled vKVM through Intersight for this Policy?\n'
+                polVars["Description"] = 'Enables Tunneled vKVM on the endpoint. Applicable only for Device Connectors that support Tunneled vKVM'
+                polVars["varInput"] = f'Do you want to Tunneled vKVM through Intersight for this Policy?\n'
                 '* Note: Make sure to Enable Virtual Tunneled KVM Launch and Configuration under:\n'
                 'Setttings > Settings > Security & Privacy.'
-                templateVars["varDefault"] = 'N'
-                templateVars["varName"] = 'Allow Tunneled vKVM'
-                templateVars["allow_tunneled_vkvm"] = varBoolLoop(**templateVars)
+                polVars["varDefault"] = 'N'
+                polVars["varName"] = 'Allow Tunneled vKVM'
+                polVars["allow_tunneled_vkvm"] = ezfunctions.varBoolLoop(**polVars)
 
                 # Enable Local Server Video
-                templateVars["Description"] = jsonVars['EnableLocalServerVideo']['description']
-                templateVars["varInput"] = f'Do you want to Display KVM on Monitors attached to the Server?'
-                templateVars["varDefault"] = 'Y'
-                templateVars["varName"] = 'Enable Local Server Video'
-                templateVars["enable_local_server_video"] = varBoolLoop(**templateVars)
+                polVars["Description"] = jsonVars['EnableLocalServerVideo']['description']
+                polVars["varInput"] = f'Do you want to Display KVM on Monitors attached to the Server?'
+                polVars["varDefault"] = 'Y'
+                polVars["varName"] = 'Enable Local Server Video'
+                polVars["enable_local_server_video"] = ezfunctions.varBoolLoop(**polVars)
 
                 # Enable Video Encryption
-                templateVars["Description"] = jsonVars['EnableVideoEncryption']['description']
-                templateVars["varInput"] = f'Do you want to Enable video Encryption?'
-                templateVars["varDefault"] = 'Y'
-                templateVars["varName"] = 'Enable Video Encryption'
-                templateVars["enable_video_encryption"] = varBoolLoop(**templateVars)
+                polVars["Description"] = jsonVars['EnableVideoEncryption']['description']
+                polVars["varInput"] = f'Do you want to Enable video Encryption?'
+                polVars["varDefault"] = 'Y'
+                polVars["varName"] = 'Enable Video Encryption'
+                polVars["enable_video_encryption"] = ezfunctions.varBoolLoop(**polVars)
 
                 # Obtain the Port to Use for vKVM
-                templateVars["Description"] = jsonVars['RemotePort']['description']
-                templateVars["varDefault"] =  jsonVars['RemotePort']['default']
-                templateVars["varInput"] = 'What is the Port you would like to Assign for Remote Access?\n'
+                polVars["Description"] = jsonVars['RemotePort']['description']
+                polVars["varDefault"] =  jsonVars['RemotePort']['default']
+                polVars["varInput"] = 'What is the Port you would like to Assign for Remote Access?\n'
                 'This should be a value between 1024-65535. [2068]: '
-                templateVars["varName"] = 'Remote Port'
-                templateVars["varRegex"] = '^[0-9]+$'
-                templateVars["minNum"] = 1
-                templateVars["maxNum"] = 65535
-                templateVars["remote_port"] = varNumberLoop(**templateVars)
+                polVars["varName"] = 'Remote Port'
+                polVars["varRegex"] = '^[0-9]+$'
+                polVars["minNum"] = 1
+                polVars["maxNum"] = 65535
+                polVars["remote_port"] = ezfunctions.varNumberLoop(**polVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'   description               = "{templateVars["descr"]}"')
-                print(f'   enable_local_server_video = {templateVars["enable_local_server_video"]}')
-                print(f'   enable_video_encryption   = {templateVars["enable_video_encryption"]}')
-                print(f'   enable_virtual_kvm        = {templateVars["enable_virtual_kvm"]}')
-                print(f'   maximum_sessions          = {templateVars["maximum_sessions"]}')
-                print(f'   name                      = "{templateVars["name"]}"')
-                print(f'   remote_port               = "{templateVars["remote_port"]}"')
+                print(f'   description               = "{polVars["descr"]}"')
+                print(f'   enable_local_server_video = {polVars["enable_local_server_video"]}')
+                print(f'   enable_video_encryption   = {polVars["enable_video_encryption"]}')
+                print(f'   enable_virtual_kvm        = {polVars["enable_virtual_kvm"]}')
+                print(f'   maximum_sessions          = {polVars["maximum_sessions"]}')
+                print(f'   name                      = "{polVars["name"]}"')
+                print(f'   remote_port               = "{polVars["remote_port"]}"')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:
@@ -2180,15 +2170,15 @@ class policies_p3(object):
                         confirm_policy = 'Y'
 
                         # Write Policies to Template File
-                        templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                        write_to_template(self, **templateVars)
+                        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                        ezfunctions.write_to_template(self, **polVars)
 
-                        configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                        configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                         valid_confirm = True
 
                     elif confirm_policy == 'N':
                         print(f'\n------------------------------------------------------\n')
-                        print(f'  Starting {templateVars["policy_type"]} Section over.')
+                        print(f'  Starting {polVars["policy_type"]} Section over.')
                         print(f'\n------------------------------------------------------\n')
                         valid_confirm = True
 
@@ -2198,8 +2188,8 @@ class policies_p3(object):
                         print(f'\n------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # Virtual Media Policy Policy Module
@@ -2210,18 +2200,18 @@ class policies_p3(object):
         opSystem = kwargs['opSystem']
         org = self.org
         policy_type = 'Virtual Media Policy'
-        templateVars = {}
-        templateVars["header"] = '%s Variables' % (policy_type)
-        templateVars["initial_write"] = True
-        templateVars["org"] = org
-        templateVars["policy_type"] = policy_type
-        templateVars["template_file"] = 'template_open.jinja2'
-        templateVars["template_type"] = 'virtual_media_policies'
+        polVars = {}
+        polVars["header"] = '%s Variables' % (policy_type)
+        polVars["initial_write"] = True
+        polVars["org"] = org
+        polVars["policy_type"] = policy_type
+        polVars["template_file"] = 'template_open.jinja2'
+        polVars["template_type"] = 'virtual_media_policies'
         tfDir = kwargs['tfDir']
 
         # Open the Template file
-        write_to_template(self, **templateVars)
-        templateVars["initial_write"] = False
+        ezfunctions.write_to_template(self, **polVars)
+        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -2234,9 +2224,9 @@ class policies_p3(object):
             print(f'  through HDD.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
             if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
             else:
-                print(f'  - {tfDir}/{org}/{self.type}/{templateVars["template_type"]}.auto.tfvars')
+                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -2249,9 +2239,9 @@ class policies_p3(object):
                     else:
                         name = '%s_%s' % (org, name_suffix)
 
-                    templateVars["name"] = policy_name(name, policy_type)
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
-                    templateVars["enable_virtual_media"] = True
+                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
+                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["enable_virtual_media"] = True
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    Select this option to enable the appearance of virtual drives on the boot selection menu')
@@ -2261,10 +2251,10 @@ class policies_p3(object):
                     while valid == False:
                         question = input(f'Do you want to Enable Low Power USB?  Enter "Y" or "N" [Y]: ')
                         if question == 'N':
-                            templateVars["enable_low_power_usb"] = False
+                            polVars["enable_low_power_usb"] = False
                             valid = True
                         elif question == '' or question == 'Y':
-                            templateVars["enable_low_power_usb"] = True
+                            polVars["enable_low_power_usb"] = True
                             valid = True
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -2282,17 +2272,17 @@ class policies_p3(object):
                     while valid == False:
                         question = input(f'Do you want to Enable Virtual Media Encryption?  Enter "Y" or "N" [Y]: ')
                         if question == 'N':
-                            templateVars["enable_virtual_media_encryption"] = False
+                            polVars["enable_virtual_media_encryption"] = False
                             valid = True
                         elif question == '' or question == 'Y':
-                            templateVars["enable_virtual_media_encryption"] = True
+                            polVars["enable_virtual_media_encryption"] = True
                             valid = True
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    templateVars["virtual_media"] = []
+                    polVars["virtual_media"] = []
                     inner_loop_count = 1
                     sub_loop = False
                     while sub_loop == False:
@@ -2300,26 +2290,26 @@ class policies_p3(object):
                         if question == '' or question == 'Y':
                             valid_sub = False
                             while valid_sub == False:
-                                templateVars["multi_select"] = False
+                                polVars["multi_select"] = False
                                 jsonVars = jsonData['components']['schemas']['vmedia.Mapping']['allOf'][1]['properties']
-                                templateVars["var_description"] = jsonVars['MountProtocol']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['MountProtocol']['enum'])
-                                templateVars["defaultVar"] = jsonVars['MountProtocol']['default']
-                                templateVars["varType"] = 'vMedia Mount Protocol'
-                                Protocol = variablesFromAPI(**templateVars)
+                                polVars["var_description"] = jsonVars['MountProtocol']['description']
+                                polVars["jsonVars"] = sorted(jsonVars['MountProtocol']['enum'])
+                                polVars["defaultVar"] = jsonVars['MountProtocol']['default']
+                                polVars["varType"] = 'vMedia Mount Protocol'
+                                Protocol = ezfunctions.variablesFromAPI(**polVars)
 
-                                templateVars["var_description"] = jsonVars['MountProtocol']['description']
-                                templateVars["jsonVars"] = sorted(jsonVars['MountProtocol']['enum'])
-                                templateVars["defaultVar"] = jsonVars['MountProtocol']['default']
-                                templateVars["varType"] = 'vMedia Mount Protocol'
-                                deviceType = variablesFromAPI(**templateVars)
+                                polVars["var_description"] = jsonVars['MountProtocol']['description']
+                                polVars["jsonVars"] = sorted(jsonVars['MountProtocol']['enum'])
+                                polVars["defaultVar"] = jsonVars['MountProtocol']['default']
+                                polVars["varType"] = 'vMedia Mount Protocol'
+                                deviceType = ezfunctions.variablesFromAPI(**polVars)
 
                                 if Protocol == 'cifs':
-                                    templateVars["var_description"] = jsonVars['AuthenticationProtocol']['description']
-                                    templateVars["jsonVars"] = sorted(jsonVars['AuthenticationProtocol']['enum'])
-                                    templateVars["defaultVar"] = jsonVars['AuthenticationProtocol']['default']
-                                    templateVars["varType"] = 'CIFS Authentication Protocol'
-                                    authProtocol = variablesFromAPI(**templateVars)
+                                    polVars["var_description"] = jsonVars['AuthenticationProtocol']['description']
+                                    polVars["jsonVars"] = sorted(jsonVars['AuthenticationProtocol']['enum'])
+                                    polVars["defaultVar"] = jsonVars['AuthenticationProtocol']['default']
+                                    polVars["varType"] = 'CIFS Authentication Protocol'
+                                    authProtocol = ezfunctions.variablesFromAPI(**polVars)
 
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Provide the remote file location path: Host Name or IP address/file path/file name')
@@ -2343,13 +2333,13 @@ class policies_p3(object):
                                 while valid == False:
                                     Question = input(f'What is the file Location? ')
                                     if not Question == '':
-                                        templateVars["varName"] = 'File Location'
+                                        polVars["varName"] = 'File Location'
                                         varValue = Question
                                         if re.search('(http|https)', Protocol):
-                                            valid = validating.url(templateVars["varName"], varValue)
+                                            valid = validating.url(polVars["varName"], varValue)
                                         else:
                                             varValue = 'http://%s' % (Question)
-                                            valid = validating.url(templateVars["varName"], varValue)
+                                            valid = validating.url(polVars["varName"], varValue)
                                     else:
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
                                         print(f'  Error!! Invalid Value.  Please Re-enter the LDAP Group.')
@@ -2362,11 +2352,11 @@ class policies_p3(object):
                                 while valid == False:
                                     Question = input(f'What is the Username you would like to configure for Authentication? [press enter for no username]: ')
                                     if not Question == '':
-                                        templateVars["minLength"] = 1
-                                        templateVars["maxLength"] = 255
-                                        templateVars["varName"] = 'Username'
+                                        polVars["minLength"] = 1
+                                        polVars["maxLength"] = 255
+                                        polVars["varName"] = 'Username'
                                         varValue = Question
-                                        valid = validating.string_length(templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
+                                        valid = validating.string_length(polVars["varName"], varValue, polVars["minLength"], polVars["maxLength"])
                                     if Question == '':
                                         valid = True
                                     else:
@@ -2381,12 +2371,12 @@ class policies_p3(object):
                                     valid = False
                                     while valid == False:
                                         Password = stdiomask.getpass(prompt='What is the password for authentication? ')
-                                        templateVars["minLength"] = 1
-                                        templateVars["maxLength"] = 255
-                                        templateVars["rePattern"] = '^[\\S]+$'
-                                        templateVars["varName"] = 'Password'
+                                        polVars["minLength"] = 1
+                                        polVars["maxLength"] = 255
+                                        polVars["rePattern"] = '^[\\S]+$'
+                                        polVars["varName"] = 'Password'
                                         varValue = Password
-                                        valid_passphrase = validating.length_and_regex_sensitive(templateVars["rePattern"], templateVars["varName"], varValue, templateVars["minLength"], templateVars["maxLength"])
+                                        valid_passphrase = validating.length_and_regex_sensitive(polVars["rePattern"], polVars["varName"], varValue, polVars["minLength"], polVars["maxLength"])
                                         if valid_passphrase == True:
                                             env_password = 'TF_VAR_vmedia_password_%s' % (inner_loop_count)
                                             os.environ[env_password] = '%s' % (Password)
@@ -2419,23 +2409,23 @@ class policies_p3(object):
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                                 if assignOptions == True:
-                                    templateVars["multi_select"] = True
+                                    polVars["multi_select"] = True
                                     jsonVars = easy_jsonData['policies']['vmedia.Mapping']
                                     if Protocol == 'cifs':
-                                        templateVars["var_description"] = jsonVars['cifs.mountOptions']['description']
-                                        templateVars["jsonVars"] = sorted(jsonVars['cifs.mountOptions']['enum'])
-                                        templateVars["defaultVar"] = jsonVars['cifs.mountOptions']['default']
+                                        polVars["var_description"] = jsonVars['cifs.mountOptions']['description']
+                                        polVars["jsonVars"] = sorted(jsonVars['cifs.mountOptions']['enum'])
+                                        polVars["defaultVar"] = jsonVars['cifs.mountOptions']['default']
                                     elif Protocol == 'nfs':
-                                        templateVars["var_description"] = jsonVars['nfs.mountOptions']['description']
-                                        templateVars["jsonVars"] = sorted(jsonVars['nfs.mountOptions']['enum'])
-                                        templateVars["defaultVar"] = jsonVars['nfs.mountOptions']['default']
+                                        polVars["var_description"] = jsonVars['nfs.mountOptions']['description']
+                                        polVars["jsonVars"] = sorted(jsonVars['nfs.mountOptions']['enum'])
+                                        polVars["defaultVar"] = jsonVars['nfs.mountOptions']['default']
                                     else:
-                                        templateVars["multi_select"] = False
-                                        templateVars["var_description"] = jsonVars['http.mountOptions']['description']
-                                        templateVars["jsonVars"] = sorted(jsonVars['http.mountOptions']['enum'])
-                                        templateVars["defaultVar"] = jsonVars['http.mountOptions']['default']
-                                    templateVars["varType"] = 'Mount Options'
-                                    mount_loop = variablesFromAPI(**templateVars)
+                                        polVars["multi_select"] = False
+                                        polVars["var_description"] = jsonVars['http.mountOptions']['description']
+                                        polVars["jsonVars"] = sorted(jsonVars['http.mountOptions']['enum'])
+                                        polVars["defaultVar"] = jsonVars['http.mountOptions']['default']
+                                    polVars["varType"] = 'Mount Options'
+                                    mount_loop = ezfunctions.variablesFromAPI(**polVars)
 
                                     mount_output = []
                                     for x in mount_loop:
@@ -2449,11 +2439,11 @@ class policies_p3(object):
                                                 if Question == '':
                                                     Question = 2049
                                                 if re.fullmatch(r'^[0-9]{1,4}$', str(Question)):
-                                                    templateVars["minNum"] = 1
-                                                    templateVars["maxNum"] = 65535
-                                                    templateVars["varName"] = 'NFS Port'
+                                                    polVars["minNum"] = 1
+                                                    polVars["maxNum"] = 65535
+                                                    polVars["varName"] = 'NFS Port'
                                                     varValue = Question
-                                                    valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
+                                                    valid = validating.number_in_range(polVars["varName"], varValue, polVars["minNum"], polVars["maxNum"])
                                             port = 'port=%s' % (Question)
                                             mount_output.remove(x)
                                             mount_output.append(port)
@@ -2464,11 +2454,11 @@ class policies_p3(object):
                                                 if Question == '':
                                                     Question = 2
                                                 if re.fullmatch(r'^[0-9]{1,4}$', str(Question)):
-                                                    templateVars["minNum"] = 1
-                                                    templateVars["maxNum"] = 65535
-                                                    templateVars["varName"] = 'NFS Port'
+                                                    polVars["minNum"] = 1
+                                                    polVars["maxNum"] = 65535
+                                                    polVars["varName"] = 'NFS Port'
                                                     varValue = Question
-                                                    valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
+                                                    valid = validating.number_in_range(polVars["varName"], varValue, polVars["minNum"], polVars["maxNum"])
                                             retry = 'retry=%s' % (Question)
                                             mount_output.remove(x)
                                             mount_output.append(retry)
@@ -2479,11 +2469,11 @@ class policies_p3(object):
                                                 if Question == '':
                                                     Question = 600
                                                 if re.fullmatch(r'^[0-9]{1,4}$', str(Question)):
-                                                    templateVars["minNum"] = 60
-                                                    templateVars["maxNum"] = 600
-                                                    templateVars["varName"] = 'NFS timeo'
+                                                    polVars["minNum"] = 60
+                                                    polVars["maxNum"] = 600
+                                                    polVars["varName"] = 'NFS timeo'
                                                     varValue = Question
-                                                    valid = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
+                                                    valid = validating.number_in_range(polVars["varName"], varValue, polVars["minNum"], polVars["maxNum"])
                                             timeo = 'timeo=%s' % (Question)
                                             mount_output.remove(x)
                                             mount_output.append(timeo)
@@ -2494,12 +2484,12 @@ class policies_p3(object):
                                                 if Question == '':
                                                     Question = 1024
                                                 if re.fullmatch(r'^[0-9]{4,7}$', str(Question)):
-                                                    templateVars["minNum"] = 1024
-                                                    templateVars["maxNum"] = 1048576
-                                                    templateVars["varName"] = 'NFS timeo'
+                                                    polVars["minNum"] = 1024
+                                                    polVars["maxNum"] = 1048576
+                                                    polVars["varName"] = 'NFS timeo'
                                                     varValue = Question
                                                     validCount = 0
-                                                    validNum = validating.number_in_range(templateVars["varName"], varValue, templateVars["minNum"], templateVars["maxNum"])
+                                                    validNum = validating.number_in_range(polVars["varName"], varValue, polVars["minNum"], polVars["maxNum"])
                                                     if validNum == True:
                                                         validCount += 1
                                                     if int(Question) % 1024 == 0:
@@ -2559,7 +2549,7 @@ class policies_p3(object):
                                 while valid_confirm == False:
                                     confirm_config = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                                     if confirm_config == 'Y' or confirm_config == '':
-                                        templateVars["virtual_media"].append(vmedia_map)
+                                        polVars["virtual_media"].append(vmedia_map)
                                         valid_exit = False
                                         while valid_exit == False:
                                             loop_exit = input(f'Would You like to Configure another Virtual Media Map?  Enter "Y" or "N" [N]: ')
@@ -2595,14 +2585,14 @@ class policies_p3(object):
                             print(f'\n------------------------------------------------------\n')
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    description                     = "{templateVars["descr"]}"')
-                    print(f'    enable_low_power_usb            = "{templateVars["enable_low_power_usb"]}"')
-                    print(f'    enable_virtual_media            = "{templateVars["enable_virtual_media"]}"')
-                    print(f'    enable_virtual_media_encryption = "{templateVars["enable_virtual_media_encryption"]}"')
-                    print(f'    name                            = "{templateVars["name"]}"')
-                    if len(templateVars["virtual_media"]) > 0:
+                    print(f'    description                     = "{polVars["descr"]}"')
+                    print(f'    enable_low_power_usb            = "{polVars["enable_low_power_usb"]}"')
+                    print(f'    enable_virtual_media            = "{polVars["enable_virtual_media"]}"')
+                    print(f'    enable_virtual_media_encryption = "{polVars["enable_virtual_media_encryption"]}"')
+                    print(f'    name                            = "{polVars["name"]}"')
+                    if len(polVars["virtual_media"]) > 0:
                         print(f'    virtual_media = ''{')
-                        for item in templateVars["virtual_media"]:
+                        for item in polVars["virtual_media"]:
                             for k, v in item.items():
                                 if k == 'name':
                                     print(f'      "{v}" = ''{')
@@ -2631,15 +2621,15 @@ class policies_p3(object):
                             confirm_policy = 'Y'
 
                             # Write Policies to Template File
-                            templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
+                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
+                            ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {templateVars["policy_type"]} Section over.')
+                            print(f'  Starting {polVars["policy_type"]} Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
 
@@ -2656,5 +2646,5 @@ class policies_p3(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Close the Template file
-        templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        polVars["template_file"] = 'template_close.jinja2'
+        ezfunctions.write_to_template(self, **polVars)

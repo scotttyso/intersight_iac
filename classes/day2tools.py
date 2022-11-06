@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-
 from collections import OrderedDict
 from datetime import datetime
-from easy_functions import variablesFromAPI
-from easy_functions import vlan_list_format
 from intersight.api import access_api
 from intersight.api import adapter_api
 from intersight.api import asset_api
@@ -38,6 +35,7 @@ from intersight.exceptions import ApiException
 from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
 from pathlib import Path
 import credentials
+import ezfunctions
 import json
 import pkg_resources
 import pprint
@@ -51,7 +49,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 pp = pprint.PrettyPrinter(indent=4)
 home = Path.home()
-template_path = pkg_resources.resource_filename('class_vmware', 'Templates/')
+template_path = pkg_resources.resource_filename('vmware', '../templates/')
 
 class intersight_api(object):
     def __init__(self, type):
@@ -62,7 +60,7 @@ class intersight_api(object):
         path_sep = kwargs['path_sep']
         script_path = kwargs['get_script_path']
         jsonArg = False
-        jsonFile = f'{script_path}{path_sep}Templates{path_sep}variables{path_sep}easy_variables.json'
+        jsonFile = f'{script_path}{path_sep}templates{path_sep}variables{path_sep}easy_variables.json'
         jsonOpen = open(jsonFile, 'r')
         easy_jsonData = json.load(jsonOpen)
         jsonOpen.close()
@@ -104,7 +102,7 @@ class intersight_api(object):
             kwargs["jsonVars"] = ['FIAttached', 'Standalone']
             kwargs["defaultVar"] = 'FIAttached'
             kwargs["varType"] = 'Profile Type'
-            profile_type = variablesFromAPI(**kwargs)
+            profile_type = ezfunctions.variablesFromAPI(**kwargs)
         else:
             profile_type = jsonData['profile_type']
 
@@ -116,7 +114,7 @@ class intersight_api(object):
             kwargs["jsonVars"] = policy_list['enum']
             kwargs["defaultVar"] = policy_list['default']
             kwargs["varType"] = 'Policy Type'
-            policy_type = variablesFromAPI(**kwargs)
+            policy_type = ezfunctions.variablesFromAPI(**kwargs)
         else:
             policy_type = jsonData['policy_type']
 
@@ -135,7 +133,7 @@ class intersight_api(object):
             kwargs["jsonVars"] = org_names
             kwargs["defaultVar"] = 'default'
             kwargs["varType"] = 'Organizations'
-            organizations = variablesFromAPI(**kwargs)
+            organizations = ezfunctions.variablesFromAPI(**kwargs)
         else:
             organizations = jsonData['organizations']
 
@@ -160,7 +158,7 @@ class intersight_api(object):
             kwargs["jsonVars"] = policyNames
             kwargs["defaultVar"] = policyNames[0]
             kwargs["varType"] = f'{policy_type} Policy Name'
-            policy_name = variablesFromAPI(**kwargs)
+            policy_name = ezfunctions.variablesFromAPI(**kwargs)
 
             # Obtain Server Profile Data
             query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}' and TargetPlatform eq '{profile_type}'"
@@ -178,7 +176,7 @@ class intersight_api(object):
                 kwargs["jsonVars"] = profileNames
                 kwargs["defaultVar"] = profileNames[0]
                 kwargs["varType"] = 'Server Profiles'
-                profile_names = variablesFromAPI(**kwargs)
+                profile_names = ezfunctions.variablesFromAPI(**kwargs)
             else:
                 profile_names = jsonData['server_profiles']
             
@@ -300,7 +298,7 @@ class intersight_api(object):
             kwargs["jsonVars"] = org_names
             kwargs["defaultVar"] = 'default'
             kwargs["varType"] = 'Organizations'
-            organizations = variablesFromAPI(**kwargs)
+            organizations = ezfunctions.variablesFromAPI(**kwargs)
         else:
             organizations = jsonData['organizations']
         for org in organizations:
@@ -322,7 +320,7 @@ class intersight_api(object):
                 kwargs["jsonVars"] = vlan_policies_names
                 kwargs["defaultVar"] = ''
                 kwargs["varType"] = 'VLAN Policy'
-                vlan_policy = variablesFromAPI(**kwargs)
+                vlan_policy = ezfunctions.variablesFromAPI(**kwargs)
             else:
                 vlan_policy = jsonData['vlan_policy']
 
@@ -345,7 +343,7 @@ class intersight_api(object):
                         print(f'  VLAN is already in the policy {vlan_policy} and has moid {i["Moid"]}.')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                 vlan_list.sort()
-                vlans = vlan_list_format(vlan_list)
+                vlans = ezfunctions.vlan_list_format(vlan_list)
                 if match_count == 0:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  VLAN {vlan_id} was not in VLAN Policy {vlan_policy}.  Adding VLAN...')
@@ -390,7 +388,7 @@ class intersight_api(object):
                 kwargs["jsonVars"] = eth_group_policies_names
                 kwargs["defaultVar"] = ''
                 kwargs["varType"] = 'VLAN Group Policies'
-                ethernet_network_group_policies = variablesFromAPI(**kwargs)
+                ethernet_network_group_policies = ezfunctions.variablesFromAPI(**kwargs)
             else:
                 ethernet_network_group_policies = jsonData['ethernet_network_group_policies']
 
@@ -472,7 +470,7 @@ class intersight_api(object):
                 kwargs["jsonVars"] = eth_control_names
                 kwargs["defaultVar"] = ''
                 kwargs["varType"] = 'Ethernet Network Control Policies'
-                ethernet_network_control_policy = variablesFromAPI(**kwargs)
+                ethernet_network_control_policy = ezfunctions.variablesFromAPI(**kwargs)
             else:
                 ethernet_network_control_policy = jsonData['ethernet_network_control_policy']
 
@@ -490,7 +488,7 @@ class intersight_api(object):
                 kwargs["jsonVars"] = mac_pools_names
                 kwargs["defaultVar"] = ''
                 kwargs["varType"] = 'MAC Pool'
-                mac_pool = variablesFromAPI(**kwargs)
+                mac_pool = ezfunctions.variablesFromAPI(**kwargs)
             else:
                 mac_pool = jsonData['mac_pool']
 
@@ -509,7 +507,7 @@ class intersight_api(object):
                 kwargs["jsonVars"] = adapter_policies_names
                 kwargs["defaultVar"] = ''
                 kwargs["varType"] = 'Ethernet Adapter Policies'
-                ethernet_adapter_policy = variablesFromAPI(**kwargs)
+                ethernet_adapter_policy = ezfunctions.variablesFromAPI(**kwargs)
             else:
                 ethernet_adapter_policy = jsonData['ethernet_adapter_policy']
 
@@ -527,7 +525,7 @@ class intersight_api(object):
                 kwargs["jsonVars"] = qos_policies_names
                 kwargs["defaultVar"] = ''
                 kwargs["varType"] = 'Ethernet QoS Policies'
-                ethernet_qos_policy = variablesFromAPI(**kwargs)
+                ethernet_qos_policy = ezfunctions.variablesFromAPI(**kwargs)
             else:
                 ethernet_qos_policy = jsonData['ethernet_qos_policy']
 

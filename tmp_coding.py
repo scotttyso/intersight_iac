@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import classes.ezfunctions
 import jinja2
 import json
 import os
@@ -8,15 +9,8 @@ import re
 import stdiomask
 import subprocess
 import validating
-from easy_functions import exit_default_no, exit_default_yes
-from easy_functions import policy_descr, policy_name
-from easy_functions import varBoolLoop
-from easy_functions import variablesFromAPI
-from easy_functions import varNumberLoop
-from easy_functions import varStringLoop
-from easy_functions import write_to_template
 
-ucs_template_path = pkg_resources.resource_filename('temp_coding', 'Templates/')
+ucs_template_path = pkg_resources.resource_filename('temp_coding', '../templates/')
 
 class temp_coding(object):
     def __init__(self, name_prefix, org, type):
@@ -34,7 +28,7 @@ class temp_coding(object):
         name_prefix = self.name_prefix
         name_suffix = 'storage'
         org = self.org
-        policy_names = []
+        classes.ezfunctions.policy_names = []
         policy_type = 'Storage Policy'
         templateVars = {}
         templateVars["header"] = '%s Variables' % (policy_type)
@@ -45,7 +39,7 @@ class temp_coding(object):
         templateVars["template_type"] = 'storage_policies'
 
         # Open the Template file
-        write_to_template(self, **templateVars)
+        classes.ezfunctions.write_to_template(self, **templateVars)
         templateVars["initial_write"] = False
 
         configure_loop = False
@@ -68,9 +62,9 @@ class temp_coding(object):
                         name = '%s_%s' % (org, name_suffix)
 
                     # Obtain Policy Name
-                    templateVars["name"] = policy_name(name, policy_type)
+                    templateVars["name"] = classes.ezfunctions.policy_name(name, policy_type)
                     # Obtain Policy Description
-                    templateVars["descr"] = policy_descr(templateVars["name"], policy_type)
+                    templateVars["descr"] = classes.ezfunctions.policy_descr(templateVars["name"], policy_type)
 
                     # Configure the Global Host Spares Setting
                     templateVars["multi_select"] = False
@@ -85,21 +79,21 @@ class temp_coding(object):
                     templateVars["varRegex"] = jsonVars['GlobalHotSpares']['pattern']
                     templateVars["minLength"] = 0
                     templateVars["maxLength"] = 128
-                    templateVars["global_hot_spares"] = varStringLoop(**templateVars)
+                    templateVars["global_hot_spares"] = classes.ezfunctions.varStringLoop(**templateVars)
 
                     # Obtain Unused Disks State
                     templateVars["var_description"] = jsonVars['UnusedDisksState']['description']
                     templateVars["jsonVars"] = sorted(jsonVars['UnusedDisksState']['enum'])
                     templateVars["defaultVar"] = jsonVars['UnusedDisksState']['default']
                     templateVars["varType"] = 'Unused Disks State'
-                    templateVars["unused_disks_state"] = variablesFromAPI(**templateVars)
+                    templateVars["unused_disks_state"] = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                     # Configure the Global Host Spares Setting
                     templateVars["Description"] = jsonVars['UseJbodForVdCreation']['description']
                     templateVars["varInput"] = f'Do you want to Use JBOD drives for Virtual Drive creation?'
                     templateVars["varDefault"] = 'N'
                     templateVars["varName"] = 'Use Jbod For Vd Creation'
-                    templateVars["use_jbod_for_vd_creation"] = varBoolLoop(**templateVars)
+                    templateVars["use_jbod_for_vd_creation"] = classes.ezfunctions.varBoolLoop(**templateVars)
 
                     # Ask if Drive Groups should be configured
                     templateVars["Description"] = 'Drive Group Configuration - Enable to add RAID drive groups that can be used to create'\
@@ -107,7 +101,7 @@ class temp_coding(object):
                     templateVars["varInput"] = f'Do you want to Configure Drive Groups?'
                     templateVars["varDefault"] = 'N'
                     templateVars["varName"] = 'Drive Groups'
-                    driveGroups = varBoolLoop(**templateVars)
+                    driveGroups = classes.ezfunctions.varBoolLoop(**templateVars)
 
                     # If True configure Drive Groups
                     if driveGroups == True:
@@ -126,14 +120,14 @@ class temp_coding(object):
                             templateVars["varRegex"] = jsonVars['Name']['pattern']
                             templateVars["minLength"] = 1
                             templateVars["maxLength"] = 60
-                            dgName = varStringLoop(**templateVars)
+                            dgName = classes.ezfunctions.varStringLoop(**templateVars)
 
                             # Obtain Raid Level for Drive Group
                             templateVars["var_description"] = jsonVars['RaidLevel']['description']
                             templateVars["jsonVars"] = sorted(jsonVars['RaidLevel']['enum'])
                             templateVars["defaultVar"] = jsonVars['RaidLevel']['default']
                             templateVars["varType"] = 'Raid Level'
-                            RaidLevel = variablesFromAPI(**templateVars)
+                            RaidLevel = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                             jsonVars = jsonData['components']['schemas']['storage.ManualDriveGroup']['allOf'][1]['properties']
 
@@ -145,7 +139,7 @@ class temp_coding(object):
                                 templateVars["varRegex"] = jsonVars['DedicatedHotSpares']['pattern']
                                 templateVars["minLength"] = 1
                                 templateVars["maxLength"] = 60
-                                DedicatedHotSpares = varStringLoop(**templateVars)
+                                DedicatedHotSpares = classes.ezfunctions.varStringLoop(**templateVars)
                             else:
                                 DedicatedHotSpares = ''
 
@@ -157,7 +151,7 @@ class temp_coding(object):
                                 templateVars["jsonVars"] = [2, 4, 6, 8]
                                 templateVars["defaultVar"] = 2
                                 templateVars["varType"] = 'Span Groups'
-                                SpanGroups = variablesFromAPI(**templateVars)
+                                SpanGroups = classes.ezfunctions.variablesFromAPI(**templateVars)
                                 if SpanGroups == 2:
                                     SpanGroups = [0, 1]
                                 elif SpanGroups == 4:
@@ -188,7 +182,7 @@ class temp_coding(object):
                                     templateVars["varRegex"] = jsonVars['Slots']['pattern']
                                     templateVars["minLength"] = 1
                                     templateVars["maxLength"] = 10
-                                    SpanSlots.append({'slots':varStringLoop(**templateVars)})
+                                    SpanSlots.append({'slots':classes.ezfunctions.varStringLoop(**templateVars)})
                             elif re.fullmatch('^Raid(0|1|5|6)$', RaidLevel):
                                 jsonVars = jsonData['components']['schemas']['storage.SpanDrives']['allOf'][1]['properties']
                                 templateVars["Description"] = jsonVars['Slots']['description']
@@ -209,7 +203,7 @@ class temp_coding(object):
                                 templateVars["varRegex"] = jsonVars['Slots']['pattern']
                                 templateVars["minLength"] = 1
                                 templateVars["maxLength"] = 10
-                                SpanSlots.append({'slots':varStringLoop(**templateVars)})
+                                SpanSlots.append({'slots':classes.ezfunctions.varStringLoop(**templateVars)})
                                 
                             virtualDrives = []
                             sub_loop_count = 0
@@ -224,13 +218,13 @@ class temp_coding(object):
                                 templateVars["varRegex"] = jsonVars['Name']['pattern']
                                 templateVars["minLength"] = 1
                                 templateVars["maxLength"] = 60
-                                vd_name = varStringLoop(**templateVars)
+                                vd_name = classes.ezfunctions.varStringLoop(**templateVars)
 
                                 templateVars["Description"] = jsonVars['ExpandToAvailable']['description']
                                 templateVars["varInput"] = f'Do you want to expand to all the space in the drive group?'
                                 templateVars["varDefault"] = 'Y'
                                 templateVars["varName"] = 'Expand To Available'
-                                ExpandToAvailable = varBoolLoop(**templateVars)
+                                ExpandToAvailable = classes.ezfunctions.varBoolLoop(**templateVars)
 
                                 # If Expand to Available is Disabled obtain Virtual Drive disk size
                                 if ExpandToAvailable == False:
@@ -241,7 +235,7 @@ class temp_coding(object):
                                     templateVars["varRegex"] = '[0-9]+'
                                     templateVars["minNum"] = jsonVars['Size']['minimum']
                                     templateVars["maxNum"] = 9999999999
-                                    vdSize = varNumberLoop(**templateVars)
+                                    vdSize = classes.ezfunctions.varNumberLoop(**templateVars)
                                 else:
                                     vdSize = 1
                                 
@@ -249,7 +243,7 @@ class temp_coding(object):
                                 templateVars["varInput"] = f'Do you want to configure {vd_name} as a boot drive?'
                                 templateVars["varDefault"] = 'Y'
                                 templateVars["varName"] = 'Boot Drive'
-                                BootDrive = varBoolLoop(**templateVars)
+                                BootDrive = classes.ezfunctions.varBoolLoop(**templateVars)
 
                                 jsonVars = jsonData['components']['schemas']['storage.VirtualDrivePolicy']['allOf'][1]['properties']
 
@@ -257,31 +251,31 @@ class temp_coding(object):
                                 templateVars["jsonVars"] = sorted(jsonVars['AccessPolicy']['enum'])
                                 templateVars["defaultVar"] = jsonVars['AccessPolicy']['default']
                                 templateVars["varType"] = 'Access Policy'
-                                AccessPolicy = variablesFromAPI(**templateVars)
+                                AccessPolicy = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                                 templateVars["var_description"] = jsonVars['DriveCache']['description']
                                 templateVars["jsonVars"] = sorted(jsonVars['DriveCache']['enum'])
                                 templateVars["defaultVar"] = jsonVars['DriveCache']['default']
                                 templateVars["varType"] = 'Drive Cache'
-                                DriveCache = variablesFromAPI(**templateVars)
+                                DriveCache = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                                 templateVars["var_description"] = jsonVars['ReadPolicy']['description']
                                 templateVars["jsonVars"] = sorted(jsonVars['ReadPolicy']['enum'])
                                 templateVars["defaultVar"] = jsonVars['ReadPolicy']['default']
                                 templateVars["varType"] = 'Read Policy'
-                                ReadPolicy = variablesFromAPI(**templateVars)
+                                ReadPolicy = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                                 templateVars["var_description"] = jsonVars['StripSize']['description']
                                 templateVars["jsonVars"] = sorted(jsonVars['StripSize']['enum'])
                                 templateVars["defaultVar"] = jsonVars['StripSize']['default']
                                 templateVars["varType"] = 'Strip Size'
-                                StripSize = variablesFromAPI(**templateVars)
+                                StripSize = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                                 templateVars["var_description"] = jsonVars['WritePolicy']['description']
                                 templateVars["jsonVars"] = sorted(jsonVars['WritePolicy']['enum'])
                                 templateVars["defaultVar"] = jsonVars['WritePolicy']['default']
                                 templateVars["varType"] = 'Write Policy'
-                                WritePolicy = variablesFromAPI(**templateVars)
+                                WritePolicy = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                                 virtual_drive = {
                                     'access_policy':AccessPolicy,
@@ -420,7 +414,7 @@ class temp_coding(object):
                     templateVars["varInput"] = f'Do you want to Enable the M.2 Virtual Drive Configuration?'
                     templateVars["varDefault"] = 'Y'
                     templateVars["varName"] = 'M.2 Virtual Drive'
-                    M2VirtualDrive = varBoolLoop(**templateVars)
+                    M2VirtualDrive = classes.ezfunctions.varBoolLoop(**templateVars)
 
                     # Configure M2 if it is True if not Pop it from the list
                     if M2VirtualDrive == True:
@@ -430,7 +424,7 @@ class temp_coding(object):
                         templateVars["jsonVars"] = sorted(jsonVars['ControllerSlot']['enum'])
                         templateVars["defaultVar"] = 'MSTOR-RAID-1,MSTOR-RAID-2'
                         templateVars["varType"] = 'Controller Slot'
-                        ControllerSlot = variablesFromAPI(**templateVars)
+                        ControllerSlot = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                         templateVars["m2_configuration"] = {
                             'controller_slot':ControllerSlot,
@@ -444,7 +438,7 @@ class temp_coding(object):
                     templateVars["varInput"] = f"Do you want to Configure Single Drive RAID's?"
                     templateVars["varDefault"] = 'N'
                     templateVars["varName"] = 'Single Drive RAID'
-                    singledriveRaid = varBoolLoop(**templateVars)
+                    singledriveRaid = classes.ezfunctions.varBoolLoop(**templateVars)
 
                     # If True configure Drive Groups
                     if singledriveRaid == True:
@@ -459,7 +453,7 @@ class temp_coding(object):
                             templateVars["varRegex"] = jsonVars['DriveSlots']['pattern']
                             templateVars["minLength"] = 1
                             templateVars["maxLength"] = 64
-                            DriveSlots = varStringLoop(**templateVars)
+                            DriveSlots = classes.ezfunctions.varStringLoop(**templateVars)
                                 
                             # Obtain the Virtual Drive Policies
                             jsonVars = jsonData['components']['schemas']['storage.VirtualDrivePolicy']['allOf'][1]['properties']
@@ -469,35 +463,35 @@ class temp_coding(object):
                             templateVars["jsonVars"] = sorted(jsonVars['AccessPolicy']['enum'])
                             templateVars["defaultVar"] = jsonVars['AccessPolicy']['default']
                             templateVars["varType"] = 'Access Policy'
-                            AccessPolicy = variablesFromAPI(**templateVars)
+                            AccessPolicy = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                             # Drive Cache
                             templateVars["var_description"] = jsonVars['DriveCache']['description']
                             templateVars["jsonVars"] = sorted(jsonVars['DriveCache']['enum'])
                             templateVars["defaultVar"] = jsonVars['DriveCache']['default']
                             templateVars["varType"] = 'Drive Cache'
-                            DriveCache = variablesFromAPI(**templateVars)
+                            DriveCache = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                             # Read Policy
                             templateVars["var_description"] = jsonVars['ReadPolicy']['description']
                             templateVars["jsonVars"] = sorted(jsonVars['ReadPolicy']['enum'])
                             templateVars["defaultVar"] = jsonVars['ReadPolicy']['default']
                             templateVars["varType"] = 'Read Policy'
-                            ReadPolicy = variablesFromAPI(**templateVars)
+                            ReadPolicy = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                             # Strip Size
                             templateVars["var_description"] = jsonVars['StripSize']['description']
                             templateVars["jsonVars"] = sorted(jsonVars['StripSize']['enum'])
                             templateVars["defaultVar"] = jsonVars['StripSize']['default']
                             templateVars["varType"] = 'Strip Size'
-                            StripSize = variablesFromAPI(**templateVars)
+                            StripSize = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                             # Write Policy
                             templateVars["var_description"] = jsonVars['WritePolicy']['description']
                             templateVars["jsonVars"] = sorted(jsonVars['WritePolicy']['enum'])
                             templateVars["defaultVar"] = jsonVars['WritePolicy']['default']
                             templateVars["varType"] = 'Write Policy'
-                            WritePolicy = variablesFromAPI(**templateVars)
+                            WritePolicy = classes.ezfunctions.variablesFromAPI(**templateVars)
 
                             templateVars["single_drive_raid_configuration"] = {
                                 'access_policy':AccessPolicy,
@@ -610,12 +604,12 @@ class temp_coding(object):
 
                             # Write Policies to Template File
                             templateVars["template_file"] = '%s.jinja2' % (templateVars["template_type"])
-                            write_to_template(self, **templateVars)
+                            classes.ezfunctions.write_to_template(self, **templateVars)
 
                             # Add Template Name to Policies Output
-                            policy_names.append(templateVars["name"])
+                            classes.ezfunctions.policy_names.append(templateVars["name"])
 
-                            configure_loop, policy_loop = exit_default_no(templateVars["policy_type"])
+                            configure_loop, policy_loop = classes.ezfunctions.exit_default_no(templateVars["policy_type"])
                             valid_confirm = True
 
                         elif confirm_policy == 'N':
@@ -638,4 +632,4 @@ class temp_coding(object):
 
         # Close the Template file
         templateVars["template_file"] = 'template_close.jinja2'
-        write_to_template(self, **templateVars)
+        classes.ezfunctions.write_to_template(self, **templateVars)
