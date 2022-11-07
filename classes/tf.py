@@ -1,3 +1,4 @@
+from copy import deepcopy
 from requests.api import delete
 import ezfunctions
 import jinja2

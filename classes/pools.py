@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from copy import deepcopy
 import ezfunctions
 import ipaddress
 import jinja2
@@ -20,7 +21,7 @@ class pools(object):
     #==============================================
     # IP Pools Module
     #==============================================
-    def ip_pools(self, jsonData, easy_jsonData, **kwargs):
+    def ip_pools(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'ip_pool'
         opSystem = kwargs['opSystem']
@@ -65,7 +66,7 @@ class pools(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['pool.AbstractPool']['allOf'][1]['properties']
+                    jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
                     polVars["var_description"] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
@@ -86,7 +87,7 @@ class pools(object):
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     if config_ipv4 == 'Y' or config_ipv4 == '':
-                        jsonVars = jsonData['components']['schemas']['ippool.IpV4Block']['allOf'][1]['properties']
+                        jsonVars = jsonData['ippool.IpV4Block']['allOf'][1]['properties']
 
                         polVars["Description"] = 'The Gateway/Prefix to Assign to the Pool'
                         polVars["varDefault"] = '198.18.0.1/24'
@@ -111,7 +112,7 @@ class pools(object):
                         polVars["maxLength"] = 15
                         pool_from = ezfunctions.varStringLoop(**polVars)
 
-                        jsonVars = jsonData['components']['schemas']['pool.AbstractBlockType']['allOf'][1]['properties']
+                        jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
                         polVars["Description"] = jsonVars['Size']['description']
                         polVars["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1000.'
@@ -121,7 +122,7 @@ class pools(object):
                         polVars["maxNum"] = jsonVars['Size']['maximum']
                         pool_size = ezfunctions.varNumberLoop(**polVars)
 
-                        jsonVars = jsonData['components']['schemas']['ippool.IpV4Config']['allOf'][1]['properties']
+                        jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
 
                         polVars["Description"] = jsonVars['PrimaryDns']['description']
                         polVars["varDefault"] = '208.67.220.220'
@@ -172,7 +173,7 @@ class pools(object):
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     if config_ipv6 == 'Y':
-                        jsonVars = jsonData['components']['schemas']['ippool.IpV6Block']['allOf'][1]['properties']
+                        jsonVars = jsonData['ippool.IpV6Block']['allOf'][1]['properties']
 
                         polVars["Description"] = 'The Gateway/Prefix to Assign to the Pool'
                         polVars["varDefault"] = '2001:0002::1/64'
@@ -199,7 +200,7 @@ class pools(object):
                         polVars["maxLength"] = 164
                         starting = ezfunctions.varStringLoop(**polVars)
 
-                        jsonVars = jsonData['components']['schemas']['pool.AbstractBlockType']['allOf'][1]['properties']
+                        jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
                         polVars["Description"] = jsonVars['Size']['description']
                         polVars["varInput"] = 'How Many IPv6 Addresses should be added to the Pool?  Range is 1-1000.'
@@ -209,7 +210,7 @@ class pools(object):
                         polVars["maxNum"] = jsonVars['Size']['maximum']
                         pool_size = ezfunctions.varNumberLoop(**polVars)
 
-                        jsonVars = jsonData['components']['schemas']['ippool.IpV6Config']['allOf'][1]['properties']
+                        jsonVars = jsonData['ippool.IpV6Config']['allOf'][1]['properties']
 
                         polVars["Description"] = jsonVars['PrimaryDns']['description']
                         polVars["varDefault"] = '2620:119:53::53'
@@ -342,7 +343,7 @@ class pools(object):
     #==============================================
     # IQN Pools Module
     #==============================================
-    def iqn_pools(self, jsonData, easy_jsonData, **kwargs):
+    def iqn_pools(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'iqn_pool'
         opSystem = kwargs['opSystem']
@@ -378,7 +379,7 @@ class pools(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['pool.AbstractPool']['allOf'][1]['properties']
+                    jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
                     polVars["var_description"] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
@@ -399,7 +400,7 @@ class pools(object):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid = False
                     while valid == False:
-                        jsonVars = jsonData['components']['schemas']['iqnpool.Pool']['allOf'][1]['properties']
+                        jsonVars = jsonData['iqnpool.Pool']['allOf'][1]['properties']
 
                         polVars["Description"] = jsonVars['Prefix']['description']
                         polVars["varDefault"] = 'iqn.1984-12.com.cisco'
@@ -410,7 +411,7 @@ class pools(object):
                         polVars["maxLength"] = 64
                         polVars["prefix"] = ezfunctions.varStringLoop(**polVars)
 
-                        jsonVars = jsonData['components']['schemas']['iqnpool.IqnSuffixBlock']['allOf'][1]['properties']
+                        jsonVars = jsonData['iqnpool.IqnSuffixBlock']['allOf'][1]['properties']
 
                         polVars["Description"] = jsonVars['From']['description']
                         polVars["varInput"] = jsonVars['From']['description'] 
@@ -429,7 +430,7 @@ class pools(object):
                         polVars["maxLength"] = 32
                         suffix = ezfunctions.varStringLoop(**polVars)
 
-                        jsonVars = jsonData['components']['schemas']['pool.AbstractBlockType']['allOf'][1]['properties']
+                        jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
                         polVars["Description"] = jsonVars['Size']['description']
                         polVars["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1000.'
@@ -514,7 +515,7 @@ class pools(object):
     #==============================================
     # MAC Pools Module
     #==============================================
-    def mac_pools(self, jsonData, easy_jsonData, **kwargs):
+    def mac_pools(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         opSystem = kwargs['opSystem']
         org = self.org
@@ -556,7 +557,7 @@ class pools(object):
                 polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                 polVars["multi_select"] = False
-                jsonVars = jsonData['components']['schemas']['pool.AbstractPool']['allOf'][1]['properties']
+                jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
                 polVars["var_description"] = jsonVars['AssignmentOrder']['description']
                 polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
@@ -564,7 +565,7 @@ class pools(object):
                 polVars["varType"] = 'Assignment Order'
                 polVars["assignment_order"] = ezfunctions.variablesFromAPI(**polVars)
 
-                jsonVars = jsonData['components']['schemas']['macpool.Block']['allOf'][1]['properties']
+                jsonVars = jsonData['macpool.Block']['allOf'][1]['properties']
 
                 polVars["Description"] = jsonVars['From']['description']
                 if loop_count % 2 == 0: 
@@ -579,7 +580,7 @@ class pools(object):
                 polVars["maxLength"] = 17
                 pool_from = ezfunctions.varStringLoop(**polVars)
 
-                jsonVars = jsonData['components']['schemas']['pool.AbstractBlockType']['allOf'][1]['properties']
+                jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
                 polVars["Description"] = jsonVars['Size']['description']
                 polVars["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1000.'
@@ -654,7 +655,7 @@ class pools(object):
     #==============================================
     # Resource Pool Module
     #==============================================
-    def resource_pools(self, jsonData, easy_jsonData, **kwargs):
+    def resource_pools(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'resource'
         opSystem = kwargs['opSystem']
@@ -701,7 +702,7 @@ class pools(object):
                     polVars["multi_select"] = False
 
                     # Assignment Order
-                    jsonVars = jsonData['components']['schemas']['pool.AbstractPool']['allOf'][1]['properties']
+                    jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
                     polVars["defaultVar"] = jsonVars['AssignmentOrder']['default']
@@ -728,7 +729,7 @@ class pools(object):
                         valid = ezfunctions.varBoolLoop(**polVars)
 
                     # Server Type
-                    jsonVars = easy_jsonData['pools']['resourcepool.Pool']
+                    jsonVars = ezData['pools']['resourcepool.Pool']
                     polVars["var_description"] = jsonVars['server_type']['description']
                     polVars["jsonVars"] = sorted(jsonVars['server_type']['enum'])
                     polVars["defaultVar"] = jsonVars['server_type']['default']
@@ -780,7 +781,7 @@ class pools(object):
     #==============================================
     # UUID Pools Module
     #==============================================
-    def uuid_pools(self, jsonData, easy_jsonData, **kwargs):
+    def uuid_pools(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'uuid_pool'
         opSystem = kwargs['opSystem']
@@ -819,7 +820,7 @@ class pools(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['pool.AbstractPool']['allOf'][1]['properties']
+                    jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
                     polVars["var_description"] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
@@ -827,7 +828,7 @@ class pools(object):
                     polVars["varType"] = 'Assignment Order'
                     polVars["assignment_order"] = ezfunctions.variablesFromAPI(**polVars)
 
-                    jsonVars = jsonData['components']['schemas']['uuidpool.Pool']['allOf'][1]['properties']
+                    jsonVars = jsonData['uuidpool.Pool']['allOf'][1]['properties']
 
                     polVars["Description"] = jsonVars['Prefix']['description']
                     polVars["varDefault"] = '000025B5-0000-0000'
@@ -838,7 +839,7 @@ class pools(object):
                     polVars["maxLength"] = 18
                     polVars["prefix"] = ezfunctions.varStringLoop(**polVars)
 
-                    jsonVars = jsonData['components']['schemas']['uuidpool.UuidBlock']['allOf'][1]['properties']
+                    jsonVars = jsonData['uuidpool.UuidBlock']['allOf'][1]['properties']
 
                     polVars["Description"] = jsonVars['From']['description']
                     polVars["varDefault"] = '0000-000000000000'
@@ -849,7 +850,7 @@ class pools(object):
                     polVars["maxLength"] = 17
                     pool_from = ezfunctions.varStringLoop(**polVars)
 
-                    jsonVars = jsonData['components']['schemas']['pool.AbstractBlockType']['allOf'][1]['properties']
+                    jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
                     polVars["Description"] = jsonVars['Size']['description']
                     polVars["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1000.'
@@ -931,7 +932,7 @@ class pools(object):
     #==============================================
     # WWNN Pools Module
     #==============================================
-    def wwnn_pools(self, jsonData, easy_jsonData, **kwargs):
+    def wwnn_pools(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'wwnn_pool'
         opSystem = kwargs['opSystem']
@@ -977,7 +978,7 @@ class pools(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['pool.AbstractPool']['allOf'][1]['properties']
+                    jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
                     polVars["var_description"] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
@@ -985,7 +986,7 @@ class pools(object):
                     polVars["varType"] = 'Assignment Order'
                     polVars["assignment_order"] = ezfunctions.variablesFromAPI(**polVars)
 
-                    jsonVars = jsonData['components']['schemas']['fcpool.Block']['allOf'][1]['properties']
+                    jsonVars = jsonData['fcpool.Block']['allOf'][1]['properties']
 
                     polVars["Description"] = jsonVars['From']['description']
                     polVars["varDefault"] = '20:00:00:25:B5:00:00:00'
@@ -996,7 +997,7 @@ class pools(object):
                     polVars["maxLength"] = 23
                     pool_from = ezfunctions.varStringLoop(**polVars)
 
-                    jsonVars = jsonData['components']['schemas']['pool.AbstractBlockType']['allOf'][1]['properties']
+                    jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
                     polVars["Description"] = jsonVars['Size']['description']
                     polVars["varInput"] = 'How Many WWNN Addresses should be added to the Pool?  Range is 1-1000.'
@@ -1078,7 +1079,7 @@ class pools(object):
     #==============================================
     # WWPN Pools Module
     #==============================================
-    def wwpn_pools(self, jsonData, easy_jsonData, **kwargs):
+    def wwpn_pools(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         opSystem = kwargs['opSystem']
         org = self.org
@@ -1122,7 +1123,7 @@ class pools(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['pool.AbstractPool']['allOf'][1]['properties']
+                    jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
                     polVars["var_description"] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
@@ -1130,7 +1131,7 @@ class pools(object):
                     polVars["varType"] = 'Assignment Order'
                     polVars["assignment_order"] = ezfunctions.variablesFromAPI(**polVars)
 
-                    jsonVars = jsonData['components']['schemas']['fcpool.Block']['allOf'][1]['properties']
+                    jsonVars = jsonData['fcpool.Block']['allOf'][1]['properties']
 
                     polVars["Description"] = jsonVars['From']['description']
                     if loop_count % 2 == 0: 
@@ -1145,7 +1146,7 @@ class pools(object):
                     polVars["maxLength"] = 23
                     pool_from = ezfunctions.varStringLoop(**polVars)
 
-                    jsonVars = jsonData['components']['schemas']['pool.AbstractBlockType']['allOf'][1]['properties']
+                    jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
                     polVars["Description"] = jsonVars['Size']['description']
                     polVars["varInput"] = 'How Many WWPN Addresses should be added to the Pool?  Range is 1-1000.'

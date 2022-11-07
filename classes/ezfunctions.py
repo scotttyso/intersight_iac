@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from copy import deepcopy
 from git import cmd, Repo
 from openpyxl import load_workbook
 from ordered_set import OrderedSet
@@ -78,32 +79,56 @@ def api_secret(args):
 #======================================================
 # Function - Format Policy Description
 #======================================================
-def choose_policy(policy, **polVars):
+def choose_policy(policy_type, **kwargs):
+    policy_descr = mod_pol_description(policy_type)
+    policy_list = []
+    for i in kwargs['policies'][policy_type]:
+        policy_list.append(i['name'])
+    valid = False
+    while valid == False:
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        if kwargs.get('optional_message'):
+            print(kwargs["optional_message"])
+        print(f'  {policy_descr} Options:')
+        for i, v in enumerate(policy_list):
+            i += 1
+            if i < 10:
+                print(f'     {i}. {v}')
+            else:
+                print(f'    {i}. {v}')
+        if kwargs["allow_opt_out"] == True:
+            print(f'     99. Do not assign a(n) {policy_descr}.')
+        print(f'     100. Create a New {policy_descr}.')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        policyOption = input(f'Select the Option Number for the {policy_descr} to Assign to {kwargs["name"]}: ')
+        if re.search(r'^[0-9]{1,3}$', policyOption):
+            for i, v in enumerate(policy_list):
+                i += 1
+                if int(policyOption) == i:
+                    kwargs['policy'] = v
+                    valid = True
+                    return kwargs
+                elif int(policyOption) == 99:
+                    kwargs['policy'] = ''
+                    valid = True
+                    return kwargs
+                elif int(policyOption) == 100:
+                    kwargs['policy'] = 'create_policy'
+                    valid = True
+                    return kwargs
 
-    if 'policies' in policy:
-        policy_short = policy.replace('policies', 'policy')
-    elif 'pools' in policy:
-        policy_short = policy.replace('pools', 'pool')
-    elif 'templates' in policy:
-        policy_short = policy.replace('templates', 'template')
-    x = policy_short.split('_')
-    policy_description = []
-    for y in x:
-        y = y.capitalize()
-        policy_description.append(y)
-    policy_description = " ".join(policy_description)
-    policy_description = policy_description.replace('Ip', 'IP')
-    policy_description = policy_description.replace('Ntp', 'NTP')
-    policy_description = policy_description.replace('Snmp', 'SNMP')
-    policy_description = policy_description.replace('Wwnn', 'WWNN')
-    policy_description = policy_description.replace('Wwpn', 'WWPN')
-
-    if len(policy) > 0:
-        polVars["policy"] = policy_description
-        policy_short = policies_list(polVars["policies"], **polVars)
-    else:
-        policy_short = ""
-    return policy_short
+            if int(policyOption) == 99:
+                kwargs['policy'] = ''
+                valid = True
+                return kwargs
+            elif int(policyOption) == 100:
+                kwargs['policy'] = 'create_policy'
+                valid = True
+                return kwargs
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Error!! Invalid Selection.  Please Select a valid Index from the List.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
 
 #======================================================
 # Function - Count the Number of Keys
@@ -187,6 +212,60 @@ def exit_loop_default_yes(loop_count, policy_type):
             print(f'\n------------------------------------------------------\n')
     return configure_loop, loop_count, policy_loop
 
+#========================================================
+# Function to Append the immDict Dictionary
+#========================================================
+def ez_append(polVars, **kwargs):
+    class_path = kwargs['class_path']
+    cS = class_path.split(',')
+    org = kwargs['org']
+    polVars = ez_remove_empty(polVars)
+
+    # Confirm the Key Exists
+    if len(cS) >= 2:
+        if not kwargs['immDict']['orgs'][org].get(cS[0]):
+            kwargs['immDict']['orgs'][org].update(deepcopy({cS[0]:{}}))
+    if len(cS) >= 3:
+        if not kwargs['immDict']['orgs'][org][cS[0]].get(cS[1]):
+            kwargs['immDict']['orgs'][org][cS[0]].update(deepcopy({cS[1]:{}}))
+    if len(cS) >= 4:
+        if not kwargs['immDict']['orgs'][org][cS[0]][cS[1]].get(cS[2]):
+            kwargs['immDict']['orgs'][org][cS[0]][cS[1]].update(deepcopy({cS[2]:{}}))
+    if len(cS) == 2:
+        if not kwargs['immDict']['orgs'][org][cS[0]].get(cS[1]):
+            kwargs['immDict']['orgs'][org][cS[0]].update(deepcopy({cS[1]:[]}))
+    elif len(cS) == 3:
+        if not kwargs['immDict']['orgs'][org][cS[0]][cS[1]].get(cS[2]):
+            kwargs['immDict']['orgs'][org][cS[0]][cS[1]].update(deepcopy({cS[2]:[]}))
+    elif len(cS) == 4:
+        if not kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]].get(cS[3]):
+            kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]].update(deepcopy({cS[3]:[]}))
+    elif len(cS) == 5:
+        if not kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]].get(cS[3]):
+            kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]].update(deepcopy({cS[3]:{}}))
+        if not kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]][cS[3]].get(cS[4]):
+            kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]][cS[3]].update(deepcopy({cS[4]:[]}))
+        
+    # append the Dictionary
+    if len(cS) == 2: kwargs['immDict']['orgs'][org][cS[0]][cS[1]].append(deepcopy(polVars))
+    elif len(cS) == 3: kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]].append(deepcopy(polVars))
+    elif len(cS) == 4: kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]][cS[3]].append(deepcopy(polVars))
+    elif len(cS) == 5: kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]][cS[3]][cS[4]].append(deepcopy(polVars))
+
+    return kwargs
+
+#========================================================
+# Function to Remove Empty Arguments
+#========================================================
+def ez_remove_empty(polVars):
+    pop_list = []
+    for k,v in polVars.items():
+        if v == None:
+            pop_list.append(k)
+    for i in pop_list:
+        polVars.pop(i)
+    return polVars
+
 #======================================================
 # Function - find the Keys for each Section
 #======================================================
@@ -258,12 +337,12 @@ def ipmi_key_function(**polVars):
 #======================================================
 # Function - Local User Policy
 #======================================================
-def local_users_function(jsonData, easy_jsonData, inner_loop_count, **polVars):
+def local_users_function(jsonData, ezData, inner_loop_count, **polVars):
     local_users = []
     valid_users = False
     while valid_users == False:
         polVars["multi_select"] = False
-        jsonVars = jsonData['components']['schemas']['iam.EndPointUser']['allOf'][1]['properties']
+        jsonVars = jsonData['iam.EndPointUser']['allOf'][1]['properties']
 
         polVars["Description"] = jsonVars['Name']['description']
         polVars["varDefault"] = 'admin'
@@ -275,7 +354,7 @@ def local_users_function(jsonData, easy_jsonData, inner_loop_count, **polVars):
         username = varStringLoop(**polVars)
 
         polVars["multi_select"] = False
-        jsonVars = easy_jsonData['policies']['iam.LocalUserPasswordPolicy']
+        jsonVars = ezData['policies']['iam.LocalUserPasswordPolicy']
         polVars["var_description"] = jsonVars['role']['description']
         polVars["jsonVars"] = sorted(jsonVars['role']['enum'])
         polVars["defaultVar"] = jsonVars['role']['default']
@@ -365,7 +444,7 @@ def local_users_function(jsonData, easy_jsonData, inner_loop_count, **polVars):
 #======================================================
 # Function - Merge Easy IMM Repository to Dest Folder
 #======================================================
-def merge_easy_imm_repository(args, easy_jsonData, org):
+def merge_easy_imm_repository(args, ezData, org):
     baseRepo = args.dir
 
     # Setup Operating Environment
@@ -413,11 +492,32 @@ def merge_easy_imm_repository(args, easy_jsonData, org):
                         shutil.copy2(os.path.join(src_dir, fname), folder)
                 
                 # Identify the files 
-                files = easy_jsonData['wizard']['files'][mod]
+                files = ezData['wizard']['files'][mod]
                 for xRemove in removeList:
                     if xRemove in files:
                         files.remove(xRemove)
                 terraform_fmt(files, folder, path_sep)
+
+#======================================================
+# Function - Change Policy Description to Sentence
+#======================================================
+def mod_pol_description(pol_description):
+    pol_description = str.title(pol_description.replace('_', ' '))
+    pol_description = pol_description.replace('Ipmi', 'IPMI')
+    pol_description = pol_description.replace('Ip', 'IP')
+    pol_description = pol_description.replace('Iqn', 'IQN')
+    pol_description = pol_description.replace('Ldap', 'LDAP')
+    pol_description = pol_description.replace('Ntp', 'NTP')
+    pol_description = pol_description.replace('Sd', 'SD')
+    pol_description = pol_description.replace('Smtp', 'SMTP')
+    pol_description = pol_description.replace('Snmp', 'SNMP')
+    pol_description = pol_description.replace('Ssh', 'SSH')
+    pol_description = pol_description.replace('Wwnn', 'WWNN')
+    pol_description = pol_description.replace('Wwnn', 'WWNN')
+    pol_description = pol_description.replace('Wwpn', 'WWPN')
+    pol_description = pol_description.replace('Vsan', 'VSAN')
+
+    return pol_description
 
 #======================================================
 # Function - Naming Rule
@@ -488,96 +588,20 @@ def ntp_primary():
             valid = validating.ip_address('Primary NTP Server', primary_ntp)
     return primary_ntp
 
-def policies_list(policies_list, **polVars):
-    valid = False
-    while valid == False:
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        if polVars.get('optional_message'):
-            print(polVars["optional_message"])
-        print(f'  {polVars["policy"]} Options:')
-        for i, v in enumerate(policies_list):
-            i += 1
-            if i < 10:
-                print(f'     {i}. {v}')
-            else:
-                print(f'    {i}. {v}')
-        if polVars["allow_opt_out"] == True:
-            print(f'     99. Do not assign a(n) {polVars["policy"]}.')
-        print(f'     100. Create a New {polVars["policy"]}.')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        policyOption = input(f'Select the Option Number for the {polVars["policy"]} to Assign to {polVars["name"]}: ')
-        if re.search(r'^[0-9]{1,3}$', policyOption):
-            for i, v in enumerate(policies_list):
-                i += 1
-                if int(policyOption) == i:
-                    policy = v
-                    valid = True
-                    return policy
-                elif int(policyOption) == 99:
-                    policy = ''
-                    valid = True
-                    return policy
-                elif int(policyOption) == 100:
-                    policy = 'create_policy'
-                    valid = True
-                    return policy
+#======================================================
+# Function - Get Policies from Dictionary
+#======================================================
+def policies_parse(ptype, policy_type, **kwargs):
+    org  = kwargs['org']
+    kwargs['policies'] = []
+    if not kwargs['immDict']['orgs'][org]['intersight'].get(ptype) == None:
+        if not kwargs['immDict']['orgs'][org]['intersight'][ptype].get(policy_type) == None:
+            kwargs['policies'] = {policy_type:kwargs['immDict']['orgs'][org]['intersight'][ptype][policy_type]}
+    return kwargs
 
-            if int(policyOption) == 99:
-                policy = ''
-                valid = True
-                return policy
-            elif int(policyOption) == 100:
-                policy = 'create_policy'
-                valid = True
-                return policy
-        else:
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Error!! Invalid Selection.  Please Select a valid Index from the List.')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-
-def policies_parse(org, policy_type, policy):
-    if os.environ.get('TF_DEST_DIR') is None:
-        tfDir = 'Intersight'
-    else:
-        tfDir = os.environ.get('TF_DEST_DIR')
-    policies = []
-
-    opSystem = platform.system()
-    if opSystem == 'Windows':
-        policy_file = f'.\{tfDir}\{org}\{policy_type}\{policy}.auto.tfvars'
-    else:
-        policy_file = f'./{tfDir}/{org}/{policy_type}/{policy}.auto.tfvars'
-    if os.path.isfile(policy_file):
-        if len(policy_file) > 0:
-            if opSystem == 'Windows':
-                cmd = 'hcl2json.exe %s' % (policy_file)
-            else:
-                cmd = 'hcl2json %s' % (policy_file)
-                # cmd = 'json2hcl -reverse < %s' % (policy_file)
-            p = subprocess.run(
-                cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT
-            )
-            if 'unable to parse' in p.stdout.decode('utf-8'):
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  !!!! Encountered Error in Attempting to read file !!!!')
-                print(f'  - {policy_file}')
-                print(f'  Error was:')
-                print(f'  - {p.stdout.decode("utf-8")}')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                json_data = {}
-                return policies,json_data
-            else:
-                json_data = json.loads(p.stdout.decode('utf-8'))
-                for i in json_data[policy]:
-                    policies.append(i)
-                return policies,json_data
-    else:
-        json_data = {}
-        return policies,json_data
-
+#======================================================
+# Function - Prompt User to Enter Policy Description
+#======================================================
 def policy_descr(name, policy_type):
     valid = False
     while valid == False:
@@ -585,9 +609,11 @@ def policy_descr(name, policy_type):
         if descr == '':
             descr = '%s %s' % (name, policy_type)
         valid = validating.description(f'{policy_type} polVars["descr"]', descr, 1, 62)
-        if valid == True:
-            return descr
+        if valid == True: return descr
 
+#======================================================
+# Function - Prompt User to Enter Policy Name
+#======================================================
 def policy_name(namex, policy_type):
     valid = False
     while valid == False:
@@ -595,8 +621,7 @@ def policy_name(namex, policy_type):
         if name == '':
             name = '%s' % (namex)
         valid = validating.name_rule(f'{policy_type} Name', name, 1, 62)
-        if valid == True:
-            return name
+        if valid == True: return name
 
 # Function to validate input for each method
 def process_kwargs(required_args, optional_args, **kwargs):
@@ -765,35 +790,35 @@ def sensitive_var_value(jsonData, **polVars):
                 if not sensitive_var == '':
                     valid = True
             elif 'bind' in sensitive_var:
-                jsonVars = jsonData['components']['schemas']['iam.LdapBaseProperties']['allOf'][1]['properties']
+                jsonVars = jsonData['iam.LdapBaseProperties']['allOf'][1]['properties']
                 minLength = 1
                 maxLength = 254
                 rePattern = jsonVars['Password']['pattern']
                 varName = 'SNMP Community'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'community' in sensitive_var:
-                jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
+                jsonVars = jsonData['snmp.Policy']['allOf'][1]['properties']
                 minLength = 1
                 maxLength = jsonVars['TrapCommunity']['maxLength']
                 rePattern = '^[\\S]+$'
                 varName = 'SNMP Community'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'ipmi_key' in sensitive_var:
-                jsonVars = jsonData['components']['schemas']['ipmioverlan.Policy']['allOf'][1]['properties']
+                jsonVars = jsonData['ipmioverlan.Policy']['allOf'][1]['properties']
                 minLength = 2
                 maxLength = jsonVars['EncryptionKey']['maxLength']
                 rePattern = jsonVars['EncryptionKey']['pattern']
                 varName = 'IPMI Encryption Key'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'iscsi_boot' in sensitive_var:
-                jsonVars = jsonData['components']['schemas']['vnic.IscsiAuthProfile']['allOf'][1]['properties']
+                jsonVars = jsonData['vnic.IscsiAuthProfile']['allOf'][1]['properties']
                 minLength = 12
                 maxLength = 16
                 rePattern = jsonVars['Password']['pattern']
                 varName = 'iSCSI Boot Password'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'local' in sensitive_var:
-                jsonVars = jsonData['components']['schemas']['iam.EndPointUserRole']['allOf'][1]['properties']
+                jsonVars = jsonData['iam.EndPointUserRole']['allOf'][1]['properties']
                 minLength = jsonVars['Password']['minLength']
                 maxLength = jsonVars['Password']['maxLength']
                 rePattern = jsonVars['Password']['pattern']
@@ -809,14 +834,14 @@ def sensitive_var_value(jsonData, **polVars):
                 else:
                     valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'secure_passphrase' in sensitive_var:
-                jsonVars = jsonData['components']['schemas']['memory.PersistentMemoryLocalSecurity']['allOf'][1]['properties']
+                jsonVars = jsonData['memory.PersistentMemoryLocalSecurity']['allOf'][1]['properties']
                 minLength = jsonVars['SecurePassphrase']['minLength']
                 maxLength = jsonVars['SecurePassphrase']['maxLength']
                 rePattern = jsonVars['SecurePassphrase']['pattern']
                 varName = 'Persistent Memory Secure Passphrase'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'snmp' in sensitive_var:
-                jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
+                jsonVars = jsonData['snmp.Policy']['allOf'][1]['properties']
                 minLength = 1
                 maxLength = jsonVars['TrapCommunity']['maxLength']
                 rePattern = '^[\\S]+$'
@@ -826,7 +851,7 @@ def sensitive_var_value(jsonData, **polVars):
                     varName = 'SNMP Privacy Password'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'vmedia' in sensitive_var:
-                jsonVars = jsonData['components']['schemas']['vmedia.Mapping']['allOf'][1]['properties']
+                jsonVars = jsonData['vmedia.Mapping']['allOf'][1]['properties']
                 minLength = 1
                 maxLength = jsonVars['Password']['maxLength']
                 rePattern = '^[\\S]+$'
@@ -852,7 +877,7 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
     valid_traps = False
     while valid_traps == False:
         polVars["multi_select"] = False
-        jsonVars = jsonData['components']['schemas']['snmp.Trap']['allOf'][1]['properties']
+        jsonVars = jsonData['snmp.Trap']['allOf'][1]['properties']
         if len(snmp_user_list) == 0:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  There are no valid SNMP Users so Trap Destinations can only be set to SNMPv2.')
@@ -992,7 +1017,7 @@ def snmp_users(jsonData, inner_loop_count, **polVars):
     valid_users = False
     while valid_users == False:
         polVars["multi_select"] = False
-        jsonVars = jsonData['components']['schemas']['snmp.User']['allOf'][1]['properties']
+        jsonVars = jsonData['snmp.User']['allOf'][1]['properties']
 
         snmpUser = False
         while snmpUser == False:
@@ -1160,7 +1185,7 @@ def syslog_servers(jsonData, **polVars):
             else:
                 valid = validating.ip_address('Remote Logging Server', hostname)
 
-        jsonVars = jsonData['components']['schemas']['syslog.RemoteClientBase']['allOf'][1]['properties']
+        jsonVars = jsonData['syslog.RemoteClientBase']['allOf'][1]['properties']
         polVars["var_description"] = jsonVars['MinSeverity']['description']
         polVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
         polVars["defaultVar"] = jsonVars['MinSeverity']['default']
@@ -1287,6 +1312,9 @@ def terraform_fmt(files, folder, path_sep):
         line = line.strip()
         print(f'- {line}')
 
+#======================================================
+# Function to Prompt User for Sensitive Variables
+#======================================================
 def tfc_sensitive_variables(varValue, jsonData, polVars):
     polVars["Variable"] = varValue
     if 'ipmi_key' in varValue:
@@ -1310,10 +1338,18 @@ def tfc_sensitive_variables(varValue, jsonData, polVars):
     print(f'* Adding {polVars["Description"]} to {polVars["workspaceName"]}')
     return polVars
 
-def ucs_domain_serials():
+#======================================================
+# Function to Prompt User for Domain Serial Numbers
+#======================================================
+def ucs_domain_serials(**kwargs):
+    args = kwargs['args']
+    baseRepo = args.dir
+    org = kwargs['org']
+    path_sep = kwargs['path_sep']
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  Note: If you do not have the Serial Number at this time you can manually add it to the:')
-    print(f'        - ucs_domain_profiles/ucs_domain_profiles.auto.tfvars file later.')
+    print(f'  Note: If you do not have the Serial Numbers at this time you can manually add them here:\n')
+    print(f'       * {baseRepo}{path_sep}{org}{path_sep}profiles{path_sep}domain.yaml\n')
+    print(f'        After the Wizard has completed.')
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
@@ -1322,16 +1358,16 @@ def ucs_domain_serials():
         for x in fabrics:
             polVars[f"serial_{x}"] = input(f'What is the Serial Number of Fabric {x}? [press enter to skip]: ')
             if polVars[f"serial_{x}"] == '':
+                polVars[f"serial_{x}"] = 'unknown'
                 valid = True
             elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', polVars[f"serial_{x}"]):
                 valid = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Serial Number.  "polVars["serial_{x}"]" is not a valid serial.')
+                print(f'  Error!! Invalid Serial Number.  "{polVars[f"serial_{x}"]}" is not a valid serial.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-    serial_a = polVars["serial_A"]
-    serial_b = polVars["serial_B"]
-    return serial_a,serial_b
+    serials = [polVars["serial_A"], polVars["serial_B"]]
+    return serials
 
 def validate_vlan_in_policy(vlan_policy_list, vlan_id):
     valid = False

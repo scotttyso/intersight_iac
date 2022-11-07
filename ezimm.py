@@ -11,13 +11,12 @@ It uses argparse to take in the following CLI arguments:
     u or url:                The intersight root URL for the api endpoint. (The default is https://intersight.com)
 """
 
+from copy import deepcopy
 from intersight.api import organization_api
 from intersight.api import resource_api
 from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
 from pathlib import Path
 import argparse
-import classes.ezfunctions
-import classes.validating
 import credentials
 import json
 import os
@@ -29,6 +28,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 sys.path.insert(0, './classes')
+import classes.ezfunctions
 import classes.imm_transition
 import classes.p1
 import classes.p2
@@ -39,6 +39,7 @@ import classes.quick_start
 import classes.tf
 import classes.lan
 import classes.san
+import classes.validating
 import classes.vxan
 
 def create_terraform_workspaces(**kwargs):
@@ -579,18 +580,17 @@ def process_wizard(**kwargs):
         for i in plist:
             if policy == i:
                 kwargs = eval(f"classes.profiles.profiles(name_prefix, org, type).{i}(**kwargs)")
-
         
         #==============================================
         # Quick Start - Pools
         #==============================================
 
-        quick = classes.quick_start.quick_start
+        quick = 'classes.quick_start.quick_start'
+        kwargs['domain_prefix'] = domain_prefix
         type = 'pools'
         if 'quick_start_pools' in policy:
-            kwargs = classes.quick_start.quick_start(domain_prefix, org, type).pools(**kwargs)
-            #primary_dns,secondary_dns = classes.quick_start.quick_start(domain_prefix, org, type).pools(**kwargs)
-            #kwargs.update({'primary_dns':primary_dns,'secondary_dns':secondary_dns})
+            # kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
+            kwargs.update(deepcopy({'primary_dns': '208.67.220.220', 'secondary_dns': ''}))
 
         #==============================================
         # Quick Start - Policies
@@ -598,59 +598,38 @@ def process_wizard(**kwargs):
 
         type = 'policies'
         if 'quick_start_domain_policies' in policy or 'quick_start_rack_policies' in policy:
-            Config = True
+            kwargs['Config'] = True
             if 'domain' in policy:
-                # kwargs = {'primary_dns': '208.67.220.220', 'secondary_dns': ''}
-                # kwargs.update({'server_type':'FIAttached'})
-                kwargs = classes.quick_start.quick_start(name_prefix, org, type).domain_policies(**kwargs)
-                #Config,vlan_policy,vsan_a,vsan_b,fc_ports,mtu = classes.quick_start.quick_start(
-                #    name_prefix, org, type
-                #    ).domain_policies(
-                #    **kwargs
-                #)
-                #if Config == True:
-                #    kwargs.update({
-                #        'vlan_policy':vlan_policy["vlan_policy"],'vlans':vlan_policy["vlans"],
-                #        'native_vlan':vlan_policy["native_vlan"]
-                #    })
-                #    kwargs.update({'vsan_a':vsan_a,'vsan_b':vsan_b,'fc_ports':fc_ports})
-                #    kwargs.update({'mtu':mtu})
+                kwargs.update(deepcopy({'server_type':'FIAttached'}))
+                kwargs = eval(f"{quick}(name_prefix, org, type).domain_policies(**kwargs)")
             else:
-                kwargs['immDict'][org].update({'server_type':'Standalone'})
-                kwargs['immDict'][org].update({'fc_ports':[]})
+                kwargs.update({'server_type':'Standalone'})
+                kwargs.update({'fc_ports':[]})
                 type = 'policies'
-                Config = classes.quick_start.quick_start(name_prefix, org, type).standalone_policies(**kwargs)
-            if not kwargs['immDict'][org]['Config'] == False:
-                # kwargs = {
-                #     'primary_dns': '208.67.220.220', 'secondary_dns': '',
-                #     'server_type': 'FIAttached', 'vlan_policy': 'asgard-ucs',
-                #     'vlans': '1-99', 'native_vlan': '1', 'vsan_a': 100, 'vsan_b': 200,
-                #     'fc_ports': [1, 2, 3, 4], 'mtu': 9216
-                # }
-                classes.quick_start.quick_start(name_prefix, org, type).server_policies(**kwargs)
+                kwargs = eval(f"{quick}(name_prefix, org, type).standalone_policies(**kwargs)")
+            if not kwargs['Config'] == False:
+                kwargs = eval(f"{quick}(name_prefix, org, type).server_policies(**kwargs)")
         elif 'quick_start_lan_san_policies' in policy:
             type = 'policies'
-            if not Config == False:
-                classes.quick_start.quick_start(domain_prefix, org, type).lan_san_policies(**kwargs)
+            if not kwargs['Config'] == False:
+                kwargs = eval(f"{quick}(domain_prefix, org, type).lan_san_policies(**kwargs)")
         elif policy == 'quick_start_vmware_m2':
-            if not Config == False:
-                kwargs = classes.quick_start.quick_start(name_prefix, org, type).vmware_m2(**kwargs)
+            if not kwargs['Config'] == False:
+                kwargs = eval(f"{quick}(name_prefix, org, type).vmware_m2(**kwargs)")
                 # kwargs.update({'boot_order_policy':'VMware_M2_pxe'})
         elif policy == 'quick_start_vmware_raid1':
-            if not Config == False:
-                kwargs = classes.quick_start.quick_start(name_prefix, org, type).vmware_raid1(**kwargs)
+            if not kwargs['Config'] == False:
+                kwargs = eval(f"{quick}(name_prefix, org, type).vmware_raid1(**kwargs)")
                 # kwargs.update({'boot_order_policy':'VMware_Raid1_pxe'})
         elif policy == 'quick_start_vmware_stateless':
-            if not Config == False:
-                kwargs = classes.quick_start.quick_start(name_prefix, org, type).vmware_pxe(**kwargs)
+            if not kwargs['Config'] == False:
+                kwargs = eval(f"{quick}(name_prefix, org, type).vmware_pxe(**kwargs)")
                 # kwargs.update({'boot_order_policy':'VMware_pxe'})
         elif 'quick_start_server_profile' in policy:
-            if not Config == False:
+            if not kwargs['Config'] == False:
                 type = 'profiles'
-                kwargs = classes.quick_start.quick_start(domain_prefix, org, type).server_profiles(**kwargs)
-
-    return org
-
+                kwargs = eval(f"{quick}(domain_prefix, org, type).server_profiles(**kwargs)")
+    return kwargs
 
 def main():
     Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
@@ -712,16 +691,18 @@ def main():
 
     script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 
-    jsonFile = f'{script_path}{path_sep}templates{path_sep}variables{path_sep}intersight-openapi.json'
+    jsonFile = f'{script_path}{path_sep}templates{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
     jsonOpen = open(jsonFile, 'r')
-    kwargs['jsonData'] = json.load(jsonOpen)
+    jsonData = json.load(jsonOpen)
     jsonOpen.close()
+    kwargs['jsonData'] = jsonData['components']['schemas']
 
     jsonFile = f'{script_path}{path_sep}templates{path_sep}variables{path_sep}easy_variables.json'
     jsonOpen = open(jsonFile, 'r')
     ezData = json.load(jsonOpen)
     jsonOpen.close()
     kwargs['ezData'] = ezData['components']['schemas']
+    kwargs['immDict'] = {'orgs':{}}
     kwargs['ez_settings'] = {}
 
     destdirCheck = False
@@ -740,8 +721,6 @@ def main():
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 exit()
         destdirCheck = True
-
-
 
     if not args.json_file == None:
         if not os.path.isfile(args.json_file):
@@ -775,10 +754,12 @@ def main():
     else:
         kwargs = prompt_main_menu(**kwargs)
         kwargs = prompt_org(**kwargs)
+        kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{}}))
         kwargs = process_wizard(**kwargs)
-        orgs = list(kwargs['immDict']['org'].keys())
+        orgs = list(kwargs['immDict']['orgs'].keys())
     for org in orgs:
-        kwargs['immDict']['org'] = org
+        kwargs['org'] = org
+        kwargs['immDict']['orgs'].update(deepcopy({org:{}}))
         kwargs = classes.ezfunctions.merge_easy_imm_repository(**kwargs)
         kwargs = create_terraform_workspaces(**kwargs)
         kwargs = intersight_org_check(**kwargs)
@@ -786,7 +767,6 @@ def main():
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
     print(f'\n-------------------------------------------------------------------------------------------\n')
-
 
 if __name__ == '__main__':
     main()

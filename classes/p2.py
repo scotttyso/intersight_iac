@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
+from copy import deepcopy
 import p1
 import lan
 import vxan
 import ezfunctions
 import jinja2
+import json
 import os
 import pkg_resources
 import platform
 import re
 import stdiomask
 import validating
+import yaml
 
 ucs_template_path = pkg_resources.resource_filename('p2', '../templates/')
 
@@ -25,7 +28,7 @@ class policies(object):
     #==============================================
     # Local User Policy Module
     #==============================================
-    def local_user_policies(self, jsonData, easy_jsonData, **kwargs):
+    def local_user_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'local_users'
         opSystem = kwargs['opSystem']
@@ -71,7 +74,7 @@ class policies(object):
 
                     # Obtain Information for iam.EndpointPasswordProperties
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['iam.EndPointPasswordProperties']['allOf'][1]['properties']
+                    jsonVars = jsonData['iam.EndPointPasswordProperties']['allOf'][1]['properties']
 
                     # Local User Always Send Password
                     polVars["Description"] = jsonVars['ForceSendPassword']['description']
@@ -168,7 +171,7 @@ class policies(object):
                         question = input(f'Would you like to configure a Local user?  Enter "Y" or "N" [Y]: ')
                         if question == '' or question == 'Y':
                             local_users,user_loop = ezfunctions.local_users_function(
-                                jsonData, easy_jsonData, ilCount, **polVars
+                                jsonData, ezData, ilCount, **polVars
                             )
                         elif question == 'N':
                             user_loop = True
@@ -242,7 +245,7 @@ class policies(object):
     #==============================================
     # Network Connectivity Policy Module
     #==============================================
-    def network_connectivity_policies(self, jsonData, easy_jsonData, **kwargs):
+    def network_connectivity_policies(self, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'dns'
         opSystem = kwargs['opSystem']
@@ -387,7 +390,7 @@ class policies(object):
     #==============================================
     # NTP Policy Module
     #==============================================
-    def ntp_policies(self, jsonData, easy_jsonData, **kwargs):
+    def ntp_policies(self, jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'ntp'
         opSystem = kwargs['opSystem']
@@ -440,7 +443,7 @@ class policies(object):
                     polVars["ntp_servers"].append(alternate_ntp)
 
                 polVars["multi_select"] = False
-                jsonVars = jsonData['components']['schemas']['appliance.SystemInfo']['allOf'][1]['properties']['TimeZone']['enum']
+                jsonVars = jsonData['appliance.SystemInfo']['allOf'][1]['properties']['TimeZone']['enum']
                 tz_regions = []
                 for i in jsonVars:
                     tz_region = i.split('/')[0]
@@ -505,7 +508,7 @@ class policies(object):
     #==============================================
     # Persistent Memory Policy Module
     #==============================================
-    def persistent_memory_policies(self, jsonData, easy_jsonData, **kwargs):
+    def persistent_memory_policies(self, jsonData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'persistent_memory'
         opSystem = kwargs['opSystem']
@@ -566,7 +569,7 @@ class policies(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['memory.PersistentMemoryPolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['memory.PersistentMemoryPolicy']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['ManagementMode']['description']
                     polVars["jsonVars"] = sorted(jsonVars['ManagementMode']['enum'])
                     polVars["defaultVar"] = jsonVars['ManagementMode']['default']
@@ -622,7 +625,7 @@ class policies(object):
                                 print(f'  "{polVars["memory_mode_percentage"]}" is not a valid number.')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                        jsonVars = jsonData['components']['schemas']['memory.PersistentMemoryGoal']['allOf'][1]['properties']
+                        jsonVars = jsonData['memory.PersistentMemoryGoal']['allOf'][1]['properties']
                         polVars["var_description"] = jsonVars['PersistentMemoryType']['description']
                         polVars["jsonVars"] = sorted(jsonVars['PersistentMemoryType']['enum'])
                         polVars["defaultVar"] = jsonVars['PersistentMemoryType']['default']
@@ -686,7 +689,7 @@ class policies(object):
                                         print(f'  "{varValue}" is not a valid number.')
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                                jsonVars = jsonData['components']['schemas']['memory.PersistentMemoryLogicalNamespace']['allOf'][1]['properties']
+                                jsonVars = jsonData['memory.PersistentMemoryLogicalNamespace']['allOf'][1]['properties']
                                 polVars["var_description"] = jsonVars['Mode']['description']
                                 polVars["jsonVars"] = sorted(jsonVars['Mode']['enum'])
                                 polVars["defaultVar"] = jsonVars['Mode']['default']
@@ -813,7 +816,7 @@ class policies(object):
     #==============================================
     # Port Policy Module
     #==============================================
-    def port_policies(self, jsonData, easy_jsonData, **kwargs):
+    def port_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         opSystem = kwargs['opSystem']
         org = self.org
@@ -871,14 +874,14 @@ class policies(object):
                 polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                 polVars["multi_select"] = False
-                jsonVars = jsonData['components']['schemas']['fabric.PortPolicy']['allOf'][1]['properties']
+                jsonVars = jsonData['fabric.PortPolicy']['allOf'][1]['properties']
                 polVars["var_description"] = jsonVars['DeviceModel']['description']
                 polVars["jsonVars"] = sorted(jsonVars['DeviceModel']['enum'])
                 polVars["defaultVar"] = jsonVars['DeviceModel']['default']
                 polVars["varType"] = 'Device Model'
                 polVars["device_model"] = ezfunctions.variablesFromAPI(**polVars)
                 
-                fc_mode,ports_in_use,fc_converted_ports,port_modes = port_modes_fc(jsonData, easy_jsonData, name_prefix, **polVars)
+                fc_mode,ports_in_use,fc_converted_ports,port_modes = port_modes_fc(jsonData, ezData, name_prefix, **polVars)
                 polVars["fc_mode"] = fc_mode
                 polVars["ports_in_use"] = ports_in_use
                 polVars["fc_converted_ports"] = fc_converted_ports
@@ -887,53 +890,53 @@ class policies(object):
 
                 # Appliance Port-Channel
                 polVars['port_type'] = 'Appliance Port-Channel'
-                port_channel_appliances,polVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars)
+                port_channel_appliances,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **polVars)
 
                 # Ethernet Uplink Port-Channel
                 polVars['port_type'] = 'Ethernet Uplink Port-Channel'
-                port_channel_ethernet_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars)
+                port_channel_ethernet_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **polVars)
 
                 # Fibre-Channel Port-Channel
                 polVars["fc_ports_in_use"] = []
                 polVars["port_type"] = 'Fibre-Channel Port-Channel'
-                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, easy_jsonData, name_prefix, **polVars)
+                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, ezData, name_prefix, **polVars)
                 Fabric_A_fc_port_channels = Fab_A
                 Fabric_B_fc_port_channels = Fab_B
                 polVars["fc_ports_in_use"] = fc_ports_in_use
 
                 # FCoE Uplink Port-Channel
                 polVars['port_type'] = 'FCoE Uplink Port-Channel'
-                port_channel_fcoe_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars)
+                port_channel_fcoe_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **polVars)
 
                 # Appliance Ports
                 polVars['port_type'] = 'Appliance Ports'
-                port_role_appliances,polVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars)
+                port_role_appliances,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **polVars)
 
                 # Ethernet Uplink
                 polVars['port_type'] = 'Ethernet Uplink'
-                port_role_ethernet_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars)
+                port_role_ethernet_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **polVars)
 
                 # Fibre-Channel Storage
                 polVars["port_type"] = 'Fibre-Channel Storage'
-                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, easy_jsonData, name_prefix, **polVars)
+                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, ezData, name_prefix, **polVars)
                 Fabric_A_port_role_fc_storage = Fab_A
                 Fabric_B_port_role_fc_storage = Fab_B
                 polVars["fc_ports_in_use"] = fc_ports_in_use
 
                 # Fibre-Channel Uplink
                 polVars["port_type"] = 'Fibre-Channel Uplink'
-                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, easy_jsonData, name_prefix, **polVars)
+                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, ezData, name_prefix, **polVars)
                 Fabric_A_port_role_fc_uplink = Fab_A
                 Fabric_B_port_role_fc_uplink = Fab_B
                 polVars["fc_ports_in_use"] = fc_ports_in_use
 
                 # FCoE Uplink
                 polVars['port_type'] = 'FCoE Uplink'
-                port_role_fcoe_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars)
+                port_role_fcoe_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **polVars)
 
                 # Server Ports
                 polVars['port_type'] = 'Server Ports'
-                port_role_servers,polVars['ports_in_use'] = port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars)
+                port_role_servers,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **polVars)
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'    description  = "{polVars["descr"]}"')
@@ -1219,141 +1222,115 @@ class policies(object):
         polVars["template_file"] = 'template_close.jinja2'
         ezfunctions.write_to_template(self, **polVars)
 
-def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars):
+def policy_select_loop(**kwargs):
+    policy = kwargs['policy']
+    name_prefix = kwargs['name_prefix']
+    org = kwargs['org']
     loop_valid = False
     while loop_valid == False:
         create_policy = True
-        inner_policy = policy.split('.')[1]
-        inner_type = policy.split('.')[0]
-        inner_var = policy.split('.')[2]
-        polVars[inner_var] = ''
-        polVars["policies"],policyData = ezfunctions.policies_parse(polVars["org"], inner_type, inner_policy)
-        if not len(polVars["policies"]) > 0:
+        kwargs['inner_policy'] = policy.split('.')[1]
+        kwargs['inner_type']   = policy.split('.')[0]
+        kwargs['inner_var']    = policy.split('.')[2]
+        kwargs = ezfunctions.policies_parse(kwargs['inner_type'], kwargs['inner_policy'], **kwargs)
+        if not len(kwargs["policies"]) > 0:
             valid = False
             while valid == False:
 
-                x = inner_policy.split('_')
-                ezfunctions.policy_description = []
-                for y in x:
-                    y = y.capitalize()
-                    ezfunctions.policy_description.append(y)
-                ezfunctions.policy_description = " ".join(ezfunctions.policy_description)
-                ezfunctions.policy_description = ezfunctions.policy_description.replace('Wwnn', 'WWNN')
-                ezfunctions.policy_description = ezfunctions.policy_description.replace('Wwpn', 'WWPN')
-                ezfunctions.policy_description = ezfunctions.policy_description.replace('Vsan', 'VSAN')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'   There were no {ezfunctions.policy_description} found.')
+                print(f'   There was no {kwargs["inner_policy"]} found.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                if 'Policies' in ezfunctions.policy_description:
-                    ezfunctions.policy_description = ezfunctions.policy_description.replace('Policies', 'Policy')
-                elif 'Pools' in ezfunctions.policy_description:
-                    ezfunctions.policy_description = ezfunctions.policy_description.replace('Pools', 'Pool')
-                elif 'Profiles' in ezfunctions.policy_description:
-                    ezfunctions.policy_description = ezfunctions.policy_description.replace('Profiles', 'Profile')
-                elif 'Templates' in ezfunctions.policy_description:
-                    ezfunctions.policy_description = ezfunctions.policy_description.replace('Templates', 'Template')
+                policy_description = ezfunctions.mod_pol_description(kwargs['inner_policy'])
 
-                if polVars["allow_opt_out"] == True:
-                    Question = input(f'Do you want to create a(n) {ezfunctions.policy_description}?  Enter "Y" or "N" [Y]: ')
+                if kwargs["allow_opt_out"] == True:
+                    Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
                     if Question == '' or Question == 'Y':
                         create_policy = True
                         valid = True
                     elif Question == 'N':
                         create_policy = False
                         valid = True
-                        return polVars[inner_var],policyData
+                        return kwargs
                 else:
                     create_policy = True
                     valid = True
 
         else:
-            polVars[inner_var] = ezfunctions.choose_policy(inner_policy, **polVars)
-            if polVars[inner_var] == 'create_policy':
+            kwargs = ezfunctions.choose_policy(kwargs['inner_policy'], **kwargs)
+            if kwargs['policy'] == 'create_policy':
                 create_policy = True
-            elif polVars[inner_var] == '' and polVars["allow_opt_out"] == True:
+            elif kwargs['policy'] == '' and kwargs["allow_opt_out"] == True:
                 loop_valid = True
                 create_policy = False
-                return polVars[inner_var],policyData
-            elif not polVars[inner_var] == '':
+                kwargs[kwargs['inner_var']] = ''
+                return kwargs
+            elif not kwargs['policy'] == '':
                 loop_valid = True
                 create_policy = False
-                return polVars[inner_var],policyData
+                kwargs[kwargs['inner_var']] = kwargs['policy']
+                return kwargs
+
+        # Create Policy if Option was Selected
         if create_policy == True:
-            kwargs = {}
-            opSystem = platform.system()
-            if os.environ.get('TF_DEST_DIR') is None:
-                tfDir = 'Intersight'
-            else:
-                tfDir = os.environ.get('TF_DEST_DIR')
-            if tfDir[-1] == '\\' or tfDir[-1] == '/':
-                    tfDir = tfDir[:-1]
-
-            kwargs.update({'opSystem':opSystem,'tfDir':tfDir})
-
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Starting module to create {inner_policy}')
+            print(f'  Starting module to create {kwargs["inner_policy"]}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            if inner_policy == 'ethernet_network_control_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData, **kwargs)
-            elif inner_policy == 'ethernet_network_group_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_network_group_policies(jsonData, easy_jsonData, **kwargs)
-            elif inner_policy == 'flow_control_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).flow_control_policies(jsonData, easy_jsonData, **kwargs)
-            elif inner_policy == 'link_aggregation_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).link_aggregation_policies(jsonData, easy_jsonData, **kwargs)
-            elif inner_policy == 'link_control_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).link_control_policies(jsonData, easy_jsonData, **kwargs)
-            elif inner_policy == 'vsan_policies':
-                vxan.policies(name_prefix, polVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData, **kwargs)
+            if re.search('ethernet_network_(control|group)', kwargs['inner_policy']):
+                kwargs = eval(f"lan.policies(name_prefix, org, inner_type).{kwargs['inner_policy']}(**kwargs)")
+            elif re.search('^(flow_|link_)', kwargs['inner_policy']):
+                kwargs = eval(f"p1.policies(name_prefix, org, inner_type).{kwargs['inner_policy']}(**kwargs)")
+            elif kwargs['inner_policy'] == 'vsan':
+                kwargs = vxan.policies(name_prefix, org, kwargs['inner_type']).vsan_policies(**kwargs)
 
-def port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars):
-    port_channels = []
-    port_roles = []
-    port_count = 1
-    ports_in_use = polVars["ports_in_use"]
-    if  len(polVars["fc_converted_ports"]) > 0:
-        fc_count = len(polVars["fc_converted_ports"])
+def port_list_eth(**kwargs):
+    device_model       = kwargs["device_model"]
+    jsonData           = kwargs["jsonData"]
+    kwargs['portDict'] = []
+    port_count         = 1
+    port_type          = kwargs["port_type"]
+    ports_in_use       = kwargs["ports_in_use"]
+    if  len(kwargs["fc_converted_ports"]) > 0:
+        fc_count = len(kwargs["fc_converted_ports"])
     else:
         fc_count = 0
-    if polVars["port_type"] == 'Appliance Port-Channel' and polVars["device_model"] == 'UCS-FI-64108':
-        portx = '99,100'
-    elif polVars["port_type"] == 'Appliance Port-Channel':
-        portx = '51,52'
-    elif polVars["port_type"] == 'Ethernet Uplink Port-Channel' and polVars["device_model"] == 'UCS-FI-64108':
-        portx = '97,98'
-    elif polVars["port_type"] == 'Ethernet Uplink Port-Channel':
-        portx = '49,50'
-    elif polVars["port_type"] == 'FCoE Uplink Port-Channel' and polVars["device_model"] == 'UCS-FI-64108':
-        portx = '101,102'
-    elif polVars["port_type"] == 'FCoE Uplink Port-Channel':
-        portx = '53,54'
-    elif polVars["port_type"] == 'Appliance Ports' and polVars["device_model"] == 'UCS-FI-64108':
-        portx = '99'
-    elif polVars["port_type"] == 'Appliance Ports':
-        portx = '51'
-    elif polVars["port_type"] == 'Ethernet Uplink' and polVars["device_model"] == 'UCS-FI-64108':
-        portx = '97'
-    elif polVars["port_type"] == 'Ethernet Uplink':
-        portx = '49'
-    elif polVars["port_type"] == 'FCoE Uplink' and polVars["device_model"] == 'UCS-FI-64108':
-        portx = '101'
-    elif polVars["port_type"] == 'FCoE Uplink':
-        portx = '53'
-    elif polVars["port_type"] == 'Server Ports' and polVars["device_model"] == 'UCS-FI-64108':
-        portx = f'{fc_count + 1}-36'
-    elif polVars["port_type"] == 'Server Ports':
-        portx = f'{fc_count + 1}-18'
-    if re.search('(Ethernet Uplink Port-Channel|Server Ports)', polVars["port_type"]):
-        default_answer = 'Y'
-    else:
-        default_answer = 'N'
+    if   kwargs["device_model"] == 'UCS-FI-64108': uplinks = ezfunctions.vlan_list_full('99-108')
+    elif kwargs["device_model"] == 'UCS-FI-6536': uplinks = ezfunctions.vlan_list_full('1-36')
+    else: uplinks = ezfunctions.vlan_list_full('49-54')
+    uplink_list = uplinks
+    for item in ports_in_use:
+        for i in uplink_list:
+            if int(item) == int(i): uplinks.remove(i)
+    if   port_type == 'Appliance Port-Channel' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-4]},{uplinks[-1]}'
+    elif port_type == 'Appliance Port-Channel' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[1]},{uplinks[0]}'
+    elif port_type == 'Appliance Port-Channel': portx = f'{uplinks[-2]},{uplinks[-1]}'
+    elif port_type == 'Ethernet Uplink Port-Channel' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-4]},{uplinks[-1]}'
+    elif port_type == 'Ethernet Uplink Port-Channel' and device_model == 'UCS-FI-6536' : portx =f'{uplinks[1]},{uplinks[0]}'
+    elif port_type == 'Ethernet Uplink Port-Channel': portx = f'{uplinks[-2]},{uplinks[-1]}'
+    elif port_type == 'FCoE Uplink Port-Channel' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-4]},{uplinks[-1]}'
+    elif port_type == 'FCoE Uplink Port-Channel' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[1]},{uplinks[0]}'
+    elif port_type == 'FCoE Uplink Port-Channel': portx = f'{uplinks[-2]},{uplinks[-1]}'
+    elif port_type == 'Appliance Ports' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-1]}'
+    elif port_type == 'Appliance Ports' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}'
+    elif port_type == 'Appliance Ports': portx = f'{uplinks[-1]}'
+    elif port_type == 'Ethernet Uplink' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-1]}'
+    elif port_type == 'Ethernet Uplink' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}'
+    elif port_type == 'Ethernet Uplink': portx = f'{uplinks[-1]}'
+    elif port_type == 'FCoE Uplink' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-1]}'
+    elif port_type == 'FCoE Uplink' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}'
+    elif port_type == 'FCoE Uplink': portx = f'{uplinks[-1]}'
+    elif port_type == 'Server Ports' and device_model == 'UCS-FI-64108': portx = f'{fc_count + 1}-36'
+    elif port_type == 'Server Ports' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}-32'
+    elif port_type == 'Server Ports': portx = f'{fc_count + 1}-18'
+    
+    if re.search('(Ethernet Uplink Port-Channel|Server Ports)', kwargs["port_type"]): default_answer = 'Y'
+    else: default_answer = 'N'
     valid = False
     while valid == False:
-        if polVars["port_type"] == 'Server Ports':
-            question = input(f'Do you want to configure {polVars["port_type"]}?  Enter "Y" or "N" [{default_answer}]: ')
+        if kwargs["port_type"] == 'Server Ports':
+            question = input(f'Do you want to configure {port_type}?  Enter "Y" or "N" [{default_answer}]: ')
         else:
-            question = input(f'Do you want to configure an {polVars["port_type"]}?  Enter "Y" or "N" [{default_answer}]: ')
+            question = input(f'Do you want to configure an {port_type}?  Enter "Y" or "N" [{default_answer}]: ')
         if question == 'Y' or (default_answer == 'Y' and question == ''):
             configure_valid = False
             while configure_valid == False:
@@ -1364,10 +1341,9 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars):
                 print(f'     5,11,12,13,14,15 - List of Ports')
                 print(f'     5-10,20-30 - Ranges and Lists of Ports')
                 print(f'\n------------------------------------------------------\n')
-                port_list = input(f'Please enter the list of ports you want to add to the {polVars["port_type"]}?  [{portx}]: ')
+                port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [{portx}]: ')
                 if port_list == '': port_list = portx
 
-                print('matching port list')
                 if re.search(r'(^\d+$|^\d+,{1,48}\d+$|^(\d+[\-,\d+]+){1,48}\d+$)', port_list):
                     original_port_list = port_list
                     ports_expanded = ezfunctions.vlan_list_full(port_list)
@@ -1382,9 +1358,10 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars):
                                 port_overlap_count += 1
                                 port_overlap.append(x)
                     if port_overlap_count == 0:
-                        if polVars["device_model"] == 'UCS-FI-64108': max_port = 108
+                        if   kwargs["device_model"] == 'UCS-FI-64108': max_port = 108
+                        elif kwargs["device_model"] == 'UCS-FI-6536': max_port = 36
                         else: max_port = 54
-                        if polVars["fc_mode"] == 'Y': min_port = int(polVars["fc_ports"][1]) + 1
+                        if kwargs["fc_mode"] == 'Y': min_port = int(kwargs["fc_ports"][1]) + 1
                         else: min_port = 1
                         for port in port_list:
                             valid_ports = validating.number_in_range('Port Range', port, min_port, max_port)
@@ -1392,176 +1369,141 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars):
                                 break
                         if valid_ports == True:
                             # Prompt User for the Admin Speed of the Port
-                            if not polVars["port_type"] == 'Server Ports':
-                                polVars["multi_select"] = False
-                                jsonVars = jsonData['components']['schemas']['fabric.TransceiverRole']['allOf'][1]['properties']
-                                polVars["var_description"] = jsonVars['AdminSpeed']['description']
-                                polVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
-                                polVars["defaultVar"] = jsonVars['AdminSpeed']['default']
-                                polVars["varType"] = 'Admin Speed'
-                                polVars["admin_speed"] = ezfunctions.variablesFromAPI(**polVars)
+                            if not kwargs["port_type"] == 'Server Ports':
+                                kwargs["multi_select"] = False
+                                jsonVars = jsonData['fabric.TransceiverRole']['allOf'][1]['properties']
+                                kwargs["var_description"] = jsonVars['AdminSpeed']['description']
+                                kwargs["jsonVars"] = jsonVars['AdminSpeed']['enum']
+                                kwargs["defaultVar"] = jsonVars['AdminSpeed']['default']
+                                kwargs["varType"] = 'Admin Speed'
+                                admin_speed = ezfunctions.variablesFromAPI(**kwargs)
 
-                            if re.search('^(Appliance Appliance Ports|(Ethernet|FCoE) Uplink)$', polVars["port_type"]):
+                            if re.search('^(Appliance|(Ethernet|FCoE) Uplink)$', port_type):
                                 # Prompt User for the FEC Mode of the Port
-                                polVars["var_description"] = jsonVars['Fec']['description']
-                                polVars["jsonVars"] = sorted(jsonVars['Fec']['enum'])
-                                polVars["defaultVar"] = jsonVars['Fec']['default']
-                                polVars["varType"] = 'Fec Mode'
-                                polVars["fec"] = ezfunctions.variablesFromAPI(**polVars)
+                                kwargs["var_description"] = jsonVars['Fec']['description']
+                                kwargs["jsonVars"] = sorted(jsonVars['Fec']['enum'])
+                                kwargs["defaultVar"] = jsonVars['Fec']['default']
+                                kwargs["varType"] = 'Fec Mode'
+                                fec = ezfunctions.variablesFromAPI(**kwargs)
 
-                            if re.search('(Appliance Port-Channel|Appliance Ports)', polVars["port_type"]):
+                            if re.search('(Appliance)', port_type):
                                 # Prompt User for the Mode of the Port
-                                jsonVars = jsonData['components']['schemas']['fabric.AppliancePcRole']['allOf'][1]['properties']
-                                polVars["var_description"] = jsonVars['Mode']['description']
-                                polVars["jsonVars"] = sorted(jsonVars['Mode']['enum'])
-                                polVars["defaultVar"] = jsonVars['Mode']['default']
-                                polVars["varType"] = 'Mode'
-                                polVars["mode"] = ezfunctions.variablesFromAPI(**polVars)
+                                jsonVars = jsonData['fabric.AppliancePcRole']['allOf'][1]['properties']
+                                kwargs["var_description"] = jsonVars['Mode']['description']
+                                kwargs["jsonVars"] = sorted(jsonVars['Mode']['enum'])
+                                kwargs["defaultVar"] = jsonVars['Mode']['default']
+                                kwargs["varType"] = 'Mode'
+                                mode = ezfunctions.variablesFromAPI(**kwargs)
 
-                                polVars["var_description"] = jsonVars['Priority']['description']
-                                polVars["jsonVars"] = sorted(jsonVars['Priority']['enum'])
-                                polVars["defaultVar"] = jsonVars['Priority']['default']
-                                polVars["varType"] = 'Priority'
-                                polVars["priority"] = ezfunctions.variablesFromAPI(**polVars)
+                                kwargs["var_description"] = jsonVars['Priority']['description']
+                                kwargs["jsonVars"] = sorted(jsonVars['Priority']['enum'])
+                                kwargs["defaultVar"] = jsonVars['Priority']['default']
+                                kwargs["varType"] = 'Priority'
+                                priority = ezfunctions.variablesFromAPI(**kwargs)
 
                             # Prompt User for the
-                            if re.search('(Appliance Port-Channel|Appliance Ports)', polVars["port_type"]):
-                                policy_list = [
-                                    'policies.ethernet_network_control_policies.ethernet_network_control_policy',
-                                    'policies.ethernet_network_group_policies.ethernet_network_group_policy',
-                                ]
-                            elif re.search('Ethernet Uplink', polVars["port_type"]):
-                                policy_list = [
-                                    'policies.ethernet_network_group_policies.ethernet_network_group_policy',
-                                    'policies.flow_control_policies.flow_control_policy',
-                                    'policies.link_aggregation_policies.link_aggregation_policy',
-                                    'policies.link_control_policies.link_control_policy',
-                                ]
-                            elif re.search('(FCoE Uplink Port-Channel|FCoE Uplink)', polVars["port_type"]):
-                                policy_list = [
-                                    'policies.link_aggregation_policies.link_aggregation_policy',
-                                    'policies.link_control_policies.link_control_policy',
-                                ]
-                            polVars["allow_opt_out"] = False
-                            if not polVars["port_type"] == 'Server Ports':
-                                for policy in policy_list:
-                                    policy_short = policy.split('.')[2]
-                                    polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
-                                    polVars.update(policyData)
+                            policy_list = []
+                            if re.search('(Appliance|FCoE)', port_type):
+                                policy_list.extend([
+                                    'policies.ethernet_network_control.ethernet_network_control_policy'
+                                ])
+                            if re.search('(Appliance|Ethernet)', port_type):
+                                policy_list.extend([
+                                    'policies.ethernet_network_group.ethernet_network_group_policy'
+                                ])
+                            if re.search('(Ethernet|FCoE)', port_type):
+                                policy_list.extend(['policies.link_aggregation.link_aggregation_policy'])
+                            if re.search('Ethernet Uplink', port_type):
+                                policy_list.extend([
+                                    'policies.flow_control.flow_control_policy',
+                                    'policies.link_control.link_control_policy',
+                                ])
+                            kwargs["allow_opt_out"] = False
+                            if not kwargs["port_type"] == 'Server Ports':
+                                for i in policy_list:
+                                    kwargs['policy'] = i
+                                    kwargs = policy_select_loop(**kwargs)
 
                             interfaces = []
                             pc_id = port_list[0]
                             for i in port_list:
-                                interfaces.append({'port_id':i,'slot_id':1})
+                                interfaces.append({'port_id':i})
 
-                            if polVars["port_type"] == 'Appliance Port-Channel':
-                                port_channel = {
-                                    'admin_speed':polVars["admin_speed"],
-                                    'ethernet_network_control_policy':polVars["ethernet_network_control_policy"],
-                                    'ethernet_network_group_policy':polVars["ethernet_network_group_policy"],
+                            if port_type == 'Appliance Port-Channel':
+                                port_config = {
+                                    'admin_speed':admin_speed,
+                                    'ethernet_network_control_policy':kwargs["ethernet_network_control_policy"],
+                                    'ethernet_network_group_policy':kwargs["ethernet_network_group_policy"],
                                     'interfaces':interfaces,
-                                    'mode':polVars["mode"],
-                                    'pc_id':pc_id,
-                                    'priority':polVars["priority"]
+                                    'mode':kwargs["mode"],
+                                    'pc_ids':[pc_id, pc_id],
+                                    'priority':priority
                                 }
-                            elif polVars["port_type"] == 'Ethernet Uplink Port-Channel':
-                                port_channel = {
-                                    'admin_speed':polVars["admin_speed"],
-                                    'ethernet_network_group_policy':polVars["ethernet_network_group_policy"],
-                                    'flow_control_policy':polVars["flow_control_policy"],
+                            elif port_type == 'Ethernet Uplink Port-Channel':
+                                port_config = {
+                                    'admin_speed':admin_speed,
+                                    'ethernet_network_group_policy':kwargs["ethernet_network_group_policy"],
+                                    'flow_control_policy':kwargs["flow_control_policy"],
                                     'interfaces':interfaces,
-                                    'link_aggregation_policy':polVars["link_aggregation_policy"],
-                                    'link_control_policy':polVars["link_control_policy"],
-                                    'pc_id':pc_id,
+                                    'link_aggregation_policy':kwargs["link_aggregation_policy"],
+                                    'link_control_policy':kwargs["link_control_policy"],
+                                    'pc_ids':[pc_id, pc_id]
                                 }
-                            elif polVars["port_type"] == 'FCoE Uplink Port-Channel':
-                                port_channel = {
-                                    'admin_speed':polVars["admin_speed"],
+                            elif port_type == 'FCoE Uplink Port-Channel':
+                                port_config = {
+                                    'admin_speed':admin_speed,
                                     'interfaces':interfaces,
-                                    'link_aggregation_policy':polVars["link_aggregation_policy"],
-                                    'link_control_policy':polVars["link_control_policy"],
-                                    'pc_id':pc_id,
+                                    'link_aggregation_policy':kwargs["link_aggregation_policy"],
+                                    'link_control_policy':kwargs["link_control_policy"],
+                                    'pc_ids':[pc_id, pc_id]
                                 }
-                            elif polVars["port_type"] == 'Appliance Ports':
-                                port_role = {
-                                    'admin_speed':polVars["admin_speed"],
-                                    'ethernet_network_control_policy':polVars["ethernet_network_control_policy"],
-                                    'ethernet_network_group_policy':polVars["ethernet_network_group_policy"],
-                                    'fec':polVars["fec"],
-                                    'mode':polVars["mode"],
-                                    'port_id':original_port_list,
-                                    'priority':polVars["priority"],
-                                    'slot_id':1
-                                }
-                            elif polVars["port_type"] == 'Ethernet Uplink':
-                                port_role = {
-                                    'admin_speed':polVars["admin_speed"],
-                                    'ethernet_network_group_policy':polVars["ethernet_network_group_policy"],
-                                    'fec':polVars["fec"],
-                                    'flow_control_policy':polVars["flow_control_policy"],
-                                    'link_control_policy':polVars["link_control_policy"],
-                                    'port_id':original_port_list,
-                                    'slot_id':1
-                                }
-                            elif polVars["port_type"] == 'FCoE Uplink':
-                                port_role = {
-                                    'admin_speed':polVars["admin_speed"],
-                                    'fec':polVars["fec"],
-                                    'link_control_policy':polVars["link_control_policy"],
-                                    'port_id':original_port_list,
-                                    'slot_id':1
-                                }
-                            elif polVars["port_type"] == 'Server Ports':
-                                server_ports = {
+                            elif port_type == 'Appliance Ports':
+                                port_config = {
+                                    'admin_speed':admin_speed,
+                                    'ethernet_network_control_policy':kwargs["ethernet_network_control_policy"],
+                                    'ethernet_network_group_policy':kwargs["ethernet_network_group_policy"],
+                                    'fec':fec,
+                                    'mode':kwargs["mode"],
                                     'port_list':original_port_list,
-                                    'slot_id':1
+                                    'priority':priority
                                 }
+                            elif port_type == 'Ethernet Uplink':
+                                port_config = {
+                                    'admin_speed':admin_speed,
+                                    'ethernet_network_group_policy':kwargs["ethernet_network_group_policy"],
+                                    'fec':fec,
+                                    'flow_control_policy':kwargs["flow_control_policy"],
+                                    'link_control_policy':kwargs["link_control_policy"],
+                                    'port_list':original_port_list
+                                }
+                            elif port_type == 'FCoE Uplink':
+                                port_config = {
+                                    'admin_speed':admin_speed,
+                                    'fec':fec,
+                                    'link_control_policy':kwargs["link_control_policy"],
+                                    'port_list':original_port_list
+                                }
+                            elif port_type == 'Server Ports':
+                                port_config = {'port_list':original_port_list}
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            if not polVars["port_type"] == 'Server Ports':
-                                print(f'    admin_speed                     = "{polVars["admin_speed"]}"')
-                            if re.search('Appliance', polVars["port_type"]):
-                                print(f'    ethernet_network_control_policy = "{polVars["ethernet_network_control_policy"]}"')
-                            if re.search('(Appliance|Ethernet)', polVars["port_type"]):
-                                print(f'    ethernet_network_group_policy   = "{polVars["ethernet_network_group_policy"]}"')
-                            if re.search('Ethernet', polVars["port_type"]):
-                                print(f'    flow_control_policy             = "{polVars["flow_control_policy"]}"')
-                            if re.search('(Ethernet|FCoE) Uplink Port-Channel', polVars["port_type"]):
-                                print(f'    link_aggregation_policy         = "{polVars["link_aggregation_policy"]}"')
-                            if re.search('(Ethernet|FCoE)', polVars["port_type"]):
-                                print(f'    link_control_policy             = "{polVars["link_control_policy"]}"')
-                            if re.search('Port-Channel', polVars["port_type"]):
-                                print(f'    interfaces = [')
-                                for item in interfaces:
-                                    print('      {')
-                                    for k, v in item.items():
-                                        print(f'        {k} = {v}')
-                                    print('      }')
-                                print(f'    ]')
-                            if re.search('Appliance', polVars["port_type"]):
-                                print(f'    mode      = "{polVars["mode"]}"')
-                            if re.search('Port-Channel', polVars["port_type"]):
-                                print(f'    pc_id     = {pc_id}')
-                            if re.search('Appliance', polVars["port_type"]):
-                                print(f'    priority  = "{polVars["priority"]}"')
-                            if re.search('^(Appliance Ports|(Ethernet|FCoE) Uplink|Server Ports)$', polVars["port_type"]):
-                                print(f'    port_list = {original_port_list}')
+                            class MyDumper(yaml.Dumper):
+                                def increase_indent(self, flow=False, indentless=False):
+                                    return super(MyDumper, self).increase_indent(flow, False)
+                            #stream = yaml.dump(port_config, default_flow_style=False)
+                            #print(stream.replace('\n- ', '\n\n- '))
+                            print(yaml.dump({port_type:port_config}, Dumper=MyDumper, default_flow_style=False))
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             valid_confirm = False
                             while valid_confirm == False:
                                 confirm_port = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                                 if confirm_port == 'Y' or confirm_port == '':
-                                    if re.search('Port-Channel', polVars["port_type"]):
-                                        port_channels.append(port_channel)
-                                    elif re.search('^(Appliance Ports|(Ethernet|FCoE) Uplink)$', polVars["port_type"]):
-                                        port_roles.append(port_role)
-                                    elif polVars["port_type"] == 'Server Ports':
-                                        port_roles.append(server_ports)
+                                    kwargs['portDict'].append(port_config)
                                     for i in port_list:
-                                        polVars["ports_in_use"].append(i)
+                                        kwargs["ports_in_use"].append(i)
 
                                     valid_exit = False
                                     while valid_exit == False:
-                                        port_exit = input(f'Would You like to Configure another {polVars["port_type"]}?  Enter "Y" or "N" [N]: ')
+                                        port_exit = input(f'Would You like to Configure another {port_type}?  Enter "Y" or "N" [N]: ')
                                         if port_exit == 'Y':
                                             port_count += 1
                                             valid_confirm = True
@@ -1578,7 +1520,7 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars):
 
                                 elif confirm_port == 'N':
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    print(f'  Starting {polVars["port_type"]} Configuration Over.')
+                                    print(f'  Starting {port_type} Configuration Over.')
                                     print(f'\n-------------------------------------------------------------------------------------------\n')
                                     valid_confirm = True
                                 else:
@@ -1604,12 +1546,12 @@ def port_list_eth(jsonData, easy_jsonData, name_prefix, **polVars):
             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
             print(f'\n------------------------------------------------------\n')
 
-    if re.search('Port-Channel', polVars["port_type"]):
-        return port_channels,ports_in_use
-    elif re.search('^(Appliance Ports|(Ethernet|FCoE) Uplink|Server Ports)$', polVars["port_type"]):
-        return port_roles,ports_in_use
+    return kwargs
     
-def port_list_fc(jsonData, easy_jsonData, name_prefix, **polVars):
+def port_list_fc(**kwargs):
+    jsonData  = kwargs['jsonData']
+    org       = kwargs['org']
+    port_type = kwargs['port_type']
     fill_pattern_descr = 'For Cisco UCS 6400 Series fabric interconnect, if the FC uplink speed is 8 Gbps, set the '\
         'fill pattern as IDLE on the uplink switch. If the fill pattern is not set as IDLE, FC '\
         'uplinks operating at 8 Gbps might go to an errDisabled state, lose SYNC intermittently, or '\
@@ -1623,57 +1565,52 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **polVars):
         '  switchport fill-pattern IDLE speed 8000\n\n'\
         'mds-a(config-if)#\n'
 
-    if polVars["port_type"] == 'Fibre-Channel Port-Channel':
+    if port_type == 'Fibre-Channel Port-Channel':
         default_answer = 'Y'
     else:
         default_answer = 'N'
-    A_port_channels = []
-    B_port_channels = []
-    A_port_role = []
-    B_port_role = []
-    fc_ports_in_use = polVars["fc_ports_in_use"]
     port_count = 1
-    if len(polVars["fc_converted_ports"]) > 0:
+    if len(kwargs["fc_converted_ports"]) > 0:
         configure_fc = True
     else:
         configure_fc = False
     if configure_fc == True:
         valid = False
         while valid == False:
-            question = input(f'Do you want to configure a {polVars["port_type"]}?  Enter "Y" or "N" [{default_answer}]: ')
+            question = input(f'Do you want to configure a {port_type}?  Enter "Y" or "N" [{default_answer}]: ')
             if question == 'Y' or (default_answer == 'Y' and question == ''):
                 configure_valid = False
                 while configure_valid == False:
-                    if polVars["port_type"] == 'Fibre-Channel Port-Channel':
-                        polVars["multi_select"] = True
-                        polVars["var_description"] = '    Please Select a Port for the Port-Channel:\n'
-                    elif polVars["port_type"] == 'Fibre-Channel Storage':
-                        polVars["multi_select"] = False
-                        polVars["var_description"] = '    Please Select a Port for the Storage Port:\n'
+                    if port_type == 'Fibre-Channel Port-Channel':
+                        kwargs["multi_select"] = True
+                        kwargs["var_description"] = '    Please Select a Port for the Port-Channel:\n'
+                    elif port_type == 'Fibre-Channel Storage':
+                        kwargs["multi_select"] = False
+                        kwargs["var_description"] = '    Please Select a Port for the Storage Port:\n'
                     else:
-                        polVars["multi_select"] = False
-                        polVars["var_description"] = '    Please Select a Port for the Uplink Port:\n'
-                    polVars["var_type"] = 'Unified Port'
-                    port_list = ezfunctions.vars_from_list(polVars["fc_converted_ports"], **polVars)
+                        kwargs["multi_select"] = False
+                        kwargs["var_description"] = '    Please Select a Port for the Uplink Port:\n'
+                    kwargs["var_type"] = 'Unified Port'
+                    port_list = ezfunctions.vars_from_list(kwargs["fc_converted_ports"], **kwargs)
 
                     # Prompt User for the Admin Speed of the Port
-                    polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['fabric.FcUplinkPcRole']['allOf'][1]['properties']
-                    polVars["var_description"] = jsonVars['AdminSpeed']['description']
+                    kwargs["multi_select"] = False
+                    jsonVars = jsonData['fabric.FcUplinkPcRole']['allOf'][1]['properties']
+                    kwargs["var_description"] = jsonVars['AdminSpeed']['description']
                     jsonVars['AdminSpeed']['enum'].remove('Auto')
-                    polVars["jsonVars"] = jsonVars['AdminSpeed']['enum']
-                    polVars["defaultVar"] = jsonVars['AdminSpeed']['enum'][2]
-                    polVars["varType"] = 'Admin Speed'
-                    polVars["admin_speed"] = ezfunctions.variablesFromAPI(**polVars)
+                    kwargs["jsonVars"] = jsonVars['AdminSpeed']['enum']
+                    kwargs["defaultVar"] = jsonVars['AdminSpeed']['enum'][2]
+                    kwargs["varType"] = 'Admin Speed'
+                    admin_speed = ezfunctions.variablesFromAPI(**kwargs)
 
                     # Prompt User for the Fill Pattern of the Port
-                    if not polVars["port_type"] == 'Fibre-Channel Storage':
-                        polVars["var_description"] = jsonVars['FillPattern']['description']
-                        polVars["var_description"] = '%s\n%s' % (polVars["var_description"], fill_pattern_descr)
-                        polVars["jsonVars"] = sorted(jsonVars['FillPattern']['enum'])
-                        polVars["defaultVar"] = jsonVars['FillPattern']['enum'][1]
-                        polVars["varType"] = 'Fill Pattern'
-                        polVars["fill_pattern"] = ezfunctions.variablesFromAPI(**polVars)
+                    if not port_type == 'Fibre-Channel Storage':
+                        kwargs["var_description"] = jsonVars['FillPattern']['description']
+                        kwargs["var_description"] = '%s\n%s' % (kwargs["var_description"], fill_pattern_descr)
+                        kwargs["jsonVars"] = sorted(jsonVars['FillPattern']['enum'])
+                        kwargs["defaultVar"] = jsonVars['FillPattern']['enum'][1]
+                        kwargs["varType"] = 'Fill Pattern'
+                        fill_pattern = ezfunctions.variablesFromAPI(**kwargs)
 
                     vsans = {}
                     fabrics = ['Fabric_A', 'Fabric_B']
@@ -1681,19 +1618,20 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **polVars):
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  Please Select the VSAN Policy for {fabric}')
                         policy_list = [
-                            'policies.vsan_policies.vsan_policy',
+                            'policies.vsan.vsan_policy',
                         ]
-                        polVars["allow_opt_out"] = False
-                        for policy in policy_list:
-                            vsan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                        kwargs["allow_opt_out"] = False
+                        for i in policy_list:
+                            kwargs['policy'] = i
+                            kwargs = policy_select_loop(**kwargs)
 
+                        
+                        print(kwargs['vsan_policy'])
                         vsan_list = []
-                        for key, value in policyData['vsan_policies'].items():
-                            if key == vsan_policy:
-                                for k, v in value['vsans'].items():
-                                    for y, val in v.items():
-                                        if y == 'vsan_id':
-                                            vsan_list.append(val)
+                        for i in kwargs['immDict']['orgs'][org]['intersight']['policies']['vsan']:
+                            if i['name'] == kwargs['vsan_policy']:
+                                for item in i['vsans']:
+                                    vsan_list.append(item['vsan_id'])
 
                         if len(vsan_list) > 1:
                             vsan_list = ','.join(str(vsan_list))
@@ -1701,103 +1639,69 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **polVars):
                             vsan_list = vsan_list[0]
                         vsan_list = ezfunctions.vlan_list_full(vsan_list)
 
-                        polVars["multi_select"] = False
-                        if polVars["port_type"] == 'Fibre-Channel Port-Channel':
-                            polVars["var_description"] = '    Please Select a VSAN for the Port-Channel:\n'
-                        elif polVars["port_type"] == 'Fibre-Channel Storage':
-                            polVars["var_description"] = '    Please Select a VSAN for the Storage Port:\n'
+                        kwargs["multi_select"] = False
+                        if port_type == 'Fibre-Channel Port-Channel':
+                            kwargs["var_description"] = '    Please Select a VSAN for the Fibre-Channel Port-Channel:\n'
+                        elif port_type == 'Fibre-Channel Storage':
+                            kwargs["var_description"] = '    Please Select a VSAN for the Fibre-Channel Storage Port:\n'
                         else:
-                            polVars["var_description"] = '    Please Select a VSAN for the Uplink Port:\n'
-                        polVars["var_type"] = 'VSAN'
-                        vsan_x = ezfunctions.vars_from_list(vsan_list, **polVars)
+                            kwargs["var_description"] = '    Please Select a VSAN for the Fibre-Channel Uplink Port:\n'
+                        kwargs["var_type"] = 'VSAN'
+                        vsan_x = ezfunctions.vars_from_list(vsan_list, **kwargs)
                         for vs in vsan_x:
                             vsan = vs
                         vsans.update({fabric:vsan})
 
 
-                    if polVars["port_type"] == 'Fibre-Channel Port-Channel':
+                    if port_type == 'Fibre-Channel Port-Channel':
                         interfaces = []
                         for i in port_list:
-                            interfaces.append({'port_id':i,'slot_id':1})
+                            interfaces.append({'port_id':i})
 
                         pc_id = port_list[0]
-                        port_channel_a = {
-                            'admin_speed':polVars["admin_speed"],
-                            'fill_pattern':polVars["fill_pattern"],
+                        port_config = {
+                            'admin_speed':admin_speed,
+                            'fill_pattern':fill_pattern,
                             'interfaces':interfaces,
-                            'pc_id':pc_id,
-                            'vsan_id':vsans.get("Fabric_A")
+                            'pc_ids':[pc_id, pc_id],
+                            'vsan_ids':[vsans.get("Fabric_A"), vsans.get("Fabric_B")]
                         }
-                        port_channel_b = {
-                            'admin_speed':polVars["admin_speed"],
-                            'fill_pattern':polVars["fill_pattern"],
-                            'interfaces':interfaces,
-                            'pc_id':pc_id,
-                            'vsan_id':vsans.get("Fabric_B")
-                        }
-                    elif polVars["port_type"] == 'Fibre-Channel Storage':
+                    elif port_type == 'Fibre-Channel Storage':
                         port_list = '%s' % (port_list[0])
-                        fc_port_role_a = {
-                            'admin_speed':polVars["admin_speed"],
+                        port_config = {
+                            'admin_speed':admin_speed,
                             'port_id':port_list,
                             'slot_id':1,
-                            'vsan_id':vsans["Fabric_A"]
-                        }
-                        fc_port_role_b = {
-                            'admin_speed':polVars["admin_speed"],
-                            'port_id':port_list,
-                            'slot_id':1,
-                            'vsan_id':vsans["Fabric_B"]
+                            'vsan_ids':[vsans.get("Fabric_A"), vsans.get("Fabric_B")]
                         }
                     else:
                         port_list = '%s' % (port_list[0])
-                        fc_port_role_a = {
-                            'admin_speed':polVars["admin_speed"],
-                            'fill_pattern':polVars["fill_pattern"],
+                        port_config = {
+                            'admin_speed':admin_speed,
+                            'fill_pattern':fill_pattern,
                             'port_id':port_list,
                             'slot_id':1,
-                            'vsan_id':vsans["Fabric_A"]
-                        }
-                        fc_port_role_b = {
-                            'admin_speed':polVars["admin_speed"],
-                            'fill_pattern':polVars["fill_pattern"],
-                            'port_id':port_list,
-                            'slot_id':1,
-                            'vsan_id':vsans["Fabric_B"]
+                            'vsan_id':[vsans.get("Fabric_A"), vsans.get("Fabric_B")]
                         }
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    admin_speed      = "{polVars["admin_speed"]}"')
-                    if not polVars["port_type"] == 'Fibre-Channel Storage':
-                        print(f'    fill_pattern     = "{polVars["fill_pattern"]}"')
-                    if re.search('Uplink|Storage', polVars["port_type"]):
-                        print(f'    port_list        = "{port_list}"')
-                    print(f'    vsan_id_fabric_a = {vsans["Fabric_A"]}')
-                    print(f'    vsan_id_fabric_b = {vsans["Fabric_B"]}')
-                    if polVars["port_type"] == 'Fibre-Channel Port-Channel':
-                        print(f'    interfaces = [')
-                        for item in interfaces:
-                            print('      {')
-                            for k, v in item.items():
-                                print(f'        {k}          = {v}')
-                            print('      }')
-                        print(f'    ]')
+                    class MyDumper(yaml.Dumper):
+                        def increase_indent(self, flow=False, indentless=False):
+                            return super(MyDumper, self).increase_indent(flow, False)
+                    #stream = yaml.dump(port_config, default_flow_style=False)
+                    #print(stream.replace('\n- ', '\n\n- '))
+                    print(yaml.dump({port_type:port_config}, Dumper=MyDumper, default_flow_style=False))
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_port = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_port == 'Y' or confirm_port == '':
-                            if polVars["port_type"] == 'Fibre-Channel Port-Channel':
-                                A_port_channels.append(port_channel_a)
-                                B_port_channels.append(port_channel_b)
-                            else:
-                                A_port_role.append(fc_port_role_a)
-                                B_port_role.append(fc_port_role_b)
+                            kwargs['portDict'].append(port_config)
                             for i in port_list:
-                                fc_ports_in_use.append(i)
+                                kwargs['fc_ports_in_use'].append(i)
 
                             valid_exit = False
                             while valid_exit == False:
-                                port_exit = input(f'Would You like to Configure another {polVars["port_type"]}?  Enter "Y" or "N" [N]: ')
+                                port_exit = input(f'Would You like to Configure another {port_type}?  Enter "Y" or "N" [N]: ')
                                 if port_exit == 'Y':
                                     port_count += 1
                                     valid_confirm = True
@@ -1814,7 +1718,7 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **polVars):
 
                         elif confirm_port == 'N':
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Starting {polVars["port_type"]} Configuration Over.')
+                            print(f'  Starting {port_type} Configuration Over.')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             valid_confirm = True
                         else:
@@ -1828,41 +1732,47 @@ def port_list_fc(jsonData, easy_jsonData, name_prefix, **polVars):
                 print(f'\n------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n------------------------------------------------------\n')
+    return kwargs
 
-    if polVars["port_type"] == 'Fibre-Channel Port-Channel':
-        return A_port_channels,B_port_channels,fc_ports_in_use
-    else:
-        return A_port_role,B_port_role,fc_ports_in_use
-
-def port_modes_fc(jsonData, easy_jsonData, name_prefix, **polVars):
-    port_modes = {}
-    ports_in_use = []
+def port_modes_fc(**kwargs):
+    ezData             = kwargs["ezData"]
     fc_converted_ports = []
+    port_modes         = {}
+    ports_in_use       = []
     valid = False
     while valid == False:
         fc_mode = input('Do you want to convert ports to Fibre-Channel Mode?  Enter "Y" or "N" [Y]: ')
         if fc_mode == '' or fc_mode == 'Y':
             fc_mode = 'Y'
-            jsonVars = easy_jsonData['policies']['fabric.PortPolicy']
-            polVars["var_description"] = jsonVars['unifiedPorts']['description']
-            polVars["jsonVars"] = jsonVars['unifiedPorts']['enum']
-            polVars["defaultVar"] = jsonVars['unifiedPorts']['default']
-            polVars["varType"] = 'Unified Port Ranges'
-            fc_ports = ezfunctions.variablesFromAPI(**polVars)
+            if kwargs['device_model'] == 'UCS-FI-6536':
+                jsonVars   = ezData['ezimm']['allOf'][1]['properties']['policies']['fabric.PortPolicy_Gen5']
+            else: jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['fabric.PortPolicy_Gen4']
+            kwargs["var_description"] = jsonVars['unifiedPorts']['description']
+            kwargs["jsonVars"] = jsonVars['unifiedPorts']['enum']
+            kwargs["defaultVar"] = jsonVars['unifiedPorts']['default']
+            kwargs["varType"] = 'Unified Port Ranges'
+            fc_ports = ezfunctions.variablesFromAPI(**kwargs)
             x = fc_ports.split('-')
             fc_ports = [int(x[0]),int(x[1])]
             for i in range(int(x[0]), int(x[1]) + 1):
                 ports_in_use.append(i)
                 fc_converted_ports.append(i)
-            port_modes = {'custom_mode':'FibreChannel','port_list':fc_ports,'slot_id':1}
+            if kwargs['device_model'] == 'UCS-FI-6536':
+                port_modes = {'custom_mode':'BreakoutFibreChannel32G','port_list':fc_ports,}
+            else: port_modes = {'custom_mode':'FibreChannel','port_list':fc_ports,}
             valid = True
         elif fc_mode == 'N':
             fc_ports = []
-            port_modes = {'custom_mode':'FibreChannel','port_list':fc_ports,'slot_id':1}
+            port_modes = {}
             valid = True
         else:
             print(f'\n------------------------------------------------------\n')
             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
             print(f'\n------------------------------------------------------\n')
     
-    return fc_mode,ports_in_use,fc_converted_ports,port_modes
+    kwargs['fc_converted_ports'] = fc_converted_ports
+    kwargs['fc_mode']    = fc_mode
+    kwargs['fc_ports']   = fc_ports
+    kwargs['port_modes'] = port_modes
+    kwargs['ports_in_use'] = ports_in_use
+    return kwargs

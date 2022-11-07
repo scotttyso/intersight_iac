@@ -558,6 +558,254 @@
                                 ],
                                 "x-omitempty": true
                             },
+                            "policies":{
+                                "bios.Policy":{
+                                    "templates":{
+                                        "description": "Pre-Defined BIOS Templates with recommended policy parameters.",
+                                        "enum":[
+                                            "DSS",
+                                            "DSS_tpm",
+                                            "HPC",
+                                            "HPC_tpm",
+                                            "Java",
+                                            "Java_tpm",
+                                            "M6_analytical_DB_tpm",
+                                            "M6_Data_tpm",
+                                            "M6_HPC_tpm",
+                                            "M6_relational_DB_tpm",
+                                            "M6_Virtualization_tpm",
+                                            "OLTP",
+                                            "OLTP_tpm",
+                                            "Virtualization",
+                                            "Virtualization_tpm",
+                                            "Windows",
+                                            "Windows_tpm"
+                                        ],
+                                        "default": "Virtualization_tpm"
+                                    }
+                                },
+                                "boot.PrecisionPolicy":{
+                                    "boot.Localdisk":{
+                                        "description": "Slot options for a Localdisk boot Policy.",
+                                        "FIAttached":[
+                                            "1-205",
+                                            "FMEZZ1-SAS",
+                                            "MRAID",
+                                            "MRAID1",
+                                            "MRAID2",
+                                            "MSTOR-RAID",
+                                            "MSTOR-RAID-1",
+                                            "MSTOR-RAID-2"
+                                        ],
+                                        "Standalone":[
+                                            "1-205",
+                                            "M",
+                                            "HBA",
+                                            "SAS",
+                                            "MRAID",
+                                            "MRAID1",
+                                            "MRAID2",
+                                            "MSTOR-RAID",
+                                            "RAID"
+                                        ],
+                                        "default": "MSTOR-RAID"
+                                    }
+                                },
+                                "fabric.EthNetworkControlPolicy":{
+                                    "discoveryProtocol":{
+                                        "description": "Neighbor Discovery Protocol.",
+                                        "enum":[
+                                            "CDP",
+                                            "LLDP",
+                                            "None"
+                                        ],
+                                        "default": "LLDP"
+                                    }
+                                },
+                                "fabric.PortPolicy_Gen4":{
+                                    "unifiedPorts":{
+                                        "description": "The Port Range to convert to Fibre-Channel Mode.",
+                                        "enum":[
+                                            "1-4",
+                                            "1-8",
+                                            "1-12",
+                                            "1-16"
+                                        ],
+                                        "default": "1-4"
+                                    }
+                                },
+                                "fabric.PortPolicy_Gen5":{
+                                    "unifiedPorts":{
+                                        "description": "The Port Range to convert to Fibre-Channel Mode.",
+                                        "enum":[
+                                            "33-36",
+                                            "35-36"
+                                        ],
+                                        "default": "35-36"
+                                    }
+                                },
+                                "iam.LdapPolicy":{
+                                    "role":{
+                                        "description": "The Role to Assign to the LDAP Group.",
+                                        "enum":[
+                                            "admin",
+                                            "readonly",
+                                            "user"
+                                        ],
+                                        "default": "admin"
+                                    }
+                                },
+                                "iam.LocalUserPasswordPolicy":{
+                                    "role":{
+                                        "description": "The Role to Assign to the Local User.",
+                                        "enum":[
+                                            "admin",
+                                            "readonly",
+                                            "user"
+                                        ],
+                                        "default": "admin"
+                                    }
+                                },
+                                "power.Policy":{
+                                    "systemType": {
+                                        "description": "The Type of System to Apply this Power Policy to.",
+                                        "enum":[
+                                            "5108",
+                                            "9508",
+                                            "Server"
+                                        ],
+                                        "default": "9508"
+                                    }
+                                },
+                                "server.Generation":{
+                                    "systemType": {
+                                        "description": "The Generation of UCS to Apply these Policies to.",
+                                        "enum":[
+                                            "M5",
+                                            "M6",
+                                            "M7"
+                                        ],
+                                        "default": "M6"
+                                    }
+                                },
+                                "thermal.Policy":{
+                                    "chassisType": {
+                                        "description": "The Type of Chassis to Apply this Policy to.",
+                                        "enum":[
+                                            "5108",
+                                            "9508"
+                                        ],
+                                        "default": "9508"
+                                    }
+                                },
+                                "vmedia.Mapping":{
+                                    "cifs.mountOptions": {
+                                        "description": "Mount Options you would like to assign to the Mapping Policy.",
+                                        "enum":[
+                                            "guest",
+                                            "noserverino",
+                                            "nounix",
+                                            "soft",
+                                            "vers=2.0",
+                                            "vers=3.0"
+                                        ],
+                                        "default": ""
+                                    },
+                                    "http.mountOptions": {
+                                        "description": "Mount Options you would like to assign to the Mapping Policy.",
+                                        "enum":[
+                                            "guest",
+                                            "noserverino",
+                                            "nounix",
+                                            "soft",
+                                            "vers=2.0",
+                                            "vers=3.0"
+                                        ],
+                                        "default": ""
+                                    },
+                                    "nfs.mountOptions": {
+                                        "description": "Mount Options you would like to assign to the Mapping Policy.",
+                                        "enum":[
+                                            "nolock",
+                                            "noexec",
+                                            "port",
+                                            "retry",
+                                            "ro",
+                                            "rsize",
+                                            "rw",
+                                            "soft",
+                                            "timeou",
+                                            "wsize",
+                                            "vers=4.0",
+                                            "vers=3.0"
+                                        ],
+                                        "default": ""
+                                    }
+                                },
+                                "vnic.EthNetworkPolicy":{
+                                    "templates":{
+                                        "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
+                                        "enum":[
+                                            "Linux",
+                                            "Linux-NVMe-RoCE",
+                                            "MQ",
+                                            "MQ-SMBd",
+                                            "SMBServer",
+                                            "SMBClient",
+                                            "Solaris",
+                                            "SRIOV",
+                                            "usNIC",
+                                            "usNICOracleRAC",
+                                            "VMware",
+                                            "VMwarePassThru",
+                                            "WIN-AzureStack",
+                                            "Win-HPN",
+                                            "Win-HPN-SMBd",
+                                            "Windows"
+                                        ],
+                                        "default": "VMware"
+                                    }
+                                },
+                                "vnic.FcNetworkPolicy":{
+                                    "templates":{
+                                        "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
+                                        "enum":[
+                                            "FCNVMeInitiator",
+                                            "FCNVMeTarget",
+                                            "Initiator",
+                                            "Linux",
+                                            "Solaris",
+                                            "Target",
+                                            "VMware",
+                                            "WindowsBoot",
+                                            "Windows"
+                                        ],
+                                        "default": "VMware"
+                                    }
+                                },
+                                "vnic.PlacementSettings": {
+                                    "description": "PCIe Slot where the VIC adapter is installed. Supported values are (1-15) and MLOM.",
+                                    "enum":[
+                                        "1",
+                                        "2",
+                                        "3",
+                                        "4",
+                                        "5",
+                                        "6",
+                                        "7",
+                                        "8",
+                                        "9",
+                                        "10",
+                                        "11",
+                                        "12",
+                                        "13",
+                                        "14",
+                                        "15",
+                                        "MLOM"
+                                    ],
+                                    "default": "MLOM"
+                                }
+                            },
                             "rack_pools": {
                                 "description": "List of Rackmount Pools to Remove.",
                                 "type": "list_of_values",
@@ -704,7 +952,7 @@
                                         "Quick Start Deployment - Domain - VMware Stateless",
                                         "Skip Policy Deployment"
                                     ],
-                                    "default":"Deploy Domain Wizard"
+                                    "default":"Quick Start Deployment - Domain - VMware M2"
                                 },
                                 "Policies":{
                                     "description": "Select what type to Deploy:",
@@ -856,244 +1104,6 @@
                 ],
                 "default": "Blade"
             }
-        }
-    },
-    "policies":{
-        "bios.Policy":{
-            "templates":{
-                "description": "Pre-Defined BIOS Templates with recommended policy parameters.",
-                "enum":[
-                    "DSS",
-                    "DSS_tpm",
-                    "HPC",
-                    "HPC_tpm",
-                    "Java",
-                    "Java_tpm",
-                    "M6_analytical_DB_tpm",
-                    "M6_Data_tpm",
-                    "M6_HPC_tpm",
-                    "M6_relational_DB_tpm",
-                    "M6_Virtualization_tpm",
-                    "OLTP",
-                    "OLTP_tpm",
-                    "Virtualization",
-                    "Virtualization_tpm",
-                    "Windows",
-                    "Windows_tpm"
-                ],
-                "default": "Virtualization_tpm"
-            }
-        },
-        "boot.PrecisionPolicy":{
-            "boot.Localdisk":{
-                "description": "Slot options for a Localdisk boot Policy.",
-                "FIAttached":[
-                    "1-205",
-                    "FMEZZ1-SAS",
-                    "MRAID",
-                    "MRAID1",
-                    "MRAID2",
-                    "MSTOR-RAID",
-                    "MSTOR-RAID-1",
-                    "MSTOR-RAID-2"
-                ],
-                "Standalone":[
-                    "1-205",
-                    "M",
-                    "HBA",
-                    "SAS",
-                    "MRAID",
-                    "MRAID1",
-                    "MRAID2",
-                    "MSTOR-RAID",
-                    "RAID"
-                ],
-                "default": "MSTOR-RAID"
-            }
-        },
-        "fabric.EthNetworkControlPolicy":{
-            "discoveryProtocol":{
-                "description": "Neighbor Discovery Protocol.",
-                "enum":[
-                    "CDP",
-                    "LLDP",
-                    "None"
-                ],
-                "default": "LLDP"
-            }
-        },
-        "fabric.PortPolicy":{
-            "unifiedPorts":{
-                "description": "The Port Range to convert to Fibre-Channel Mode.",
-                "enum":[
-                    "1-4",
-                    "1-8",
-                    "1-12",
-                    "1-16"
-                ],
-                "default": "1-4"
-            }
-        },
-        "iam.LdapPolicy":{
-            "role":{
-                "description": "The Role to Assign to the LDAP Group.",
-                "enum":[
-                    "admin",
-                    "readonly",
-                    "user"
-                ],
-                "default": "admin"
-            }
-        },
-        "iam.LocalUserPasswordPolicy":{
-            "role":{
-                "description": "The Role to Assign to the Local User.",
-                "enum":[
-                    "admin",
-                    "readonly",
-                    "user"
-                ],
-                "default": "admin"
-            }
-        },
-        "power.Policy":{
-            "systemType": {
-                "description": "The Type of System to Apply this Power Policy to.",
-                "enum":[
-                    "5108",
-                    "9508",
-                    "Server"
-                ],
-                "default": "9508"
-            }
-        },
-        "server.Generation":{
-            "systemType": {
-                "description": "The Generation of UCS to Apply these Policies to.",
-                "enum":[
-                    "M5",
-                    "M6",
-                    "M7"
-                ],
-                "default": "M6"
-            }
-        },
-        "thermal.Policy":{
-            "chassisType": {
-                "description": "The Type of Chassis to Apply this Policy to.",
-                "enum":[
-                    "5108",
-                    "9508"
-                ],
-                "default": "9508"
-            }
-        },
-        "vmedia.Mapping":{
-            "cifs.mountOptions": {
-                "description": "Mount Options you would like to assign to the Mapping Policy.",
-                "enum":[
-                    "guest",
-                    "noserverino",
-                    "nounix",
-                    "soft",
-                    "vers=2.0",
-                    "vers=3.0"
-                ],
-                "default": ""
-            },
-            "http.mountOptions": {
-                "description": "Mount Options you would like to assign to the Mapping Policy.",
-                "enum":[
-                    "guest",
-                    "noserverino",
-                    "nounix",
-                    "soft",
-                    "vers=2.0",
-                    "vers=3.0"
-                ],
-                "default": ""
-            },
-            "nfs.mountOptions": {
-                "description": "Mount Options you would like to assign to the Mapping Policy.",
-                "enum":[
-                    "nolock",
-                    "noexec",
-                    "port",
-                    "retry",
-                    "ro",
-                    "rsize",
-                    "rw",
-                    "soft",
-                    "timeou",
-                    "wsize",
-                    "vers=4.0",
-                    "vers=3.0"
-                ],
-                "default": ""
-            }
-        },
-        "vnic.EthNetworkPolicy":{
-            "templates":{
-                "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
-                "enum":[
-                    "Linux",
-                    "Linux-NVMe-RoCE",
-                    "MQ",
-                    "MQ-SMBd",
-                    "SMBServer",
-                    "SMBClient",
-                    "Solaris",
-                    "SRIOV",
-                    "usNIC",
-                    "usNICOracleRAC",
-                    "VMware",
-                    "VMwarePassThru",
-                    "WIN-AzureStack",
-                    "Win-HPN",
-                    "Win-HPN-SMBd",
-                    "Windows"
-                ],
-                "default": "VMware"
-            }
-        },
-        "vnic.FcNetworkPolicy":{
-            "templates":{
-                "description": "Pre-Defined Ethernet Network Adapter Templates with recommended policy parameters.",
-                "enum":[
-                    "FCNVMeInitiator",
-                    "FCNVMeTarget",
-                    "Initiator",
-                    "Linux",
-                    "Solaris",
-                    "Target",
-                    "VMware",
-                    "WindowsBoot",
-                    "Windows"
-                ],
-                "default": "VMware"
-            }
-        },
-        "vnic.PlacementSettings": {
-            "description": "PCIe Slot where the VIC adapter is installed. Supported values are (1-15) and MLOM.",
-            "enum":[
-                "1",
-                "2",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-                "8",
-                "9",
-                "10",
-                "11",
-                "12",
-                "13",
-                "14",
-                "15",
-                "MLOM"
-            ],
-            "default": "MLOM"
         }
     },
     "profiles":{

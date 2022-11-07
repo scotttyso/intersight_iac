@@ -1,3 +1,4 @@
+from copy import deepcopy
 import p3
 import vxan
 import pools
@@ -24,7 +25,7 @@ class policies(object):
     #==============================================
     # Ethernet Adapter Policy Module
     #==============================================
-    def ethernet_adapter_policies(self, jsonData, easy_jsonData, **kwargs):
+    def ethernet_adapter_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         opSystem = kwargs['opSystem']
         org = self.org
@@ -63,7 +64,7 @@ class policies(object):
                 while policy_loop == False:
 
                     polVars["multi_select"] = False
-                    jsonVars = easy_jsonData['policies']['vnic.EthNetworkPolicy']
+                    jsonVars = ezData['policies']['vnic.EthNetworkPolicy']
                     polVars["var_description"] = jsonVars['templates']['description']
                     polVars["jsonVars"] = sorted(jsonVars['templates']['enum'])
                     polVars["defaultVar"] = jsonVars['templates']['default']
@@ -121,7 +122,7 @@ class policies(object):
     #==============================================
     # Ethernet Network Control Policy Module
     #==============================================
-    def ethernet_network_control_policies(self, jsonData, easy_jsonData, **kwargs):
+    def ethernet_network_control_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'netwk_ctrl'
         opSystem = kwargs['opSystem']
@@ -194,7 +195,7 @@ class policies(object):
                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                 polVars["multi_select"] = False
-                jsonVars = jsonData['components']['schemas']['fabric.EthNetworkControlPolicy']['allOf'][1]['properties']
+                jsonVars = jsonData['fabric.EthNetworkControlPolicy']['allOf'][1]['properties']
                 polVars["var_description"] = jsonVars['MacRegistrationMode']['description']
                 polVars["jsonVars"] = sorted(jsonVars['MacRegistrationMode']['enum'])
                 polVars["defaultVar"] = jsonVars['MacRegistrationMode']['default']
@@ -248,7 +249,7 @@ class policies(object):
     #==============================================
     # Ethernet Network Group Policy Module
     #==============================================
-    def ethernet_network_group_policies(self, jsonData, easy_jsonData, **kwargs):
+    def ethernet_network_group_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'VMs']
         opSystem = kwargs['opSystem']
@@ -313,7 +314,7 @@ class policies(object):
                 ]
                 polVars["allow_opt_out"] = False
                 for policy in policy_list:
-                    vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                    vlan_policy,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                 
                 vlan_list = []
                 for item in policyData['vlan_policies'][0][vlan_policy][0]['vlans']:
@@ -451,7 +452,7 @@ class policies(object):
     #==============================================
     # Ethernet Network Policy Module
     #==============================================
-    def ethernet_network_policies(self, jsonData, easy_jsonData, **kwargs):
+    def ethernet_network_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'network'
         opSystem = kwargs['opSystem']
@@ -496,7 +497,7 @@ class policies(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['vnic.VlanSettings']['allOf'][1]['properties']
+                    jsonVars = jsonData['vnic.VlanSettings']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['Mode']['description']
                     polVars["jsonVars"] = sorted(jsonVars['Mode']['enum'])
                     polVars["defaultVar"] = jsonVars['Mode']['default']
@@ -553,7 +554,7 @@ class policies(object):
     #==============================================
     # Ethernet QoS Policy Module
     #==============================================
-    def ethernet_qos_policies(self, jsonData, easy_jsonData, **kwargs):
+    def ethernet_qos_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'VMs']
         opSystem = kwargs['opSystem']
@@ -596,7 +597,7 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
             polVars["multi_select"] = False
-            jsonVars = jsonData['components']['schemas']['vnic.EthNetworkPolicy']['allOf'][1]['properties']
+            jsonVars = jsonData['vnic.EthNetworkPolicy']['allOf'][1]['properties']
             polVars["var_description"] = jsonVars['TargetPlatform']['description']
             polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
             polVars["defaultVar"] = 'FIAttached'
@@ -740,7 +741,7 @@ class policies(object):
                     polVars["burst"] = Question
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['vnic.EthQosPolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['vnic.EthQosPolicy']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['Priority']['description']
                     polVars["jsonVars"] = sorted(jsonVars['Priority']['enum'])
                     polVars["defaultVar"] = jsonVars['Priority']['default']
@@ -754,7 +755,7 @@ class policies(object):
                             ]
                             polVars["allow_opt_out"] = False
                             for policy in policy_list:
-                                system_qos_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                                system_qos_policy,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
 
                     mtu = policyData['system_qos_policies'][0][system_qos_policy][0]['classes'][0][polVars["priority"]][0]['mtu']
                     if mtu > 8999:
@@ -825,7 +826,7 @@ class policies(object):
     #==============================================
     # iSCSI Adapter Policy Module
     #==============================================
-    def iscsi_adapter_policies(self, jsonData, easy_jsonData, **kwargs):
+    def iscsi_adapter_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'adapter'
         opSystem = kwargs['opSystem']
@@ -869,7 +870,7 @@ class policies(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     # Pull in the Policies for iSCSI Adapter
-                    jsonVars = jsonData['components']['schemas']['vnic.IscsiAdapterPolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['vnic.IscsiAdapterPolicy']['allOf'][1]['properties']
 
                     # DHCP Timeout
                     polVars["Description"] = jsonVars['DhcpTimeout']['description']
@@ -943,7 +944,7 @@ class policies(object):
     #==============================================
     # iSCSI Boot Policy Module
     #==============================================
-    def iscsi_boot_policies(self, jsonData, easy_jsonData, **kwargs):
+    def iscsi_boot_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'boot'
         opSystem = kwargs['opSystem']
@@ -988,7 +989,7 @@ class policies(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     # Pull in the Policies for iSCSI Boot
-                    jsonVars = jsonData['components']['schemas']['vnic.IscsiBootPolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['vnic.IscsiBootPolicy']['allOf'][1]['properties']
                     polVars["multi_select"] = False
 
                     # Target Source Type
@@ -1021,7 +1022,7 @@ class policies(object):
                         polVars["allow_opt_out"] = False
                         for policy in policy_list:
                             policy_short = policy.split('.')[2]
-                            polVars["primary_target_policy"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                            polVars["primary_target_policy"],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                             polVars.update(policyData)
 
                         polVars["optional_message"] = '  !!! Optionally Select the Secondary Static Target or enter 100 for no Secondary !!!\n'
@@ -1031,7 +1032,7 @@ class policies(object):
                         polVars["allow_opt_out"] = True
                         for policy in policy_list:
                             policy_short = policy.split('.')[2]
-                            polVars["secondary_target_policy"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                            polVars["secondary_target_policy"],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                             polVars.update(policyData)
 
                         polVars.pop("optional_message")
@@ -1051,7 +1052,7 @@ class policies(object):
                             polVars["allow_opt_out"] = False
                             for policy in policy_list:
                                 policy_short = policy.split('.')[2]
-                                polVars['ip_pool'],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                                polVars['ip_pool'],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                                 polVars.update(policyData)
                             polVars.pop("optional_message")
 
@@ -1060,7 +1061,7 @@ class policies(object):
                             print(jsonVars['InitiatorStaticIpV4Config']['description'])
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                            jsonVars = jsonData['components']['schemas']['ippool.IpV4Config']['allOf'][1]['properties']
+                            jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
                             polVars["Description"] = 'Static IP address provided for iSCSI Initiator.'
                             polVars["varDefault"] = ''
                             polVars["varInput"] = f'IP Address:'
@@ -1122,7 +1123,7 @@ class policies(object):
                         Authentication = ezfunctions.variablesFromAPI(**polVars)
 
                         if re.search('chap', Authentication):
-                            jsonVars = jsonData['components']['schemas']['vnic.IscsiAuthProfile']['allOf'][1]['properties']
+                            jsonVars = jsonData['vnic.IscsiAuthProfile']['allOf'][1]['properties']
                             auth_type = Authentication.replace('_', ' ')
                             auth_type = auth_type.capitalize()
 
@@ -1158,7 +1159,7 @@ class policies(object):
                     polVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                         polVars.update(policyData)
 
 
@@ -1227,7 +1228,7 @@ class policies(object):
     #==============================================
     # iSCSI Static Target Policy Module
     #==============================================
-    def iscsi_static_target_policies(self, jsonData, easy_jsonData, **kwargs):
+    def iscsi_static_target_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'target'
         opSystem = kwargs['opSystem']
@@ -1272,7 +1273,7 @@ class policies(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     # Pull in the Policies for iSCSI Static Target
-                    jsonVars = jsonData['components']['schemas']['vnic.IscsiStaticTargetPolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['vnic.IscsiStaticTargetPolicy']['allOf'][1]['properties']
 
                     desc_add = '\n  such as:\n  * iqn.1984-12.com.cisco:lnx1\n  * iqn.1984-12.com.cisco:win-server1'
                     # Target Name
@@ -1375,7 +1376,7 @@ class policies(object):
     #==============================================
     # LAN Connectivity Policy Module
     #==============================================
-    def lan_connectivity_policies(self, jsonData, easy_jsonData, **kwargs):
+    def lan_connectivity_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = ['Management', 'Migration', 'Storage', 'Virtual_Machines']
         opSystem = kwargs['opSystem']
@@ -1426,7 +1427,7 @@ class policies(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['vnic.LanConnectivityPolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['vnic.LanConnectivityPolicy']['allOf'][1]['properties']
 
                     polVars["var_description"] = jsonVars['TargetPlatform']['description']
                     polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
@@ -1455,7 +1456,7 @@ class policies(object):
                             polVars["allow_opt_out"] = False
                             for policy in policy_list:
                                 policy_short = policy.split('.')[2]
-                                polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                                polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                                 polVars.update(policyData)
 
                         elif polVars["iqn_allocation_type"] == 'Static':
@@ -1528,7 +1529,7 @@ class policies(object):
                     polVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                         polVars.update(policyData)
 
                     if polVars['san_connectivity_policy']:
@@ -1542,7 +1543,7 @@ class policies(object):
                     polVars["vnics"] = []
                     vnic_loop = False
                     while vnic_loop == False:
-                        jsonVars = jsonData['components']['schemas']['vnic.EthIf']['allOf'][1]['properties']
+                        jsonVars = jsonData['vnic.EthIf']['allOf'][1]['properties']
 
                         polVars["Description"] = jsonVars['FailoverEnabled']['description']
                         polVars["varInput"] = f'Do you want to Enable Failover for this vNIC?'
@@ -1590,7 +1591,7 @@ class policies(object):
                                         if polVars["enable_failover"] == False:
                                             polVars["optional_message"] = f'MAC Address Pool for Fabric {x}'
                                         policy_short = policy.split('.')[2]
-                                        polVars[f'mac_pool_{x}'],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                                        polVars[f'mac_pool_{x}'],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                                         polVars.update(policyData)
                                     polVars.pop('optional_message')
                             else:
@@ -1605,13 +1606,13 @@ class policies(object):
                                         polVars["varName"] = f'Static Mac Address'
                                     else:
                                         polVars["varName"] = f'Fabric {x} Mac Address'
-                                    polVars["varRegex"] = jsonData['components']['schemas']['boot.Pxe']['allOf'][1]['properties']['MacAddress']['pattern']
+                                    polVars["varRegex"] = jsonData['boot.Pxe']['allOf'][1]['properties']['MacAddress']['pattern']
                                     polVars["minLength"] = 17
                                     polVars["maxLength"] = 17
                                     polVars[f"static_mac_{x}"] = ezfunctions.varStringLoop(**polVars)
 
                         # Pull in API Attributes
-                        jsonVars = jsonData['components']['schemas']['vnic.PlacementSettings']['allOf'][1]['properties']
+                        jsonVars = jsonData['vnic.PlacementSettings']['allOf'][1]['properties']
 
                         for x in fabrics:
                             polVars["var_description"] = jsonVars['PciLink']['description']
@@ -1634,13 +1635,13 @@ class policies(object):
                                 polVars[f"uplink_port_{x}"] = ezfunctions.variablesFromAPI(**polVars)
 
                         polVars["var_description"] = jsonVars['Id']['description']
-                        polVars["jsonVars"] = easy_jsonData['policies']['vnic.PlacementSettings']['enum']
-                        polVars["defaultVar"] = easy_jsonData['policies']['vnic.PlacementSettings']['default']
+                        polVars["jsonVars"] = ezData['policies']['vnic.PlacementSettings']['enum']
+                        polVars["defaultVar"] = ezData['policies']['vnic.PlacementSettings']['default']
                         polVars["varType"] = 'Slot ID'
                         polVars[f"slot_id"] = ezfunctions.variablesFromAPI(**polVars)
 
                         # Pull in API Attributes
-                        jsonVars = jsonData['components']['schemas']['vnic.EthIf']['allOf'][1]['properties']
+                        jsonVars = jsonData['vnic.EthIf']['allOf'][1]['properties']
 
                         for x in fabrics:
                             valid = False
@@ -1672,7 +1673,7 @@ class policies(object):
                                     valid = True
 
                         # Pull in API Attributes
-                        jsonVars = jsonData['components']['schemas']['vnic.Cdn']['allOf'][1]['properties']
+                        jsonVars = jsonData['vnic.Cdn']['allOf'][1]['properties']
 
                         polVars["var_description"] = jsonVars['Source']['description']
                         polVars["jsonVars"] = jsonVars['Source']['enum']
@@ -1709,7 +1710,7 @@ class policies(object):
                         polVars["allow_opt_out"] = False
                         for policy in policy_list:
                             policy_short = policy.split('.')[2]
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                             polVars.update(policyData)
                         if not polVars["iqn_allocation_type"] == 'None':
                             policy_list [
@@ -1719,7 +1720,7 @@ class policies(object):
                                 if polVars["enable_failover"] == False:
                                     polVars["optional_message"] = f'iSCSI Boot Policy for Fabric {x}'
                                 policy_short = policy.split('.')[2]
-                                polVars[f"{policy_short}_{x}"],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                                polVars[f"{policy_short}_{x}"],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                                 polVars.update(policyData)
                             else:
                                 polVars[f'iscsi_boot_policy_{x}'] = ''
@@ -1933,7 +1934,7 @@ class policies(object):
         polVars["template_file"] = 'template_close.jinja2'
         ezfunctions.write_to_template(self, **polVars)
 
-def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars):
+def policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars):
     loop_valid = False
     while loop_valid == False:
         create_policy = True
@@ -2004,26 +2005,26 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars):
             print(f'  Starting module to create {inner_policy}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             if inner_policy == 'iqn_pools':
-                pools.pools(name_prefix, polVars["org"], inner_type).iqn_pools(jsonData, easy_jsonData, **kwargs)
+                pools.pools(name_prefix, polVars["org"], inner_type).iqn_pools(jsonData, ezData, **kwargs)
             elif inner_policy == 'mac_pools':
-                pools.pools(name_prefix, polVars["org"], inner_type).mac_pools(jsonData, easy_jsonData, **kwargs)
+                pools.pools(name_prefix, polVars["org"], inner_type).mac_pools(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_adapter_policies':
-                policies(name_prefix, polVars["org"], inner_type).ethernet_adapter_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).ethernet_adapter_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_network_control_policies':
-                policies(name_prefix, polVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).ethernet_network_control_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_network_group_policies':
-                policies(name_prefix, polVars["org"], inner_type).ethernet_network_group_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).ethernet_network_group_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_network_policies':
-                policies(name_prefix, polVars["org"], inner_type).ethernet_network_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).ethernet_network_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_qos_policies':
-                policies(name_prefix, polVars["org"], inner_type).ethernet_qos_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).ethernet_qos_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'iscsi_adapter_policies':
-                policies(name_prefix, polVars["org"], inner_type).iscsi_adapter_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).iscsi_adapter_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'iscsi_boot_policies':
-                policies(name_prefix, polVars["org"], inner_type).iscsi_boot_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).iscsi_boot_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'iscsi_static_target_policies':
-                policies(name_prefix, polVars["org"], inner_type).iscsi_static_target_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).iscsi_static_target_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'system_qos_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).system_qos_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'vlan_policies':
-                vxan.policies(name_prefix, polVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData, **kwargs)
+                vxan.policies(name_prefix, polVars["org"], inner_type).vlan_policies(jsonData, ezData, **kwargs)

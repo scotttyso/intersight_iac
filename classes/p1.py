@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from copy import deepcopy
 from textwrap import fill
 import base64
 import lan
@@ -29,7 +30,7 @@ class policies(object):
     #==============================================
     # Adapter Configuration Policy Module
     #==============================================
-    def adapter_configuration_policies(self, jsonData, easy_jsonData, **kwargs):
+    def adapter_configuration_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'adapter'
         opSystem = kwargs['opSystem']
@@ -132,7 +133,7 @@ class policies(object):
                     intList = [1, 2, 3, 4]
                     for x in intList:
                         polVars["multi_select"] = False
-                        jsonVars = jsonData['components']['schemas']['adapter.DceInterfaceSettings']['allOf'][1]['properties']
+                        jsonVars = jsonData['adapter.DceInterfaceSettings']['allOf'][1]['properties']
                         polVars["var_description"] = jsonVars['FecMode']['description']
                         polVars["jsonVars"] = sorted(jsonVars['FecMode']['enum'])
                         polVars["defaultVar"] = jsonVars['FecMode']['default']
@@ -189,7 +190,7 @@ class policies(object):
     #==============================================
     # BIOS Policy Module
     #==============================================
-    def bios_policies(self, jsonData, easy_jsonData, **kwargs):
+    def bios_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         opSystem = kwargs['opSystem']
         org = self.org
@@ -228,7 +229,7 @@ class policies(object):
                 while policy_loop == False:
 
                     polVars["multi_select"] = False
-                    jsonVars = easy_jsonData['policies']['bios.Policy']
+                    jsonVars = ezData['policies']['bios.Policy']
                     polVars["var_description"] = jsonVars['templates']['description']
                     polVars["jsonVars"] = sorted(jsonVars['templates']['enum'])
                     polVars["defaultVar"] = jsonVars['templates']['default']
@@ -286,7 +287,7 @@ class policies(object):
     #==============================================
     # Boot Order Policy Module
     #==============================================
-    def boot_order_policies(self, jsonData, easy_jsonData, **kwargs):
+    def boot_order_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'boot_order'
         opSystem = kwargs['opSystem']
@@ -331,7 +332,7 @@ class policies(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     # Pull in the Policies for iSCSI Boot
-                    jsonVars = jsonData['components']['schemas']['boot.PrecisionPolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['boot.PrecisionPolicy']['allOf'][1]['properties']
                     polVars["multi_select"] = False
 
                     # Configured Boot Mode
@@ -364,7 +365,7 @@ class policies(object):
                             valid_sub = False
                             while valid_sub == False:
                                 # Pull in the Policies for iSCSI Boot
-                                jsonVars = jsonData['components']['schemas']['boot.DeviceBase']['allOf'][1]['properties']
+                                jsonVars = jsonData['boot.DeviceBase']['allOf'][1]['properties']
 
                                 # Configured Boot Mode
                                 polVars["var_description"] = 'Select the Type of Boot Device to configure.'
@@ -390,36 +391,36 @@ class policies(object):
 
                                 if objectType == 'boot.Iscsi':
                                     device_type = 'iscsi_boot'
-                                    jsonVars = jsonData['components']['schemas']['boot.Iscsi']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.Iscsi']['allOf'][1]['properties']
                                 elif objectType == 'boot.LocalCdd':
                                     device_type = 'local_cdd'
                                 elif objectType == 'boot.LocalDisk':
                                     device_type = 'local_disk'
-                                    jsonVars = jsonData['components']['schemas']['boot.LocalDisk']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.LocalDisk']['allOf'][1]['properties']
                                 elif objectType == 'boot.Nvme':
                                     device_type = 'nvme'
-                                    jsonVars = jsonData['components']['schemas']['boot.Nvme']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.Nvme']['allOf'][1]['properties']
                                 elif objectType == 'boot.PchStorage':
                                     device_type = 'pch_storage'
-                                    jsonVars = jsonData['components']['schemas']['boot.PchStorage']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.PchStorage']['allOf'][1]['properties']
                                 elif objectType == 'boot.Pxe':
                                     device_type = 'pxe_boot'
-                                    jsonVars = jsonData['components']['schemas']['boot.Pxe']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.Pxe']['allOf'][1]['properties']
                                 elif objectType == 'boot.San':
                                     device_type = 'san_boot'
-                                    jsonVars = jsonData['components']['schemas']['boot.San']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.San']['allOf'][1]['properties']
                                 elif objectType == 'boot.SdCard':
                                     device_type = 'sd_card'
-                                    jsonVars = jsonData['components']['schemas']['boot.SdCard']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.SdCard']['allOf'][1]['properties']
                                 elif objectType == 'boot.UefiShell':
                                     device_type = 'uefi_shell'
-                                    jsonVars = jsonData['components']['schemas']['boot.UefiShell']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.UefiShell']['allOf'][1]['properties']
                                 elif objectType == 'boot.Usb':
                                     device_type = 'usb'
-                                    jsonVars = jsonData['components']['schemas']['boot.Usb']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.Usb']['allOf'][1]['properties']
                                 elif objectType == 'boot.VirtualMedia':
                                     device_type = 'virtual_media'
-                                    jsonVars = jsonData['components']['schemas']['boot.VirtualMedia']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.VirtualMedia']['allOf'][1]['properties']
 
                                 boot_device.update({'device_type':device_type})
 
@@ -433,7 +434,7 @@ class policies(object):
 
                                 if objectType == 'boot.LocalDisk':
                                     polVars["multi_select"] = False
-                                    jsonVars = jsonData['components']['schemas']['vnic.EthNetworkPolicy']['allOf'][1]['properties']
+                                    jsonVars = jsonData['vnic.EthNetworkPolicy']['allOf'][1]['properties']
                                     polVars["var_description"] = jsonVars['TargetPlatform']['description']
                                     polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
                                     polVars["defaultVar"] = jsonVars['TargetPlatform']['default']
@@ -441,10 +442,10 @@ class policies(object):
                                     target_platform = ezfunctions.variablesFromAPI(**polVars)
 
                                     # Slot
-                                    jsonVars = jsonData['components']['schemas']['boot.LocalDisk']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.LocalDisk']['allOf'][1]['properties']
                                     polVars["var_description"] = jsonVars['Slot']['description']
-                                    polVars["jsonVars"] = easy_jsonData['policies']['boot.PrecisionPolicy']['boot.Localdisk'][target_platform]
-                                    polVars["defaultVar"] = easy_jsonData['policies']['boot.PrecisionPolicy']['boot.Localdisk']['default']
+                                    polVars["jsonVars"] = ezData['policies']['boot.PrecisionPolicy']['boot.Localdisk'][target_platform]
+                                    polVars["defaultVar"] = ezData['policies']['boot.PrecisionPolicy']['boot.Localdisk']['default']
                                     polVars["varType"] = 'Slot'
                                     Slot = ezfunctions.variablesFromAPI(**polVars)
 
@@ -482,7 +483,7 @@ class policies(object):
                                     ]
                                     polVars["allow_opt_out"] = False
                                     for policy in policy_list:
-                                        lan_connectivity_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                                        lan_connectivity_policy,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                                     vnicNames = []
                                     for x in policyData['lan_connectivity_policies']:
                                         for keys, values in x.items():
@@ -550,7 +551,7 @@ class policies(object):
                                     boot_device.update(pxeBoot)
 
                                 if re.fullmatch('boot\.Iscsi', objectType):
-                                    jsonVars = jsonData['components']['schemas']['boot.Iscsi']['allOf'][1]['properties']
+                                    jsonVars = jsonData['boot.Iscsi']['allOf'][1]['properties']
 
                                     # Port
                                     polVars["Description"] = jsonVars['Port']['description']
@@ -578,7 +579,7 @@ class policies(object):
                                     ]
                                     polVars["allow_opt_out"] = False
                                     for policy in policy_list:
-                                        san_connectivity_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                                        san_connectivity_policy,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                                     vnicNames = []
                                     for x in policyData['san_connectivity_policies']:
                                         for keys, values in x.items():
@@ -610,13 +611,13 @@ class policies(object):
                                 if re.fullmatch('boot\.(SdCard|Usb|VirtualMedia)', objectType):
                                     if objectType == 'boot.SdCard':
                                         # Pull in the Sub Types for Virtual Media
-                                        jsonVars = jsonData['components']['schemas']['boot.SdCard']['allOf'][1]['properties']
+                                        jsonVars = jsonData['boot.SdCard']['allOf'][1]['properties']
                                     elif objectType == 'boot.Usb':
                                         # Pull in the Sub Types for Virtual Media
-                                        jsonVars = jsonData['components']['schemas']['boot.Usb']['allOf'][1]['properties']
+                                        jsonVars = jsonData['boot.Usb']['allOf'][1]['properties']
                                     elif objectType == 'boot.VirtualMedia':
                                         # Pull in the Sub Types for Virtual Media
-                                        jsonVars = jsonData['components']['schemas']['boot.VirtualMedia']['allOf'][1]['properties']
+                                        jsonVars = jsonData['boot.VirtualMedia']['allOf'][1]['properties']
 
                                     # Configured Boot Mode
                                     polVars["var_description"] = jsonVars['Subtype']['description']
@@ -782,7 +783,7 @@ class policies(object):
     #==============================================
     # Certificate Management Policy Module
     #==============================================
-    def certificate_management_policies(self, jsonData, easy_jsonData, **kwargs):
+    def certificate_management_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'cert_mgmt'
         opSystem = kwargs['opSystem']
@@ -827,7 +828,7 @@ class policies(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     # Pull in the Policies for Certificate Management
-                    jsonVars = jsonData['components']['schemas']['certificatemanagement.CertificateBase']['allOf'][1]['properties']
+                    jsonVars = jsonData['certificatemanagement.CertificateBase']['allOf'][1]['properties']
                     polVars["multi_select"] = False
 
                     # Request Certificate
@@ -907,7 +908,7 @@ class policies(object):
     #==============================================
     # Device Connector Policy Module
     #==============================================
-    def device_connector_policies(self, jsonData, easy_jsonData, **kwargs):
+    def device_connector_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'devcon'
         opSystem = kwargs['opSystem']
@@ -960,7 +961,7 @@ class policies(object):
                     polVars["name"] = ezfunctions.policy_name(name, policy_type)
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
-                    jsonVars = jsonData['components']['schemas']['deviceconnector.Policy']['allOf'][1]['properties']
+                    jsonVars = jsonData['deviceconnector.Policy']['allOf'][1]['properties']
                     polVars["Description"] = jsonVars['LockoutEnabled']['description']
                     polVars["varInput"] = f'Do you want to lock down Configuration to Intersight only?'
                     polVars["varDefault"] = 'N'
@@ -1011,7 +1012,7 @@ class policies(object):
     #==============================================
     # Firmware - UCS Domain Module
     #==============================================
-    def firmware_ucs_domain(self, jsonData, easy_jsonData, **kwargs):
+    def firmware_ucs_domain(self, jsonData, ezData, **kwargs):
         polVars = {}
         polVars["header"] = 'UCS Domain Profile Variables'
         polVars["initial_write"] = True
@@ -1051,7 +1052,7 @@ class policies(object):
     #==============================================
     # Flow Control Policy Module
     #==============================================
-    def flow_control_policies(self, jsonData, easy_jsonData, **kwargs):
+    def flow_control_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'flow_ctrl'
         opSystem = kwargs['opSystem']
@@ -1136,7 +1137,7 @@ class policies(object):
     #==============================================
     # IMC Access Policy Module
     #==============================================
-    def imc_access_policies(self, jsonData, easy_jsonData, **kwargs):
+    def imc_access_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'imc_access'
         opSystem = kwargs['opSystem']
@@ -1179,7 +1180,7 @@ class policies(object):
                 polVars["default_vlan"] = 0
 
                 polVars["multi_select"] = False
-                jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
+                jsonVars = jsonData['server.BaseProfile']['allOf'][1]['properties']
                 polVars["var_description"] = jsonVars['TargetPlatform']['description']
                 polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
                 polVars["defaultVar"] = 'FIAttached'
@@ -1187,7 +1188,7 @@ class policies(object):
                 polVars["target_platform"] = ezfunctions.variablesFromAPI(**polVars)
 
                 # IMC Access Type
-                jsonVars = jsonData['components']['schemas']['access.Policy']['allOf'][1]['properties']
+                jsonVars = jsonData['access.Policy']['allOf'][1]['properties']
                 polVars["var_description"] = jsonVars['ConfigurationType']['description']
                 polVars["jsonVars"] = ['inband', 'out_of_band']
                 polVars["defaultVar"] = 'inband'
@@ -1200,7 +1201,7 @@ class policies(object):
                 polVars["allow_opt_out"] = False
                 for policy in policy_list:
                     policy_type = policy.split('.')[2]
-                    polVars[policy_type],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                    polVars[policy_type],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
 
                 if imcBand == 'inband':
                     valid = False
@@ -1214,7 +1215,7 @@ class policies(object):
                                 ]
                                 polVars["allow_opt_out"] = False
                                 for policy in policy_list:
-                                    vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                                    vlan_policy,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                                 vlan_list = []
                                 print(json.dumps(policyData['vlan_policies'], indent=4))
                                 for key, value in policyData['vlan_policies'].items():
@@ -1305,7 +1306,7 @@ class policies(object):
     #==============================================
     # IPMI over LAN Policy Module
     #==============================================
-    def ipmi_over_lan_policies(self, jsonData, easy_jsonData, **kwargs):
+    def ipmi_over_lan_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'ipmi'
         opSystem = kwargs['opSystem']
@@ -1357,7 +1358,7 @@ class policies(object):
                             polVars["ipmi_key"] = ezfunctions.ipmi_key_function(**polVars)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['ipmioverlan.Policy']['allOf'][1]['properties']
+                    jsonVars = jsonData['ipmioverlan.Policy']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['Privilege']['description']
                     polVars["jsonVars"] = sorted(jsonVars['Privilege']['enum'])
                     polVars["defaultVar"] = jsonVars['Privilege']['default']
@@ -1410,7 +1411,7 @@ class policies(object):
     #==============================================
     # Intersight Module
     #==============================================
-    def intersight(self, easy_jsonData, tfcb_config):
+    def intersight(self, ezData, tfcb_config):
         org = self.org
         policy_type = 'Intersight'
         polVars = {}
@@ -1440,7 +1441,7 @@ class policies(object):
                     elif k == 'policies':
                         polVars["policies_ws"] = v
 
-        polVars["tags"] = '[{ key = "Module", value = "terraform-intersight-easy-imm" }, { key = "Version", value = "'f'{easy_jsonData["version"]}''" }]'
+        polVars["tags"] = '[{ key = "Module", value = "terraform-intersight-easy-imm" }, { key = "Version", value = "'f'{ezData["version"]}''" }]'
 
         # Write Policies to Template File
         polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
@@ -1449,7 +1450,7 @@ class policies(object):
     #==============================================
     # LDAP Policy Module
     #==============================================
-    def ldap_policies(self, jsonData, easy_jsonData, **kwargs):
+    def ldap_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'ldap'
         opSystem = kwargs['opSystem']
@@ -1556,7 +1557,7 @@ class policies(object):
                     }
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['iam.LdapBaseProperties']['allOf'][1]['properties']
+                    jsonVars = jsonData['iam.LdapBaseProperties']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['BindMethod']['description']
                     polVars["jsonVars"] = sorted(jsonVars['BindMethod']['enum'])
                     polVars["defaultVar"] = jsonVars['BindMethod']['default']
@@ -1652,7 +1653,7 @@ class policies(object):
 
                     if ldap_from_dns == True:
                         polVars["multi_select"] = False
-                        jsonVars = jsonData['components']['schemas']['iam.LdapDnsParameters']['allOf'][1]['properties']
+                        jsonVars = jsonData['iam.LdapDnsParameters']['allOf'][1]['properties']
                         polVars["var_description"] = jsonVars['Source']['description']
                         polVars["jsonVars"] = sorted(jsonVars['Source']['enum'])
                         polVars["defaultVar"] = jsonVars['Source']['default']
@@ -1745,7 +1746,7 @@ class policies(object):
                     polVars["nested_group_search_depth"] = varNested
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['iam.LdapPolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['iam.LdapPolicy']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['UserSearchPrecedence']['description']
                     polVars["jsonVars"] = sorted(jsonVars['UserSearchPrecedence']['enum'])
                     polVars["defaultVar"] = jsonVars['UserSearchPrecedence']['default']
@@ -1776,7 +1777,7 @@ class policies(object):
                                         print(f'\n-------------------------------------------------------------------------------------------\n')
 
                                 polVars["multi_select"] = False
-                                jsonVars = easy_jsonData['policies']['iam.LdapPolicy']
+                                jsonVars = ezData['policies']['iam.LdapPolicy']
                                 polVars["var_description"] = jsonVars['role']['description']
                                 polVars["jsonVars"] = sorted(jsonVars['role']['enum'])
                                 polVars["defaultVar"] = jsonVars['role']['default']
@@ -2004,7 +2005,7 @@ class policies(object):
     #==============================================
     # Link Aggregation Policy Module
     #==============================================
-    def link_aggregation_policies(self, jsonData, easy_jsonData, **kwargs):
+    def link_aggregation_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'link_agg'
         opSystem = kwargs['opSystem']
@@ -2087,7 +2088,7 @@ class policies(object):
     #==============================================
     # Link Control Policy Module
     #==============================================
-    def link_control_policies(self, jsonData, easy_jsonData, **kwargs):
+    def link_control_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'link_ctrl'
         opSystem = kwargs['opSystem']
@@ -2168,7 +2169,7 @@ class policies(object):
         polVars["template_file"] = 'template_close.jinja2'
         ezfunctions.write_to_template(self, **polVars)
 
-def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars):
+def policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars):
     loop_valid = False
     while loop_valid == False:
         create_policy = True
@@ -2246,10 +2247,10 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars):
             print(f'  Starting module to create {inner_policy}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             if inner_policy == 'ip_pools':
-                pools.pools(name_prefix, polVars["org"], inner_type).ip_pools(jsonData, easy_jsonData, **kwargs)
+                pools.pools(name_prefix, polVars["org"], inner_type).ip_pools(jsonData, ezData, **kwargs)
             elif inner_policy == 'lan_connectivity_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).lan_connectivity_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).lan_connectivity_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'san_connectivity_policies':
-                san.policies(name_prefix, polVars["org"], inner_type).san_connectivity_policies(jsonData, easy_jsonData, **kwargs)
+                san.policies(name_prefix, polVars["org"], inner_type).san_connectivity_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'vlan_policies':
-                vxan.policies(name_prefix, polVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData, **kwargs)
+                vxan.policies(name_prefix, polVars["org"], inner_type).vlan_policies(jsonData, ezData, **kwargs)

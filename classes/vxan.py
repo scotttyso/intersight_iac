@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from copy import deepcopy
 import ezfunctions
 import jinja2
 import json
@@ -22,7 +23,7 @@ class policies(object):
     #==============================================
     # Multicast Policy Module
     #==============================================
-    def multicast_policies(self, jsonData, easy_jsonData, **kwargs):
+    def multicast_policies(self, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'multicast'
         opSystem = kwargs['opSystem']
@@ -128,106 +129,51 @@ class policies(object):
         ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
-    # Quick Start - Multicast Policy Module
-    #==============================================
-    def quick_start_multicast(self, **polVars):
-        org = self.org
-        policy_type = 'Multicast Policy'
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'multicast_policies'
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
-
-        polVars["igmp_snooping_state"] = 'Enabled'
-        polVars["querier_ip_address"] = ''
-        polVars["igmp_snooping_querier_state"] = 'Disabled'
-        polVars["querier_ip_address_peer"] = ''
-
-        # Write Policies to Template File
-        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-        ezfunctions.write_to_template(self, **polVars)
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
-
-    #==============================================
     # Quick Start - VLAN Policy Module
     #==============================================
-    def quick_start_vlan(self, **polVars):
+    def quick_start_vlan(self, **kwargs):
         org = self.org
-        policy_type = 'VLAN Policy'
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'vlan_policies'
+        polVars = {'name': org}
+        vlan_list_expanded = ezfunctions.vlan_list_full(kwargs["vlans"])
 
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
-
-        vlan_list_expanded = ezfunctions.vlan_list_full(polVars["vlan_list"])
-
-        if not polVars["native_vlan"] == '':
-            if int(polVars["native_vlan"]) in vlan_list_expanded:
-                while(int(polVars["native_vlan"]) in vlan_list_expanded):
-                    vlan_list_expanded.remove(int(polVars["native_vlan"]))
-        elif polVars["native_vlan"] == '' and 1 in vlan_list_expanded:
-            polVars["native_vlan"] == 1
+        if not kwargs["native_vlan"] == '':
+            if int(kwargs["native_vlan"]) in vlan_list_expanded:
+                while(int(kwargs["native_vlan"]) in vlan_list_expanded):
+                    vlan_list_expanded.remove(int(kwargs["native_vlan"]))
+        elif kwargs["native_vlan"] == '' and 1 in vlan_list_expanded:
+            kwargs["native_vlan"] == 1
             while(1 in vlan_list_expanded):
                 vlan_list_expanded.remove(1)
 
-        polVars["vlan_list"] = ezfunctions.vlan_list_format(vlan_list_expanded)
+        kwargs["vlan_list"] = ezfunctions.vlan_list_format(vlan_list_expanded)
 
-        # print(f'vlan list final is {polVars["vlan_list"]}')
-        if not polVars["native_vlan"] == '':
-            polVars["vlans"] = [
-                {
-                    'auto_allow_on_uplinks':True,
-                    'id':polVars["native_vlan"],
-                    'multicast_policy':polVars["multicast_policy"],
-                    'name':'default',
-                    'native_vlan':True
-                },
-                {
-                    'auto_allow_on_uplinks':False,
-                    'id':polVars["vlan_list"],
-                    'multicast_policy':polVars["multicast_policy"],
-                    'name':polVars["name"],
-                    'native_vlan':False
-                }
-            ]
-        else:
-            polVars["vlans"] = [
-                {
-                    'auto_allow_on_uplinks':False,
-                    'id':polVars["vlan_list"],
-                    'multicast_policy':polVars["multicast_policy"],
-                    'name':polVars["name"],
-                    'native_vlan':False
-                }
-            ]
+        polVars["vlans"] = []
+        if not kwargs["native_vlan"] == '':
+            polVars["vlans"].append({
+                'auto_allow_on_uplinks':True,
+                'multicast_policy':'mcast',
+                'name':'default',
+                'native_vlan':True,
+                'vlan_list':kwargs["native_vlan"]
+            })
+        polVars["vlans"].append({
+            'multicast_policy':'mcast',
+            'name':org,
+            'vlan_list':kwargs["vlan_list"]
+        })
 
-        # Write Policies to Template File
-        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-        ezfunctions.write_to_template(self, **polVars)
+        # Add Policy Variables to immDict
+        kwargs['class_path'] = 'intersight,policies,vlan'
+        kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
+        # Return New Variables
+        kwargs['vlan_list_expanded'] = vlan_list_expanded
+        return kwargs
 
     #==============================================
     # VLAN Policy Module
     #==============================================
-    def vlan_policies(self, jsonData, easy_jsonData, **kwargs):
+    def vlan_policies(self, jsonData, ezData, **kwargs):
         vlan_policies_vlans = []
         name_prefix = self.name_prefix
         name_suffix = 'vlans'
@@ -349,7 +295,7 @@ class policies(object):
                 polVars["allow_opt_out"] = False
                 for policy in policy_list:
                     policy_short = policy.split('.')[2]
-                    polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                    polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                     polVars.update(policyData)
 
                 if not native_vlan == '' and len(vlan_list) > 1:
@@ -443,7 +389,7 @@ class policies(object):
     #==============================================
     # VSAN Policy Module
     #==============================================
-    def vsan_policies(self, jsonData, easy_jsonData, **kwargs):
+    def vsan_policies(self, jsonData, ezData, **kwargs):
         vsan_policies_vsans = []
         name_prefix = self.name_prefix
         opSystem = kwargs['opSystem']
@@ -496,7 +442,7 @@ class policies(object):
                     
                     # Pull Information from the API
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['fabric.FcNetworkPolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['fabric.FcNetworkPolicy']['allOf'][1]['properties']
 
                     # Uplink Trunking
                     polVars["Description"] = jsonVars['EnableTrunking']['description']
@@ -539,7 +485,7 @@ class policies(object):
                                     ]
                                     polVars["allow_opt_out"] = False
                                     for policy in policy_list:
-                                        vlan_policy,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                                        vlan_policy,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                                     vlan_list = []
                                     for key, value in policyData['vlan_policies'].items():
                                             if key == vlan_policy:
@@ -571,7 +517,7 @@ class policies(object):
                                 print(f'  Invalid Entry!  Please Enter a valid VLAN ID in the range of 1-4094.')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                        jsonVars = jsonData['components']['schemas']['fabric.Vsan']['allOf'][1]['properties']
+                        jsonVars = jsonData['fabric.Vsan']['allOf'][1]['properties']
 
                         # VSAN Name
                         polVars["Description"] = jsonVars['Name']['description']
@@ -690,7 +636,7 @@ class policies(object):
         polVars["template_file"] = 'template_close.jinja2'
         ezfunctions.write_to_template(self, **polVars)
 
-def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars):
+def policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars):
     loop_valid = False
     while loop_valid == False:
         create_policy = True
@@ -757,7 +703,7 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars):
             print(f'  Starting module to create {inner_policy}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             if inner_policy == 'multicast_policies':
-                policies(name_prefix, polVars["org"], inner_type).multicast_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).multicast_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'vlan_policies':
-                policies(name_prefix, polVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData, **kwargs)
+                policies(name_prefix, polVars["org"], inner_type).vlan_policies(jsonData, ezData, **kwargs)
 

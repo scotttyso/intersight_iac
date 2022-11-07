@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from copy import deepcopy
 import lan
 import p1
 import p2
@@ -28,7 +29,7 @@ class profiles(object):
     #==============================================
     # Quick Start - UCS Chassis Profile Module
     #==============================================
-    def quick_start_chassis(self, easy_jsonData, **polVars):
+    def quick_start_chassis(self, ezData, **polVars):
         org = self.org
         policy_type = 'UCS Chassis Profile'
         polVars["header"] = '%s Variables' % (policy_type)
@@ -55,7 +56,7 @@ class profiles(object):
         for x in range(1,rangex):
             # Chassis Model
             polVars["multi_select"] = False
-            jsonVars = easy_jsonData['policies']['thermal.Policy']
+            jsonVars = ezData['policies']['thermal.Policy']
             polVars["var_description"] = jsonVars['chassisType']['description']
             polVars["jsonVars"] = sorted(jsonVars['chassisType']['enum'])
             polVars["defaultVar"] = jsonVars['chassisType']['default']
@@ -116,7 +117,7 @@ class profiles(object):
     #==============================================
     # Quick Start - UCS Server Profile Module
     #==============================================
-    def quick_start_server_profiles(self, jsonData, easy_jsonData, **polVars):
+    def quick_start_server_profiles(self, jsonData, ezData, **polVars):
         org = self.org
         policy_type = 'UCS Server Profile'
         polVars["header"] = '%s Variables' % (policy_type)
@@ -173,7 +174,7 @@ class profiles(object):
 
             polVars["multi_select"] = False
             # Generation of UCS Server
-            jsonVars = easy_jsonData['policies']['server.Generation']
+            jsonVars = ezData['policies']['server.Generation']
             polVars["var_description"] = jsonVars['systemType']['description']
             polVars["jsonVars"] = sorted(jsonVars['systemType']['enum'])
             polVars["defaultVar"] = jsonVars['systemType']['default']
@@ -275,7 +276,7 @@ class profiles(object):
     #==============================================
     # UCS Chassis Profile Module
     #==============================================
-    def ucs_chassis_profiles(self, jsonData, easy_jsonData, **kwargs):
+    def ucs_chassis_profiles(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'chassis'
         opSystem = kwargs['opSystem']
@@ -311,7 +312,7 @@ class profiles(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = easy_jsonData['profiles']
+                    jsonVars = ezData['profiles']
                     polVars["var_description"] = jsonVars['action']['description']
                     polVars["jsonVars"] = sorted(jsonVars['action']['enum'])
                     polVars["defaultVar"] = jsonVars['action']['default']
@@ -343,7 +344,7 @@ class profiles(object):
                     polVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                         polVars.update(policyData)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -397,7 +398,7 @@ class profiles(object):
     #==============================================
     # UCS Domain Profile Module
     #==============================================
-    def ucs_domain_profiles(self, jsonData, easy_jsonData, policy_prefix, **kwargs):
+    def ucs_domain_profiles(self, jsonData, ezData, policy_prefix, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'ucs'
         opSystem = kwargs['opSystem']
@@ -433,7 +434,7 @@ class profiles(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = easy_jsonData['profiles']
+                    jsonVars = ezData['profiles']
                     polVars["var_description"] = jsonVars['action']['description']
                     polVars["jsonVars"] = sorted(jsonVars['action']['enum'])
                     polVars["defaultVar"] = jsonVars['action']['default']
@@ -456,9 +457,9 @@ class profiles(object):
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
                         if re.search(r'(switch_control|system_qos)', policy):
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                         else:
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, policy_prefix, policy, **polVars)
+                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, policy_prefix, policy, **polVars)
                         polVars.update(policyData)
 
                     policy_list = [
@@ -481,11 +482,11 @@ class profiles(object):
                         # polVars["policy"] = '%s Fabric A' % (ezfunctions.policy_description)
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  !!! Select the {ezfunctions.policy_description} for Fabric A !!!')
-                        fabric_a,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                        fabric_a,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                         # polVars["policy"] = '%s Fabric B' % (ezfunctions.policy_description)
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  !!! Select the {ezfunctions.policy_description} for Fabric B !!!')
-                        fabric_b,policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                        fabric_b,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                         polVars[policy_long].update({'fabric_a':fabric_a})
                         polVars[policy_long].update({'fabric_b':fabric_b})
                         if policy_long == 'port_policies':
@@ -566,7 +567,7 @@ class profiles(object):
     #==============================================
     # UCS Server Profile Module
     #==============================================
-    def ucs_server_profiles(self, jsonData, easy_jsonData, **kwargs):
+    def ucs_server_profiles(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'server'
         opSystem = kwargs['opSystem']
@@ -601,7 +602,7 @@ class profiles(object):
 
                 polVars["allow_opt_out"] = False
                 polVars["multi_select"] = False
-                jsonVars = easy_jsonData['profiles']
+                jsonVars = ezData['profiles']
                 polVars["var_description"] = jsonVars['action']['description']
                 polVars["jsonVars"] = sorted(jsonVars['action']['enum'])
                 polVars["defaultVar"] = jsonVars['action']['default']
@@ -609,7 +610,7 @@ class profiles(object):
                 polVars["action"] = ezfunctions.variablesFromAPI(**polVars)
 
 
-                jsonVars = jsonData['components']['schemas']['server.Profile']['allOf'][1]['properties']
+                jsonVars = jsonData['server.Profile']['allOf'][1]['properties']
                 polVars["var_description"] = jsonVars['ServerAssignmentMode']['description']
                 polVars["jsonVars"] = sorted(jsonVars['ServerAssignmentMode']['enum'])
                 polVars["defaultVar"] = jsonVars['ServerAssignmentMode']['default']
@@ -636,7 +637,7 @@ class profiles(object):
                     polVars["allow_opt_out"] = False
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                         polVars.update(policyData)
                         server_template = True
                         valid = True
@@ -651,7 +652,7 @@ class profiles(object):
                         polVars["allow_opt_out"] = False
                         for policy in policy_list:
                             policy_short = policy.split('.')[2]
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                             polVars.update(policyData)
                             server_template = True
                             valid = True
@@ -665,7 +666,7 @@ class profiles(object):
 
                 if server_template == False:
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
+                    jsonVars = jsonData['server.BaseProfile']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['TargetPlatform']['description']
                     polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
                     polVars["defaultVar"] = jsonVars['TargetPlatform']['default']
@@ -757,7 +758,7 @@ class profiles(object):
                     polVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                         polVars.update(policyData)
 
                 polVars["boot_policy"] = polVars["boot_order_policy"]
@@ -861,7 +862,7 @@ class profiles(object):
     #==============================================
     # UCS Server Profile Template Module
     #==============================================
-    def ucs_server_profile_templates(self, jsonData, easy_jsonData, **kwargs):
+    def ucs_server_profile_templates(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'template'
         opSystem = kwargs['opSystem']
@@ -897,7 +898,7 @@ class profiles(object):
                     polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['server.BaseProfile']['allOf'][1]['properties']
+                    jsonVars = jsonData['server.BaseProfile']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['TargetPlatform']['description']
                     polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
                     polVars["defaultVar"] = jsonVars['TargetPlatform']['default']
@@ -987,7 +988,7 @@ class profiles(object):
                     polVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
                         polVars.update(policyData)
 
                     polVars["boot_policy"] = polVars["boot_order_policy"]
@@ -1084,7 +1085,7 @@ class profiles(object):
         polVars["template_file"] = 'template_close.jinja2'
         ezfunctions.write_to_template(self, **polVars)
 
-def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars):
+def policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars):
     loop_valid = False
     while loop_valid == False:
         create_policy = True
@@ -1168,108 +1169,108 @@ def policy_select_loop(jsonData, easy_jsonData, name_prefix, policy, **polVars):
             print(f'  Starting module to create {inner_policy}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             if inner_policy == 'ip_pools':
-                pools.pools(name_prefix, polVars["org"], inner_type).ip_pools(jsonData, easy_jsonData, **kwargs)
+                pools.pools(name_prefix, polVars["org"], inner_type).ip_pools(jsonData, ezData, **kwargs)
             elif inner_policy == 'iqn_pools':
-                pools.pools(name_prefix, polVars["org"], inner_type).iqn_pools(jsonData, easy_jsonData, **kwargs)
+                pools.pools(name_prefix, polVars["org"], inner_type).iqn_pools(jsonData, ezData, **kwargs)
             elif inner_policy == 'mac_pools':
-                pools.pools(name_prefix, polVars["org"], inner_type).mac_pools(jsonData, easy_jsonData, **kwargs)
+                pools.pools(name_prefix, polVars["org"], inner_type).mac_pools(jsonData, ezData, **kwargs)
             elif inner_policy == 'uuid_pools':
-                pools.pools(name_prefix, polVars["org"], inner_type).uuid_pools(jsonData, easy_jsonData, **kwargs)
+                pools.pools(name_prefix, polVars["org"], inner_type).uuid_pools(jsonData, ezData, **kwargs)
             elif inner_policy == 'wwnn_pools':
-                pools.pools(name_prefix, polVars["org"], inner_type).wwnn_pools(jsonData, easy_jsonData, **kwargs)
+                pools.pools(name_prefix, polVars["org"], inner_type).wwnn_pools(jsonData, ezData, **kwargs)
             elif inner_policy == 'wwpn_pools':
-                pools.pools(name_prefix, polVars["org"], inner_type).wwpn_pools(jsonData, easy_jsonData, **kwargs)
+                pools.pools(name_prefix, polVars["org"], inner_type).wwpn_pools(jsonData, ezData, **kwargs)
             elif inner_policy == 'adapter_configuration_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).adapter_configuration_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).adapter_configuration_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'bios_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).bios_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).bios_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'boot_order_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).boot_order_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).boot_order_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'certificate_management_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).certificate_management_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).certificate_management_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'device_connector_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).device_connector_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).device_connector_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_adapter_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_adapter_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_adapter_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_network_control_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_network_control_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_network_control_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_network_group_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_network_group_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_network_group_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_network_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_network_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_network_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ethernet_qos_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_qos_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).ethernet_qos_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'fibre_channel_adapter_policies':
-                san.policies(name_prefix, polVars["org"], inner_type).fibre_channel_adapter_policies(jsonData, easy_jsonData, **kwargs)
+                san.policies(name_prefix, polVars["org"], inner_type).fibre_channel_adapter_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'fibre_channel_network_policies':
-                san.policies(name_prefix, polVars["org"], inner_type).fibre_channel_network_policies(jsonData, easy_jsonData, **kwargs)
+                san.policies(name_prefix, polVars["org"], inner_type).fibre_channel_network_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'fibre_channel_qos_policies':
-                san.policies(name_prefix, polVars["org"], inner_type).fibre_channel_qos_policies(jsonData, easy_jsonData, **kwargs)
+                san.policies(name_prefix, polVars["org"], inner_type).fibre_channel_qos_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'flow_control_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).flow_control_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).flow_control_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'imc_access_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).imc_access_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).imc_access_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ipmi_over_lan_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).ipmi_over_lan_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).ipmi_over_lan_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'iscsi_adapter_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).iscsi_adapter_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).iscsi_adapter_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'iscsi_boot_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).iscsi_boot_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).iscsi_boot_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'iscsi_static_target_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).iscsi_static_target_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).iscsi_static_target_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'lan_connectivity_policies':
-                lan.policies(name_prefix, polVars["org"], inner_type).lan_connectivity_policies(jsonData, easy_jsonData, **kwargs)
+                lan.policies(name_prefix, polVars["org"], inner_type).lan_connectivity_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ldap_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).ldap_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).ldap_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'link_aggregation_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).link_aggregation_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).link_aggregation_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'link_control_policies':
-                p1.policies(name_prefix, polVars["org"], inner_type).link_control_policies(jsonData, easy_jsonData, **kwargs)
+                p1.policies(name_prefix, polVars["org"], inner_type).link_control_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'local_user_policies':
-                p2.policies(name_prefix, polVars["org"], inner_type).local_user_policies(jsonData, easy_jsonData, **kwargs)
+                p2.policies(name_prefix, polVars["org"], inner_type).local_user_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'multicast_policies':
-                vxan.policies(name_prefix, polVars["org"], inner_type).multicast_policies(jsonData, easy_jsonData, **kwargs)
+                vxan.policies(name_prefix, polVars["org"], inner_type).multicast_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'network_connectivity_policies':
-                p2.policies(name_prefix, polVars["org"], inner_type).network_connectivity_policies(jsonData, easy_jsonData, **kwargs)
+                p2.policies(name_prefix, polVars["org"], inner_type).network_connectivity_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ntp_policies':
-                p2.policies(name_prefix, polVars["org"], inner_type).ntp_policies(jsonData, easy_jsonData, **kwargs)
+                p2.policies(name_prefix, polVars["org"], inner_type).ntp_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'persistent_memory_policies':
-                p2.policies(name_prefix, polVars["org"], inner_type).persistent_memory_policies(jsonData, easy_jsonData, **kwargs)
+                p2.policies(name_prefix, polVars["org"], inner_type).persistent_memory_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'port_policies':
-                p2.policies(name_prefix, polVars["org"], inner_type).port_policies(jsonData, easy_jsonData, **kwargs)
+                p2.policies(name_prefix, polVars["org"], inner_type).port_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'power_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).power_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).power_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'san_connectivity_policies':
-                san.policies(name_prefix, polVars["org"], inner_type).san_connectivity_policies(jsonData, easy_jsonData, **kwargs)
+                san.policies(name_prefix, polVars["org"], inner_type).san_connectivity_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'sd_card_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).sd_card_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).sd_card_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'serial_over_lan_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).serial_over_lan_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).serial_over_lan_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'smtp_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).smtp_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).smtp_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'snmp_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).snmp_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).snmp_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ssh_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).ssh_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).ssh_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'storage_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).storage_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).storage_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'switch_control_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).switch_control_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).switch_control_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'syslog_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).syslog_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).syslog_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'system_qos_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).system_qos_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).system_qos_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'thermal_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).thermal_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).thermal_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'ucs_server_profiles':
-                profiles(name_prefix, polVars["org"], inner_type).ucs_server_profiles(jsonData, easy_jsonData, **kwargs)
+                profiles(name_prefix, polVars["org"], inner_type).ucs_server_profiles(jsonData, ezData, **kwargs)
             elif inner_policy == 'ucs_server_profile_templates':
-                profiles(name_prefix, polVars["org"], inner_type).ucs_server_profile_templates(jsonData, easy_jsonData, **kwargs)
+                profiles(name_prefix, polVars["org"], inner_type).ucs_server_profile_templates(jsonData, ezData, **kwargs)
             elif inner_policy == 'virtual_kvm_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).virtual_kvm_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).virtual_kvm_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'virtual_media_policies':
-                p3.policies(name_prefix, polVars["org"], inner_type).virtual_media_policies(jsonData, easy_jsonData, **kwargs)
+                p3.policies(name_prefix, polVars["org"], inner_type).virtual_media_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'vlan_policies':
-                vxan.policies(name_prefix, polVars["org"], inner_type).vlan_policies(jsonData, easy_jsonData, **kwargs)
+                vxan.policies(name_prefix, polVars["org"], inner_type).vlan_policies(jsonData, ezData, **kwargs)
             elif inner_policy == 'vsan_policies':
-                vxan.policies(name_prefix, polVars["org"], inner_type).vsan_policies(jsonData, easy_jsonData, **kwargs)
+                vxan.policies(name_prefix, polVars["org"], inner_type).vsan_policies(jsonData, ezData, **kwargs)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from copy import deepcopy
 import ezfunctions
 import jinja2
 import os
@@ -21,7 +22,7 @@ class policies(object):
     #==============================================
     # Power Policy Module
     #==============================================
-    def power_policies(self, jsonData, easy_jsonData, **kwargs):
+    def power_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         opSystem = kwargs['opSystem']
         org = self.org
@@ -56,9 +57,9 @@ class policies(object):
 
                 print('staring loop again')
                 polVars["multi_select"] = False
-                polVars["var_description"] = easy_jsonData['policies']['power.Policy']['systemType']['description']
-                polVars["jsonVars"] = sorted(easy_jsonData['policies']['power.Policy']['systemType']['enum'])
-                polVars["defaultVar"] = easy_jsonData['policies']['power.Policy']['systemType']['default']
+                polVars["var_description"] = ezData['policies']['power.Policy']['systemType']['description']
+                polVars["jsonVars"] = sorted(ezData['policies']['power.Policy']['systemType']['enum'])
+                polVars["defaultVar"] = ezData['policies']['power.Policy']['systemType']['default']
                 polVars["varType"] = 'System Type'
                 system_type = ezfunctions.variablesFromAPI(**polVars)
 
@@ -71,7 +72,7 @@ class policies(object):
                 polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                 polVars["multi_select"] = False
-                jsonVars = jsonData['components']['schemas']['power.Policy']['allOf'][1]['properties']
+                jsonVars = jsonData['power.Policy']['allOf'][1]['properties']
 
                 if system_type == '9508':
                     valid = False
@@ -176,7 +177,7 @@ class policies(object):
     #==============================================
     # SD Card Policy Module
     #==============================================
-    def sd_card_policies(self, jsonData, easy_jsonData, **kwargs):
+    def sd_card_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'sdcard'
         opSystem = kwargs['opSystem']
@@ -237,7 +238,7 @@ class policies(object):
     #==============================================
     # Serial over LAN Policy Module
     #==============================================
-    def serial_over_lan_policies(self, jsonData, easy_jsonData, **kwargs):
+    def serial_over_lan_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'sol'
         opSystem = kwargs['opSystem']
@@ -286,7 +287,7 @@ class policies(object):
                     polVars["enabled"] = True
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['sol.Policy']['allOf'][1]['properties']
+                    jsonVars = jsonData['sol.Policy']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['BaudRate']['description']
                     polVars["jsonVars"] = sorted(jsonVars['BaudRate']['enum'])
                     polVars["defaultVar"] = jsonVars['BaudRate']['default']
@@ -353,7 +354,7 @@ class policies(object):
     #==============================================
     # SMTP Policy Module
     #==============================================
-    def smtp_policies(self, jsonData, easy_jsonData, **kwargs):
+    def smtp_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'smtp'
         opSystem = kwargs['opSystem']
@@ -432,7 +433,7 @@ class policies(object):
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['smtp.Policy']['allOf'][1]['properties']
+                    jsonVars = jsonData['smtp.Policy']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['MinSeverity']['description']
                     polVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
                     polVars["defaultVar"] = jsonVars['MinSeverity']['default']
@@ -528,7 +529,7 @@ class policies(object):
     #==============================================
     # SNMP Policy Module
     #==============================================
-    def snmp_policies(self, jsonData, easy_jsonData, **kwargs):
+    def snmp_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'snmp'
         opSystem = kwargs['opSystem']
@@ -588,7 +589,7 @@ class policies(object):
                             print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['snmp.Policy']['allOf'][1]['properties']
+                    jsonVars = jsonData['snmp.Policy']['allOf'][1]['properties']
 
                     # SNMP Contact
                     polVars["Description"] = jsonVars['SysContact']['description']
@@ -814,7 +815,7 @@ class policies(object):
     #==============================================
     # SSH Policy Module
     #==============================================
-    def ssh_policies(self, jsonData, easy_jsonData, **kwargs):
+    def ssh_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'ssh'
         opSystem = kwargs['opSystem']
@@ -935,7 +936,7 @@ class policies(object):
     #========================================
     # Storage Policy Module
     #========================================
-    def storage_policies(self, jsonData, easy_jsonData, **kwargs):
+    def storage_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'storage'
         opSystem = kwargs['opSystem']
@@ -984,7 +985,7 @@ class policies(object):
 
                     # Configure the Global Host Spares Setting
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['storage.StoragePolicy']['allOf'][1]['properties']
+                    jsonVars = jsonData['storage.StoragePolicy']['allOf'][1]['properties']
 
                     # Configure the Global Host Spares Setting
                     polVars["Description"] = jsonVars['GlobalHotSpares']['description']
@@ -1026,7 +1027,7 @@ class policies(object):
                         drive_group = []
                         drive_group_loop = False
                         while drive_group_loop == False:
-                            jsonVars = jsonData['components']['schemas']['storage.DriveGroup']['allOf'][1]['properties']
+                            jsonVars = jsonData['storage.DriveGroup']['allOf'][1]['properties']
 
                             # Request Drive Group Name
                             polVars["Description"] = jsonVars['Name']['description']
@@ -1045,7 +1046,7 @@ class policies(object):
                             polVars["varType"] = 'Raid Level'
                             RaidLevel = ezfunctions.variablesFromAPI(**polVars)
 
-                            jsonVars = jsonData['components']['schemas']['storage.ManualDriveGroup']['allOf'][1]['properties']
+                            jsonVars = jsonData['storage.ManualDriveGroup']['allOf'][1]['properties']
 
                             # If Raid Level is anything other than Raid0 ask for Hot Spares
                             if not RaidLevel == 'Raid0':
@@ -1079,7 +1080,7 @@ class policies(object):
 
 
                                 for span in SpanGroups:
-                                    jsonVars = jsonData['components']['schemas']['storage.SpanDrives']['allOf'][1]['properties']
+                                    jsonVars = jsonData['storage.SpanDrives']['allOf'][1]['properties']
                                     polVars["Description"] = jsonVars['Slots']['description']
                                     if re.fullmatch('^Raid10$', RaidLevel):
                                         Drive1 = (inner_loop_count * 2) - 1
@@ -1100,7 +1101,7 @@ class policies(object):
                                     polVars["maxLength"] = 10
                                     SpanSlots.append({'slots':ezfunctions.varStringLoop(**polVars)})
                             elif re.fullmatch('^Raid(0|1|5|6)$', RaidLevel):
-                                jsonVars = jsonData['components']['schemas']['storage.SpanDrives']['allOf'][1]['properties']
+                                jsonVars = jsonData['storage.SpanDrives']['allOf'][1]['properties']
                                 polVars["Description"] = jsonVars['Slots']['description']
                                 if re.fullmatch('^Raid(0|1)$', RaidLevel):
                                     Drive1 = (inner_loop_count * 2) - 1
@@ -1125,7 +1126,7 @@ class policies(object):
                             sub_loop_count = 0
                             sub_loop = False
                             while sub_loop == False:
-                                jsonVars = jsonData['components']['schemas']['storage.VirtualDriveConfiguration']['allOf'][1]['properties']
+                                jsonVars = jsonData['storage.VirtualDriveConfiguration']['allOf'][1]['properties']
 
                                 polVars["Description"] = jsonVars['Name']['description']
                                 polVars["varDefault"] = f'vd{sub_loop_count}'
@@ -1161,7 +1162,7 @@ class policies(object):
                                 polVars["varName"] = 'Boot Drive'
                                 BootDrive = ezfunctions.varBoolLoop(**polVars)
 
-                                jsonVars = jsonData['components']['schemas']['storage.VirtualDrivePolicy']['allOf'][1]['properties']
+                                jsonVars = jsonData['storage.VirtualDrivePolicy']['allOf'][1]['properties']
 
                                 polVars["var_description"] = jsonVars['AccessPolicy']['description']
                                 polVars["jsonVars"] = sorted(jsonVars['AccessPolicy']['enum'])
@@ -1334,7 +1335,7 @@ class policies(object):
 
                     # Configure M2 if it is True if not Pop it from the list
                     if M2VirtualDrive == True:
-                        jsonVars = jsonData['components']['schemas']['storage.M2VirtualDriveConfig']['allOf'][1]['properties']
+                        jsonVars = jsonData['storage.M2VirtualDriveConfig']['allOf'][1]['properties']
 
                         polVars["var_description"] = jsonVars['ControllerSlot']['description']
                         polVars["jsonVars"] = sorted(jsonVars['ControllerSlot']['enum'])
@@ -1361,7 +1362,7 @@ class policies(object):
                         single_drive_loop = False
                         while single_drive_loop == False:
                             # Obtain the Single Drive Raid Slots
-                            jsonVars = jsonData['components']['schemas']['storage.R0Drive']['allOf'][1]['properties']
+                            jsonVars = jsonData['storage.R0Drive']['allOf'][1]['properties']
                             polVars["Description"] = jsonVars['DriveSlots']['description']
                             polVars["varDefault"] = f'1-2'
                             polVars["varInput"] = f'Enter the Drive Slots for Drive Array Span 0. [{polVars["varDefault"]}]:'
@@ -1372,7 +1373,7 @@ class policies(object):
                             DriveSlots = ezfunctions.varStringLoop(**polVars)
                                 
                             # Obtain the Virtual Drive Policies
-                            jsonVars = jsonData['components']['schemas']['storage.VirtualDrivePolicy']['allOf'][1]['properties']
+                            jsonVars = jsonData['storage.VirtualDrivePolicy']['allOf'][1]['properties']
 
                             # Access Policy
                             polVars["var_description"] = jsonVars['AccessPolicy']['description']
@@ -1553,7 +1554,7 @@ class policies(object):
     #==============================================
     # Switch Control Policy Module
     #==============================================
-    def switch_control_policies(self, jsonData, easy_jsonData, **kwargs):
+    def switch_control_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'sw_ctrl'
         opSystem = kwargs['opSystem']
@@ -1605,7 +1606,7 @@ class policies(object):
 
                 # Pull Information from the API
                 polVars["multi_select"] = False
-                jsonVars = jsonData['components']['schemas']['fabric.FcNetworkPolicy']['allOf'][1]['properties']
+                jsonVars = jsonData['fabric.FcNetworkPolicy']['allOf'][1]['properties']
 
                 # Ethernet Switching Mode
                 polVars["var_description"] = jsonVars['EthernetSwitchingMode']['description']
@@ -1663,7 +1664,7 @@ class policies(object):
     #==============================================
     # Syslog Policy Module
     #==============================================
-    def syslog_policies(self, jsonData, easy_jsonData, **kwargs):
+    def syslog_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'syslog'
         opSystem = kwargs['opSystem']
@@ -1709,7 +1710,7 @@ class policies(object):
 
                     # Syslog Local Logging
                     polVars["multi_select"] = False
-                    jsonVars = jsonData['components']['schemas']['syslog.LocalClientBase']['allOf'][1]['properties']
+                    jsonVars = jsonData['syslog.LocalClientBase']['allOf'][1]['properties']
                     polVars["var_description"] = jsonVars['MinSeverity']['description']
                     polVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
                     polVars["defaultVar"] = jsonVars['MinSeverity']['default']
@@ -1785,7 +1786,7 @@ class policies(object):
     #==============================================
     # System QoS Policy Module
     #==============================================
-    def system_qos_policies(self, jsonData, easy_jsonData, **kwargs):
+    def system_qos_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'qos'
         opSystem = kwargs['opSystem']
@@ -1976,7 +1977,7 @@ class policies(object):
     #==============================================
     # Thermal Policy Module
     #==============================================
-    def thermal_policies(self, jsonData, easy_jsonData, **kwargs):
+    def thermal_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         opSystem = kwargs['opSystem']
         org = self.org
@@ -2009,7 +2010,7 @@ class policies(object):
             while policy_loop == False:
 
                 polVars["multi_select"] = False
-                jsonVars = easy_jsonData['policies']['thermal.Policy']
+                jsonVars = ezData['policies']['thermal.Policy']
                 polVars["var_description"] = jsonVars['chassisType']['description']
                 polVars["jsonVars"] = sorted(jsonVars['chassisType']['enum'])
                 polVars["defaultVar"] = jsonVars['chassisType']['default']
@@ -2028,7 +2029,7 @@ class policies(object):
                     polVars["popList"] = ['Acoustic', 'HighPower', 'MaximumPower']
                 if polVars["chassis_type"] == '9508':
                     polVars["popList"] = []
-                jsonVars = jsonData['components']['schemas']['thermal.Policy']['allOf'][1]['properties']
+                jsonVars = jsonData['thermal.Policy']['allOf'][1]['properties']
                 polVars["var_description"] = jsonVars['FanControlMode']['description']
                 polVars["jsonVars"] = sorted(jsonVars['FanControlMode']['enum'])
                 polVars["defaultVar"] = jsonVars['FanControlMode']['default']
@@ -2071,7 +2072,7 @@ class policies(object):
     #==============================================
     # Virtual KVM Policy Module
     #==============================================
-    def virtual_kvm_policies(self, jsonData, easy_jsonData, **kwargs):
+    def virtual_kvm_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'vkvm'
         opSystem = kwargs['opSystem']
@@ -2117,7 +2118,7 @@ class policies(object):
                 polVars["maximum_sessions"] = 4
 
                 # Pull in the Policies for Virtual KVM
-                jsonVars = jsonData['components']['schemas']['kvm.Policy']['allOf'][1]['properties']
+                jsonVars = jsonData['kvm.Policy']['allOf'][1]['properties']
                 polVars["multi_select"] = False
 
                 # Enable Local Server Video
@@ -2194,7 +2195,7 @@ class policies(object):
     #==============================================
     # Virtual Media Policy Policy Module
     #==============================================
-    def virtual_media_policies(self, jsonData, easy_jsonData, **kwargs):
+    def virtual_media_policies(self, jsonData, ezData, **kwargs):
         name_prefix = self.name_prefix
         name_suffix = 'vmedia'
         opSystem = kwargs['opSystem']
@@ -2291,7 +2292,7 @@ class policies(object):
                             valid_sub = False
                             while valid_sub == False:
                                 polVars["multi_select"] = False
-                                jsonVars = jsonData['components']['schemas']['vmedia.Mapping']['allOf'][1]['properties']
+                                jsonVars = jsonData['vmedia.Mapping']['allOf'][1]['properties']
                                 polVars["var_description"] = jsonVars['MountProtocol']['description']
                                 polVars["jsonVars"] = sorted(jsonVars['MountProtocol']['enum'])
                                 polVars["defaultVar"] = jsonVars['MountProtocol']['default']
@@ -2410,7 +2411,7 @@ class policies(object):
 
                                 if assignOptions == True:
                                     polVars["multi_select"] = True
-                                    jsonVars = easy_jsonData['policies']['vmedia.Mapping']
+                                    jsonVars = ezData['policies']['vmedia.Mapping']
                                     if Protocol == 'cifs':
                                         polVars["var_description"] = jsonVars['cifs.mountOptions']['description']
                                         polVars["jsonVars"] = sorted(jsonVars['cifs.mountOptions']['enum'])
