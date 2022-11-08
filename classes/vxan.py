@@ -129,48 +129,6 @@ class policies(object):
         ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
-    # Quick Start - VLAN Policy Module
-    #==============================================
-    def quick_start_vlan(self, **kwargs):
-        org = self.org
-        polVars = {'name': org}
-        vlan_list_expanded = ezfunctions.vlan_list_full(kwargs["vlans"])
-
-        if not kwargs["native_vlan"] == '':
-            if int(kwargs["native_vlan"]) in vlan_list_expanded:
-                while(int(kwargs["native_vlan"]) in vlan_list_expanded):
-                    vlan_list_expanded.remove(int(kwargs["native_vlan"]))
-        elif kwargs["native_vlan"] == '' and 1 in vlan_list_expanded:
-            kwargs["native_vlan"] == 1
-            while(1 in vlan_list_expanded):
-                vlan_list_expanded.remove(1)
-
-        kwargs["vlan_list"] = ezfunctions.vlan_list_format(vlan_list_expanded)
-
-        polVars["vlans"] = []
-        if not kwargs["native_vlan"] == '':
-            polVars["vlans"].append({
-                'auto_allow_on_uplinks':True,
-                'multicast_policy':'mcast',
-                'name':'default',
-                'native_vlan':True,
-                'vlan_list':kwargs["native_vlan"]
-            })
-        polVars["vlans"].append({
-            'multicast_policy':'mcast',
-            'name':org,
-            'vlan_list':kwargs["vlan_list"]
-        })
-
-        # Add Policy Variables to immDict
-        kwargs['class_path'] = 'intersight,policies,vlan'
-        kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-        # Return New Variables
-        kwargs['vlan_list_expanded'] = vlan_list_expanded
-        return kwargs
-
-    #==============================================
     # VLAN Policy Module
     #==============================================
     def vlan_policies(self, jsonData, ezData, **kwargs):

@@ -27,94 +27,6 @@ class profiles(object):
         self.type = type
 
     #==============================================
-    # Quick Start - UCS Chassis Profile Module
-    #==============================================
-    def quick_start_chassis(self, ezData, **polVars):
-        org = self.org
-        policy_type = 'UCS Chassis Profile'
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'ucs_chassis_profiles'
-
-        domain_name = polVars["name"]
-        polVars["Description"] = f'Number of Chassis attached to {domain_name}.'
-        polVars["varInput"] = f'Enter the Number of Chassis attached to {domain_name}:'
-        polVars["varDefault"] = 1
-        polVars["varName"] = 'Chassis Count'
-        polVars["minNum"] = 1
-        polVars["maxNum"] = 20
-        chassis_count = ezfunctions.varNumberLoop(**polVars)
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
-
-        rangex = int(chassis_count) + 1
-        for x in range(1,rangex):
-            # Chassis Model
-            polVars["multi_select"] = False
-            jsonVars = ezData['policies']['thermal.Policy']
-            polVars["var_description"] = jsonVars['chassisType']['description']
-            polVars["jsonVars"] = sorted(jsonVars['chassisType']['enum'])
-            polVars["defaultVar"] = jsonVars['chassisType']['default']
-            polVars["varType"] = 'Chassis Model'
-            chassis_model = ezfunctions.variablesFromAPI(**polVars)
-
-            # Set Default Policy Values
-            polVars["imc_access_policy"] = polVars["org"]
-            polVars["power_policy"] = chassis_model
-            polVars["snmp_policy"] = polVars["org"]
-            polVars["thermal_policy"] = chassis_model
-            polVars["name"] = f'{domain_name}-{x}'
-            polVars["descr"] = f'{domain_name}-{x} Chassis Profile.'
-
-            # Obtain Chassis Serial Number or Skip
-            polVars["Description"] = 'Serial Number of the Chassis to assign to the Profile.'
-            polVars["varDefault"] = ''
-            polVars["varInput"] = f'What is the Serial Number of Chassis {x}? [press enter to skip]:'
-            polVars["varName"] = 'Serial Number'
-            polVars["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
-            polVars["minLength"] = 11
-            polVars["maxLength"] = 11
-            polVars['serial_number'] = ezfunctions.varStringLoop(**polVars)
-
-            # Write Policies to Template File
-            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-            ezfunctions.write_to_template(self, **polVars)
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
-
-    #==============================================
-    # Quick Start - UCS Domain Profile Module
-    #==============================================
-    def quick_start_domain(self, **polVars):
-        org = self.org
-        policy_type = 'UCS Domain Profile'
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'ucs_domain_profiles'
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
-
-        # Write Policies to Template File
-        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-        ezfunctions.write_to_template(self, **polVars)
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
-
-    #==============================================
     # Quick Start - UCS Server Profile Module
     #==============================================
     def quick_start_server_profiles(self, jsonData, ezData, **polVars):
@@ -211,18 +123,6 @@ class profiles(object):
     #==================================================
     def quick_start_server_templates(self, **polVars):
         org = self.org
-        policy_type = 'UCS Server Profile Template'
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'ucs_server_profile_templates'
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
-
         # Set Default Policy Values
         polVars["name"] = f'{polVars["boot_order_policy"]}'
         polVars["descr"] = f'{polVars["name"]} Server Profile Template'
@@ -264,14 +164,6 @@ class profiles(object):
             polVars["smtp_policy"] = f'{org}'
             polVars["ssh_policy"] = f'{org}'
             polVars["target_platform"] = 'Standalone'
-
-        # Write Policies to Template File
-        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-        ezfunctions.write_to_template(self, **polVars)
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
 
     #==============================================
     # UCS Chassis Profile Module

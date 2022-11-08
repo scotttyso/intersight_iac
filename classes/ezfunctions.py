@@ -307,63 +307,38 @@ def findVars(ws, func, rows, count):
     return var_dict
 
 #======================================================
-# Function - ipmi_key Function
-#======================================================
-def ipmi_key_function(**polVars):
-    print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  The ipmi_key Must be in Hexidecimal Format [a-fA-F0-9] and no longer than 40 characters.')
-    print(f'\n-------------------------------------------------------------------------------------------\n')
-    valid = False
-    while valid == False:
-        password1 = stdiomask.getpass(prompt='Enter the ipmi_key: ')
-        password2 = stdiomask.getpass(prompt='Please re-enter ipmi_key: ')
-        if not password1 == '':
-            if password1 == password2:
-                TF_VAR = 'TF_VAR_ipmi_key_1'
-                os.environ[TF_VAR] = '%s' % (password1)
-                polVars["ipmi_key"] = 1
-                valid = validating.ipmi_key_check(password1)
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! The Keys did not match.  Please Re-enter the IPMI Key.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-        else:
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Error!! Invalid Value.  Please Re-enter the IPMI Key.')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-
-    return polVars["ipmi_key"]
-
-#======================================================
 # Function - Local User Policy
 #======================================================
-def local_users_function(jsonData, ezData, inner_loop_count, **polVars):
-    local_users = []
+def local_users_function(**kwargs):
+    ezData = kwargs['ezData']
+    inner_loop_count = 1
+    jsonData = kwargs['jsonData']
+    kwargs['local_users'] = []
     valid_users = False
     while valid_users == False:
-        polVars["multi_select"] = False
+        kwargs["multi_select"] = False
         jsonVars = jsonData['iam.EndPointUser']['allOf'][1]['properties']
 
-        polVars["Description"] = jsonVars['Name']['description']
-        polVars["varDefault"] = 'admin'
-        polVars["varInput"] = 'What is the Local username?'
-        polVars["varName"] = 'Local User'
-        polVars["varRegex"] = jsonVars['Name']['pattern']
-        polVars["minLength"] = 1
-        polVars["maxLength"] = jsonVars['Name']['maxLength']
-        username = varStringLoop(**polVars)
+        kwargs["Description"] = jsonVars['Name']['description']
+        kwargs["varDefault"] = 'admin'
+        kwargs["varInput"] = 'What is the Local username?'
+        kwargs["varName"] = 'Local User'
+        kwargs["varRegex"] = jsonVars['Name']['pattern']
+        kwargs["minLength"] = 1
+        kwargs["maxLength"] = jsonVars['Name']['maxLength']
+        username = varStringLoop(**kwargs)
 
-        polVars["multi_select"] = False
-        jsonVars = ezData['policies']['iam.LocalUserPasswordPolicy']
-        polVars["var_description"] = jsonVars['role']['description']
-        polVars["jsonVars"] = sorted(jsonVars['role']['enum'])
-        polVars["defaultVar"] = jsonVars['role']['default']
-        polVars["varType"] = 'User Role'
-        role = variablesFromAPI(**polVars)
+        kwargs["multi_select"] = False
+        jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['iam.LocalUserPasswordPolicy']
+        kwargs["var_description"] = jsonVars['role']['description']
+        kwargs["jsonVars"] = sorted(jsonVars['role']['enum'])
+        kwargs["defaultVar"] = jsonVars['role']['default']
+        kwargs["varType"] = 'User Role'
+        role = variablesFromAPI(**kwargs)
 
-        if polVars["enforce_strong_password"] == True:
+        if kwargs["enforce_strong_password"] == True:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print('Enforce Strong Password is enabled so the following rules must be followed:')
+            print('Enforce Strong Password is enabled.  The following rules must be followed:')
             print('  - The password must have a minimum of 8 and a maximum of 20 characters.')
             print("  - The password must not contain the User's Name.")
             print('  - The password must contain characters from three of the following four categories.')
@@ -371,30 +346,8 @@ def local_users_function(jsonData, ezData, inner_loop_count, **polVars):
             print('    * English lowercase characters (a through z).')
             print('    * Base 10 digits (0 through 9).')
             print('    * Non-alphabetic characters (! , @, #, $, %, ^, &, *, -, _, +, =)\n\n')
-        valid = False
-        while valid == False:
-            password1 = stdiomask.getpass(f'What is the password for {username}? ')
-            password2 = stdiomask.getpass(f'Please re-enter the password for {username}? ')
-            if not password1 == '':
-                if password1 == password2:
-                    if polVars["enforce_strong_password"] == True:
-                        valid = validating.strong_password(f"{username}'s password", password1, 8, 20)
-
-                    else:
-                        valid = validating.string_length(f'{username} password', password1, 1, 127)
-
-                else:
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Error!! The Passwords did not match.  Please Re-enter the password for {username}.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please Re-enter the password for {username}.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-        TF_VAR = 'TF_VAR_local_user_password_%s' % (inner_loop_count)
-        os.environ[TF_VAR] = '%s' % (password1)
-        password1 = inner_loop_count
-
+        kwargs['Variable'] = f'local_user_password_{inner_loop_count}'
+        kwargs = sensitive_var_value(**kwargs)
         user_attributes = {
             'enabled':True,
             'password':inner_loop_count,
@@ -411,7 +364,7 @@ def local_users_function(jsonData, ezData, inner_loop_count, **polVars):
         while valid_confirm == False:
             question = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
             if question == 'Y' or question == '':
-                local_users.append(user_attributes)
+                kwargs['local_users'].append(user_attributes)
                 valid_exit = False
                 while valid_exit == False:
                     loop_exit = input(f'Would You like to Configure another Local User?  Enter "Y" or "N" [N]: ')
@@ -420,7 +373,6 @@ def local_users_function(jsonData, ezData, inner_loop_count, **polVars):
                         valid_confirm = True
                         valid_exit = True
                     elif loop_exit == 'N' or loop_exit == '':
-                        user_loop = True
                         valid_confirm = True
                         valid_exit = True
                         valid_users = True
@@ -438,8 +390,7 @@ def local_users_function(jsonData, ezData, inner_loop_count, **polVars):
                 print(f'\n------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n------------------------------------------------------\n')
-
-    return local_users,user_loop
+    return kwargs
 
 #======================================================
 # Function - Merge Easy IMM Repository to Dest Folder
@@ -623,7 +574,9 @@ def policy_name(namex, policy_type):
         valid = validating.name_rule(f'{policy_type} Name', name, 1, 62)
         if valid == True: return name
 
-# Function to validate input for each method
+#======================================================
+# Function - Validate input for each method
+#======================================================
 def process_kwargs(required_args, optional_args, **kwargs):
     # Validate all required kwargs passed
     # if all(item in kwargs for item in required_args.keys()) is not True:
@@ -670,6 +623,9 @@ def process_kwargs(required_args, optional_args, **kwargs):
     polVars = {**required_args, **optional_args}
     return(polVars)
 
+#======================================================
+# Function - Create Files
+#======================================================
 def process_method(wr_method, dest_dir, dest_file, template, **polVars):
     opSystem = platform.system()
     if opSystem == 'Windows':
@@ -718,7 +674,9 @@ def process_method(wr_method, dest_dir, dest_file, template, **polVars):
     wr_file.write(payload)
     wr_file.close()
 
-# Function to Read Excel Workbook Data
+#======================================================
+# Function - Read Excel Workbook Data
+#======================================================
 def read_in(excel_workbook):
     try:
         wb = load_workbook(excel_workbook)
@@ -728,19 +686,28 @@ def read_in(excel_workbook):
         sys.exit(e)
     return wb
 
-def sensitive_var_value(jsonData, **polVars):
-    sensitive_var = 'TF_VAR_%s' % (polVars['Variable'])
+#======================================================
+# Function - Prompt User for Sensitive Values
+#======================================================
+def sensitive_var_value(**kwargs):
+    jsonData = kwargs['jsonData']
+    org = kwargs['org']
+    sensitive_var = 'TF_VAR_%s' % (kwargs['Variable'])
     # -------------------------------------------------------------------------------------------------------------------------
     # Check to see if the Variable is already set in the Environment, and if not prompt the user for Input.
     #--------------------------------------------------------------------------------------------------------------------------
     if os.environ.get(sensitive_var) is None:
         print(f"\n----------------------------------------------------------------------------------\n")
         print(f"  The Script did not find {sensitive_var} as an 'environment' variable.")
-        print(f"  To not be prompted for the value of {polVars['Variable']} each time")
+        print(f"  To not be prompted for the value of {kwargs['Variable']} each time")
         print(f"  add the following to your local environemnt:\n")
-        print(f"    - Linux: export {sensitive_var}='{polVars['Variable']}_value'")
-        print(f"    - Windows: $env:{sensitive_var}='{polVars['Variable']}_value'")
+        print(f"    - Linux: export {sensitive_var}='{kwargs['Variable']}_value'")
+        print(f"    - Windows: $env:{sensitive_var}='{kwargs['Variable']}_value'")
         print(f"\n----------------------------------------------------------------------------------\n")
+    if kwargs['Variable'] == 'ipmi_key':
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'  The ipmi_key Must be in Hexidecimal Format [a-fA-F0-9] and no longer than 40 characters.')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
 
     if os.environ.get(sensitive_var) is None:
         valid = False
@@ -751,8 +718,8 @@ def sensitive_var_value(jsonData, **polVars):
 
         valid = False
         while valid == False:
-            if polVars.get('Multi_Line_Input'):
-                print(f'Enter the value for {polVars["Variable"]}:')
+            if kwargs.get('Multi_Line_Input'):
+                print(f'Enter the value for {kwargs["Variable"]}:')
                 lines = []
                 while True:
                     # line = input('')
@@ -768,8 +735,8 @@ def sensitive_var_value(jsonData, **polVars):
             else:
                 valid_pass = False
                 while valid_pass == False:
-                    password1 = stdiomask.getpass(prompt=f'Enter the value for {polVars["Variable"]}: ')
-                    password2 = stdiomask.getpass(prompt=f'Re-Enter the value for {polVars["Variable"]}: ')
+                    password1 = stdiomask.getpass(prompt=f'Enter the value for {kwargs["Variable"]}: ')
+                    password2 = stdiomask.getpass(prompt=f'Re-Enter the value for {kwargs["Variable"]}: ')
                     if password1 == password2:
                         secure_value = password1
                         valid_pass = True
@@ -809,7 +776,7 @@ def sensitive_var_value(jsonData, **polVars):
                 maxLength = jsonVars['EncryptionKey']['maxLength']
                 rePattern = jsonVars['EncryptionKey']['pattern']
                 varName = 'IPMI Encryption Key'
-                valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                valid = validating.ipmi_key_check(secure_value)
             elif 'iscsi_boot' in sensitive_var:
                 jsonVars = jsonData['vnic.IscsiAuthProfile']['allOf'][1]['properties']
                 minLength = 12
@@ -823,14 +790,14 @@ def sensitive_var_value(jsonData, **polVars):
                 maxLength = jsonVars['Password']['maxLength']
                 rePattern = jsonVars['Password']['pattern']
                 varName = 'Local User Password'
-                if polVars.get('enforce_strong_password'):
-                    enforce_pass = polVars['enforce_strong_password']
+                if kwargs.get('enforce_strong_password'):
+                    enforce_pass = kwargs['enforce_strong_password']
                 else:
                     enforce_pass = False
                 if enforce_pass == True:
                     minLength = 8
                     maxLength = 20
-                    valid = validating.strong_password(polVars['Variable'], secure_value, minLength, maxLength)
+                    valid = validating.strong_password(kwargs['Variable'], secure_value, minLength, maxLength)
                 else:
                     valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'secure_passphrase' in sensitive_var:
@@ -858,20 +825,27 @@ def sensitive_var_value(jsonData, **polVars):
                 varName = 'vMedia Mapping Password'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
 
+        # Add Policy Variables to immDict
+        if not kwargs['immDict']['orgs'][org].get('sensitive_vars'):
+            kwargs['immDict']['orgs'][org]['sensitive_vars'] = []
+        kwargs['immDict']['orgs'][org]['sensitive_vars'].append(sensitive_var)
+
         # Add the Variable to the Environment
         os.environ[sensitive_var] = '%s' % (secure_value)
         var_value = secure_value
 
     else:
         # Add the Variable to the Environment
-        if polVars.get('Multi_Line_Input'):
+        if kwargs.get('Multi_Line_Input'):
             var_value = os.environ.get(sensitive_var)
             var_value = var_value.replace('\n', '\\n')
         else:
             var_value = os.environ.get(sensitive_var)
+    return kwargs
 
-    return var_value
-
+#======================================================
+# Function - Wizard for SNMP Trap Servers
+#======================================================
 def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
     trap_servers = []
     valid_traps = False
@@ -1012,6 +986,9 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
 
     return trap_servers,snmp_loop
 
+#======================================================
+# Function - Wizard for SNMP Users
+#======================================================
 def snmp_users(jsonData, inner_loop_count, **polVars):
     snmp_user_list = []
     valid_users = False
@@ -1156,7 +1133,9 @@ def snmp_users(jsonData, inner_loop_count, **polVars):
                 print(f'\n------------------------------------------------------\n')
     return snmp_user_list,snmp_loop
 
-# Function to Define stdout_log output
+#======================================================
+# Function - Define stdout_log output
+#======================================================
 def stdout_log(sheet, line):
     if log_level == 0:
         return
@@ -1172,6 +1151,9 @@ def stdout_log(sheet, line):
     else:
         return
 
+#======================================================
+# Function - Wizard for Syslog Servers
+#======================================================
 def syslog_servers(jsonData, **polVars):
     remote_logging = {}
     syslog_count = 1

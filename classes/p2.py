@@ -11,10 +11,15 @@ import pkg_resources
 import platform
 import re
 import stdiomask
+import textwrap
 import validating
 import yaml
 
 ucs_template_path = pkg_resources.resource_filename('p2', '../templates/')
+
+class MyDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyDumper, self).increase_indent(flow, False)
 
 class policies(object):
     def __init__(self, name_prefix, org, type):
@@ -1486,12 +1491,8 @@ def port_list_eth(**kwargs):
                             elif port_type == 'Server Ports':
                                 port_config = {'port_list':original_port_list}
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-                            class MyDumper(yaml.Dumper):
-                                def increase_indent(self, flow=False, indentless=False):
-                                    return super(MyDumper, self).increase_indent(flow, False)
-                            #stream = yaml.dump(port_config, default_flow_style=False)
-                            #print(stream.replace('\n- ', '\n\n- '))
-                            print(yaml.dump({port_type:port_config}, Dumper=MyDumper, default_flow_style=False))
+                            print(textwrap.indent(yaml.dump({port_type:port_config}, Dumper=MyDumper, default_flow_style=False
+                            ), " "*4, predicate=None))
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             valid_confirm = False
                             while valid_confirm == False:
@@ -1684,12 +1685,8 @@ def port_list_fc(**kwargs):
                             'vsan_id':[vsans.get("Fabric_A"), vsans.get("Fabric_B")]
                         }
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    class MyDumper(yaml.Dumper):
-                        def increase_indent(self, flow=False, indentless=False):
-                            return super(MyDumper, self).increase_indent(flow, False)
-                    #stream = yaml.dump(port_config, default_flow_style=False)
-                    #print(stream.replace('\n- ', '\n\n- '))
-                    print(yaml.dump({port_type:port_config}, Dumper=MyDumper, default_flow_style=False))
+                    print(textwrap.indent(yaml.dump({port_type:port_config}, Dumper=MyDumper, default_flow_style=False
+                    ), " "*4, predicate=None))
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:

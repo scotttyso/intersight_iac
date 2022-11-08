@@ -1,0 +1,396 @@
+{
+    "intersight": {
+        "pools": {
+            "ip": [
+                {
+                    "name": "imc_198.18.0.10",
+                    "ipv4_blocks": [
+                        {
+                            "from": "198.18.0.10",
+                            "size": 245
+                        }
+                    ],
+                    "ipv4_configuration": {
+                        "gateway": "198.18.0.1",
+                        "prefix": "255.255.255.0",
+                        "primary_dns": "208.67.220.220",
+                        "secondary_dns": ""
+                    }
+                }
+            ],
+            "mac": [
+                {
+                    "name": "dvs-a",
+                    "mac_blocks": [
+                        {
+                            "from": "00:25:B5:00:10:00",
+                            "size": 1000
+                        }
+                    ]
+                },
+                {
+                    "name": "dvs-b",
+                    "mac_blocks": [
+                        {
+                            "from": "00:25:B5:00:20:00",
+                            "size": 1000
+                        }
+                    ]
+                },
+                {
+                    "name": "mgmt-a",
+                    "mac_blocks": [
+                        {
+                            "from": "00:25:B5:00:A0:00",
+                            "size": 1000
+                        }
+                    ]
+                },
+                {
+                    "name": "mgmt-b",
+                    "mac_blocks": [
+                        {
+                            "from": "00:25:B5:00:B0:00",
+                            "size": 1000
+                        }
+                    ]
+                },
+                {
+                    "name": "migration-a",
+                    "mac_blocks": [
+                        {
+                            "from": "00:25:B5:00:C0:00",
+                            "size": 1000
+                        }
+                    ]
+                },
+                {
+                    "name": "migration-b",
+                    "mac_blocks": [
+                        {
+                            "from": "00:25:B5:00:D0:00",
+                            "size": 1000
+                        }
+                    ]
+                },
+                {
+                    "name": "storage-a",
+                    "mac_blocks": [
+                        {
+                            "from": "00:25:B5:00:E0:00",
+                            "size": 1000
+                        }
+                    ]
+                },
+                {
+                    "name": "storage-b",
+                    "mac_blocks": [
+                        {
+                            "from": "00:25:B5:00:F0:00",
+                            "size": 1000
+                        }
+                    ]
+                }
+            ],
+            "uuid": [
+                {
+                    "name": "asgard",
+                    "descr": "asgard UUID Pool",
+                    "prefix": "000025B5-0000-0000",
+                    "uuid_blocks": [
+                        {
+                            "from": "0000-000000000000",
+                            "size": 1000
+                        }
+                    ]
+                }
+            ],
+            "wwnn": [
+                {
+                    "name": "asgard",
+                    "id_blocks": [
+                        {
+                            "from": "20:00:00:25:B5:00:00:00",
+                            "size": 1000
+                        }
+                    ]
+                }
+            ],
+            "wwpn": [
+                {
+                    "name": "asgard-a",
+                    "id_blocks": [
+                        {
+                            "from": "20:00:00:25:B5:00:A0:00",
+                            "size": 1000
+                        }
+                    ]
+                },
+                {
+                    "name": "asgard-b",
+                    "id_blocks": [
+                        {
+                            "from": "20:00:00:25:B5:00:B0:00",
+                            "size": 1000
+                        }
+                    ]
+                }
+            ]
+        },
+        "policies": {
+            "multicast": [
+                {
+                    "name": "mcast"
+                }
+            ],
+            "vlan": [
+                {
+                    "name": "asgard",
+                    "vlans": [
+                        {
+                            "multicast_policy": "mcast",
+                            "name": "asgard",
+                            "vlan_list": "2-99"
+                        }
+                    ]
+                }
+            ],
+            "flow_control": [
+                {
+                    "name": "flow_ctrl"
+                }
+            ],
+            "link_aggregation": [
+                {
+                    "name": "link_agg"
+                }
+            ],
+            "link_control": [
+                {
+                    "name": "link_ctrl"
+                }
+            ],
+            "vsan": [
+                {
+                    "name": "vsan-100",
+                    "vsans": [
+                        {
+                            "fcoe_vlan_id": 100,
+                            "name": "vsan-a",
+                            "vsan_id": 100
+                        }
+                    ]
+                },
+                {
+                    "name": "vsan-200",
+                    "vsans": [
+                        {
+                            "fcoe_vlan_id": 200,
+                            "name": "vsan-b",
+                            "vsan_id": 200
+                        }
+                    ]
+                }
+            ],
+            "ethernet_network_group": [
+                {
+                    "name": "asgard-ucs-uplink",
+                    "allowed_vlans": "1-99"
+                }
+            ],
+            "system_qos": [
+                {
+                    "name": "system-qos",
+                    "classes": [
+                        {
+                            "bandwidth_percent": 20,
+                            "cos": 5,
+                            "mtu": 9216,
+                            "multicast_optimize": false,
+                            "packet_drop": false,
+                            "priority": "Platinum",
+                            "state": "Enabled",
+                            "weight": 10
+                        },
+                        {
+                            "bandwidth_percent": 18,
+                            "cos": 4,
+                            "mtu": 9216,
+                            "multicast_optimize": false,
+                            "packet_drop": true,
+                            "priority": "Gold",
+                            "state": "Enabled",
+                            "weight": 9
+                        },
+                        {
+                            "bandwidth_percent": 20,
+                            "cos": 3,
+                            "mtu": 2240,
+                            "multicast_optimize": false,
+                            "packet_drop": false,
+                            "priority": "FC",
+                            "state": "Enabled",
+                            "weight": 10
+                        },
+                        {
+                            "bandwidth_percent": 18,
+                            "cos": 2,
+                            "mtu": 9216,
+                            "multicast_optimize": false,
+                            "packet_drop": true,
+                            "priority": "Silver",
+                            "state": "Enabled",
+                            "weight": 8
+                        },
+                        {
+                            "bandwidth_percent": 14,
+                            "cos": 1,
+                            "mtu": 9216,
+                            "multicast_optimize": false,
+                            "packet_drop": true,
+                            "priority": "Bronze",
+                            "state": "Enabled",
+                            "weight": 7
+                        },
+                        {
+                            "bandwidth_percent": 10,
+                            "cos": 255,
+                            "mtu": 9216,
+                            "multicast_optimize": false,
+                            "packet_drop": true,
+                            "priority": "Best Effort",
+                            "state": "Enabled",
+                            "weight": 5
+                        }
+                    ]
+                }
+            ],
+            "network_connectivity": [
+                {
+                    "name": "dns",
+                    "dns_servers_v4": [
+                        "208.67.220.220"
+                    ]
+                }
+            ],
+            "ntp": [
+                {
+                    "name": "ntp",
+                    "ntp_servers": [
+                        "0.north-america.pool.ntp.org",
+                        "1.north-america.pool.ntp.org"
+                    ],
+                    "timezone": "America/New_York"
+                }
+            ],
+            "switch_control": [
+                {
+                    "name": "sw_ctrl",
+                    "vlan_port_count_optimization": false
+                }
+            ],
+            "port": [
+                {
+                    "names": [
+                        "asgard-ucs-a",
+                        "asgard-ucs-b"
+                    ],
+                    "port_channel_ethernet_uplinks": [
+                        {
+                            "admin_speed": "Auto",
+                            "ethernet_network_group_policy": "asgard-ucs-uplink",
+                            "flow_control_policy": "flow_ctrl",
+                            "interfaces": [
+                                {
+                                    "port_id": 53
+                                },
+                                {
+                                    "port_id": 54
+                                }
+                            ],
+                            "link_aggregation_policy": "link_agg",
+                            "link_control_policy": "link_ctrl",
+                            "pc_ids": [
+                                53,
+                                53
+                            ]
+                        }
+                    ],
+                    "port_role_servers": [
+                        {
+                            "port_list": "5-18"
+                        }
+                    ],
+                    "port_channel_fc_uplinks": [
+                        {
+                            "admin_speed": "32Gbps",
+                            "fill_pattern": "Arbff",
+                            "interfaces": [
+                                {
+                                    "port_id": 1
+                                },
+                                {
+                                    "port_id": 2
+                                }
+                            ],
+                            "pc_ids": [
+                                1,
+                                1
+                            ],
+                            "vsan_ids": [
+                                100,
+                                200
+                            ]
+                        }
+                    ],
+                    "port_modes": {
+                        "custom_mode": "FibreChannel",
+                        "port_list": [
+                            1,
+                            4
+                        ]
+                    }
+                }
+            ]
+        },
+        "profiles": {
+            "chassis": [
+                {
+                    "imc_access_policy": "imc_198.18.0.10",
+                    "names": [
+                        [
+                            "asgard-ucs-1",
+                            "unknown"
+                        ]
+                    ],
+                    "power_policy": "9508",
+                    "snmp_policy": "snmp",
+                    "thermal_policy": "9508"
+                }
+            ],
+            "domain": [
+                {
+                    "name": "asgard-ucs",
+                    "action": "No-op",
+                    "network_connectivity_policy": "dns",
+                    "ntp_policy": "ntp",
+                    "port_policies": [
+                        "asgard-ucs-a",
+                        "asgard-ucs-b"
+                    ],
+                    "snmp_policy": "snmp-domain",
+                    "switch_control_policy": "sw_ctrl",
+                    "syslog_policy": "syslog-domain",
+                    "system_qos_policy": "system-qos",
+                    "vlan_policies": [
+                        "asgard"
+                    ],
+                    "vsan_policies": [
+                        "vsan-100",
+                        "vsan-200"
+                    ]
+                }
+            ]
+        }
+    }
+}

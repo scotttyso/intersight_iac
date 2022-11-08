@@ -26,6 +26,8 @@ import requests
 import sys
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import yaml
+import textwrap
 
 sys.path.insert(0, './classes')
 import classes.ezfunctions
@@ -588,43 +590,47 @@ def process_wizard(**kwargs):
         quick = 'classes.quick_start.quick_start'
         kwargs['domain_prefix'] = domain_prefix
         type = 'pools'
-        if 'quick_start_pools' in policy:
-            # kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
-            kwargs.update(deepcopy({'primary_dns': '208.67.220.220', 'secondary_dns': ''}))
+        #if 'quick_start_pools' in policy:
+        #    kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
+
+        #==============================================
+        # TESTING TEMP PARAMETERS
+        #==============================================
+        script_path = kwargs['script_path']
+        path_sep = kwargs['path_sep']
+        jsonFile = f'{script_path}{path_sep}asgard.json'
+        jsonOpen = open(jsonFile, 'r')
+        kwargs['immDict'] = {'orgs':{org:{}}}
+        kwargs['immDict']['orgs'][org] = json.load(jsonOpen)
+        jsonOpen.close()
+        kwargs["vlan_list"] = '1-99'
 
         #==============================================
         # Quick Start - Policies
         #==============================================
-
         type = 'policies'
         if 'quick_start_domain_policies' in policy or 'quick_start_rack_policies' in policy:
             kwargs['Config'] = True
             if 'domain' in policy:
                 kwargs.update(deepcopy({'server_type':'FIAttached'}))
-                kwargs = eval(f"{quick}(name_prefix, org, type).domain_policies(**kwargs)")
+                #kwargs = eval(f"{quick}(name_prefix, org, type).domain_policies(**kwargs)")
             else:
                 kwargs.update({'server_type':'Standalone'})
                 kwargs.update({'fc_ports':[]})
                 type = 'policies'
                 kwargs = eval(f"{quick}(name_prefix, org, type).standalone_policies(**kwargs)")
-            if not kwargs['Config'] == False:
+            if not kwargs['Config'] == False and 'domain' in policy:
                 kwargs = eval(f"{quick}(name_prefix, org, type).server_policies(**kwargs)")
+            if not kwargs['Config'] == False:
+                kwargs = eval(f"{quick}(name_prefix, org, type).bios_policies(**kwargs)")
         elif 'quick_start_lan_san_policies' in policy:
             type = 'policies'
             if not kwargs['Config'] == False:
                 kwargs = eval(f"{quick}(domain_prefix, org, type).lan_san_policies(**kwargs)")
-        elif policy == 'quick_start_vmware_m2':
+        elif re.search('quick_start_vmware_(m2|raid1|stateless)', policy):
             if not kwargs['Config'] == False:
-                kwargs = eval(f"{quick}(name_prefix, org, type).vmware_m2(**kwargs)")
-                # kwargs.update({'boot_order_policy':'VMware_M2_pxe'})
-        elif policy == 'quick_start_vmware_raid1':
-            if not kwargs['Config'] == False:
-                kwargs = eval(f"{quick}(name_prefix, org, type).vmware_raid1(**kwargs)")
-                # kwargs.update({'boot_order_policy':'VMware_Raid1_pxe'})
-        elif policy == 'quick_start_vmware_stateless':
-            if not kwargs['Config'] == False:
-                kwargs = eval(f"{quick}(name_prefix, org, type).vmware_pxe(**kwargs)")
-                # kwargs.update({'boot_order_policy':'VMware_pxe'})
+                kwargs['boot_type'] = policy.split('_')[3]
+                kwargs = eval(f"{quick}(name_prefix, org, type).boot_and_storage(**kwargs)")
         elif 'quick_start_server_profile' in policy:
             if not kwargs['Config'] == False:
                 type = 'profiles'
@@ -690,6 +696,7 @@ def main():
     kwargs['path_sep'] = path_sep
 
     script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+    kwargs['script_path'] = script_path
 
     jsonFile = f'{script_path}{path_sep}templates{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
     jsonOpen = open(jsonFile, 'r')
