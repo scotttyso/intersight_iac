@@ -757,21 +757,12 @@ def sensitive_var_value(**kwargs):
                 minLength = 1
                 maxLength = 254
                 rePattern = jsonVars['Password']['pattern']
-                varName = 'SNMP Community'
+                varName = 'LDAP Binding Password'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'community' in sensitive_var:
-                jsonVars = jsonData['snmp.Policy']['allOf'][1]['properties']
-                minLength = 1
-                maxLength = jsonVars['TrapCommunity']['maxLength']
-                rePattern = '^[\\S]+$'
-                varName = 'SNMP Community'
-                valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                varName = 'SNMP Community String'
+                valid = validating.snmp_string(varName, secure_value)
             elif 'ipmi_key' in sensitive_var:
-                jsonVars = jsonData['ipmioverlan.Policy']['allOf'][1]['properties']
-                minLength = 2
-                maxLength = jsonVars['EncryptionKey']['maxLength']
-                rePattern = jsonVars['EncryptionKey']['pattern']
-                varName = 'IPMI Encryption Key'
                 valid = validating.ipmi_key_check(secure_value)
             elif 'iscsi_boot' in sensitive_var:
                 jsonVars = jsonData['vnic.IscsiAuthProfile']['allOf'][1]['properties']
@@ -842,56 +833,46 @@ def sensitive_var_value(**kwargs):
 #======================================================
 # Function - Wizard for SNMP Trap Servers
 #======================================================
-def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
-    trap_servers = []
+def snmp_trap_servers(**kwargs):
+    jsonData   = kwargs['jsonData']
+    loop_count = 1
+    kwargs['snmp_traps'] = []
     valid_traps = False
     while valid_traps == False:
-        polVars["multi_select"] = False
+        kwargs["multi_select"] = False
         jsonVars = jsonData['snmp.Trap']['allOf'][1]['properties']
-        if len(snmp_user_list) == 0:
+        if len(kwargs['snmp_users']) == 0:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  There are no valid SNMP Users so Trap Destinations can only be set to SNMPv2.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             snmp_version = 'V2'
         else:
-            polVars["var_description"] = jsonVars['Version']['description']
-            polVars["jsonVars"] = sorted(jsonVars['Version']['enum'])
-            polVars["defaultVar"] = jsonVars['Version']['default']
-            polVars["varType"] = 'SNMP Version'
-            snmp_version = variablesFromAPI(**polVars)
+            kwargs["var_description"] = jsonVars['Version']['description']
+            kwargs["jsonVars"] = sorted(jsonVars['Version']['enum'])
+            kwargs["defaultVar"] = jsonVars['Version']['default']
+            kwargs["varType"] = 'SNMP Version'
+            snmp_version = variablesFromAPI(**kwargs)
 
         if snmp_version == 'V2':
-            valid = False
-            while valid == False:
-                community_string = stdiomask.getpass(f'What is the Community String for the Destination? ')
-                if not community_string == '':
-                    valid = validating.snmp_string('SNMP Community String', community_string)
-                else:
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Community String.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-            TF_VAR = 'TF_VAR_snmp_community_string_%s' % (inner_loop_count)
-            os.environ[TF_VAR] = '%s' % (community_string)
-            community_string = inner_loop_count
+            kwargs['Variable'] = f'snmp_community_string_{loop_count}'
+            kwargs = sensitive_var_value(**kwargs)
 
         if snmp_version == 'V3':
-            polVars["multi_select"] = False
-            polVars["var_description"] = '    Please Select the SNMP User to assign to this Destination:\n'
-            polVars["var_type"] = 'SNMP User'
+            kwargs["multi_select"] = False
+            kwargs["var_description"] = '    Please Select the SNMP User to assign to this Destination:\n'
+            kwargs["var_type"] = 'SNMP User'
             snmp_users = []
-            for item in snmp_user_list:
-                snmp_users.append(item['name'])
-            snmp_user = vars_from_list(snmp_users, **polVars)
+            for item in kwargs['snmp_users']: snmp_users.append(item['name'])
+            snmp_user = vars_from_list(snmp_users, **kwargs)
             snmp_user = snmp_user[0]
 
         if snmp_version == 'V2':
-            polVars["var_description"] = jsonVars['Type']['description']
-            polVars["jsonVars"] = sorted(jsonVars['Type']['enum'])
-            polVars["defaultVar"] = jsonVars['Type']['default']
-            polVars["varType"] = 'SNMP Trap Type'
-            trap_type = variablesFromAPI(**polVars)
-        else:
-            trap_type = 'Trap'
+            kwargs["var_description"] = jsonVars['Type']['description']
+            kwargs["jsonVars"] = sorted(jsonVars['Type']['enum'])
+            kwargs["defaultVar"] = jsonVars['Type']['default']
+            kwargs["varType"] = 'SNMP Trap Type'
+            trap_type = variablesFromAPI(**kwargs)
+        else: trap_type = 'Trap'
 
         valid = False
         while valid == False:
@@ -900,8 +881,7 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
                 if re.search(r'^[0-9a-fA-F]+[:]+[0-9a-fA-F]$', destination_address) or \
                     re.search(r'^(\d{1,3}\.){3}\d{1,3}$', destination_address):
                     valid = validating.ip_address('SNMP Trap Destination', destination_address)
-                else:
-                    valid = validating.dns_name('SNMP Trap Destination', destination_address)
+                else: valid = validating.dns_name('SNMP Trap Destination', destination_address)
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Trap Destination Hostname/Address.')
@@ -910,8 +890,7 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
         valid = False
         while valid == False:
             port = input(f'Enter the Port to Assign to this Destination.  Valid Range is 1-65535.  [162]: ')
-            if port == '':
-                port = 162
+            if port == '': port = 162
             if re.search(r'[0-9]{1,4}', str(port)):
                 valid = validating.snmp_port('SNMP Port', port, 1, 65535)
             else:
@@ -921,21 +900,13 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
 
         if snmp_version == 'V3':
             snmp_destination = {
-                'destination_address':destination_address,
-                'enabled':True,
-                'port':port,
-                'trap_type':trap_type,
-                'user':snmp_user,
-                'version':snmp_version
+                'destination_address':destination_address, 'enabled':True,
+                'port':port, 'trap_type':trap_type, 'user':snmp_user, 'version':snmp_version
             }
         else:
             snmp_destination = {
-                'community':community_string,
-                'destination_address':destination_address,
-                'enabled':True,
-                'port':port,
-                'trap_type':trap_type,
-                'version':snmp_version
+                'community':loop_count, 'destination_address':destination_address,
+                'enabled':True, 'port':port, 'trap_type':trap_type, 'version':snmp_version
             }
 
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -952,16 +923,15 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
         while valid_confirm == False:
             confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
             if confirm_v == 'Y' or confirm_v == '':
-                trap_servers.append(snmp_destination)
+                kwargs['snmp_traps'].append(snmp_destination)
                 valid_exit = False
                 while valid_exit == False:
                     loop_exit = input(f'Would You like to Configure another SNMP Trap Destination?  Enter "Y" or "N" [N]: ')
                     if loop_exit == 'Y':
-                        inner_loop_count += 1
+                        loop_count += 1
                         valid_confirm = True
                         valid_exit = True
                     elif loop_exit == 'N' or loop_exit == '':
-                        snmp_loop = True
                         valid_confirm = True
                         valid_exit = True
                         valid_traps = True
@@ -979,29 +949,30 @@ def snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars):
                 print(f'\n------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n------------------------------------------------------\n')
-
-    return trap_servers,snmp_loop
+    return kwargs
 
 #======================================================
 # Function - Wizard for SNMP Users
 #======================================================
-def snmp_users(jsonData, inner_loop_count, **polVars):
-    snmp_user_list = []
+def snmp_users(**kwargs):
+    loop_count = 1
+    jsonData = kwargs['jsonData']
+    kwargs['snmp_users'] = []
     valid_users = False
     while valid_users == False:
-        polVars["multi_select"] = False
+        kwargs["multi_select"] = False
         jsonVars = jsonData['snmp.User']['allOf'][1]['properties']
 
         snmpUser = False
         while snmpUser == False:
-            polVars["Description"] = jsonVars['Name']['description']
-            polVars["varDefault"] = 'admin'
-            polVars["varInput"] = 'What is the SNMPv3 Username:'
-            polVars["varName"] = 'SNMP User'
-            polVars["varRegex"] = '^([a-zA-Z]+[a-zA-Z0-9\\-\\_\\.\\@]+)$'
-            polVars["minLength"] = jsonVars['Name']['minLength']
-            polVars["maxLength"] = jsonVars['Name']['maxLength']
-            snmp_user = varStringLoop(**polVars)
+            kwargs["Description"] = jsonVars['Name']['description']
+            kwargs["varDefault"] = 'snmpadmin'
+            kwargs["varInput"] = 'What is the SNMPv3 Username?'
+            kwargs["varName"] = 'SNMP User'
+            kwargs["varRegex"] = '^([a-zA-Z]+[a-zA-Z0-9\\-\\_\\.\\@]+)$'
+            kwargs["minLength"] = jsonVars['Name']['minLength']
+            kwargs["maxLength"] = jsonVars['Name']['maxLength']
+            snmp_user = varStringLoop(**kwargs)
             if snmp_user == 'admin':
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  admin may not be used for the snmp user value.')
@@ -1009,82 +980,45 @@ def snmp_users(jsonData, inner_loop_count, **polVars):
             else:
                 snmpUser = True
 
-        polVars["var_description"] = jsonVars['SecurityLevel']['description']
-        polVars["jsonVars"] = sorted(jsonVars['SecurityLevel']['enum'])
-        polVars["defaultVar"] = jsonVars['SecurityLevel']['default']
-        polVars["varType"] = 'SNMP Security Level'
-        security_level = variablesFromAPI(**polVars)
+        kwargs["var_description"] = jsonVars['SecurityLevel']['description']
+        kwargs["jsonVars"] = sorted(jsonVars['SecurityLevel']['enum'])
+        kwargs["defaultVar"] = jsonVars['SecurityLevel']['default']
+        kwargs["varType"] = 'SNMP Security Level'
+        security_level = variablesFromAPI(**kwargs)
 
         if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
-            polVars["var_description"] = jsonVars['AuthType']['description']
-            polVars["jsonVars"] = sorted(jsonVars['AuthType']['enum'])
-            polVars["defaultVar"] = 'SHA'
-            polVars["popList"] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
-            polVars["varType"] = 'SNMP Auth Type'
-            auth_type = variablesFromAPI(**polVars)
+            kwargs["var_description"] = jsonVars['AuthType']['description']
+            kwargs["jsonVars"] = sorted(jsonVars['AuthType']['enum'])
+            kwargs["defaultVar"] = 'SHA'
+            kwargs["popList"] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
+            kwargs["varType"] = 'SNMP Auth Type'
+            auth_type = variablesFromAPI(**kwargs)
 
         if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
-            valid = False
-            while valid == False:
-                password1 = stdiomask.getpass(f'What is the authorization password for {snmp_user}? ')
-                password2 = stdiomask.getpass(f'Please re-enter the authorization password for {snmp_user}? ')
-                if not password1 == '':
-                    if password1 == password2:
-                        TF_VAR = 'TF_VAR_snmp_auth_password_%s' % (inner_loop_count)
-                        os.environ[TF_VAR] = '%s' % (password1)
-                        auth_password = inner_loop_count
-                        valid = validating.snmp_string(f"{snmp_user}'s Authorization Password", password1)
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! The Passwords did not match.  Please Re-enter the password for {snmp_user}.')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                else:
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Error!! Invalid Value.  Please Re-enter the password for {snmp_user}.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            kwargs['Variable'] = f'snmp_auth_password_{loop_count}'
+            kwargs = sensitive_var_value(**kwargs)
 
         if security_level == 'AuthPriv':
-            polVars["var_description"] = jsonVars['PrivacyType']['description']
-            polVars["jsonVars"] = sorted(jsonVars['PrivacyType']['enum'])
-            polVars["defaultVar"] = 'AES'
-            polVars["popList"] = ['NA']
-            polVars["varType"] = 'SNMP Auth Type'
-            privacy_type = variablesFromAPI(**polVars)
+            kwargs["var_description"] = jsonVars['PrivacyType']['description']
+            kwargs["jsonVars"] = sorted(jsonVars['PrivacyType']['enum'])
+            kwargs["defaultVar"] = 'AES'
+            kwargs["popList"] = ['NA']
+            kwargs["varType"] = 'SNMP Auth Type'
+            privacy_type = variablesFromAPI(**kwargs)
 
-            valid = False
-            while valid == False:
-                password1 = stdiomask.getpass(f'What is the privacy password for {snmp_user}? ')
-                password2 = stdiomask.getpass(f'Please re-enter the privacy password for {snmp_user}? ')
-                if not password1 == '':
-                    if password1 == password2:
-                        TF_VAR = 'TF_VAR_snmp_privacy_password_%s' % (inner_loop_count)
-                        os.environ[TF_VAR] = '%s' % (password1)
-                        privacy_password = inner_loop_count
-                        valid = validating.snmp_string(f"{snmp_user}'s Privacy Password", password1)
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! The Passwords did not match.  Please Re-enter the password for {snmp_user}.')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                else:
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Error!! Invalid Value.  Please Re-enter the password for {snmp_user}.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            kwargs['Variable'] = f'snmp_privacy_password_{loop_count}'
+            kwargs = sensitive_var_value(**kwargs)
 
         if security_level == 'AuthPriv':
             snmp_user = {
-                'auth_password':auth_password,
-                'auth_type':auth_type,
-                'name':snmp_user,
-                'privacy_password':privacy_password,
-                'privacy_type':privacy_type,
+                'auth_password':loop_count, 'auth_type':auth_type, 'name':snmp_user,
+                'privacy_password':loop_count, 'privacy_type':privacy_type,
                 'security_level':security_level
             }
         elif security_level == 'AuthNoPriv':
             snmp_user = {
-                'auth_password':auth_password,
-                'auth_type':auth_type,
-                'name':snmp_user,
-                'security_level':security_level
+                'auth_password':loop_count, 'auth_type':auth_type,
+                'name':snmp_user, 'security_level':security_level
             }
 
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -1100,16 +1034,15 @@ def snmp_users(jsonData, inner_loop_count, **polVars):
         while valid_confirm == False:
             confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
             if confirm_v == 'Y' or confirm_v == '':
-                snmp_user_list.append(snmp_user)
+                kwargs['snmp_users'].append(snmp_user)
                 valid_exit = False
                 while valid_exit == False:
                     loop_exit = input(f'Would You like to Configure another SNMP User?  Enter "Y" or "N" [N]: ')
                     if loop_exit == 'Y':
-                        inner_loop_count += 1
+                        loop_count += 1
                         valid_confirm = True
                         valid_exit = True
                     elif loop_exit == 'N' or loop_exit == '':
-                        snmp_loop = True
                         valid_confirm = True
                         valid_exit = True
                         valid_users = True
@@ -1127,7 +1060,7 @@ def snmp_users(jsonData, inner_loop_count, **polVars):
                 print(f'\n------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n------------------------------------------------------\n')
-    return snmp_user_list,snmp_loop
+    return kwargs
 
 #======================================================
 # Function - Define stdout_log output
@@ -1148,8 +1081,9 @@ def stdout_log(sheet, line):
 #======================================================
 # Function - Wizard for Syslog Servers
 #======================================================
-def syslog_servers(jsonData, **polVars):
-    remote_logging = {}
+def syslog_servers(**kwargs):
+    jsonData = kwargs['jsonData']
+    kwargs['remote_clients'] = []
     syslog_count = 1
     syslog_loop = False
     while syslog_loop == False:
@@ -1158,27 +1092,25 @@ def syslog_servers(jsonData, **polVars):
             hostname = input(f'Enter the Hostname/IP Address of the Remote Server: ')
             if re.search(r'[a-zA-Z]+', hostname):
                 valid = validating.dns_name('Remote Logging Server', hostname)
-            else:
-                valid = validating.ip_address('Remote Logging Server', hostname)
+            else: valid = validating.ip_address('Remote Logging Server', hostname)
 
         jsonVars = jsonData['syslog.RemoteClientBase']['allOf'][1]['properties']
-        polVars["var_description"] = jsonVars['MinSeverity']['description']
-        polVars["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
-        polVars["defaultVar"] = jsonVars['MinSeverity']['default']
-        polVars["varType"] = 'Syslog Remote Minimum Severity'
-        min_severity = variablesFromAPI(**polVars)
+        kwargs["var_description"] = jsonVars['MinSeverity']['description']
+        kwargs["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
+        kwargs["defaultVar"] = jsonVars['MinSeverity']['default']
+        kwargs["varType"] = 'Syslog Remote Minimum Severity'
+        min_severity = variablesFromAPI(**kwargs)
 
-        polVars["var_description"] = jsonVars['Protocol']['description']
-        polVars["jsonVars"] = sorted(jsonVars['Protocol']['enum'])
-        polVars["defaultVar"] = jsonVars['Protocol']['default']
-        polVars["varType"] = 'Syslog Protocol'
-        polVars["protocol"] = variablesFromAPI(**polVars)
+        kwargs["var_description"] = jsonVars['Protocol']['description']
+        kwargs["jsonVars"] = sorted(jsonVars['Protocol']['enum'])
+        kwargs["defaultVar"] = jsonVars['Protocol']['default']
+        kwargs["varType"] = 'Syslog Protocol'
+        protocol = variablesFromAPI(**kwargs)
 
         valid = False
         while valid == False:
             port = input(f'Enter the Port to Assign to this Policy.  Valid Range is 1-65535.  [514]: ')
-            if port == '':
-                port = 514
+            if port == '': port = 514
             if re.search(r'[0-9]{1,4}', str(port)):
                 valid = validating.number_in_range('Port', port, 1, 65535)
             else:
@@ -1187,26 +1119,22 @@ def syslog_servers(jsonData, **polVars):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
         remote_host = {
-            'enable':True,
-            'hostname':hostname,
-            'min_severity':min_severity,
-            'port':port,
-            'protocol':polVars["protocol"]
+            'enable':True, 'hostname':hostname, 'min_severity':min_severity, 'port':port, 'protocol':protocol
         }
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'   hostname     = "{hostname}"')
         print(f'   min_severity = "{min_severity}"')
         print(f'   port         = {port}')
-        print(f'   protocol     = "{polVars["protocol"]}"')
+        print(f'   protocol     = "{protocol}"')
         print(f'\n-------------------------------------------------------------------------------------------\n')
         valid_confirm = False
         while valid_confirm == False:
             confirm_host = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
             if confirm_host == 'Y' or confirm_host == '':
                 if syslog_count == 1:
-                    remote_logging.update({'server1':remote_host})
+                    kwargs['remote_clients'].append({'server1':remote_host})
                 elif syslog_count == 2:
-                    remote_logging.update({'server2':remote_host})
+                    kwargs['remote_clients'].append({'server2':remote_host})
                     syslog_loop = True
                     valid_confirm = True
                 if syslog_count == 1:
@@ -1218,14 +1146,7 @@ def syslog_servers(jsonData, **polVars):
                             valid_confirm = True
                             valid_exit = True
                         elif remote_exit == 'N':
-                            remote_host = {
-                                'enable':False,
-                                'hostname':'0.0.0.0',
-                                'min_severity':'warning',
-                                'port':514,
-                                'protocol':'udp'
-                            }
-                            remote_logging.update({'server2':remote_host})
+                            kwargs['remote_clients'].append({'server2':{}})
                             syslog_loop = True
                             valid_confirm = True
                             valid_exit = True
@@ -1243,11 +1164,10 @@ def syslog_servers(jsonData, **polVars):
                 print(f'\n------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n------------------------------------------------------\n')
-
-    return remote_logging
+    return kwargs
 
 #======================================================
-# Function to Format Terraform Files
+# Function - Format Terraform Files
 #======================================================
 def terraform_fmt(files, folder, path_sep):
     # Create the Empty_variable_maps.auto.tfvars to house all the unused variables
@@ -1289,7 +1209,7 @@ def terraform_fmt(files, folder, path_sep):
         print(f'- {line}')
 
 #======================================================
-# Function to Prompt User for Sensitive Variables
+# Function - Prompt User for Sensitive Variables
 #======================================================
 def tfc_sensitive_variables(varValue, jsonData, polVars):
     polVars["Variable"] = varValue
@@ -1308,7 +1228,7 @@ def tfc_sensitive_variables(varValue, jsonData, polVars):
     return polVars
 
 #======================================================
-# Function to Prompt User for Domain Serial Numbers
+# Function - Prompt User for Domain Serial Numbers
 #======================================================
 def ucs_domain_serials(**kwargs):
     args = kwargs['args']
@@ -1338,6 +1258,9 @@ def ucs_domain_serials(**kwargs):
     serials = [polVars["serial_A"], polVars["serial_B"]]
     return serials
 
+#======================================================
+# Function - Check VLAN exists in VLAN Policy
+#======================================================
 def validate_vlan_in_policy(vlan_policy_list, vlan_id):
     valid = False
     vlan_count = 0
@@ -1354,6 +1277,9 @@ def validate_vlan_in_policy(vlan_policy_list, vlan_id):
         print(f'\n-------------------------------------------------------------------------------------------\n')
     return valid
 
+#======================================================
+# Function - Prompt User with List of Options
+#======================================================
 def variablesFromAPI(**polVars):
     valid = False
     while valid == False:
@@ -1429,9 +1355,12 @@ def variablesFromAPI(**polVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return selection
 
-def varBoolLoop(**polVars):
+#======================================================
+# Function - Prompt User for Boolean Question
+#======================================================
+def varBoolLoop(**kwargs):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = polVars["Description"]
+    newDescr = kwargs["Description"]
     if '\n' in newDescr:
         newDescr = newDescr.split('\n')
         for line in newDescr:
@@ -1440,15 +1369,15 @@ def varBoolLoop(**polVars):
             else:
                 print(fill(f'{line}',88))
     else:
-        print(fill(f'{polVars["Description"]}',88))
+        print(fill(f'{kwargs["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{polVars["varInput"]}  [{polVars["varDefault"]}]: ')
+        varValue = input(f'{kwargs["varInput"]}  [{kwargs["varDefault"]}]: ')
         if varValue == '':
-            if polVars["varDefault"] == 'Y':
+            if kwargs["varDefault"] == 'Y':
                 varValue = True
-            elif polVars["varDefault"] == 'N':
+            elif kwargs["varDefault"] == 'N':
                 varValue = False
             valid = True
         elif varValue == 'N':
@@ -1459,17 +1388,20 @@ def varBoolLoop(**polVars):
             valid = True
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {polVars["varName"]} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
+            print(f'   {kwargs["varName"]} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def varNumberLoop(**polVars):
-    maxNum = polVars["maxNum"]
-    minNum = polVars["minNum"]
-    varName = polVars["varName"]
+#======================================================
+# Function - Prompt User for Input Number
+#======================================================
+def varNumberLoop(**kwargs):
+    maxNum = kwargs["maxNum"]
+    minNum = kwargs["minNum"]
+    varName = kwargs["varName"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = polVars["Description"]
+    newDescr = kwargs["Description"]
     if '\n' in newDescr:
         newDescr = newDescr.split('\n')
         for line in newDescr:
@@ -1478,13 +1410,13 @@ def varNumberLoop(**polVars):
             else:
                 print(fill(f'{line}',88))
     else:
-        print(fill(f'{polVars["Description"]}',88))
+        print(fill(f'{kwargs["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{polVars["varInput"]}  [{polVars["varDefault"]}]: ')
+        varValue = input(f'{kwargs["varInput"]}  [{kwargs["varDefault"]}]: ')
         if varValue == '':
-            varValue = polVars["varDefault"]
+            varValue = kwargs["varDefault"]
         if re.fullmatch(r'^[0-9]+$', str(varValue)):
             valid = validating.number_in_range(varName, varValue, minNum, maxNum)
         else:
@@ -1494,14 +1426,17 @@ def varNumberLoop(**polVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def varSensitiveStringLoop(**polVars):
-    maxLength = polVars["maxLength"]
-    minLength = polVars["minLength"]
-    varName = polVars["varName"]
-    varRegex = polVars["varRegex"]
+#======================================================
+# Function - Prompt User for Sensitive Input String
+#======================================================
+def varSensitiveStringLoop(**kwargs):
+    maxLength = kwargs["maxLength"]
+    minLength = kwargs["minLength"]
+    varName = kwargs["varName"]
+    varRegex = kwargs["varRegex"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = polVars["Description"]
+    newDescr = kwargs["Description"]
     if '\n' in newDescr:
         newDescr = newDescr.split('\n')
         for line in newDescr:
@@ -1510,11 +1445,11 @@ def varSensitiveStringLoop(**polVars):
             else:
                 print(fill(f'{line}',88))
     else:
-        print(fill(f'{polVars["Description"]}',88))
+        print(fill(f'{kwargs["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = stdiomask.getpass(f'{polVars["varInput"]} ')
+        varValue = stdiomask.getpass(f'{kwargs["varInput"]} ')
         if not varValue == '':
             valid = validating.length_and_regex_sensitive(varRegex, varName, varValue, minLength, maxLength)
         else:
@@ -1523,14 +1458,17 @@ def varSensitiveStringLoop(**polVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
-def varStringLoop(**polVars):
-    maxLength = polVars["maxLength"]
-    minLength = polVars["minLength"]
-    varName = polVars["varName"]
-    varRegex = polVars["varRegex"]
+#======================================================
+# Function - Prompt User for Input String
+#======================================================
+def varStringLoop(**kwargs):
+    maxLength = kwargs["maxLength"]
+    minLength = kwargs["minLength"]
+    varName = kwargs["varName"]
+    varRegex = kwargs["varRegex"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = polVars["Description"]
+    newDescr = kwargs["Description"]
     if '\n' in newDescr:
         newDescr = newDescr.split('\n')
         for line in newDescr:
@@ -1539,15 +1477,17 @@ def varStringLoop(**polVars):
             else:
                 print(fill(f'{line}',88))
     else:
-        print(fill(f'{polVars["Description"]}',88))
+        print(fill(f'{kwargs["Description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{polVars["varInput"]} ')
-        if 'press enter to skip' in polVars["varInput"] and varValue == '':
+        if not kwargs["varDefault"] == '':
+            varValue = input(f'{kwargs["varInput"]}  [{kwargs["varDefault"]}]:')
+        else: varValue = input(f'{kwargs["varInput"]} ')
+        if 'press enter to skip' in kwargs["varInput"] and varValue == '':
             valid = True
-        elif not polVars["varDefault"] == '' and varValue == '':
-            varValue = polVars["varDefault"]
+        elif not kwargs["varDefault"] == '' and varValue == '':
+            varValue = kwargs["varDefault"]
             valid = True
         elif not varValue == '':
             valid = validating.length_and_regex(varRegex, varName, varValue, minLength, maxLength)
@@ -1557,6 +1497,9 @@ def varStringLoop(**polVars):
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
+#======================================================
+# Function - Prompt User with Names for Policies
+#======================================================
 def vars_from_list(var_options, **polVars):
     selection = []
     selection_count = 0
@@ -1617,6 +1560,9 @@ def vars_from_list(var_options, **polVars):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
     return selection
 
+#======================================================
+# Function - Collapse VLAN List
+#======================================================
 def vlan_list_format(vlan_list_expanded):
     vlanGroups = itertools.groupby(vlan_list_expanded, key=lambda item, c=itertools.count():item-next(c))
     tempvlans = [list(g) for k, g in vlanGroups]
@@ -1624,6 +1570,9 @@ def vlan_list_format(vlan_list_expanded):
     vlan_list = ",".join(vlanList)
     return vlan_list
 
+#======================================================
+# Function - Expand VLAN List
+#======================================================
 def vlan_list_full(vlan_list):
     full_vlan_list = []
     if re.search(r',', str(vlan_list)):
@@ -1649,6 +1598,33 @@ def vlan_list_full(vlan_list):
         full_vlan_list.append(vlan_list)
     return full_vlan_list
 
+#======================================================
+# Function - To Request Native VLAN
+#======================================================
+def vlan_native_function(vlan_policy_list, vlan_list):
+    native_count = 0
+    nativeVlan = ''
+    nativeValid = False
+    while nativeValid == False:
+        nativeVlan = input('Do you want to Configure one of the VLANs as a Native VLAN?  [press enter to skip]:')
+        if nativeVlan == '':
+            nativeValid = True
+        else:
+            for vlan in vlan_policy_list:
+                if int(nativeVlan) == int(vlan):
+                    native_count = 1
+            if not native_count == 1:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  Error!! The Native VLAN was not in the Allowed List.')
+                print(f'  Allowed VLAN List is: "{vlan_list}"')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+            else:
+                nativeValid = True
+    return nativeVlan
+
+#======================================================
+# Function - Prompt for VLANs and Configure Policy
+#======================================================
 def vlan_pool():
     valid = False
     while valid == False:
@@ -1686,6 +1662,9 @@ def vlan_pool():
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return VlanList,vlanListExpanded
 
+#======================================================
+# Function - Write polVars to Jinja2 Template
+#======================================================
 def write_to_template(self, **polVars):
     # Define the Template Source
     template = self.templateEnv.get_template(polVars["template_file"])

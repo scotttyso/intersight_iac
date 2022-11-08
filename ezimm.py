@@ -569,10 +569,14 @@ def process_wizard(**kwargs):
         path_sep = kwargs['path_sep']
         jsonFile = f'{script_path}{path_sep}asgard.json'
         jsonOpen = open(jsonFile, 'r')
-        kwargs['immDict'] = {'orgs':{org:{}}}
-        kwargs['immDict']['orgs'][org] = json.load(jsonOpen)
+        kwargs['immDict'] = json.load(jsonOpen)
         jsonOpen.close()
-        kwargs["vlan_list"] = '1-99'
+        kwargs['fc_ports_in_use'] = [1, 4]
+        kwargs['mtu']           = 9216
+        kwargs['tpm_installed'] = True
+        kwargs["vlan_list"]     = '1-99'
+        kwargs["vsan_id_a"]     = 100
+        kwargs["vsan_id_b"]     = 200
 
         #==============================================
         # Quick Start - Policies
@@ -580,22 +584,20 @@ def process_wizard(**kwargs):
         type = 'policies'
         if 'quick_start_domain_policies' in policy or 'quick_start_rack_policies' in policy:
             kwargs['Config'] = True
-            if 'domain' in policy:
+            if 'quick_start_domain_policies' in policy:
                 kwargs.update(deepcopy({'server_type':'FIAttached'}))
                 #kwargs = eval(f"{quick}(name_prefix, org, type).domain_policies(**kwargs)")
-            else:
-                kwargs.update({'server_type':'Standalone'})
-                kwargs.update({'fc_ports':[]})
+            else: kwargs.update(deepcopy({'fc_ports':[],'server_type':'Standalone'}))
+            #if not kwargs['Config'] == False:
+            #    kwargs = eval(f"{quick}(name_prefix, org, type).bios_policies(**kwargs)")
+            #    kwargs = eval(f"{quick}(name_prefix, org, type).server_policies(**kwargs)")
+            if 'quick_start_rack_policies' in policy:
                 type = 'policies'
                 kwargs = eval(f"{quick}(name_prefix, org, type).standalone_policies(**kwargs)")
-            if not kwargs['Config'] == False and 'domain' in policy:
-                kwargs = eval(f"{quick}(name_prefix, org, type).server_policies(**kwargs)")
-            if not kwargs['Config'] == False:
-                kwargs = eval(f"{quick}(name_prefix, org, type).bios_policies(**kwargs)")
-        elif 'quick_start_lan_san_policies' in policy:
-            type = 'policies'
-            if not kwargs['Config'] == False:
-                kwargs = eval(f"{quick}(domain_prefix, org, type).lan_san_policies(**kwargs)")
+        #elif 'quick_start_lan_san_policies' in policy:
+        #    type = 'policies'
+        #    if not kwargs['Config'] == False:
+        #        kwargs = eval(f"{quick}(domain_prefix, org, type).lan_san_policies(**kwargs)")
         elif re.search('quick_start_vmware_(m2|raid1|stateless)', policy):
             if not kwargs['Config'] == False:
                 kwargs['boot_type'] = policy.split('_')[3]
@@ -603,7 +605,7 @@ def process_wizard(**kwargs):
         elif 'quick_start_server_profile' in policy:
             if not kwargs['Config'] == False:
                 type = 'profiles'
-                kwargs = eval(f"{quick}(domain_prefix, org, type).server_profiles(**kwargs)")
+                kwargs = eval(f"{quick}(name_prefix, org, type).server_profiles(**kwargs)")
     return kwargs
 
 def main():

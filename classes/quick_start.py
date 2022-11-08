@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from copy import deepcopy
+#from copy import deepcopy
 import ezfunctions
 import ipaddress
 import json
@@ -8,7 +8,6 @@ import p1
 import p2
 import p3
 import pools
-import profiles
 import re
 import san
 import textwrap
@@ -52,12 +51,12 @@ class quick_start(object):
         # Configure BIOS Policy
         #_______________________________________________________________________
         polVars = {}
-        template_names = ['M5-Virtualization', 'M5-virtualization-tpm', 'M6-virtualization-tpm']
+        template_names = ['M5-virtualization', 'M5-virtualization-tpm', 'M6-virtualization-tpm']
         for bname in template_names:
             name = bname
             polVars['name'] = name
             polVars['descr'] = f'{name} BIOS Policy'
-            if bname == 'M5-Virtualization':
+            if bname == 'M5-virtualization':
                 polVars['bios_template'] = 'Virtualization'
             elif name == 'M5-virtualization-tpm':
                 polVars['bios_template'] = 'Virtualization_tpm'
@@ -118,23 +117,23 @@ class quick_start(object):
                 'subtype':'kvm-mapped-dvd'
             }]
             if boot_type == 'm2':
-                polVars['boot_devices'].append[{
+                polVars['boot_devices'].append({
                     'device_name':'M2',
                     'device_type':'local_disk',
                     'enabled':True,
                     'object_type':'boot.LocalDisk',
                     'slot':'MSTOR-RAID'
-                }]
+                })
             if boot_type == 'raid1':
-                polVars['boot_devices'].append[{
+                polVars['boot_devices'].append({
                     'device_name':'MRAID',
                     'device_type':'local_disk',
                     'enabled':True,
                     'object_type':'boot.LocalDisk',
                     'slot':'MRAID'
-                }]
+                })
             if i == False:
-                polVars['boot_devices'].append[{
+                polVars['boot_devices'].append({
                     'device_name':'PXE',
                     'device_type':'pxe_boot',
                     'enabled':True,
@@ -143,7 +142,7 @@ class quick_start(object):
                     'ip_type':'IPv4',
                     'object_type':'boot.Pxe',
                     'slot':'MLOM'
-                }]
+                })
             # Add Policy Variables to immDict
             kwargs['class_path'] = 'intersight,policies,boot'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -195,7 +194,6 @@ class quick_start(object):
         org         = self.org
         path_sep    = kwargs['path_sep']
         kwargs['name_prefix'] = name_prefix
-
         configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -736,25 +734,20 @@ class quick_start(object):
                             configure_loop = True
                             policy_loop = True
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Starting Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
-
                         else:
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
-
-            elif configure == 'N':
-                configure_loop = True
+            elif configure == 'N': configure_loop = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-        
         if configure == 'Y' or configure == '':
             kwargs['Config'] = True
         elif configure == 'N':
@@ -768,15 +761,12 @@ class quick_start(object):
         args = kwargs['args']
         baseRepo = args.dir
         ezData = kwargs['ezData']
-        fc_ports_in_use = kwargs['fc_ports_in_use']
         jsonData = kwargs['jsonData']
         org = self.org
         path_sep = kwargs['path_sep']
         if kwargs['mtu'] > 8999:
             mtu = 9000
         else: mtu = 1500
-        vlanListExpanded = kwargs['vlanListExpanded']
-
         configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -809,15 +799,13 @@ class quick_start(object):
                     print(f'              LAN Connectivity Policies.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    vlan_policy = kwargs['vlan_policy']
-                    vlan_list = kwargs['vlans']
-                    polVars['vsan_A'] = kwargs['vsan_a']
-                    polVars['vsan_B'] = kwargs['vsan_b']
-                    fc_ports_in_use = kwargs['fc_ports']
+                    vlan_policy = org
+                    vlan_list = kwargs['vlan_list']
                     vlan_policy_list = ezfunctions.vlan_list_full(vlan_list)
+                    fc_ports_in_use = kwargs['fc_ports_in_use']
 
-                    polVars['multi_select'] = False
-                    jsonVars = jsonVars = ezData['policies']['fabric.EthNetworkControlPolicy']
+                    kwargs['multi_select'] = False
+                    jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['fabric.EthNetworkControlPolicy']
 
                     # Neighbor Discovery Protocol
                     kwargs['var_description'] = jsonVars['discoveryProtocol']['description']
@@ -829,8 +817,8 @@ class quick_start(object):
                     # Management VLAN
                     valid = False
                     while valid == False:
-                        kwargs['Description'] = 'LAN Connectivity Policy vNICs - MGMT VLAN Identifier'
-                        kwargs['varInput'] = 'Enter the VLAN ID for MGMT:'
+                        kwargs['Description'] = 'LAN Connectivity Policy vNICs - mgmt VLAN Identifier'
+                        kwargs['varInput'] = 'Enter the VLAN ID for mgmt:'
                         kwargs['varDefault'] = 1
                         kwargs['varName'] = 'Management VLAN ID'
                         kwargs['minNum'] = 1
@@ -841,8 +829,8 @@ class quick_start(object):
                     # vMotion VLAN
                     valid = False
                     while valid == False:
-                        kwargs['Description'] = 'LAN Connectivity Policy vNICs - vMotion VLAN Identifier'
-                        kwargs['varInput'] = 'Enter the VLAN ID for vMotion:'
+                        kwargs['Description'] = 'LAN Connectivity Policy vNICs - migration VLAN Identifier'
+                        kwargs['varInput'] = 'Enter the VLAN ID for migration:'
                         kwargs['varDefault'] = 2
                         kwargs['varName'] = 'Management VLAN ID'
                         kwargs['minNum'] = 1
@@ -853,8 +841,8 @@ class quick_start(object):
                     # Storage VLAN
                     valid = False
                     while valid == False:
-                        kwargs['Description'] = 'LAN Connectivity Policy vNICs - Storage VLAN Identifier'
-                        kwargs['varInput'] = 'Enter the VLAN ID for Storage:'
+                        kwargs['Description'] = 'LAN Connectivity Policy vNICs - storage VLAN Identifier'
+                        kwargs['varInput'] = 'Enter the VLAN ID for storage:'
                         kwargs['varDefault'] = 3
                         kwargs['varName'] = 'Storage VLAN ID'
                         kwargs['minNum'] = 1
@@ -864,21 +852,14 @@ class quick_start(object):
 
                     valid = False
                     while valid == False:
-                        VlanList = input('Enter the VLAN or List of VLANs to add to the DATA (Virtual Machine) vNICs: ')
+                        VlanList = input('Enter the VLAN or List of VLANs to add to the dvs (Virtual Machine) vNICs: ')
                         if not VlanList == '':
-                            vlanListExpanded = ezfunctions.vlan_list_full(VlanList)
                             valid_vlan = True
                             vlans_not_in_domain_policy = []
-                            for vlan in vlanListExpanded:
-                                valid_vlan = validating.number_in_range('VLAN ID', vlan, 1, 4094)
-                                if valid_vlan == False: continue
-                                else:
-                                    vlan_count = 0
-                                    for vlans in vlan_policy_list:
-                                        if int(vlan) == int(vlans):
-                                            vlan_count += 1
-                                            break
-                                    if vlan_count == 0: vlans_not_in_domain_policy.append(vlan)
+                            vlanListExpanded = ezfunctions.vlan_list_full(VlanList)
+                            for v in vlanListExpanded:
+                                valid_v = ezfunctions.validate_vlan_in_policy(vlan_policy_list, v)
+                                if valid_v == False: vlans_not_in_domain_policy.append(v)
 
                             if len(vlans_not_in_domain_policy) > 0:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -888,29 +869,9 @@ class quick_start(object):
                                 print(f'  - Missing VLANs: {vlans_not_in_domain_policy}')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 valid_vlan = False
-
-                            native_count = 0
-                            nativeVlan = ''
                             if valid_vlan == True:
-                                nativeValid = False
-                                while nativeValid == False:
-                                    nativeVlan = input('Do you want to Configure one of the VLANs as a Native VLAN?  [press enter to skip]:')
-                                    if nativeVlan == '':
-                                        nativeValid = True
-                                        valid = True
-                                    else:
-                                        for vlan in vlanListExpanded:
-                                            if int(nativeVlan) == int(vlan):
-                                                native_count = 1
-                                        if not native_count == 1:
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                            print(f'  Error!! The Native VLAN was not in the Allowed List.')
-                                            print(f'  Allowed VLAN List is: "{vlan_list}"')
-                                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        else:
-                                            nativeValid = True
-                                            valid = True
-
+                                nativeVlan = ezfunctions.vlan_native_function(vlan_policy_list, vlan_list)
+                                valid = True
                         else:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  The allowed vlan list can be in the format of:')
@@ -922,20 +883,19 @@ class quick_start(object):
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Network Configuration Variables:')
-                    print(f'    MGMT VLAN     = {mgmt_vlan}')
+                    print(f'    MGMT VLAN       = {mgmt_vlan}')
                     print(f'    Migration VLAN  = {migration_vlan}')
-                    print(f'    Storage VLAN  = {storage_vlan}')
-                    print(f'    Data VLANs    = "{VlanList}"')
+                    print(f'    Storage VLAN    = {storage_vlan}')
+                    print(f'    Data VLANs      = "{VlanList}"')
                     if len(fc_ports_in_use) > 0:
-                        print(f'    VSAN Fabric A = {kwargs["vsan_a"]}')
-                        print(f'    VSAN Fabric B = {kwargs["vsan_b"]}')
+                        print(f'    VSAN Fabric A   = {kwargs["vsan_id_a"]}')
+                        print(f'    VSAN Fabric B   = {kwargs["vsan_id_b"]}')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             confirm_policy = 'Y'
-
                             #_______________________________________________________________________
                             #
                             # Configure Ethernet Adapter Policy
@@ -979,12 +939,9 @@ class quick_start(object):
                             # Configure Ethernet Network Group Policy
                             #_______________________________________________________________________
                             polVars = {}
-                            names = [kwargs['vlan_policy'], 'mgmt', 'migration', 'storage', 'dvs']
+                            names = ['mgmt', 'migration', 'storage', 'dvs']
                             for x in names:
-                                if x == kwargs['vlan_policy']:
-                                    allowed_vlans = kwargs['vlans']
-                                    native_vlan = kwargs['native_vlan']
-                                elif x == 'mgmt':
+                                if   x == 'mgmt':
                                     allowed_vlans = mgmt_vlan
                                     native_vlan = mgmt_vlan
                                 elif x == 'migration':
@@ -995,7 +952,8 @@ class quick_start(object):
                                     native_vlan = storage_vlan
                                 elif x == 'dvs':
                                     allowed_vlans = VlanList
-                                    native_vlan = nativeVlan
+                                    if not nativeVlan == '':
+                                        native_vlan = nativeVlan
                                 name = x
                                 polVars['name'] = name
                                 polVars['allowed_vlans'] = allowed_vlans
@@ -1056,7 +1014,7 @@ class quick_start(object):
                                     name = f'san-{fab}'
                                     polVars['name'] = name
                                     polVars['default_vlan'] = 0
-                                    polVars['vsan_id'] = polVars[f"vsan_{fab}"]
+                                    polVars['vsan_id'] = kwargs[f"vsan_id_{fab}"]
 
                                     # Add Policy Variables to immDict
                                     kwargs['class_path'] = 'intersight,policies,fibre_channel_network'
@@ -1131,29 +1089,24 @@ class quick_start(object):
                             kwargs['class_path'] = 'intersight,policies,lan_connectivity'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
-
                             configure_loop = True
                             policy_loop = True
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Starting Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
-
                         else:
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
-
-
-            elif configure == 'N':
-                configure_loop = True
+            elif configure == 'N': configure_loop = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
+        return kwargs
 
     #==============================================
     # Pools
@@ -1162,7 +1115,6 @@ class quick_start(object):
         args = kwargs['args']
         baseRepo = args.dir
         org = self.org
-        ezData = kwargs['ezData']
         jsonData = kwargs['jsonData']
         path_sep = kwargs['path_sep']
         polVars = {}
@@ -1389,26 +1341,20 @@ class quick_start(object):
                             configure_loop = True
                             policy_loop = True
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Starting Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
-
                         else:
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
-
-
-            elif configure == 'N':
-                configure_loop = True
+            elif configure == 'N': configure_loop = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-
         return kwargs
 
     #==============================================
@@ -1417,7 +1363,6 @@ class quick_start(object):
     def server_policies(self, **kwargs):
         args = kwargs['args']
         baseRepo = args.dir
-        ezData = kwargs['ezData']
         jsonData = kwargs['jsonData']
         org = self.org
         path_sep = kwargs['path_sep']
@@ -1427,17 +1372,10 @@ class quick_start(object):
         configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  The Quick Deployment Module - Pools, will configure pools for a UCS Server Profile')
-            print(f'  connected to an IMM Domain.\n')
-            print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/imc_access_policies.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/ipmi_over_lan_policies.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/local_user_policies.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/power_policies.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/serial_over_lan_policies.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/snmp_policies.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/syslog_policies.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/thermal_policies.yaml')
+            print(f'  The Quick Deployment Module - Configure Policies for a UCS Server Profile.\n')
+            print(f'  This wizard will save the output for these Policies in the following files:\n')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/environment.yaml')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/management.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Policy Configuration?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1461,40 +1399,39 @@ class quick_start(object):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     kwargs['name'] = 'Quick Deployment Module'
-
                     vlan_policy_list = ezfunctions.vlan_list_full(vlan_list)
-
                     kwargs['multi_select'] = False
 
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Now Starting the IMC Access Policy Section.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    if kwargs['server_type'] == 'FIAttached':
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                        print(f'  Now Starting the IMC Access Policy Section.')
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
 
-                    #_______________________________________________________________________
-                    #
-                    # Prompt User for IMC Access Type
-                    #_______________________________________________________________________
-                    jsonVars = jsonData['access.Policy']['allOf'][1]['properties']
-                    kwargs['var_description'] = jsonVars['ConfigurationType']['description']
-                    kwargs['jsonVars'] = ['inband', 'out_of_band']
-                    kwargs['defaultVar'] = 'inband'
-                    kwargs['varType'] = 'IMC Access Type'
-                    imcBand = ezfunctions.variablesFromAPI(**kwargs)
+                        #_______________________________________________________________________
+                        #
+                        # Prompt User for IMC Access Type
+                        #_______________________________________________________________________
+                        jsonVars = jsonData['access.Policy']['allOf'][1]['properties']
+                        kwargs['var_description'] = jsonVars['ConfigurationType']['description']
+                        kwargs['jsonVars'] = ['inband', 'out_of_band']
+                        kwargs['defaultVar'] = 'inband'
+                        kwargs['varType'] = 'IMC Access Type'
+                        imcBand = ezfunctions.variablesFromAPI(**kwargs)
 
-                    if imcBand == 'inband':
-                        valid = False
-                        while valid == False:
-                            kwargs['Description'] = 'IMC Access VLAN Identifier'
-                            kwargs['varInput'] = 'Enter the VLAN ID for the IMC Access Policy.'
-                            kwargs['varDefault'] = 4
-                            kwargs['varName'] = 'IMC Access Policy VLAN ID'
-                            kwargs['minNum'] = 4
-                            kwargs['maxNum'] = 4094
-                            inband_vlan_id = ezfunctions.varNumberLoop(**kwargs)
-                            if server_type == 'FIAttached':
-                                valid = ezfunctions.validate_vlan_in_policy(vlan_policy_list, inband_vlan_id)
-                            else:
-                                valid = True
+                        if imcBand == 'inband':
+                            valid = False
+                            while valid == False:
+                                kwargs['Description'] = 'IMC Access VLAN Identifier'
+                                kwargs['varInput'] = 'Enter the VLAN ID for the IMC Access Policy.'
+                                kwargs['varDefault'] = 4
+                                kwargs['varName'] = 'IMC Access Policy VLAN ID'
+                                kwargs['minNum'] = 4
+                                kwargs['maxNum'] = 4094
+                                inband_vlan_id = ezfunctions.varNumberLoop(**kwargs)
+                                if server_type == 'FIAttached':
+                                    valid = ezfunctions.validate_vlan_in_policy(vlan_policy_list, inband_vlan_id)
+                                else:
+                                    valid = True
 
                     #_______________________________________________________________________
                     #
@@ -1556,26 +1493,25 @@ class quick_start(object):
                         question = input(f'Would you like to configure an SNMPv3 User?  Enter "Y" or "N" [Y]: ')
                         if question == '' or question == 'Y':
                             kwargs = ezfunctions.snmp_users(**kwargs)
-                        elif question == 'N':
                             snmp_loop = True
+                        elif question == 'N': snmp_loop = True
                         else:
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
 
                     snmp_loop = False
-                    if len(kwargs['users']) > 0:
+                    if len(kwargs['snmp_users']) > 0:
                         while snmp_loop == False:
                             question = input(f'Would you like to configure SNMP Trap Destionations?  Enter "Y" or "N" [Y]: ')
                             if question == '' or question == 'Y':
                                 kwargs = ezfunctions.snmp_trap_servers(**kwargs)
-                            elif question == 'N':
                                 snmp_loop = True
+                            elif question == 'N': snmp_loop = True
                             else:
                                 print(f'\n------------------------------------------------------\n')
                                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                                 print(f'\n------------------------------------------------------\n')
-                    #kwargs['trap_destinations'] = snmp_dests
 
                     #_______________________________________________________________________
                     #
@@ -1595,15 +1531,13 @@ class quick_start(object):
                             kwargs['jsonVars'] = sorted(jsonVars['MinSeverity']['enum'])
                             kwargs['defaultVar'] = jsonVars['MinSeverity']['default']
                             kwargs['varType'] = 'Syslog Local Minimum Severity'
-                            kwargs['min_severity'] = ezfunctions.variablesFromAPI(**kwargs)
+                            min_severity = ezfunctions.variablesFromAPI(**kwargs)
 
-                            kwargs['local_logging'] = {'file':{'min_severity':kwargs['min_severity']}}
                             kwargs = ezfunctions.syslog_servers(**kwargs)
                             syslog_loop = True
 
                         elif question == 'N':
-                            kwargs['min_severity'] = 'warning'
-                            kwargs['local_logging'] = {'file':{'min_severity':kwargs['min_severity']}}
+                            min_severity = 'warning'
                             kwargs['remote_clients'] = {'server1':{},'server2':{}}
                             syslog_loop = True
                         else:
@@ -1611,23 +1545,35 @@ class quick_start(object):
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
 
+                    #_______________________________________________________________________
+                    #
+                    # Prompt User for Allow Tunneled KVM Support
+                    #_______________________________________________________________________
+                    jsonVars = jsonData['kvm.Policy']['allOf'][1]['properties']['TunneledKvmEnabled']
+                    kwargs['Description'] = jsonVars['description']
+                    kwargs['varInput'] = f'Do you want to enable Tunneled KVM in the KVM Policy?'
+                    kwargs['varDefault'] = 'Y'
+                    kwargs['varName'] = 'Tunneled KVM'
+                    allow_tunneled_kvm = ezfunctions.varBoolLoop(**kwargs)
+
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Policy Variables:')
-                    print(f'    IMC Access Mode  = "{imcBand}"')
-                    if imcBand == 'Inband':
-                        print(f'    IMC Access VLAN  = {kwargs["inband_vlan_id"]}')
+                    if kwargs['server_type'] == 'FIAttached':
+                        print(f'    IMC Access Mode  = "{imcBand}"')
+                        if imcBand == 'Inband':
+                            print(f'    IMC Access VLAN  = {kwargs["inband_vlan_id"]}')
                     if len(kwargs['local_users']) > 0:
                         print(textwrap.indent(yaml.dump(kwargs['local_users'], Dumper=MyDumper, default_flow_style=False
                         ), " "*3, predicate=None))
                     print(f'    System Contact   = "{kwargs["system_contact"]}"')
                     print(f'    System Locaction = "{kwargs["system_location"]}"')
                     print(f'    SNMP Trap Destinations:')
-                    if len(kwargs['trap_destinations']) > 0:
-                        print(textwrap.indent(yaml.dump({'snmp_traps':kwargs['trap_destinations']
+                    if len(kwargs['snmp_traps']) > 0:
+                        print(textwrap.indent(yaml.dump({'snmp_traps':kwargs['snmp_traps']
                         }, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
                     print(f'    SNMP Users:')
-                    if len(kwargs['users']) > 0:
-                        print(textwrap.indent(yaml.dump({'snmp_users':kwargs['trap_destinations']
+                    if len(kwargs['snmp_users']) > 0:
+                        print(textwrap.indent(yaml.dump({'snmp_users':kwargs['snmp_users']
                         }, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
                     print(f'    Syslog Remote Clients:')
                     print(textwrap.indent(yaml.dump({'remote_clients':kwargs['remote_clients']
@@ -1638,20 +1584,22 @@ class quick_start(object):
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
 
-                            #_______________________________________________________________________
-                            #
-                            # Configure IMC Access Policy
-                            #_______________________________________________________________________
-                            polVars = {}
-                            polVars['name'] = ezData['immDict']['orgs'][org]['intersight']['pools']['ip'][0]['name']
-                            polVars[f'{imcBand}_ip_pool'] = ezData['immDict']['orgs'][org]['intersight']['pools']['ip'][0]['name']
-                            if imcBand == 'inband':
-                                polVars['inband_vlan_id'] = inband_vlan_id
+                            if kwargs['server_type'] == 'FIAttached':
+                                #_______________________________________________________________________
+                                #
+                                # Configure IMC Access Policy
+                                #_______________________________________________________________________
+                                polVars = {}
+                                name = kwargs['immDict']['orgs'][org]['intersight']['pools']['ip'][0]['name']
+                                polVars['name'] = name
+                                polVars[f'{imcBand}_ip_pool'] = name
+                                if imcBand == 'inband':
+                                    polVars['inband_vlan_id'] = inband_vlan_id
 
-                            # Add Policy Variables to immDict
-                            kwargs['class_path'] = 'intersight,policies,imc_access'
-                            kwargs = ezfunctions.ez_append(polVars, **kwargs)
-                            kwargs['imc_access_policy'] = polVars['name']
+                                # Add Policy Variables to immDict
+                                kwargs['class_path'] = 'intersight,policies,imc_access'
+                                kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                                kwargs['imc_access_policy'] = polVars['name']
 
                             #_______________________________________________________________________
                             #
@@ -1671,7 +1619,7 @@ class quick_start(object):
                             #_______________________________________________________________________
                             polVars = {}
                             polVars['name'] = f'{org}-users'
-                            polVars['users'] = kwargs['users']
+                            polVars['users'] = kwargs['local_users']
 
                             # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,local_user'
@@ -1686,12 +1634,8 @@ class quick_start(object):
                             for name in names:
                                 polVars['allocated_budget'] = 0
                                 polVars['name'] = name
-                                if name == 'Server':
-                                    polVars['power_restore'] = 'LastState'
-                                    
-                                elif name == '9508':
-                                    polVars['power_allocation'] = 8400
-
+                                if name == 'Server': polVars['power_restore'] = 'LastState'
+                                elif name == '9508': polVars['power_allocation'] = 8400
                                 polVars['power_redundancy'] = 'Grid'
 
                                 # Add Policy Variables to immDict
@@ -1736,11 +1680,9 @@ class quick_start(object):
                             polVars = {}
                             names = ['syslog', 'syslog-domain']
                             for name in names:
-                                polVars['name'] = name
-                                polVars['min_severity']   = kwargs['min_severity']
-                                polVars['local_logging']  = kwargs['local_logging']
-                                polVars['remote_logging'] = kwargs['remote_logging']
-                                polVars['remote_clients'] = kwargs['remote_clients']
+                                polVars['name']               = name
+                                polVars['local_min_severity'] = min_severity
+                                polVars['remote_clients']     = kwargs['remote_clients']
 
                                 # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,syslog'
@@ -1766,7 +1708,7 @@ class quick_start(object):
                             #_______________________________________________________________________
                             polVars = {}
                             polVars['name'] = 'vkvm'
-                            polVars['allow_tunneled_kvm'] = False
+                            polVars['allow_tunneled_kvm'] = allow_tunneled_kvm
 
                             # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,virtual_kvm'
@@ -1787,21 +1729,16 @@ class quick_start(object):
                             configure_loop = True
                             policy_loop = True
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Starting Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
-
                         else:
                             print(f'\n------------------------------------------------------\n')
                             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                             print(f'\n------------------------------------------------------\n')
-
-
-            elif configure == 'N':
-                configure_loop = True
+            elif configure == 'N': configure_loop = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
@@ -1812,11 +1749,12 @@ class quick_start(object):
     # UCS Domain and Policies
     #==============================================
     def server_profiles(self, **kwargs):
+        ezData      = kwargs['ezData']
+        args        = kwargs['args']
+        baseRepo    = args.dir
         name_prefix = self.name_prefix
-        args = kwargs['args']
-        baseRepo = args.dir
-        org = self.org
-        path_sep = kwargs['path_sep']
+        org         = self.org
+        path_sep    = kwargs['path_sep']
         kwargs['fc_ports'] = kwargs['fc_ports']
         kwargs['server_type'] = kwargs['server_type']
         kwargs['boot_order_policy'] = kwargs['boot_order_policy']
@@ -1830,7 +1768,8 @@ class quick_start(object):
             print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/ucs_server_profile_templates.yaml')
             print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/ucs_server_profiles.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            configure = input(f'Do You Want to run the Quick Deployment Module - Server Profiles Configuration?  \nEnter "Y" or "N" [Y]: ')
+            configure = input(f'Do You Want to run the Quick Deployment Module - Server Profiles Configuration?  \n'\
+                'Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
@@ -1845,17 +1784,135 @@ class quick_start(object):
                     #
                     # Configure UCS Server Profiles
                     #_______________________________________________________________________
-                    kwargs = profiles.profiles(name_prefix, org, self.type).quick_start_server_profiles(**kwargs)
-                    kwargs = profiles.profiles(name_prefix, org, self.type).quick_start_server_templates(**kwargs)
+                    kwargs["Description"] = f'Number of Server Profiles.'
+                    kwargs["varInput"] = f'Enter the Number of Server Profiles to Create:'
+                    kwargs["varDefault"] = 1
+                    kwargs["varName"] = 'Server Count'
+                    kwargs["minNum"] = 1
+                    kwargs["maxNum"] = 160
+                    server_count = ezfunctions.varNumberLoop(**kwargs)
+
+                    #_______________________________________________________________________
+                    #
+                    # Prompt for Generation of UCS Servers
+                    #_______________________________________________________________________
+                    kwargs["multi_select"] = False
+                    jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['server.Generation']
+                    kwargs["var_description"] = jsonVars['systemType']['description']
+                    kwargs["jsonVars"] = sorted(jsonVars['systemType']['enum'])
+                    kwargs["defaultVar"] = jsonVars['systemType']['default']
+                    kwargs["varType"] = 'Generation of UCS Server'
+                    ucs_generation = ezfunctions.variablesFromAPI(**kwargs)
+
+                    #_______________________________________________________________________
+                    #
+                    # Determine if the Trusted Platform Module is Installed
+                    #_______________________________________________________________________
+                    if ucs_generation == 'M5':
+                        kwargs["Description"] = 'Flag to Determine if the Server has TPM Installed.'
+                        kwargs["varInput"] = f'Is a Trusted Platform Module installed in this Server(s)'\
+                            'and do you want to enable secure-boot?'
+                        kwargs["varDefault"] = 'N'
+                        kwargs["varName"] = 'TPM Installed'
+                        tpm_installed = ezfunctions.varBoolLoop(**kwargs)
+                    else: tpm_installed = True
+
+                    #_______________________________________________________________________
+                    #
+                    # Configure the Template Name
+                    #_______________________________________________________________________
+                    boot_type = kwargs['boot_type']
+                    if boot_type == 'm2': template_name = 'M2-pxe'
+                    elif boot_type == 'raid1': template_name = 'Raid1-pxe'
+                    else: template_name = 'pxe'
+
+                    names_serials = []
+                    rangex = int(server_count) + 1
+                    for x in range(1,rangex):
+                        polVars = {}
+                        # Server Profile Name
+                        valid = False
+                        while valid == False:
+                            name = input(f'What is the Name for the Server Profile? ')
+                            if not name == '':
+                                valid = validating.name_rule(f'Server Profile Name', name, 1, 62)
+                            else:
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                print(f'  Error!! Invalid Value.  Please Re-enter the Server Profile Name.')
+                                print(f'\n-------------------------------------------------------------------------------------------\n')
+
+                        # Obtain Server Serial Number or Skip
+                        kwargs["Description"] = f'Serial Number of the Server Profile {polVars["name"]}.'
+                        kwargs["varDefault"] = ''
+                        kwargs["varInput"] = f'What is the Serial Number of {polVars["name"]}? [press enter to skip]:'
+                        kwargs["varName"] = 'Serial Number'
+                        kwargs["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
+                        kwargs["minLength"] = 11
+                        kwargs["maxLength"] = 11
+                        serial_number = ezfunctions.varStringLoop(**kwargs)
+                        if serial_number == '': serial_number = 'unknown'
+                        names_serials.append([name,serial_number])
+
+                    polVars = {}
+                    polVars['names_serials'] = names_serials
+                    polVars['ucs_server_profile_template'] = template_name
+
+                    # Add Policy Variables to immDict
+                    kwargs['class_path'] = 'intersight,profiles,servers'
+                    kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        
+                    polVars = {}
+                    if ucs_generation == 'M5' and tpm_installed == True:
+                        polVars["bios_policy"] = 'M5-virtualization-tpm'
+                    elif ucs_generation == 'M5': polVars["bios_policy"] = 'M5-virtualization'
+                    elif ucs_generation == 'M6': polVars["bios_policy"] = 'M6-virtualization-tpm'
+                    polVars["boot_order_policy"] = polVars["name"]
+                    polVars["descr"] = f'{polVars["name"]} Server Profile Template'
+                    polVars['name'] = template_name
+                    polVars["uuid_pool"] = org
+                    polVars["virtual_media_policy"] = 'vmedia'
+                    polVars["ipmi_over_lan_policy"] = f'{org}-ipmi'
+                    polVars["local_user_policy"] = f'{org}-users'
+                    polVars["serial_over_lan_policy"] = 'sol'
+                    polVars["snmp_policy"] = 'snmp'
+                    polVars["syslog_policy"] = 'syslog'
+                    polVars["virtual_kvm_policy"] = 'vkvm'
+                    polVars["sd_card_policy"] = ''
+                    if boot_type == 'm2': polVars["storage_policy"] = 'M2-Raid'
+                    elif boot_type == 'raid1': polVars["storage_policy"] = 'Raid1'
+                    else: polVars["storage_policy"] = ''
+                    polVars["lan_connectivity_policy"] = 'vmware-lcp'
+                    if len(polVars["fc_ports"]) > 0:
+                        polVars["san_connectivity_policy"] = f'{org}-scp'
+                    if kwargs["server_type"] == 'FIAttached':
+                        polVars["certificate_management_policy"] = ''
+                        polVars["imc_access_policy"] = f'{org}'
+                        polVars["power_policy"] = 'Server'
+                        polVars["target_platform"] = 'FIAttached'
+                    if kwargs["server_type"] == 'Standalone':
+                        polVars["adapter_configuration_policy"] = f'{org}'
+                        polVars["device_connector_policy"] = f'{org}'
+                        polVars["ldap_policy"] = f'{org}-ldap'
+                        polVars["network_connectivity_policy"] = f'dns'
+                        polVars["ntp_policy"] = f'ntp'
+                        polVars["persistent_memory_policy"] = f'pmem'
+                        polVars["smtp_policy"] = f'{org}-smtp'
+                        polVars["ssh_policy"] = f'{org}-ssh'
+                        polVars["target_platform"] = 'Standalone'
+
+                    # Add Policy Variables to immDict
+                    kwargs['class_path'] = 'intersight,templates,servers'
+                    kwargs = ezfunctions.ez_append(polVars, **kwargs)
+
                     policy_loop = True
                     configure_loop = True
-
-            elif configure == 'N':
-                configure_loop = True
+            elif configure == 'N': configure_loop = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(json.dumps(kwargs['immDict'], indent=4))
+        exit()
         return kwargs
         
     #==============================================
@@ -1876,10 +1933,6 @@ class quick_start(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Standalone Policies.\n')
             print(f'  This wizard will save the output for these policies in the following files:\n')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}compute.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}environment.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}ethernet.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}fibre_channel.yaml')
             print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}management.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Standalone Policy Configuration?  Enter "Y" or "N" [Y]: ')
@@ -1902,525 +1955,6 @@ class quick_start(object):
                     print(f'   - Persistent Memory Policies (Optional)')
                     print(f'   - SMTP Policy (Optional)')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    # Pull in the Policies for SNMP Policies
-                    jsonVars = jsonData['snmp.Policy']['allOf'][1]['properties']
-
-                    # SNMP Contact
-                    polVars['Description'] = jsonVars['SysContact']['description'] + \
-                        'Note: Enter a string up to 64 characters, such as an email address or a name and telephone number.'
-                    polVars['varDefault'] = ''
-                    polVars['varInput'] = 'SNMP System Contact:'
-                    polVars['varName'] = 'SNMP System Contact'
-                    polVars['varRegex'] = '.*'
-                    polVars['minLength'] = 1
-                    polVars['maxLength'] = jsonVars['SysContact']['maxLength']
-                    polVars['system_contact'] = ezfunctions.varStringLoop(**polVars)
-
-                    # SNMP Location
-                    polVars['Description'] = jsonVars['SysLocation']['description']
-                    polVars['varDefault'] = ''
-                    polVars['varInput'] = 'What is the Location of the host on which the SNMP agent (server) runs?'
-                    polVars['varName'] = 'SNMP System Location'
-                    polVars['varRegex'] = '.*'
-                    polVars['minLength'] = 1
-                    polVars['maxLength'] = jsonVars['SysLocation']['maxLength']
-                    polVars['system_location'] = ezfunctions.varStringLoop(**polVars)
-
-                    # SNMP Users
-                    snmp_user_list = []
-                    inner_loop_count = 1
-                    snmp_loop = False
-                    while snmp_loop == False:
-                        question = input(f'Would you like to configure an SNMPv3 User?  Enter "Y" or "N" [Y]: ')
-                        if question == '' or question == 'Y':
-                            snmp_user_list,snmp_loop = ezfunctions.snmp_users(jsonData, inner_loop_count, **polVars)
-                        elif question == 'N':
-                            snmp_loop = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-                    polVars['users'] = snmp_user_list
-
-                    # SNMP Trap Destinations
-                    snmp_dests = []
-                    inner_loop_count = 1
-                    snmp_loop = False
-                    if len(snmp_user_list) > 0:
-                        while snmp_loop == False:
-                            question = input(f'Would you like to configure SNMP Trap Destionations?  Enter "Y" or "N" [Y]: ')
-                            if question == '' or question == 'Y':
-                                snmp_dests,snmp_loop = ezfunctions.snmp_trap_servers(jsonData, inner_loop_count, snmp_user_list, **polVars)
-                            elif question == 'N':
-                                snmp_loop = True
-                            else:
-                                print(f'\n------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                print(f'\n------------------------------------------------------\n')
-                    polVars['trap_destinations'] = snmp_dests
-
-                    # Syslog Local Logging
-                    jsonVars = jsonData['syslog.LocalClientBase']['allOf'][1]['properties']
-                    polVars['var_description'] = jsonVars['MinSeverity']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['MinSeverity']['enum'])
-                    polVars['defaultVar'] = jsonVars['MinSeverity']['default']
-                    polVars['varType'] = 'Syslog Local Minimum Severity'
-                    polVars['min_severity'] = ezfunctions.variablesFromAPI(**polVars)
-
-                    polVars['local_logging'] = {'file':{'min_severity':polVars['min_severity']}}
-                    remote_logging = ezfunctions.syslog_servers(jsonData, **polVars)
-                    polVars['remote_logging'] = remote_logging
-
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Network Configuration Variables:"')
-                    print(f'    System Contact   = "{polVars["system_contact"]}"')
-                    print(f'    System Locaction = "{polVars["system_location"]}"')
-                    if len(polVars['trap_destinations']) > 0:
-                        print(f'    snmp_trap_destinations = ''{')
-                        for item in polVars['trap_destinations']:
-                            for k, v in item.items():
-                                if k == 'destination_address':
-                                    print(f'      "{v}" = ''{')
-                            for k, v in item.items():
-                                if k == 'community':
-                                    print(f'        community_string    = "Sensitive"')
-                                elif k == 'destination_address':
-                                    print(f'        destination_address = "{v}"')
-                                elif k == 'enabled':
-                                    print(f'        enable              = {v}')
-                                elif k == 'port':
-                                    print(f'        port                = {v}')
-                                elif k == 'trap_type':
-                                    print(f'        trap_type           = "{v}"')
-                                elif k == 'user':
-                                    print(f'        user                = "{v}"')
-                            print(f'      ''}')
-                        print(f'    ''}')
-                    if len(polVars['users']) > 0:
-                        print(f'    snmp_users = ''{')
-                        for item in polVars['users']:
-                            for k, v in item.items():
-                                if k == 'name':
-                                    print(f'      "{v}" = ''{')
-                            for k, v in item.items():
-                                if k == 'auth_password':
-                                    print(f'        auth_password    = "Sensitive"')
-                                elif k == 'auth_type':
-                                    print(f'        auth_type        = "{v}"')
-                                elif k == 'privacy_password':
-                                    print(f'        privacy_password = "Sensitive"')
-                                elif k == 'privacy_type':
-                                    print(f'        privacy_type     = "{v}"')
-                                elif k == 'security_level':
-                                    print(f'        security_level   = "{v}"')
-                            print(f'      ''}')
-                        print(f'    ''}')
-                    print(f'    remote_clients = [')
-                    item_count = 1
-                    for key, value in polVars['remote_logging'].items():
-                        print(f'      ''{')
-                        for k, v in value.items():
-                            if k == 'enable':
-                                print(f'        enabled      = {"%s".lower() % (v)}')
-                            elif k == 'hostname':
-                                print(f'        hostname     = "{v}"')
-                            elif k == 'min_severity':
-                                print(f'        min_severity = "{v}"')
-                            elif k == 'port':
-                                print(f'        port         = {v}')
-                            elif k == 'protocol':
-                                print(f'        protocol     = "{v}"')
-                        print(f'      ''}')
-                        item_count += 1
-                    print(f'    ]')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid_confirm = False
-                    while valid_confirm == False:
-                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
-                        if confirm_policy == 'Y' or confirm_policy == '':
-                            confirm_policy = 'Y'
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure BIOS Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'BIOS Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'bios_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # Configure BIOS Policy
-                            name = 'VMware'
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} BIOS Policy'
-                            polVars['bios_template'] = 'Virtualization'
-
-
-                            # Write Policies to Template File
-                            polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure Boot Order Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'Boot Order Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'boot_order_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # Configure Boot Order Policy
-                            name = 'VMware_M2'
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} Boot Order Policy'
-                            polVars['boot_mode'] = 'Uefi'
-                            polVars['enable_secure_boot'] = True
-                            polVars['boot_mode'] = 'Uefi'
-                            polVars['boot_devices'] = [
-                                {
-                                    'enabled':True,
-                                    'device_name':'kvm-dvd',
-                                    'object_type':'boot.VirtualMedia',
-                                    'Subtype':'cimc-mapped-dvd'
-                                },
-                                {
-                                    'device_name':'m2',
-                                    'enabled':True,
-                                    'object_type':'boot.LocalDisk',
-                                    'Slot':'MSTOR-RAID'
-                                },
-                                {
-                                    'device_name':'pxe',
-                                    'enabled':True,
-                                    'InterfaceName':'MGMT-A',
-                                    'InterfaceSource':'name',
-                                    'IpType':'IPv4',
-                                    'MacAddress':'',
-                                    'object_type':'boot.Pxe',
-                                    'Port':-1,
-                                    'Slot':'MLOM'
-                                }
-                            ]
-
-                            # Write Policies to Template File
-                            polVars['template_file'] = '%s.jinja2' % ('boot_policies')
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure IMC Access Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'IMC Access Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'imc_access_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # Configure IMC Access Policy
-                            name = org
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} IMC Access Policy'
-                            polVars['inband_ip_pool'] = 'VMware_KVM'
-                            polVars['ipv4_address_configuration'] = True
-                            polVars['ipv6_address_configuration'] = False
-
-                            # Write Policies to Template File
-                            polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure IPMI over LAN Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'IPMI over LAN Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'ipmi_over_lan_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # IPMI over LAN Settings
-                            name = org
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} IPMI over LAN Policy'
-                            polVars['enabled'] = True
-                            polVars['ipmi_key'] = 1
-
-                            # Write Policies to Template File
-                            polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure Local User Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'Local User Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'local_user_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # Local User Settings
-                            name = org
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} Local User Policy'
-                            polVars['enabled'] = True
-                            polVars['ipmi_key'] = 1
-
-                            # Write Policies to Template File
-                            polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure Power Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'Power Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'power_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # Power Settings
-                            names = ['5108', '9508', 'Server']
-                            for name in names:
-                                polVars['allocated_budget'] = 0
-                                polVars['name'] = name
-                                polVars['descr'] = f'{name} Power Policy'
-                                if name == 'Server': polVars['power_restore_state'] = 'LastState'
-                                elif name == '9508': polVars['allocated_budget'] = 5600
-
-                                polVars['power_redundancy'] = 'Grid'
-                                polVars['ipmi_key'] = 1
-
-                                # Write Policies to Template File
-                                polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                                ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure Serial over LAN Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'Serial over LAN Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'serial_over_lan_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # Serial over LAN Settings
-                            name = org
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} Serial over LAN Policy'
-                            polVars['enabled'] = True
-                            polVars['baud_rate'] = 115200
-                            polVars['com_port'] = 'com0'
-                            polVars['ssh_port'] = 2400
-
-                            # Write Policies to Template File
-                            polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure SNMP Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'SNMP Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'snmp_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # SNMP Settings
-                            name = org
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} SNMP Policy'
-                            polVars['access_community_string'] = ''
-                            polVars['enabled'] = True
-                            polVars['engine_input_id'] = ''
-                            polVars['port'] = 161
-                            polVars['snmp_community_access'] = 'Disabled'
-                            polVars['trap_community_string'] = ''
-
-                            # Write Policies to Template File
-                            polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure Storage Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'Storage Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'storage_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            name = 'M2_Raid'
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} Storage Policy'
-                            polVars['drive_group'] = {}
-                            polVars['global_hot_spares'] = ''
-                            polVars['m2_configuration'] = [ { 'controller_slot':'MSTOR-RAID-1,MSTOR-RAID-2' } ]
-                            polVars['single_drive_raid_configuration'] = {}
-                            polVars['unused_disks_state'] = 'No Change'
-                            polVars['use_jbod_for_vd_creation'] = True
-
-                            # Write Policies to Template File
-                            polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure Syslog Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'Syslog Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'syslog_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # Syslog Settings
-                            name = org
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} Syslog Policy'
-                            polVars['enabled'] = True
-                            polVars['ipmi_key'] = 1
-
-                            # Write Policies to Template File
-                            polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure Thermal Policy
-                            #_______________________________________________________________________
-
-                            polVars['initial_write'] = True
-                            polVars['policy_type'] = 'Thermal Policy'
-                            polVars['header'] = '%s Variables' % (polVars['policy_type'])
-                            polVars['template_file'] = 'template_open.jinja2'
-                            polVars['template_type'] = 'thermal_policies'
-
-                            # Open the Template file
-                            ezfunctions.write_to_template(self, **polVars)
-                            polVars['initial_write'] = False
-
-                            # Thermal Settings
-                            names = ['5108', '9508']
-                            for name in names:
-                                polVars['name'] = name
-                                polVars['descr'] = f'{name} Thermal Policy'
-                                polVars['fan_control_mode'] = 'Balanced'
-
-                                # Write Policies to Template File
-                                polVars['template_file'] = '%s.jinja2' % (polVars['template_type'])
-                                ezfunctions.write_to_template(self, **polVars)
-
-                            # Close the Template file
-                            polVars['template_file'] = 'template_close.jinja2'
-                            ezfunctions.write_to_template(self, **polVars)
-
-                        elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting Section over.')
-                            print(f'\n------------------------------------------------------\n')
-                            valid_confirm = True
-
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
 
 
             elif configure == 'N':
@@ -2453,13 +1987,10 @@ def policy_select_loop(**kwargs):
         if not len(kwargs["policies"]) > 0:
             valid = False
             while valid == False:
-
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'   There was no {inner_policy} found.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-
                 policy_description = ezfunctions.mod_pol_description(inner_policy)
-
                 if kwargs["allow_opt_out"] == True:
                     Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
                     if Question == '' or Question == 'Y':
@@ -2472,11 +2003,9 @@ def policy_select_loop(**kwargs):
                 else:
                     create_policy = True
                     valid = True
-
         else:
             kwargs = ezfunctions.choose_policy(inner_policy, **kwargs)
-            if kwargs['policy'] == 'create_policy':
-                create_policy = True
+            if kwargs['policy'] == 'create_policy': create_policy = True
             elif kwargs['policy'] == '' and kwargs["allow_opt_out"] == True:
                 loop_valid = True
                 create_policy = False
@@ -2490,8 +2019,7 @@ def policy_select_loop(**kwargs):
 
         # Simple Loop to show name_prefix in Use
         ncount = 0
-        if ncount == 5:
-            print(name_prefix)
+        if ncount == 5: print(name_prefix)
         
         # Create Policy if Option was Selected
         if create_policy == True:

@@ -1,396 +1,882 @@
 {
-    "intersight": {
-        "pools": {
-            "ip": [
-                {
-                    "name": "imc_198.18.0.10",
-                    "ipv4_blocks": [
+    "orgs": {
+        "asgard": {
+            "intersight": {
+                "pools": {
+                    "ip": [
                         {
-                            "from": "198.18.0.10",
-                            "size": 245
+                            "name": "imc_198.18.0.10",
+                            "ipv4_blocks": [
+                                {
+                                    "from": "198.18.0.10",
+                                    "size": 245
+                                }
+                            ],
+                            "ipv4_configuration": {
+                                "gateway": "198.18.0.1",
+                                "prefix": "255.255.255.0",
+                                "primary_dns": "208.67.220.220",
+                                "secondary_dns": ""
+                            }
                         }
                     ],
-                    "ipv4_configuration": {
-                        "gateway": "198.18.0.1",
-                        "prefix": "255.255.255.0",
-                        "primary_dns": "208.67.220.220",
-                        "secondary_dns": ""
-                    }
-                }
-            ],
-            "mac": [
-                {
-                    "name": "dvs-a",
-                    "mac_blocks": [
+                    "mac": [
                         {
-                            "from": "00:25:B5:00:10:00",
-                            "size": 1000
+                            "name": "dvs-a",
+                            "mac_blocks": [
+                                {
+                                    "from": "00:25:B5:00:10:00",
+                                    "size": 1000
+                                }
+                            ]
+                        },
+                        {
+                            "name": "dvs-b",
+                            "mac_blocks": [
+                                {
+                                    "from": "00:25:B5:00:20:00",
+                                    "size": 1000
+                                }
+                            ]
+                        },
+                        {
+                            "name": "mgmt-a",
+                            "mac_blocks": [
+                                {
+                                    "from": "00:25:B5:00:A0:00",
+                                    "size": 1000
+                                }
+                            ]
+                        },
+                        {
+                            "name": "mgmt-b",
+                            "mac_blocks": [
+                                {
+                                    "from": "00:25:B5:00:B0:00",
+                                    "size": 1000
+                                }
+                            ]
+                        },
+                        {
+                            "name": "migration-a",
+                            "mac_blocks": [
+                                {
+                                    "from": "00:25:B5:00:C0:00",
+                                    "size": 1000
+                                }
+                            ]
+                        },
+                        {
+                            "name": "migration-b",
+                            "mac_blocks": [
+                                {
+                                    "from": "00:25:B5:00:D0:00",
+                                    "size": 1000
+                                }
+                            ]
+                        },
+                        {
+                            "name": "storage-a",
+                            "mac_blocks": [
+                                {
+                                    "from": "00:25:B5:00:E0:00",
+                                    "size": 1000
+                                }
+                            ]
+                        },
+                        {
+                            "name": "storage-b",
+                            "mac_blocks": [
+                                {
+                                    "from": "00:25:B5:00:F0:00",
+                                    "size": 1000
+                                }
+                            ]
                         }
-                    ]
-                },
-                {
-                    "name": "dvs-b",
-                    "mac_blocks": [
+                    ],
+                    "uuid": [
                         {
-                            "from": "00:25:B5:00:20:00",
-                            "size": 1000
-                        }
-                    ]
-                },
-                {
-                    "name": "mgmt-a",
-                    "mac_blocks": [
-                        {
-                            "from": "00:25:B5:00:A0:00",
-                            "size": 1000
-                        }
-                    ]
-                },
-                {
-                    "name": "mgmt-b",
-                    "mac_blocks": [
-                        {
-                            "from": "00:25:B5:00:B0:00",
-                            "size": 1000
-                        }
-                    ]
-                },
-                {
-                    "name": "migration-a",
-                    "mac_blocks": [
-                        {
-                            "from": "00:25:B5:00:C0:00",
-                            "size": 1000
-                        }
-                    ]
-                },
-                {
-                    "name": "migration-b",
-                    "mac_blocks": [
-                        {
-                            "from": "00:25:B5:00:D0:00",
-                            "size": 1000
-                        }
-                    ]
-                },
-                {
-                    "name": "storage-a",
-                    "mac_blocks": [
-                        {
-                            "from": "00:25:B5:00:E0:00",
-                            "size": 1000
-                        }
-                    ]
-                },
-                {
-                    "name": "storage-b",
-                    "mac_blocks": [
-                        {
-                            "from": "00:25:B5:00:F0:00",
-                            "size": 1000
-                        }
-                    ]
-                }
-            ],
-            "uuid": [
-                {
-                    "name": "asgard",
-                    "descr": "asgard UUID Pool",
-                    "prefix": "000025B5-0000-0000",
-                    "uuid_blocks": [
-                        {
-                            "from": "0000-000000000000",
-                            "size": 1000
-                        }
-                    ]
-                }
-            ],
-            "wwnn": [
-                {
-                    "name": "asgard",
-                    "id_blocks": [
-                        {
-                            "from": "20:00:00:25:B5:00:00:00",
-                            "size": 1000
-                        }
-                    ]
-                }
-            ],
-            "wwpn": [
-                {
-                    "name": "asgard-a",
-                    "id_blocks": [
-                        {
-                            "from": "20:00:00:25:B5:00:A0:00",
-                            "size": 1000
-                        }
-                    ]
-                },
-                {
-                    "name": "asgard-b",
-                    "id_blocks": [
-                        {
-                            "from": "20:00:00:25:B5:00:B0:00",
-                            "size": 1000
-                        }
-                    ]
-                }
-            ]
-        },
-        "policies": {
-            "multicast": [
-                {
-                    "name": "mcast"
-                }
-            ],
-            "vlan": [
-                {
-                    "name": "asgard",
-                    "vlans": [
-                        {
-                            "multicast_policy": "mcast",
                             "name": "asgard",
-                            "vlan_list": "2-99"
+                            "descr": "asgard UUID Pool",
+                            "prefix": "000025B5-0000-0000",
+                            "uuid_blocks": [
+                                {
+                                    "from": "0000-000000000000",
+                                    "size": 1000
+                                }
+                            ]
                         }
-                    ]
-                }
-            ],
-            "flow_control": [
-                {
-                    "name": "flow_ctrl"
-                }
-            ],
-            "link_aggregation": [
-                {
-                    "name": "link_agg"
-                }
-            ],
-            "link_control": [
-                {
-                    "name": "link_ctrl"
-                }
-            ],
-            "vsan": [
-                {
-                    "name": "vsan-100",
-                    "vsans": [
+                    ],
+                    "wwnn": [
                         {
-                            "fcoe_vlan_id": 100,
-                            "name": "vsan-a",
-                            "vsan_id": 100
+                            "name": "asgard",
+                            "id_blocks": [
+                                {
+                                    "from": "20:00:00:25:B5:00:00:00",
+                                    "size": 1000
+                                }
+                            ]
+                        }
+                    ],
+                    "wwpn": [
+                        {
+                            "name": "asgard-a",
+                            "id_blocks": [
+                                {
+                                    "from": "20:00:00:25:B5:00:A0:00",
+                                    "size": 1000
+                                }
+                            ]
+                        },
+                        {
+                            "name": "asgard-b",
+                            "id_blocks": [
+                                {
+                                    "from": "20:00:00:25:B5:00:B0:00",
+                                    "size": 1000
+                                }
+                            ]
                         }
                     ]
                 },
-                {
-                    "name": "vsan-200",
-                    "vsans": [
+                "policies": {
+                    "multicast": [
                         {
-                            "fcoe_vlan_id": 200,
-                            "name": "vsan-b",
+                            "name": "mcast"
+                        }
+                    ],
+                    "vlan": [
+                        {
+                            "name": "asgard",
+                            "vlans": [
+                                {
+                                    "multicast_policy": "mcast",
+                                    "name": "asgard",
+                                    "vlan_list": "2-99"
+                                }
+                            ]
+                        }
+                    ],
+                    "flow_control": [
+                        {
+                            "name": "flow_ctrl"
+                        }
+                    ],
+                    "link_aggregation": [
+                        {
+                            "name": "link_agg"
+                        }
+                    ],
+                    "link_control": [
+                        {
+                            "name": "link_ctrl"
+                        }
+                    ],
+                    "vsan": [
+                        {
+                            "name": "vsan-100",
+                            "vsans": [
+                                {
+                                    "fcoe_vlan_id": 100,
+                                    "name": "vsan-a",
+                                    "vsan_id": 100
+                                }
+                            ]
+                        },
+                        {
+                            "name": "vsan-200",
+                            "vsans": [
+                                {
+                                    "fcoe_vlan_id": 200,
+                                    "name": "vsan-b",
+                                    "vsan_id": 200
+                                }
+                            ]
+                        }
+                    ],
+                    "ethernet_network_group": [
+                        {
+                            "name": "asgard-ucs-uplink",
+                            "allowed_vlans": "1-99"
+                        },
+                        {
+                            "name": "mgmt",
+                            "allowed_vlans": 1,
+                            "native_vlan": 1
+                        },
+                        {
+                            "name": "migration",
+                            "allowed_vlans": 2,
+                            "native_vlan": 2
+                        },
+                        {
+                            "name": "storage",
+                            "allowed_vlans": 3,
+                            "native_vlan": 3
+                        },
+                        {
+                            "name": "dvs",
+                            "allowed_vlans": "1-99",
+                            "native_vlan": 3
+                        }
+                    ],
+                    "system_qos": [
+                        {
+                            "name": "system-qos",
+                            "classes": [
+                                {
+                                    "bandwidth_percent": 20,
+                                    "cos": 5,
+                                    "mtu": 9216,
+                                    "multicast_optimize": false,
+                                    "packet_drop": false,
+                                    "priority": "Platinum",
+                                    "state": "Enabled",
+                                    "weight": 10
+                                },
+                                {
+                                    "bandwidth_percent": 18,
+                                    "cos": 4,
+                                    "mtu": 9216,
+                                    "multicast_optimize": false,
+                                    "packet_drop": true,
+                                    "priority": "Gold",
+                                    "state": "Enabled",
+                                    "weight": 9
+                                },
+                                {
+                                    "bandwidth_percent": 20,
+                                    "cos": 3,
+                                    "mtu": 2240,
+                                    "multicast_optimize": false,
+                                    "packet_drop": false,
+                                    "priority": "FC",
+                                    "state": "Enabled",
+                                    "weight": 10
+                                },
+                                {
+                                    "bandwidth_percent": 18,
+                                    "cos": 2,
+                                    "mtu": 9216,
+                                    "multicast_optimize": false,
+                                    "packet_drop": true,
+                                    "priority": "Silver",
+                                    "state": "Enabled",
+                                    "weight": 8
+                                },
+                                {
+                                    "bandwidth_percent": 14,
+                                    "cos": 1,
+                                    "mtu": 9216,
+                                    "multicast_optimize": false,
+                                    "packet_drop": true,
+                                    "priority": "Bronze",
+                                    "state": "Enabled",
+                                    "weight": 7
+                                },
+                                {
+                                    "bandwidth_percent": 10,
+                                    "cos": 255,
+                                    "mtu": 9216,
+                                    "multicast_optimize": false,
+                                    "packet_drop": true,
+                                    "priority": "Best Effort",
+                                    "state": "Enabled",
+                                    "weight": 5
+                                }
+                            ]
+                        }
+                    ],
+                    "network_connectivity": [
+                        {
+                            "name": "dns",
+                            "dns_servers_v4": [
+                                "208.67.220.220"
+                            ]
+                        }
+                    ],
+                    "ntp": [
+                        {
+                            "name": "ntp",
+                            "ntp_servers": [
+                                "0.north-america.pool.ntp.org",
+                                "1.north-america.pool.ntp.org"
+                            ],
+                            "timezone": "America/New_York"
+                        }
+                    ],
+                    "switch_control": [
+                        {
+                            "name": "sw_ctrl",
+                            "vlan_port_count_optimization": false
+                        }
+                    ],
+                    "port": [
+                        {
+                            "names": [
+                                "asgard-ucs-a",
+                                "asgard-ucs-b"
+                            ],
+                            "port_channel_ethernet_uplinks": [
+                                {
+                                    "admin_speed": "Auto",
+                                    "ethernet_network_group_policy": "asgard-ucs-uplink",
+                                    "flow_control_policy": "flow_ctrl",
+                                    "interfaces": [
+                                        {
+                                            "port_id": 53
+                                        },
+                                        {
+                                            "port_id": 54
+                                        }
+                                    ],
+                                    "link_aggregation_policy": "link_agg",
+                                    "link_control_policy": "link_ctrl",
+                                    "pc_ids": [
+                                        53,
+                                        53
+                                    ]
+                                }
+                            ],
+                            "port_role_servers": [
+                                {
+                                    "port_list": "5-18"
+                                }
+                            ],
+                            "port_channel_fc_uplinks": [
+                                {
+                                    "admin_speed": "32Gbps",
+                                    "fill_pattern": "Arbff",
+                                    "interfaces": [
+                                        {
+                                            "port_id": 1
+                                        },
+                                        {
+                                            "port_id": 2
+                                        }
+                                    ],
+                                    "pc_ids": [
+                                        1,
+                                        1
+                                    ],
+                                    "vsan_ids": [
+                                        100,
+                                        200
+                                    ]
+                                }
+                            ],
+                            "port_modes": {
+                                "custom_mode": "FibreChannel",
+                                "port_list": [
+                                    1,
+                                    4
+                                ]
+                            }
+                        }
+                    ],
+                    "bios": [
+                        {
+                            "name": "M5-Virtualization",
+                            "descr": "M5-Virtualization BIOS Policy",
+                            "bios_template": "Virtualization",
+                            "baud_rate": 115200,
+                            "console_redirection": "serial-port-a",
+                            "execute_disable_bit": "disabled",
+                            "lv_ddr_mode": "auto",
+                            "serial_port_aenable": "enabled",
+                            "terminal_type": "vt100"
+                        },
+                        {
+                            "name": "M5-virtualization-tpm",
+                            "descr": "M5-virtualization-tpm BIOS Policy",
+                            "bios_template": "Virtualization_tpm",
+                            "baud_rate": 115200,
+                            "console_redirection": "serial-port-a",
+                            "execute_disable_bit": "disabled",
+                            "lv_ddr_mode": "auto",
+                            "serial_port_aenable": "enabled",
+                            "terminal_type": "vt100"
+                        },
+                        {
+                            "name": "M6-virtualization-tpm",
+                            "descr": "M6-virtualization-tpm BIOS Policy",
+                            "bios_template": "M6_Virtualization_tpm",
+                            "baud_rate": 115200,
+                            "console_redirection": "serial-port-a",
+                            "execute_disable_bit": "disabled",
+                            "lv_ddr_mode": "auto",
+                            "serial_port_aenable": "enabled",
+                            "terminal_type": "vt100"
+                        }
+                    ],
+                    "imc_access": [
+                        {
+                            "name": "imc_198.18.0.10",
+                            "inband_ip_pool": "imc_198.18.0.10",
+                            "inband_vlan_id": 4
+                        }
+                    ],
+                    "ipmi_over_lan": [
+                        {
+                            "name": "asgard-ipmi",
+                            "enabled": true
+                        }
+                    ],
+                    "local_user": [
+                        {
+                            "name": "asgard-users",
+                            "users": [
+                                {
+                                    "enabled": true,
+                                    "password": 1,
+                                    "role": "admin",
+                                    "username": "admin"
+                                }
+                            ]
+                        }
+                    ],
+                    "power": [
+                        {
+                            "allocated_budget": 0,
+                            "name": "5108",
+                            "power_redundancy": "Grid"
+                        },
+                        {
+                            "allocated_budget": 0,
+                            "name": "9508",
+                            "power_redundancy": "Grid",
+                            "power_allocation": 8400
+                        },
+                        {
+                            "allocated_budget": 0,
+                            "name": "Server",
+                            "power_redundancy": "Grid",
+                            "power_allocation": 8400,
+                            "power_restore": "LastState"
+                        }
+                    ],
+                    "serial_over_lan": [
+                        {
+                            "name": "sol",
+                            "descr": "Server Serial over LAN Policy",
+                            "enabled": true
+                        }
+                    ],
+                    "snmp": [
+                        {
+                            "name": "snmp",
+                            "enabled": true,
+                            "system_contact": "rich-lab@cisco.com",
+                            "system_location": "Richfield, OH",
+                            "snmp_traps": [
+                                {
+                                    "destination_address": "198.18.1.62",
+                                    "enabled": true,
+                                    "port": 162,
+                                    "trap_type": "Trap",
+                                    "user": "snmpadmin",
+                                    "version": "V3"
+                                }
+                            ],
+                            "snmp_users": [
+                                {
+                                    "auth_password": 1,
+                                    "auth_type": "SHA",
+                                    "name": "snmpadmin",
+                                    "privacy_password": 1,
+                                    "privacy_type": "AES",
+                                    "security_level": "AuthPriv"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "snmp-domain",
+                            "enabled": true,
+                            "system_contact": "rich-lab@cisco.com",
+                            "system_location": "Richfield, OH",
+                            "snmp_traps": [
+                                {
+                                    "destination_address": "198.18.1.62",
+                                    "enabled": true,
+                                    "port": 162,
+                                    "trap_type": "Trap",
+                                    "user": "snmpadmin",
+                                    "version": "V3"
+                                }
+                            ],
+                            "snmp_users": [
+                                {
+                                    "auth_password": 1,
+                                    "auth_type": "SHA",
+                                    "name": "snmpadmin",
+                                    "privacy_password": 1,
+                                    "privacy_type": "AES",
+                                    "security_level": "AuthPriv"
+                                }
+                            ]
+                        }
+                    ],
+                    "syslog": [
+                        {
+                            "name": "syslog",
+                            "local_min_severity": "warning",
+                            "remote_clients": [
+                                {
+                                    "server1": {
+                                        "enable": true,
+                                        "hostname": "198.18.5.14",
+                                        "min_severity": "warning",
+                                        "port": 514,
+                                        "protocol": "udp"
+                                    }
+                                },
+                                {
+                                    "server2": {}
+                                }
+                            ]
+                        },
+                        {
+                            "name": "syslog-domain",
+                            "local_min_severity": "warning",
+                            "remote_clients": [
+                                {
+                                    "server1": {
+                                        "enable": true,
+                                        "hostname": "198.18.5.14",
+                                        "min_severity": "warning",
+                                        "port": 514,
+                                        "protocol": "udp"
+                                    }
+                                },
+                                {
+                                    "server2": {}
+                                }
+                            ]
+                        }
+                    ],
+                    "thermal": [
+                        {
+                            "name": "5108",
+                            "fan_control_mode": "Balanced"
+                        },
+                        {
+                            "name": "9508",
+                            "fan_control_mode": "Balanced"
+                        }
+                    ],
+                    "virtual_kvm": [
+                        {
+                            "name": "vkvm",
+                            "allow_tunneled_kvm": true
+                        }
+                    ],
+                    "virtual_media": [
+                        {
+                            "name": "vmedia",
+                            "enable_virtual_media_encryption": true
+                        }
+                    ],
+                    "ethernet_adapter": [
+                        {
+                            "name": "VMware",
+                            "adapter_template": "VMware"
+                        }
+                    ],
+                    "ethernet_network_control": [
+                        {
+                            "name": "LLDP",
+                            "descr": "VMware Ethernet Network Control Policy",
+                            "action_on_uplink_fail": "linkDown",
+                            "cdp_enable": false,
+                            "lldp_receive_enable": true,
+                            "lldp_transmit_enable": true,
+                            "mac_register_mode": "nativeVlanOnly",
+                            "mac_security_forge": "allow"
+                        }
+                    ],
+                    "ethernet_qos": [
+                        {
+                            "name": "Bronze",
+                            "descr": "Bronze Ethernet QoS Policy",
+                            "allowed_vlans": 1,
+                            "native_vlan": 1,
+                            "burst": 1024,
+                            "enable_trust_host_cos": false,
+                            "priority": "Bronze",
+                            "mtu": 9000,
+                            "rate_limit": 0
+                        },
+                        {
+                            "name": "Gold",
+                            "descr": "Gold Ethernet QoS Policy",
+                            "allowed_vlans": 1,
+                            "native_vlan": 1,
+                            "burst": 1024,
+                            "enable_trust_host_cos": false,
+                            "priority": "Gold",
+                            "mtu": 9000,
+                            "rate_limit": 0
+                        },
+                        {
+                            "name": "Platinum",
+                            "descr": "Platinum Ethernet QoS Policy",
+                            "allowed_vlans": 1,
+                            "native_vlan": 1,
+                            "burst": 1024,
+                            "enable_trust_host_cos": false,
+                            "priority": "Platinum",
+                            "mtu": 9000,
+                            "rate_limit": 0
+                        },
+                        {
+                            "name": "Silver",
+                            "descr": "Silver Ethernet QoS Policy",
+                            "allowed_vlans": 1,
+                            "native_vlan": 1,
+                            "burst": 1024,
+                            "enable_trust_host_cos": false,
+                            "priority": "Silver",
+                            "mtu": 9000,
+                            "rate_limit": 0
+                        }
+                    ],
+                    "fibre_channel_adapter": [
+                        {
+                            "name": "VMware",
+                            "descr": "VMware Fibre-Channel Adapter Policy",
+                            "policy_template": "VMware"
+                        }
+                    ],
+                    "fibre_channel_network": [
+                        {
+                            "name": "san-a",
+                            "default_vlan": 0,
+                            "vsan_id": 100
+                        },
+                        {
+                            "name": "san-b",
+                            "default_vlan": 0,
                             "vsan_id": 200
                         }
-                    ]
-                }
-            ],
-            "ethernet_network_group": [
-                {
-                    "name": "asgard-ucs-uplink",
-                    "allowed_vlans": "1-99"
-                }
-            ],
-            "system_qos": [
-                {
-                    "name": "system-qos",
-                    "classes": [
+                    ],
+                    "fibre_channel_qos": [
                         {
-                            "bandwidth_percent": 20,
-                            "cos": 5,
-                            "mtu": 9216,
-                            "multicast_optimize": false,
-                            "packet_drop": false,
-                            "priority": "Platinum",
-                            "state": "Enabled",
-                            "weight": 10
-                        },
-                        {
-                            "bandwidth_percent": 18,
-                            "cos": 4,
-                            "mtu": 9216,
-                            "multicast_optimize": false,
-                            "packet_drop": true,
-                            "priority": "Gold",
-                            "state": "Enabled",
-                            "weight": 9
-                        },
-                        {
-                            "bandwidth_percent": 20,
-                            "cos": 3,
-                            "mtu": 2240,
-                            "multicast_optimize": false,
-                            "packet_drop": false,
-                            "priority": "FC",
-                            "state": "Enabled",
-                            "weight": 10
-                        },
-                        {
-                            "bandwidth_percent": 18,
-                            "cos": 2,
-                            "mtu": 9216,
-                            "multicast_optimize": false,
-                            "packet_drop": true,
-                            "priority": "Silver",
-                            "state": "Enabled",
-                            "weight": 8
-                        },
-                        {
-                            "bandwidth_percent": 14,
-                            "cos": 1,
-                            "mtu": 9216,
-                            "multicast_optimize": false,
-                            "packet_drop": true,
-                            "priority": "Bronze",
-                            "state": "Enabled",
-                            "weight": 7
-                        },
-                        {
-                            "bandwidth_percent": 10,
-                            "cos": 255,
-                            "mtu": 9216,
-                            "multicast_optimize": false,
-                            "packet_drop": true,
-                            "priority": "Best Effort",
-                            "state": "Enabled",
-                            "weight": 5
+                            "name": "fc-qos",
+                            "burst": 1024,
+                            "max_data_field_size": 2112,
+                            "rate_limit": 0
                         }
-                    ]
-                }
-            ],
-            "network_connectivity": [
-                {
-                    "name": "dns",
-                    "dns_servers_v4": [
-                        "208.67.220.220"
-                    ]
-                }
-            ],
-            "ntp": [
-                {
-                    "name": "ntp",
-                    "ntp_servers": [
-                        "0.north-america.pool.ntp.org",
-                        "1.north-america.pool.ntp.org"
                     ],
-                    "timezone": "America/New_York"
-                }
-            ],
-            "switch_control": [
-                {
-                    "name": "sw_ctrl",
-                    "vlan_port_count_optimization": false
-                }
-            ],
-            "port": [
-                {
-                    "names": [
-                        "asgard-ucs-a",
-                        "asgard-ucs-b"
-                    ],
-                    "port_channel_ethernet_uplinks": [
+                    "san_connectivity": [
                         {
-                            "admin_speed": "Auto",
-                            "ethernet_network_group_policy": "asgard-ucs-uplink",
-                            "flow_control_policy": "flow_ctrl",
-                            "interfaces": [
+                            "name": "asgard-scp",
+                            "target_platform": "FIAttached",
+                            "vhbas": [
                                 {
-                                    "port_id": 53
-                                },
-                                {
-                                    "port_id": 54
+                                    "fibre_channel_adapter_policy": "VMware",
+                                    "fibre_channel_network_policy": "san-b",
+                                    "fibre_channel_qos_policy": "fc-qos",
+                                    "names": [
+                                        "hba-a",
+                                        "hba-b"
+                                    ],
+                                    "pci_order": [
+                                        0,
+                                        1
+                                    ],
+                                    "wwpn_allocation_type": "POOL",
+                                    "wwpn_pools": [
+                                        "asgard-a",
+                                        "asgard-b"
+                                    ]
                                 }
                             ],
-                            "link_aggregation_policy": "link_agg",
-                            "link_control_policy": "link_ctrl",
-                            "pc_ids": [
-                                53,
-                                53
+                            "wwnn_allocation_type": "POOL",
+                            "wwnn_pool": "asgard"
+                        }
+                    ],
+                    "lan_connectivity": [
+                        {
+                            "name": "vmware-lcp",
+                            "target_platform": "FIAttached",
+                            "vnics": [
+                                {
+                                    "ethernet_adapter_policy": "VMware",
+                                    "ethernet_network_control_policy": "LLDP",
+                                    "ethernet_network_group_policy": "mgmt",
+                                    "ethernet_qos_policy": "Silver",
+                                    "mac_address_pools": [
+                                        "asgard-a",
+                                        "asgard-b"
+                                    ],
+                                    "names": [
+                                        "mgmt-a",
+                                        "mgmt-b"
+                                    ],
+                                    "pci_order": [
+                                        2,
+                                        3
+                                    ]
+                                },
+                                {
+                                    "ethernet_adapter_policy": "VMware",
+                                    "ethernet_network_control_policy": "LLDP",
+                                    "ethernet_network_group_policy": "migration",
+                                    "ethernet_qos_policy": "Bronze",
+                                    "mac_address_pools": [
+                                        "asgard-a",
+                                        "asgard-b"
+                                    ],
+                                    "names": [
+                                        "migration-a",
+                                        "migration-b"
+                                    ],
+                                    "pci_order": [
+                                        4,
+                                        5
+                                    ]
+                                },
+                                {
+                                    "ethernet_adapter_policy": "VMware",
+                                    "ethernet_network_control_policy": "LLDP",
+                                    "ethernet_network_group_policy": "storage",
+                                    "ethernet_qos_policy": "Platinum",
+                                    "mac_address_pools": [
+                                        "asgard-a",
+                                        "asgard-b"
+                                    ],
+                                    "names": [
+                                        "storage-a",
+                                        "storage-b"
+                                    ],
+                                    "pci_order": [
+                                        6,
+                                        7
+                                    ]
+                                },
+                                {
+                                    "ethernet_adapter_policy": "VMware",
+                                    "ethernet_network_control_policy": "LLDP",
+                                    "ethernet_network_group_policy": "dvs",
+                                    "ethernet_qos_policy": "Gold",
+                                    "mac_address_pools": [
+                                        "asgard-a",
+                                        "asgard-b"
+                                    ],
+                                    "names": [
+                                        "dvs-a",
+                                        "dvs-b"
+                                    ],
+                                    "pci_order": [
+                                        8,
+                                        9
+                                    ]
+                                }
                             ]
                         }
                     ],
-                    "port_role_servers": [
+                    "boot": [
                         {
-                            "port_list": "5-18"
-                        }
-                    ],
-                    "port_channel_fc_uplinks": [
-                        {
-                            "admin_speed": "32Gbps",
-                            "fill_pattern": "Arbff",
-                            "interfaces": [
+                            "name": "M2-pxe",
+                            "boot_mode": "Uefi",
+                            "enable_secure_boot": false,
+                            "boot_devices": [
                                 {
-                                    "port_id": 1
+                                    "device_name": "KVM-DVD",
+                                    "device_type": "virtual_media",
+                                    "object_type": "boot.VirtualMedia",
+                                    "subtype": "kvm-mapped-dvd"
                                 },
                                 {
-                                    "port_id": 2
+                                    "device_name": "M2",
+                                    "device_type": "local_disk",
+                                    "enabled": true,
+                                    "object_type": "boot.LocalDisk",
+                                    "slot": "MSTOR-RAID"
+                                },
+                                {
+                                    "device_name": "PXE",
+                                    "device_type": "pxe_boot",
+                                    "enabled": true,
+                                    "interface_name": "mgmt-a",
+                                    "interface_source": "name",
+                                    "ip_type": "IPv4",
+                                    "object_type": "boot.Pxe",
+                                    "slot": "MLOM"
                                 }
-                            ],
-                            "pc_ids": [
-                                1,
-                                1
-                            ],
-                            "vsan_ids": [
-                                100,
-                                200
+                            ]
+                        },
+                        {
+                            "name": "M2",
+                            "boot_mode": "Uefi",
+                            "enable_secure_boot": true,
+                            "boot_devices": [
+                                {
+                                    "device_name": "KVM-DVD",
+                                    "device_type": "virtual_media",
+                                    "object_type": "boot.VirtualMedia",
+                                    "subtype": "kvm-mapped-dvd"
+                                },
+                                {
+                                    "device_name": "M2",
+                                    "device_type": "local_disk",
+                                    "enabled": true,
+                                    "object_type": "boot.LocalDisk",
+                                    "slot": "MSTOR-RAID"
+                                }
                             ]
                         }
                     ],
-                    "port_modes": {
-                        "custom_mode": "FibreChannel",
-                        "port_list": [
-                            1,
-                            4
-                        ]
-                    }
-                }
-            ]
-        },
-        "profiles": {
-            "chassis": [
-                {
-                    "imc_access_policy": "imc_198.18.0.10",
-                    "names": [
-                        [
-                            "asgard-ucs-1",
-                            "unknown"
-                        ]
+                    "storage": [
+                        {
+                            "name": "M2-Raid",
+                            "m2_configuration": {
+                                "controller_slot": "MSTOR-RAID-1"
+                            },
+                            "use_jbod_for_vd_creation": true
+                        }
+                    ]
+                },
+                "profiles": {
+                    "chassis": [
+                        {
+                            "imc_access_policy": "imc_198.18.0.10",
+                            "names": [
+                                [
+                                    "asgard-ucs-1",
+                                    "unknown"
+                                ]
+                            ],
+                            "power_policy": "9508",
+                            "snmp_policy": "snmp",
+                            "thermal_policy": "9508"
+                        }
                     ],
-                    "power_policy": "9508",
-                    "snmp_policy": "snmp",
-                    "thermal_policy": "9508"
-                }
-            ],
-            "domain": [
-                {
-                    "name": "asgard-ucs",
-                    "action": "No-op",
-                    "network_connectivity_policy": "dns",
-                    "ntp_policy": "ntp",
-                    "port_policies": [
-                        "asgard-ucs-a",
-                        "asgard-ucs-b"
-                    ],
-                    "snmp_policy": "snmp-domain",
-                    "switch_control_policy": "sw_ctrl",
-                    "syslog_policy": "syslog-domain",
-                    "system_qos_policy": "system-qos",
-                    "vlan_policies": [
-                        "asgard"
-                    ],
-                    "vsan_policies": [
-                        "vsan-100",
-                        "vsan-200"
+                    "domain": [
+                        {
+                            "name": "asgard-ucs",
+                            "action": "No-op",
+                            "network_connectivity_policy": "dns",
+                            "ntp_policy": "ntp",
+                            "port_policies": [
+                                "asgard-ucs-a",
+                                "asgard-ucs-b"
+                            ],
+                            "snmp_policy": "snmp-domain",
+                            "switch_control_policy": "sw_ctrl",
+                            "syslog_policy": "syslog-domain",
+                            "system_qos_policy": "system-qos",
+                            "vlan_policies": [
+                                "asgard"
+                            ],
+                            "vsan_policies": [
+                                "vsan-100",
+                                "vsan-200"
+                            ]
+                        }
                     ]
                 }
-            ]
+            }
         }
     }
 }
