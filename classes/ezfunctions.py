@@ -513,8 +513,7 @@ def ntp_alternate():
                 alternate_ntp = '1.north-america.pool.ntp.org'
             if re.search(r'[a-zA-Z]+', alternate_ntp):
                 valid = validating.dns_name('Alternate NTP Server', alternate_ntp)
-            else:
-                valid = validating.ip_address('Alternate NTP Server', alternate_ntp)
+            else: valid = validating.ip_address('Alternate NTP Server', alternate_ntp)
         elif alternate_true == 'N':
             alternate_ntp = ''
             valid = True
@@ -535,8 +534,7 @@ def ntp_primary():
             primary_ntp = '0.north-america.pool.ntp.org'
         if re.search(r'[a-zA-Z]+', primary_ntp):
             valid = validating.dns_name('Primary NTP Server', primary_ntp)
-        else:
-            valid = validating.ip_address('Primary NTP Server', primary_ntp)
+        else: valid = validating.ip_address('Primary NTP Server', primary_ntp)
     return primary_ntp
 
 #======================================================
@@ -557,8 +555,7 @@ def policy_descr(name, policy_type):
     valid = False
     while valid == False:
         descr = input(f'What is the Description for the {policy_type}?  [{name} {policy_type}]: ')
-        if descr == '':
-            descr = '%s %s' % (name, policy_type)
+        if descr == '': descr = '%s %s' % (name, policy_type)
         valid = validating.description(f'{policy_type} polVars["descr"]', descr, 1, 62)
         if valid == True: return descr
 
@@ -569,8 +566,7 @@ def policy_name(namex, policy_type):
     valid = False
     while valid == False:
         name = input(f'What is the Name for the {policy_type}?  [{namex}]: ')
-        if name == '':
-            name = '%s' % (namex)
+        if name == '': name = '%s' % (namex)
         valid = validating.name_rule(f'{policy_type} Name', name, 1, 62)
         if valid == True: return name
 
@@ -1137,8 +1133,7 @@ def snmp_users(jsonData, inner_loop_count, **polVars):
 # Function - Define stdout_log output
 #======================================================
 def stdout_log(sheet, line):
-    if log_level == 0:
-        return
+    if log_level == 0: return
     elif ((log_level == (1) or log_level == (2)) and
             (sheet) and (line is None)):
         #print('*' * 80)
@@ -1148,8 +1143,7 @@ def stdout_log(sheet, line):
         #print('*' * 80)
     elif log_level == (2) and (sheet) and (line is not None):
         print('Evaluating line %s from %s Worksheet...' % (line, sheet.title))
-    else:
-        return
+    else: return
 
 #======================================================
 # Function - Wizard for Syslog Servers
@@ -1299,20 +1293,13 @@ def terraform_fmt(files, folder, path_sep):
 #======================================================
 def tfc_sensitive_variables(varValue, jsonData, polVars):
     polVars["Variable"] = varValue
-    if 'ipmi_key' in varValue:
-        polVars["Description"] = 'IPMI over LAN Encryption Key'
-    elif 'iscsi' in varValue:
-        polVars["Description"] = 'iSCSI Boot Password'
-    elif 'local_user' in varValue:
-        polVars["Description"] = 'Local User Password'
-    elif 'access_comm' in varValue:
-        polVars["Description"] = 'SNMP Access Community String'
-    elif 'snmp_auth' in varValue:
-        polVars["Description"] = 'SNMP Authorization Password'
-    elif 'snmp_priv' in varValue:
-        polVars["Description"] = 'SNMP Privacy Password'
-    elif 'trap_comm' in varValue:
-        polVars["Description"] = 'SNMP Trap Community String'
+    if 'ipmi_key' in varValue: polVars["Description"] = 'IPMI over LAN Encryption Key'
+    elif 'iscsi' in varValue: polVars["Description"] = 'iSCSI Boot Password'
+    elif 'local_user' in varValue: polVars["Description"] = 'Local User Password'
+    elif 'access_comm' in varValue: polVars["Description"] = 'SNMP Access Community String'
+    elif 'snmp_auth' in varValue: polVars["Description"] = 'SNMP Authorization Password'
+    elif 'snmp_priv' in varValue: polVars["Description"] = 'SNMP Privacy Password'
+    elif 'trap_comm' in varValue: polVars["Description"] = 'SNMP Trap Community String'
     polVars["varValue"] = sensitive_var_value(jsonData, **polVars)
     polVars["varId"] = varValue
     polVars["varKey"] = varValue
@@ -1678,8 +1665,7 @@ def vlan_pool():
             valid_vlan = True
             for vlan in vlanListExpanded:
                 valid_vlan = validating.number_in_range('VLAN ID', vlan, 1, 4094)
-                if valid_vlan == False:
-                    continue
+                if valid_vlan == False: continue
             if valid_vlan == False:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error with VLAN(s) assignment!!! VLAN List: "{VlanList}" is not Valid.')
@@ -1689,8 +1675,7 @@ def vlan_pool():
                 print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
                 print(f'     1-10,20-30 - Ranges and Lists of VLANs')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-            else:
-                valid = True
+            else: valid = True
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The allowed vlan list can be in the format of:')
@@ -1699,7 +1684,6 @@ def vlan_pool():
             print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
             print(f'     1-10,20-30 - Ranges and Lists of VLANs')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-    
     return VlanList,vlanListExpanded
 
 def write_to_template(self, **polVars):
@@ -1709,8 +1693,6 @@ def write_to_template(self, **polVars):
     # Process the template
     dest_dir = '%s' % (self.type)
     dest_file = '%s.auto.tfvars' % (polVars["template_type"])
-    if polVars["initial_write"] == True:
-        write_method = 'w'
-    else:
-        write_method = 'a'
+    if polVars["initial_write"] == True: write_method = 'w'
+    else: write_method = 'a'
     process_method(write_method, dest_dir, dest_file, template, **polVars)

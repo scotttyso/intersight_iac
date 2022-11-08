@@ -10,7 +10,6 @@ It uses argparse to take in the following CLI arguments:
     s or api-key-file:       Name of file containing secret key for the HTTP signature scheme
     u or url:                The intersight root URL for the api endpoint. (The default is https://intersight.com)
 """
-
 from copy import deepcopy
 from intersight.api import organization_api
 from intersight.api import resource_api
@@ -26,8 +25,6 @@ import requests
 import sys
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-import yaml
-import textwrap
 
 sys.path.insert(0, './classes')
 import classes.ezfunctions
@@ -82,8 +79,7 @@ def create_terraform_workspaces(**kwargs):
                 classes.validating.ip_address('Terraform Target', polVars["tfc_host"])
             elif ':' in polVars["tfc_host"]:
                 classes.validating.ip_address('Terraform Target', polVars["tfc_host"])
-            else:
-                classes.validating.dns_name('Terraform Target', polVars["tfc_host"])
+            else: classes.validating.dns_name('Terraform Target', polVars["tfc_host"])
         else:
             polVars['tfc_host'] = 'app.terraform.io'
 
@@ -94,8 +90,7 @@ def create_terraform_workspaces(**kwargs):
         if os.environ.get('tfc_organization') is None:
             polVars["tfc_organization"] = classes.tf.terraform_cloud().tfc_organization(**polVars)
             os.environ['tfc_organization'] = polVars["tfc_organization"]
-        else:
-            polVars["tfc_organization"] = os.environ.get('tfc_organization')
+        else: polVars["tfc_organization"] = os.environ.get('tfc_organization')
         tfcb_config.append({'tfc_organization':polVars["tfc_organization"]})
         
         # Obtain Version Control Provider
@@ -112,8 +107,7 @@ def create_terraform_workspaces(**kwargs):
         if os.environ.get('vcsBaseRepo') is None:
             polVars["vcsBaseRepo"] = classes.tf.terraform_cloud().tfc_vcs_repository(**polVars)
             os.environ['vcsBaseRepo'] = polVars["vcsBaseRepo"]
-        else:
-            polVars["vcsBaseRepo"] = os.environ.get('vcsBaseRepo')
+        else: polVars["vcsBaseRepo"] = os.environ.get('vcsBaseRepo')
         
         polVars["agentPoolId"] = ''
         polVars["allowDestroyPlan"] = False
@@ -129,7 +123,6 @@ def create_terraform_workspaces(**kwargs):
         url = f'https://github.com/hashicorp/terraform/tags'
         r = requests.get(url, stream=True)
         for line in r.iter_lines():
-            # print(line)
             toString = line.decode("utf-8")
             if re.search(r'/releases/tag/v(\d+\.\d+\.\d+)\"', toString):
                 terraform_versions.append(re.search('/releases/tag/v(\d+\.\d+\.\d+)', toString).group(1))
@@ -153,8 +146,7 @@ def create_terraform_workspaces(**kwargs):
         # Obtain Terraform Workspace Version
         if not kwargs['ez_settings'].get('terraformVersion') == None:
             polVars["terraformVersion"] = kwargs['ez_settings'].get('terraformVersion')
-        else:
-            polVars["terraformVersion"] = classes.ezfunctions.variablesFromAPI(**polVars)
+        else: polVars["terraformVersion"] = classes.ezfunctions.variablesFromAPI(**polVars)
 
         polVars["Description"] = f'Name of the {org} Workspace to Create in Terraform Cloud'
         polVars["varDefault"] = f'{org}'
@@ -166,10 +158,7 @@ def create_terraform_workspaces(**kwargs):
         polVars["workspaceName"] = classes.ezfunctions.varStringLoop(**polVars)
 
         polVars['workspace_id'] = classes.tf.terraform_cloud().tfcWorkspace(**polVars)
-        vars = [
-            'apikey.Intersight API Key',
-            'secretkey.Intersight Secret Key'
-        ]
+        vars = ['apikey.Intersight API Key', 'secretkey.Intersight Secret Key' ]
         for var in vars:
             print(f'* Adding {var.split(".")[1]} to {polVars["workspaceName"]}')
             polVars["Variable"] = var.split('.')[0]
@@ -294,7 +283,6 @@ def intersight_org_check(**kwargs):
     args = kwargs['args']
     home = kwargs['home']
     org = kwargs['org']
-
     check_org = True
     while check_org == True:
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -312,11 +300,7 @@ def intersight_org_check(**kwargs):
             rg_list = api_handle.get_resource_group_list(**kwargs)
             resourceGroup = f'{org}_rg'
             if not rg_list.results:
-                api_body = {
-                    "ClassId":"resource.Group",
-                    "Name":resourceGroup,
-                    "ObjectType":"resource.Group"
-                }
+                api_body = { "ClassId":"resource.Group", "Name":resourceGroup, "ObjectType":"resource.Group"}
                 resource_group = api_handle.create_resource_group(api_body)
                 rg_2nd_list = api_handle.get_resource_group_list(**kwargs)
                 if rg_2nd_list.results:
@@ -344,11 +328,7 @@ def intersight_org_check(**kwargs):
                     "ClassId":"organization.Organization",
                     "Name":org,
                     "ObjectType":"organization.Organization",
-                    "ResourceGroups":[{
-                        "ClassId":"mo.MoRef",
-                        "Moid": rg_moid,
-                        "ObjectType":"resource.Group"
-                    }]
+                    "ResourceGroups":[{"ClassId":"mo.MoRef", "Moid": rg_moid, "ObjectType":"resource.Group"}]
                 }
                 organization = api_handle.create_organization_organization(api_body)
                 org_2nd_list = api_handle.get_organization_organization_list(**kwargs)
@@ -364,9 +344,7 @@ def intersight_org_check(**kwargs):
                 print(f'  Organization {org} has the Moid of {org_moid},')
                 print(f'  which already exists.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-
             check_org = False
-
         elif question == 'N':
             check_org = False
         else:
@@ -380,27 +358,21 @@ def imm_transition(**kwargs):
     print(f'\n---------------------------------------------------------------------------------------\n')
     print(f'  Starting the Easy IMM Transition Wizard!')
     print(f'\n---------------------------------------------------------------------------------------\n')
-
     type = 'pools'
     plist = ezData['ezimm']['allOf'][1]['properties']['list_pools']
-    for i in plist:
-        kwargs = eval(f"classes.imm_transition(json_data, type).{i}(**kwargs)")
+    for i in plist: kwargs = eval(f"classes.imm_transition(json_data, type).{i}(**kwargs)")
     type = 'policies'
     plist = ezData['ezimm']['allOf'][1]['properties']['list_policies']
-    for i in plist:
-        kwargs = eval(f"classes.imm_transition(json_data, type).{i}(**kwargs)")
+    for i in plist: kwargs = eval(f"classes.imm_transition(json_data, type).{i}(**kwargs)")
     type = 'profiles'
     plist = ezData['ezimm']['allOf'][1]['properties']['list_profiles']
-    for i in plist:
-        kwargs = eval(f"classes.imm_transition(json_data, type).{i}(**kwargs)")
+    for i in plist: kwargs = eval(f"classes.imm_transition(json_data, type).{i}(**kwargs)")
 
     # Return Organizations found in jsonData
     return kwargs
 
 def prompt_main_menu(**kwargs):
     ezData = kwargs['ezData']
-    jsonData = kwargs['jsonData']
-
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Starting the Easy IMM Initial Configuration Wizard!')
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -497,8 +469,7 @@ def prompt_org(**kwargs):
     valid = False
     while valid == False:
         org = input('What is your Intersight Organization Name?  [default]: ')
-        if org == '':
-            org = 'default'
+        if org == '': org = 'default'
         valid = classes.validating.org_rule('Intersight Organization', org, 1, 62)
     kwargs['org'] = org
     return kwargs
@@ -523,15 +494,13 @@ def process_wizard(**kwargs):
                 domain_prefix = input('Enter a Name Prefix for Domain Profile Policies.  [press enter to skip]: ')
                 if domain_prefix == '':
                     valid = True
-                else:
-                    valid = classes.validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
+                else: valid = classes.validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
             valid = False
             while valid == False:
                 name_prefix = input('Enter a Name Prefix for Pools and Server Policies.  [press enter to skip]: ')
                 if name_prefix == '':
                     valid = True
-                else:
-                    valid = classes.validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
+                else: valid = classes.validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
         else:
             domain_prefix = 'default'
             name_prefix = 'default'
@@ -640,45 +609,31 @@ def process_wizard(**kwargs):
 def main():
     Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
     Parser.add_argument(
-        '-a',
-        '--api-key-id',
-        default=os.getenv('TF_VAR_apikey'),
+        '-a', '--api-key-id', default=os.getenv('TF_VAR_apikey'),
         help='The Intersight API client key id for HTTP signature scheme'
     )
     Parser.add_argument(
-        '-d',
-        '--dir',
-        default='Intersight',
+        '-d', '--dir', default='Intersight',
         help='The Directory to Publish the Terraform Files to.'
     )
     Parser.add_argument(
-        '-i',
-        '--ignore-tls',
-        action='store_true',
+        '-i', '--ignore-tls', action='store_true',
         help='Ignore TLS server-side certificate verification'
     )
     Parser.add_argument(
-        '-j',
-        '--json-file',
-        default=None,
+        '-j', '--json-file', default=None,
         help='The IMM Transition Tool JSON Dump File to Convert to HCL.'
     )
     Parser.add_argument(
-        '-s',
-        '--api-key-file',
-        default='~/Downloads/SecretKey.txt',
+        '-s', '--api-key-file', default='~/Downloads/SecretKey.txt',
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
     )
     Parser.add_argument(
-        '-u',
-        '--url',
-        default='https://intersight.com',
+        '-u', '--url', default='https://intersight.com',
         help='The Intersight root URL for the API endpoint. The default is https://intersight.com'
     )
     Parser.add_argument(
-        '-v',
-        '--api-key-v3',
-        action='store_true',
+        '-v', '--api-key-v3', action='store_true',
         help='Flag for API Key Version 3.'
     )
     args = Parser.parse_args()
