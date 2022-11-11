@@ -279,8 +279,19 @@
                     {},
                     {
                         "properties": {
-                            "lan_list": {
-                                "description": "List of Pools.",
+                            "intersightEndpoint": {
+                                "description": "List of Intersight Endpoint Options.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "Connected Virtual Appliance",
+                                    "Private Virtual Appliance",
+                                    "intersight.com"
+                                ],
+                                "default": "intersight.com",
+                                "x-omitempty": true
+                            },
+                            "lansan_list": {
+                                "description": "List of LAN, SAN, VLAN, and VSAN Policies.",
                                 "type": "list_of_values",
                                 "enum": [
                                     "ethernet_adapter_policies",
@@ -288,10 +299,20 @@
                                     "ethernet_network_group_policies",
                                     "ethernet_network_policies",
                                     "ethernet_qos_policies",
+                                    "fibre_channel_adapter_policies",
+                                    "fibre_channel_network_policies",
+                                    "fibre_channel_qos_policies",
+                                    "flow_control_policies",
                                     "iscsi_adapter_policies",
                                     "iscsi_boot_policies",
                                     "iscsi_static_target_policies",
-                                    "lan_connectivity_policies"
+                                    "lan_connectivity_policies",
+                                    "link_aggregation_policies",
+                                    "link_control_policies",
+                                    "multicast_policies",
+                                    "san_connectivity_policies",
+                                    "vlan_policies",
+                                    "vsan_policies"
                                 ],
                                 "x-omitempty": true
                             },
@@ -476,8 +497,8 @@
                                 ],
                                 "x-omitempty": true
                             },
-                            "p1_list": {
-                                "description": "List of Pools.",
+                            "policies_list": {
+                                "description": "List of Policies.",
                                 "type": "list_of_values",
                                 "enum": [
                                     "adapter_configuration_policies",
@@ -485,44 +506,24 @@
                                     "boot_order_policies",
                                     "certificate_management_policies",
                                     "device_connector_policies",
-                                    "ethernet_adapter_policies",
-                                    "ethernet_network_control_policies",
-                                    "ethernet_network_group_policies",
-                                    "ethernet_network_policies",
-                                    "ethernet_qos_policies",
-                                    "fibre_channel_adapter_policies",
-                                    "fibre_channel_network_policies",
-                                    "fibre_channel_qos_policies",
-                                    "flow_control_policies",
                                     "imc_access_policies",
                                     "ipmi_over_lan_policies",
-                                    "iscsi_adapter_policies",
-                                    "iscsi_boot_policies",
-                                    "iscsi_static_target_policies",
-                                    "lan_connectivity_policies",
                                     "ldap_policies",
-                                    "link_aggregation_policies",
-                                    "link_control_policies",
                                     "local_user_policies",
                                     "multicast_policies",
                                     "network_connectivity_policies",
                                     "ntp_policies",
                                     "persistent_memory_policies",
                                     "port_policies",
-                                    "san_connectivity_policies",
                                     "sd_card_policies",
                                     "serial_over_lan_policies",
                                     "smtp_policies",
                                     "snmp_policies",
                                     "ssh_policies",
                                     "storage_policies",
-                                    "switch_control_policies",
                                     "syslog_policies",
-                                    "system_qos_policies",
                                     "virtual_kvm_policies",
-                                    "virtual_media_policies",
-                                    "vlan_policies",
-                                    "vsan_policies"
+                                    "virtual_media_policies"
                                 ],
                                 "x-omitempty": true
                             },
@@ -815,26 +816,49 @@
                                 ],
                                 "x-omitempty": true
                             },
-                            "san_list": {
-                                "description": "List of Pools.",
-                                "type": "list_of_values",
-                                "enum": [
-                                    "fibre_channel_adapter_policies",
-                                    "fibre_channel_network_policies",
-                                    "fibre_channel_qos_policies",
-                                    "san_connectivity_policies"
-                                ],
-                                "x-omitempty": true
-                            },
-                            "vxan_list": {
-                                "description": "List of Pools.",
-                                "type": "list_of_values",
-                                "enum": [
-                                    "multicast_policies",
-                                    "vlan_policies",
-                                    "vsan_policies"
-                                ],
-                                "x-omitempty": true
+                            "systemQos": {
+                                "Best Effort" : {
+                                    "bandwidth_percent":10,
+                                    "cos":255,
+                                    "multicast_optimize":false,
+                                    "packet_drop":false,
+                                    "weight":5
+                                },
+                                "Bronze" : {
+                                    "bandwidth_percent":14,
+                                    "cos":1,
+                                    "multicast_optimize":false,
+                                    "packet_drop":true,
+                                    "weight":7
+                                },
+                                "FC" : {
+                                    "bandwidth_percent":20,
+                                    "cos":3,
+                                    "multicast_optimize":false,
+                                    "packet_drop":false,
+                                    "weight":10
+                                },
+                                "Gold" : {
+                                    "bandwidth_percent":18,
+                                    "cos":4,
+                                    "multicast_optimize":false,
+                                    "packet_drop":false,
+                                    "weight":9
+                                },
+                                "Platinum" : {
+                                    "bandwidth_percent":20,
+                                    "cos":5,
+                                    "multicast_optimize":false,
+                                    "packet_drop":false,
+                                    "weight":10
+                                },
+                                "Silver" : {
+                                    "bandwidth_percent":18,
+                                    "cos":2,
+                                    "multicast_optimize":false,
+                                    "packet_drop":true,
+                                    "weight":8
+                                }
                             },
                             "wizard":{
                                 "files":{

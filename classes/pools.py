@@ -1,19 +1,17 @@
-#!/usr/bin/env python3
 from copy import deepcopy
 import ezfunctions
 import ipaddress
-import jinja2
-import pkg_resources
 import re
+import textwrap
 import validating
+import yaml
 
-ucs_template_path = pkg_resources.resource_filename('pools', '../templates/')
+class MyDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyDumper, self).increase_indent(flow, False)
 
 class pools(object):
     def __init__(self, name_prefix, org, type):
-        self.templateLoader = jinja2.FileSystemLoader(
-            searchpath=(ucs_template_path + '%s/') % (type))
-        self.templateEnv = jinja2.Environment(loader=self.templateLoader)
         self.name_prefix = name_prefix
         self.org = org
         self.type = type
@@ -21,24 +19,17 @@ class pools(object):
     #==============================================
     # IP Pools Module
     #==============================================
-    def ip_pools(self, jsonData, ezData, **kwargs):
+    def ip_pools(self, **kwargs):
+        baseRepo    = kwargs['args'].dir
+        ezData      = kwargs['ezData']
+        jsonData    = kwargs['jsonData']
         name_prefix = self.name_prefix
-        name_suffix = 'ip_pool'
-        opSystem = kwargs['opSystem']
-        org = self.org
+        name_suffix = 'ip'
+        org         = self.org
+        path_sep    = kwargs['path_sep']
         policy_type = 'IP Pool'
+        yaml_file   = 'pools'
         polVars = {}
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'ip_pools'
-        tfDir = kwargs['tfDir']
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -47,28 +38,23 @@ class pools(object):
             print(f'  management is not supported for KVM access.  This IP Pool will need to be associated to a ')
             print(f'  VLAN assigned to the VLAN Pool of the Domain.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
-            else:
-                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}pools{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
 
-                    if not name_prefix == '':
-                        name = '%s_%s' % (name_prefix, name_suffix)
-                    else:
-                        name = '%s_%s' % (org, name_suffix)
+                    if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
+                    else: name = f'{org}-{name_suffix}'
 
-                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
-                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["name"]        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
-                    polVars["var_description"] = jsonVars['AssignmentOrder']['description']
+                    polVars['description'] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
                     polVars["defaultVar"] = jsonVars['AssignmentOrder']['default']
                     polVars["varType"] = 'Assignment Order'
@@ -81,15 +67,12 @@ class pools(object):
                             valid = True
                         elif config_ipv4 == 'N':
                             valid = True
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                        else: ezfunctions.message_invalid_y_or_n('short')
 
                     if config_ipv4 == 'Y' or config_ipv4 == '':
                         jsonVars = jsonData['ippool.IpV4Block']['allOf'][1]['properties']
 
-                        polVars["Description"] = 'The Gateway/Prefix to Assign to the Pool'
+                        polVars['description'] = 'The Gateway/Prefix to Assign to the Pool'
                         polVars["varDefault"] = '198.18.0.1/24'
                         polVars["varInput"] = 'What is the Gateway/Prefix to Assign to the Pool?  [198.18.0.1/24]:'
                         polVars["varName"] = 'Gateway/Prefix'
@@ -103,7 +86,7 @@ class pools(object):
                         network = str(ipaddress.IPv4Interface(network_prefix).network)
                         prefix = network_prefix.split('/')[1]
 
-                        polVars["Description"] = jsonVars['From']['description']
+                        polVars['description'] = jsonVars['From']['description']
                         polVars["varDefault"] = '198.18.0.2'
                         polVars["varInput"] = 'What is the Starting IP Address to Assign to the Pool?  [198.18.0.2]:'
                         polVars["varName"] = 'Starting IP Address'
@@ -114,7 +97,7 @@ class pools(object):
 
                         jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
-                        polVars["Description"] = jsonVars['Size']['description']
+                        polVars['description'] = jsonVars['Size']['description']
                         polVars["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1000.'
                         polVars["varDefault"] = 253
                         polVars["varName"] = 'Pool Size'
@@ -124,7 +107,7 @@ class pools(object):
 
                         jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
 
-                        polVars["Description"] = jsonVars['PrimaryDns']['description']
+                        polVars['description'] = jsonVars['PrimaryDns']['description']
                         polVars["varDefault"] = '208.67.220.220'
                         polVars["varInput"] = 'What is your Primary DNS Server?  [208.67.220.220]:'
                         polVars["varName"] = 'Primary Dns'
@@ -133,7 +116,7 @@ class pools(object):
                         polVars["maxLength"] = 15
                         primary_dns = ezfunctions.varStringLoop(**polVars)
 
-                        polVars["Description"] = jsonVars['SecondaryDns']['description']
+                        polVars['description'] = jsonVars['SecondaryDns']['description']
                         polVars["varDefault"] = ''
                         polVars["varInput"] = 'What is your Secondary DNS Server?  [press enter to skip]:'
                         polVars["varName"] = 'Secondary Dns'
@@ -167,15 +150,12 @@ class pools(object):
                             valid = True
                         elif config_ipv6 == 'N' or config_ipv6 == '':
                             valid = True
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                        else: ezfunctions.message_invalid_y_or_n('short')
 
                     if config_ipv6 == 'Y':
                         jsonVars = jsonData['ippool.IpV6Block']['allOf'][1]['properties']
 
-                        polVars["Description"] = 'The Gateway/Prefix to Assign to the Pool'
+                        polVars['description'] = 'The Gateway/Prefix to Assign to the Pool'
                         polVars["varDefault"] = '2001:0002::1/64'
                         polVars["varInput"] = 'What is the Gateway/Prefix to Assign to the Pool?  [2001:0002::1/64]:'
                         polVars["varName"] = 'Gateway/Prefix'
@@ -191,7 +171,7 @@ class pools(object):
                         network = str(ipaddress.IPv6Interface(network_prefix).network)
                         prefix = network_prefix.split('/')[1]
 
-                        polVars["Description"] = jsonVars['From']['description']
+                        polVars['description'] = jsonVars['From']['description']
                         polVars["varDefault"] = '2001:0002::2'
                         polVars["varInput"] = 'What is the Starting IP Address to Assign to the Pool?  [2001:0002::2]:'
                         polVars["varName"] = 'Starting IPv6 Address'
@@ -202,7 +182,7 @@ class pools(object):
 
                         jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
-                        polVars["Description"] = jsonVars['Size']['description']
+                        polVars['description'] = jsonVars['Size']['description']
                         polVars["varInput"] = 'How Many IPv6 Addresses should be added to the Pool?  Range is 1-1000.'
                         polVars["varDefault"] = 1000
                         polVars["varName"] = 'Pool Size'
@@ -212,7 +192,7 @@ class pools(object):
 
                         jsonVars = jsonData['ippool.IpV6Config']['allOf'][1]['properties']
 
-                        polVars["Description"] = jsonVars['PrimaryDns']['description']
+                        polVars['description'] = jsonVars['PrimaryDns']['description']
                         polVars["varDefault"] = '2620:119:53::53'
                         polVars["varInput"] = 'What is your Primary DNS Server?  [2620:119:53::53]:'
                         polVars["varName"] = 'Primary Dns'
@@ -221,7 +201,7 @@ class pools(object):
                         polVars["maxLength"] = 164
                         primary_dns = ezfunctions.varStringLoop(**polVars)
 
-                        polVars["Description"] = jsonVars['SecondaryDns']['description']
+                        polVars['description'] = jsonVars['SecondaryDns']['description']
                         polVars["varDefault"] = ''
                         polVars["varInput"] = 'What is your Secondary DNS Server?  [press enter to skip]:'
                         polVars["varName"] = 'Secondary Dns'
@@ -249,62 +229,8 @@ class pools(object):
                         }
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    assignment_order = "{polVars["assignment_order"]}"')
-                    print(f'    description      = "{polVars["descr"]}"')
-                    print(f'    name             = "{polVars["name"]}"')
-                    if config_ipv4 == 'Y' or config_ipv4 == '':
-                        print(f'    ipv4_blocks = ''[')
-                        for item in polVars["ipv4_blocks"]:
-                            print('      {')
-                            for k, v in item.items():
-                                if k == 'from':
-                                    print(f'        from = "{v}" ')
-                                elif k == 'size':
-                                    print(f'        size = {v}')
-                                elif k == 'to':
-                                    print(f'        to   = "{v}"')
-                            print('      }')
-                        print(f'    '']')
-                        print('    ipv4_configuration = {')
-                        print('      [')
-                        for k, v in polVars["ipv4_configuration"].items():
-                            if k == 'gateway':
-                                print(f'        gateway       = "{v}"')
-                            elif k == 'netmask':
-                                print(f'        netmask       = "{v}"')
-                            elif k == 'primary_dns':
-                                print(f'        primary_dns   = "{v}"')
-                            elif k == 'secondary_dns':
-                                print(f'        secondary_dns = "{v}"')
-                        print('      }')
-                        print('    ]')
-                    if config_ipv6 == 'Y':
-                        print(f'    ipv6_blocks = ''{')
-                        for item in polVars["ipv6_blocks"]:
-                            print('      [')
-                            for k, v in item.items():
-                                if k == 'from':
-                                    print(f'        from = "{v}"')
-                                elif k == 'size':
-                                    print(f'        size = {v}')
-                                elif k == 'to':
-                                    print(f'        to   = "{v}"')
-                            print('      }')
-                        print(f'    '']')
-                        print('    ipv6_configuration = [')
-                        print('      {')
-                        for k, v in polVars["ipv6_configuration"].items():
-                            if k == 'gateway':
-                                print(f'        gateway       = "{v}"')
-                            elif k == 'prefix':
-                                print(f'        prefix        = "{v}"')
-                            elif k == 'primary_dns':
-                                print(f'        primary_dns   = "{v}"')
-                            elif k == 'secondary_dns':
-                                print(f'        secondary_dns = "{v}"')
-                        print('      }')
-                        print('    ]')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    print(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
@@ -315,30 +241,16 @@ class pools(object):
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
                             ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {polVars["policy_type"]} Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
-
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-
-            elif configure == 'N':
-                configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
+                        else: ezfunctions.message_invalid_y_or_n('short')
+            elif configure == 'N': configure_loop = True
+            else: ezfunctions.message_invalid_y_or_n('long')
+        # Return kwargs
+        return kwargs
 
     #==============================================
     # IQN Pools Module
@@ -350,13 +262,6 @@ class pools(object):
         org = self.org
         policy_type = 'IQN Pool'
         polVars = {}
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'iqn_pools'
-        tfDir = kwargs['tfDir']
 
         # Open the Template file
         ezfunctions.write_to_template(self, **polVars)
@@ -370,18 +275,16 @@ class pools(object):
                 policy_loop = False
                 while policy_loop == False:
 
-                    if not name_prefix == '':
-                        name = '%s_%s' % (name_prefix, name_suffix)
-                    else:
-                        name = '%s_%s' % (org, name_suffix)
+                    if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
+                    else: name = f'{org}-{name_suffix}'
 
-                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
-                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["name"]        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
-                    polVars["var_description"] = jsonVars['AssignmentOrder']['description']
+                    polVars['description'] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
                     polVars["defaultVar"] = jsonVars['AssignmentOrder']['default']
                     polVars["varType"] = 'Assignment Order'
@@ -402,7 +305,7 @@ class pools(object):
                     while valid == False:
                         jsonVars = jsonData['iqnpool.Pool']['allOf'][1]['properties']
 
-                        polVars["Description"] = jsonVars['Prefix']['description']
+                        polVars['description'] = jsonVars['Prefix']['description']
                         polVars["varDefault"] = 'iqn.1984-12.com.cisco'
                         polVars["varInput"] = 'What is the IQN Prefix you would like to assign to the Pool?  [iqn.1984-12.com.cisco]:'
                         polVars["varName"] = 'IQN Prefix'
@@ -413,7 +316,7 @@ class pools(object):
 
                         jsonVars = jsonData['iqnpool.IqnSuffixBlock']['allOf'][1]['properties']
 
-                        polVars["Description"] = jsonVars['From']['description']
+                        polVars['description'] = jsonVars['From']['description']
                         polVars["varInput"] = jsonVars['From']['description'] 
                         polVars["varDefault"] = 0
                         polVars["varName"] = 'Starting Suffix'
@@ -421,7 +324,7 @@ class pools(object):
                         polVars["maxNum"] = 60000000000
                         pool_from = ezfunctions.varNumberLoop(**polVars)
 
-                        polVars["Description"] = jsonVars['Suffix']['description']
+                        polVars['description'] = jsonVars['Suffix']['description']
                         polVars["varDefault"] = 'ucs-host'
                         polVars["varInput"] = 'What is the IQN Suffix you would like to assign to the Pool?  [ucs-host]:'
                         polVars["varName"] = 'IQN Suffix'
@@ -432,7 +335,7 @@ class pools(object):
 
                         jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
-                        polVars["Description"] = jsonVars['Size']['description']
+                        polVars['description'] = jsonVars['Size']['description']
                         polVars["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1000.'
                         polVars["varDefault"] = 1000
                         polVars["varName"] = 'Pool Size'
@@ -458,25 +361,8 @@ class pools(object):
                         }
                     ]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    assignment_order = "{polVars["assignment_order"]}"')
-                    print(f'    description      = "{polVars["descr"]}"')
-                    print(f'    name             = "{polVars["name"]}"')
-                    print(f'    prefix           = "{polVars["prefix"]}"')
-                    print(f'    iqn_blocks = ''[')
-                    for i in polVars["iqn_blocks"]:
-                        print(f'      ''{')
-                        for k, v in i.items():
-                            if k == 'from':
-                                print(f'        from   = {v}')
-                            elif k == 'size':
-                                print(f'        size   = {v}')
-                            elif k == 'suffix':
-                                print(f'        suffix = "{v}"')
-                            elif k == 'to':
-                                print(f'        to     = {v}')
-                        print(f'      ''}')
-                    print(f'    '']')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    print(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
@@ -487,51 +373,31 @@ class pools(object):
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
                             ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {polVars["policy_type"]} Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
-
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-
-            elif configure == 'N':
-                configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
+                        else: ezfunctions.message_invalid_y_or_n('short')
+            elif configure == 'N': configure_loop = True
+            else: ezfunctions.message_invalid_y_or_n('long')
+        # Return kwargs
+        return kwargs
 
     #==============================================
     # MAC Pools Module
     #==============================================
-    def mac_pools(self, jsonData, ezData, **kwargs):
+    def mac_pools(self, **kwargs):
+        baseRepo    = kwargs['args'].dir
+        ezData      = kwargs['ezData']
+        jsonData    = kwargs['jsonData']
         name_prefix = self.name_prefix
-        opSystem = kwargs['opSystem']
-        org = self.org
+        name_suffix = 'mac'
+        org         = self.org
+        path_sep    = kwargs['path_sep']
         policy_type = 'MAC Pool'
+        yaml_file   = 'pools'
         polVars = {}
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'mac_pools'
-        tfDir = kwargs['tfDir']
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -542,10 +408,7 @@ class pools(object):
             print(f'  - Pool Size can be between 1 and 1000 addresses.')
             print(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
-            else:
-                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}pools{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 0
             policy_loop = False
@@ -553,13 +416,13 @@ class pools(object):
 
                 name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
 
-                polVars["name"] = ezfunctions.policy_name(name, policy_type)
-                polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                polVars["name"]        = ezfunctions.policy_name(name, policy_type)
+                polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                 polVars["multi_select"] = False
                 jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
-                polVars["var_description"] = jsonVars['AssignmentOrder']['description']
+                polVars['description'] = jsonVars['AssignmentOrder']['description']
                 polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
                 polVars["defaultVar"] = jsonVars['AssignmentOrder']['default']
                 polVars["varType"] = 'Assignment Order'
@@ -567,7 +430,7 @@ class pools(object):
 
                 jsonVars = jsonData['macpool.Block']['allOf'][1]['properties']
 
-                polVars["Description"] = jsonVars['From']['description']
+                polVars['description'] = jsonVars['From']['description']
                 if loop_count % 2 == 0: 
                     polVars["varDefault"] = '00:25:B5:0A:00:00'
                     polVars["varInput"] = 'What is the Starting MAC Address to Assign to the Pool?  [00:25:B5:0A:00:00]:'
@@ -582,7 +445,7 @@ class pools(object):
 
                 jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
-                polVars["Description"] = jsonVars['Size']['description']
+                polVars['description'] = jsonVars['Size']['description']
                 polVars["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1000.'
                 polVars["varDefault"] = 1000
                 polVars["varName"] = 'Pool Size'
@@ -607,22 +470,8 @@ class pools(object):
                 ]
 
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'    assignment_order = "{polVars["assignment_order"]}"')
-                print(f'    description      = "{polVars["descr"]}"')
-                print(f'    name             = "{polVars["name"]}"')
-                print(f'    mac_blocks = ''[')
-                for item in polVars["mac_blocks"]:
-                    print('      {')
-                    for k, v in item.items():
-                        if k == 'from':
-                            print(f'        from = "{v}" ')
-                        elif k == 'size':
-                            print(f'        size = {v}')
-                        elif k == 'to':
-                            print(f'        to   = "{v}"')
-                    print('      }')
-                print(f'    '']')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                print(f'-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
@@ -634,45 +483,28 @@ class pools(object):
                         ezfunctions.write_to_template(self, **polVars)
 
                         configure_loop, loop_count, policy_loop = ezfunctions.exit_loop_default_yes(loop_count, policy_type)
-
                         valid_confirm = True
-
                     elif confirm_policy == 'N':
-                        print(f'\n------------------------------------------------------\n')
-                        print(f'  Starting {policy_type} Section over.')
-                        print(f'\n------------------------------------------------------\n')
+                        ezfunctions.message_starting_over(policy_type)
                         valid_confirm = True
-
-                    else:
-                        print(f'\n------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n------------------------------------------------------\n')
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
+                    else: ezfunctions.message_invalid_y_or_n('long')
+        # Return kwargs
+        return kwargs
 
     #==============================================
     # Resource Pool Module
     #==============================================
-    def resource_pools(self, jsonData, ezData, **kwargs):
+    def resource_pools(self, **kwargs):
+        baseRepo    = kwargs['args'].dir
+        ezData      = kwargs['ezData']
+        jsonData    = kwargs['jsonData']
         name_prefix = self.name_prefix
         name_suffix = 'resource'
-        opSystem = kwargs['opSystem']
-        org = self.org
+        org         = self.org
+        path_sep    = kwargs['path_sep']
         policy_type = 'Resource Pool'
+        yaml_file   = 'pools'
         polVars = {}
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'resource_pools'
-        tfDir = kwargs['tfDir']
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -680,30 +512,25 @@ class pools(object):
             print(f'  The {policy_type} represents a collection of resources that can be associated to ')
             print(f'  the configuration entities such as server profiles.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
-            else:
-                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}pools{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
 
-                    if not name_prefix == '':
-                        name = '%s_%s' % (name_prefix, name_suffix)
-                    else:
-                        name = '%s_%s' % (org, name_suffix)
+                    if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
+                    else: name = f'{org}-{name_suffix}'
 
-                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
-                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["name"]        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     # Pull in the Policies for iSCSI Boot
                     polVars["multi_select"] = False
 
                     # Assignment Order
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
-                    polVars["var_description"] = jsonVars['AssignmentOrder']['description']
+                    polVars['description'] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
                     polVars["defaultVar"] = jsonVars['AssignmentOrder']['default']
                     polVars["varType"] = 'Assignment Order'
@@ -713,7 +540,7 @@ class pools(object):
                     polVars['serial_number_list'] = []
                     valid = False
                     while valid == False:
-                        polVars["Description"] = 'A List of Serial Numbers to add to the Resource Pool.'
+                        polVars['description'] = 'A List of Serial Numbers to add to the Resource Pool.'
                         polVars["varDefault"] = ''
                         polVars["varInput"] = 'Enter the Server Serial Number:'
                         polVars["varName"] = 'Serial Number'
@@ -722,7 +549,7 @@ class pools(object):
                         polVars["maxLength"] = 11
                         polVars['serial_number_list'].append(ezfunctions.varStringLoop(**polVars))
 
-                        polVars["Description"] = 'Add Additional Serial Numbers.'
+                        polVars['description'] = 'Add Additional Serial Numbers.'
                         polVars["varInput"] = f'Do you want to add another Serial Number?'
                         polVars["varDefault"] = 'N'
                         polVars["varName"] = 'Additional Serial Numbers'
@@ -730,19 +557,15 @@ class pools(object):
 
                     # Server Type
                     jsonVars = ezData['pools']['resourcepool.Pool']
-                    polVars["var_description"] = jsonVars['server_type']['description']
+                    polVars['description'] = jsonVars['server_type']['description']
                     polVars["jsonVars"] = sorted(jsonVars['server_type']['enum'])
                     polVars["defaultVar"] = jsonVars['server_type']['default']
                     polVars["varType"] = 'Server Type'
                     polVars["server_type"] = ezfunctions.variablesFromAPI(**polVars)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'   assignment_order   = "{polVars["assignment_order"]}"')
-                    print(f'   description        = "{polVars["descr"]}"')
-                    print(f'   name               = "{polVars["name"]}"')
-                    print(f'   serial_number_list = {polVars["serial_number_list"]}')
-                    print(f'   server_type        = "{polVars["server_type"]}"')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    print(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
@@ -753,30 +576,16 @@ class pools(object):
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
                             ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {polVars["policy_type"]} Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
-
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-
-            elif configure == 'N':
-                configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
+                        else: ezfunctions.message_invalid_y_or_n('short')
+            elif configure == 'N': configure_loop = True
+            else: ezfunctions.message_invalid_y_or_n('long')
+        # Return kwargs
+        return kwargs
 
     #==============================================
     # UUID Pools Module
@@ -788,17 +597,6 @@ class pools(object):
         org = self.org
         policy_type = 'UUID Pool'
         polVars = {}
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'uuid_pools'
-        tfDir = kwargs['tfDir']
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -811,18 +609,16 @@ class pools(object):
                 policy_loop = False
                 while policy_loop == False:
 
-                    if not name_prefix == '':
-                        name = '%s_%s' % (name_prefix, name_suffix)
-                    else:
-                        name = '%s_%s' % (org, name_suffix)
+                    if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
+                    else: name = f'{org}-{name_suffix}'
 
-                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
-                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["name"]        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
-                    polVars["var_description"] = jsonVars['AssignmentOrder']['description']
+                    polVars['description'] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
                     polVars["defaultVar"] = jsonVars['AssignmentOrder']['default']
                     polVars["varType"] = 'Assignment Order'
@@ -830,7 +626,7 @@ class pools(object):
 
                     jsonVars = jsonData['uuidpool.Pool']['allOf'][1]['properties']
 
-                    polVars["Description"] = jsonVars['Prefix']['description']
+                    polVars['description'] = jsonVars['Prefix']['description']
                     polVars["varDefault"] = '000025B5-0000-0000'
                     polVars["varInput"] = 'What is the UUID Prefix you would like to assign to the Pool?  [000025B5-0000-0000]:'
                     polVars["varName"] = 'UUID Prefix'
@@ -841,7 +637,7 @@ class pools(object):
 
                     jsonVars = jsonData['uuidpool.UuidBlock']['allOf'][1]['properties']
 
-                    polVars["Description"] = jsonVars['From']['description']
+                    polVars['description'] = jsonVars['From']['description']
                     polVars["varDefault"] = '0000-000000000000'
                     polVars["varInput"] = 'What is the First UUID Suffix in the Block?  [0000-000000000000]:'
                     polVars["varName"] = 'UUID First Suffix'
@@ -852,7 +648,7 @@ class pools(object):
 
                     jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
-                    polVars["Description"] = jsonVars['Size']['description']
+                    polVars['description'] = jsonVars['Size']['description']
                     polVars["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1000.'
                     polVars["varDefault"] = 1000
                     polVars["varName"] = 'Pool Size'
@@ -877,23 +673,8 @@ class pools(object):
                         }
                     ]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    assignment_order = "{polVars["assignment_order"]}"')
-                    print(f'    description      = "{polVars["descr"]}"')
-                    print(f'    name             = "{polVars["name"]}"')
-                    print(f'    prefix           = "{polVars["prefix"]}"')
-                    print(f'    uuid_blocks = ''[')
-                    for i in polVars["uuid_blocks"]:
-                        print(f'      ''{')
-                        for k, v in i.items():
-                            if k == 'from':
-                                print(f'        from = "{v}"')
-                            elif k == 'size':
-                                print(f'        size = {v}')
-                            elif k == 'to':
-                                print(f'        to   = "{v}"')
-                        print(f'      ''}')
-                    print(f'    '']')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    print(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
@@ -904,52 +685,31 @@ class pools(object):
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
                             ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {polVars["policy_type"]} Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
-
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-
-            elif configure == 'N':
-                configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
+                        else: ezfunctions.message_invalid_y_or_n('short')
+            elif configure == 'N': configure_loop = True
+            else: ezfunctions.message_invalid_y_or_n('long')
+        # Return kwargs
+        return kwargs
 
     #==============================================
     # WWNN Pools Module
     #==============================================
-    def wwnn_pools(self, jsonData, ezData, **kwargs):
+    def wwnn_pools(self, **kwargs):
+        baseRepo    = kwargs['args'].dir
+        ezData      = kwargs['ezData']
+        jsonData    = kwargs['jsonData']
         name_prefix = self.name_prefix
-        name_suffix = 'wwnn_pool'
-        opSystem = kwargs['opSystem']
-        org = self.org
+        name_suffix = 'wwnn'
+        org         = self.org
+        path_sep    = kwargs['path_sep']
         policy_type = 'WWNN Pool'
+        yaml_file   = 'pools'
         polVars = {}
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'wwnn_pools'
-        tfDir = kwargs['tfDir']
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -959,28 +719,23 @@ class pools(object):
             print(f'  - Pool Size can be between 1 and 1000 addresses.')
             print(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
-            else:
-                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}pools{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
 
-                    if not name_prefix == '':
-                        name = '%s_%s' % (name_prefix, name_suffix)
-                    else:
-                        name = '%s_%s' % (org, name_suffix)
+                    if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
+                    else: name = f'{org}-{name_suffix}'
 
-                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
-                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["name"]        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
-                    polVars["var_description"] = jsonVars['AssignmentOrder']['description']
+                    polVars['description'] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
                     polVars["defaultVar"] = jsonVars['AssignmentOrder']['default']
                     polVars["varType"] = 'Assignment Order'
@@ -988,7 +743,7 @@ class pools(object):
 
                     jsonVars = jsonData['fcpool.Block']['allOf'][1]['properties']
 
-                    polVars["Description"] = jsonVars['From']['description']
+                    polVars['description'] = jsonVars['From']['description']
                     polVars["varDefault"] = '20:00:00:25:B5:00:00:00'
                     polVars["varInput"] = 'What is the Starting WWNN Address to Assign to the Pool?  [20:00:00:25:B5:00:00:00]:'
                     polVars["varName"] = 'Starting WWNN Address'
@@ -999,7 +754,7 @@ class pools(object):
 
                     jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
-                    polVars["Description"] = jsonVars['Size']['description']
+                    polVars['description'] = jsonVars['Size']['description']
                     polVars["varInput"] = 'How Many WWNN Addresses should be added to the Pool?  Range is 1-1000.'
                     polVars["varDefault"] = 1000
                     polVars["varName"] = 'Pool Size'
@@ -1025,22 +780,8 @@ class pools(object):
                     ]
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    assignment_order = "{polVars["assignment_order"]}"')
-                    print(f'    description      = "{polVars["descr"]}"')
-                    print(f'    name             = "{polVars["name"]}"')
-                    print(f'    id_blocks = ''[')
-                    for item in polVars["wwnn_blocks"]:
-                        print('      {')
-                        for k, v in item.items():
-                            if k == 'from':
-                                print(f'        from = "{v}" ')
-                            elif k == 'size':
-                                print(f'        size = {v}')
-                            elif k == 'to':
-                                print(f'        to   = "{v}"')
-                        print('      }')
-                    print(f'    '']')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    print(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
@@ -1051,51 +792,31 @@ class pools(object):
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
                             ezfunctions.write_to_template(self, **polVars)
 
-                            configure_loop, policy_loop = ezfunctions.exit_default_no(polVars["policy_type"])
+                            configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {polVars["policy_type"]} Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
-
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-
-            elif configure == 'N':
-                configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
+                        else: ezfunctions.message_invalid_y_or_n('short')
+            elif configure == 'N': configure_loop = True
+            else: ezfunctions.message_invalid_y_or_n('long')
+        # Return kwargs
+        return kwargs
 
     #==============================================
     # WWPN Pools Module
     #==============================================
-    def wwpn_pools(self, jsonData, ezData, **kwargs):
+    def wwpn_pools(self, **kwargs):
+        baseRepo    = kwargs['args'].dir
+        ezData      = kwargs['ezData']
+        jsonData    = kwargs['jsonData']
         name_prefix = self.name_prefix
-        opSystem = kwargs['opSystem']
-        org = self.org
+        name_suffix = 'wwpn'
+        org         = self.org
+        path_sep    = kwargs['path_sep']
         policy_type = 'WWPN Pool'
+        yaml_file   = 'pools'
         polVars = {}
-        polVars["header"] = '%s Variables' % (policy_type)
-        polVars["initial_write"] = True
-        polVars["org"] = org
-        polVars["policy_type"] = policy_type
-        polVars["template_file"] = 'template_open.jinja2'
-        polVars["template_type"] = 'wwpn_pools'
-        tfDir = kwargs['tfDir']
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **polVars)
-        polVars["initial_write"] = False
 
         configure_loop = False
         while configure_loop == False:
@@ -1106,10 +827,7 @@ class pools(object):
             print(f'  - Pool Size can be between 1 and 1000 addresses.')
             print(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            if opSystem == 'Windows':
-                print(f'  - {tfDir}\\{org}\\{self.type}\\{polVars["template_type"]}.auto.tfvars')
-            else:
-                print(f'  - {tfDir}/{org}/{self.type}/{polVars["template_type"]}.auto.tfvars')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}pools{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1119,13 +837,13 @@ class pools(object):
 
                     name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
 
-                    polVars["name"] = ezfunctions.policy_name(name, policy_type)
-                    polVars["descr"] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars["name"]        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
 
                     polVars["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
 
-                    polVars["var_description"] = jsonVars['AssignmentOrder']['description']
+                    polVars['description'] = jsonVars['AssignmentOrder']['description']
                     polVars["jsonVars"] = sorted(jsonVars['AssignmentOrder']['enum'])
                     polVars["defaultVar"] = jsonVars['AssignmentOrder']['default']
                     polVars["varType"] = 'Assignment Order'
@@ -1133,7 +851,7 @@ class pools(object):
 
                     jsonVars = jsonData['fcpool.Block']['allOf'][1]['properties']
 
-                    polVars["Description"] = jsonVars['From']['description']
+                    polVars['description'] = jsonVars['From']['description']
                     if loop_count % 2 == 0: 
                         polVars["varDefault"] = '20:00:00:25:B5:0A:00:00'
                         polVars["varInput"] = 'What is the Starting WWPN Address to Assign to the Pool?  [20:00:00:25:B5:0A:00:00]:'
@@ -1148,7 +866,7 @@ class pools(object):
 
                     jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
 
-                    polVars["Description"] = jsonVars['Size']['description']
+                    polVars['description'] = jsonVars['Size']['description']
                     polVars["varInput"] = 'How Many WWPN Addresses should be added to the Pool?  Range is 1-1000.'
                     polVars["varDefault"] = 1000
                     polVars["varName"] = 'Pool Size'
@@ -1174,22 +892,8 @@ class pools(object):
                     ]
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    assignment_order = "{polVars["assignment_order"]}"')
-                    print(f'    description      = "{polVars["descr"]}"')
-                    print(f'    name             = "{polVars["name"]}"')
-                    print(f'    id_blocks = ''[')
-                    for item in polVars["wwpn_blocks"]:
-                        print('      {')
-                        for k, v in item.items():
-                            if k == 'from':
-                                print(f'        from = "{v}" ')
-                            elif k == 'size':
-                                print(f'        size = {v}')
-                            elif k == 'to':
-                                print(f'        to   = "{v}"')
-                        print('      }')
-                    print(f'    '']')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    print(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
@@ -1202,25 +906,11 @@ class pools(object):
 
                             configure_loop, loop_count, policy_loop = ezfunctions.exit_loop_default_yes(loop_count, policy_type)
                             valid_confirm = True
-
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting {policy_type} Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
-
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-
-            elif configure == 'N':
-                configure_loop = True
-            else:
-                print(f'\n------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n------------------------------------------------------\n')
-
-        # Close the Template file
-        polVars["template_file"] = 'template_close.jinja2'
-        ezfunctions.write_to_template(self, **polVars)
+                        else: ezfunctions.message_invalid_y_or_n('short')
+            elif configure == 'N': configure_loop = True
+            else: ezfunctions.message_invalid_y_or_n('long')
+        # Return kwargs
+        return kwargs

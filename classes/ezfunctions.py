@@ -5,10 +5,13 @@ from openpyxl import load_workbook
 from ordered_set import OrderedSet
 from textwrap import fill
 import itertools
+import jinja2
 import json
 import os
+import pkg_resources
 import platform
 import re
+import requests
 import shutil
 import subprocess
 import sys
@@ -40,7 +43,6 @@ def api_key(args):
         while key_loop == False:
             question = stdiomask.getpass(f'The Intersight API Key was not entered as a command line option.\n'\
                 'Please enter the Version 2 Intersight API key to use: ')
-
             if len(question) == 74:
                 args.api_key_id = question
                 key_loop = True
@@ -48,7 +50,7 @@ def api_key(args):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  The API key length should be 74 characters.  Please Re-Enter.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-
+    # Return API Key
     return args.api_key_id
 
 #======================================================
@@ -57,10 +59,8 @@ def api_key(args):
 def api_secret(args):
     secret_loop = False
     while secret_loop == False:
-        if '~' in args.api_key_file:
-            secret_path = os.path.expanduser(args.api_key_file)
-        else:
-            secret_path = args.api_key_file
+        if '~' in args.api_key_file: secret_path = os.path.expanduser(args.api_key_file)
+        else: secret_path = args.api_key_file
         if not os.path.isfile(secret_path):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Error!! api_key_file not found.')
@@ -68,8 +68,7 @@ def api_secret(args):
             args.api_key_file = input(f'Please Enter the Path to the File containing the Intersight API Secret: ')
         else:
             secret_file = open(secret_path, 'r')
-            if 'RSA PRIVATE KEY' in secret_file.read():
-                secret_loop = True
+            if 'RSA PRIVATE KEY' in secret_file.read(): secret_loop = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! api_key_file does not seem to contain the Private Key.')
@@ -82,22 +81,17 @@ def api_secret(args):
 def choose_policy(policy_type, **kwargs):
     policy_descr = mod_pol_description(policy_type)
     policy_list = []
-    for i in kwargs['policies'][policy_type]:
-        policy_list.append(i['name'])
+    for i in kwargs['policies'][policy_type]: policy_list.append(i['name'])
     valid = False
     while valid == False:
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        if kwargs.get('optional_message'):
-            print(kwargs["optional_message"])
+        if kwargs.get('optional_message'): print(kwargs["optional_message"])
         print(f'  {policy_descr} Options:')
         for i, v in enumerate(policy_list):
             i += 1
-            if i < 10:
-                print(f'     {i}. {v}')
-            else:
-                print(f'    {i}. {v}')
-        if kwargs["allow_opt_out"] == True:
-            print(f'     99. Do not assign a(n) {policy_descr}.')
+            if i < 10: print(f'     {i}. {v}')
+            else: print(f'    {i}. {v}')
+        if kwargs["allow_opt_out"] == True: print(f'     99. Do not assign a(n) {policy_descr}.')
         print(f'     100. Create a New {policy_descr}.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
         policyOption = input(f'Select the Option Number for the {policy_descr} to Assign to {kwargs["name"]}: ')
@@ -116,7 +110,6 @@ def choose_policy(policy_type, **kwargs):
                     kwargs['policy'] = 'create_policy'
                     valid = True
                     return kwargs
-
             if int(policyOption) == 99:
                 kwargs['policy'] = ''
                 valid = True
@@ -125,10 +118,7 @@ def choose_policy(policy_type, **kwargs):
                 kwargs['policy'] = 'create_policy'
                 valid = True
                 return kwargs
-        else:
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Error!! Invalid Selection.  Please Select a valid Index from the List.')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
+        else: message_invalid_selection()
 
 #======================================================
 # Function - Count the Number of Keys
@@ -142,13 +132,14 @@ def countKeys(ws, func):
     return count
 
 #======================================================
-# Function - Prompt User with question - default No
+# Function - Ask User to Configure Additional Policy
 #======================================================
-def exit_default_no(policy_type):
+def exit_default(policy_type, y_or_n):
     valid_exit = False
     while valid_exit == False:
-        exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [N]: ')
-        if exit_answer == '' or exit_answer == 'N':
+        exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [{y_or_n}]: ')
+        if exit_answer == '': exit_answer == y_or_n
+        if exit_answer == 'N':
             policy_loop = True
             configure_loop = True
             valid_exit = True
@@ -156,31 +147,7 @@ def exit_default_no(policy_type):
             policy_loop = False
             configure_loop = False
             valid_exit = True
-        else:
-            print(f'\n------------------------------------------------------\n')
-            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-            print(f'\n------------------------------------------------------\n')
-    return configure_loop, policy_loop
-
-#======================================================
-# Function - Prompt User with question - default Yes
-#======================================================
-def exit_default_yes(policy_type):
-    valid_exit = False
-    while valid_exit == False:
-        exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [Y]: ')
-        if exit_answer == '' or exit_answer == 'Y':
-            policy_loop = False
-            configure_loop = False
-            valid_exit = True
-        elif exit_answer == 'N':
-            policy_loop = True
-            configure_loop = True
-            valid_exit = True
-        else:
-            print(f'\n------------------------------------------------------\n')
-            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-            print(f'\n------------------------------------------------------\n')
+        else: message_invalid_y_or_n()
     return configure_loop, policy_loop
 
 #======================================================
@@ -191,8 +158,7 @@ def exit_loop_default_yes(loop_count, policy_type):
     while valid_exit == False:
         if loop_count % 2 == 0:
             exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [Y]: ')
-        else:
-            exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [N]: ')
+        else: exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [N]: ')
         if (loop_count % 2 == 0 and exit_answer == '') or exit_answer == 'Y':
             policy_loop = False
             configure_loop = False
@@ -206,10 +172,7 @@ def exit_loop_default_yes(loop_count, policy_type):
             policy_loop = True
             configure_loop = True
             valid_exit = True
-        else:
-            print(f'\n------------------------------------------------------\n')
-            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-            print(f'\n------------------------------------------------------\n')
+        else: message_invalid_y_or_n()
     return configure_loop, loop_count, policy_loop
 
 #========================================================
@@ -330,7 +293,7 @@ def local_users_function(**kwargs):
 
         kwargs["multi_select"] = False
         jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['iam.LocalUserPasswordPolicy']
-        kwargs["var_description"] = jsonVars['role']['description']
+        kwargs["Description"] = jsonVars['role']['description']
         kwargs["jsonVars"] = sorted(jsonVars['role']['enum'])
         kwargs["defaultVar"] = jsonVars['role']['default']
         kwargs["varType"] = 'User Role'
@@ -376,34 +339,28 @@ def local_users_function(**kwargs):
                         valid_confirm = True
                         valid_exit = True
                         valid_users = True
-                    else:
-                        print(f'\n------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n------------------------------------------------------\n')
+                    else: message_invalid_y_or_n()
 
             elif question == 'N':
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Starting Local User Configuration Over.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = True
-            else:
-                print(f'\n------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n------------------------------------------------------\n')
+            else: message_invalid_y_or_n()
     return kwargs
 
 #======================================================
 # Function - Merge Easy IMM Repository to Dest Folder
 #======================================================
-def merge_easy_imm_repository(args, ezData, org):
+def merge_easy_imm_repository(**kwargs):
+    args     = kwargs['args']
     baseRepo = args.dir
+    immDict  = kwargs['immDict']
+    org      = kwargs['org']
 
     # Setup Operating Environment
-    opSystem = platform.system()
     tfe_dir = 'tfe_modules'
-    if opSystem == 'Windows': path_sep = '\\'
-    else: path_sep = '/'
-    git_url = "https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm"
+    git_url = "https://github.com/terraform-cisco-modules/easy-imm-comprehensive-example"
     if not os.path.isdir(tfe_dir):
         os.mkdir(tfe_dir)
         Repo.clone_from(git_url, tfe_dir)
@@ -413,41 +370,82 @@ def merge_easy_imm_repository(args, ezData, org):
         g = cmd.Git(tfe_dir)
         g.pull()
 
-    folder_list = [
-        f'{baseRepo}{path_sep}{org}{path_sep}policies',
-        f'{baseRepo}{path_sep}{org}{path_sep}pools',
-        f'{baseRepo}{path_sep}{org}{path_sep}profiles',
-        f'{baseRepo}{path_sep}{org}{path_sep}ucs_domain_profiles'
-    ]
+    # Get All sub-folders from tfDir
+    orgs_list = list(immDict['orgs'].keys())
+    for org in orgs_list:
+        org_dir = os.path.join(baseRepo, org)
+        default_dir = os.path.join(baseRepo, org, 'defaults')
+        if not os.path.isdir(default_dir):
+            os.mkdir(default_dir)
+    
+        # Now Loop over the folders and merge the module files
+        for folder in [org, 'defaults']:
+            if folder == 'defaults':
+                dest_dir = os.path.join(baseRepo, org, folder)
+                src_dir = os.path.join(tfe_dir, 'defaults')
+            else:
+                dest_dir = os.path.join(baseRepo, org)
+                src_dir = os.path.join(tfe_dir)
+            copy_files = os.listdir(src_dir)
+            for fname in copy_files:
+                if not os.path.isdir(os.path.join(src_dir, fname)):
+                    shutil.copy2(os.path.join(src_dir, fname), dest_dir)
+        terraform_fmt(org_dir)
 
-    removeList = [
-        'data_sources.tf',
-        'locals.tf',
-        'main.tf',
-        'output.tf',
-        'outputs.tf',
-        'provider.tf',
-        'README.md',
-        'variables.tf',
-    ]
-    # Now Loop over the folders and merge the module files
-    module_folders = ['policies', 'pools', 'profiles', 'ucs_domain_profiles']
-    for folder in folder_list:
-        for mod in module_folders:
-            fsplit = folder.split(path_sep)
-            if fsplit[-1] == mod:
-                src_dir = os.path.join(tfe_dir, 'modules', mod)
-                copy_files = os.listdir(src_dir)
-                for fname in copy_files:
-                    if not os.path.isdir(os.path.join(src_dir, fname)):
-                        shutil.copy2(os.path.join(src_dir, fname), folder)
-                
-                # Identify the files 
-                files = ezData['wizard']['files'][mod]
-                for xRemove in removeList:
-                    if xRemove in files:
-                        files.remove(xRemove)
-                terraform_fmt(files, folder, path_sep)
+#======================================================
+# Function - Message for Invalid List Selection
+#======================================================
+def message_invalid_selection():
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+
+#======================================================
+# Function - Message for Invalid Selection Y or N
+#======================================================
+def message_invalid_y_or_n(length):
+    if length == 'short': dashRep = '-'*54
+    else: dashRep = '-'*91
+    print(f'\n{dashRep}\n')
+    print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
+    print(f'\n{dashRep}\n')
+
+#======================================================
+# Function - Message Starting Over
+#======================================================
+def message_starting_over(policy_type):
+    dashRep = '-'*54
+    print(f'\n{dashRep}\n')
+    print(f'  Starting {policy_type} Section over.')
+    print(f'\n{dashRep}\n')
+
+#======================================================
+# Function - Message Invalid FCoE VLAN
+#======================================================
+def message_fcoe_vlan(fcoe_id, vlan_policy):
+    dashRep = '-'*91
+    print(f'\n{dashRep}\n')
+    print(f'  Error!!  The FCoE VLAN {fcoe_id} is already assigned to the VLAN Policy')
+    print(f'  {vlan_policy}.  Please choose a VLAN id that is not already in use.')
+    print(f'\n{dashRep}\n')
+
+#======================================================
+# Function - Message Invalid VLAN
+#======================================================
+def message_invalid_vlan():
+    dashRep = '-'*91
+    print(f'\n{dashRep}\n')
+    print(f'  Invalid Entry!  Please Enter a valid VLAN ID in the range of 1-4094.')
+    print(f'\n{dashRep}\n')
+
+#======================================================
+# Function - Message Invalid VLAN
+#======================================================
+def message_invalid_vlan(vsan_policy, vsan_id, vsan_list):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  Error with VSAN!!  The VSAN {vsan_id} is not in the VSAN Policy')
+    print(f'  {vsan_policy}.  Options are {vsan_list}.')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
 
 #======================================================
 # Function - Change Policy Description to Sentence
@@ -509,18 +507,13 @@ def ntp_alternate():
         alternate_true = input('Do you want to Configure an Alternate NTP Server?  Enter "Y" or "N" [Y]: ')
         if alternate_true == 'Y' or alternate_true == '':
             alternate_ntp = input('What is your Alternate NTP Server? [1.north-america.pool.ntp.org]: ')
-            if alternate_ntp == '':
-                alternate_ntp = '1.north-america.pool.ntp.org'
-            if re.search(r'[a-zA-Z]+', alternate_ntp):
-                valid = validating.dns_name('Alternate NTP Server', alternate_ntp)
+            if alternate_ntp == '': alternate_ntp = '1.north-america.pool.ntp.org'
+            if re.search(r'[a-zA-Z]+', alternate_ntp): valid = validating.dns_name('Alternate NTP Server', alternate_ntp)
             else: valid = validating.ip_address('Alternate NTP Server', alternate_ntp)
         elif alternate_true == 'N':
             alternate_ntp = ''
             valid = True
-        else:
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
+        else: message_invalid_y_or_n()
     return alternate_ntp
 
 #======================================================
@@ -530,10 +523,8 @@ def ntp_primary():
     valid = False
     while valid == False:
         primary_ntp = input('What is your Primary NTP Server [0.north-america.pool.ntp.org]: ')
-        if primary_ntp == "":
-            primary_ntp = '0.north-america.pool.ntp.org'
-        if re.search(r'[a-zA-Z]+', primary_ntp):
-            valid = validating.dns_name('Primary NTP Server', primary_ntp)
+        if primary_ntp == "": primary_ntp = '0.north-america.pool.ntp.org'
+        if re.search(r'[a-zA-Z]+', primary_ntp): valid = validating.dns_name('Primary NTP Server', primary_ntp)
         else: valid = validating.ip_address('Primary NTP Server', primary_ntp)
     return primary_ntp
 
@@ -847,7 +838,7 @@ def snmp_trap_servers(**kwargs):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             snmp_version = 'V2'
         else:
-            kwargs["var_description"] = jsonVars['Version']['description']
+            kwargs["Description"] = jsonVars['Version']['description']
             kwargs["jsonVars"] = sorted(jsonVars['Version']['enum'])
             kwargs["defaultVar"] = jsonVars['Version']['default']
             kwargs["varType"] = 'SNMP Version'
@@ -859,7 +850,7 @@ def snmp_trap_servers(**kwargs):
 
         if snmp_version == 'V3':
             kwargs["multi_select"] = False
-            kwargs["var_description"] = '    Please Select the SNMP User to assign to this Destination:\n'
+            kwargs["Description"] = '    Please Select the SNMP User to assign to this Destination:\n'
             kwargs["var_type"] = 'SNMP User'
             snmp_users = []
             for item in kwargs['snmp_users']: snmp_users.append(item['name'])
@@ -867,7 +858,7 @@ def snmp_trap_servers(**kwargs):
             snmp_user = snmp_user[0]
 
         if snmp_version == 'V2':
-            kwargs["var_description"] = jsonVars['Type']['description']
+            kwargs["Description"] = jsonVars['Type']['description']
             kwargs["jsonVars"] = sorted(jsonVars['Type']['enum'])
             kwargs["defaultVar"] = jsonVars['Type']['default']
             kwargs["varType"] = 'SNMP Trap Type'
@@ -935,20 +926,14 @@ def snmp_trap_servers(**kwargs):
                         valid_confirm = True
                         valid_exit = True
                         valid_traps = True
-                    else:
-                        print(f'\n------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n------------------------------------------------------\n')
+                    else: message_invalid_y_or_n()
 
             elif confirm_v == 'N':
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Starting Remote Host Configuration Over.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = True
-            else:
-                print(f'\n------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n------------------------------------------------------\n')
+            else: message_invalid_y_or_n()
     return kwargs
 
 #======================================================
@@ -980,14 +965,14 @@ def snmp_users(**kwargs):
             else:
                 snmpUser = True
 
-        kwargs["var_description"] = jsonVars['SecurityLevel']['description']
+        kwargs["Description"] = jsonVars['SecurityLevel']['description']
         kwargs["jsonVars"] = sorted(jsonVars['SecurityLevel']['enum'])
         kwargs["defaultVar"] = jsonVars['SecurityLevel']['default']
         kwargs["varType"] = 'SNMP Security Level'
         security_level = variablesFromAPI(**kwargs)
 
         if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
-            kwargs["var_description"] = jsonVars['AuthType']['description']
+            kwargs["Description"] = jsonVars['AuthType']['description']
             kwargs["jsonVars"] = sorted(jsonVars['AuthType']['enum'])
             kwargs["defaultVar"] = 'SHA'
             kwargs["popList"] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
@@ -999,7 +984,7 @@ def snmp_users(**kwargs):
             kwargs = sensitive_var_value(**kwargs)
 
         if security_level == 'AuthPriv':
-            kwargs["var_description"] = jsonVars['PrivacyType']['description']
+            kwargs["Description"] = jsonVars['PrivacyType']['description']
             kwargs["jsonVars"] = sorted(jsonVars['PrivacyType']['enum'])
             kwargs["defaultVar"] = 'AES'
             kwargs["popList"] = ['NA']
@@ -1046,20 +1031,14 @@ def snmp_users(**kwargs):
                         valid_confirm = True
                         valid_exit = True
                         valid_users = True
-                    else:
-                        print(f'\n------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                        print(f'\n------------------------------------------------------\n')
+                    else: message_invalid_y_or_n()
 
             elif confirm_v == 'N':
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Starting SNMP User Configuration Over.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = True
-            else:
-                print(f'\n------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n------------------------------------------------------\n')
+            else: message_invalid_y_or_n()
     return kwargs
 
 #======================================================
@@ -1095,13 +1074,13 @@ def syslog_servers(**kwargs):
             else: valid = validating.ip_address('Remote Logging Server', hostname)
 
         jsonVars = jsonData['syslog.RemoteClientBase']['allOf'][1]['properties']
-        kwargs["var_description"] = jsonVars['MinSeverity']['description']
+        kwargs["Description"] = jsonVars['MinSeverity']['description']
         kwargs["jsonVars"] = sorted(jsonVars['MinSeverity']['enum'])
         kwargs["defaultVar"] = jsonVars['MinSeverity']['default']
         kwargs["varType"] = 'Syslog Remote Minimum Severity'
         min_severity = variablesFromAPI(**kwargs)
 
-        kwargs["var_description"] = jsonVars['Protocol']['description']
+        kwargs["Description"] = jsonVars['Protocol']['description']
         kwargs["jsonVars"] = sorted(jsonVars['Protocol']['enum'])
         kwargs["defaultVar"] = jsonVars['Protocol']['default']
         kwargs["varType"] = 'Syslog Protocol'
@@ -1150,53 +1129,25 @@ def syslog_servers(**kwargs):
                             syslog_loop = True
                             valid_confirm = True
                             valid_exit = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
+                        else: message_invalid_y_or_n()
 
             elif confirm_host == 'N':
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Starting Syslog Server Configuration Over.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 valid_confirm = True
-            else:
-                print(f'\n------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n------------------------------------------------------\n')
+            else: message_invalid_y_or_n()
     return kwargs
 
 #======================================================
 # Function - Format Terraform Files
 #======================================================
-def terraform_fmt(files, folder, path_sep):
-    # Create the Empty_variable_maps.auto.tfvars to house all the unused variables
-    empty_auto_tfvars = f'{folder}{path_sep}Empty_variable_maps.auto.tfvars'
-    wr_file = open(empty_auto_tfvars, 'w')
-    wrString = f'#______________________________________________'\
-              '\n#'\
-              '\n# UNUSED Variables'\
-              '\n#______________________________________________\n\n'
-    wr_file.write(wrString)
-    for file in files:
-        varFiles = f"{file.split('.')[0]}.auto.tfvars"
-        dest_file = f'{folder}{path_sep}{varFiles}'
-        if not os.path.isfile(dest_file):
-            x = file.split('.')
-            if re.search('(ndo_sites|ndo_users)', x[0]):
-                wrString = f'{x[0]} = ''[]\n'
-            else:
-                wrString = f'{x[0]} = ''{}\n'
-            wr_file.write(wrString)
-
-    # Close the Unused Variables File
-    wr_file.close()
-
+def terraform_fmt(folder):
     # Run terraform fmt to cleanup the formating for all of the auto.tfvar files and tf files if needed
-    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'\n-----------------------------------------------------------------------------\n')
     print(f'  Running "terraform fmt" in folder "{folder}",')
     print(f'  to correct variable formatting!')
-    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'\n-----------------------------------------------------------------------------\n')
     p = subprocess.Popen(
         ['terraform', 'fmt', folder],
         stdout = subprocess.PIPE,
@@ -1208,6 +1159,45 @@ def terraform_fmt(files, folder, path_sep):
         line = line.strip()
         print(f'- {line}')
 
+#========================================================
+# Function to Pull Latest Versions of Providers
+#========================================================
+def terraform_provider_config(**kwargs):
+    args     = kwargs['args']
+    baseRepo = args.dir
+    org      = kwargs['org']
+    url_list = [
+        'https://github.com/CiscoDevNet/terraform-provider-intersight/tags/',
+        'https://github.com/hashicorp/terraform/tags',
+        'https://github.com/netascode/terraform-provider-utils/tags/'
+    ]
+    for url in url_list:
+        # Get the Latest Release Tag for the Provider
+        r = requests.get(url, stream=True)
+        repoVer = 'BLANK'
+        stringMatch = False
+        while stringMatch == False:
+            for line in r.iter_lines():
+                toString = line.decode("utf-8")
+                if re.search(r'/releases/tag/v(\d+\.\d+\.\d+)\"', toString):
+                    repoVer = re.search('/releases/tag/v(\d+\.\d+\.\d+)', toString).group(1)
+                    break
+            stringMatch = True
+        
+        # Make sure the latest_versions Key exists
+        if kwargs.get('latest_versions') == None:
+            kwargs['latest_versions'] = {}
+        
+        # Set Provider Version
+        if   'intersight' in url:
+            kwargs['latest_versions']['intersight_provider_version'] = repoVer
+        elif 'netascode' in url:
+            kwargs['latest_versions']['utils_provider_version'] = repoVer
+        else: kwargs['latest_versions']['terraform_version'] = repoVer
+    
+    # Return kwargs
+    return kwargs
+    
 #======================================================
 # Function - Prompt User for Sensitive Variables
 #======================================================
@@ -1280,59 +1270,50 @@ def validate_vlan_in_policy(vlan_policy_list, vlan_id):
 #======================================================
 # Function - Prompt User with List of Options
 #======================================================
-def variablesFromAPI(**polVars):
+def variablesFromAPI(**kwargs):
+    jVars   = sorted(kwargs['jData']['enum'])
+    varDesc = kwargs['jData']['description']
+    varType = kwargs['jData']['varType']
     valid = False
     while valid == False:
-        json_vars = polVars["jsonVars"]
-        if 'popList' in polVars:
-            if len(polVars["popList"]) > 0:
-                for x in polVars["popList"]:
-                    varsCount = len(json_vars)
-                    for r in range(0, varsCount):
+        json_vars = jVars
+        if not kwargs.get('popList') == None:
+            if len(kwargs["popList"]) > 0:
+                for x in kwargs["popList"]:
+                    for r in range(0, len(json_vars)):
                         if json_vars[r] == x:
                             json_vars.pop(r)
                             break
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        newDescr = polVars["var_description"]
-        if '\n' in newDescr:
-            newDescr = newDescr.split('\n')
-            for line in newDescr:
-                if '*' in line:
-                    print(fill(f'{line}',width=88, subsequent_indent='    '))
-                else:
-                    print(fill(f'{line}',88))
-        else:
-            print(fill(f'{polVars["var_description"]}',88))
+        if '\n' in varDesc:
+            varDesc = varDesc.split('\n')
+            for line in varDesc:
+                if '*' in line: print(fill(f'{line}',width=88, subsequent_indent='    '))
+                else: print(fill(f'{line}',88))
+        else: print(fill(f'{varDesc}',88))
         print(f'\n    Select an Option Below:')
         for index, value in enumerate(json_vars):
             index += 1
-            if value == polVars["defaultVar"]:
-                defaultIndex = index
-            if index < 10:
-                print(f'     {index}. {value}')
-            else:
-                print(f'    {index}. {value}')
+            if value == kwargs['jData']["default"]: defaultIndex = index
+            if index < 10: print(f'     {index}. {value}')
+            else: print(f'    {index}. {value}')
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        if polVars["multi_select"] == True:
-            if not polVars["defaultVar"] == '':
-                var_selection = input(f'Please Enter the Option Number(s) to Select for {polVars["varType"]}.  [{defaultIndex}]: ')
-            else:
-                var_selection = input(f'Please Enter the Option Number(s) to Select for {polVars["varType"]}: ')
+        if kwargs["multi_select"] == True:
+            if not kwargs['jData']["default"] == '':
+                var_selection = input(f'Please Enter the Option Number(s) to Select for {varType}.  [{defaultIndex}]: ')
+            else: var_selection = input(f'Please Enter the Option Number(s) to Select for {varType}: ')
         else:
-            if not polVars["defaultVar"] == '':
-                var_selection = input(f'Please Enter the Option Number to Select for {polVars["varType"]}.  [{defaultIndex}]: ')
-            else:
-                var_selection = input(f'Please Enter the Option Number to Select for {polVars["varType"]}: ')
-        if not polVars["defaultVar"] == '' and var_selection == '':
-            var_selection = defaultIndex
-
-        if polVars["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
+            if not kwargs['jData']["default"] == '':
+                var_selection = input(f'Please Enter the Option Number to Select for {varType}.  [{defaultIndex}]: ')
+            else: var_selection = input(f'Please Enter the Option Number to Select for {varType}: ')
+        if not kwargs['jData']["default"] == '' and var_selection == '': var_selection = defaultIndex
+        if kwargs["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
             for index, value in enumerate(json_vars):
                 index += 1
                 if int(var_selection) == index:
                     selection = value
                     valid = True
-        elif polVars["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
+        elif kwargs["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
             var_list = vlan_list_full(var_selection)
             var_length = int(len(var_list))
             var_count = 0
@@ -1343,42 +1324,37 @@ def variablesFromAPI(**polVars):
                     if int(vars) == index:
                         var_count += 1
                         selection.append(value)
-            if var_count == var_length:
-                valid = True
+            if var_count == var_length: valid = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  The list of Vars {var_list} did not match the available list.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-        else:
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
+        else: message_invalid_selection()
     return selection
 
 #======================================================
 # Function - Prompt User for Boolean Question
 #======================================================
 def varBoolLoop(**kwargs):
+    varDesc  = kwargs['jData']['description']
+    varInput = kwargs['jData']['varInput']
+    varName  = kwargs['jData']['varName']
+    if kwargs['jData']['default'] == True: varDefault = 'Y'
+    else: varDefault = 'N'
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = kwargs["Description"]
-    if '\n' in newDescr:
-        newDescr = newDescr.split('\n')
+    if '\n' in varDesc:
+        newDescr = varDesc.split('\n')
         for line in newDescr:
-            if '*' in line:
-                print(fill(f'{line}',width=88, subsequent_indent='    '))
-            else:
-                print(fill(f'{line}',88))
-    else:
-        print(fill(f'{kwargs["Description"]}',88))
+            if '*' in line: print(fill(f'{line}',width=88, subsequent_indent='    '))
+            else: print(fill(f'{line}',88))
+    else: print(fill(f'{varDesc}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{kwargs["varInput"]}  [{kwargs["varDefault"]}]: ')
+        varValue = input(f'{varInput}  Enter "Y" or "N" [{varDefault}]: ')
         if varValue == '':
-            if kwargs["varDefault"] == 'Y':
-                varValue = True
-            elif kwargs["varDefault"] == 'N':
-                varValue = False
+            if varDefault == 'Y': varValue = True
+            elif varDefault == 'N': varValue = False
             valid = True
         elif varValue == 'N':
             varValue = False
@@ -1388,7 +1364,7 @@ def varBoolLoop(**kwargs):
             valid = True
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'   {kwargs["varName"]} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
+            print(f'   {varName} value of "{varValue}" is Invalid!!! Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
@@ -1396,33 +1372,31 @@ def varBoolLoop(**kwargs):
 # Function - Prompt User for Input Number
 #======================================================
 def varNumberLoop(**kwargs):
-    maxNum = kwargs["maxNum"]
-    minNum = kwargs["minNum"]
-    varName = kwargs["varName"]
+    varDefault = kwargs['jData']["default"]
+    varDesc    = kwargs['jData']['description']
+    maximum    = kwargs['jData']["maximum"]
+    minimum    = kwargs['jData']["minimum"]
+    varInput   = kwargs['jData']['varInput']
+    varName    = kwargs['jData']["varName"]
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = kwargs["Description"]
-    if '\n' in newDescr:
-        newDescr = newDescr.split('\n')
+    if '\n' in varDesc:
+        newDescr = varDesc.split('\n')
         for line in newDescr:
-            if '*' in line:
-                print(fill(f'{line}',width=88, subsequent_indent='    '))
-            else:
-                print(fill(f'{line}',88))
-    else:
-        print(fill(f'{kwargs["Description"]}',88))
+            if '*' in line: print(fill(f'{line}',width=88, subsequent_indent='    '))
+            else: print(fill(f'{line}',88))
+    else: print(fill(f'{varDesc}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = input(f'{kwargs["varInput"]}  [{kwargs["varDefault"]}]: ')
-        if varValue == '':
-            varValue = kwargs["varDefault"]
+        varValue = input(f'{varInput}  [{varDefault}]: ')
+        if varValue == '': varValue = varDefault
         if re.fullmatch(r'^[0-9]+$', str(varValue)):
-            valid = validating.number_in_range(varName, varValue, minNum, maxNum)
+            valid = validating.number_in_range(varName, varValue, minimum, maximum)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'   {varName} value of "{varValue}" is Invalid!!! ')
-            print(f'   Valid range is {minNum} to {maxNum}.')
+            print(f'   Valid range is {minimum} to {maximum}.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
     return varValue
 
@@ -1430,28 +1404,30 @@ def varNumberLoop(**kwargs):
 # Function - Prompt User for Sensitive Input String
 #======================================================
 def varSensitiveStringLoop(**kwargs):
-    maxLength = kwargs["maxLength"]
-    minLength = kwargs["minLength"]
-    varName = kwargs["varName"]
-    varRegex = kwargs["varRegex"]
+    jDict      = kwargs['jDict']
+    varDescr   = jDict['description']
+    varName    = kwargs['jData']["varName"]
+    varRegex   = kwargs['jData']["pattern"]
+    if kwargs['jData'].get('default'):  varDefault = kwargs['jData']['default']
+    else: varDefault = ''
+    if kwargs['jData'].get('maximum'):  maximum = kwargs['jData']['maximum']
+    else: maximum = 0
+    if kwargs['jData'].get('minimum'):  minimum = kwargs['jData']['minimum']
+    else: minimum = 0
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = kwargs["Description"]
     if '\n' in newDescr:
-        newDescr = newDescr.split('\n')
+        newDescr = varDescr.split('\n')
         for line in newDescr:
-            if '*' in line:
-                print(fill(f'{line}',width=88, subsequent_indent='    '))
-            else:
-                print(fill(f'{line}',88))
-    else:
-        print(fill(f'{kwargs["Description"]}',88))
+            if '*' in line: print(fill(f'{line}',width=88, subsequent_indent='    '))
+            else: print(fill(f'{line}',88))
+    else: print(fill(f'{kwargs["description"]}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
         varValue = stdiomask.getpass(f'{kwargs["varInput"]} ')
         if not varValue == '':
-            valid = validating.length_and_regex_sensitive(varRegex, varName, varValue, minLength, maxLength)
+            valid = validating.length_and_regex_sensitive(varRegex, varName, varValue, minimum, maximum)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'   {varName} value is Invalid!!! ')
@@ -1462,35 +1438,34 @@ def varSensitiveStringLoop(**kwargs):
 # Function - Prompt User for Input String
 #======================================================
 def varStringLoop(**kwargs):
-    maxLength = kwargs["maxLength"]
-    minLength = kwargs["minLength"]
-    varName = kwargs["varName"]
-    varRegex = kwargs["varRegex"]
+    varDesc    = kwargs['jData']['description']
+    varInput   = kwargs['jData']['varInput']
+    varName    = kwargs['jData']["varName"]
+    varRegex   = kwargs['jData']["pattern"]
+    if kwargs['jData'].get('default'):  varDefault = kwargs['jData']['default']
+    else: varDefault = ''
+    if kwargs['jData'].get('maximum'):  maximum = kwargs['jData']['maximum']
+    else: maximum = 0
+    if kwargs['jData'].get('minimum'):  minimum = kwargs['jData']['minimum']
+    else: minimum = 0
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    newDescr = kwargs["Description"]
-    if '\n' in newDescr:
-        newDescr = newDescr.split('\n')
+    if '\n' in varDesc:
+        newDescr = varDesc.split('\n')
         for line in newDescr:
-            if '*' in line:
-                print(fill(f'{line}',width=88, subsequent_indent='    '))
-            else:
-                print(fill(f'{line}',88))
-    else:
-        print(fill(f'{kwargs["Description"]}',88))
+            if '*' in line: print(fill(f'{line}',width=88, subsequent_indent='    '))
+            else: print(fill(f'{line}',88))
+    else: print(fill(f'{varDesc}',88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        if not kwargs["varDefault"] == '':
-            varValue = input(f'{kwargs["varInput"]}  [{kwargs["varDefault"]}]:')
-        else: varValue = input(f'{kwargs["varInput"]} ')
-        if 'press enter to skip' in kwargs["varInput"] and varValue == '':
+        if not varDefault == '': varValue = input(f'{varInput}  [{varDefault}]:')
+        else: varValue = input(f'{varInput} ')
+        if 'press enter to skip' in kwargs["varInput"] and varValue == '': valid = True
+        elif not varDefault == '' and varValue == '':
+            varValue = varDefault
             valid = True
-        elif not kwargs["varDefault"] == '' and varValue == '':
-            varValue = kwargs["varDefault"]
-            valid = True
-        elif not varValue == '':
-            valid = validating.length_and_regex(varRegex, varName, varValue, minLength, maxLength)
+        elif not varValue == '': valid = validating.length_and_regex(varRegex, varName, varValue, minimum, maximum)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'   {varName} value of "{varValue}" is Invalid!!! ')
@@ -1500,23 +1475,21 @@ def varStringLoop(**kwargs):
 #======================================================
 # Function - Prompt User with Names for Policies
 #======================================================
-def vars_from_list(var_options, **polVars):
+def vars_from_list(var_options, **kwargs):
     selection = []
     selection_count = 0
     valid = False
     while valid == False:
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'{polVars["var_description"]}')
+        print(f'{kwargs["Description"]}')
         for index, value in enumerate(var_options):
             index += 1
-            if index < 10:
-                print(f'     {index}. {value}')
-            else:
-                print(f'    {index}. {value}')
+            if index < 10: print(f'     {index}. {value}')
+            else: print(f'    {index}. {value}')
         print(f'\n-------------------------------------------------------------------------------------------\n')
         exit_answer = False
         while exit_answer == False:
-            var_selection = input(f'Please Enter the Option Number to Select for {polVars["var_type"]}: ')
+            var_selection = input(f'Please Enter the Option Number to Select for {kwargs["var_type"]}: ')
             if not var_selection == '':
                 if re.search(r'[0-9]+', str(var_selection)):
                     xcount = 1
@@ -1526,11 +1499,13 @@ def vars_from_list(var_options, **polVars):
                             selection.append(value)
                             xcount = 0
                     if xcount == 0:
-                        if selection_count % 2 == 0 and polVars["multi_select"] == True:
-                            answer_finished = input(f'Would you like to add another port to the {polVars["port_type"]}?  Enter "Y" or "N" [Y]: ')
-                        elif polVars["multi_select"] == True:
-                            answer_finished = input(f'Would you like to add another port to the {polVars["port_type"]}?  Enter "Y" or "N" [N]: ')
-                        elif polVars["multi_select"] == False:
+                        if selection_count % 2 == 0 and kwargs["multi_select"] == True:
+                            answer_finished = input(f'Would you like to add another port to the {kwargs["port_type"]}?'\
+                                '  Enter "Y" or "N" [Y]: ')
+                        elif kwargs["multi_select"] == True:
+                            answer_finished = input(f'Would you like to add another port to the {kwargs["port_type"]}?'\
+                                '  Enter "Y" or "N" [N]: ')
+                        elif kwargs["multi_select"] == False:
                             answer_finished = 'N'
                         if (selection_count % 2 == 0 and answer_finished == '') or answer_finished == 'Y':
                             exit_answer = True
@@ -1538,26 +1513,13 @@ def vars_from_list(var_options, **polVars):
                         elif answer_finished == '' or answer_finished == 'N':
                             exit_answer = True
                             valid = True
-                        elif polVars["multi_select"] == False:
+                        elif kwargs["multi_select"] == False:
                             exit_answer = True
                             valid = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Error!! Invalid Selection.  Please select a valid option from the List.')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                else:
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Selection.  Please Select a valid Option from the List.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+                        else: message_invalid_y_or_n()
+                    else: message_invalid_selection()
+                else: message_invalid_selection()
+            else: message_invalid_selection()
     return selection
 
 #======================================================
@@ -1675,3 +1637,43 @@ def write_to_template(self, **polVars):
     if polVars["initial_write"] == True: write_method = 'w'
     else: write_method = 'a'
     process_method(write_method, dest_dir, dest_file, template, **polVars)
+
+#========================================================
+# Function to Determine which sites to write files to.
+#========================================================
+def write_to_site(polVars, **kwargs):
+    args       = kwargs['args']
+    baseRepo   = args.dir
+    class_type = kwargs['class_type']
+    dest_dir   = kwargs["dest_dir"]
+    dest_file  = kwargs["tf_file"]
+    site_name  = kwargs["site_name"]
+
+    aci_template_path = pkg_resources.resource_filename(f'classes', 'templates/')
+    templateLoader = jinja2.FileSystemLoader(
+        searchpath=(aci_template_path + '%s/') % (class_type))
+    templateEnv = jinja2.Environment(loader=templateLoader)
+    
+    # Define the Template Source
+    template = templateEnv.get_template(kwargs["template_file"])
+
+    # Make sure the Destination Path and Folder Exist
+    if not os.path.isdir(os.path.join(baseRepo, site_name, dest_dir)):
+        opSystem = platform.system()
+        if opSystem == 'Windows': path_sep = '\\'
+        else: path_sep = '/'
+        dest_path = f'{os.path.join(baseRepo, site_name)}{path_sep}{dest_dir}'
+        os.makedirs(dest_path)
+    dest_dir = os.path.join(baseRepo, site_name, dest_dir)
+    if not os.path.exists(os.path.join(dest_dir, dest_file)):
+        create_file = f'type nul >> {os.path.join(dest_dir, dest_file)}'
+        os.system(create_file)
+    tf_file = os.path.join(dest_dir, dest_file)
+    wr_file = open(tf_file, 'w')
+
+    # Render Payload and Write to File
+    polVars = json.loads(json.dumps(polVars))
+    polVars = {'keys':polVars}
+    payload = template.render(polVars)
+    wr_file.write(payload)
+    wr_file.close()

@@ -1,18 +1,13 @@
-#!/usr/bin/env python3
-#from copy import deepcopy
+from copy import deepcopy
 import ezfunctions
 import ipaddress
 import json
-import lan
-import p1
-import p2
-import p3
+import lansan
+import policies
 import pools
 import re
-import san
 import textwrap
 import validating
-import vxan
 import yaml
 
 class MyDumper(yaml.Dumper):
@@ -209,7 +204,8 @@ class quick_start(object):
             print(f'  - {baseRepo}{path_sep}{org}{path_sep}profiles{path_sep}chassis.yaml')
             print(f'  - {baseRepo}{path_sep}{org}{path_sep}profiles{path_sep}domain.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            configure = input(f'Do You Want to run the Quick Deployment Module - Domain Policy Configuration?  \nEnter "Y" or "N" [Y]: ')
+            configure = input(f'Do You Want to run the Quick Deployment Module - Domain Policy Configuration?'\
+                '  \nEnter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 loop_count = 0
                 policy_loop = False
@@ -256,7 +252,7 @@ class quick_start(object):
                     #_______________________________________________________________________
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['fabric.PortPolicy']['allOf'][1]['properties']
-                    kwargs['var_description'] = jsonVars['DeviceModel']['description']
+                    kwargs['Description'] = jsonVars['DeviceModel']['description']
                     kwargs['jsonVars'] = sorted(jsonVars['DeviceModel']['enum'])
                     kwargs['jsonVars'].remove('unknown')
                     kwargs['defaultVar'] = jsonVars['DeviceModel']['default']
@@ -376,7 +372,7 @@ class quick_start(object):
                     #
                     # Determine if Fibre-Channel will be Utilized
                     #_______________________________________________________________________
-                    kwargs = p2.port_modes_fc(**kwargs)
+                    kwargs = policies.port_modes_fc(**kwargs)
 
                     # If Unified Ports Exist Configure VSAN Policies
                     if len(kwargs['fc_converted_ports']) > 0:
@@ -474,7 +470,7 @@ class quick_start(object):
                     # Configure Ethernet Uplink Port-Channels
                     #_______________________________________________________________________
                     kwargs['port_type'] = 'Ethernet Uplink Port-Channel'
-                    kwargs = p2.port_list_eth(**kwargs)
+                    kwargs = policies.port_list_eth(**kwargs)
                     kwargs['port_channel_ethernet_uplinks'] = kwargs['portDict']
 
                     kwargs['fc_ports_in_use'] = []
@@ -485,7 +481,7 @@ class quick_start(object):
                         #_______________________________________________________________________
                         kwargs['portDict'] = []
                         kwargs['port_type'] = 'Fibre-Channel Port-Channel'
-                        kwargs = p2.port_list_fc(**kwargs)
+                        kwargs = policies.port_list_fc(**kwargs)
                         kwargs['port_channel_fc_uplinks'] = kwargs['portDict']
 
                     #_______________________________________________________________________
@@ -494,7 +490,7 @@ class quick_start(object):
                     #_______________________________________________________________________
                     kwargs['portDict'] = []
                     kwargs['port_type'] = 'Server Ports'
-                    kwargs = p2.port_list_eth(**kwargs)
+                    kwargs = policies.port_list_eth(**kwargs)
                     kwargs['port_role_servers'] = kwargs['portDict']
 
                     kwargs['port_policy'] = {
@@ -510,7 +506,7 @@ class quick_start(object):
 
                     # System MTU for System QoS Policy
                     kwargs['Description'] = 'This option will set the MTU to 9216 if answer is "Y" or 1500 if answer is "N".'
-                    kwargs['varInput'] = f'Do you want to enable Jumbo MTU?  Enter "Y" or "N"'
+                    kwargs['varInput'] = f'Do you want to enable Jumbo MTU?'
                     kwargs['varDefault'] = 'Y'
                     kwargs['varName'] = 'MTU'
                     answer = ezfunctions.varBoolLoop(**kwargs)
@@ -532,7 +528,7 @@ class quick_start(object):
                         tz_region = i.split('/')[0]
                         if not tz_region in tz_regions: tz_regions.append(tz_region)
                     tz_regions = sorted(tz_regions)
-                    kwargs['var_description'] = 'Timezone Regions...'
+                    kwargs['Description'] = 'Timezone Regions...'
                     kwargs['jsonVars'] = tz_regions
                     kwargs['defaultVar'] = 'America'
                     kwargs['varType'] = 'Time Region'
@@ -542,7 +538,7 @@ class quick_start(object):
                     for item in jsonVars:
                         if time_region in item: region_tzs.append(item)
 
-                    kwargs['var_description'] = 'Region Timezones...'
+                    kwargs['Description'] = 'Region Timezones...'
                     kwargs['jsonVars'] = sorted(region_tzs)
                     kwargs['defaultVar'] = ''
                     kwargs['varType'] = 'Region Timezones'
@@ -684,7 +680,7 @@ class quick_start(object):
                                 # Chassis Model
                                 kwargs["multi_select"] = False
                                 jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['thermal.Policy']
-                                kwargs["var_description"] = jsonVars['chassisType']['description']
+                                kwargs["Description"] = jsonVars['chassisType']['description']
                                 kwargs["jsonVars"] = sorted(jsonVars['chassisType']['enum'])
                                 kwargs["defaultVar"] = jsonVars['chassisType']['default']
                                 kwargs["varType"] = 'Chassis Model'
@@ -739,15 +735,9 @@ class quick_start(object):
                             print(f'  Starting Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
+                        else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+            else: ezfunctions.message_invalid_y_or_n('short')
         if configure == 'Y' or configure == '':
             kwargs['Config'] = True
         elif configure == 'N':
@@ -808,7 +798,7 @@ class quick_start(object):
                     jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['fabric.EthNetworkControlPolicy']
 
                     # Neighbor Discovery Protocol
-                    kwargs['var_description'] = jsonVars['discoveryProtocol']['description']
+                    kwargs['Description'] = jsonVars['discoveryProtocol']['description']
                     kwargs['jsonVars'] = sorted(jsonVars['discoveryProtocol']['enum'])
                     kwargs['defaultVar'] = jsonVars['discoveryProtocol']['default']
                     kwargs['varType'] = 'Neighbor Discovery Protocol'
@@ -1097,15 +1087,9 @@ class quick_start(object):
                             print(f'  Starting Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
+                        else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+            else: ezfunctions.message_invalid_y_or_n('short')
         return kwargs
 
     #==============================================
@@ -1346,15 +1330,9 @@ class quick_start(object):
                             print(f'  Starting Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
+                        else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+            else: ezfunctions.message_invalid_y_or_n('short')
         return kwargs
 
     #==============================================
@@ -1412,7 +1390,7 @@ class quick_start(object):
                         # Prompt User for IMC Access Type
                         #_______________________________________________________________________
                         jsonVars = jsonData['access.Policy']['allOf'][1]['properties']
-                        kwargs['var_description'] = jsonVars['ConfigurationType']['description']
+                        kwargs['Description'] = jsonVars['ConfigurationType']['description']
                         kwargs['jsonVars'] = ['inband', 'out_of_band']
                         kwargs['defaultVar'] = 'inband'
                         kwargs['varType'] = 'IMC Access Type'
@@ -1495,10 +1473,7 @@ class quick_start(object):
                             kwargs = ezfunctions.snmp_users(**kwargs)
                             snmp_loop = True
                         elif question == 'N': snmp_loop = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
+                        else: ezfunctions.message_invalid_y_or_n('short')
 
                     snmp_loop = False
                     if len(kwargs['snmp_users']) > 0:
@@ -1508,10 +1483,7 @@ class quick_start(object):
                                 kwargs = ezfunctions.snmp_trap_servers(**kwargs)
                                 snmp_loop = True
                             elif question == 'N': snmp_loop = True
-                            else:
-                                print(f'\n------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                                print(f'\n------------------------------------------------------\n')
+                            else: ezfunctions.message_invalid_y_or_n('short')
 
                     #_______________________________________________________________________
                     #
@@ -1527,7 +1499,7 @@ class quick_start(object):
                         if question == '' or question == 'Y':
                             # Syslog Local Logging
                             jsonVars = jsonData['syslog.LocalClientBase']['allOf'][1]['properties']
-                            kwargs['var_description'] = jsonVars['MinSeverity']['description']
+                            kwargs['Description'] = jsonVars['MinSeverity']['description']
                             kwargs['jsonVars'] = sorted(jsonVars['MinSeverity']['enum'])
                             kwargs['defaultVar'] = jsonVars['MinSeverity']['default']
                             kwargs['varType'] = 'Syslog Local Minimum Severity'
@@ -1540,10 +1512,7 @@ class quick_start(object):
                             min_severity = 'warning'
                             kwargs['remote_clients'] = {'server1':{},'server2':{}}
                             syslog_loop = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
+                        else: ezfunctions.message_invalid_y_or_n('short')
 
                     #_______________________________________________________________________
                     #
@@ -1734,30 +1703,23 @@ class quick_start(object):
                             print(f'  Starting Section over.')
                             print(f'\n------------------------------------------------------\n')
                             valid_confirm = True
-                        else:
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                            print(f'\n------------------------------------------------------\n')
+                        else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+            else: ezfunctions.message_invalid_y_or_n('short')
         return kwargs
 
     #==============================================
     # UCS Domain and Policies
     #==============================================
     def server_profiles(self, **kwargs):
-        ezData      = kwargs['ezData']
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        name_prefix = self.name_prefix
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        kwargs['fc_ports'] = kwargs['fc_ports']
-        kwargs['server_type'] = kwargs['server_type']
-        kwargs['boot_order_policy'] = kwargs['boot_order_policy']
+        args            = kwargs['args']
+        baseRepo        = args.dir
+        ezData          = kwargs['ezData']
+        fc_ports_in_use = kwargs['fc_ports_in_use']
+        name_prefix     = self.name_prefix
+        org             = self.org
+        path_sep        = kwargs['path_sep']
+        server_type     = kwargs['server_type']
 
         configure_loop = False
         while configure_loop == False:
@@ -1798,7 +1760,7 @@ class quick_start(object):
                     #_______________________________________________________________________
                     kwargs["multi_select"] = False
                     jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['server.Generation']
-                    kwargs["var_description"] = jsonVars['systemType']['description']
+                    kwargs["Description"] = jsonVars['systemType']['description']
                     kwargs["jsonVars"] = sorted(jsonVars['systemType']['enum'])
                     kwargs["defaultVar"] = jsonVars['systemType']['default']
                     kwargs["varType"] = 'Generation of UCS Server'
@@ -1842,9 +1804,9 @@ class quick_start(object):
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
 
                         # Obtain Server Serial Number or Skip
-                        kwargs["Description"] = f'Serial Number of the Server Profile {polVars["name"]}.'
+                        kwargs["Description"] = f'Serial Number of the Server Profile {name}.'
                         kwargs["varDefault"] = ''
-                        kwargs["varInput"] = f'What is the Serial Number of {polVars["name"]}? [press enter to skip]:'
+                        kwargs["varInput"] = f'What is the Serial Number of {name}? [press enter to skip]:'
                         kwargs["varName"] = 'Serial Number'
                         kwargs["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
                         kwargs["minLength"] = 11
@@ -1866,8 +1828,8 @@ class quick_start(object):
                         polVars["bios_policy"] = 'M5-virtualization-tpm'
                     elif ucs_generation == 'M5': polVars["bios_policy"] = 'M5-virtualization'
                     elif ucs_generation == 'M6': polVars["bios_policy"] = 'M6-virtualization-tpm'
-                    polVars["boot_order_policy"] = polVars["name"]
-                    polVars["descr"] = f'{polVars["name"]} Server Profile Template'
+                    polVars["boot_order_policy"] = template_name
+                    polVars['description'] = f'{template_name} Server Profile Template'
                     polVars['name'] = template_name
                     polVars["uuid_pool"] = org
                     polVars["virtual_media_policy"] = 'vmedia'
@@ -1882,7 +1844,7 @@ class quick_start(object):
                     elif boot_type == 'raid1': polVars["storage_policy"] = 'Raid1'
                     else: polVars["storage_policy"] = ''
                     polVars["lan_connectivity_policy"] = 'vmware-lcp'
-                    if len(polVars["fc_ports"]) > 0:
+                    if len(fc_ports_in_use) > 0:
                         polVars["san_connectivity_policy"] = f'{org}-scp'
                     if kwargs["server_type"] == 'FIAttached':
                         polVars["certificate_management_policy"] = ''
@@ -1907,12 +1869,7 @@ class quick_start(object):
                     policy_loop = True
                     configure_loop = True
             elif configure == 'N': configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(json.dumps(kwargs['immDict'], indent=4))
-        exit()
+            else: ezfunctions.message_invalid_y_or_n('short')
         return kwargs
         
     #==============================================
@@ -1935,7 +1892,8 @@ class quick_start(object):
             print(f'  This wizard will save the output for these policies in the following files:\n')
             print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}management.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            configure = input(f'Do You Want to run the Quick Deployment Module - Standalone Policy Configuration?  Enter "Y" or "N" [Y]: ')
+            configure = input(f'Do You Want to run the Quick Deployment Module - Standalone Policy Configuration?'\
+                '  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 loop_count = 1
                 policy_loop = False
@@ -1959,10 +1917,7 @@ class quick_start(object):
 
             elif configure == 'N':
                 configure_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+            else: ezfunctions.message_invalid_y_or_n('short')
 
         if configure == 'Y' or configure == '':
             configure = True
@@ -2027,12 +1982,12 @@ def policy_select_loop(**kwargs):
             print(f'  Starting module to create {inner_policy} in {org}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
-            lan_list = ezData['ezimm']['allOf'][1]['properties']['lan_list']
-            p1_list = ezData['ezimm']['allOf'][1]['properties']['p1_list']
-            p2_list = ezData['ezimm']['allOf'][1]['properties']['p2_list']
-            p3_list = ezData['ezimm']['allOf'][1]['properties']['p3_list']
-            san_list = ezData['ezimm']['allOf'][1]['properties']['san_list']
-            vxan_list = ezData['ezimm']['allOf'][1]['properties']['vxan_list']
+            lan_list = ezData['ezimm']['allOf'][1]['properties']['lan_list']['enum']
+            p1_list = ezData['ezimm']['allOf'][1]['properties']['p1_list']['enum']
+            p2_list = ezData['ezimm']['allOf'][1]['properties']['p2_list']['enum']
+            p3_list = ezData['ezimm']['allOf'][1]['properties']['p3_list']['enum']
+            san_list = ezData['ezimm']['allOf'][1]['properties']['san_list']['enum']
+            vxan_list = ezData['ezimm']['allOf'][1]['properties']['vxan_list']['enum']
             if re.search('pools$', inner_policy):
                 kwargs = eval(f"pools.pools(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
             elif inner_policy in p1_list:

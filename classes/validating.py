@@ -5,7 +5,6 @@ import phonenumbers
 import re
 import string
 import validators
-from datetime import datetime
 
 # Validations
 def brkout_pg(row_num, brkout_pg):
@@ -284,12 +283,14 @@ def iqn_address(varName, varValue):
 
 def length_and_regex(regex_pattern, varName, varValue, minLength, maxLength):
     invalid_count = 0
-    if not validators.length(varValue, min=int(minLength), max=int(maxLength)):
-        invalid_count += 1
-        print(f'\n--------------------------------------------------------------------------------------\n')
-        print(f'   !!! {varName} value "{varValue}" is Invalid!!!')
-        print(f'   Length Must be between {minLength} and {maxLength} characters.')
-        print(f'\n--------------------------------------------------------------------------------------\n')
+    if minLength == 0 and maxLength == 0: invalid_count = 0
+    else:
+        if not validators.length(varValue, min=int(minLength), max=int(maxLength)):
+            invalid_count += 1
+            print(f'\n--------------------------------------------------------------------------------------\n')
+            print(f'   !!! {varName} value "{varValue}" is Invalid!!!')
+            print(f'   Length Must be between {minLength} and {maxLength} characters.')
+            print(f'\n--------------------------------------------------------------------------------------\n')
     if not re.search(regex_pattern, varValue):
         invalid_count += 1
         print(f'\n--------------------------------------------------------------------------------------\n')

@@ -1,0 +1,13 @@
+                kwargs['jData'] = {deepcopy({jsonVars['ReceiveEnabled']})}
+                kwargs['jData']['varInput'] = f'Do you want to enable LLDP Recieve for this Policy?'
+                kwargs['jData']['varName']  = 'LLDP Receive'
+                answer = ezfunctions.varBoolLoop(**kwargs)
+
+                kwargs['jData'] = deepcopy(jsonVars['MacRegistrationMode'])
+                kwargs['jData']["varType"] = 'MAC Registration Mode'
+                polVars["mac_register_mode"] = ezfunctions.variablesFromAPI(**kwargs)
+
+                kwargs['jData'] = {deepcopy({jsonVars['RateLimit']})}
+                kwargs['jData']['varInput'] = f'What is the Rate Limit you want to assign to the Policy?'
+                kwargs['jData']['varName']  = 'Rate Limit'
+                polVars["rate_limit"] = ezfunctions.varNumberLoop(**kwargs)

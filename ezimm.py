@@ -29,17 +29,13 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 sys.path.insert(0, './classes')
 import classes.ezfunctions
 import classes.imm_transition
-import classes.p1
-import classes.p2
-import classes.p3
+import classes.lansan
+import classes.policies
 import classes.pools
 import classes.profiles
 import classes.quick_start
 import classes.tf
-import classes.lan
-import classes.san
 import classes.validating
-import classes.vxan
 
 def create_terraform_workspaces(**kwargs):
     args = kwargs['args']
@@ -377,16 +373,12 @@ def prompt_main_menu(**kwargs):
     print(f'  Starting the Easy IMM Initial Configuration Wizard!')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
-    polVars = {}
-    polVars["multi_select"] = False
+    kwargs["multi_select"] = False
     jsonVars = ezData['ezimm']['allOf'][1]['properties']['wizard']
-    polVars["var_description"] = jsonVars['mainMenu']['description']
-    polVars["jsonVars"] = jsonVars['mainMenu']['enum']
-    polVars["defaultVar"] = jsonVars['mainMenu']['default']
-    polVars["varType"] = 'Main Menu'
-    main_menu = classes.ezfunctions.variablesFromAPI(**polVars)
-    main_menu = main_menu.replace(' ', '_')
-    main_menu = main_menu.lower()
+    kwargs['jData'] = deepcopy(jsonVars['mainMenu'])
+    kwargs['jData']["varType"] = 'Main Menu'
+    main_menu = classes.ezfunctions.variablesFromAPI(**kwargs)
+    main_menu = main_menu.replace(' ', '_').lower()
 
     list_chassis     = ezData['ezimm']['allOf'][1]['properties']['list_chassis']
     list_domains     = ezData['ezimm']['allOf'][1]['properties']['list_domains']
@@ -422,45 +414,37 @@ def prompt_main_menu(**kwargs):
         policy_list.append('quick_start_server_profile')
 
     if main_menu == 'deploy_individual_policies':
-        polVars["var_description"] = jsonVars['Individual']['description']
-        polVars["jsonVars"] = jsonVars['Individual']['enum']
-        polVars["defaultVar"] = jsonVars['Individual']['default']
-        polVars["varType"] = 'Configuration Type'
-        type_menu = classes.ezfunctions.variablesFromAPI(**polVars)
+        kwargs['jData'] = deepcopy(jsonVars['Individual'])
+        kwargs['jData']["varType"] = 'Configuration Type'
+        type_menu = classes.ezfunctions.variablesFromAPI(**kwargs)
         multi_select_descr = '\n'\
             '    - Single policy: 1 or 5\n'\
             '    - List of Policies: 1,2,3\n'\
             '    - Range of Policies: 1-3,5-6\n'
-        polVars["multi_select"] = True
+        kwargs["multi_select"] = True
         def policy_list_modify(policies_list):
             for line in policies_list:
-                line = line.replace(' ', '_')
-                line = line.replace('-', '_')
-                line = line.lower()
-                policy_list.append(line)
+                policy_list.append((line.replace(' ', '_')).replace('-', '_').lower())
             return policy_list
         if type_menu == 'Policies':
-            polVars["var_description"] = jsonVars['Policies']['description'] + multi_select_descr
-            polVars["jsonVars"] = jsonVars['Policies']['enum']
-            polVars["defaultVar"] = jsonVars['Policies']['default']
-            polVars["varType"] = 'Policies'
-            policies_list = classes.ezfunctions.variablesFromAPI(**polVars)
+            kwargs['jData'] = deepcopy(jsonVars['Policies'])
+            kwargs['jData']["description"] = kwargs['jData']['description'] + multi_select_descr
+            kwargs['jData']["varType"] = 'Policies'
+            policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Pools':
-            polVars["var_description"] = jsonVars['Pools']['description'] + multi_select_descr
-            polVars["jsonVars"] = jsonVars['Pools']['enum']
-            polVars["defaultVar"] = jsonVars['Pools']['default']
-            polVars["varType"] = 'Pools'
-            policies_list = classes.ezfunctions.variablesFromAPI(**polVars)
+            kwargs['jData'] = deepcopy(jsonVars['Pools'])
+            kwargs['jData']["description"] = kwargs['jData']['description'] + multi_select_descr
+            kwargs['jData']["varType"] = 'Pools'
+            policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Profiles':
-            polVars["var_description"] = jsonVars['Profiles']['description'] + multi_select_descr
-            polVars["jsonVars"] = sorted(jsonVars['Profiles']['enum'])
-            polVars["defaultVar"] = jsonVars['Profiles']['default']
-            polVars["varType"] = 'Profiles'
-            policies_list = classes.ezfunctions.variablesFromAPI(**polVars)
+            kwargs['jData'] = deepcopy(jsonVars['Profiles'])
+            kwargs['jData']["description"] = kwargs['jData']['description'] + multi_select_descr
+            kwargs['jData']["varType"] = 'Profiles'
+            policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
-
+    # Return Main Menu Outputs
     kwargs['main_menu'] = main_menu
     kwargs['policy_list'] = policy_list
     return kwargs
@@ -475,10 +459,11 @@ def prompt_org(**kwargs):
     return kwargs
 
 def process_wizard(**kwargs):
-    ezData = kwargs['ezData']
-    main_menu = kwargs['main_menu']
-    org = kwargs['org']
+    ezData      = kwargs['ezData']
+    main_menu   = kwargs['main_menu']
+    org         = kwargs['org']
     policy_list = kwargs['policy_list']
+
     
     if not main_menu == 'skip_policy_deployment':
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -488,22 +473,20 @@ def process_wizard(**kwargs):
         print(f'  for Pools and Server Policies can be entered to override the default behavior.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
 
-        if not 'classes.quick_start' in main_menu:
+        if not 'quick_start' in main_menu:
             valid = False
             while valid == False:
                 domain_prefix = input('Enter a Name Prefix for Domain Profile Policies.  [press enter to skip]: ')
-                if domain_prefix == '':
-                    valid = True
+                if domain_prefix == '': valid = True
                 else: valid = classes.validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
             valid = False
             while valid == False:
                 name_prefix = input('Enter a Name Prefix for Pools and Server Policies.  [press enter to skip]: ')
-                if name_prefix == '':
-                    valid = True
+                if name_prefix == '': valid = True
                 else: valid = classes.validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
         else:
-            domain_prefix = 'default'
-            name_prefix = 'default'
+            domain_prefix = org
+            name_prefix = org
 
     for policy in policy_list:
         #==============================================
@@ -511,42 +494,29 @@ def process_wizard(**kwargs):
         #==============================================
         cpool = 'classes.pools.pools'
         type = 'pools'
-        plist = ezData['ezimm']['allOf'][1]['properties']['list_pools']
+        plist = ezData['ezimm']['allOf'][1]['properties']['list_pools']['enum']
         for i in plist:
-            if policy == i:
-                kwargs = eval(f"{cpool}(name_prefix, org, type).{policy}(**kwargs)")
+            if policy == i: kwargs = eval(f"{cpool}(name_prefix, org, type).{policy}(**kwargs)")
 
         #==============================================
         # Intersight Policies
         #==============================================
         type = 'policies'
-        plist = ezData['ezimm']['allOf'][1]['properties']['list_policies']
-        lan_list = ezData['ezimm']['allOf'][1]['properties']['lan_list']
-        p1_list = ezData['ezimm']['allOf'][1]['properties']['p1_list']
-        p2_list = ezData['ezimm']['allOf'][1]['properties']['p2_list']
-        p3_list = ezData['ezimm']['allOf'][1]['properties']['p3_list']
-        san_list = ezData['ezimm']['allOf'][1]['properties']['san_list']
-        vxan_list = ezData['ezimm']['allOf'][1]['properties']['vxan_list']
+        plist         = ezData['ezimm']['allOf'][1]['properties']['list_policies']['enum']
+        lansan_list   = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
+        policies_list = ezData['ezimm']['allOf'][1]['properties']['policies_list']['enum']
         for i in plist:
             if policy == i:
-                if policy in lan_list:
-                    kwargs = eval(f"classes.lan.policies(name_prefix, org, type).{i}(**kwargs)")
-                elif policy in p1_list:
-                    kwargs = eval(f"classes.p1.policies(name_prefix, org, type).{i}(**kwargs)")
-                elif policy in p2_list:
-                    kwargs = eval(f"classes.p2.policies(name_prefix, org, type).{i}(**kwargs)")
-                elif policy in p3_list:
-                    kwargs = eval(f"classes.p3.policies(name_prefix, org, type).{i}(**kwargs)")
-                elif policy in san_list:
-                    kwargs = eval(f"classes.san.policies(name_prefix, org, type).{i}(**kwargs)")
-                elif policy in vxan_list:
-                    kwargs = eval(f"classes.vxan.policies(name_prefix, org, type).{i}(**kwargs)")
+                if policy in lansan_list:
+                    kwargs = eval(f"classes.lansan.policies(name_prefix, org, type).{i}(**kwargs)")
+                elif policy in policies_list:
+                    kwargs = eval(f"classes.policies.policies(name_prefix, org, type).{i}(**kwargs)")
 
         #==============================================
         # Intersight Profiles
         #==============================================
         kwargs['domain_prefix'] = domain_prefix
-        plist = ezData['ezimm']['allOf'][1]['properties']['list_profiles']
+        plist = ezData['ezimm']['allOf'][1]['properties']['list_profiles']['enum']
         type = 'profiles'
         for i in plist:
             if policy == i:
@@ -559,8 +529,8 @@ def process_wizard(**kwargs):
         quick = 'classes.quick_start.quick_start'
         kwargs['domain_prefix'] = domain_prefix
         type = 'pools'
-        #if 'quick_start_pools' in policy:
-        #    kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
+        if 'quick_start_pools' in policy:
+            kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
 
         #==============================================
         # TESTING TEMP PARAMETERS
@@ -586,18 +556,18 @@ def process_wizard(**kwargs):
             kwargs['Config'] = True
             if 'quick_start_domain_policies' in policy:
                 kwargs.update(deepcopy({'server_type':'FIAttached'}))
-                #kwargs = eval(f"{quick}(name_prefix, org, type).domain_policies(**kwargs)")
+                kwargs = eval(f"{quick}(name_prefix, org, type).domain_policies(**kwargs)")
             else: kwargs.update(deepcopy({'fc_ports':[],'server_type':'Standalone'}))
-            #if not kwargs['Config'] == False:
-            #    kwargs = eval(f"{quick}(name_prefix, org, type).bios_policies(**kwargs)")
-            #    kwargs = eval(f"{quick}(name_prefix, org, type).server_policies(**kwargs)")
+            if not kwargs['Config'] == False:
+                kwargs = eval(f"{quick}(name_prefix, org, type).bios_policies(**kwargs)")
+                kwargs = eval(f"{quick}(name_prefix, org, type).server_policies(**kwargs)")
             if 'quick_start_rack_policies' in policy:
                 type = 'policies'
                 kwargs = eval(f"{quick}(name_prefix, org, type).standalone_policies(**kwargs)")
-        #elif 'quick_start_lan_san_policies' in policy:
-        #    type = 'policies'
-        #    if not kwargs['Config'] == False:
-        #        kwargs = eval(f"{quick}(domain_prefix, org, type).lan_san_policies(**kwargs)")
+        elif 'quick_start_lan_san_policies' in policy:
+            type = 'policies'
+            if not kwargs['Config'] == False:
+                kwargs = eval(f"{quick}(domain_prefix, org, type).lan_san_policies(**kwargs)")
         elif re.search('quick_start_vmware_(m2|raid1|stateless)', policy):
             if not kwargs['Config'] == False:
                 kwargs['boot_type'] = policy.split('_')[3]
@@ -723,8 +693,8 @@ def main():
         orgs = list(kwargs['immDict']['orgs'].keys())
     for org in orgs:
         kwargs['org'] = org
-        kwargs['immDict']['orgs'].update(deepcopy({org:{}}))
-        kwargs = classes.ezfunctions.merge_easy_imm_repository(**kwargs)
+        #kwargs['immDict']['orgs'].update(deepcopy({org:{}}))
+        classes.ezfunctions.merge_easy_imm_repository(**kwargs)
         kwargs = create_terraform_workspaces(**kwargs)
         kwargs = intersight_org_check(**kwargs)
 
