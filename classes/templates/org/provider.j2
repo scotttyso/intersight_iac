@@ -1,0 +1,26 @@
+#_______________________________________________________________________
+#
+# Terraform Required Parameters - Intersight Provider
+# https://registry.terraform.io/providers/CiscoDevNet/intersight/latest
+#_______________________________________________________________________
+
+terraform {
+  required_version = ">= {{ keys['terraform_version'] }}"
+  required_providers {
+    intersight = {
+      source  = "ciscodevnet/intersight"
+      version = ">= {{ keys['intersight_provider_version'] }}"
+    }
+    utils = {
+      source  = "netascode/utils"
+      version = ">= {{ keys['utils_provider_version'] }}"
+    }
+  }
+}
+
+provider "intersight" {
+  apikey    = var.apikey
+  endpoint  = "https://${var.endpoint}"
+  secretkey = fileexists(var.secretkeyfile) ? file(var.secretkeyfile) : var.secretkey
+  insecure    = true
+}

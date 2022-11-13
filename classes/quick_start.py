@@ -17,40 +17,40 @@ class MyDumper(yaml.Dumper):
 class quick_start(object):
     def __init__(self, name_prefix, org, type):
         self.name_prefix = name_prefix
-        self.org = org
-        self.type = type
+        self.org         = org
+        self.type        = type
 
     #==============================================
     # BIOS Policy
     #==============================================
     def bios_policies(self, **kwargs):
-        args = kwargs['args']
-        baseRepo = args.dir
-        org = self.org
+        baseRepo = kwargs['args'].dir
+        org      = self.org
         path_sep = kwargs['path_sep']
-
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'  The Quick Deployment Module - BIOS policies for a UCS Server ')
         print(f'  This wizard will save the output for the BIOS Policy to the following file:\n')
         print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}compute.yaml')
         print(f'\n-------------------------------------------------------------------------------------------\n')
+        #==============================================
         # Trusted Platform Module
-        kwargs['Description'] = 'Flag to Determine if the Servers have a TPM Installed.'
-        kwargs['varInput'] = f'Will any of these servers have a TPM Module Installed?'
-        kwargs['varDefault'] = 'Y'
-        kwargs['varName'] = 'TPM Installed'
+        #==============================================
+        # Trusted Platform Module
+        kwargs['jData'] = deepcopy({})
+        kwargs['jData']['description'] = 'Flag to Determine if the Servers have a TPM Installed.'
+        kwargs['jData']['default']     = True
+        kwargs['jData']['varInput']    = f'Will any of these servers have a TPM Module Installed?'
+        kwargs['jData']['varName']     = 'TPM Installed'
         kwargs['tpm_installed'] = ezfunctions.varBoolLoop(**kwargs)
-
-        #_______________________________________________________________________
-        #
+        #==============================================
         # Configure BIOS Policy
-        #_______________________________________________________________________
+        #==============================================
         polVars = {}
         template_names = ['M5-virtualization', 'M5-virtualization-tpm', 'M6-virtualization-tpm']
         for bname in template_names:
             name = bname
             polVars['name'] = name
-            polVars['descr'] = f'{name} BIOS Policy'
+            polVars['description'] = f'{name} BIOS Policy'
             if bname == 'M5-virtualization':
                 polVars['bios_template'] = 'Virtualization'
             elif name == 'M5-virtualization-tpm':
@@ -63,38 +63,36 @@ class quick_start(object):
             polVars['lv_ddr_mode'] = 'auto'
             polVars['serial_port_aenable'] = 'enabled'
             polVars['terminal_type'] = 'vt100'
-
+            #==============================================
             # Add Policy Variables to immDict
+            #==============================================
             kwargs['class_path'] = 'intersight,policies,bios'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+        # Return kwargs
         return kwargs
 
     #==============================================
     # Boot and Storage Policies
     #==============================================
     def boot_and_storage(self, **kwargs):
-        args = kwargs['args']
-        baseRepo = args.dir
+        baseRepo  = kwargs['args'].dir
         boot_type = kwargs['boot_type']
-        org = self.org
-        path_sep = kwargs['path_sep']
-
+        org       = self.org
+        path_sep  = kwargs['path_sep']
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'  The Quick Deployment Module - Boot/Storage, Policies.\n')
         print(f'  This wizard will save the output for these pools in the following files:\n')
         print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}compute.yaml')
         print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}storage_policies.yaml')
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        #_______________________________________________________________________
-        #
+        #==============================================
         # Configure Boot Order Policy
-        #_______________________________________________________________________
+        #==============================================
         polVars = {}
         secBootList = [False, True]
         if boot_type == 'm2' or boot_type == 'raid1': secBootList = [False, True]
         else: secBootList = [False]
         for i in secBootList:
-            # Configure Boot Order Policy
             if i   == False and boot_type == 'm2': name = 'M2-pxe'
             elif i == True  and boot_type == 'm2': name = 'M2'
             elif i == False and boot_type == 'raid1': name = 'Raid1-pxe'
@@ -106,46 +104,31 @@ class quick_start(object):
                 polVars['enable_secure_boot'] = i
             else: polVars['enable_secure_boot'] = False
             polVars['boot_devices'] = [{
-                'device_name':'KVM-DVD',
-                'device_type':'virtual_media',
-                'object_type':'boot.VirtualMedia',
-                'subtype':'kvm-mapped-dvd'
+                'device_name':'KVM-DVD', 'device_type':'virtual_media',
+                'object_type':'boot.VirtualMedia', 'subtype':'kvm-mapped-dvd'
             }]
             if boot_type == 'm2':
                 polVars['boot_devices'].append({
-                    'device_name':'M2',
-                    'device_type':'local_disk',
-                    'enabled':True,
-                    'object_type':'boot.LocalDisk',
-                    'slot':'MSTOR-RAID'
+                    'device_name':'M2', 'device_type':'local_disk', 'enabled':True,
+                    'object_type':'boot.LocalDisk', 'slot':'MSTOR-RAID'
                 })
             if boot_type == 'raid1':
                 polVars['boot_devices'].append({
-                    'device_name':'MRAID',
-                    'device_type':'local_disk',
-                    'enabled':True,
-                    'object_type':'boot.LocalDisk',
-                    'slot':'MRAID'
+                    'device_name':'MRAID', 'device_type':'local_disk', 'enabled':True,
+                    'object_type':'boot.LocalDisk', 'slot':'MRAID'
                 })
             if i == False:
                 polVars['boot_devices'].append({
-                    'device_name':'PXE',
-                    'device_type':'pxe_boot',
-                    'enabled':True,
-                    'interface_name':'mgmt-a',
-                    'interface_source':'name',
-                    'ip_type':'IPv4',
-                    'object_type':'boot.Pxe',
-                    'slot':'MLOM'
+                    'device_name':'PXE', 'device_type':'pxe_boot', 'enabled':True,
+                    'interface_name':'mgmt-a', 'interface_source':'name',
+                    'ip_type':'IPv4', 'object_type':'boot.Pxe', 'slot':'MLOM'
                 })
             # Add Policy Variables to immDict
-            kwargs['class_path'] = 'intersight,policies,boot'
+            kwargs['class_path'] = 'intersight,policies,boot_order'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-        #_______________________________________________________________________
-        #
+        #==============================================
         # Configure Storage Policy
-        #_______________________________________________________________________
+        #==============================================
         polVars = {}
         if boot_type == 'm2':
             polVars['name'] = 'M2-Raid'
@@ -158,15 +141,9 @@ class quick_start(object):
                 'manual_drive_selection':{'drive_array_spans':[{'slots':'1,2'}]},
                 'raid_level':'Raid1',
                 'virtual_drives':[{
-                    'access_policy':'Default',
-                    'boot_drive':True,
-                    'disk_cache':'Default',
-                    'expand_to_available':True,
-                    'read_policy':'Always Read Ahead',
-                    'size':10,
-                    'stripe_size':'64KiB',
-                    'vd_name':'VD1',
-                    'write_policy':'Write Back Good BBU'
+                    'access_policy':'Default', 'boot_drive':True, 'disk_cache':'Default',
+                    'expand_to_available':True, 'read_policy':'Always Read Ahead', 'size':10,
+                    'stripe_size':'64KiB', 'vd_name':'VD1', 'write_policy':'Write Back Good BBU'
                 }]
             }]
             polVars['unused_disks_state'] = 'No Change'
@@ -175,21 +152,21 @@ class quick_start(object):
             # Add Policy Variables to immDict
             kwargs['class_path'] = 'intersight,policies,storage'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+        # Return kwargs
         return kwargs
 
     #==============================================
-    # UCS Domain and Policies
+    # UCS Chassis, Domain and Domain Policies
     #==============================================
     def domain_policies(self, **kwargs):
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        ezData      = kwargs['ezData']
-        jsonData    = kwargs['jsonData']
-        name_prefix = kwargs['domain_prefix']
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        kwargs['name_prefix'] = name_prefix
+        baseRepo       = kwargs['args'].dir
+        ezData         = kwargs['ezData']
+        jsonData       = kwargs['jsonData']
+        name_prefix    = kwargs['domain_prefix']
+        org            = self.org
+        path_sep       = kwargs['path_sep']
         configure_loop = False
+        kwargs['name_prefix'] = name_prefix
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Domain Policies, will configure pools for a UCS Domain ')
@@ -207,7 +184,7 @@ class quick_start(object):
             configure = input(f'Do You Want to run the Quick Deployment Module - Domain Policy Configuration?'\
                 '  \nEnter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
-                loop_count = 0
+                loop_count  = 0
                 policy_loop = False
                 while policy_loop == False:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -227,49 +204,35 @@ class quick_start(object):
                     print(f'   - VSAN ID for Fabric A.')
                     print(f'   - VSAN ID for Fabric B.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-
                     kwargs['name'] = 'Quick Deployment Module'
-
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['policy.AbstractProfile']['allOf'][1]['properties']
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Prompt User for Domain Name
-                    #_______________________________________________________________________
-                    kwargs['Description'] = jsonVars['Name']['description']
-                    kwargs['varInput'] = 'What is the name for this UCS Domain?'
-                    kwargs['varDefault'] = ''
-                    kwargs['varName'] = 'UCS Domain Name'
-                    kwargs['varRegex'] = jsonVars['Name']['pattern']
-                    kwargs['minLength'] = 1
-                    kwargs['maxLength'] = 64
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['Name'])
+                    kwargs['jData']['maximum']  = 64
+                    kwargs['jData']['minimum']  = 1
+                    kwargs['jData']['varInput'] = 'What is the name for this UCS Domain?'
+                    kwargs['jData']['varName']  = 'UCS Domain Name'
                     domain_name = ezfunctions.varStringLoop(**kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Prompt User for Device Model for Domain
-                    #_______________________________________________________________________
+                    #==============================================
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['fabric.PortPolicy']['allOf'][1]['properties']
-                    kwargs['Description'] = jsonVars['DeviceModel']['description']
-                    kwargs['jsonVars'] = sorted(jsonVars['DeviceModel']['enum'])
-                    kwargs['jsonVars'].remove('unknown')
-                    kwargs['defaultVar'] = jsonVars['DeviceModel']['default']
-                    kwargs['varType'] = 'Device Model'
+                    kwargs['jData'] = deepcopy(jsonVars['DeviceModel'])
+                    kwargs['jData']['enum'].remove('unknown')
+                    kwargs['jData']['varType'] = 'Device Model'
                     device_model = ezfunctions.variablesFromAPI(**kwargs)
                     kwargs['device_model'] = device_model
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Prompt User for FI Serial Numbers
-                    #_______________________________________________________________________
+                    #==============================================
                     serials = ezfunctions.ucs_domain_serials(**kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Prompt User for VLANs for Domain
-                    #_______________________________________________________________________
+                    #==============================================
                     valid = False
                     while valid == False:
                         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -277,34 +240,23 @@ class quick_start(object):
                         print(f'                  Be sure to exclude the VSAN for Fabric A and B from the VLAN Pool.')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         VlanList,vlanListExpanded = ezfunctions.vlan_pool()
-                        
                         nativeVlan = input('Do you want to configure one of these VLANs as the Native VLAN?  [press enter to skip]: ')
                         if nativeVlan == '': valid = True
                         else:
                             native_count = 0
                             for vlan in vlanListExpanded:
                                 if int(nativeVlan) == int(vlan): native_count = 1
-                            if not native_count == 1:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! The Native VLAN "{nativeVlan}" was not in the VLAN Policy List.')
-                                print(f'  VLAN Policy List is: "{VlanList}"')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                            if not native_count == 1: ezfunctions.message_invalid_native_vlan(nativeVlan, VlanList)
                             else: valid = True
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure Multicast Policy
-                    #_______________________________________________________________________
+                    #==============================================
                     polVars = {'name':'mcast'}
-
-                    # Add Policy Variables to immDict
                     kwargs['class_path'] = 'intersight,policies,multicast'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure VLAN Policy
-                    #_______________________________________________________________________
+                    #==============================================
                     polVars = {'name': org}
                     vlan_list_expanded = ezfunctions.vlan_list_full(VlanList)
                     if not nativeVlan == '':
@@ -313,70 +265,51 @@ class quick_start(object):
                     elif nativeVlan == '' and 1 in vlan_list_expanded:
                         nativeVlan == 1
                         vlan_list_expanded.remove(1)
-
+                    #==============================================
                     # Prepare Values to Return to main module
+                    #==============================================
                     kwargs['vlan_list_expanded'] = vlan_list_expanded
-                    kwargs["vlan_list"] = ezfunctions.vlan_list_format(vlan_list_expanded)
-
-                    polVars["vlans"] = []
+                    kwargs['vlan_list'] = ezfunctions.vlan_list_format(vlan_list_expanded)
+                    polVars['vlans'] = []
                     if not nativeVlan == '':
                         polVars["vlans"].append({
-                            'auto_allow_on_uplinks':True,
-                            'multicast_policy':'mcast',
-                            'name':'default',
-                            'native_vlan':True,
-                            'vlan_list':kwargs["native_vlan"]
+                            'auto_allow_on_uplinks':True, 'multicast_policy':'mcast',
+                            'name':'default', 'native_vlan':True, 'vlan_list':kwargs['native_vlan']
                         })
                     polVars["vlans"].append({
-                        'multicast_policy':'mcast',
-                        'name':org,
-                        'vlan_list':kwargs["vlan_list"]
+                        'multicast_policy':'mcast', 'name':org, 'vlan_list':kwargs['vlan_list']
                     })
-
-                    # Add Policy Variables to immDict
                     kwargs['class_path'] = 'intersight,policies,vlan'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure Flow Control Policy
-                    #_______________________________________________________________________
-                    polVars = {'name': 'flow_ctrl'}
-
-                    # Add Policy Variables to immDict
+                    #==============================================
+                    polVars = {'name': 'flow-ctrl'}
                     kwargs['class_path'] = 'intersight,policies,flow_control'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure Link Aggregation Policy
-                    #_______________________________________________________________________
-                    polVars = {'name': 'link_agg'}
-
-                    # Add Policy Variables to immDict
+                    #==============================================
+                    polVars = {'name': 'link-agg'}
                     kwargs['class_path'] = 'intersight,policies,link_aggregation'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure Link Control Policy
-                    #_______________________________________________________________________
-                    polVars = {'name': 'link_ctrl'}
-
-                    # Add Policy Variables to immDict
+                    #==============================================
+                    polVars = {'name': 'link-ctrl'}
                     kwargs['class_path'] = 'intersight,policies,link_control'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Determine if Fibre-Channel will be Utilized
-                    #_______________________________________________________________________
+                    #==============================================
                     kwargs = policies.port_modes_fc(**kwargs)
-
+                    #================================================
                     # If Unified Ports Exist Configure VSAN Policies
+                    #================================================
                     if len(kwargs['fc_converted_ports']) > 0:
-                        # Obtain the VSAN for Fabric A/B
+                        #==============================================
+                        # Prompt User for the VSAN for Fabric A and B
+                        #==============================================
                         fabrics = ['a', 'b']
                         for x in fabrics:
                             valid = False
@@ -393,28 +326,17 @@ class quick_start(object):
                                             valid_count += 1
                                             continue
                                     if valid_count == 0:
-                                        kwargs[f"vsan_id_{x}"] = vsan_id
+                                        kwargs[f'vsan_id_{x}'] = vsan_id
                                         valid_vlan = validating.number_in_range('VSAN ID', vsan_id, 1, 4094)
                                         if valid_vlan == True:
                                             loop_count += 1
                                             valid = True
-                                    else:
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Invalid VSAN!  The FCoE VLAN {x.upper()} must not be assigned to the Domain VLAN Pool.')
-                                        print(f'  Choose an Alternate VSAN Value.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                                else:
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    print(f'  Invalid Entry!  Please Enter a VSAN ID in the range of 1-4094.')
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                        
-                        #_______________________________________________________________________
-                        #
+                                    else: ezfunctions.message_fcoe_vlan(vsan_id, org)
+                                else: ezfunctions.message_invalid_vsan()
+                        #==============================================
                         # Configure VSAN Policies
-                        #_______________________________________________________________________
+                        #==============================================
                         polVars = {}
-                        # Configure VSAN Policy
                         for x in fabrics:
                             polVars['name'] = f'vsan-{kwargs[f"vsan_id_{x}"]}'
                             polVars['vsans'] = [{
@@ -422,11 +344,11 @@ class quick_start(object):
                                 'name':f'vsan-{x}',
                                 'vsan_id':kwargs[f"vsan_id_{x}"]
                             }]
-
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,vsan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  IMPORTANT NOTE: If you want to assign one of the VLANs from the Pool as the Native VLAN')
                     print(f'                  for the Port-Channel assign that here.')
@@ -440,17 +362,11 @@ class quick_start(object):
                             for vlan in vlanListExpanded:
                                 if int(nativeVlan) == int(vlan):
                                     native_count = 1
-                            if not native_count == 1:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! The Native VLAN "{nativeVlan}" was not in the VLAN Policy List.')
-                                print(f'  VLAN Policy List is: "{VlanList}"')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                            if not native_count == 1: ezfunctions.message_invalid_native_vlan(nativeVlan, VlanList)
                             else: valid = True
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure Ethernet Network Group Policy
-                    #_______________________________________________________________________
+                    #==============================================
                     polVars = {}
                     name = f'{domain_name}-uplink'
                     polVars['name'] = name
@@ -460,34 +376,26 @@ class quick_start(object):
                     else:
                         polVars['native_vlan'] = ''
                         polVars.pop('native_vlan')
-
-                    # Add Policy Variables to immDict
                     kwargs['class_path'] = 'intersight,policies,ethernet_network_group'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure Ethernet Uplink Port-Channels
-                    #_______________________________________________________________________
+                    #==============================================
                     kwargs['port_type'] = 'Ethernet Uplink Port-Channel'
                     kwargs = policies.port_list_eth(**kwargs)
                     kwargs['port_channel_ethernet_uplinks'] = kwargs['portDict']
-
                     kwargs['fc_ports_in_use'] = []
                     if len(kwargs['fc_converted_ports']) > 0:
-                        #_______________________________________________________________________
-                        #
+                        #==============================================
                         # Configure Fibre-Channel Uplink Port-Channels
-                        #_______________________________________________________________________
+                        #==============================================
                         kwargs['portDict'] = []
                         kwargs['port_type'] = 'Fibre-Channel Port-Channel'
                         kwargs = policies.port_list_fc(**kwargs)
                         kwargs['port_channel_fc_uplinks'] = kwargs['portDict']
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure Server Ports
-                    #_______________________________________________________________________
+                    #==============================================
                     kwargs['portDict'] = []
                     kwargs['port_type'] = 'Server Ports'
                     kwargs = policies.port_list_eth(**kwargs)
@@ -496,31 +404,35 @@ class quick_start(object):
                     kwargs['port_policy'] = {
                         'names': [f'{domain_name}-a', f'{domain_name}-b'],
                         'port_channel_ethernet_uplinks': kwargs['port_channel_ethernet_uplinks'],
-                        'port_role_servers': kwargs['port_role_servers'],
+                        'port_role_servers': kwargs['port_role_servers']
                     }
                     if len(kwargs['fc_converted_ports']) > 0:
                         kwargs['port_policy'].update({
                             'port_channel_fc_uplinks': kwargs['port_channel_fc_uplinks'],
                             'port_modes': kwargs['port_modes'],
                         })
-
-                    # System MTU for System QoS Policy
-                    kwargs['Description'] = 'This option will set the MTU to 9216 if answer is "Y" or 1500 if answer is "N".'
-                    kwargs['varInput'] = f'Do you want to enable Jumbo MTU?'
-                    kwargs['varDefault'] = 'Y'
-                    kwargs['varName'] = 'MTU'
+                    #==================================================
+                    # Prompt User for System MTU for System QoS Policy
+                    #==================================================
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = True
+                    kwargs['jData']['description'] = 'This option will set the MTU to 9216 if answer is "Y"'\
+                        ' or 1500 if answer is "N".'
+                    kwargs['jData']['varInput']    = f'Do you want to enable Jumbo MTU?'
+                    kwargs['jData']['varName']     = 'MTU'
                     answer = ezfunctions.varBoolLoop(**kwargs)
                     if answer == True: mtu = 9216
                     else: mtu = 1500
-
-                    # NTP Servers
+                    #==============================================
+                    # Prompt User for NTP Servers
+                    #==============================================
                     primary_ntp = ezfunctions.ntp_primary()
                     alternate_ntp = ezfunctions.ntp_alternate()
-
                     ntp_servers = [primary_ntp]
                     if not alternate_ntp == '': ntp_servers.append(alternate_ntp)
-
-                    # Timezone
+                    #==============================================
+                    # Prompt User for Timezone
+                    #==============================================
                     polVars['multi_select'] = False
                     jsonVars = jsonData['appliance.SystemInfo']['allOf'][1]['properties']['TimeZone']['enum']
                     tz_regions = []
@@ -528,22 +440,20 @@ class quick_start(object):
                         tz_region = i.split('/')[0]
                         if not tz_region in tz_regions: tz_regions.append(tz_region)
                     tz_regions = sorted(tz_regions)
-                    kwargs['Description'] = 'Timezone Regions...'
-                    kwargs['jsonVars'] = tz_regions
-                    kwargs['defaultVar'] = 'America'
-                    kwargs['varType'] = 'Time Region'
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = 'America'
+                    kwargs['jData']['description'] = 'Timezone Regions...'
+                    kwargs['jData']['enum']        = tz_regions
+                    kwargs['jData']['varType']     = 'Time Region'
                     time_region = ezfunctions.variablesFromAPI(**kwargs)
-
                     region_tzs = []
                     for item in jsonVars:
                         if time_region in item: region_tzs.append(item)
-
-                    kwargs['Description'] = 'Region Timezones...'
-                    kwargs['jsonVars'] = sorted(region_tzs)
-                    kwargs['defaultVar'] = ''
-                    kwargs['varType'] = 'Region Timezones'
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['description'] = 'Region Timezones...'
+                    kwargs['jData']['enum']        = sorted(region_tzs)
+                    kwargs['jData']['varType']     = 'Region Timezones'
                     timezone = ezfunctions.variablesFromAPI(**kwargs)
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  UCS Domain Name: {domain_name}')
                     print(f'  Device Model: {device_model}')
@@ -562,202 +472,162 @@ class quick_start(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Sytem QoS Settings
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = 'system-qos'
                             kwargs['Platinum'] = {
                                 'bandwidth_percent':20, 'cos':5, 'mtu':mtu, 'multicast_optimize':False,
-                                'packet_drop':False, 'priority':'Platinum', 'state':'Enabled', 'weight':10,
-                            }
+                            'packet_drop':False, 'priority':'Platinum', 'state':'Enabled', 'weight':10}
                             kwargs['Gold'] = {
                                 'bandwidth_percent':18, 'cos':4, 'mtu':mtu, 'multicast_optimize':False,
-                                'packet_drop':True, 'priority':'Gold', 'state':'Enabled', 'weight':9,
-                            }
+                            'packet_drop':True, 'priority':'Gold', 'state':'Enabled', 'weight':9}
                             kwargs['FC'] = {
                                 'bandwidth_percent':20, 'cos':3, 'mtu':2240, 'multicast_optimize':False,
-                                'packet_drop':False, 'priority':'FC', 'state':'Enabled', 'weight':10,
-                            }
+                            'packet_drop':False, 'priority':'FC', 'state':'Enabled', 'weight':10}
                             kwargs['Silver'] = {
                                 'bandwidth_percent':18, 'cos':2, 'mtu':mtu, 'multicast_optimize':False,
-                                'packet_drop':True, 'priority':'Silver', 'state':'Enabled', 'weight':8,
-                            }
+                            'packet_drop':True, 'priority':'Silver', 'state':'Enabled', 'weight':8}
                             kwargs['Bronze'] = {
                                 'bandwidth_percent':14, 'cos':1, 'mtu':mtu, 'multicast_optimize':False,
-                                'packet_drop':True, 'priority':'Bronze', 'state':'Enabled', 'weight':7,
-                            }
+                            'packet_drop':True, 'priority':'Bronze', 'state':'Enabled', 'weight':7}
                             kwargs['Best Effort'] = {
                                 'bandwidth_percent':10, 'cos':255, 'mtu':mtu, 'multicast_optimize':False,
-                                'packet_drop':True, 'priority':'Best Effort', 'state':'Enabled', 'weight':5,
-                            }
-
+                            'packet_drop':True, 'priority':'Best Effort', 'state':'Enabled', 'weight':5}
                             polVars['classes'] = []
                             priorities = ['Platinum', 'Gold', 'FC', 'Silver', 'Bronze', 'Best Effort']
-
                             for priority in priorities:
                                 polVars['classes'].append(kwargs[priority])
 
                             # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,system_qos'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Network Connectivity Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = f'dns'
                             polVars['dns_servers_v4'] = [kwargs['primary_dns']]
                             if not kwargs['secondary_dns'] == '':
                                 polVars['dns_servers_v4'].append(kwargs['secondary_dns'])
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,network_connectivity'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure NTP Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = f'ntp'
                             polVars['ntp_servers'] = ntp_servers
                             polVars['timezone'] = timezone
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,ntp'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Switch Control Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = f'sw_ctrl'
                             polVars['vlan_port_count_optimization'] = False
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,switch_control'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Port Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = kwargs['port_policy']
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,port'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure UCS Chassis Profile
-                            #_______________________________________________________________________
-                            kwargs["Description"] = f'Number of Chassis attached to {domain_name}.'
-                            kwargs["varInput"] = f'Enter the Number of Chassis attached to {domain_name}:'
-                            kwargs["varDefault"] = 1
-                            kwargs["varName"] = 'Chassis Count'
-                            kwargs["minNum"] = 1
-                            kwargs["maxNum"] = 20
+                            #==============================================
+                            kwargs['jData'] = deepcopy({})
+                            kwargs['jData']['default']     = 1
+                            kwargs['jData']['description'] = f'Number of Chassis attached to {domain_name}.'
+                            kwargs['jData']['maximum']     = 20
+                            kwargs['jData']['minimum']     = 1
+                            kwargs['jData']['varInput']    = f'Enter the Number of Chassis attached to {domain_name}:'
+                            kwargs['jData']['varName']     = 'Chassis Count'
                             chassis_count = ezfunctions.varNumberLoop(**kwargs)
-
                             chassis_models = ['5108', '9508']
                             chassis_dict = {}
                             imc_policy = kwargs['immDict']['orgs'][org]['intersight']['pools']['ip'][0]['name']
                             for i in chassis_models:
-                                chassis_dict.update({
-                                    i: {
-                                        'imc_access_policy':imc_policy, 'names':[], 'power_policy':i,
-                                        'snmp_policy':'snmp', 'thermal_policy':i,
-                                    }
-                                })
+                                chassis_dict.update({ i: {
+                                    'imc_access_policy':imc_policy, 'names':[], 'power_policy':i,
+                                    'snmp_policy':'snmp', 'thermal_policy':i,
+                                }})
+                            #==============================================
+                            # Chassis Model
+                            #==============================================
                             rangex = int(chassis_count) + 1
                             for x in range(1,rangex):
-                                # Chassis Model
-                                kwargs["multi_select"] = False
+                                kwargs['multi_select'] = False
                                 jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['thermal.Policy']
-                                kwargs["Description"] = jsonVars['chassisType']['description']
-                                kwargs["jsonVars"] = sorted(jsonVars['chassisType']['enum'])
-                                kwargs["defaultVar"] = jsonVars['chassisType']['default']
-                                kwargs["varType"] = 'Chassis Model'
+                                kwargs['jData'] = deepcopy(jsonVars['chassisType'])
+                                kwargs['jData']['varType'] = 'Chassis Model'
                                 chassis_model = ezfunctions.variablesFromAPI(**kwargs)
-
-                                # Obtain Chassis Serial Number or Skip
-                                kwargs["Description"] = 'Serial Number of the Chassis to assign to the Profile.'
-                                kwargs["varDefault"] = ''
-                                kwargs["varInput"] = f'What is the Serial Number of Chassis {x}? [press enter to skip]:'
-                                kwargs["varName"] = 'Serial Number'
-                                kwargs["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
-                                kwargs["minLength"] = 11
-                                kwargs["maxLength"] = 11
+                                #==============================================
+                                # Prompt User for Chassis Serial Number(s)
+                                #==============================================
+                                kwargs['jData'] = deepcopy({})
+                                kwargs['jData']['description'] = 'Serial Number of the Chassis to assign to the Profile.'
+                                kwargs['jData']['maximum']     = 11
+                                kwargs['jData']['minimum']     = 11
+                                kwargs['jData']['pattern']     = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
+                                kwargs['jData']['varInput']    = f'What is the Serial Number of Chassis {x}? [press enter to skip]:'
+                                kwargs['jData']['varName']     = 'Serial Number'
                                 serial_number = ezfunctions.varStringLoop(**kwargs)
                                 if serial_number == '': serial_number = 'unknown'
                                 chassis_dict[f'{chassis_model}']['names'].append([f'{domain_name}-{x}', serial_number])
-                            
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             for i in chassis_models:
                                 if len(chassis_dict[i]['names']) > 0:
                                     polVars = chassis_dict[i]
                                     kwargs['class_path'] = 'intersight,profiles,chassis'
                                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure UCS Domain Profile
-                            #_______________________________________________________________________
-                            polVars = {}
-                            polVars['name'] = domain_name
-                            polVars['action'] = 'No-op'
-                            polVars['network_connectivity_policy'] = f'dns'
-                            polVars['ntp_policy'] = f'ntp'
-                            polVars['port_policies'] = [f'{domain_name}-a', f'{domain_name}-b']
-                            polVars['snmp_policy'] = f'snmp-domain'
-                            polVars['switch_control_policy'] = 'sw_ctrl'
-                            polVars['syslog_policy'] = f'syslog-domain'
-                            polVars['system_qos_policy'] = 'system-qos'
-                            polVars['vlan_policies'] = [org]
+                            #==============================================
+                            polVars = {
+                                'name': domain_name, 'network_connectivity_policy': f'dns', 'ntp_policy': f'ntp',
+                                'port_policies': [f'{domain_name}-a', f'{domain_name}-b'],
+                                'snmp_policy': f'snmp-domain', 'switch_control_policy': 'sw_ctrl',
+                                'syslog_policy': f'syslog-domain', 'system_qos_policy': 'system-qos',
+                                'vlan_policies': [org]
+                            }
                             if len(kwargs['fc_converted_ports']) > 0:
-                                polVars['vsan_policies'] = [f'vsan-{kwargs["vsan_id_a"]}', f'vsan-{kwargs["vsan_id_b"]}']
-
+                                polVars['vsan_policies'] = [f"vsan-{kwargs['vsan_id_a']}', f'vsan-{kwargs['vsan_id_b']}"]
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,profiles,domain'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
                             configure_loop = True
                             policy_loop = True
                             valid_confirm = True
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            policy_type = 'domain_policies'
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
                         else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
             else: ezfunctions.message_invalid_y_or_n('short')
-        if configure == 'Y' or configure == '':
-            kwargs['Config'] = True
-        elif configure == 'N':
-            kwargs['Config'] = False
+        if configure == 'Y' or configure == '': kwargs['Config'] = True
+        elif configure == 'N': kwargs['Config'] = False
         return kwargs
 
     #==============================================
     # LAN and SAN Policies
     #==============================================
     def lan_san_policies(self, **kwargs):
-        args = kwargs['args']
-        baseRepo = args.dir
-        ezData = kwargs['ezData']
-        jsonData = kwargs['jsonData']
-        org = self.org
-        path_sep = kwargs['path_sep']
-        if kwargs['mtu'] > 8999:
-            mtu = 9000
-        else: mtu = 1500
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        if kwargs['mtu'] > 8999: mtu = 9000
+        else: mtu = 1500
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Network Configuration, will configure policies for the')
@@ -788,58 +658,40 @@ class quick_start(object):
                     print(f'     ** Note: This should not overlap with any of the VLANs assigned to the')
                     print(f'              LAN Connectivity Policies.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-
                     vlan_policy = org
                     vlan_list = kwargs['vlan_list']
                     vlan_policy_list = ezfunctions.vlan_list_full(vlan_list)
                     fc_ports_in_use = kwargs['fc_ports_in_use']
-
                     kwargs['multi_select'] = False
                     jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['fabric.EthNetworkControlPolicy']
-
-                    # Neighbor Discovery Protocol
-                    kwargs['Description'] = jsonVars['discoveryProtocol']['description']
-                    kwargs['jsonVars'] = sorted(jsonVars['discoveryProtocol']['enum'])
-                    kwargs['defaultVar'] = jsonVars['discoveryProtocol']['default']
-                    kwargs['varType'] = 'Neighbor Discovery Protocol'
+                    #==============================================
+                    # Prompt User for Neighbor Discovery Protocol
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['discoveryProtocol'])
+                    kwargs['jData']['varType'] = 'Neighbor Discovery Protocol'
                     neighbor_discovery = ezfunctions.variablesFromAPI(**kwargs)
+                    #==============================================
+                    # Prompt User for vNIC VLAN(s)
+                    #==============================================
+                    vcount = 0
+                    for i in ['mgmt_1', 'migration_2', 'storage_3']:
+                        valid = False
+                        while valid == False:
+                            vnic_name = i.split('_')[0]
+                            vnic_vlan = i.split('_')[1]
+                            kwargs['jData'] = deepcopy({})
+                            kwargs['jData']['default']     = vnic_vlan
+                            kwargs['jData']['description'] = f"LAN Connectivity Policy vNICs - {vnic_name} VLAN Identifier."
+                            kwargs['jData']['minimum']     = 1
+                            kwargs['jData']['maximum']     = 4094
+                            kwargs['jData']['varInput']    = f"Enter the VLAN ID for {vnic_name}:"
+                            kwargs['jData']['varName']     = f"{vnic_name} VLAN ID"
+                            valid = ezfunctions.validate_vlan_in_policy(vlan_policy_list, vnic_vlan)
+                        kwargs[f'{vnic_name}_vlan']  = ezfunctions.varNumberLoop(**kwargs)
 
-                    # Management VLAN
-                    valid = False
-                    while valid == False:
-                        kwargs['Description'] = 'LAN Connectivity Policy vNICs - mgmt VLAN Identifier'
-                        kwargs['varInput'] = 'Enter the VLAN ID for mgmt:'
-                        kwargs['varDefault'] = 1
-                        kwargs['varName'] = 'Management VLAN ID'
-                        kwargs['minNum'] = 1
-                        kwargs['maxNum'] = 4094
-                        mgmt_vlan = ezfunctions.varNumberLoop(**kwargs)
-                        valid = ezfunctions.validate_vlan_in_policy(vlan_policy_list, mgmt_vlan)
-
-                    # vMotion VLAN
-                    valid = False
-                    while valid == False:
-                        kwargs['Description'] = 'LAN Connectivity Policy vNICs - migration VLAN Identifier'
-                        kwargs['varInput'] = 'Enter the VLAN ID for migration:'
-                        kwargs['varDefault'] = 2
-                        kwargs['varName'] = 'Management VLAN ID'
-                        kwargs['minNum'] = 1
-                        kwargs['maxNum'] = 4094
-                        migration_vlan = ezfunctions.varNumberLoop(**kwargs)
-                        valid = ezfunctions.validate_vlan_in_policy(vlan_policy_list, migration_vlan)
-
-                    # Storage VLAN
-                    valid = False
-                    while valid == False:
-                        kwargs['Description'] = 'LAN Connectivity Policy vNICs - storage VLAN Identifier'
-                        kwargs['varInput'] = 'Enter the VLAN ID for storage:'
-                        kwargs['varDefault'] = 3
-                        kwargs['varName'] = 'Storage VLAN ID'
-                        kwargs['minNum'] = 1
-                        kwargs['maxNum'] = 4094
-                        storage_vlan = ezfunctions.varNumberLoop(**kwargs)
-                        valid = ezfunctions.validate_vlan_in_policy(vlan_policy_list, storage_vlan)
-
+                    #==============================================
+                    # Prompt User for DVS VLAN(s)
+                    #==============================================
                     valid = False
                     while valid == False:
                         VlanList = input('Enter the VLAN or List of VLANs to add to the dvs (Virtual Machine) vNICs: ')
@@ -850,7 +702,6 @@ class quick_start(object):
                             for v in vlanListExpanded:
                                 valid_v = ezfunctions.validate_vlan_in_policy(vlan_policy_list, v)
                                 if valid_v == False: vlans_not_in_domain_policy.append(v)
-
                             if len(vlans_not_in_domain_policy) > 0:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Error with VLAN(s) assignment!!  The following VLAN(s) are missing.')
@@ -870,12 +721,11 @@ class quick_start(object):
                             print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
                             print(f'     1-10,20-30 - Ranges and Lists of VLANs')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Network Configuration Variables:')
-                    print(f'    MGMT VLAN       = {mgmt_vlan}')
-                    print(f'    Migration VLAN  = {migration_vlan}')
-                    print(f'    Storage VLAN    = {storage_vlan}')
+                    print(f"    MGMT VLAN       = {kwargs['mgmt_vlan']}")
+                    print(f"    Migration VLAN  = {kwargs['migration_vlan']}")
+                    print(f"    Storage VLAN    = {kwargs['storage_vlan']}")
                     print(f'    Data VLANs      = "{VlanList}"')
                     if len(fc_ports_in_use) > 0:
                         print(f'    VSAN Fabric A   = {kwargs["vsan_id_a"]}')
@@ -885,32 +735,23 @@ class quick_start(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            confirm_policy = 'Y'
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Ethernet Adapter Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
-                            name = 'VMware'
-                            polVars['name'] = name
+                            polVars['name'] = 'VMware'
                             polVars['adapter_template'] = 'VMware'
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,ethernet_adapter'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Ethernet Network Control Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = neighbor_discovery
-                            polVars['descr'] = f'{name} Ethernet Network Control Policy'
+                            polVars['description'] = f'{neighbor_discovery} Ethernet Network Control Policy'
                             polVars['action_on_uplink_fail'] = "linkDown"
-                            if neighbor_discovery == 'CDP':
-                                polVars['cdp_enable'] = True
-                            else:
-                                polVars['cdp_enable'] = False
+                            if neighbor_discovery == 'CDP': polVars['cdp_enable'] = True
+                            else: polVars['cdp_enable'] = False
                             if neighbor_discovery == 'LLDP':
                                 polVars['lldp_receive_enable'] = True
                                 polVars['lldp_transmit_enable'] = True
@@ -919,56 +760,35 @@ class quick_start(object):
                                 polVars['lldp_transmit_enable'] = False
                             polVars['mac_register_mode'] = "nativeVlanOnly"
                             polVars['mac_security_forge'] = "allow"
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,ethernet_network_control'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
-                            # Configure Ethernet Network Group Policy
-                            #_______________________________________________________________________
+                            #==============================================
+                            # Configure Ethernet Network Group Policies
+                            #==============================================
                             polVars = {}
-                            names = ['mgmt', 'migration', 'storage', 'dvs']
-                            for x in names:
-                                if   x == 'mgmt':
-                                    allowed_vlans = mgmt_vlan
-                                    native_vlan = mgmt_vlan
-                                elif x == 'migration':
-                                    allowed_vlans = migration_vlan
-                                    native_vlan = migration_vlan
-                                elif x == 'storage':
-                                    allowed_vlans = storage_vlan
-                                    native_vlan = storage_vlan
+                            for x in ['mgmt', 'migration', 'storage', 'dvs']:
+                                polVars['name'] = x
+                                if re.search('mgmt|migration|storage', x):
+                                    allowed_vlans = kwargs[f'{x}_vlan']
+                                    native_vlan   = kwargs[f'{x}_vlan']
                                 elif x == 'dvs':
                                     allowed_vlans = VlanList
-                                    if not nativeVlan == '':
-                                        native_vlan = nativeVlan
-                                name = x
-                                polVars['name'] = name
+                                    if not nativeVlan == '': native_vlan = nativeVlan
                                 polVars['allowed_vlans'] = allowed_vlans
-                                if not native_vlan == '':
-                                    polVars['native_vlan'] = native_vlan
+                                if not native_vlan == '': polVars['native_vlan'] = native_vlan
                                 else:
-                                    polVars['native_vlan'] = ''
-                                    polVars.pop('native_vlan')
-
+                                    if not polVars.get('native_vlan') == None: polVars.pop('native_vlan')
                                 # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,ethernet_network_group'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Ethernet QoS Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             names = ['Bronze', 'Gold', 'Platinum', 'Silver']
                             for x in names:
-                                name = x
-                                polVars['name'] = name
-                                polVars['descr'] = f'{name} Ethernet QoS Policy'
-                                polVars['allowed_vlans'] = mgmt_vlan
-                                polVars['native_vlan'] = mgmt_vlan
+                                polVars['name'] = x
+                                polVars['description'] = f'{x} Ethernet QoS Policy'
                                 polVars['burst'] = 1024
                                 polVars['enable_trust_host_cos'] = False
                                 polVars['priority'] = x
@@ -978,59 +798,42 @@ class quick_start(object):
                                 # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,ethernet_qos'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
                             if len(fc_ports_in_use) > 0:
-                                #_______________________________________________________________________
-                                #
+                                #==============================================
                                 # Configure Fibre-Channel Adapter Policy
-                                #_______________________________________________________________________
+                                #==============================================
                                 polVars = {}
-                                name = 'VMware'
-                                polVars['name'] = name
-                                polVars['descr'] = f'{name} Fibre-Channel Adapter Policy'
+                                polVars['name'] = 'VMware'
+                                polVars['description'] = f'VMware Fibre-Channel Adapter Policy'
                                 polVars['policy_template'] = 'VMware'
-
-                                # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,fibre_channel_adapter'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                                #_______________________________________________________________________
-                                #
+                                #==============================================
                                 # Configure Fibre-Channel Network Policy
-                                #_______________________________________________________________________
+                                #==============================================
                                 polVars = {}
                                 fabrics = ['a', 'b']
                                 for fab in fabrics:
-                                    name = f'san-{fab}'
-                                    polVars['name'] = name
+                                    polVars['name'] = f'san-{fab}'
                                     polVars['default_vlan'] = 0
                                     polVars['vsan_id'] = kwargs[f"vsan_id_{fab}"]
-
-                                    # Add Policy Variables to immDict
                                     kwargs['class_path'] = 'intersight,policies,fibre_channel_network'
                                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                                #_______________________________________________________________________
-                                #
+                                #==============================================
                                 # Configure Fibre-Channel QoS Policy
-                                #_______________________________________________________________________
+                                #==============================================
                                 polVars = {}
-                                name = 'fc-qos'
-                                polVars['name'] = name
+                                polVars['name'] = 'fc-qos'
                                 polVars['burst'] = 1024
                                 polVars['max_data_field_size'] = 2112
                                 polVars['rate_limit'] = 0
-
-                                # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,fibre_channel_qos'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
                             Order = 0
                             if len(fc_ports_in_use) > 0:
-                                #_______________________________________________________________________
-                                #
-                                # SAN Connectivity Policy
-                                #_______________________________________________________________________
+                                #==============================================
+                                # Configure SAN Connectivity Policy
+                                #==============================================
                                 polVars = {}
                                 polVars['name'] = f'{org}-scp'
                                 polVars['target_platform'] = "FIAttached"
@@ -1046,15 +849,11 @@ class quick_start(object):
                                 polVars['wwnn_allocation_type'] = "POOL"
                                 polVars['wwnn_pool'] = org
                                 Order += 2
-
-                                # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,san_connectivity'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
-                            # LAN Connectivity Policy
-                            #_______________________________________________________________________
+                            #==============================================
+                            # Configure LAN Connectivity Policy
+                            #==============================================
                             polVars = {}
                             polVars['name'] = 'vmware-lcp'
                             polVars['target_platform'] = "FIAttached"
@@ -1068,24 +867,23 @@ class quick_start(object):
                                     'ethernet_network_control_policy':neighbor_discovery,
                                     'ethernet_network_group_policy':vname,
                                     'ethernet_qos_policy':qos,
-                                    'mac_address_pools':[f'{org}-a',f'{org}-b',],
+                                    'mac_address_pools':[f'{vname}-a',f'{vname}-b',],
                                     'names':[f'{vname}-a',f'{vname}-b',],
                                     'pci_order':[Order, Order + 1],
                                 }
                                 polVars['vnics'].append(vnic)
                                 Order += 2
-
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,lan_connectivity'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
                             configure_loop = True
                             policy_loop = True
                             valid_confirm = True
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            policy_type = 'LAN/SAN Policies'
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
                         else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
@@ -1096,14 +894,11 @@ class quick_start(object):
     # Pools
     #==============================================
     def pools(self, **kwargs):
-        args = kwargs['args']
-        baseRepo = args.dir
-        org = self.org
-        jsonData = kwargs['jsonData']
-        path_sep = kwargs['path_sep']
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        org            = self.org
+        jsonData       = kwargs['jsonData']
+        path_sep       = kwargs['path_sep']
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Pools, will configure pools for a UCS Server Profile')
@@ -1113,6 +908,7 @@ class quick_start(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Pools?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
+                polVars = {}
                 loop_count = 1
                 policy_loop = False
                 while policy_loop == False:
@@ -1126,89 +922,70 @@ class quick_start(object):
                     print(f'     * Primary DNS Server')
                     print(f'     * Secondary DNS Server (optional)')
                     print(f'  The following pools will be configured with the prefix value:')
-                    print(f'    * Note: (Policy maximum 1000 addresses per pool in Intersight will be assigned):')
+                    print(f'    * Note: (Policy maximum 1024 addresses per pool in Intersight will be assigned):')
                     print(f'    * MAC Pools')
-                    print(f'      - dvs-a:           00:25:B5:[prefix]:G0:00, size: 1000')
-                    print(f'      - dvs-b:           00:25:B5:[prefix]:H0:00, size: 1000')
-                    print(f'      - mgmt-a:          00:25:B5:[prefix]:A0:00, size: 1000')
-                    print(f'      - mgmt-b:          00:25:B5:[prefix]:B0:00, size: 1000')
-                    print(f'      - migration-a:     00:25:B5:[prefix]:C0:00, size: 1000')
-                    print(f'      - migration-b:     00:25:B5:[prefix]:D0:00, size: 1000')
-                    print(f'      - storage-a:       00:25:B5:[prefix]:E0:00, size: 1000')
-                    print(f'      - storage-b:       00:25:B5:[prefix]:F0:00, size: 1000')
+                    print(f'      - dvs-a:           00:25:B5:[prefix]:G0:00, size: 1024')
+                    print(f'      - dvs-b:           00:25:B5:[prefix]:H0:00, size: 1024')
+                    print(f'      - mgmt-a:          00:25:B5:[prefix]:A0:00, size: 1024')
+                    print(f'      - mgmt-b:          00:25:B5:[prefix]:B0:00, size: 1024')
+                    print(f'      - migration-a:     00:25:B5:[prefix]:C0:00, size: 1024')
+                    print(f'      - migration-b:     00:25:B5:[prefix]:D0:00, size: 1024')
+                    print(f'      - storage-a:       00:25:B5:[prefix]:E0:00, size: 1024')
+                    print(f'      - storage-b:       00:25:B5:[prefix]:F0:00, size: 1024')
                     print(f'    * UUID Pool')
-                    print(f'      - {org}:        000025B5-[prefix]00-0000, size: 1000')
+                    print(f'      - {org}:        000025B5-[prefix]00-0000, size: 1024')
                     print(f'    * WWNN Pool')
-                    print(f'      - {org}:   20:00:00:25:B5:[prefix]:00:00, size: 1000')
+                    print(f'      - {org}:   20:00:00:25:B5:[prefix]:00:00, size: 1024')
                     print(f'    * WWPN Pools')
-                    print(f'      - {org}-a: 20:00:00:25:B5:[prefix]:A0:00, size: 1000')
-                    print(f'      - {org}-b: 20:00:00:25:B5:[prefix]:B0:00, size: 1000')
+                    print(f'      - {org}-a: 20:00:00:25:B5:[prefix]:A0:00, size: 1024')
+                    print(f'      - {org}-b: 20:00:00:25:B5:[prefix]:B0:00, size: 1024')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
-                    kwargs['Description'] = jsonVars['Gateway']['description']
-                    kwargs['varInput'] = 'What is the Gateway for the KVM IP Pool? [198.18.0.1]:'
-                    kwargs['varDefault'] = '198.18.0.1'
-                    kwargs['varName'] = 'Gateway'
-                    kwargs['varRegex'] = jsonVars['Gateway']['pattern']
-                    kwargs['minLength'] = 7
-                    kwargs['maxLength'] = 15
+                    kwargs['jData'] = deepcopy(jsonVars['Gateway'])
+                    kwargs['jData']['default']  = '198.18.0.1'
+                    kwargs['jData']['varInput'] = 'What is the Gateway for the KVM IP Pool?:'
+                    kwargs['jData']['varName']  = 'Gateway'
                     gateway = ezfunctions.varStringLoop(**kwargs)
 
-                    kwargs['Description'] = jsonVars['Netmask']['description']
-                    kwargs['varInput'] = 'What is the Netmask for the KVM IP Pool? [255.255.255.0]:'
-                    kwargs['varDefault'] = '255.255.255.0'
-                    kwargs['varName'] = 'Netmask'
-                    kwargs['varRegex'] = jsonVars['Netmask']['pattern']
-                    kwargs['minLength'] = 7
-                    kwargs['maxLength'] = 15
+                    kwargs['jData'] = deepcopy(jsonVars['Netmask'])
+                    kwargs['jData']['default']  = '255.255.255.0'
+                    kwargs['jData']['varInput'] = 'What is the Netmask for the KVM IP Pool?:'
+                    kwargs['jData']['varName']  = 'Netmask'
                     netmask = ezfunctions.varStringLoop(**kwargs)
 
-                    kwargs['Description'] = jsonVars['PrimaryDns']['description']
-                    kwargs['varInput'] = 'What is the Primary Dns for the KVM IP Pool? [208.67.220.220]:'
-                    kwargs['varDefault'] = '208.67.220.220'
-                    kwargs['varName'] = 'Primary Dns'
-                    kwargs['varRegex'] = jsonVars['PrimaryDns']['pattern']
-                    kwargs['minLength'] = 7
-                    kwargs['maxLength'] = 15
+                    kwargs['jData'] = deepcopy(jsonVars['PrimaryDns'])
+                    kwargs['jData']['default']  = '208.67.220.220'
+                    kwargs['jData']['varInput'] = 'What is the Primary Dns for the KVM IP Pool?:'
+                    kwargs['jData']['varName']  = 'Primary Dns'
                     primary_dns = ezfunctions.varStringLoop(**kwargs)
 
-                    kwargs['Description'] = jsonVars['SecondaryDns']['description']
-                    kwargs['varInput'] = 'What is the Secondary Dns for the KVM IP Pool? [press enter to skip]:'
-                    kwargs['varDefault'] = ''
-                    kwargs['varName'] = 'Secondary Dns'
-                    kwargs['varRegex'] = jsonVars['SecondaryDns']['pattern']
-                    kwargs['minLength'] = 7
-                    kwargs['maxLength'] = 15
+                    kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
+                    kwargs['jData']['varInput'] = 'What is the Secondary Dns for the KVM IP Pool? [press enter to skip]:'
+                    kwargs['jData']['varName']  = 'Secondary Dns'
                     secondary_dns = ezfunctions.varStringLoop(**kwargs)
 
                     jsonVars = jsonData['ippool.IpV4Block']['allOf'][1]['properties']
-                    kwargs['Description'] = jsonVars['From']['description']
-                    kwargs['varInput'] = 'What is the First IP Address for the KVM IP Pool? [198.18.0.10]:'
-                    kwargs['varDefault'] = '198.18.0.10'
-                    kwargs['varName'] = 'Beginning IP Address'
-                    kwargs['varRegex'] = jsonVars['From']['pattern']
-                    kwargs['minLength'] = 7
-                    kwargs['maxLength'] = 15
+                    kwargs['jData'] = deepcopy(jsonVars['From'])
+                    kwargs['jData']['default']  = '198.18.0.10'
+                    kwargs['jData']['varInput'] = 'What is the First IP Address for the KVM IP Pool?'
+                    kwargs['jData']['varName']  = 'Beginning IP Address'
                     pool_from = ezfunctions.varStringLoop(**kwargs)
 
-                    kwargs['Description'] = jsonVars['To']['description']
-                    kwargs['varInput'] = 'What is the Last IP Address for the KVM IP Pool? [198.18.0.254]:'
-                    kwargs['varDefault'] = '198.18.0.254'
-                    kwargs['varName'] = 'Ending IP Address'
-                    kwargs['varRegex'] = jsonVars['To']['pattern']
-                    kwargs['minLength'] = 7
-                    kwargs['maxLength'] = 15
+                    kwargs['jData'] = deepcopy(jsonVars['To'])
+                    kwargs['jData']['default']  = '198.18.0.254'
+                    kwargs['jData']['varInput'] = 'What is the Last IP Address for the KVM IP Pool?'
+                    kwargs['jData']['varName']  = 'Ending IP Address'
                     pool_to = ezfunctions.varStringLoop(**kwargs)
 
-                    kwargs['Description'] = 'Prefix to assign to Pools'
-                    kwargs['varInput'] = 'What is the 2 Digit (Hex) Prefix to assign to the MAC, UUID, WWNN, and WWPN Pools? [00]:'
-                    kwargs['varDefault'] = '00'
-                    kwargs['varName'] = 'Pool Prefix'
-                    kwargs['varRegex'] = '^[0-9a-zA-Z][0-9a-zA-Z]$'
-                    kwargs['minLength'] = 2
-                    kwargs['maxLength'] = 2
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = '00'
+                    kwargs['jData']['description'] = 'Prefix to assign to Pools'
+                    kwargs['jData']['pattern']     = '^[0-9a-zA-Z]{2}$'
+                    kwargs['jData']['varInput']    = 'What is the 2 Digit (Hex) Prefix to assign to the MAC,'\
+                        ' UUID, WWNN, and WWPN Pools?'
+                    kwargs['jData']['varName']     = 'Pool Prefix'
                     pool_prefix = ezfunctions.varStringLoop(**kwargs)
                     pool_prefix = pool_prefix.upper()
 
@@ -1226,33 +1003,22 @@ class quick_start(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            confirm_policy = 'Y'
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure IP Pool
-                            #_______________________________________________________________________
-
-                            name = pool_from
-                            polVars['name'] = name
+                            #==============================================
+                            polVars['name'] = pool_from
                             pool_size = int(ipaddress.IPv4Address(pool_to)) - int(ipaddress.IPv4Address(pool_from)) + 1
                             polVars['ipv4_blocks'] = [{'from':pool_from, 'size':pool_size}]
                             polVars['ipv4_configuration'] = {
-                                'gateway':gateway, 'prefix':netmask,
-                                'primary_dns':primary_dns, 'secondary_dns':secondary_dns
+                                'gateway':gateway, 'prefix':netmask, 'primary_dns':primary_dns, 'secondary_dns':secondary_dns
                             }
                             kwargs['primary_dns'] = primary_dns
                             kwargs['secondary_dns'] = secondary_dns
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,pools,ip'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure MAC Pools
-                            #_______________________________________________________________________
-
+                            #==============================================
                             polVars = {}
                             names = ['dvs', 'mgmt', 'migration', 'storage']
                             fabrics = ['a', 'b']
@@ -1266,69 +1032,45 @@ class quick_start(object):
                                     elif i == 'storage' and fab == 'b': key_id = 'F'
                                     elif i == 'dvs' and fab == 'a': key_id = '1'
                                     elif i == 'dvs' and fab == 'b': key_id = '2'
-
-                                    name = f'{i}-{fab}'
-                                    polVars['name'] = name
+                                    polVars['name'] = f'{i}-{fab}'
                                     pool_from = f'00:25:B5:{pool_prefix}:{key_id}0:00'
-                                    polVars['mac_blocks'] = [{'from':pool_from, 'size':1000}]
-
-                                    # Add Policy Variables to immDict
+                                    polVars['mac_blocks'] = [{'from':pool_from, 'size':1024}]
                                     kwargs['class_path'] = 'intersight,pools,mac'
                                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure UUID Pool
-                            #_______________________________________________________________________
-
+                            #==============================================
                             polVars = {}
-                            name = org
-                            polVars['name'] = name
-                            polVars['descr'] = f'{name} UUID Pool'
+                            polVars['name'] = org
+                            polVars['description'] = f'{org} UUID Pool'
                             polVars['prefix'] = f'000025B5-{pool_prefix}00-0000'
-                            polVars['uuid_blocks'] = [{'from':'0000-000000000000', 'size':1000}]
-
-                            # Add Policy Variables to immDict
+                            polVars['uuid_blocks'] = [{'from':'0000-000000000000', 'size':1024}]
                             kwargs['class_path'] = 'intersight,pools,uuid'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure WWNN Pool
-                            #_______________________________________________________________________
-
+                            #==============================================
                             polVars = {}
-                            name = org
-                            polVars['name'] = name
+                            polVars['name'] = org
                             pool_from = f'20:00:00:25:B5:{pool_prefix}:00:00'
-                            polVars['id_blocks'] = [{'from':pool_from, 'size':1000}]
-
-                            # Add Policy Variables to immDict
+                            polVars['id_blocks'] = [{'from':pool_from, 'size':1024}]
                             kwargs['class_path'] = 'intersight,pools,wwnn'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure WWPN Pools
-                            #_______________________________________________________________________
-
+                            #==============================================
                             for fab in fabrics:
-                                name = f'{org}-{fab}'
-                                polVars['name'] = name
+                                polVars['name'] = f'{org}-{fab}'
                                 pool_from = f'20:00:00:25:B5:{pool_prefix}:{fab.upper()}0:00'
-                                polVars['id_blocks'] = [{'from':pool_from, 'size':1000,}]
-
-                                # Add Policy Variables to immDict
+                                polVars['id_blocks'] = [{'from':pool_from, 'size':1024,}]
                                 kwargs['class_path'] = 'intersight,pools,wwpn'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
                             configure_loop = True
                             policy_loop = True
                             valid_confirm = True
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            policy_type = 'pools'
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
                         else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
@@ -1339,15 +1081,13 @@ class quick_start(object):
     # Server Policies for Domain and Standalone
     #==============================================
     def server_policies(self, **kwargs):
-        args = kwargs['args']
-        baseRepo = args.dir
-        jsonData = kwargs['jsonData']
-        org = self.org
-        path_sep = kwargs['path_sep']
-        server_type = kwargs['server_type']
-        vlan_list = kwargs['vlan_list']
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        server_type    = kwargs['server_type']
+        vlan_list      = kwargs['vlan_list']
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Configure Policies for a UCS Server Profile.\n')
@@ -1375,97 +1115,86 @@ class quick_start(object):
                     print(f'   - Syslog Policy - (Optional)')
                     print(f'     * Remote Syslog Server(s)')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-
                     kwargs['name'] = 'Quick Deployment Module'
                     vlan_policy_list = ezfunctions.vlan_list_full(vlan_list)
                     kwargs['multi_select'] = False
-
                     if kwargs['server_type'] == 'FIAttached':
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  Now Starting the IMC Access Policy Section.')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                        #_______________________________________________________________________
-                        #
+                        #==============================================
                         # Prompt User for IMC Access Type
-                        #_______________________________________________________________________
+                        #==============================================
                         jsonVars = jsonData['access.Policy']['allOf'][1]['properties']
-                        kwargs['Description'] = jsonVars['ConfigurationType']['description']
-                        kwargs['jsonVars'] = ['inband', 'out_of_band']
-                        kwargs['defaultVar'] = 'inband'
-                        kwargs['varType'] = 'IMC Access Type'
+                        kwargs['jData'] = deepcopy(jsonVars['ConfigurationType'])
+                        kwargs['jData']['default'] = 'inband'
+                        kwargs['jData']['enum']    = ['inband', 'out_of_band']
+                        kwargs['jData']['varType'] = 'IMC Access Type'
                         imcBand = ezfunctions.variablesFromAPI(**kwargs)
-
                         if imcBand == 'inband':
                             valid = False
                             while valid == False:
-                                kwargs['Description'] = 'IMC Access VLAN Identifier'
-                                kwargs['varInput'] = 'Enter the VLAN ID for the IMC Access Policy.'
-                                kwargs['varDefault'] = 4
-                                kwargs['varName'] = 'IMC Access Policy VLAN ID'
-                                kwargs['minNum'] = 4
-                                kwargs['maxNum'] = 4094
+                                kwargs['jData'] = deepcopy({})
+                                kwargs['jData']['default']     = 4
+                                kwargs['jData']['description'] = 'IMC Access VLAN Identifier'
+                                kwargs['jData']['maximum']     = 4094
+                                kwargs['jData']['minimum']     = 4
+                                kwargs['jData']['varInput']    = 'Enter the VLAN ID for the IMC Access Policy.'
+                                kwargs['jData']['varName']     = 'IMC Access Policy VLAN ID'
                                 inband_vlan_id = ezfunctions.varNumberLoop(**kwargs)
                                 if server_type == 'FIAttached':
                                     valid = ezfunctions.validate_vlan_in_policy(vlan_policy_list, inband_vlan_id)
-                                else:
-                                    valid = True
-
-                    #_______________________________________________________________________
-                    #
+                                else: valid = True
+                    #==============================================
                     # Prompt User for IPMI Encryption Key
-                    #_______________________________________________________________________
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Need to obtain the IPMI Key for IPMI over LAN Policy Encryption.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     kwargs['Variable'] = 'ipmi_key'
                     kwargs['ipmi_key'] = ezfunctions.sensitive_var_value(**kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Prompt User for Local User Policy
-                    #_______________________________________________________________________
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Now Starting the Local User Policy Section.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    kwargs["enforce_strong_password"] = True
-                    kwargs['Description'] = '  Local User Configuration.'
-                    kwargs['varInput'] = f'Would you like to configure the Local users Policy?'
-                    kwargs['varDefault'] = 'Y'
-                    kwargs['varName'] = 'Local Users'
+                    kwargs['enforce_strong_password'] = True
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = True
+                    kwargs['jData']['description'] = '  Local User Configuration.'
+                    kwargs['jData']['varInput']    = f'Would you like to configure the Local users Policy?'
+                    kwargs['jData']['varName']     = 'Local Users'
                     question = ezfunctions.varBoolLoop(**kwargs)
-                    if question == True:
-                        kwargs = ezfunctions.local_users_function(**kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    if question == True: kwargs = ezfunctions.local_users_function(**kwargs)
+                    #==============================================
                     # Prompt User for SNMP Policy Parameters
-                    #_______________________________________________________________________
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Now Starting the SNMP Policy Section.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     # Pull in the Policies for SNMP Policies
                     jsonVars = jsonData['snmp.Policy']['allOf'][1]['properties']
-
-                    kwargs['Description'] = jsonVars['SysContact']['description'] + \
+                    #==============================================
+                    # Prompt User for SNMP System Contact
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SysContact'])
+                    kwargs['jData']['description'] = jsonVars['SysContact']['description'] + \
                         'Note: Enter a string up to 64 characters, such as an email address or a name and telephone number.'
-                    kwargs['varDefault'] = ''
-                    kwargs['varInput'] = 'SNMP System Contact:'
-                    kwargs['varName'] = 'SNMP System Contact'
-                    kwargs['varRegex'] = '.*'
-                    kwargs['minLength'] = 1
-                    kwargs['maxLength'] = jsonVars['SysContact']['maxLength']
+                    kwargs['jData']['pattern']  = '.*'
+                    kwargs['jData']['minimum']  = 0
+                    kwargs['jData']['varInput'] = 'SNMP System Contact:'
+                    kwargs['jData']['varName']  = 'SNMP System Contact'
                     kwargs['system_contact'] = ezfunctions.varStringLoop(**kwargs)
-
-                    kwargs['Description'] = jsonVars['SysLocation']['description']
-                    kwargs['varDefault'] = ''
-                    kwargs['varInput'] = 'What is the Location of the host on which the SNMP agent (server) runs?'
-                    kwargs['varName'] = 'SNMP System Location'
-                    kwargs['varRegex'] = '.*'
-                    kwargs['minLength'] = 1
-                    kwargs['maxLength'] = jsonVars['SysLocation']['maxLength']
+                    #==============================================
+                    # Prompt User for SNMP System Location
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SysLocation'])
+                    kwargs['jData']['minimum']  = 0
+                    kwargs['jData']['pattern']  = '.*'
+                    kwargs['jData']['varInput'] = 'What is the Location of the host on which the SNMP agent (server) runs?'
+                    kwargs['jData']['varName']  = 'SNMP System Location'
                     kwargs['system_location'] = ezfunctions.varStringLoop(**kwargs)
-
                     snmp_loop = False
                     while snmp_loop == False:
                         question = input(f'Would you like to configure an SNMPv3 User?  Enter "Y" or "N" [Y]: ')
@@ -1474,7 +1203,6 @@ class quick_start(object):
                             snmp_loop = True
                         elif question == 'N': snmp_loop = True
                         else: ezfunctions.message_invalid_y_or_n('short')
-
                     snmp_loop = False
                     if len(kwargs['snmp_users']) > 0:
                         while snmp_loop == False:
@@ -1484,47 +1212,35 @@ class quick_start(object):
                                 snmp_loop = True
                             elif question == 'N': snmp_loop = True
                             else: ezfunctions.message_invalid_y_or_n('short')
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Prompt User for Syslog Policy
-                    #_______________________________________________________________________
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Now Starting the Syslog Policy Section.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    # Syslog Section
                     syslog_loop = False
                     while syslog_loop == False:
                         question = input(f'Do you want to configure Remote Syslog Servers?  Enter "Y" or "N" [Y]: ')
                         if question == '' or question == 'Y':
-                            # Syslog Local Logging
                             jsonVars = jsonData['syslog.LocalClientBase']['allOf'][1]['properties']
-                            kwargs['Description'] = jsonVars['MinSeverity']['description']
-                            kwargs['jsonVars'] = sorted(jsonVars['MinSeverity']['enum'])
-                            kwargs['defaultVar'] = jsonVars['MinSeverity']['default']
-                            kwargs['varType'] = 'Syslog Local Minimum Severity'
+                            kwargs['jData'] = deepcopy(jsonVars['MinSeverity'])
+                            kwargs['jData']['varType'] = 'Syslog Local Minimum Severity'
                             min_severity = ezfunctions.variablesFromAPI(**kwargs)
-
                             kwargs = ezfunctions.syslog_servers(**kwargs)
                             syslog_loop = True
-
                         elif question == 'N':
                             min_severity = 'warning'
                             kwargs['remote_clients'] = {'server1':{},'server2':{}}
                             syslog_loop = True
                         else: ezfunctions.message_invalid_y_or_n('short')
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Prompt User for Allow Tunneled KVM Support
-                    #_______________________________________________________________________
-                    jsonVars = jsonData['kvm.Policy']['allOf'][1]['properties']['TunneledKvmEnabled']
-                    kwargs['Description'] = jsonVars['description']
-                    kwargs['varInput'] = f'Do you want to enable Tunneled KVM in the KVM Policy?'
-                    kwargs['varDefault'] = 'Y'
-                    kwargs['varName'] = 'Tunneled KVM'
+                    #==============================================
+                    jsonVars = jsonData['kvm.Policy']['allOf'][1]['properties']
+                    kwargs['jData'] = deepcopy(jsonVars['TunneledKvmEnabled'])
+                    kwargs['jData']['varInput'] = f'Do you want to enable Tunneled KVM in the KVM Policy?'
+                    kwargs['jData']['varName']  = 'Tunneled KVM'
                     allow_tunneled_kvm = ezfunctions.varBoolLoop(**kwargs)
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Policy Variables:')
                     if kwargs['server_type'] == 'FIAttached':
@@ -1552,52 +1268,38 @@ class quick_start(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-
                             if kwargs['server_type'] == 'FIAttached':
-                                #_______________________________________________________________________
-                                #
+                                #==============================================
                                 # Configure IMC Access Policy
-                                #_______________________________________________________________________
+                                #==============================================
                                 polVars = {}
                                 name = kwargs['immDict']['orgs'][org]['intersight']['pools']['ip'][0]['name']
                                 polVars['name'] = name
                                 polVars[f'{imcBand}_ip_pool'] = name
                                 if imcBand == 'inband':
                                     polVars['inband_vlan_id'] = inband_vlan_id
-
-                                # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,imc_access'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                                 kwargs['imc_access_policy'] = polVars['name']
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure IPMI over LAN Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = f'{org}-ipmi'
                             polVars['enabled'] = True
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,ipmi_over_lan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Local User Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = f'{org}-users'
                             polVars['users'] = kwargs['local_users']
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,local_user'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Power Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             names = ['5108', '9508', 'Server']
                             for name in names:
@@ -1606,28 +1308,20 @@ class quick_start(object):
                                 if name == 'Server': polVars['power_restore'] = 'LastState'
                                 elif name == '9508': polVars['power_allocation'] = 8400
                                 polVars['power_redundancy'] = 'Grid'
-
-                                # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,power'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Serial over LAN Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = 'sol'
-                            polVars['descr'] = f'{name} Serial over LAN Policy'
+                            polVars['description'] = f'{name} Serial over LAN Policy'
                             polVars['enabled'] = True
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,serial_over_lan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure SNMP Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             names = ['snmp', 'snmp-domain']
                             for name in names:
@@ -1637,15 +1331,11 @@ class quick_start(object):
                                 polVars['system_location'] = kwargs['system_location']
                                 polVars['snmp_traps'] = kwargs['snmp_traps']
                                 polVars['snmp_users'] = kwargs['snmp_users']
-
-                                # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,snmp'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Syslog Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             names = ['syslog', 'syslog-domain']
                             for name in names:
@@ -1656,11 +1346,9 @@ class quick_start(object):
                                 # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,syslog'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Thermal Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             names = ['5108', '9508']
                             for name in names:
@@ -1670,38 +1358,28 @@ class quick_start(object):
                                 # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'intersight,policies,thermal'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Virtual KVM Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = 'vkvm'
                             polVars['allow_tunneled_kvm'] = allow_tunneled_kvm
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,virtual_kvm'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
-                            #_______________________________________________________________________
-                            #
+                            #==============================================
                             # Configure Virtual Media Policy
-                            #_______________________________________________________________________
+                            #==============================================
                             polVars = {}
                             polVars['name'] = 'vmedia'
                             polVars['enable_virtual_media_encryption'] = True
-
-                            # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,virtual_media'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
                             configure_loop = True
                             policy_loop = True
                             valid_confirm = True
                         elif confirm_policy == 'N':
-                            print(f'\n------------------------------------------------------\n')
-                            print(f'  Starting Section over.')
-                            print(f'\n------------------------------------------------------\n')
+                            policy_type = 'Server Policies'
+                            ezfunctions.message_starting_over(policy_type)
                             valid_confirm = True
                         else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
@@ -1709,19 +1387,15 @@ class quick_start(object):
         return kwargs
 
     #==============================================
-    # UCS Domain and Policies
+    # UCS Server Profiles and Templates
     #==============================================
     def server_profiles(self, **kwargs):
-        args            = kwargs['args']
-        baseRepo        = args.dir
+        baseRepo        = kwargs['args'].dir
         ezData          = kwargs['ezData']
         fc_ports_in_use = kwargs['fc_ports_in_use']
-        name_prefix     = self.name_prefix
         org             = self.org
         path_sep        = kwargs['path_sep']
-        server_type     = kwargs['server_type']
-
-        configure_loop = False
+        configure_loop  = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Domain Policies, will configure pools for a UCS Domain ')
@@ -1741,151 +1415,143 @@ class quick_start(object):
                     print(f'   - Name of the Server Profile(s).')
                     print(f'   - Serial Number of the Server Profile(s).')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure UCS Server Profiles
-                    #_______________________________________________________________________
-                    kwargs["Description"] = f'Number of Server Profiles.'
-                    kwargs["varInput"] = f'Enter the Number of Server Profiles to Create:'
-                    kwargs["varDefault"] = 1
-                    kwargs["varName"] = 'Server Count'
-                    kwargs["minNum"] = 1
-                    kwargs["maxNum"] = 160
+                    #==============================================
+                    kwargs['multi_select'] = False
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = 1
+                    kwargs['jData']['description'] = f'Number of Server Profiles.'
+                    kwargs['jData']['maximum']     = 160
+                    kwargs['jData']['minimum']     = 1
+                    kwargs['jData']['varInput']    = f'Enter the Number of Server Profiles to Create:'
+                    kwargs['jData']['varName']     = 'Server Count'
                     server_count = ezfunctions.varNumberLoop(**kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Prompt for Generation of UCS Servers
-                    #_______________________________________________________________________
-                    kwargs["multi_select"] = False
+                    #==============================================
                     jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['server.Generation']
-                    kwargs["Description"] = jsonVars['systemType']['description']
-                    kwargs["jsonVars"] = sorted(jsonVars['systemType']['enum'])
-                    kwargs["defaultVar"] = jsonVars['systemType']['default']
-                    kwargs["varType"] = 'Generation of UCS Server'
+                    kwargs['jData'] = deepcopy(jsonVars['systemType'])
+                    kwargs['jData']['varType'] = 'Generation of UCS Server'
                     ucs_generation = ezfunctions.variablesFromAPI(**kwargs)
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Determine if the Trusted Platform Module is Installed
-                    #_______________________________________________________________________
+                    #==============================================
                     if ucs_generation == 'M5':
-                        kwargs["Description"] = 'Flag to Determine if the Server has TPM Installed.'
-                        kwargs["varInput"] = f'Is a Trusted Platform Module installed in this Server(s)'\
+                        kwargs['jData'] = deepcopy({})
+                        kwargs['jData']['default'] = False
+                        kwargs['jData']['description'] = 'Flag to Determine if the Server has TPM Installed.'
+                        kwargs['jData']['varInput'] = f'Is a Trusted Platform Module installed in this Server(s)'\
                             'and do you want to enable secure-boot?'
-                        kwargs["varDefault"] = 'N'
-                        kwargs["varName"] = 'TPM Installed'
+                        kwargs['jData']['varName'] = 'TPM Installed'
                         tpm_installed = ezfunctions.varBoolLoop(**kwargs)
                     else: tpm_installed = True
-
-                    #_______________________________________________________________________
-                    #
+                    #==============================================
                     # Configure the Template Name
-                    #_______________________________________________________________________
+                    #==============================================
                     boot_type = kwargs['boot_type']
                     if boot_type == 'm2': template_name = 'M2-pxe'
                     elif boot_type == 'raid1': template_name = 'Raid1-pxe'
                     else: template_name = 'pxe'
-
+                    #==============================================
+                    # Prompt for Server Profile Names
+                    #==============================================
                     names_serials = []
                     rangex = int(server_count) + 1
                     for x in range(1,rangex):
-                        polVars = {}
-                        # Server Profile Name
                         valid = False
                         while valid == False:
                             name = input(f'What is the Name for the Server Profile? ')
-                            if not name == '':
-                                valid = validating.name_rule(f'Server Profile Name', name, 1, 62)
+                            if not name == '': valid = validating.name_rule(f'Server Profile Name', name, 1, 62)
                             else:
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(f'  Error!! Invalid Value.  Please Re-enter the Server Profile Name.')
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                        # Obtain Server Serial Number or Skip
-                        kwargs["Description"] = f'Serial Number of the Server Profile {name}.'
-                        kwargs["varDefault"] = ''
-                        kwargs["varInput"] = f'What is the Serial Number of {name}? [press enter to skip]:'
-                        kwargs["varName"] = 'Serial Number'
-                        kwargs["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
-                        kwargs["minLength"] = 11
-                        kwargs["maxLength"] = 11
+                        #==============================================
+                        # Prompt for Server Serial Number or Skip
+                        #==============================================
+                        kwargs['jData'] = deepcopy({})
+                        kwargs['jData']['description'] = f'Serial Number of the Server Profile {name}.'
+                        kwargs['jData']['maximum'] = 11
+                        kwargs['jData']['minimum'] = 11
+                        kwargs['jData']['pattern'] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
+                        kwargs['jData']['varInput'] = f'What is the Serial Number of {name}? [press enter to skip]:'
+                        kwargs['jData']['varName'] = 'Serial Number'
                         serial_number = ezfunctions.varStringLoop(**kwargs)
                         if serial_number == '': serial_number = 'unknown'
                         names_serials.append([name,serial_number])
-
+                    #==============================================
+                    # Configure Server Profiles
+                    #==============================================
                     polVars = {}
                     polVars['names_serials'] = names_serials
                     polVars['ucs_server_profile_template'] = template_name
-
-                    # Add Policy Variables to immDict
-                    kwargs['class_path'] = 'intersight,profiles,servers'
+                    kwargs['class_path'] = 'intersight,profiles,server'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-                        
+                    #==============================================
+                    # Configure Server Template
+                    #==============================================
                     polVars = {}
                     if ucs_generation == 'M5' and tpm_installed == True:
-                        polVars["bios_policy"] = 'M5-virtualization-tpm'
-                    elif ucs_generation == 'M5': polVars["bios_policy"] = 'M5-virtualization'
-                    elif ucs_generation == 'M6': polVars["bios_policy"] = 'M6-virtualization-tpm'
-                    polVars["boot_order_policy"] = template_name
+                        polVars['bios_policy'] = 'M5-virtualization-tpm'
+                    elif ucs_generation == 'M5': polVars['bios_policy'] = 'M5-virtualization'
+                    elif ucs_generation == 'M6': polVars['bios_policy'] = 'M6-virtualization-tpm'
+                    polVars['boot_order_policy'] = template_name
                     polVars['description'] = f'{template_name} Server Profile Template'
                     polVars['name'] = template_name
-                    polVars["uuid_pool"] = org
-                    polVars["virtual_media_policy"] = 'vmedia'
-                    polVars["ipmi_over_lan_policy"] = f'{org}-ipmi'
-                    polVars["local_user_policy"] = f'{org}-users'
-                    polVars["serial_over_lan_policy"] = 'sol'
-                    polVars["snmp_policy"] = 'snmp'
-                    polVars["syslog_policy"] = 'syslog'
-                    polVars["virtual_kvm_policy"] = 'vkvm'
-                    polVars["sd_card_policy"] = ''
-                    if boot_type == 'm2': polVars["storage_policy"] = 'M2-Raid'
-                    elif boot_type == 'raid1': polVars["storage_policy"] = 'Raid1'
-                    else: polVars["storage_policy"] = ''
-                    polVars["lan_connectivity_policy"] = 'vmware-lcp'
+                    polVars['uuid_pool'] = org
+                    polVars['virtual_media_policy'] = 'vmedia'
+                    polVars['ipmi_over_lan_policy'] = f'{org}-ipmi'
+                    polVars['local_user_policy'] = f'{org}-users'
+                    polVars['serial_over_lan_policy'] = 'sol'
+                    polVars['snmp_policy'] = 'snmp'
+                    polVars['syslog_policy'] = 'syslog'
+                    polVars['virtual_kvm_policy'] = 'vkvm'
+                    polVars['sd_card_policy'] = ''
+                    if boot_type == 'm2': polVars['storage_policy'] = 'M2-Raid'
+                    elif boot_type == 'raid1': polVars['storage_policy'] = 'Raid1'
+                    else: polVars['storage_policy'] = ''
+                    polVars['lan_connectivity_policy'] = 'vmware-lcp'
                     if len(fc_ports_in_use) > 0:
-                        polVars["san_connectivity_policy"] = f'{org}-scp'
-                    if kwargs["server_type"] == 'FIAttached':
-                        polVars["certificate_management_policy"] = ''
-                        polVars["imc_access_policy"] = f'{org}'
-                        polVars["power_policy"] = 'Server'
-                        polVars["target_platform"] = 'FIAttached'
-                    if kwargs["server_type"] == 'Standalone':
-                        polVars["adapter_configuration_policy"] = f'{org}'
-                        polVars["device_connector_policy"] = f'{org}'
-                        polVars["ldap_policy"] = f'{org}-ldap'
-                        polVars["network_connectivity_policy"] = f'dns'
-                        polVars["ntp_policy"] = f'ntp'
-                        polVars["persistent_memory_policy"] = f'pmem'
-                        polVars["smtp_policy"] = f'{org}-smtp'
-                        polVars["ssh_policy"] = f'{org}-ssh'
-                        polVars["target_platform"] = 'Standalone'
-
+                        polVars['san_connectivity_policy'] = f'{org}-scp'
+                    if kwargs['server_type'] == 'FIAttached':
+                        polVars['certificate_management_policy'] = ''
+                        polVars['imc_access_policy'] = f'{org}'
+                        polVars['power_policy'] = 'Server'
+                        polVars['target_platform'] = 'FIAttached'
+                    if kwargs['server_type'] == 'Standalone':
+                        polVars['adapter_configuration_policy'] = f'{org}'
+                        polVars['device_connector_policy'] = f'{org}'
+                        polVars['ldap_policy'] = f'{org}-ldap'
+                        polVars['network_connectivity_policy'] = f'dns'
+                        polVars['ntp_policy'] = f'ntp'
+                        polVars['persistent_memory_policy'] = f'pmem'
+                        polVars['smtp_policy'] = f'{org}-smtp'
+                        polVars['ssh_policy'] = f'{org}-ssh'
+                        polVars['target_platform'] = 'Standalone'
+                    #==============================================
                     # Add Policy Variables to immDict
-                    kwargs['class_path'] = 'intersight,templates,servers'
+                    #==============================================
+                    kwargs['class_path'] = 'intersight,templates,server'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
-
                     policy_loop = True
                     configure_loop = True
             elif configure == 'N': configure_loop = True
             else: ezfunctions.message_invalid_y_or_n('short')
+        # Return kwargs
         return kwargs
         
     #==============================================
     # Standalone Server Policies
     #==============================================
     def standalone_policies(self, **kwargs):
-        args = kwargs['args']
-        baseRepo = args.dir
-        ezData = kwargs['ezData']
-        jsonData = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        org = self.org
-        path_sep = kwargs['path_sep']
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        org            = self.org
+        path_sep       = kwargs['path_sep']
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Standalone Policies.\n')
@@ -1895,6 +1561,7 @@ class quick_start(object):
             configure = input(f'Do You Want to run the Quick Deployment Module - Standalone Policy Configuration?'\
                 '  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
+                polVars = {}
                 loop_count = 1
                 policy_loop = False
                 while policy_loop == False:
@@ -1913,24 +1580,22 @@ class quick_start(object):
                     print(f'   - Persistent Memory Policies (Optional)')
                     print(f'   - SMTP Policy (Optional)')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-
-
             elif configure == 'N':
                 configure_loop = True
             else: ezfunctions.message_invalid_y_or_n('short')
-
-        if configure == 'Y' or configure == '':
-            configure = True
-        elif configure == 'N':
-            configure = False
+        if configure == 'Y' or configure == '': configure = True
+        elif configure == 'N': configure = False
         return configure
 
+#==============================================
+# Function - Prompt User to Select Policy
+#==============================================
 def policy_select_loop(**kwargs):
-    ezData = kwargs['ezData']
-    policy = kwargs['policy']
+    ezData      = kwargs['ezData']
+    policy      = kwargs['policy']
     name_prefix = kwargs['name_prefix']
-    org = kwargs['org']
-    loop_valid = False
+    org         = kwargs['org']
+    loop_valid  = False
     while loop_valid == False:
         create_policy = True
         kwargs['inner_policy'] = policy.split('.')[1]
@@ -1939,14 +1604,14 @@ def policy_select_loop(**kwargs):
         inner_policy = kwargs['inner_policy']
         inner_type   = kwargs['inner_type']
         kwargs = ezfunctions.policies_parse(inner_type, inner_policy, **kwargs)
-        if not len(kwargs["policies"]) > 0:
+        if not len(kwargs['policies']) > 0:
             valid = False
             while valid == False:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'   There was no {inner_policy} found.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 policy_description = ezfunctions.mod_pol_description(inner_policy)
-                if kwargs["allow_opt_out"] == True:
+                if kwargs['allow_opt_out'] == True:
                     Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
                     if Question == '' or Question == 'Y':
                         create_policy = True
@@ -1961,7 +1626,7 @@ def policy_select_loop(**kwargs):
         else:
             kwargs = ezfunctions.choose_policy(inner_policy, **kwargs)
             if kwargs['policy'] == 'create_policy': create_policy = True
-            elif kwargs['policy'] == '' and kwargs["allow_opt_out"] == True:
+            elif kwargs['policy'] == '' and kwargs['allow_opt_out'] == True:
                 loop_valid = True
                 create_policy = False
                 kwargs[kwargs['inner_var']] = ''
@@ -1971,34 +1636,19 @@ def policy_select_loop(**kwargs):
                 create_policy = False
                 kwargs[kwargs['inner_var']] = kwargs['policy']
                 return kwargs
-
         # Simple Loop to show name_prefix in Use
         ncount = 0
         if ncount == 5: print(name_prefix)
-        
         # Create Policy if Option was Selected
         if create_policy == True:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Starting module to create {inner_policy} in {org}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-
-            lan_list = ezData['ezimm']['allOf'][1]['properties']['lan_list']['enum']
-            p1_list = ezData['ezimm']['allOf'][1]['properties']['p1_list']['enum']
-            p2_list = ezData['ezimm']['allOf'][1]['properties']['p2_list']['enum']
-            p3_list = ezData['ezimm']['allOf'][1]['properties']['p3_list']['enum']
-            san_list = ezData['ezimm']['allOf'][1]['properties']['san_list']['enum']
-            vxan_list = ezData['ezimm']['allOf'][1]['properties']['vxan_list']['enum']
+            lansan_list   = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
+            policies_list = ezData['ezimm']['allOf'][1]['properties']['policies_list']['enum']
             if re.search('pools$', inner_policy):
                 kwargs = eval(f"pools.pools(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in p1_list:
-                kwargs = eval(f"p1.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in p2_list:
-                kwargs = eval(f"p2.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in p3_list:
-                kwargs = eval(f"p3.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in lan_list:
-                kwargs = eval(f"lan.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in san_list:
-                kwargs = eval(f"san.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in vxan_list:
-                kwargs = eval(f"vxan.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
+            elif inner_policy in policies_list:
+                kwargs = eval(f"policies.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
+            elif inner_policy in lansan_list:
+                kwargs = eval(f"lansan.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")

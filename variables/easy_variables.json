@@ -279,6 +279,140 @@
                     {},
                     {
                         "properties": {
+                            "classes": {
+                                "enum": [
+                                    "policies",
+                                    "pools",
+                                    "profiles",
+                                    "templates"
+                                ]
+                            },
+                            "class.compute": {
+                                "enum": [
+                                    "bios",
+                                    "boot_order",
+                                    "persistent_memory",
+                                    "virtual_media"
+                                ]
+                            },
+                            "class.domain": {
+                                "enum": [
+                                    "flow_control",
+                                    "link_aggregation",
+                                    "link_control",
+                                    "switch_control",
+                                    "system_qos"
+                                ]
+                            },
+                            "class.environment": {
+                                "enum": [
+                                    "power",
+                                    "thermal"
+                                ]
+                            },
+                            "class.ethernet": {
+                                "enum": [
+                                    "adapter_configuration",
+                                    "ethernet_adapter",
+                                    "ethernet_network",
+                                    "ethernet_network_control",
+                                    "ethernet_network_group",
+                                    "ethernet_qos"
+                                ]
+                            },
+                            "class.fibre_channel": {
+                                "enum": [
+                                    "fibre_channel_adapter",
+                                    "fibre_channel_network",
+                                    "fibre_channel_qos"
+                                ]
+                            },
+                            "class.lan_connectivity": {
+                                "enum": [
+                                    "lan_connectivity"
+                                ]
+                            },
+                            "class.management": {
+                                "enum": [
+                                    "certificate_management",
+                                    "device_connector",
+                                    "imc_access",
+                                    "ipmi_over_lan",
+                                    "ldap",
+                                    "local_user",
+                                    "network_connectivity",
+                                    "ntp",
+                                    "smtp",
+                                    "snmp",
+                                    "ssh",
+                                    "syslog",
+                                    "virtual_kvm"
+                                ]
+                            },
+                            "class.port": {
+                                "enum": [
+                                    "port"
+                                ]
+                            },
+                            "class.san_connectivity": {
+                                "enum": [
+                                    "san_connectivity"
+                                ]
+                            },
+                            "class.storage": {
+                                "enum": [
+                                    "sd_card",
+                                    "storage"
+                                ]
+                            },
+                            "class.vlan": {
+                                "enum": [
+                                    "multicast",
+                                    "vlan"
+                                ]
+                            },
+                            "class.vsan": {
+                                "enum": [
+                                    "vsan"
+                                ]
+                            },
+                            "class.policies": {
+                                "directory": "policies",
+                                "enum": [
+                                    "compute",
+                                    "domain",
+                                    "environment",
+                                    "ethernet",
+                                    "fibre_channel",
+                                    "lan_connectivity",
+                                    "management",
+                                    "port",
+                                    "san_connectivity",
+                                    "storage",
+                                    "vlan",
+                                    "vsan"
+                                ]
+                            },
+                            "class.pools": {
+                                "directory": "pools",
+                                "enum": [
+                                    "pools"
+                                ]
+                            },
+                            "class.profiles": {
+                                "directory": "profiles",
+                                "enum": [
+                                    "chassis",
+                                    "domain",
+                                    "server"
+                                ]
+                            },
+                            "class.templates": {
+                                "directory": "templates",
+                                "enum": [
+                                    "server"
+                                ]
+                            },
                             "intersightEndpoint": {
                                 "description": "List of Intersight Endpoint Options.",
                                 "type": "list_of_values",
@@ -807,6 +941,29 @@
                                     "default": "MLOM"
                                 }
                             },
+                            "pools":{
+                                "resourcepool.Pool":{
+                                    "server_type":{
+                                        "description": "The type of Server for this Pool.",
+                                        "enum":[
+                                            "Blade",
+                                            "RackUnit"
+                                        ],
+                                        "default": "Blade"
+                                    }
+                                }
+                            },
+                            "profiles":{
+                                "action":{
+                                    "description": "Please Choose the Action to Perform on this Profile:\n* Deploy - will deploy the profile.\n* No-op - will not deploy the profile.\n* Unassign - will detach the profile from the hardware.\n",
+                                    "enum": [
+                                        "Deploy",
+                                        "No-op",
+                                        "Unassign"
+                                    ],
+                                    "default":"No-op"
+                                }
+                            },
                             "rack_pools": {
                                 "description": "List of Rackmount Pools to Remove.",
                                 "type": "list_of_values",
@@ -1115,31 +1272,8 @@
                         }
                     }
                 ]
-            }
+            },
+            "version":"2.0.1"
         }
-    },
-    "pools":{
-        "resourcepool.Pool":{
-            "server_type":{
-                "description": "The type of Server for this Pool.",
-                "enum":[
-                    "Blade",
-                    "RackUnit"
-                ],
-                "default": "Blade"
-            }
-        }
-    },
-    "profiles":{
-        "action":{
-            "description": "Please Choose the Action to Perform on this Profile:\n* Deploy - will deploy the profile.\n* No-op - will not deploy the profile.\n* Unassign - will detach the profile from the hardware.\n",
-            "enum": [
-                "Deploy",
-                "No-op",
-                "Unassign"
-            ],
-            "default":"No-op"
-        }
-    },
-    "version":"1.5.4"
+    }
 }

@@ -8,7 +8,7 @@ It uses argparse to take in the following CLI arguments:
     j or json_file:          IMM Transition JSON export to convert to HCL
     l or api-key-legacy:     Use legacy API client (v2) key
     s or api-key-file:       Name of file containing secret key for the HTTP signature scheme
-    u or url:                The intersight root URL for the api endpoint. (The default is https://intersight.com)
+    e or endoint:            The intersight hostname for the api endpoint. (The default is intersight.com)
 """
 from copy import deepcopy
 from intersight.api import organization_api
@@ -37,7 +37,7 @@ import classes.quick_start
 import classes.tf
 import classes.validating
 
-def create_terraform_workspaces(**kwargs):
+def create_terraform_workspaces(orgs, **kwargs):
     args = kwargs['args']
     baseRepo = args.dir
     ezData = kwargs['ezData']
@@ -46,234 +46,211 @@ def create_terraform_workspaces(**kwargs):
     org = kwargs['org']
     path_sep = kwargs['path_sep']
     tfcb_config = []
-
     polVars = {}
-    polVars["Description"] = f'Terraform Cloud Workspaces for Organization {org}'
-    polVars["varInput"] = f'Do you want to Proceed with creating Workspaces in Terraform Cloud or Enterprise?'
-    polVars["varDefault"] = 'Y'
-    polVars["varName"] = 'Terraform Cloud Workspaces'
-    runTFCB = classes.ezfunctions.varBoolLoop(**polVars)
-    if runTFCB == True:
-        kwargs = {}
-        kwargs["multi_select"] = True
-        kwargs["var_description"] = f'Select the Terraform Target.'
-        kwargs["jsonVars"] = ['Terraform Cloud', 'Terraform Enterprise']
-        kwargs["defaultVar"] = 'Terraform Cloud'
-        kwargs["varType"] = 'Target'
-        terraform_target = classes.ezfunctions.variablesFromAPI(**kwargs)
-
-        if terraform_target[0] == 'Terraform Enterprise':
-            polVars["Description"] = f'Hostname of the Terraform Enterprise Instance'
-            polVars["varDefault"] = f'app.terraform.io'
-            polVars["varInput"] = f'What is the Hostname of the TFE Instance? [app.terraform.io]: '
-            polVars["varName"] = f'Terraform Target Name'
-            polVars["varRegex"] = '^[a-zA-Z0-9\\-\\.\\:]+$'
-            polVars["minLength"] = 1
-            polVars["maxLength"] = 90
-            polVars["tfc_host"] = classes.ezfunctions.varStringLoop(**polVars)
-            if re.search(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", polVars["tfc_host"]):
-                classes.validating.ip_address('Terraform Target', polVars["tfc_host"])
-            elif ':' in polVars["tfc_host"]:
-                classes.validating.ip_address('Terraform Target', polVars["tfc_host"])
-            else: classes.validating.dns_name('Terraform Target', polVars["tfc_host"])
-        else:
-            polVars['tfc_host'] = 'app.terraform.io'
-
-        #polVars = {}
-        polVars["classes.tf.terraform_cloud_token"] = classes.tf.terraform_cloud().terraform_token()
-        
-        # Obtain Terraform Cloud Organization
-        if os.environ.get('tfc_organization') is None:
-            polVars["tfc_organization"] = classes.tf.terraform_cloud().tfc_organization(**polVars)
-            os.environ['tfc_organization'] = polVars["tfc_organization"]
-        else: polVars["tfc_organization"] = os.environ.get('tfc_organization')
-        tfcb_config.append({'tfc_organization':polVars["tfc_organization"]})
-        
-        # Obtain Version Control Provider
-        if os.environ.get('tfc_vcs_provider') is None:
-            tfc_vcs_provider,polVars["tfc_oath_token"] = classes.tf.terraform_cloud().tfc_vcs_providers(**polVars)
-            polVars["tfc_vcs_provider"] = tfc_vcs_provider
-            os.environ['tfc_vcs_provider'] = tfc_vcs_provider
-            os.environ['tfc_oath_token'] = polVars["tfc_oath_token"]
-        else:
-            polVars["tfc_vcs_provider"] = os.environ.get('tfc_vcs_provider')
-            polVars["tfc_oath_token"] = os.environ['tfc_oath_token']
-
-        # Obtain Version Control Base Repo
-        if os.environ.get('vcsBaseRepo') is None:
-            polVars["vcsBaseRepo"] = classes.tf.terraform_cloud().tfc_vcs_repository(**polVars)
-            os.environ['vcsBaseRepo'] = polVars["vcsBaseRepo"]
-        else: polVars["vcsBaseRepo"] = os.environ.get('vcsBaseRepo')
-        
-        polVars["agentPoolId"] = ''
-        polVars["allowDestroyPlan"] = False
-        polVars["executionMode"] = 'remote'
-        polVars["queueAllRuns"] = False
-        polVars["speculativeEnabled"] = True
-        polVars["triggerPrefixes"] = []
-
-        # Query the Terraform Versions from the Release URL
-        terraform_versions = []
-        url = f'https://github.com/hashicorp/terraform/releases'
-        # Get the Latest Release Tag for Terraform
-        url = f'https://github.com/hashicorp/terraform/tags'
-        r = requests.get(url, stream=True)
-        for line in r.iter_lines():
-            toString = line.decode("utf-8")
-            if re.search(r'/releases/tag/v(\d+\.\d+\.\d+)\"', toString):
-                terraform_versions.append(re.search('/releases/tag/v(\d+\.\d+\.\d+)', toString).group(1))
-
-
-        # Removing Deprecated Versions from the List
-        deprecatedVersions = ["1.1.0", "1.1.1"]
-        for depver in deprecatedVersions:
-            for Version in terraform_versions:
-                if str(depver) == str(Version):
-                    terraform_versions.remove(depver)
-        terraform_versions = list(set(terraform_versions))
-        terraform_versions.sort(reverse=True)
-        # Assign the Terraform Version from the Terraform Release URL Above
-        polVars["multi_select"] = False
-        polVars["var_description"] = "Terraform Version for Workspaces:"
-        polVars["jsonVars"] = terraform_versions
-        polVars["varType"] = 'Terraform Version'
-        polVars["defaultVar"] = terraform_versions[0]
-
-        # Obtain Terraform Workspace Version
-        if not kwargs['ez_settings'].get('terraformVersion') == None:
-            polVars["terraformVersion"] = kwargs['ez_settings'].get('terraformVersion')
-        else: polVars["terraformVersion"] = classes.ezfunctions.variablesFromAPI(**polVars)
-
-        polVars["Description"] = f'Name of the {org} Workspace to Create in Terraform Cloud'
-        polVars["varDefault"] = f'{org}'
-        polVars["varInput"] = f'Terraform Cloud Workspace Name. [{org}]: '
-        polVars["varName"] = f'Workspace Name'
-        polVars["varRegex"] = '^[a-zA-Z0-9\\-\\_]+$'
-        polVars["minLength"] = 1
-        polVars["maxLength"] = 90
-        polVars["workspaceName"] = classes.ezfunctions.varStringLoop(**polVars)
-
-        polVars['workspace_id'] = classes.tf.terraform_cloud().tfcWorkspace(**polVars)
-        vars = ['apikey.Intersight API Key', 'secretkey.Intersight Secret Key' ]
-        for var in vars:
-            print(f'* Adding {var.split(".")[1]} to {polVars["workspaceName"]}')
-            polVars["Variable"] = var.split('.')[0]
-            if 'secret' in var:
-                polVars["Multi_Line_Input"] = True
-            polVars["Description"] = var.split('.')[1]
-            polVars["varId"] = var.split('.')[0]
-            polVars["varKey"] = var.split('.')[0]
-            polVars["varValue"] = classes.ezfunctions.sensitive_var_value(jsonData, **polVars)
-            polVars["Sensitive"] = True
-            if 'secret' in var and opSystem == 'Windows':
-                if os.path.isfile(polVars["varValue"]):
-                    f = open(polVars["varValue"])
-                    polVars["varValue"] = f.read().replace('\n', '\\n')
-            classes.tf.terraform_cloud().tfcVariables(**polVars)
-
-            polVars["Multi_Line_Input"] = False
-            vars = [
-                'ipmi_over_lan_policies.ipmi_key',
-                'iscsi_boot_policies.password',
-                'ldap_policies.binding_password',
-                'local_user_policies.local_user_password',
-                'persistent_memory_policies.secure_passphrase',
-                'snmp_policies.access_community_string',
-                'snmp_policies.password',
-                'snmp_policies.trap_community_string',
-                'virtual_media_policies.vmedia_password'
-            ]
-            for var in vars:
-                policy_type = 'policies'
-                policy = '%s' % (var.split('.')[0])
-                policies,json_data = classes.ezfunctions.policies_parse(org, policy_type, policy)
-                y = var.split('.')[0]
-                z = var.split('.')[1]
-                if y == 'persistent_memory_policies':
-                    if len(policies) > 0:
-                        varValue = z
-                        classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, **polVars)
-                else:
-                    for keys, values in json_data.items():
-                        for key, value in values.items():
-                            for k, v in value.items():
-                                if 'local_user' in keys and k == 'enforce_strong_password':
-                                    polVars['enforce_strong_password'] = v
-                                if k == z:
-                                    if not v == 0:
-                                        if y == 'iscsi_boot_policies':
-                                            varValue = 'iscsi_boot_password'
-                                        else:
-                                            varValue = '%s_%s' % (k, v)
-                                        polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                        classes.tf.terraform_cloud().tfcVariables(**polVars)
-                                elif k == 'binding_parameters':
-                                    for ka, va in v.items():
-                                        if ka == 'bind_method':
-                                            if va == 'ConfiguredCredentials':
-                                                varValue = 'binding_parameters_password'
-                                                polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                                classes.tf.terraform_cloud().tfcVariables(**polVars)
-                                elif k == 'users' or k == 'vmedia_mappings':
-                                    for ka, va in v.items():
-                                        for kb, vb in va.items():
-                                            if kb == 'password':
-                                                varValue = '%s_%s' % (z, vb)
-                                                polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                                classes.tf.terraform_cloud().tfcVariables(**polVars)
-                                elif k == 'snmp_users' and z == 'password':
-                                    for ka, va in v.items():
-                                        for kb, vb in va.items():
-                                            if kb == 'auth_password':
-                                                varValue = 'snmp_auth_%s_%s' % (z, vb)
-                                                polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                                classes.tf.terraform_cloud().tfcVariables(**polVars)
-                                            elif kb == 'privacy_password':
-                                                varValue = 'snmp_privacy_%s_%s' % (z, vb)
-                                                polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                                classes.tf.terraform_cloud().tfcVariables(**polVars)
-
-        tfcb_config.append({'backend':'remote','org':org})
+    #kwargs['jData'] = deepcopy({})
+    #kwargs['jData']['default']     = True
+    #kwargs['jData']['description'] = f'Terraform Cloud Workspaces'
+    #kwargs['jData']['varInput']    = f'Do you want to Proceed with creating Workspaces in Terraform Cloud or Enterprise?'
+    #kwargs['jData']['varName']     = 'Terraform Cloud Workspaces'
+    #runTFCB = classes.ezfunctions.varBoolLoop(**kwargs)
+    #if runTFCB == True:
+    #    polVars = {}
+    #    kwargs['multi_select'] = False
+    #    kwargs['jData'] = deepcopy({})
+    #    kwargs['jData']['default']     = 'Terraform Cloud'
+    #    kwargs['jData']['description'] = 'Select the Terraform Target.'
+    #    kwargs['jData']['enum']        = ['Terraform Cloud', 'Terraform Enterprise']
+    #    kwargs['jData']['varType']     = 'Target'
+    #    terraform_target = classes.ezfunctions.variablesFromAPI(**kwargs)
+#
+    #    if terraform_target[0] == 'Terraform Enterprise':
+    #        kwargs['jData'] = deepcopy({})
+    #        kwargs['jData']['default']     = f'app.terraform.io'
+    #        kwargs['jData']['description'] = f'Hostname of the Terraform Enterprise Instance'
+    #        kwargs['jData']['pattern']     = '^[a-zA-Z0-9\\-\\.\\:]+$'
+    #        kwargs['jData']['minimum']     = 1
+    #        kwargs['jData']['maximum']     = 90
+    #        kwargs['jData']['varInput']    = f'What is the Hostname of the TFE Instance?'
+    #        kwargs['jData']['varName']     = f'Terraform Target Name'
+    #        polVars['tfc_host'] = classes.ezfunctions.varStringLoop(**kwargs)
+    #        if re.search(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", polVars['tfc_host']):
+    #            classes.validating.ip_address('Terraform Target', polVars['tfc_host'])
+    #        elif ':' in polVars['tfc_host']:
+    #            classes.validating.ip_address('Terraform Target', polVars['tfc_host'])
+    #        else: classes.validating.dns_name('Terraform Target', polVars['tfc_host'])
+    #    else:
+    #        polVars['tfc_host'] = 'app.terraform.io'
+    #    #polVars = {}
+    #    polVars['terraform_cloud_token'] = classes.tf.terraform_cloud().terraform_token()
+    #    #==============================================
+    #    # Obtain Terraform Cloud Organization
+    #    #==============================================
+    #    if os.environ.get('tfc_organization') is None:
+    #        polVars['tfc_organization'] = classes.tf.terraform_cloud().tfc_organization(polVars, **kwargs)
+    #        os.environ['tfc_organization'] = polVars['tfc_organization']
+    #    else: polVars['tfc_organization'] = os.environ.get('tfc_organization')
+    #    tfcb_config.append({'tfc_organization':polVars['tfc_organization']})
+    #    #==============================================
+    #    # Obtain Version Control Provider
+    #    #==============================================
+    #    if os.environ.get('tfc_vcs_provider') is None:
+    #        tfc_vcs_provider,polVars['tfc_oath_token'] = classes.tf.terraform_cloud().tfc_vcs_providers(polVars, **kwargs)
+    #        polVars['tfc_vcs_provider'] = tfc_vcs_provider
+    #        os.environ['tfc_vcs_provider'] = tfc_vcs_provider
+    #        os.environ['tfc_oath_token'] = polVars['tfc_oath_token']
+    #    else:
+    #        polVars['tfc_vcs_provider'] = os.environ.get('tfc_vcs_provider')
+    #        polVars['tfc_oath_token'] = os.environ['tfc_oath_token']
+    #    #==============================================
+    #    # Obtain Version Control Base Repo
+    #    #==============================================
+    #    if os.environ.get('vcsBaseRepo') is None:
+    #        polVars['vcsBaseRepo'] = classes.tf.terraform_cloud().tfc_vcs_repository(polVars, **kwargs)
+    #        os.environ['vcsBaseRepo'] = polVars['vcsBaseRepo']
+    #    else: polVars['vcsBaseRepo'] = os.environ.get('vcsBaseRepo')
+    #    
+    #    polVars['agentPoolId'] = ''
+    #    polVars['allowDestroyPlan'] = False
+    #    polVars['executionMode'] = 'remote'
+    #    polVars['queueAllRuns'] = False
+    #    polVars['speculativeEnabled'] = True
+    #    polVars['triggerPrefixes'] = []
+    #    #==============================================
+    #    # Obtain Terraform Versions from GitHub
+    #    #==============================================
+    #    terraform_versions = []
+    #    # Get the Latest Release Tag for Terraform
+    #    url = f'https://github.com/hashicorp/terraform/tags'
+    #    r = requests.get(url, stream=True)
+    #    for line in r.iter_lines():
+    #        toString = line.decode("utf-8")
+    #        if re.search(r'/releases/tag/v(\d+\.\d+\.\d+)\"', toString):
+    #            terraform_versions.append(re.search('/releases/tag/v(\d+\.\d+\.\d+)', toString).group(1))
+    #    #==============================================
+    #    # Removing Deprecated Versions from the List
+    #    #==============================================
+    #    deprecatedVersions = ['1.1.0", "1.1.1']
+    #    for depver in deprecatedVersions:
+    #        for Version in terraform_versions:
+    #            if str(depver) == str(Version):
+    #                terraform_versions.remove(depver)
+    #    terraform_versions = list(set(terraform_versions))
+    #    terraform_versions.sort(reverse=True)
+    #    #==============================================
+    #    # Assign the Terraform Version
+    #    #==============================================
+    #    kwargs['jData'] = deepcopy({})
+    #    kwargs['jData']['default']     = terraform_versions[0]
+    #    kwargs['jData']['description'] = "Terraform Version for Workspaces:"
+    #    kwargs['jData']['dontsort']    = True
+    #    kwargs['jData']['enum']        = terraform_versions
+    #    kwargs['jData']['varType']     = 'Terraform Version'
+    #    polVars['terraformVersion'] = classes.ezfunctions.variablesFromAPI(**kwargs)
+    #    #==============================================
+    #    # Begin Creating Workspaces
+    #    #==============================================
+    #    for org in orgs:
+    #        kwargs['org'] = org
+    #        kwargs['jData'] = deepcopy({})
+    #        kwargs['jData']['default']     = f'{org}'
+    #        kwargs['jData']['description'] = f'Name of the {org} Workspace to Create in Terraform Cloud'
+    #        kwargs['jData']['pattern']     = '^[a-zA-Z0-9\\-\\_]+$'
+    #        kwargs['jData']['minimum']     = 1
+    #        kwargs['jData']['maximum']     = 90
+    #        kwargs['jData']['varInput']    = f'Terraform Cloud Workspace Name.'
+    #        kwargs['jData']['varName']     = f'Workspace Name'
+    #        polVars['workspaceName'] = classes.ezfunctions.varStringLoop(**kwargs)
+    #        polVars['workspace_id'] = classes.tf.terraform_cloud().tfcWorkspace(polVars, **kwargs)
+    #        vars = ['apikey.Intersight API Key', 'secretkey.Intersight Secret Key' ]
+    #        for var in vars:
+    #            print(f"* Adding {var.split('.')[1]} to {polVars['workspaceName']}")
+    #            kwargs['Variable'] = var.split('.')[0]
+    #            if 'secret' in var:
+    #                kwargs['Multi_Line_Input'] = True
+    #            polVars['description'] = var.split('.')[1]
+    #            polVars['varId'] = var.split('.')[0]
+    #            polVars['varKey'] = var.split('.')[0]
+    #            kwargs = classes.ezfunctions.sensitive_var_value(**kwargs)
+    #            polVars['varValue'] = kwargs['var_value']
+    #            polVars['Sensitive'] = True
+    #            if 'secret' in var and opSystem == 'Windows':
+    #                if os.path.isfile(polVars['varValue']):
+    #                    f = open(polVars['varValue'])
+    #                    polVars['varValue'] = f.read().replace('\n', '\\n')
+    #            classes.tf.terraform_cloud().tfcVariables(polVars, **kwargs)
+    #            kwargs['Multi_Line_Input'] = False
+    #            #vars = [
+    #            #    'ipmi_over_lan.ipmi_key',
+    #            #    'iscsi_boot.password',
+    #            #    'ldap.binding_password',
+    #            #    'local_user.local_user_password',
+    #            #    'persistent_memory.secure_passphrase',
+    #            #    'snmp.access_community_string',
+    #            #    'snmp.password',
+    #            #    'snmp.trap_community_string',
+    #            #    'virtual_media.vmedia_password'
+    #            #]
+    #            #for var in vars:
+    #            #    policy_type = 'policies'
+    #            #    policy = '%s' % (var.split('.')[0])
+    #            #    policies,json_data = classes.ezfunctions.policies_parse(org, policy_type, policy)
+    #            #    y = var.split('.')[0]
+    #            #    z = var.split('.')[1]
+    #            #    if y == 'persistent_memory_policies':
+    #            #        if len(policies) > 0:
+    #            #            varValue = z
+    #            #            classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, **polVars)
+    #            #    else:
+    #            #        for keys, values in json_data.items():
+    #            #            for key, value in values.items():
+    #            #                for k, v in value.items():
+    #            #                    if 'local_user' in keys and k == 'enforce_strong_password':
+    #            #                        polVars['enforce_strong_password'] = v
+    #            #                    if k == z:
+    #            #                        if not v == 0:
+    #            #                            if y == 'iscsi_boot_policies':
+    #            #                                varValue = 'iscsi_boot_password'
+    #            #                            else:
+    #            #                                varValue = '%s_%s' % (k, v)
+    #            #                            polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+    #            #                            classes.tf.terraform_cloud().tfcVariables(**polVars)
+    #            #                    elif k == 'binding_parameters':
+    #            #                        for ka, va in v.items():
+    #            #                            if ka == 'bind_method':
+    #            #                                if va == 'ConfiguredCredentials':
+    #            #                                    varValue = 'binding_parameters_password'
+    #            #                                    polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+    #            #                                    classes.tf.terraform_cloud().tfcVariables(**polVars)
+    #            #                    elif k == 'users' or k == 'vmedia_mappings':
+    #            #                        for ka, va in v.items():
+    #            #                            for kb, vb in va.items():
+    #            #                                if kb == 'password':
+    #            #                                    varValue = '%s_%s' % (z, vb)
+    #            #                                    polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+    #            #                                    classes.tf.terraform_cloud().tfcVariables(**polVars)
+    #            #                    elif k == 'snmp_users' and z == 'password':
+    #            #                        for ka, va in v.items():
+    #            #                            for kb, vb in va.items():
+    #            #                                if kb == 'auth_password':
+    #            #                                    varValue = 'snmp_auth_%s_%s' % (z, vb)
+    #            #                                    polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+    #            #                                    classes.tf.terraform_cloud().tfcVariables(**polVars)
+    #            #                                elif kb == 'privacy_password':
+    #            #                                    varValue = 'snmp_privacy_%s_%s' % (z, vb)
+    #            #                                    polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+    #            #                                    classes.tf.terraform_cloud().tfcVariables(**polVars)
+    #else:
+    #    print(f'\n-------------------------------------------------------------------------------------------\n')
+    #    print(f'  Skipping Step to Create Terraform Cloud Workspaces.')
+    #    print(f'  Moving to last step to Confirm the Intersight Organization Exists.')
+    #    print(f'\n-------------------------------------------------------------------------------------------\n')
+    for org in orgs:
+        # Configure the provider.tf and variables.auto.tfvars
         name_prefix = 'dummy'
-        type = 'pools'
-        classes.p1.policies(name_prefix, org, type).intersight(ezData, tfcb_config)
         type = 'policies'
-        classes.p1.policies(name_prefix, org, type).intersight(ezData, tfcb_config)
-        type = 'profiles'
-        classes.p1.policies(name_prefix, org, type).intersight(ezData, tfcb_config)
-        type = 'ucs_domain_profiles'
-        classes.p1.policies(name_prefix, org, type).intersight(ezData, tfcb_config)
-    else:
-        valid = False
-        while valid == False:
-            polVars = {}
-            polVars["Description"] = f'Will You be utilizing Local or Terraform Cloud'
-            polVars["varInput"] = f'Will you be utilizing Terraform Cloud?'
-            polVars["varDefault"] = 'Y'
-            polVars["varName"] = 'Terraform Type'
-            runTFCB = classes.ezfunctions.varBoolLoop(**polVars)
-
-            if runTFCB == False:
-                tfcb_config.append({'backend':'local','org':org,'tfc_organization':'default'})
-                tfcb_config.append({'policies':'','pools':'','ucs_domain_profiles':''})
-
-                name_prefix = 'dummy'
-                type = 'pools'
-                classes.p1.policies(name_prefix, org, type).intersight(ezData, tfcb_config)
-                type = 'policies'
-                classes.p1.policies(name_prefix, org, type).intersight(ezData, tfcb_config)
-                type = 'profiles'
-                classes.p1.policies(name_prefix, org, type).intersight(ezData, tfcb_config)
-                type = 'ucs_domain_profiles'
-                classes.p1.policies(name_prefix, org, type).intersight(ezData, tfcb_config)
-                valid = True
-            else:
-                valid = True
-
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'  Skipping Step to Create Terraform Cloud Workspaces.')
-        print(f'  Moving to last step to Confirm the Intersight Organization Exists.')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
+        classes.policies.policies(name_prefix, org, type).variables(**kwargs)
+    # Return kwargs
+    return kwargs
      
 def intersight_org_check(**kwargs):
     args = kwargs['args']
@@ -373,10 +350,10 @@ def prompt_main_menu(**kwargs):
     print(f'  Starting the Easy IMM Initial Configuration Wizard!')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
-    kwargs["multi_select"] = False
+    kwargs['multi_select'] = False
     jsonVars = ezData['ezimm']['allOf'][1]['properties']['wizard']
     kwargs['jData'] = deepcopy(jsonVars['mainMenu'])
-    kwargs['jData']["varType"] = 'Main Menu'
+    kwargs['jData']['varType'] = 'Main Menu'
     main_menu = classes.ezfunctions.variablesFromAPI(**kwargs)
     main_menu = main_menu.replace(' ', '_').lower()
 
@@ -415,33 +392,33 @@ def prompt_main_menu(**kwargs):
 
     if main_menu == 'deploy_individual_policies':
         kwargs['jData'] = deepcopy(jsonVars['Individual'])
-        kwargs['jData']["varType"] = 'Configuration Type'
+        kwargs['jData']['varType'] = 'Configuration Type'
         type_menu = classes.ezfunctions.variablesFromAPI(**kwargs)
         multi_select_descr = '\n'\
             '    - Single policy: 1 or 5\n'\
             '    - List of Policies: 1,2,3\n'\
             '    - Range of Policies: 1-3,5-6\n'
-        kwargs["multi_select"] = True
+        kwargs['multi_select'] = True
         def policy_list_modify(policies_list):
             for line in policies_list:
                 policy_list.append((line.replace(' ', '_')).replace('-', '_').lower())
             return policy_list
         if type_menu == 'Policies':
             kwargs['jData'] = deepcopy(jsonVars['Policies'])
-            kwargs['jData']["description"] = kwargs['jData']['description'] + multi_select_descr
-            kwargs['jData']["varType"] = 'Policies'
+            kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
+            kwargs['jData']['varType'] = 'Policies'
             policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Pools':
             kwargs['jData'] = deepcopy(jsonVars['Pools'])
-            kwargs['jData']["description"] = kwargs['jData']['description'] + multi_select_descr
-            kwargs['jData']["varType"] = 'Pools'
+            kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
+            kwargs['jData']['varType'] = 'Pools'
             policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Profiles':
             kwargs['jData'] = deepcopy(jsonVars['Profiles'])
-            kwargs['jData']["description"] = kwargs['jData']['description'] + multi_select_descr
-            kwargs['jData']["varType"] = 'Profiles'
+            kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
+            kwargs['jData']['varType'] = 'Profiles'
             policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
     # Return Main Menu Outputs
@@ -463,8 +440,6 @@ def process_wizard(**kwargs):
     main_menu   = kwargs['main_menu']
     org         = kwargs['org']
     policy_list = kwargs['policy_list']
-
-    
     if not main_menu == 'skip_policy_deployment':
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'  By Default, the Intersight Organization will be used as the Name Prefix for Pools ')
@@ -472,7 +447,6 @@ def process_wizard(**kwargs):
         print(f'  options below.  As Options, a different prefix for UCS domain policies and a prefix')
         print(f'  for Pools and Server Policies can be entered to override the default behavior.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
-
         if not 'quick_start' in main_menu:
             valid = False
             while valid == False:
@@ -525,12 +499,11 @@ def process_wizard(**kwargs):
         #==============================================
         # Quick Start - Pools
         #==============================================
-
         quick = 'classes.quick_start.quick_start'
         kwargs['domain_prefix'] = domain_prefix
         type = 'pools'
-        if 'quick_start_pools' in policy:
-            kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
+        #if 'quick_start_pools' in policy:
+        #    kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
 
         #==============================================
         # TESTING TEMP PARAMETERS
@@ -541,12 +514,14 @@ def process_wizard(**kwargs):
         jsonOpen = open(jsonFile, 'r')
         kwargs['immDict'] = json.load(jsonOpen)
         jsonOpen.close()
+        kwargs['primary_dns'] = '208.67.220.220'
+        kwargs['secondary_dns'] = '208.67.220.220'
         kwargs['fc_ports_in_use'] = [1, 4]
         kwargs['mtu']           = 9216
         kwargs['tpm_installed'] = True
-        kwargs["vlan_list"]     = '1-99'
-        kwargs["vsan_id_a"]     = 100
-        kwargs["vsan_id_b"]     = 200
+        kwargs['vlan_list']     = '1-99'
+        kwargs['vsan_id_a']     = 100
+        kwargs['vsan_id_b']     = 200
 
         #==============================================
         # Quick Start - Policies
@@ -556,26 +531,26 @@ def process_wizard(**kwargs):
             kwargs['Config'] = True
             if 'quick_start_domain_policies' in policy:
                 kwargs.update(deepcopy({'server_type':'FIAttached'}))
-                kwargs = eval(f"{quick}(name_prefix, org, type).domain_policies(**kwargs)")
+                # kwargs = eval(f"{quick}(name_prefix, org, type).domain_policies(**kwargs)")
             else: kwargs.update(deepcopy({'fc_ports':[],'server_type':'Standalone'}))
-            if not kwargs['Config'] == False:
-                kwargs = eval(f"{quick}(name_prefix, org, type).bios_policies(**kwargs)")
-                kwargs = eval(f"{quick}(name_prefix, org, type).server_policies(**kwargs)")
+            #if not kwargs['Config'] == False:
+            #    kwargs = eval(f"{quick}(name_prefix, org, type).bios_policies(**kwargs)")
+            #    kwargs = eval(f"{quick}(name_prefix, org, type).server_policies(**kwargs)")
             if 'quick_start_rack_policies' in policy:
                 type = 'policies'
                 kwargs = eval(f"{quick}(name_prefix, org, type).standalone_policies(**kwargs)")
         elif 'quick_start_lan_san_policies' in policy:
             type = 'policies'
-            if not kwargs['Config'] == False:
-                kwargs = eval(f"{quick}(domain_prefix, org, type).lan_san_policies(**kwargs)")
-        elif re.search('quick_start_vmware_(m2|raid1|stateless)', policy):
-            if not kwargs['Config'] == False:
-                kwargs['boot_type'] = policy.split('_')[3]
-                kwargs = eval(f"{quick}(name_prefix, org, type).boot_and_storage(**kwargs)")
-        elif 'quick_start_server_profile' in policy:
-            if not kwargs['Config'] == False:
-                type = 'profiles'
-                kwargs = eval(f"{quick}(name_prefix, org, type).server_profiles(**kwargs)")
+            #if not kwargs['Config'] == False:
+            #    kwargs = eval(f"{quick}(domain_prefix, org, type).lan_san_policies(**kwargs)")
+        #elif re.search('quick_start_vmware_(m2|raid1|stateless)', policy):
+        #    if not kwargs['Config'] == False:
+        #        kwargs['boot_type'] = policy.split('_')[3]
+        #        kwargs = eval(f"{quick}(name_prefix, org, type).boot_and_storage(**kwargs)")
+        #elif 'quick_start_server_profile' in policy:
+        #    if not kwargs['Config'] == False:
+        #        type = 'profiles'
+        #        kwargs = eval(f"{quick}(name_prefix, org, type).server_profiles(**kwargs)")
     return kwargs
 
 def main():
@@ -587,6 +562,10 @@ def main():
     Parser.add_argument(
         '-d', '--dir', default='Intersight',
         help='The Directory to Publish the Terraform Files to.'
+    )
+    Parser.add_argument(
+        '-e', '--endpoint', default='intersight.com',
+        help='The Intersight hostname for the API endpoint. The default is intersight.com'
     )
     Parser.add_argument(
         '-i', '--ignore-tls', action='store_true',
@@ -601,16 +580,13 @@ def main():
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
     )
     Parser.add_argument(
-        '-u', '--url', default='https://intersight.com',
-        help='The Intersight root URL for the API endpoint. The default is https://intersight.com'
-    )
-    Parser.add_argument(
         '-v', '--api-key-v3', action='store_true',
         help='Flag for API Key Version 3.'
     )
     args = Parser.parse_args()
     args.api_key_id = classes.ezfunctions.api_key(args)
     args.api_key_file = classes.ezfunctions.api_secret(args)
+    args.url = f'https://{args.endpoint}'
 
     # Setup Main Script Arguments
     opSystem = platform.system()
@@ -625,13 +601,13 @@ def main():
     script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
     kwargs['script_path'] = script_path
 
-    jsonFile = f'{script_path}{path_sep}templates{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
+    jsonFile = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
     jsonOpen = open(jsonFile, 'r')
     jsonData = json.load(jsonOpen)
     jsonOpen.close()
     kwargs['jsonData'] = jsonData['components']['schemas']
 
-    jsonFile = f'{script_path}{path_sep}templates{path_sep}variables{path_sep}easy_variables.json'
+    jsonFile = f'{script_path}{path_sep}variables{path_sep}easy_variables.json'
     jsonOpen = open(jsonFile, 'r')
     ezData = json.load(jsonOpen)
     jsonOpen.close()
@@ -655,7 +631,6 @@ def main():
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 exit()
         destdirCheck = True
-
     if not args.json_file == None:
         if not os.path.isfile(args.json_file):
             print(folder)
@@ -691,13 +666,13 @@ def main():
         kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{}}))
         kwargs = process_wizard(**kwargs)
         orgs = list(kwargs['immDict']['orgs'].keys())
+    classes.ezfunctions.merge_easy_imm_repository(orgs, **kwargs)
+    classes.ezfunctions.create_yaml(orgs, **kwargs)
+    kwargs = classes.ezfunctions.terraform_provider_config(**kwargs)
+    kwargs = create_terraform_workspaces(orgs, **kwargs)
     for org in orgs:
         kwargs['org'] = org
-        #kwargs['immDict']['orgs'].update(deepcopy({org:{}}))
-        classes.ezfunctions.merge_easy_imm_repository(**kwargs)
-        kwargs = create_terraform_workspaces(**kwargs)
         kwargs = intersight_org_check(**kwargs)
-
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
     print(f'\n-------------------------------------------------------------------------------------------\n')

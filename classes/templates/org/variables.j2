@@ -1,0 +1,63 @@
+#____________________________________________________________
+#
+# Global - Variables
+#____________________________________________________________
+
+# Begin Variables
+{%- for k, v in keys.items() %}
+  {%- if k == 'class_type' %}
+  {%- elif v == None or k == 'template_type' %}
+  {%- elif v | int(-1) != -1 %}
+{{ k }} = {{ v }}
+  {%- elif v == 'false' or v == 'true' %}
+{{ k }} = {{ v }}
+  {%- elif v is iterable and (v is not string and v is not mapping) %}
+{{ k }} = [
+   {%- for item in v %}
+    {%- if item is mapping %}
+  {
+      {%- for key, value in item.items() %}
+        {%- if value == None %}
+        {%- elif value | int(-1) != -1 %}
+    {{ key }} = {{ value }}
+        {%- elif value == 'false' or value == 'true' %}
+    {{ key }} = {{ value }}
+        {%- elif value is iterable and (value is not string and value is not mapping) %}
+    {{ key }} = {{ value }}
+        {%- elif value is mapping %}
+    {{ key }} = [
+      {
+          {%- for keys, values in value.items() %}
+            {%- if values == None %}
+            {%- elif values | int(-1) != -1 %}
+        {{ keys }} = {{ values }}
+            {%- elif values == 'false' or values == 'true' %}
+        {{ keys }} = {{ values }}
+            {%- else %}
+        {{ keys }} = "{{ values }}"
+            {%- endif %}
+          {%- endfor %}
+      }
+    ]
+        {%- else %}
+    {{ key }} = "{{ value }}"
+        {%- endif %}
+      {%- endfor %}
+      {%- if not loop.last %}
+  },
+      {%- else %}
+  }
+      {%- endif %}
+    {%- elif item | int(-1) != -1 %}
+    {{ item }}
+    {%- elif item == 'false' or item == 'true' %}
+    {{ item }}
+    {%- else %}
+    "{{ item }}"
+    {%- endif %}
+    {%- endfor %}
+]
+  {%- else %}
+{{ k }} = "{{ v }}"
+  {%- endif %}
+{%- endfor %}

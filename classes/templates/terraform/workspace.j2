@@ -1,0 +1,57 @@
+{
+    "data": {
+        "attributes": {
+            "agent-pool-id": "{{ agentPoolId }}",
+{%- if allowDestroyPlan %}
+            "allow-destroy-plan":{{ allowDestroyPlan|lower }},
+{%- else %}
+            "allow-destroy-plan":true,
+{%- endif %}
+{%- if autoApply %}
+            "auto-apply":{{ autoApply|lower }},
+{%- else %}
+            "auto-apply":false,
+{%- endif %}
+            "description":"{{ description }}",
+            "execution-mode": "{{ executionMode }}",
+{%- if fileTriggersEnabled %}
+            "file-triggers-enabled":{{ fileTriggersEnabled|lower }},
+{%- else %}
+            "file-triggers-enabled":true,
+{%- endif %}
+{%- if globalRemoteState %}
+            "global-remote-state":{{ globalRemoteState|lower }},
+{%- else %}
+            "global-remote-state":false,
+{%- endif %}
+            "name": "{{ workspaceName }}",
+{%- if queueAllRuns %}
+            "queue-all-runs":{{ queueAllRuns|lower }},
+{%- else %}
+            "queue-all-runs":false,
+{%- endif %}
+{%- if speculativeEnabled %}
+            "speculative-enabled":{{ speculativeEnabled|lower }},
+{%- else %}
+            "speculative-enabled":true,
+{%- endif %}
+            "structured-run-output-enabled": false,
+            "terraform_version": "{{ terraformVersion }}",
+{%- if triggerPrefixes %}
+            "trigger-prefixes": [
+    {%- for item in triggerPrefixes %}
+                "{{ item }}",
+    {%- endfor %}
+                "/modules"
+            ],
+{%- endif %}
+            "working-directory": "{{ workingDirectory }}",
+            "vcs-repo": {
+                "branch": "{{ vcsBranch }}",
+                "identifier": "{{ vcsBaseRepo }}",
+                "oauth-token-id": "{{ tfc_oath_token }}"
+            }
+        },
+        "type": "workspaces"
+    }
+}

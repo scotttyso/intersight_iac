@@ -6,15 +6,29 @@ import re
 import string
 import validators
 
-# Validations
-def brkout_pg(row_num, brkout_pg):
-    if not re.search('(2x100g_pg|4x100g_pg|4x10g_pg|4x25g_pg|8x50g_pg)', brkout_pg):
-        print(f'\n-----------------------------------------------------------------------------\n')
-        print(f'   Error on Row {row_num}. Breakout Port Group is Invalid.  Valid Values are:')
-        print(f'   2x100g_pg, 4x100g_pg, 4x10g_pg, 4x25g_pg, and 8x50g_pg.  Exiting....')
-        print(f'\n-----------------------------------------------------------------------------\n')
+# Errors
+def subnet_check(**kwargs):
+    ip_version = kwargs['ip_version']
+    if ip_version == 'v4': prefix = kwargs['subnetMask']
+    else: prefix = kwargs['Prefix']
+    gateway = kwargs['defaultGateway']
+    pool_from = kwargs['pool_from']
+    pool_to = kwargs['pool_to']
+    subnetList = list(ipaddress.ip_network(f"{gateway}/{prefix}", strict=False).hosts())
+    if not pool_from in subnetList:
+        print(f'\n{"-"*91}\n')
+        print(f'   Error!!!  {pool_from} is not in network {gateway}/{prefix}:')
+        print(f'   Exiting....')
+        print(f'\n{"-"*91}\n')
+        exit()
+    if not pool_from in subnetList:
+        print(f'\n{"-"*91}\n')
+        print(f'   Error!!!  {pool_to} is not in network {gateway}/{prefix}:')
+        print(f'   Exiting....')
+        print(f'\n{"-"*91}\n')
         exit()
 
+# Validations
 def description(varName, varValue, minLength, maxLength):
     if not (re.search(r'^[a-zA-Z0-9\\!#$%()*,-./:;@ _{|}~?&+]+$',  varValue) and \
     validators.length(str(varValue), min=int(minLength), max=int(maxLength))):

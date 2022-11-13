@@ -40,8 +40,8 @@ class profiles(object):
                         name = '%s' % (name_prefix)
                     else: name = f'{org}-{name_suffix}'
 
-                    polVars["name"]        = ezfunctions.policy_name(name, policy_type)
-                    polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars['name']        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
 
                     polVars["multi_select"] = False
                     jsonVars = ezData['profiles']
@@ -49,7 +49,7 @@ class profiles(object):
                     polVars["jsonVars"] = sorted(jsonVars['action']['enum'])
                     polVars["defaultVar"] = jsonVars['action']['default']
                     polVars["varType"] = 'Action'
-                    polVars["action"] = ezfunctions.variablesFromAPI(**polVars)
+                    polVars["action"] = ezfunctions.variablesFromAPI(**kwargs)
 
                     valid = False
                     while valid == False:
@@ -76,7 +76,7 @@ class profiles(object):
                     polVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
                         polVars.update(policyData)
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -100,7 +100,7 @@ class profiles(object):
 
                             # Write Policies to Template File
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-                            ezfunctions.write_to_template(self, **polVars)
+                            ezfunctions.write_to_template(self, **kwargs)
 
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
@@ -136,8 +136,8 @@ class profiles(object):
                         name = '%s' % (name_prefix)
                     else: name = f'{org}-{name_suffix}'
 
-                    polVars["name"]        = ezfunctions.policy_name(name, policy_type)
-                    polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars['name']        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
 
                     polVars["multi_select"] = False
                     jsonVars = ezData['profiles']
@@ -145,7 +145,7 @@ class profiles(object):
                     polVars["jsonVars"] = sorted(jsonVars['action']['enum'])
                     polVars["defaultVar"] = jsonVars['action']['default']
                     polVars["varType"] = 'Action'
-                    polVars["action"] = ezfunctions.variablesFromAPI(**polVars)
+                    polVars["action"] = ezfunctions.variablesFromAPI(**kwargs)
 
                     serial_a,serial_b = ezfunctions.ucs_domain_serials()
                     polVars["serial_number_fabric_a"] = serial_a
@@ -163,9 +163,9 @@ class profiles(object):
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
                         if re.search(r'(switch_control|system_qos)', policy):
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
+                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
                         else:
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, policy_prefix, policy, **polVars)
+                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, policy_prefix, policy, **kwargs)
                         polVars.update(policyData)
 
                     policy_list = [
@@ -188,11 +188,11 @@ class profiles(object):
                         # polVars["policy"] = '%s Fabric A' % (ezfunctions.policy_description)
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  !!! Select the {ezfunctions.policy_description} for Fabric A !!!')
-                        fabric_a,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
+                        fabric_a,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
                         # polVars["policy"] = '%s Fabric B' % (ezfunctions.policy_description)
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  !!! Select the {ezfunctions.policy_description} for Fabric B !!!')
-                        fabric_b,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
+                        fabric_b,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
                         polVars[policy_long].update({'fabric_a':fabric_a})
                         polVars[policy_long].update({'fabric_b':fabric_b})
                         if policy_long == 'port':
@@ -243,7 +243,7 @@ class profiles(object):
 
                             # Write Policies to Template File
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-                            ezfunctions.write_to_template(self, **polVars)
+                            ezfunctions.write_to_template(self, **kwargs)
 
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
@@ -278,8 +278,8 @@ class profiles(object):
                 else:
                     name = f'{org}-{name_suffix}'
 
-                polVars["name"]        = ezfunctions.policy_name(name, policy_type)
-                polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                polVars['name']        = ezfunctions.policy_name(name, policy_type)
+                polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
 
                 polVars["allow_opt_out"] = False
                 polVars["multi_select"] = False
@@ -288,7 +288,7 @@ class profiles(object):
                 polVars["jsonVars"] = sorted(jsonVars['action']['enum'])
                 polVars["defaultVar"] = jsonVars['action']['default']
                 polVars["varType"] = 'Action'
-                polVars["action"] = ezfunctions.variablesFromAPI(**polVars)
+                polVars["action"] = ezfunctions.variablesFromAPI(**kwargs)
 
 
                 jsonVars = jsonData['server.Profile']['allOf'][1]['properties']
@@ -296,7 +296,7 @@ class profiles(object):
                 polVars["jsonVars"] = sorted(jsonVars['ServerAssignmentMode']['enum'])
                 polVars["defaultVar"] = jsonVars['ServerAssignmentMode']['default']
                 polVars["varType"] = 'Server Assignment Mode'
-                polVars["server_assignment_mode"] = ezfunctions.variablesFromAPI(**polVars)
+                polVars["server_assignment_mode"] = ezfunctions.variablesFromAPI(**kwargs)
 
                 if polVars["server_assignment_mode"] == 'Static':
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -310,7 +310,7 @@ class profiles(object):
                     polVars["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
                     polVars["minLength"] = 11
                     polVars["maxLength"] = 11
-                    polVars['serial_number'] = ezfunctions.varStringLoop(**polVars)
+                    polVars['serial_number'] = ezfunctions.varStringLoop(**kwargs)
                 elif polVars["server_assignment_mode"] == 'Pool':
                     policy_list = [
                         'pools.resource_pools.resource_pool'
@@ -318,7 +318,7 @@ class profiles(object):
                     polVars["allow_opt_out"] = False
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
                         polVars.update(policyData)
                         server_template = True
                         valid = True
@@ -333,7 +333,7 @@ class profiles(object):
                         polVars["allow_opt_out"] = False
                         for policy in policy_list:
                             policy_short = policy.split('.')[2]
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
+                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
                             polVars.update(policyData)
                             server_template = True
                             valid = True
@@ -349,13 +349,13 @@ class profiles(object):
                     polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
                     polVars["defaultVar"] = jsonVars['TargetPlatform']['default']
                     polVars["varType"] = 'Target Platform'
-                    polVars["target_platform"] = ezfunctions.variablesFromAPI(**polVars)
+                    polVars["target_platform"] = ezfunctions.variablesFromAPI(**kwargs)
 
-                    #___________________________________________________________________________
+                    #==============================================____
                     #
                     # Policies On Hold for Right Now
                     # 'policies.certificate_management_policies.certificate_management_policy',
-                    #___________________________________________________________________________
+                    #==============================================____
                     polVars["uuid_pool"] = ''
                     polVars["static_uuid_address"] = ''
                     if polVars["target_platform"] == 'FIAttached':
@@ -436,7 +436,7 @@ class profiles(object):
                     polVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
                         polVars.update(policyData)
 
                 polVars["boot_policy"] = polVars["boot_order_policy"]
@@ -451,7 +451,7 @@ class profiles(object):
 
                         # Write Policies to Template File
                         polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-                        ezfunctions.write_to_template(self, **polVars)
+                        ezfunctions.write_to_template(self, **kwargs)
 
                         configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                         valid_confirm = True
@@ -484,8 +484,8 @@ class profiles(object):
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
 
-                    polVars["name"]        = ezfunctions.policy_name(name, policy_type)
-                    polVars['description'] = ezfunctions.policy_descr(polVars["name"], policy_type)
+                    polVars['name']        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
 
                     polVars["multi_select"] = False
                     jsonVars = jsonData['server.BaseProfile']['allOf'][1]['properties']
@@ -493,13 +493,13 @@ class profiles(object):
                     polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
                     polVars["defaultVar"] = jsonVars['TargetPlatform']['default']
                     polVars["varType"] = 'Target Platform'
-                    polVars["target_platform"] = ezfunctions.variablesFromAPI(**polVars)
+                    polVars["target_platform"] = ezfunctions.variablesFromAPI(**kwargs)
 
-                    #___________________________________________________________________________
+                    #==============================================____
                     #
                     # Policies On Hold for Right Now
                     # 'policies.certificate_management_policies.certificate_management_policy',
-                    #___________________________________________________________________________
+                    #==============================================____
                     if polVars["target_platform"] == 'FIAttached':
                         policy_list = [
                             #___________________________
@@ -578,7 +578,7 @@ class profiles(object):
                     polVars["allow_opt_out"] = True
                     for policy in policy_list:
                         policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **polVars)
+                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
                         polVars.update(policyData)
 
                     polVars["boot_policy"] = polVars["boot_order_policy"]
@@ -593,7 +593,7 @@ class profiles(object):
 
                             # Write Policies to Template File
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-                            ezfunctions.write_to_template(self, **polVars)
+                            ezfunctions.write_to_template(self, **kwargs)
 
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True

@@ -1,6 +1,6 @@
 {
     "orgs": {
-        "asgard": {
+        "Asgard": {
             "intersight": {
                 "pools": {
                     "ip": [
@@ -97,7 +97,7 @@
                     "uuid": [
                         {
                             "name": "asgard",
-                            "descr": "asgard UUID Pool",
+                            "description": "asgard UUID Pool",
                             "prefix": "000025B5-0000-0000",
                             "uuid_blocks": [
                                 {
@@ -377,7 +377,7 @@
                     "bios": [
                         {
                             "name": "M5-Virtualization",
-                            "descr": "M5-Virtualization BIOS Policy",
+                            "description": "M5-Virtualization BIOS Policy",
                             "bios_template": "Virtualization",
                             "baud_rate": 115200,
                             "console_redirection": "serial-port-a",
@@ -388,7 +388,7 @@
                         },
                         {
                             "name": "M5-virtualization-tpm",
-                            "descr": "M5-virtualization-tpm BIOS Policy",
+                            "description": "M5-virtualization-tpm BIOS Policy",
                             "bios_template": "Virtualization_tpm",
                             "baud_rate": 115200,
                             "console_redirection": "serial-port-a",
@@ -399,7 +399,7 @@
                         },
                         {
                             "name": "M6-virtualization-tpm",
-                            "descr": "M6-virtualization-tpm BIOS Policy",
+                            "description": "M6-virtualization-tpm BIOS Policy",
                             "bios_template": "M6_Virtualization_tpm",
                             "baud_rate": 115200,
                             "console_redirection": "serial-port-a",
@@ -458,7 +458,7 @@
                     "serial_over_lan": [
                         {
                             "name": "sol",
-                            "descr": "Server Serial over LAN Policy",
+                            "description": "Server Serial over LAN Policy",
                             "enabled": true
                         }
                     ],
@@ -585,7 +585,7 @@
                     "ethernet_network_control": [
                         {
                             "name": "LLDP",
-                            "descr": "VMware Ethernet Network Control Policy",
+                            "description": "VMware Ethernet Network Control Policy",
                             "action_on_uplink_fail": "linkDown",
                             "cdp_enable": false,
                             "lldp_receive_enable": true,
@@ -597,7 +597,7 @@
                     "ethernet_qos": [
                         {
                             "name": "Bronze",
-                            "descr": "Bronze Ethernet QoS Policy",
+                            "description": "Bronze Ethernet QoS Policy",
                             "allowed_vlans": 1,
                             "native_vlan": 1,
                             "burst": 1024,
@@ -608,7 +608,7 @@
                         },
                         {
                             "name": "Gold",
-                            "descr": "Gold Ethernet QoS Policy",
+                            "description": "Gold Ethernet QoS Policy",
                             "allowed_vlans": 1,
                             "native_vlan": 1,
                             "burst": 1024,
@@ -619,7 +619,7 @@
                         },
                         {
                             "name": "Platinum",
-                            "descr": "Platinum Ethernet QoS Policy",
+                            "description": "Platinum Ethernet QoS Policy",
                             "allowed_vlans": 1,
                             "native_vlan": 1,
                             "burst": 1024,
@@ -630,7 +630,7 @@
                         },
                         {
                             "name": "Silver",
-                            "descr": "Silver Ethernet QoS Policy",
+                            "description": "Silver Ethernet QoS Policy",
                             "allowed_vlans": 1,
                             "native_vlan": 1,
                             "burst": 1024,
@@ -643,7 +643,7 @@
                     "fibre_channel_adapter": [
                         {
                             "name": "VMware",
-                            "descr": "VMware Fibre-Channel Adapter Policy",
+                            "description": "VMware Fibre-Channel Adapter Policy",
                             "policy_template": "VMware"
                         }
                     ],
@@ -706,8 +706,8 @@
                                     "ethernet_network_group_policy": "mgmt",
                                     "ethernet_qos_policy": "Silver",
                                     "mac_address_pools": [
-                                        "asgard-a",
-                                        "asgard-b"
+                                        "mgmt-a",
+                                        "mgmt-b"
                                     ],
                                     "names": [
                                         "mgmt-a",
@@ -724,8 +724,8 @@
                                     "ethernet_network_group_policy": "migration",
                                     "ethernet_qos_policy": "Bronze",
                                     "mac_address_pools": [
-                                        "asgard-a",
-                                        "asgard-b"
+                                        "migration-a",
+                                        "migration-b"
                                     ],
                                     "names": [
                                         "migration-a",
@@ -742,8 +742,8 @@
                                     "ethernet_network_group_policy": "storage",
                                     "ethernet_qos_policy": "Platinum",
                                     "mac_address_pools": [
-                                        "asgard-a",
-                                        "asgard-b"
+                                        "storage-a",
+                                        "storage-b"
                                     ],
                                     "names": [
                                         "storage-a",
@@ -760,8 +760,8 @@
                                     "ethernet_network_group_policy": "dvs",
                                     "ethernet_qos_policy": "Gold",
                                     "mac_address_pools": [
-                                        "asgard-a",
-                                        "asgard-b"
+                                        "dvs-a",
+                                        "dvs-b"
                                     ],
                                     "names": [
                                         "dvs-a",
@@ -775,7 +775,7 @@
                             ]
                         }
                     ],
-                    "boot": [
+                    "boot_order": [
                         {
                             "name": "M2-pxe",
                             "boot_mode": "Uefi",
@@ -873,6 +873,43 @@
                                 "vsan-100",
                                 "vsan-200"
                             ]
+                        }
+                    ],
+                    "server": [
+                        {
+                            "names_serials": [
+                                [
+                                    "esx01",
+                                    "unknown"
+                                ]
+                            ],
+                            "ucs_server_profile_template": "M2-pxe"
+                        }
+                    ]
+                },
+                "templates": {
+                    "server": [
+                        {
+                            "bios_policy": "M6-virtualization-tpm",
+                            "boot_order_policy": "M2-pxe",
+                            "description": "M2-pxe Server Profile Template",
+                            "name": "M2-pxe",
+                            "uuid_pool": "asgard",
+                            "virtual_media_policy": "vmedia",
+                            "ipmi_over_lan_policy": "asgard-ipmi",
+                            "local_user_policy": "asgard-users",
+                            "serial_over_lan_policy": "sol",
+                            "snmp_policy": "snmp",
+                            "syslog_policy": "syslog",
+                            "virtual_kvm_policy": "vkvm",
+                            "sd_card_policy": "",
+                            "storage_policy": "M2-Raid",
+                            "lan_connectivity_policy": "vmware-lcp",
+                            "san_connectivity_policy": "asgard-scp",
+                            "certificate_management_policy": "",
+                            "imc_access_policy": "asgard",
+                            "power_policy": "Server",
+                            "target_platform": "FIAttached"
                         }
                     ]
                 }
