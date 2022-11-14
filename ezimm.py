@@ -28,7 +28,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 sys.path.insert(0, './classes')
 import classes.ezfunctions
-import classes.imm_transition
+import classes.imm
 import classes.lansan
 import classes.policies
 import classes.pools
@@ -324,25 +324,6 @@ def intersight_org_check(**kwargs):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-
-def imm_transition(**kwargs):
-    ezData = kwargs['ezData']
-    json_data = kwargs['json_data']
-    print(f'\n---------------------------------------------------------------------------------------\n')
-    print(f'  Starting the Easy IMM Transition Wizard!')
-    print(f'\n---------------------------------------------------------------------------------------\n')
-    type = 'pools'
-    plist = ezData['ezimm']['allOf'][1]['properties']['list_pools']
-    for i in plist: kwargs = eval(f"classes.imm_transition(json_data, type).{i}(**kwargs)")
-    type = 'policies'
-    plist = ezData['ezimm']['allOf'][1]['properties']['list_policies']
-    for i in plist: kwargs = eval(f"classes.imm_transition(json_data, type).{i}(**kwargs)")
-    type = 'profiles'
-    plist = ezData['ezimm']['allOf'][1]['properties']['list_profiles']
-    for i in plist: kwargs = eval(f"classes.imm_transition(json_data, type).{i}(**kwargs)")
-
-    # Return Organizations found in jsonData
-    return kwargs
 
 def prompt_main_menu(**kwargs):
     ezData = kwargs['ezData']
@@ -643,8 +624,8 @@ def main():
         else:
             json_file = args.json_file
             json_open = open(json_file, 'r')
-            json_data = json.load(json_open)
-            device_type = json_data['easyucs']['metadata'][0]['device_type']
+            kwargs['json_data'] = json.load(json_open)
+            device_type = kwargs['json_data']['easyucs']['metadata'][0]['device_type']
             if not device_type == 'intersight':
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  !!ERROR!!')
@@ -657,9 +638,9 @@ def main():
                 print(f'  Exiting Wizard...')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 exit()
-            orgs = classes.imm_transition.imm_transition(json_data, 'policies').return_orgs()
-            for org in orgs:
-                kwargs = imm_transition(**kwargs)
+            kwargs = classes.imm.transition('transition').policy_loop(**kwargs)
+            print(json.dumps(kwargs['immDict']['orgs'], indent=4))
+            orgs = list(kwargs['immDict']['orgs'].keys())
     else:
         kwargs = prompt_main_menu(**kwargs)
         kwargs = prompt_org(**kwargs)
@@ -672,7 +653,7 @@ def main():
     kwargs = create_terraform_workspaces(orgs, **kwargs)
     for org in orgs:
         kwargs['org'] = org
-        kwargs = intersight_org_check(**kwargs)
+        intersight_org_check(**kwargs)
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
     print(f'\n-------------------------------------------------------------------------------------------\n')
