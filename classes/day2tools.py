@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from collections import OrderedDict
 from datetime import datetime
 from intersight.api import access_api
@@ -25,31 +24,30 @@ from intersight.api import sdcard_api
 from intersight.api import server_api
 from intersight.api import smtp_api
 from intersight.api import snmp_api
-from intersight.api import sol_api
 from intersight.api import ssh_api
 from intersight.api import storage_api
 from intersight.api import syslog_api
+from intersight.api import virtualization_api
 from intersight.api import vmedia_api
 from intersight.api import vnic_api
 from intersight.exceptions import ApiException
 from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
 from pathlib import Path
 import credentials
-import ezfunctions
+import classes.ezfunctions
 import json
-import pkg_resources
 import pprint
 import pytz
 import openpyxl
+import os
 import re
 import sys
-import validating
+import classes.validating
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 pp = pprint.PrettyPrinter(indent=4)
 home = Path.home()
-template_path = pkg_resources.resource_filename('vmware', '../templates/')
 
 class intersight_api(object):
     def __init__(self, type):
@@ -58,9 +56,9 @@ class intersight_api(object):
     def add_policies(self, **kwargs):
         args = kwargs['args']
         path_sep = kwargs['path_sep']
-        script_path = kwargs['get_script_path']
+        script_path = kwargs['script_path']
         jsonArg = False
-        jsonFile = f'{script_path}{path_sep}templates{path_sep}variables{path_sep}easy_variables.json'
+        jsonFile = f'{script_path}{path_sep}variables{path_sep}easy_variables.json'
         jsonOpen = open(jsonFile, 'r')
         easy_jsonData = json.load(jsonOpen)
         jsonOpen.close()
@@ -88,7 +86,7 @@ class intersight_api(object):
                 return empty, api_dict, api_list
         
         def empty_results(apiQuery):
-                print(f'The API Query Results were empty for {apiQuery["ObjectType"]}.  Exiting...')
+                print(f"The API Query Results were empty for {apiQuery['ObjectType']}.  Exiting...")
                 exit()
 
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -96,27 +94,24 @@ class intersight_api(object):
         print(f'\n-------------------------------------------------------------------------------------------\n')
 
         # Determine if the Profiles are for FI-attached or Standalone Servers
+        kwargs['multi_select'] = False
         if jsonArg == False:
-            kwargs["multi_select"] = False
-            kwargs["var_description"] = 'Select the Profile Type.'
-            kwargs["jsonVars"] = ['FIAttached', 'Standalone']
-            kwargs["defaultVar"] = 'FIAttached'
-            kwargs["varType"] = 'Profile Type'
-            profile_type = ezfunctions.variablesFromAPI(**kwargs)
-        else:
-            profile_type = jsonData['profile_type']
+            kwargs['jData'] = {}
+            kwargs['jData']['default']     = 'FIAttached'
+            kwargs['jData']['description'] = 'Select the Profile Type.'
+            kwargs['jData']['enum']        = ['FIAttached', 'Standalone']
+            kwargs['jData']['varType']     = 'Profile Type'
+            profile_type = classes.ezfunctions.variablesFromAPI(**kwargs)
+        else: profile_type = jsonData['profile_type']
 
         # Prompt User for the Type of Policy to Attach to the Profiles
         if jsonArg == False:
-            policy_list = easy_jsonData['components']['schemas']['policies']['allOf'][1]['properties'][profile_type]
-            kwargs["multi_select"] = False
-            kwargs["var_description"] = 'Select the Policy Type.'
-            kwargs["jsonVars"] = policy_list['enum']
-            kwargs["defaultVar"] = policy_list['default']
-            kwargs["varType"] = 'Policy Type'
-            policy_type = ezfunctions.variablesFromAPI(**kwargs)
-        else:
-            policy_type = jsonData['policy_type']
+            jsonVars = easy_jsonData['components']['schemas']['policies']['allOf'][1]['properties']
+            kwargs['jData'] = jsonVars[profile_type]
+            kwargs['jData']['description'] = 'Select the Policy Type.'
+            kwargs['jData']['varType']     = 'Policy Type'
+            policy_type = classes.ezfunctions.variablesFromAPI(**kwargs)
+        else: policy_type = jsonData['policy_type']
 
         # Query API for the Organization List
         api_client = credentials.config_credentials(home, args)
@@ -128,14 +123,14 @@ class intersight_api(object):
 
         # Request from User Which Organizations to Apply this to if not provided with jsonArg.
         if jsonArg == False:
-            kwargs["multi_select"] = True
-            kwargs["var_description"] = f'Select the Organizations to Apply the {policy_type} to.'
-            kwargs["jsonVars"] = org_names
-            kwargs["defaultVar"] = 'default'
-            kwargs["varType"] = 'Organizations'
-            organizations = ezfunctions.variablesFromAPI(**kwargs)
-        else:
-            organizations = jsonData['organizations']
+            kwargs['multi_select'] = True
+            kwargs['jData'] = {}
+            kwargs['jData']['default']     = 'default'
+            kwargs['jData']['description'] = f'Select the Organizations to Apply the {policy_type} to.'
+            kwargs['jData']['enum']        = org_names
+            kwargs['jData']['varType']     = 'Organizations'
+            organizations = classes.ezfunctions.variablesFromAPI(**kwargs)
+        else: organizations = jsonData['organizations']
 
         for org in organizations:
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -153,12 +148,13 @@ class intersight_api(object):
             if empty == True: empty_results(apiQuery)
 
             # Prompt User for Policy to Attach.
-            kwargs["multi_select"] = False
-            kwargs["var_description"] = f'Select the {policy_type} Policy to attach to the Server Profile.'
-            kwargs["jsonVars"] = policyNames
-            kwargs["defaultVar"] = policyNames[0]
-            kwargs["varType"] = f'{policy_type} Policy Name'
-            policy_name = ezfunctions.variablesFromAPI(**kwargs)
+            kwargs['multi_select'] = False
+            kwargs['jData'] = {}
+            kwargs['jData']['default']     = policyNames[0]
+            kwargs['jData']['description'] = f'Select the {policy_type} Policy to attach to the Server Profile.'
+            kwargs['jData']['enum']        = policyNames
+            kwargs['jData']['varType']     = f'{policy_type} Policy Name'
+            policy_name = classes.ezfunctions.variablesFromAPI(**kwargs)
 
             # Obtain Server Profile Data
             query_filter = f"Organization.Moid eq '{orgs[org]['Moid']}' and TargetPlatform eq '{profile_type}'"
@@ -171,14 +167,14 @@ class intersight_api(object):
 
             # Request from User Which Profiles to Apply this to if not provided with jsonArg.
             if jsonArg == False:
-                kwargs["multi_select"] = True
-                kwargs["var_description"] = f'Select the Server Profiles to Apply the {policy_type} to.'
-                kwargs["jsonVars"] = profileNames
-                kwargs["defaultVar"] = profileNames[0]
-                kwargs["varType"] = 'Server Profiles'
-                profile_names = ezfunctions.variablesFromAPI(**kwargs)
-            else:
-                profile_names = jsonData['server_profiles']
+                kwargs['multi_select'] = True
+                kwargs['jData'] = {}
+                kwargs['jData']['default']     = profileNames[0]
+                kwargs['jData']['description'] = f'Select the Server Profiles to Apply the {policy_type} to.'
+                kwargs['jData']['enum']        = profileNames
+                kwargs['jData']['varType']     = 'Server Profiles'
+                profile_names = classes.ezfunctions.variablesFromAPI(**kwargs)
+            else: profile_names = jsonData['server_profiles']
             
             # Attach the Policy to the Selected Server Profiles
             for profilex in profile_names:
@@ -201,22 +197,12 @@ class intersight_api(object):
                 if object_index.get(object_type):
                     type_index = object_index.get(object_type, -1)
                     policy_link = f"https://www.intersight.com/api/v1/{policy_api['enum'][3]}/{policyMoid}"
-                    policy_bucket[type_index].update({
-                        "Moid":policyMoid,
-                        "link": policy_link
-                    })
+                    policy_bucket[type_index].update({"Moid":policyMoid, "link": policy_link})
                     json_payload = {"PolicyBucket":policy_bucket}
                 else:
-                    policy_bucket.append({
-                        "classId": "mo.MoRef",
-                        "Moid": policyMoid,
-                        "ObjectType": object_type
-                    })
+                    policy_bucket.append({"classId": "mo.MoRef", "Moid": policyMoid, "ObjectType": object_type})
                     json_payload = {"PolicyBucket":policy_bucket}
 
-                # print(json.dumps(json_payload, indent=4))
-                # print(f'Policy "{policy_name}" Moid is "{policyMoid}"')
-                # print(f'Server Profile "{profilex}" Moid is "{profileMoid}"')
                 try:
                     kwargs = dict(_preload_content = False)
                     apiPost = json.loads(api_handle.patch_server_profile(profileMoid, json_payload, **kwargs).data)
@@ -228,11 +214,9 @@ class intersight_api(object):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Finished Server Profile {profilex}.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Finished Loop on Organization {org}.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print('  Finished Updating Server Profiles...')
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -263,9 +247,8 @@ class intersight_api(object):
                 return empty, api_dict, api_list
         
         def empty_results(apiQuery):
-                print(f'The API Query Results were empty for {apiQuery["ObjectType"]}.  Exiting...')
+                print(f"The API Query Results were empty for {apiQuery['ObjectType']}.  Exiting...")
                 exit()
-
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print('  Beginning VLAN Addition...')
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -274,14 +257,13 @@ class intersight_api(object):
         valid = False
         while valid == False:
             vlan_id = '%s' % (input(f'    What is the VLAN ID: '))
-            if re.search('^\d+$', vlan_id):
-                valid = validating.number_in_range('VLAN ID', vlan_id, 1, 4094)
+            if re.search('^\d+$', vlan_id): valid = classes.validating.number_in_range('VLAN ID', vlan_id, 1, 4094)
 
         # Prompt User for VLAN Name.
         valid = False
         while valid == False:
             vlan_name = '%s' % (input(f'    What is the name you want to assign to VLAN {vlan_id}: '))
-            valid = validating.name_rule('VLAN Name', vlan_name, 1, 62)
+            valid = classes.validating.name_rule('VLAN Name', vlan_name, 1, 62)
 
         # Query API for the Organization List
         api_client = credentials.config_credentials(home, args)
@@ -293,14 +275,14 @@ class intersight_api(object):
 
         # Request from User Which Organizations to Apply this to.
         if jsonFile == False:
-            kwargs["multi_select"] = True
-            kwargs["var_description"] = 'Select the Organizations to Apply this VLAN to.'
-            kwargs["jsonVars"] = org_names
-            kwargs["defaultVar"] = 'default'
-            kwargs["varType"] = 'Organizations'
-            organizations = ezfunctions.variablesFromAPI(**kwargs)
-        else:
-            organizations = jsonData['organizations']
+            kwargs['multi_select'] = True
+            kwargs['jData'] = {}
+            kwargs['jData']['default']     = 'default'
+            kwargs['jData']['description'] = 'Select the Organizations to Apply this VLAN to.'
+            kwargs['jData']['enum']        = org_names
+            kwargs['jData']['varType']     = 'Organizations'
+            organizations = classes.ezfunctions.variablesFromAPI(**kwargs)
+        else: organizations = jsonData['organizations']
         for org in organizations:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Starting Loop on Organization {org}.')
@@ -315,14 +297,13 @@ class intersight_api(object):
 
             # Prompt the User to Select the VLAN Policy
             if jsonFile == False:
-                kwargs["multi_select"] = False
-                kwargs["var_description"] = f'Select the VLAN Policy for Organization {org}.'
-                kwargs["jsonVars"] = vlan_policies_names
-                kwargs["defaultVar"] = ''
-                kwargs["varType"] = 'VLAN Policy'
-                vlan_policy = ezfunctions.variablesFromAPI(**kwargs)
-            else:
-                vlan_policy = jsonData['vlan_policy']
+                kwargs['multi_select'] = False
+                kwargs['jData'] = {}
+                kwargs['description'] = f'Select the VLAN Policy for Organization {org}.'
+                kwargs['enum']        = vlan_policies_names
+                kwargs['varType']     = 'VLAN Policy'
+                vlan_policy = classes.ezfunctions.variablesFromAPI(**kwargs)
+            else: vlan_policy = jsonData['vlan_policy']
 
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Checking VLAN Policy {vlan_policy} for VLAN {vlan_id}.')
@@ -340,10 +321,10 @@ class intersight_api(object):
                     if int(i['VlanId']) == int(vlan_id):
                         match_count += 1
                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  VLAN is already in the policy {vlan_policy} and has moid {i["Moid"]}.')
+                        print('  VLAN is already in the policy {} and has moid {}.').format(vlan_policy, i['Moid'])
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                 vlan_list.sort()
-                vlans = ezfunctions.vlan_list_format(vlan_list)
+                vlans = classes.ezfunctions.vlan_list_format(vlan_list)
                 if match_count == 0:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  VLAN {vlan_id} was not in VLAN Policy {vlan_policy}.  Adding VLAN...')
@@ -382,13 +363,14 @@ class intersight_api(object):
 
             # Prompt the User to Select the Ethernet Network Group Policies
             if jsonFile == False:
-                kwargs["multi_select"] = True
-                kwargs["var_description"] = f'Select the Ethernet Network Group Polices to append'\
+                kwargs['multi_select'] = True
+                kwargs['jData']
+                kwargs['var_description'] = f'Select the Ethernet Network Group Polices to append'\
                     f'the VLAN to in Organization {org}.'
-                kwargs["jsonVars"] = eth_group_policies_names
-                kwargs["defaultVar"] = ''
-                kwargs["varType"] = 'VLAN Group Policies'
-                ethernet_network_group_policies = ezfunctions.variablesFromAPI(**kwargs)
+                kwargs['jsonVars'] = eth_group_policies_names
+                kwargs['defaultVar'] = ''
+                kwargs['varType'] = 'VLAN Group Policies'
+                ethernet_network_group_policies = classes.ezfunctions.variablesFromAPI(**kwargs)
             else:
                 ethernet_network_group_policies = jsonData['ethernet_network_group_policies']
 
@@ -465,12 +447,12 @@ class intersight_api(object):
 
             # Prompt User for the Ethernet Network Control Policy
             if jsonFile == False:
-                kwargs["multi_select"] = False
-                kwargs["var_description"] = f'Select the Ethernet Network Control Policy for Organization {org}.'
-                kwargs["jsonVars"] = eth_control_names
-                kwargs["defaultVar"] = ''
-                kwargs["varType"] = 'Ethernet Network Control Policies'
-                ethernet_network_control_policy = ezfunctions.variablesFromAPI(**kwargs)
+                kwargs['multi_select'] = False
+                kwargs['var_description'] = f'Select the Ethernet Network Control Policy for Organization {org}.'
+                kwargs['jsonVars'] = eth_control_names
+                kwargs['defaultVar'] = ''
+                kwargs['varType'] = 'Ethernet Network Control Policies'
+                ethernet_network_control_policy = classes.ezfunctions.variablesFromAPI(**kwargs)
             else:
                 ethernet_network_control_policy = jsonData['ethernet_network_control_policy']
 
@@ -484,11 +466,11 @@ class intersight_api(object):
 
             # Prompt User for MAC Pool
             if jsonFile == False:
-                kwargs["var_description"] = f'Select the MAC Pool for Organization {org}.'
-                kwargs["jsonVars"] = mac_pools_names
-                kwargs["defaultVar"] = ''
-                kwargs["varType"] = 'MAC Pool'
-                mac_pool = ezfunctions.variablesFromAPI(**kwargs)
+                kwargs['var_description'] = f'Select the MAC Pool for Organization {org}.'
+                kwargs['jsonVars'] = mac_pools_names
+                kwargs['defaultVar'] = ''
+                kwargs['varType'] = 'MAC Pool'
+                mac_pool = classes.ezfunctions.variablesFromAPI(**kwargs)
             else:
                 mac_pool = jsonData['mac_pool']
 
@@ -502,12 +484,12 @@ class intersight_api(object):
 
             # Prompt User for Ethernet Adapter Policy
             if jsonFile == False:
-                kwargs["multi_select"] = False
-                kwargs["var_description"] = f'Select the Ethernet Adapter Policy for Organization {org}.'
-                kwargs["jsonVars"] = adapter_policies_names
-                kwargs["defaultVar"] = ''
-                kwargs["varType"] = 'Ethernet Adapter Policies'
-                ethernet_adapter_policy = ezfunctions.variablesFromAPI(**kwargs)
+                kwargs['multi_select'] = False
+                kwargs['var_description'] = f'Select the Ethernet Adapter Policy for Organization {org}.'
+                kwargs['jsonVars'] = adapter_policies_names
+                kwargs['defaultVar'] = ''
+                kwargs['varType'] = 'Ethernet Adapter Policies'
+                ethernet_adapter_policy = classes.ezfunctions.variablesFromAPI(**kwargs)
             else:
                 ethernet_adapter_policy = jsonData['ethernet_adapter_policy']
 
@@ -521,11 +503,11 @@ class intersight_api(object):
 
             # Prompt User for Ethernet Adapter Policy
             if jsonFile == False:
-                kwargs["var_description"] = f'Select the Ethernet QoS Policy for Organization {org}.'
-                kwargs["jsonVars"] = qos_policies_names
-                kwargs["defaultVar"] = ''
-                kwargs["varType"] = 'Ethernet QoS Policies'
-                ethernet_qos_policy = ezfunctions.variablesFromAPI(**kwargs)
+                kwargs['var_description'] = f'Select the Ethernet QoS Policy for Organization {org}.'
+                kwargs['jsonVars'] = qos_policies_names
+                kwargs['defaultVar'] = ''
+                kwargs['varType'] = 'Ethernet QoS Policies'
+                ethernet_qos_policy = classes.ezfunctions.variablesFromAPI(**kwargs)
             else:
                 ethernet_qos_policy = jsonData['ethernet_qos_policy']
 
@@ -544,7 +526,7 @@ class intersight_api(object):
             for k, v in lan_policies.items():
                 if k == vlan_id:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  LAN Policy {vlan_id} exists.  Moid is {v["Moid"]}')
+                    print('  LAN Policy {} exists.  Moid is {}').format(vlan_id, v['Moid'])
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     lcount += 1
             if lcount == 0:
@@ -649,7 +631,7 @@ class intersight_api(object):
                     sys.exit(1)
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  LAN Connectivity vNIC "NIC-A" exists.  Moid is {vnics["NIC-A"]["Moid"]}')
+                print('  LAN Connectivity vNIC "NIC-A" exists.  Moid is {}').format(vnics['NIC-A']['Moid'])
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -659,6 +641,141 @@ class intersight_api(object):
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print('  Finished Adding VLAN...')
         print(f'\n-------------------------------------------------------------------------------------------\n')
+
+    def hcl_inventory(self, **kwargs):
+        args     = kwargs['args']
+        pyDict   = {}
+        jsonData = kwargs['json_data']
+
+        # Obtain Server Profile Data
+        api_client = credentials.config_credentials(home, args)
+        for item in jsonData:
+            if 'Cisco' in item['Hostname']['Manufacturer']:
+                esxBuild    = item['Hostname']['Build']
+                esxVersion  = item['Hostname']['Version']
+                Hostname    = item['Hostname']['Name']
+                Serial      = item['Serial']
+                toolDate    = item['InstallDate']
+                toolName    = item['Name']
+                toolVersion = item['Version']
+
+                # Query API for Server Details
+                api_client = credentials.config_credentials(home, args)
+                api_handle = compute_api.ComputeApi(api_client)
+                api_filter = f"Serial eq '{Serial}'"
+                api_args = dict(filter= api_filter, _preload_content = False)
+                if re.search('UCSB', item['Hostname']['Model']):
+                    apiQuery = json.loads(api_handle.get_compute_blade_identity_list(**api_args).data)
+                else:
+                    apiQuery = json.loads(api_handle.get_compute_rack_unit_list(**api_args).data)
+                if apiQuery.get('Results'):
+                    for i in apiQuery['Results']:
+                        if re.search('UCSB', item['Hostname']['Model']):
+                            serverDn = 'chassis-' + str(i['ChassisId']) + "/blade-" + str(i['SlotId'])
+                        else:
+                            serverDn = 'rackunit-' + str(i['ServerId'])
+                        physMoid = i['Moid']
+                        if i.get('ServiceProfile'): serverP = i['ServiceProfile']
+                        else: serverP = ''
+                        api_handle = asset_api.AssetApi(api_client)
+                        api_args = dict(_preload_content = False)
+                        domainParent = json.loads(api_handle.get_asset_device_registration_by_moid(
+                            i['RegisteredDevice']['Moid'], **api_args).data
+                        )
+                # Obtain Server Profile Data
+                api_filter = f"ManagedObject.Moid eq '{physMoid}'"
+                api_args = dict(filter=api_filter, _preload_content = False)
+                api_handle = cond_api.CondApi(api_client)
+                apiQuery = json.loads((api_handle.get_cond_hcl_status_list(**api_args)).data)
+                if apiQuery.get('Results'):
+                    hostResults = {
+                        Serial:{
+                            'Domain':domainParent['DeviceHostname'][0],
+                            'Model':apiQuery['Results'][0]['HclModel'],
+                            'Serial':Serial,
+                            'Server':serverDn,
+                            'Profile':serverP,
+                            'Firmware':apiQuery['Results'][0]['HclFirmwareVersion'],
+                            'Hostname':Hostname,
+                            'ESX Version':esxVersion,
+                            'ESX Build':esxBuild,
+                            'UCS Tools Install Date':toolDate,
+                            'UCS Tools Version':toolVersion
+                        }
+                    }
+                    pyDict.update(hostResults)
+
+        if len(pyDict) > 0:
+            # Build Named Style Sheets for Workbook
+            bd1 = Side(style="thick", color="0070C0")
+            bd2 = Side(style="medium", color="0070C0")
+            heading_1 = NamedStyle(name="heading_1")
+            heading_1.alignment = Alignment(horizontal="center", vertical="center", wrap_text="True")
+            heading_1.border = Border(left=bd1, top=bd1, right=bd1, bottom=bd1)
+            heading_1.fill = PatternFill("solid", fgColor="305496")
+            heading_1.font = Font(bold=True, size=15, color="FFFFFF")
+            heading_2 = NamedStyle(name="heading_2")
+            heading_2.alignment = Alignment(horizontal="center", vertical="center", wrap_text="True")
+            heading_2.border = Border(left=bd2, top=bd2, right=bd2, bottom=bd2)
+            heading_2.font = Font(bold=True, size=15, color="44546A")
+            even = NamedStyle(name="even")
+            even.alignment = Alignment(horizontal="center", vertical="center", wrap_text="True")
+            even.border = Border(left=bd1, top=bd1, right=bd1, bottom=bd1)
+            even.font = Font(bold=False, size=12, color="44546A")
+            odd = NamedStyle(name="odd")
+            odd.alignment = Alignment(horizontal="center", vertical="center", wrap_text="True")
+            odd.border = Border(left=bd2, top=bd2, right=bd2, bottom=bd2)
+            odd.fill = PatternFill("solid", fgColor="D9E1F2")
+            odd.font = Font(bold=False, size=12, color="44546A")
+
+            Est = pytz.timezone('US/Eastern')
+            datetime_est = datetime.now(Est)
+            Est1 = datetime_est.strftime('%Y-%m-%d_%H-%M')
+            Est2 = datetime_est.strftime('%Y-%m-%d %H:%M:%S %Z %z')
+
+            workbook = f'UCS-Tools-Inventory-{Est1}.xlsx'
+            wb = openpyxl.Workbook()
+            wb.add_named_style(heading_1)
+            wb.add_named_style(heading_2)
+            wb.add_named_style(even)
+            wb.add_named_style(odd)
+            ws = wb.active
+            ws.title = 'Inventory List'
+
+            # Read Server Inventory to Create Column Headers
+            column_headers = [
+                'Domain','Model','Serial','Server','Profile','Firmware','Hostname','ESX Version','ESX Build',
+                'UCS Tools Install Date', 'UCS Tools Version'
+            ]
+            for i in range(len(column_headers)):
+                ws.column_dimensions[chr(ord('@')+i+1)].width = 30
+            cLength = len(column_headers)
+            ws_header = f'Collected UCS Data on {Est2}'
+            data = [ws_header]
+            ws.append(data)
+            ws.merge_cells(f'A1:{chr(ord("@")+cLength)}1')
+            for cell in ws['1:1']:
+                cell.style = 'heading_1'
+            ws.append(column_headers)
+            for cell in ws['2:2']:
+                cell.style = 'heading_2'
+            ws_row_count = 3
+            
+            # Populate the Columns with Server Inventory
+            for key, value in pyDict.items():
+                data = []
+                for k, v in value.items():
+                    data.append(v)
+                    
+                # Add the Columns to the Spreadsheet
+                ws.append(data)
+                for cell in ws[ws_row_count:ws_row_count]:
+                    if ws_row_count % 2 == 0: cell.style = 'odd'
+                    else: cell.style = 'even'
+                ws_row_count += 1
+            
+            # Save the Workbook
+            wb.save(filename=workbook)
 
     def hcl_status(self, **kwargs):
         args = kwargs['args']
@@ -691,7 +808,7 @@ class intersight_api(object):
                     serverSerial = apiQuery['Serial']
                     api_handle = asset_api.AssetApi(api_client)
                     serverReg = json.loads(api_handle.get_asset_device_registration_by_moid(
-                        apiQuery["RegisteredDevice"]['Moid'], **kwargs).data
+                        apiQuery['RegisteredDevice']['Moid'], **kwargs).data
                     )
                     domainParent = json.loads(api_handle.get_asset_device_registration_by_moid(
                         serverReg['ParentConnection']['Moid'], **kwargs).data
@@ -783,8 +900,8 @@ class intersight_api(object):
             wb.save(filename=workbook)
 
     def server_inventory(self, **kwargs):
-        args = kwargs['args']
-        pyDict = {}
+        args     = kwargs['args']
+        pyDict   = {}
         # Obtain Server Profile Data
         api_client = credentials.config_credentials(home, args)
         kwargs = dict(top = 1000, _preload_content = False)
@@ -818,7 +935,7 @@ class intersight_api(object):
                     serverSerial = apiQuery['Serial']
                     api_handle = asset_api.AssetApi(api_client)
                     serverReg = json.loads(api_handle.get_asset_device_registration_by_moid(
-                        apiQuery["RegisteredDevice"]['Moid'], **kwargs).data
+                        apiQuery['RegisteredDevice']['Moid'], **kwargs).data
                     )
                     domainParent = json.loads(api_handle.get_asset_device_registration_by_moid(
                         serverReg['ParentConnection']['Moid'], **kwargs).data

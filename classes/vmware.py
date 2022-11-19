@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from intersight.api import asset_api
 from intersight.api import compute_api
 from intersight.api import server_api
@@ -16,7 +15,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 home = Path.home()
-template_path = pkg_resources.resource_filename('vmware', '../templates/')
+template_path = pkg_resources.resource_filename('vmware', 'templates/')
 
 # Exception Classes
 class InsufficientArgs(Exception):

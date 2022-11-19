@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 import argparse
-import classes.ezfunctions
 import json
 import os
 import re
+import sys
+
+sys.path.insert(0, './classes')
+import classes.ezfunctions
+import classes.vmware
 
 # Global Variables
 excel_workbook = None
@@ -15,7 +19,7 @@ VMware_regex = re.compile('^(globals|server|vmks|vnics|vcenter)$')
 
 def process_servers(args, wb, pydict):
     # Evaluate Server Worksheet
-    class_ref = 'class_vmware.Servers'
+    class_ref = 'classes.vmware.Servers'
     func_regex = VMware_regex
     ws = wb['Hosts']
     pydict = read_worksheet(args, class_ref, func_regex, pydict, wb, ws)

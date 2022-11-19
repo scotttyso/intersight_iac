@@ -483,8 +483,8 @@ def process_wizard(**kwargs):
         quick = 'classes.quick_start.quick_start'
         kwargs['domain_prefix'] = domain_prefix
         type = 'pools'
-        #if 'quick_start_pools' in policy:
-        #    kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
+        if 'quick_start_pools' in policy:
+            kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
 
         #==============================================
         # TESTING TEMP PARAMETERS

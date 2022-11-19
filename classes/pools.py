@@ -46,7 +46,6 @@ class pools(object):
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
                     # Pull Information from API Documentation
                     kwargs["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
@@ -166,7 +165,6 @@ class pools(object):
                                     ezfunctions.message_starting_over(pol_type)
                                     valid_confirm = True
                                 else: ezfunctions.message_invalid_y_or_n('short')
-
                     valid = False
                     while valid == False:
                         config_ipv6 = input('Do you want to configure IPv6 for this Pool?  Enter "Y" or "N" [Y]: ')
@@ -272,13 +270,11 @@ class pools(object):
                                             inner_loop_count += 1
                                             valid_confirm = True
                                             valid_exit = True
-                                        else:
-                                            valid_exit = True
+                                        else: valid_exit = True
                                 elif confirm_conf == 'N':
                                     ezfunctions.message_starting_over(pol_type)
                                     valid_confirm = True
                                 else: ezfunctions.message_invalid_y_or_n('short')
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -396,8 +392,7 @@ class pools(object):
                         to_iqn = f"{prefix}:{suffix}{pool_to}"
                         valid_starting_iqn = validating.iqn_address('IQN Staring Address', from_iqn)
                         valid_ending_iqn = validating.iqn_address('IQN Ending Address', to_iqn)
-                        if valid_starting_iqn == True and valid_ending_iqn == True:
-                            valid = True
+                        if valid_starting_iqn == True and valid_ending_iqn == True: valid = True
                     polVars['iqn_blocks'] = [{'from':pool_from, 'size':pool_size, 'suffix':suffix}]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
@@ -449,7 +444,6 @@ class pools(object):
                 name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
                 polVars["multi_select"] = False
                 jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                 #==============================================
@@ -490,15 +484,13 @@ class pools(object):
                 #
                 # Configure Pool Paramemters
                 #==============================================
-                if re.search('[a-z]', pool_from):
-                    pool_from = pool_from.upper()
+                if re.search('[a-z]', pool_from): pool_from = pool_from.upper()
                 beginx = int(pool_from.replace(':', ''), 16)
                 add_dec = (beginx + int(pool_size) - 1)
                 pool_to = ':'.join(['{}{}'.format(a, b)
                     for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                 pool_to = pool_to.upper()
                 polVars["mac_blocks"] = [{'from':pool_from, 'size':pool_size}]
-
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -580,8 +572,10 @@ class pools(object):
                         kwargs['jData']["varInput"] = f'Do you want to add another Serial Number?'
                         kwargs['jData']["varName"] = 'Additional Serial Numbers'
                         valid = ezfunctions.varBoolLoop(**kwargs)
-
-                    # Server Type
+                    #==============================================
+                    #
+                    # Prompt User for Server Type
+                    #==============================================
                     jsonVars = ezData['pools']['resourcepool.Pool']
                     kwargs['jData'] = deepcopy(jsonVars['server_type'])
                     kwargs['jData']['description'] = jsonVars['server_type']['description']
@@ -589,7 +583,6 @@ class pools(object):
                     kwargs['jData']["defaultVar"] = jsonVars['server_type']['default']
                     kwargs['jData']["varType"] = 'Server Type'
                     polVars["server_type"] = ezfunctions.variablesFromAPI(**kwargs)
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -693,7 +686,6 @@ class pools(object):
                         pool_to = str(from_split[0]) + '-' + ('0' * add_zeros) + pool_to
                     pool_to = pool_to.upper()
                     polVars["uuid_blocks"] = [{'from':pool_from, 'size':pool_size}]
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -780,15 +772,13 @@ class pools(object):
                     #
                     # Configure Pool Parameters
                     #==============================================
-                    if re.search('[a-z]', pool_from):
-                        pool_from = pool_from.upper()
+                    if re.search('[a-z]', pool_from): pool_from = pool_from.upper()
                     beginx = int(pool_from.replace(':', ''), 16)
                     add_dec = (beginx + int(pool_size) - 1)
                     pool_to = ':'.join(['{}{}'.format(a, b)
-                        for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
+                    for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                     pool_to = pool_to.upper()
                     polVars["wwnn_blocks"] = [{'from':pool_from, 'size':pool_size}]
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -879,12 +869,11 @@ class pools(object):
                     #
                     # Configure Pool Parameters
                     #==============================================
-                    if re.search('[a-z]', pool_from):
-                        pool_from = pool_from.upper()
+                    if re.search('[a-z]', pool_from): pool_from = pool_from.upper()
                     beginx = int(pool_from.replace(':', ''), 16)
                     add_dec = (beginx + int(pool_size) - 1)
                     pool_to = ':'.join(['{}{}'.format(a, b)
-                        for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
+                    for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                     pool_to = pool_to.upper()
                     polVars["wwpn_blocks"] = [{'from':pool_from, 'size':pool_size}]
                     print(f'\n-------------------------------------------------------------------------------------------\n')

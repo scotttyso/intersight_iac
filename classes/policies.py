@@ -26,18 +26,16 @@ class policies(object):
     # Adapter Configuration Policy Module
     #==============================================
     def adapter_configuration_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        ezData      = kwargs['ezData']
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'adapter'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Adapter Configuration Policy'
-        yaml_file   = 'ethernet'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'adapter'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Adapter Configuration Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  An {policy_type} configures the Ethernet and Fibre-Channel settings for the ')
@@ -49,6 +47,7 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
@@ -57,7 +56,6 @@ class policies(object):
                     # Get API Data
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['adapter.FcSettings']['allOf'][1]['properties']
-
                     kwargs['jData'] = deepcopy(jsonVars['FipEnabled'])
                     kwargs['jData']['description'] = 'If Selected, then FCoE Initialization Protocol (FIP) mode is enabled.'\
                         ' FIP mode ensures that the adapter is compatible with current FCoE standards.'
@@ -90,7 +88,6 @@ class policies(object):
                         polVars["varType"] = f'DCE Interface {x} FEC Mode'
                         intFec = f'fec_mode_{x}'
                         polVars[intFec] = ezfunctions.variablesFromAPI(**kwargs)
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -98,8 +95,6 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            confirm_policy = 'Y'
-
                             # Write Policies to Template File
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
                             ezfunctions.write_to_template(self, **kwargs)
@@ -112,7 +107,6 @@ class policies(object):
                         else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
             else: ezfunctions.message_invalid_y_or_n('long')
-
         # Return kwargs
         return kwargs
 
@@ -120,17 +114,15 @@ class policies(object):
     # BIOS Policy Module
     #==============================================
     def bios_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        ezData      = kwargs['ezData']
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'BIOS Policy'
-        yaml_file   = 'compute'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'BIOS Policy'
+        yaml_file      = 'compute'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  {policy_type} Policies:  To simplify your work, this wizard will use {policy_type}')
@@ -144,7 +136,7 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
+                    polVars = {}
                     polVars["multi_select"] = False
                     jsonVars = ezData['policies']['bios.Policy']
                     polVars['description'] = jsonVars['templates']['description']
@@ -155,12 +147,9 @@ class policies(object):
 
                     if not polVars["name_prefix"] == '':
                         name = '%s-%s' % (polVars["name_prefix"], polVars["policy_template"])
-                    else:
-                        name = '%s-%s' % (polVars["org"], polVars["policy_template"])
-
+                    else: name = '%s-%s' % (polVars["org"], polVars["policy_template"])
                     polVars['name']        = ezfunctions.policy_name(name, polVars["policy_type"])
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], polVars["policy_type"])
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -168,8 +157,6 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            confirm_policy = 'Y'
-
                             # Write Policies to Template File
                             polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
                             ezfunctions.write_to_template(self, **kwargs)
@@ -182,7 +169,6 @@ class policies(object):
                         else: ezfunctions.message_invalid_y_or_n('short')
             elif configure == 'N': configure_loop = True
             else: ezfunctions.message_invalid_y_or_n('long')
-
         # Return kwargs
         return kwargs
 
@@ -190,22 +176,16 @@ class policies(object):
     # Boot Order Policy Module
     #==============================================
     def boot_order_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        ezData      = kwargs['ezData']
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'boot'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Boot Order Policy'
-        yaml_file   = 'compute'
-        polVars = {}
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **kwargs)
-        polVars["initial_write"] = False
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'boot'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Boot Order Policy'
+        yaml_file      = 'compute'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} configures the linear ordering of devices and enables you to change ')
@@ -218,35 +198,26 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
-
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
 
                     # Pull in the Policies for iSCSI Boot
                     jsonVars = jsonData['boot.PrecisionPolicy']['allOf'][1]['properties']
-                    polVars["multi_select"] = False
-
+                    kwargs["multi_select"] = False
                     # Configured Boot Mode
-                    polVars['description'] = jsonVars['ConfiguredBootMode']['description']
-                    polVars["jsonVars"] = sorted(jsonVars['ConfiguredBootMode']['enum'])
-                    polVars["defaultVar"] = jsonVars['ConfiguredBootMode']['default']
-                    polVars["varType"] = 'Configured Boot Mode'
+                    kwargs['jData'] = deepcopy(jsonVars['ConfiguredBootMode'])
+                    kwargs['jData'].update({'varType': 'Configured Boot Mode'})
                     polVars["boot_mode"] = ezfunctions.variablesFromAPI(**kwargs)
-
                     if polVars["boot_mode"] == 'Uefi':
                         # Enforce Uefi SecureBoot
-                        polVars['description'] = jsonVars['EnforceUefiSecureBoot']['description']
-                        polVars["varInput"] = f'Do you want to Enforce Uefi Secure Boot?'
-                        polVars["varDefault"] = 'Y'
-                        polVars["varName"] = 'Uefi SecureBoot'
+                        kwargs['jData'] = deepcopy(jsonVars['EnforceUefiSecureBoot'])
+                        kwargs['jData'].update({'default': False, 'varName': 'Uefi SecureBoot'})
+                        kwargs['jData']["varInput"] = f'Do you want to Enforce Uefi Secure Boot?'
                         polVars["enable_secure_boot"] = ezfunctions.varBoolLoop(**kwargs)
-                    else:
-                        polVars["enable_secure_boot"] = False
-
-
+                    else: polVars["enable_secure_boot"] = False
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Add and configure a boot device. The configuration options vary with boot device types.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -260,12 +231,11 @@ class policies(object):
                             while valid_sub == False:
                                 # Pull in the Policies for iSCSI Boot
                                 jsonVars = jsonData['boot.DeviceBase']['allOf'][1]['properties']
-
                                 # Configured Boot Mode
-                                polVars['description'] = 'Select the Type of Boot Device to configure.'
-                                polVars["jsonVars"] = sorted(jsonVars['ClassId']['enum'])
-                                polVars["defaultVar"] = 'boot.LocalDisk'
-                                polVars["varType"] = 'Boot Device Class ID'
+                                kwargs['jData'] = deepcopy(jsonVars['ClassId'])
+                                kwargs['jData']["default"] = 'boot.LocalDisk'
+                                kwargs['jData']['description'] = 'Select the Type of Boot Device to configure.'
+                                kwargs['jData']["varType"] = 'Boot Device Class ID'
                                 objectType = ezfunctions.variablesFromAPI(**kwargs)
 
                                 polVars['description'] = jsonVars['Name']['description']
@@ -276,13 +246,7 @@ class policies(object):
                                 polVars["minLength"] = 1
                                 polVars["maxLength"] = 30
                                 device_name = ezfunctions.varStringLoop(**kwargs)
-
-                                boot_device = {
-                                    "enabled":True,
-                                    "device_name":device_name,
-                                    "object_type":objectType
-                                }
-
+                                boot_device = {"enabled":True, "device_name":device_name, "object_type":objectType}
                                 if objectType == 'boot.Iscsi':
                                     device_type = 'iscsi_boot'
                                     jsonVars = jsonData['boot.Iscsi']['allOf'][1]['properties']
@@ -318,14 +282,6 @@ class policies(object):
 
                                 boot_device.update({'device_type':device_type})
 
-                                if polVars["boot_mode"] == 'Uefi' and re.fullmatch('boot\.(Iscsi|LocalDisk|Nvme|PchStorage|San|SdCard)', objectType):
-                                    addLoader = {
-                                        "bootloader_description":"Uefi Bootloader",
-                                        "bootloader_name":"BOOTX64.EFI",
-                                        "bootloader_path":"\\\\EFI\\\\BOOT\\\\"
-                                    }
-                                    boot_device.update(addLoader)
-
                                 if objectType == 'boot.LocalDisk':
                                     polVars["multi_select"] = False
                                     jsonVars = jsonData['vnic.EthNetworkPolicy']['allOf'][1]['properties']
@@ -352,10 +308,8 @@ class policies(object):
                                         polVars["minNum"] = 1
                                         polVars["maxNum"] = 205
                                         Slot = ezfunctions.varNumberLoop(**kwargs)
-
                                     localDisk = {'slot':Slot}
                                     boot_device.update(localDisk)
-
                                 if objectType == 'boot.Pxe':
                                     # IPv4 or IPv6
                                     polVars['description'] = jsonVars['IpType']['description']
@@ -372,27 +326,24 @@ class policies(object):
                                     InterfaceSource = ezfunctions.variablesFromAPI(**kwargs)
 
                                 if objectType == 'boot.Iscsi' or (objectType == 'boot.Pxe' and InterfaceSource == 'name'):
-                                    policy_list = [
-                                        'policies.lan_connectivity_policies.lan_connectivity_policy',
-                                    ]
                                     polVars["allow_opt_out"] = False
-                                    for policy in policy_list:
-                                        lan_connectivity_policy,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
+                                    kwargs['policy'] = 'policies.lan_connectivity_policies.lan_connectivity_policy'
+                                    lan_connectivity_policy = kwargs['lan_connectivity_policy']
+                                    kwargs = policy_select_loop(**kwargs)
                                     vnicNames = []
-                                    for x in policyData['lan_connectivity_policies']:
-                                        for keys, values in x.items():
-                                            if keys == lan_connectivity_policy:
-                                                for i in values[0]['vnics']:
-                                                    for k, v in i.items():
-                                                        vnicNames.append(k)
+                                    for item in kwargs['immDict']['orgs'][org]['intersight']['policies']['lan_connectivity_policies']:
+                                        if item['name'] == lan_connectivity_policy:
+                                            for i in item['vnics']:
+                                                vnicNames.append(i['names'])
 
-                                                polVars['description'] = 'LAN Connectivity vNIC Names.'
-                                                polVars["jsonVars"] = sorted(vnicNames)
-                                                polVars["defaultVar"] = ''
-                                                polVars["varType"] = 'vNIC Names'
-                                                vnicTemplate = ezfunctions.variablesFromAPI(**kwargs)
-                                                InterfaceName = values[0]['vnics'][0][vnicTemplate][0]['name']
-                                                Slot = values[0]['vnics'][0][vnicTemplate][0]['placement_slot_id']
+                                    vnicNames = [i for s in vnicNames for i in s]
+                                    polVars['description'] = 'LAN Connectivity vNIC Names.'
+                                    polVars["jsonVars"] = sorted(vnicNames)
+                                    polVars["defaultVar"] = ''
+                                    polVars["varType"] = 'vNIC Names'
+                                    vnicTemplate = ezfunctions.variablesFromAPI(**kwargs)
+                                    InterfaceName = values[0]['vnics'][0][vnicTemplate][0]['name']
+                                    Slot = values[0]['vnics'][0][vnicTemplate][0]['placement_slot_id']
 
                                     if objectType == 'boot.Iscsi':
                                         Port = 0

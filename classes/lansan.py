@@ -21,16 +21,14 @@ class policies(object):
     # Ethernet Adapter Policy Module
     #==============================================
     def ethernet_adapter_policies(self, **kwargs):
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        ezData      = kwargs['ezData']
-        name_prefix = self.name_prefix
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Ethernet Adapter'
-        yaml_file   = 'ethernet'
-        
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        name_prefix    = self.name_prefix
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Ethernet Adapter'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  {policy_type} Policy:  To simplify your work, this wizard will use {policy_type}')
@@ -44,15 +42,13 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-                    # Prompt User for Ethernet Adapter Template
                     polVars = {}
+                    # Prompt User for Ethernet Adapter Template
                     kwargs['multi_select'] = False
                     jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['vnic.EthNetworkPolicy']
-
                     kwargs['jData'] = deepcopy(jsonVars['templates'])
                     kwargs['jData']['varType'] = 'Ethernet Adapter Template'
                     policy_template = ezfunctions.variablesFromAPI(**kwargs)
-
                     if not name_prefix == '': name = '%s-%s' % (name_prefix, policy_template)
                     else: name = '%s-%s' % (org, policy_template)
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
@@ -84,17 +80,15 @@ class policies(object):
     # Ethernet Network Control Policy Module
     #==============================================
     def ethernet_network_control_policies(self, **kwargs):
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'ntwk-ctrl'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Ethernet Network Control Policy'
-        yaml_file   = 'ethernet'
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'ntwk-ctrl'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Ethernet Network Control Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  An {policy_type} will allow you to control Network Discovery with ')
@@ -104,9 +98,9 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
-                polVars = {}
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 polVars['action_on_uplink_fail'] = 'linkDown'
@@ -129,7 +123,6 @@ class policies(object):
 
                 # Pull Information from API Documentation
                 jsonVars = jsonData['fabric.EthNetworkControlPolicy']['allOf'][1]['properties']
-
                 # Prompt User for CDP Enable
                 kwargs['jData'] = deepcopy(jsonVars['CdpEnabled'])
                 kwargs['jData']['varInput'] = f'Do you want to enable CDP (Cisco Discovery Protocol) for this Policy?'
@@ -171,16 +164,14 @@ class policies(object):
     # Ethernet Network Group Policy Module
     #==============================================
     def ethernet_network_group_policies(self, **kwargs):
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        name_prefix = self.name_prefix
-        name_suffix = ['mgmt', 'migration', 'storage', 'dvs']
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Ethernet Network Group Policy'
-        yaml_file   = 'ethernet'
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        name_prefix    = self.name_prefix
+        name_suffix    = ['mgmt', 'migration', 'storage', 'dvs']
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Ethernet Network Group Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  An {policy_type} will define the Allowed VLANs on a Server vNIC Template.')
@@ -209,16 +200,13 @@ class policies(object):
                         if not name_prefix == '': name = '%s-%s' % (name_prefix, v)
                         else: name = '%s-%s' % (org, v)
                 if name == '':  name = '%s-%s' % (org, 'vlg')
-
                 polVars = {}
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 polVars['action_on_uplink_fail'] = 'linkDown'
-
                 kwargs['policy'] = 'policies.vlan.vlan_policy'
                 kwargs['allow_opt_out'] = False
                 kwargs = policy_select_loop(**kwargs)
-                
                 vlan_list = []
                 for item in kwargs['immDict']['orgs'][org]['vlan']:
                     if item['name'] == kwargs['vlan_policy']:
@@ -226,7 +214,6 @@ class policies(object):
                             vlan_list.append(i['vlan_list'])
                 all_vlans = ','.join(vlan_list)
                 vlan_policy_list = ezfunctions.vlan_list_full(all_vlans)
-
                 valid = False
                 while valid == False:
                     VlanList = input('Enter the VLAN or List of VLANs to add to this VLAN Group: ')
@@ -245,7 +232,6 @@ class policies(object):
                                             break
                                     if vlan_count == 0: vlans_not_in_domain_policy.append(vlan)
                             else: vlans_not_in_domain_policy.append(vlan)
-
                         if len(vlans_not_in_domain_policy) > 0:
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(f'  Error with VLAN(s) assignment!!  The following VLAN(s) are missing.')
@@ -262,12 +248,10 @@ class policies(object):
                         print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
                         print(f'     1-10,20-30 - Ranges and Lists of VLANs')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
-
                 # Prompt User for Native VLAN
                 polVars['native_vlan'] = ezfunctions.vlan_native_function(vlan_policy_list, vlan_list)
                 if polVars['native_vlan'] == '': polVars.pop('native_vlan')
                 polVars['allowed_vlans'] = VlanList
-
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -294,17 +278,15 @@ class policies(object):
     # Ethernet Network Policy Module
     #==============================================
     def ethernet_network_policies(self, **kwargs):
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'network'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Ethernet Network Policy'
-        yaml_file   = 'ethernet'
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'network'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Ethernet Network Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  An {policy_type} determines if the port can carry single VLAN (Access) ')
@@ -364,17 +346,15 @@ class policies(object):
     # Ethernet QoS Policy Module
     #==============================================
     def ethernet_qos_policies(self, **kwargs):
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = ['mgmt', 'migration', 'storage', 'dvs']
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Ethernet QoS Policy'
-        yaml_file   = 'ethernet'
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = ['mgmt', 'migration', 'storage', 'dvs']
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Ethernet QoS Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  An {policy_type} will configure QoS on a Server vNIC Template.')
@@ -396,12 +376,10 @@ class policies(object):
             # Get Variables from API Data
             kwargs['multi_select'] = False
             jsonVars = jsonData['vnic.EthNetworkPolicy']['allOf'][1]['properties']
-
             kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
             kwargs['jData']['default'] = 'FIAttached'
             kwargs['jData']['varType'] = 'Target Platform'
             target_platform = ezfunctions.variablesFromAPI(**kwargs)
-
             loop_count = 0
             policy_loop = False
             while policy_loop == False:
@@ -504,16 +482,14 @@ class policies(object):
     # Fibre-Channel Adapter Policy Module
     #==============================================
     def fibre_channel_adapter_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        ezData      = kwargs['ezData']
-        name_prefix = self.name_prefix
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Fibre-Channel Adapter Policy'
-        yaml_file   = 'fibre_channel'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        name_prefix    = self.name_prefix
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Fibre-Channel Adapter Policy'
+        yaml_file      = 'fibre_channel'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
@@ -528,7 +504,7 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
+                    polVars = {}
                     # Pull Information from API Documentation
                     polVars["multi_select"] = False
                     jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['vnic.FcNetworkPolicy']
@@ -568,16 +544,14 @@ class policies(object):
     # Fibre-Channel Network Policy Module
     #==============================================
     def fibre_channel_network_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Fibre-Channel Network Policy'
-        yaml_file   = 'fibre_channel'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Fibre-Channel Network Policy'
+        yaml_file      = 'fibre_channel'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
@@ -591,6 +565,7 @@ class policies(object):
                 loop_count = 0
                 policy_loop = False
                 while policy_loop == False:
+                    polVars = {}
                     name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
@@ -663,16 +638,14 @@ class policies(object):
     # Fibre-Channel QoS Policy Module
     #==============================================
     def fibre_channel_qos_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        name_prefix = self.name_prefix
-        name_suffix = 'fc-qos'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Fibre-Channel QoS Policy'
-        yaml_file   = 'fibre_channel'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        name_prefix    = self.name_prefix
+        name_suffix    = 'fc-qos'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Fibre-Channel QoS Policy'
+        yaml_file      = 'fibre_channel'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
@@ -686,6 +659,7 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
@@ -717,16 +691,14 @@ class policies(object):
     # Flow Control Policy Module
     #==============================================
     def flow_control_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        name_prefix = self.name_prefix
-        name_suffix = 'flow-ctrl'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Flow Control Policy'
-        yaml_file   = 'ethernet'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        name_prefix    = self.name_prefix
+        name_suffix    = 'flow-ctrl'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Flow Control Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Flow Control Policy will enable Priority Flow Control on the Fabric Interconnects.')
@@ -738,6 +710,7 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
@@ -767,17 +740,15 @@ class policies(object):
     # iSCSI Adapter Policy Module
     #==============================================
     def iscsi_adapter_policies(self, **kwargs):
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'adapter'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'iSCSI Adapter Policy'
-        yaml_file   = 'ethernet'
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'adapter'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'iSCSI Adapter Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The {policy_type} allows you to configure values for TCP Connection Timeout, ')
@@ -847,17 +818,15 @@ class policies(object):
     # iSCSI Boot Policy Module
     #==============================================
     def iscsi_boot_policies(self, **kwargs):
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'boot'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'iSCSI Boot Policy'
-        yaml_file   = 'ethernet'
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'boot'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'iSCSI Boot Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The {policy_type} allows you to initialize the Operating System on FI-attached ')
@@ -1020,17 +989,15 @@ class policies(object):
     # iSCSI Static Target Policy Module
     #==============================================
     def iscsi_static_target_policies(self, **kwargs):
-        args        = kwargs['args']
-        baseRepo    = args.dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'target'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'iSCSI Static Target Policy'
-        yaml_file   = 'ethernet'
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'target'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'iSCSI Static Target Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The {policy_type} allows you to specify the name, IP address, port, and ')
@@ -1115,17 +1082,15 @@ class policies(object):
     # Multicast Policy Module
     #==============================================
     def multicast_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'mcast'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Multicast Policy'
-        yaml_file   = 'vlan'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'mcast'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Multicast Policy'
+        yaml_file      = 'vlan'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Each VLAN must have a Multicast Policy applied to it.  Optional attributes will be')
@@ -1138,6 +1103,7 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
                 polVars['name'] = ezfunctions.policy_name(name, policy_type)
@@ -1158,7 +1124,6 @@ class policies(object):
                     kwargs['jData']['varName']  = 'IGMP Querier Peer IP'
                     polVars['querier_ip_address_peer'] = ezfunctions.varStringLoop(**kwargs)
                 if polVars['querier_ip_address'] == '': polVars.pop('querier_ip_address')
-
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -1183,16 +1148,15 @@ class policies(object):
     # LAN Connectivity Policy Module
     #==============================================
     def lan_connectivity_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = ['mgmt', 'migration', 'storage', 'dvs']
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'LAN Connectivity Policy'
-        yaml_file   = 'lan_connectivity'
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = ['mgmt', 'migration', 'storage', 'dvs']
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'LAN Connectivity Policy'
+        yaml_file      = 'lan_connectivity'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} will configure vNIC adapters for Server Profiles.\n')
@@ -1520,16 +1484,14 @@ class policies(object):
     # Link Aggregation Policy Module
     #==============================================
     def link_aggregation_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        name_prefix = self.name_prefix
-        name_suffix = 'link-agg'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Link Aggregation Policy'
-        yaml_file   = 'ethernet'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        name_prefix    = self.name_prefix
+        name_suffix    = 'link-agg'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Link Aggregation Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A Link Aggregation Policy will assign LACP settings to the Ethernet Port-Channels and')
@@ -1541,6 +1503,7 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
@@ -1570,16 +1533,14 @@ class policies(object):
     # Link Control Policy Module
     #==============================================
     def link_control_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        name_prefix = self.name_prefix
-        name_suffix = 'link-ctrl'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Link Control Policy'
-        yaml_file   = 'ethernet'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        name_prefix    = self.name_prefix
+        name_suffix    = 'link-ctrl'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Link Control Policy'
+        yaml_file      = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A Link Control Policy will configure the Unidirectional Link Detection Protocol for')
@@ -1592,6 +1553,7 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
@@ -1621,18 +1583,15 @@ class policies(object):
     # SAN Connectivity Policy Module
     #==============================================
     def san_connectivity_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        ezData      = kwargs['ezData']
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'scp'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'SAN Connectivity Policy'
-        yaml_file   = 'san_connectivity'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'scp'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'SAN Connectivity Policy'
+        yaml_file      = 'san_connectivity'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
@@ -1644,6 +1603,7 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
@@ -1662,7 +1622,6 @@ class policies(object):
                         kwargs['jData'] = deepcopy(jsonVars['WwnnAddressType'])
                         kwargs['jData']["varType"] = 'WWNN Allocation Type'
                         kwargs["wwnn_allocation_type"] = ezfunctions.variablesFromAPI(**kwargs)
-
                         polVars["wwnn_pool"] = ''
                         polVars["wwnn_static"] = ''
                         if kwargs["wwnn_allocation_type"] == 'POOL':
@@ -1674,7 +1633,6 @@ class policies(object):
                             kwargs['jData']['varInput'] = 'What is the Static WWNN you would like to assign to this SAN Policy?'
                             kwargs['jData']['varName']  = 'Static WWNN'
                             static_wwnn = ezfunctions.varStringLoop(**kwargs)
-
                     policy_name = polVars['name']
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'   BEGINNING vHBA Creation Process')
@@ -1702,14 +1660,12 @@ class policies(object):
                             kwargs["name"] = f"the {kwargs['policy'].split(',')[2]} for vHBA on Fabric {x.upper()}"
                             kwargs = policy_select_loop(**kwargs)
                             kwargs[f'fc_network_policy_{x}'] = kwargs['fibre_channel_network_policy']
-
                         for x in fabrics:
                             valid = False
                             while valid == False:
                                 kwargs[f'name_{x}'] = input(f'What is the name for Fabric {x.upper} vHBA?  [vhba-{x}]: ')
                                 if kwargs[f'name_{x}'] == '': kwargs[f'name_{x}'] = 'vhba-%s' % (x)
                                 valid = validating.vname('vNIC Name', kwargs[f'name_{x}'])
-
                         jsonVars = jsonData['vnic.FcIfInventory']['allOf'][1]['properties']
                         kwargs['jData'] = deepcopy(jsonVars['PersistentBindings'])
                         kwargs['jData']['varInput'] = f'Do you want to Enable Persistent LUN Bindings?'
@@ -1718,7 +1674,6 @@ class policies(object):
 
                         # Pull in API Attributes
                         jsonVars = jsonData['vnic.PlacementSettings']['allOf'][1]['properties']
-
                         for x in fabrics:
                             kwargs['jData'] = deepcopy(jsonVars['PciLink'])
                             if kwargs['enable_failover'] == False:
@@ -1733,7 +1688,6 @@ class policies(object):
                                 kwargs['jData']['varInput'] = f'What is the {jsonVars["Uplink"]["description"]}?'
                                 kwargs['jData']['varType']  = 'Adapter Port'
                                 kwargs[f'placement_uplink_port_{x}'] = ezfunctions.varNumberLoop(**kwargs)
-
                             kwargs['jData'] = deepcopy(jsonVars['Id'])
                             kwargs['jData']['default']  = 'MLOM'
                             kwargs['jData']['varInput'] = f'What is the {jsonVars["Id"]["description"]}?'
@@ -1741,7 +1695,6 @@ class policies(object):
                             kwargs[f'placement_slot_id_{x}'] = ezfunctions.varStringLoop(**kwargs)
 
                         jsonVars = jsonData['vnic.FcIf']['allOf'][1]['properties']
-
                         kwargs['jData'] = deepcopy(jsonVars['Type'])
                         kwargs['jData']['varType'] = 'vHBA Type'
                         kwargs['vhba_type'] = ezfunctions.variablesFromAPI(**kwargs)
@@ -1766,7 +1719,6 @@ class policies(object):
                                         f' assign to Fabric {x.upper()}?'
                                     kwargs['jData']['varName']  = 'WWPN Static Address'
                                     kwargs[f'static_wwpn_{x}'] = ezfunctions.varStringLoop(**kwargs)
-
                         polVars = {}
                         polVars['names'] = []
                         polVars['fibre_channel_network_policies'] = []
@@ -1821,8 +1773,7 @@ class policies(object):
                                         inner_loop_count += 1
                                         valid_confirm = True
                                         valid_exit = True
-                                    else:
-                                        valid_exit = True
+                                    else: valid_exit = True
                             elif confirm_conf == 'N':
                                 pol_type = 'vHBA'
                                 ezfunctions.message_starting_over(pol_type)
@@ -1855,17 +1806,15 @@ class policies(object):
     # Switch Control Policy Module
     #==============================================
     def switch_control_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'sw-ctrl'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'Switch Control Policy'
-        yaml_file   = 'switch'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'sw-ctrl'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'Switch Control Policy'
+        yaml_file      = 'switch'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A Switch Control Policy will configure Unidirectional Link Detection Protocol and')
@@ -1878,6 +1827,7 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
@@ -1922,22 +1872,16 @@ class policies(object):
     # System QoS Policy Module
     #==============================================
     def system_qos_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        ezData      = kwargs['ezData']
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        name_suffix = 'qos'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'System QoS Policy'
-        yaml_file   = 'switch'
-        polVars = {}
-
-        # Open the Template file
-        ezfunctions.write_to_template(self, **kwargs)
-        polVars["initial_write"] = False
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'qos'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'System QoS Policy'
+        yaml_file      = 'switch'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A System QoS Policy will configure the QoS Policies for the UCS Domain Profile')
@@ -1958,6 +1902,7 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
@@ -2016,16 +1961,14 @@ class policies(object):
     # VLAN Policy Module
     #==============================================
     def vlan_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        name_prefix = self.name_prefix
-        name_suffix = 'vlan'
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'VLAN Policy'
-        yaml_file   = 'vlan'
-        polVars = {}
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        name_prefix    = self.name_prefix
+        name_suffix    = 'vlan'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'VLAN Policy'
+        yaml_file      = 'vlan'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} will define the VLANs Assigned to the Fabric Interconnects.')
@@ -2045,9 +1988,9 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
-
                 polVars['name']  = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 polVars['auto_allow_on_uplinks'] = True
@@ -2086,15 +2029,12 @@ class policies(object):
                         print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
                         print(f'     1-10,20-30 - Ranges and Lists of VLANs')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
-
                     if not native_vlan == '':
                         vlan_list_expanded.remove(int(native_vlan))
-
                 vlan_list = ezfunctions.vlan_list_format(vlan_list_expanded)
                 kwargs['policy'] = 'policies.multicast.multicast_policy'
                 kwargs['allow_opt_out'] = False
                 kwargs = policy_select_loop(**kwargs)
-
                 polVars['vlans']
                 if not native_vlan == '' and len(vlan_list) > 1:
                     if int(native_vlan) == 1: auto_native = True
@@ -2135,15 +2075,14 @@ class policies(object):
     # VSAN Policy Module
     #==============================================
     def vsan_policies(self, **kwargs):
-        baseRepo    = kwargs['args'].dir
-        jsonData    = kwargs['jsonData']
-        name_prefix = self.name_prefix
-        org         = self.org
-        path_sep    = kwargs['path_sep']
-        policy_type = 'VSAN Policy'
-        yaml_file   = 'vsan'
-
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'VSAN Policy'
+        yaml_file      = 'vsan'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
@@ -2160,17 +2099,14 @@ class policies(object):
                 loop_count = 0
                 policy_loop = False
                 while policy_loop == False:
-
                     name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
                     kwargs['name'] = ezfunctions.policy_name(name, policy_type)
                     kwargs['description'] = ezfunctions.policy_descr(kwargs['name'], policy_type)
                     kwargs['auto_allow_on_uplinks'] = True
-
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Uplink Trunking: Default is No.')
                     print(f'     Most deployments do not enable Uplink Trunking for Fibre-Channel. ')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    
                     # Pull Information from the API
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['fabric.FcNetworkPolicy']['allOf'][1]['properties']
@@ -2180,7 +2116,6 @@ class policies(object):
                     kwargs['jData']['varInput'] = f'Do you want to Enable Uplink Trunking for this VSAN Policy?'
                     kwargs['jData']['varName']  = 'Enable Trunking'
                     kwargs['uplink_trunking'] = ezfunctions.varBoolLoop(**kwargs)
-
                     kwargs['vsan'] = []
                     vsan_count = 0
                     vsan_loop = False
@@ -2194,7 +2129,6 @@ class policies(object):
                             if re.search(r'[0-9]{1,4}', str(vsan_id)):
                                 valid = validating.number_in_range('VSAN ID', vsan_id, 1, 4094)
                             else: ezfunctions.message_invalid_vlan()
-
                         valid = False
                         while valid == False:
                             fcoe_id = input(f'Enter the VLAN id for the FCOE VLAN to encapsulate "{vsan_id}" over Ethernet.'\
@@ -2221,21 +2155,17 @@ class policies(object):
                                     if overlap == False: valid = True
                                 else: ezfunctions.message_invalid_vlan()
                             else: ezfunctions.message_invalid_vlan()
-
                         jsonVars = jsonData['fabric.Vsan']['allOf'][1]['properties']
-
                         # VSAN Name
                         kwargs['jData'] = deepcopy(jsonVars['Name'])
                         kwargs['jData']['default'] = f'vsan-{vsan_id}'
                         kwargs['jData']['varInput'] = f'What Name would you like to assign to "{vsan_id}"?'
                         kwargs['jData']['varName'] = 'VSAN Name'
                         vsan_name = ezfunctions.varStringLoop(**kwargs)
-
                         # Assign the VSAN Scope for this List
                         kwargs['jData'] = deepcopy(jsonVars['Name'])
                         kwargs['jData']['varType'] = 'Vsan Scope'
                         vsan_scope = ezfunctions.variablesFromAPI(**kwargs)
-
                         vsan = {
                             'fcoe_vlan_id':fcoe_id, 'name':vsan_name,
                             'id':vsan_id, 'vsan_scope':vsan_scope
@@ -2259,7 +2189,6 @@ class policies(object):
                                     else:
                                         valid_confirm = True
                                         valid_exit = True
-
                             elif confirm_vsan == 'N':
                                 ezfunctions.message_starting_over(policy_type)
                                 valid_confirm = True

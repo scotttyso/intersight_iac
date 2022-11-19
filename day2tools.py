@@ -3,6 +3,8 @@
 import argparse
 import classes.day2tools
 import classes.ezfunctions
+import json
+import io
 import os
 import platform
 import sys
@@ -17,12 +19,12 @@ def main():
         Parser.description = description
     Parser.add_argument(
         '-a', '--api-key-id',
-        default=os.getenv('TF_VAR_apikey'),
+        default=os.getenv('apikey'),
         help='The Intersight API client key id for HTTP signature scheme'
     )
     Parser.add_argument(
         '-s', '--api-key-file',
-        default=os.getenv('TF_VAR_secretkeyfile'),
+        default=os.getenv('secretkeyfile'),
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
     )
     Parser.add_argument(
@@ -46,7 +48,12 @@ def main():
     Parser.add_argument(
         '-p', '--process',
         default='server_inventory',
-        help='Which Process to run with the Script.  Options are 1. add_policies 2. add_vlan 3. server_inventory 4. hcl_status.'
+        help='Which Process to run with the Script.  Options are:'\
+            '1. add_policies '\
+            '2. add_vlan '\
+            '3. server_inventory '\
+            '4. hcl_inventory '\
+            '5. hcl_status.'
     )
     Parser.add_argument(
         '-u', '--url', default='https://intersight.com',
@@ -63,9 +70,24 @@ def main():
     opSystem = platform.system()
     kwargs = {}
     kwargs['args'] = args
-    kwargs['get_script_path'] = os.path.dirname(os.path.realpath(sys.argv[0]))
+    kwargs['script_path'] = os.path.dirname(os.path.realpath(sys.argv[0]))
     if opSystem == 'Windows': kwargs['path_sep'] = '\\'
     else: kwargs['path_sep'] = '/'
+    if not args.json_file == None:
+        if not os.path.isfile(args.json_file):
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  !!ERROR!!')
+            print(f'  Did not find the file {args.json_file}.')
+            print(f'  Please Validate that you have specified the correct file and path.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            exit()
+        else:
+            json_file = args.json_file
+            if 'hcl_inventory' in args.process:
+                json_open = open(json_file, 'r', encoding='utf-16')
+            else:
+                json_open = open(json_file, 'r')
+            kwargs['json_data'] = json.load(json_open)
 
     # Verify the SecretKey
     if not args.api_key_file == None:
@@ -84,6 +106,9 @@ def main():
     elif args.process == 'add_vlan':
         type = 'add_vlan'
         classes.day2tools.intersight_api(type).add_vlan(**kwargs)
+    elif args.process == 'hcl_inventory':
+        type = 'hcl_inventory'
+        classes.day2tools.intersight_api('hcl_inventory').hcl_inventory(**kwargs)
     elif args.process == 'hcl_status':
         type = 'hcl_status'
         classes.day2tools.intersight_api(type).hcl_status(**kwargs)

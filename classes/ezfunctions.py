@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from copy import deepcopy
 from git import cmd, Repo
 from openpyxl import load_workbook
@@ -9,7 +8,6 @@ import jinja2
 import json
 import os
 import pkg_resources
-import platform
 import re
 import requests
 import shutil
@@ -17,7 +15,7 @@ import subprocess
 import sys
 import stdiomask
 import textwrap
-import validating
+import classes.validating
 import yaml
 
 # Log levels 0 = None, 1 = Class only, 2 = Line
@@ -586,8 +584,8 @@ def ntp_alternate():
         if alternate_true == 'Y' or alternate_true == '':
             alternate_ntp = input('What is your Alternate NTP Server? [1.north-america.pool.ntp.org]: ')
             if alternate_ntp == '': alternate_ntp = '1.north-america.pool.ntp.org'
-            if re.search(r'[a-zA-Z]+', alternate_ntp): valid = validating.dns_name('Alternate NTP Server', alternate_ntp)
-            else: valid = validating.ip_address('Alternate NTP Server', alternate_ntp)
+            if re.search(r'[a-zA-Z]+', alternate_ntp): valid = classes.validating.dns_name('Alternate NTP Server', alternate_ntp)
+            else: valid = classes.validating.ip_address('Alternate NTP Server', alternate_ntp)
         elif alternate_true == 'N':
             alternate_ntp = ''
             valid = True
@@ -602,8 +600,8 @@ def ntp_primary():
     while valid == False:
         primary_ntp = input('What is your Primary NTP Server [0.north-america.pool.ntp.org]: ')
         if primary_ntp == "": primary_ntp = '0.north-america.pool.ntp.org'
-        if re.search(r'[a-zA-Z]+', primary_ntp): valid = validating.dns_name('Primary NTP Server', primary_ntp)
-        else: valid = validating.ip_address('Primary NTP Server', primary_ntp)
+        if re.search(r'[a-zA-Z]+', primary_ntp): valid = classes.validating.dns_name('Primary NTP Server', primary_ntp)
+        else: valid = classes.validating.ip_address('Primary NTP Server', primary_ntp)
     return primary_ntp
 
 #======================================================
@@ -625,7 +623,7 @@ def policy_descr(name, policy_type):
     while valid == False:
         descr = input(f'What is the Description for the {policy_type}?  [{name} {policy_type}]: ')
         if descr == '': descr = '%s %s' % (name, policy_type)
-        valid = validating.description(f'{policy_type} polVars["descr"]', descr, 1, 62)
+        valid = classes.validating.description(f'{policy_type} polVars["descr"]', descr, 1, 62)
         if valid == True: return descr
 
 #======================================================
@@ -636,7 +634,7 @@ def policy_name(namex, policy_type):
     while valid == False:
         name = input(f'What is the Name for the {policy_type}?  [{namex}]: ')
         if name == '': name = '%s' % (namex)
-        valid = validating.name_rule(f'{policy_type} Name', name, 1, 62)
+        valid = classes.validating.name_rule(f'{policy_type} Name', name, 1, 62)
         if valid == True: return name
 
 #======================================================
@@ -766,18 +764,18 @@ def sensitive_var_value(**kwargs):
                 maxLength = 254
                 rePattern = jsonVars['Password']['pattern']
                 varName = 'LDAP Binding Password'
-                valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'community' in sensitive_var:
                 varName = 'SNMP Community String'
-                valid = validating.snmp_string(varName, secure_value)
-            elif 'ipmi_key' in sensitive_var: valid = validating.ipmi_key_check(secure_value)
+                valid = classes.validating.snmp_string(varName, secure_value)
+            elif 'ipmi_key' in sensitive_var: valid = classes.validating.ipmi_key_check(secure_value)
             elif 'iscsi_boot' in sensitive_var:
                 jsonVars = jsonData['vnic.IscsiAuthProfile']['allOf'][1]['properties']
                 minLength = 12
                 maxLength = 16
                 rePattern = jsonVars['Password']['pattern']
                 varName = 'iSCSI Boot Password'
-                valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'local' in sensitive_var:
                 jsonVars = jsonData['iam.EndPointUserRole']['allOf'][1]['properties']
                 minLength = jsonVars['Password']['minLength']
@@ -789,15 +787,15 @@ def sensitive_var_value(**kwargs):
                 if enforce_pass == True:
                     minLength = 8
                     maxLength = 20
-                    valid = validating.strong_password(kwargs['Variable'], secure_value, minLength, maxLength)
-                else: valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                    valid = classes.validating.strong_password(kwargs['Variable'], secure_value, minLength, maxLength)
+                else: valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'secure_passphrase' in sensitive_var:
                 jsonVars = jsonData['memory.PersistentMemoryLocalSecurity']['allOf'][1]['properties']
                 minLength = jsonVars['SecurePassphrase']['minLength']
                 maxLength = jsonVars['SecurePassphrase']['maxLength']
                 rePattern = jsonVars['SecurePassphrase']['pattern']
                 varName = 'Persistent Memory Secure Passphrase'
-                valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'snmp' in sensitive_var:
                 jsonVars = jsonData['snmp.Policy']['allOf'][1]['properties']
                 minLength = 1
@@ -805,14 +803,14 @@ def sensitive_var_value(**kwargs):
                 rePattern = '^[\\S]+$'
                 if 'auth' in sensitive_var: varName = 'SNMP Authorization Password'
                 else: varName = 'SNMP Privacy Password'
-                valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'vmedia' in sensitive_var:
                 jsonVars = jsonData['vmedia.Mapping']['allOf'][1]['properties']
                 minLength = 1
                 maxLength = jsonVars['Password']['maxLength']
                 rePattern = '^[\\S]+$'
                 varName = 'vMedia Mapping Password'
-                valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
+                valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
 
         # Add Policy Variables to immDict
         if not kwargs['immDict']['orgs'][org].get('sensitive_vars'):
@@ -880,8 +878,8 @@ def snmp_trap_servers(**kwargs):
             if not destination_address == '':
                 if re.search(r'^[0-9a-fA-F]+[:]+[0-9a-fA-F]$', destination_address) or \
                     re.search(r'^(\d{1,3}\.){3}\d{1,3}$', destination_address):
-                    valid = validating.ip_address('SNMP Trap Destination', destination_address)
-                else: valid = validating.dns_name('SNMP Trap Destination', destination_address)
+                    valid = classes.validating.ip_address('SNMP Trap Destination', destination_address)
+                else: valid = classes.validating.dns_name('SNMP Trap Destination', destination_address)
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Trap Destination Hostname/Address.')
@@ -892,7 +890,7 @@ def snmp_trap_servers(**kwargs):
             port = input(f'Enter the Port to Assign to this Destination.  Valid Range is 1-65535.  [162]: ')
             if port == '': port = 162
             if re.search(r'[0-9]{1,4}', str(port)):
-                valid = validating.snmp_port('SNMP Port', port, 1, 65535)
+                valid = classes.validating.snmp_port('SNMP Port', port, 1, 65535)
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
@@ -1051,8 +1049,8 @@ def syslog_servers(**kwargs):
         while valid == False:
             hostname = input(f'Enter the Hostname/IP Address of the Remote Server: ')
             if re.search(r'[a-zA-Z]+', hostname):
-                valid = validating.dns_name('Remote Logging Server', hostname)
-            else: valid = validating.ip_address('Remote Logging Server', hostname)
+                valid = classes.validating.dns_name('Remote Logging Server', hostname)
+            else: valid = classes.validating.ip_address('Remote Logging Server', hostname)
 
         jsonVars = jsonData['syslog.RemoteClientBase']['allOf'][1]['properties']
         kwargs['jData'] = deepcopy(jsonVars['MinSeverity'])
@@ -1066,7 +1064,7 @@ def syslog_servers(**kwargs):
         while valid == False:
             port = input(f'Enter the Port to Assign to this Policy.  Valid Range is 1-65535.  [514]: ')
             if port == '': port = 514
-            if re.search(r'[0-9]{1,4}', str(port)): valid = validating.number_in_range('Port', port, 1, 65535)
+            if re.search(r'[0-9]{1,4}', str(port)): valid = classes.validating.number_in_range('Port', port, 1, 65535)
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
@@ -1374,7 +1372,7 @@ def varNumberLoop(**kwargs):
         varValue = input(f'{varInput}  [{varDefault}]: ')
         if varValue == '': varValue = varDefault
         if re.fullmatch(r'^[0-9]+$', str(varValue)):
-            valid = validating.number_in_range(varName, varValue, minimum, maximum)
+            valid = classes.validating.number_in_range(varName, varValue, minimum, maximum)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'   {varName} value of "{varValue}" is Invalid!!! ')
@@ -1408,7 +1406,7 @@ def varSensitiveStringLoop(**kwargs):
     while valid == False:
         varValue = stdiomask.getpass(f'{kwargs["varInput"]} ')
         if not varValue == '':
-            valid = validating.length_and_regex_sensitive(varRegex, varName, varValue, minimum, maximum)
+            valid = classes.validating.length_and_regex_sensitive(varRegex, varName, varValue, minimum, maximum)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'   {varName} value is Invalid!!! ')
@@ -1445,7 +1443,7 @@ def varStringLoop(**kwargs):
         elif not varDefault == '' and varValue == '':
             varValue = varDefault
             valid = True
-        elif not varValue == '': valid = validating.length_and_regex(varRegex, varName, varValue, minimum, maximum)
+        elif not varValue == '': valid = classes.validating.length_and_regex(varRegex, varName, varValue, minimum, maximum)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'   {varName} value of "{varValue}" is Invalid!!! ')
@@ -1577,7 +1575,7 @@ def vlan_pool():
             vlanListExpanded = vlan_list_full(VlanList)
             valid_vlan = True
             for vlan in vlanListExpanded:
-                valid_vlan = validating.number_in_range('VLAN ID', vlan, 1, 4094)
+                valid_vlan = classes.validating.number_in_range('VLAN ID', vlan, 1, 4094)
                 if valid_vlan == False: continue
             if valid_vlan == False:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
