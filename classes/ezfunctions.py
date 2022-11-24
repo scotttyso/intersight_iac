@@ -613,6 +613,8 @@ def policies_parse(ptype, policy_type, **kwargs):
     if not kwargs['immDict']['orgs'][org]['intersight'].get(ptype) == None:
         if not kwargs['immDict']['orgs'][org]['intersight'][ptype].get(policy_type) == None:
             kwargs['policies'] = {policy_type:kwargs['immDict']['orgs'][org]['intersight'][ptype][policy_type]}
+        else: kwargs['policies'] = {policy_type:{}}
+    else: kwargs['policies'] = {policy_type:{}}
     return kwargs
 
 #======================================================
@@ -1423,9 +1425,11 @@ def varStringLoop(**kwargs):
     varRegex   = kwargs['jData']["pattern"]
     if kwargs['jData'].get('default'):  varDefault = kwargs['jData']['default']
     else: varDefault = ''
-    if kwargs['jData'].get('maximum'):  maximum = kwargs['jData']['maximum']
+    if   kwargs['jData'].get('maximum'):   maximum = kwargs['jData']['maximum']
+    elif kwargs['jData'].get('maxLength'): maximum = kwargs['jData']['maxLength']
     else: maximum = 0
-    if kwargs['jData'].get('minimum'):  minimum = kwargs['jData']['minimum']
+    if   kwargs['jData'].get('minimum'):   minimum = kwargs['jData']['minimum']
+    elif kwargs['jData'].get('minLength'): minimum = kwargs['jData']['minLength']
     else: minimum = 0
     print(f'\n-------------------------------------------------------------------------------------------\n')
     if '\n' in varDesc:

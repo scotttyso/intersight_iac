@@ -50,7 +50,6 @@ class pools(object):
                     kwargs["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
-                    #
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
@@ -66,7 +65,6 @@ class pools(object):
                         else: ezfunctions.message_invalid_y_or_n('short')
                     if config_ipv4 == 'Y':
                         #==============================================
-                        #
                         # Prompt User for Subnet Mask
                         #==============================================
                         jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
@@ -76,7 +74,6 @@ class pools(object):
                         kwargs['jData']['varName']  = 'Subnet Mask'
                         kwargs['subnetMask'] = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Prompt User for Default Gateway
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['Gateway'])
@@ -85,16 +82,14 @@ class pools(object):
                         kwargs['jData']['varName']  = 'Default Gateway'
                         kwargs['defaultGateway'] = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Prompt User for Primary DNS Server
                         #==============================================
-                        kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
+                        kwargs['jData'] = deepcopy(jsonVars['PrimaryDns'])
                         kwargs['jData']['default']  = '208.67.220.220'
                         kwargs['jData']['varInput'] = f'Primary DNS Server.'
                         kwargs['jData']['varName']  = f'Primary DNS Server'
                         primaryDns = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Prompt User for Secondary DNS Server
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
@@ -102,7 +97,6 @@ class pools(object):
                         kwargs['jData']['varName']  = f'Secondary DNS Server'
                         secondaryDns = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Configure IPv4 Configuration Parameters
                         #==============================================
                         polVars["ipv4_configuration"] = {
@@ -115,7 +109,6 @@ class pools(object):
                         while ipv4_loop == False:
                             jsonVars = jsonData['ippool.IpV4Block']['allOf'][1]['properties']
                             #==============================================
-                            #
                             # Prompt User for IPv4 Block Starting Address
                             #==============================================
                             kwargs['ip_version'] = 'v4'
@@ -126,7 +119,6 @@ class pools(object):
                             kwargs['jData']['varName']  = f'IPv4 Block Starting IP Address'
                             kwargs['pool_from'] = ezfunctions.varStringLoop(**kwargs)
                             #==============================================
-                            #
                             # Prompt User for Block Size
                             #==============================================
                             jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
@@ -136,7 +128,6 @@ class pools(object):
                             kwargs['jData']["varName"] = 'Block Size'
                             pool_size = ezfunctions.varNumberLoop(**kwargs)
                             #==============================================
-                            #
                             # Configure IP Block Parameters
                             #==============================================
                             beginx = int(ipaddress.IPv4Address(kwargs['pool_from']))
@@ -177,7 +168,6 @@ class pools(object):
                     if config_ipv6 == 'Y':
                         jsonVars = jsonData['ippool.IpV6Config']['allOf'][1]['properties']
                         #==============================================
-                        #
                         # Prompt User for Subnet Prefix
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['Prefix'])
@@ -186,7 +176,6 @@ class pools(object):
                         kwargs['jData']['varName']  = f'Prefix'
                         kwargs['Prefix'] = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Prompt User for Default Gateway
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['Gateway'])
@@ -195,7 +184,6 @@ class pools(object):
                         kwargs['jData']['varName']  = f'Default Gateway'
                         kwargs['defaultGateway'] = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Prompt User for Primary DNS Server
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
@@ -204,7 +192,6 @@ class pools(object):
                         kwargs['jData']['varName']  = f'Primary DNS Server'
                         primaryDns = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Prompt User for Secondary DNS Server
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
@@ -212,7 +199,6 @@ class pools(object):
                         kwargs['jData']['varName']  = f'Secondary DNS Server'
                         secondaryDns = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Configure IPv6 Configuration Parameters
                         #==============================================
                         polVars["ipv6_configuration"] = {
@@ -225,7 +211,6 @@ class pools(object):
                         while ipv6_loop == False:
                             jsonVars = jsonData['ippool.IpV6Block']['allOf'][1]['properties']
                             #==============================================
-                            #
                             # Prompt User for IPv6 Block Starting Address
                             #==============================================
                             kwargs['ip_version'] = 'v6'
@@ -236,7 +221,6 @@ class pools(object):
                             kwargs['jData']['varName']  = f'IPv6 Block Starting IP Address'
                             kwargs['pool_from'] = ezfunctions.varStringLoop(**kwargs)
                             #==============================================
-                            #
                             # Prompt User for Block Size
                             #==============================================
                             jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
@@ -246,7 +230,6 @@ class pools(object):
                             kwargs['jData']["varName"] = 'Pool Size'
                             pool_size = ezfunctions.varNumberLoop(**kwargs)
                             #==============================================
-                            #
                             # Configure IP Block Parameters
                             #==============================================
                             beginx = int(ipaddress.IPv6Address(kwargs['pool_from']))
@@ -341,7 +324,6 @@ class pools(object):
                     while valid == False:
                         jsonVars = jsonData['iqnpool.Pool']['allOf'][1]['properties']
                         #==============================================
-                        #
                         # Prompt User for IQN Prefix
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['Prefix'])
@@ -353,7 +335,6 @@ class pools(object):
                         kwargs['jData']["varName"]  = 'IQN Prefix'
                         prefix = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Prompt User for Starting Address
                         #==============================================
                         jsonVars = jsonData['iqnpool.IqnSuffixBlock']['allOf'][1]['properties']
@@ -364,7 +345,6 @@ class pools(object):
                         kwargs['jData']["varName"]  = 'Starting Address'
                         pool_from = ezfunctions.varNumberLoop(**kwargs)
                         #==============================================
-                        #
                         # Prompt User for IQN Suffix
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['Suffix'])
@@ -374,7 +354,6 @@ class pools(object):
                         kwargs['jData']["varName"]  = 'IQN Suffix'
                         suffix = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
-                        #
                         # Prompt User for Pool Size
                         #==============================================
                         jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
@@ -384,7 +363,6 @@ class pools(object):
                         kwargs['jData']["varName"]  = 'Pool Size'
                         pool_size = ezfunctions.varNumberLoop(**kwargs)
                         #==============================================
-                        #
                         # Configure Pool Parameters
                         #==============================================
                         pool_to = pool_from + pool_size - 1
@@ -518,7 +496,6 @@ class pools(object):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
-        jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         name_suffix    = 'resource'
         org            = self.org
@@ -545,14 +522,12 @@ class pools(object):
                     # Pull in the Policies from API Documentation
                     polVars["multi_select"] = False
                     #==============================================
-                    #
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
                     kwargs['jData']["varType"] = 'Assignment Order'
                     polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
-                    #
                     # Prompt User for Serial Number List
                     #==============================================
                     polVars['serial_number_list'] = []
@@ -560,20 +535,19 @@ class pools(object):
                     while valid == False:
                         kwargs['jData'] = deepcopy({})
                         kwargs['jData']['description'] = 'A List of Serial Numbers to add to the Resource Pool.'
+                        kwargs['jData']["pattern"]  = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
+                        kwargs['jData']["minimum"]  = 11
+                        kwargs['jData']["maximum"]  = 11
                         kwargs['jData']["varInput"] = 'Enter the Server Serial Number:'
-                        kwargs['jData']["varName"] = 'Serial Number'
-                        kwargs['jData']["pattern"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
-                        kwargs['jData']["minimum"] = 11
-                        kwargs['jData']["maximum"] = 11
+                        kwargs['jData']["varName"]  = 'Serial Number'
                         polVars['serial_number_list'].append(ezfunctions.varStringLoop(**kwargs))
                         kwargs['jData'] = deepcopy({})
-                        kwargs['jData']["default"] = True
+                        kwargs['jData']["default"]     = True
                         kwargs['jData']['description'] = 'Add Additional Serial Numbers.'
-                        kwargs['jData']["varInput"] = f'Do you want to add another Serial Number?'
-                        kwargs['jData']["varName"] = 'Additional Serial Numbers'
+                        kwargs['jData']["varInput"]    = f'Do you want to add another Serial Number?'
+                        kwargs['jData']["varName"]     = 'Additional Serial Numbers'
                         valid = ezfunctions.varBoolLoop(**kwargs)
                     #==============================================
-                    #
                     # Prompt User for Server Type
                     #==============================================
                     jsonVars = ezData['pools']['resourcepool.Pool']
@@ -635,14 +609,12 @@ class pools(object):
                     polVars["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
-                    #
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
                     kwargs['jData']["varType"] = 'Assignment Order'
                     polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
-                    #
                     # Prompt User for UUID Prefix
                     #==============================================
                     jsonVars = jsonData['uuidpool.Pool']['allOf'][1]['properties']
@@ -654,7 +626,6 @@ class pools(object):
                     kwargs['jData']["varName"]  = 'UUID Prefix'
                     polVars["prefix"] = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
-                    #
                     # Prompt User for UUID First Suffix
                     #==============================================
                     jsonVars = jsonData['uuidpool.UuidBlock']['allOf'][1]['properties']
@@ -664,7 +635,6 @@ class pools(object):
                     kwargs['jData']["varName"]  = 'UUID First Suffix'
                     pool_from = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
-                    #
                     # Prompt User for Pool Size
                     #==============================================
                     jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
@@ -674,7 +644,6 @@ class pools(object):
                     kwargs['jData']["varName"]  = 'Pool Size'
                     pool_size = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
-                    #
                     # Configure UUID Pool Parameters
                     #==============================================
                     if re.search('[a-z]', pool_from):
@@ -742,14 +711,12 @@ class pools(object):
                     polVars["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
-                    #
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
                     kwargs['jData']["varType"] = 'Assignment Order'
                     polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
-                    #
                     # Prompt User for Starting Address
                     #==============================================
                     jsonVars = jsonData['fcpool.Block']['allOf'][1]['properties']
@@ -759,7 +726,6 @@ class pools(object):
                     kwargs['jData']["varName"]  = 'Starting WWNN Address'
                     pool_from = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
-                    #
                     # Prompt User for Block Size
                     #==============================================
                     jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
@@ -769,7 +735,6 @@ class pools(object):
                     kwargs['jData']["varName"]  = 'Pool Size'
                     pool_size = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
-                    #
                     # Configure Pool Parameters
                     #==============================================
                     if re.search('[a-z]', pool_from): pool_from = pool_from.upper()
@@ -835,7 +800,6 @@ class pools(object):
                     polVars["multi_select"] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
-                    #
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
@@ -843,7 +807,6 @@ class pools(object):
                     polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
                     jsonVars = jsonData['fcpool.Block']['allOf'][1]['properties']
                     #==============================================
-                    #
                     # Prompt User for Starting Address
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['From'])
@@ -856,7 +819,6 @@ class pools(object):
                     kwargs['jData']["varName"] = 'Starting WWPN Address'
                     pool_from = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
-                    #
                     # Prompt User for Block Size
                     #==============================================
                     jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
@@ -866,7 +828,6 @@ class pools(object):
                     kwargs['jData']["varName"]  = 'Pool Size'
                     pool_size = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
-                    #
                     # Configure Pool Parameters
                     #==============================================
                     if re.search('[a-z]', pool_from): pool_from = pool_from.upper()

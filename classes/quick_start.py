@@ -1162,7 +1162,7 @@ class quick_start(object):
                     kwargs['enforce_strong_password'] = True
                     kwargs['jData'] = deepcopy({})
                     kwargs['jData']['default']     = True
-                    kwargs['jData']['description'] = '  Local User Configuration.'
+                    kwargs['jData']['description'] = 'Local User Configuration.'
                     kwargs['jData']['varInput']    = f'Would you like to configure the Local users Policy?'
                     kwargs['jData']['varName']     = 'Local Users'
                     question = ezfunctions.varBoolLoop(**kwargs)

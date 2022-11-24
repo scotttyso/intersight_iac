@@ -26,6 +26,13 @@ def subnet_check(**kwargs):
         print(f'\n{"-"*91}\n')
         exit()
 
+def number_in_range(varName, varValue, minNum, maxNum):
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'  Error!! {varName} with value {varValue}.')
+        print(f'  Please enter a number in the range of {minNum} and {maxNum}.')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+
+
 # Validations
 def description(varName, varValue, minLength, maxLength):
     if not (re.search(r'^[a-zA-Z0-9\\!#$%()*,-./:;@ _{|}~?&+]+$',  varValue) and \
