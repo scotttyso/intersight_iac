@@ -25,7 +25,7 @@ class policies(object):
     #==============================================
     # Adapter Configuration Policy Module
     #==============================================
-    def adapter_configuration_policies(self, **kwargs):
+    def adapter_configuration(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -46,22 +46,31 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
+                    #==============================================
                     # Get API Data
+                    #==============================================
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['adapter.FcSettings']['allOf'][1]['properties']
+                    #==============================================
+                    # Prompt User for FIP Enabled
+                    #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['FipEnabled'])
                     kwargs['jData']['description'] = 'If Selected, then FCoE Initialization Protocol (FIP) mode is enabled.'\
                         ' FIP mode ensures that the adapter is compatible with current FCoE standards.'
                     kwargs['jData']['varInput'] = f'Do you want to Enable FIP on the VIC?'
                     kwargs['jData']['varName']  = 'FIP Enabled'
                     polVars['enable_fip'] = ezfunctions.varBoolLoop(**kwargs)
-
+                    #==============================================
+                    # Prompt User for LLDP Enabled
+                    #==============================================
                     jsonVars = jsonData['adapter.EthSettings']['allOf'][1]['properties']
                     kwargs['jData'] = deepcopy(jsonVars['LldpEnabled'])
                     kwargs['jData']['description'] = 'If Selected, then Link Layer Discovery Protocol (LLDP) enables all'\
@@ -70,7 +79,9 @@ class policies(object):
                     kwargs['jData']['varInput'] = f'Do you want to Enable LLDP on the VIC?'
                     kwargs['jData']['varName']  = 'LLDP Enabled'
                     polVars['enable_lldp'] = ezfunctions.varBoolLoop(**kwargs)
-
+                    #==============================================
+                    # Prompt User for Port-Channel Settings
+                    #==============================================
                     jsonVars = jsonData['adapter.PortChannelSettings']['allOf'][1]['properties']
                     kwargs['jData'] = deepcopy(jsonVars['Enabled'])
                     kwargs['jData']['varInput'] = f'Do you want to Enable Port-Channel on the VIC?'
@@ -80,13 +91,16 @@ class policies(object):
                     jsonVars = jsonData['adapter.DceInterfaceSettings']['allOf'][1]['properties']
                     intList = [1, 2, 3, 4]
                     for x in intList:
-                        polVars['multi_select'] = False
-                        polVars['description'] = jsonVars['FecMode']['description']
-                        polVars['jsonVars'] = sorted(jsonVars['FecMode']['enum'])
-                        polVars['defaultVar'] = jsonVars['FecMode']['default']
-                        polVars['varType'] = f'DCE Interface {x} FEC Mode'
+                        #==============================================
+                        # Prompt User for FEC Mode
+                        #==============================================
                         intFec = f'fec_mode_{x}'
+                        kwargs['jData'] = deepcopy(jsonVars['FecMode'])
+                        kwargs['jData']['varType'] = f'DCE Interface {x} FEC Mode'
                         polVars[intFec] = ezfunctions.variablesFromAPI(**kwargs)
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -94,9 +108,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,adapter_configuration'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -111,7 +130,7 @@ class policies(object):
     #==============================================
     # BIOS Policy Module
     #==============================================
-    def bios_policies(self, **kwargs):
+    def bios(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -132,18 +151,29 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     polVars = {}
                     kwargs['multi_select'] = False
+                    #==============================================
+                    # Prompt User for BIOS Template Name
+                    #==============================================
                     jsonVars = ezData['policies']['bios.Policy']
                     kwargs['jData'] = deepcopy(jsonVars['templates'])
                     kwargs['jData']['varType'] = 'BIOS Template'
                     polVars['policy_template'] = ezfunctions.variablesFromAPI(**kwargs)
-
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     if not polVars['name_prefix'] == '':
                         name = '%s-%s' % (polVars['name_prefix'], polVars['policy_template'])
                     else: name = '%s-%s' % (polVars['org'], polVars['policy_template'])
                     polVars['name']        = ezfunctions.policy_name(name, polVars['policy_type'])
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], polVars['policy_type'])
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -151,9 +181,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,bios'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'Y')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -168,7 +203,7 @@ class policies(object):
     #==============================================
     # Boot Order Policy Module
     #==============================================
-    def boot_order_policies(self, **kwargs):
+    def boot_order(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -191,21 +226,29 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    # Pull in the Policies for iSCSI Boot
-                    jsonVars = jsonData['boot.PrecisionPolicy']['allOf'][1]['properties']
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     kwargs['multi_select'] = False
-                    # Configured Boot Mode
+                    jsonVars = jsonData['boot.PrecisionPolicy']['allOf'][1]['properties']
+                    #==============================================
+                    # Prompt User for Boot Mode
+                    #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['ConfiguredBootMode'])
                     kwargs['jData'].update({'varType': 'Configured Boot Mode'})
                     polVars['boot_mode'] = ezfunctions.variablesFromAPI(**kwargs)
                     if polVars['boot_mode'] == 'Uefi':
-                        # Enforce Uefi SecureBoot
+                        #==============================================
+                        # Prompt User to Enable Secure Boot
+                        #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['EnforceUefiSecureBoot'])
                         kwargs['jData'].update({'default': False, 'varName': 'Uefi SecureBoot'})
                         kwargs['jData']['varInput'] = f'Do you want to Enforce Uefi Secure Boot?'
@@ -213,7 +256,7 @@ class policies(object):
                     else: polVars['enable_secure_boot'] = False
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Add and configure a boot device. The configuration options vary with boot device types.')
+                    print(f'  Configure boot device(s). The configuration options vary with boot device types.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     polVars['boot_devices'] = []
                     inner_loop_count = 1
@@ -223,15 +266,18 @@ class policies(object):
                         if question == '' or question == 'Y':
                             valid_sub = False
                             while valid_sub == False:
-                                # Pull in the Policies for iSCSI Boot
+                                #==============================================
+                                # Prompt User for Boot Device Type
+                                #==============================================
                                 jsonVars = jsonData['boot.DeviceBase']['allOf'][1]['properties']
-                                # Configured Boot Mode
                                 kwargs['jData'] = deepcopy(jsonVars['ClassId'])
                                 kwargs['jData']['default']     = 'boot.LocalDisk'
                                 kwargs['jData']['description'] = 'Select the Type of Boot Device to configure.'
                                 kwargs['jData']['varType']     = 'Boot Device Class ID'
                                 objectType = ezfunctions.variablesFromAPI(**kwargs)
-
+                                #==============================================
+                                # Prompt User for Boot Device Name
+                                #==============================================
                                 kwargs['jData'] = deepcopy(jsonVars['Name'])
                                 kwargs['jData']['maximum']  = 30
                                 kwargs['jData']['minimum']  = 1
@@ -254,14 +300,17 @@ class policies(object):
                                 elif objectType == 'boot.VirtualMedia': device_type = 'virtual_media'
                                 boot_device.update({'device_type':device_type})
 
-                                kwargs['multi_select'] = False
                                 if objectType == 'boot.LocalDisk':
+                                    #==============================================
+                                    # Prompt User for Target Platform
+                                    #==============================================
                                     jsonVars = jsonData['vnic.EthNetworkPolicy']['allOf'][1]['properties']
                                     kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
                                     kwargs['jData']['varType'] = 'Target Platform'
                                     target_platform = ezfunctions.variablesFromAPI(**kwargs)
-
-                                    # Slot
+                                    #==============================================
+                                    # Prompt User for Slot
+                                    #==============================================
                                     jsonVars = jsonData['boot.LocalDisk']['allOf'][1]['properties']
                                     ezVars = ezData['policies']['boot.PrecisionPolicy']
                                     kwargs['jData'] = deepcopy(jsonVars['Slot'])
@@ -281,17 +330,23 @@ class policies(object):
                                         Slot = ezfunctions.varNumberLoop(**kwargs)
                                     boot_device.update({'slot':Slot})
                                 if objectType == 'boot.Pxe':
-                                    # IPv4 or IPv6
+                                    #==============================================
+                                    # Prompt User for IP Type
+                                    #==============================================
                                     kwargs['jData'] = deepcopy(jsonVars['IpType'])
                                     kwargs['jData']['varType'] = 'IP Type'
                                     IpType = ezfunctions.variablesFromAPI(**kwargs)
-
-                                    # Interface Source
+                                    #==============================================
+                                    # Prompt User for Interface Source
+                                    #==============================================
                                     kwargs['jData'] = deepcopy(jsonVars['InterfaceSource'])
                                     kwargs['jData']['varType'] = 'Interface Source'
                                     InterfaceSource = ezfunctions.variablesFromAPI(**kwargs)
 
                                 if objectType == 'boot.Iscsi' or (objectType == 'boot.Pxe' and InterfaceSource == 'name'):
+                                    #==============================================
+                                    # Prompt User with LAN Connectivity Policies
+                                    #==============================================
                                     kwargs['allow_opt_out'] = False
                                     kwargs['policy'] = 'policies.lan_connectivity.lan_connectivity_policy'
                                     lan_connectivity_policy = kwargs['lan_connectivity_policy']
@@ -302,6 +357,9 @@ class policies(object):
                                             for i in item['vnics']:
                                                 vnicNames.append(i['names'])
                                             vnicNames = [i for s in vnicNames for i in s]
+                                            #==============================================
+                                            # Prompt User to Select vNIC Name
+                                            #==============================================
                                             kwargs['jData'] = deepcopy({})
                                             kwargs['jData']['description'] = 'LAN Connectivity vNIC Names.'
                                             kwargs['jData']['enum'] = sorted(vnicNames)
@@ -317,6 +375,9 @@ class policies(object):
 
                                 if objectType == 'boot.Pxe':
                                     if InterfaceSource == 'mac':
+                                        #==============================================
+                                        # Prompt User for MAC Address
+                                        #==============================================
                                         kwargs['jData'] = deepcopy(jsonVars['MacAddress'])
                                         kwargs['jData']['varInput'] = 'The MAC Address of the adapter on the underlying Virtual NIC:'
                                         kwargs['jData']['varName']  = 'Mac Address'
@@ -324,6 +385,9 @@ class policies(object):
                                         InterfaceName = ''
                                         Port = -1
                                     elif InterfaceSource == 'port':
+                                        #==============================================
+                                        # Prompt User for Port ID
+                                        #==============================================
                                         kwargs['jData'] = deepcopy(jsonVars['Port'])
                                         kwargs['jData']['varInput'] = 'The Port ID of the adapter on the underlying Virtual NIC:'
                                         kwargs['jData']['varName']  = 'Port'
@@ -331,6 +395,9 @@ class policies(object):
                                         InterfaceName = ''
                                         MacAddress = ''
                                     if not InterfaceSource == 'name':
+                                        #==============================================
+                                        # Prompt User for Slot
+                                        #==============================================
                                         kwargs['jData'] = deepcopy(jsonVars['Slot'])
                                         kwargs['jData']['default']  = 'MLOM'
                                         kwargs['jData']['varInput'] = 'The Slot ID of the adapter on the underlying Virtual NIC:'
@@ -340,21 +407,23 @@ class policies(object):
                                         'interface_name':InterfaceName, 'interface_source':InterfaceSource,
                                         'ip_type':IpType, 'mac_address':MacAddress, 'port':Port, 'slot':Slot
                                     })
-
                                 if re.fullmatch('boot\.Iscsi', objectType):
                                     jsonVars = jsonData['boot.Iscsi']['allOf'][1]['properties']
-                                    # Port
+                                    #==============================================
+                                    # Prompt User for Port ID
+                                    #==============================================
                                     kwargs['jData'] = deepcopy(jsonVars['Port'])
                                     kwargs['jData']['varInput'] = 'Enter the Port ID of the Adapter:'
                                     kwargs['jData']['varName'] = 'Port'
                                     polVars['port'] = ezfunctions.varNumberLoop(**kwargs)
-
                                 if re.fullmatch('boot\.(PchStorage|San|SdCard)', objectType):
+                                    #==============================================
+                                    # Prompt User for LUN Id
+                                    #==============================================
                                     kwargs['jData'] = deepcopy(jsonVars['Lun'])
                                     kwargs['jData']['varInput'] = 'LUN Identifier:'
                                     kwargs['jData']['varName'] = 'LUN ID'
                                     boot_device.update({'lun':ezfunctions.varNumberLoop(**kwargs)})
-
                                 if objectType == 'boot.San':
                                     kwargs['allow_opt_out'] = False
                                     kwargs['policy'] = 'policies.san_connectivity.san_connectivity_policy'
@@ -364,6 +433,9 @@ class policies(object):
                                         if item['name'] == kwargs['san_connectivity_policy']:
                                             for i in item['vhbas']:
                                                 vnicNames.append(i['name'])
+                                            #==============================================
+                                            # Prompt User for vHBA Name
+                                            #==============================================
                                             kwargs['jData'] = deepcopy({})
                                             kwargs['jData']['description'] = '{} : vHBA(s).'.format(kwargs['san_connectivity_policy'])
                                             kwargs['jData']['enum'] = sorted(vnicNames)
@@ -373,11 +445,13 @@ class policies(object):
                                             for i in item['vhbas']:
                                                 if i['name'] == vnicName:
                                                     Slot = i['placement_slot_id']
+                                    #==============================================
+                                    # Prompt User for WWPN
+                                    #==============================================
                                     kwargs['jData'] = deepcopy(jsonVars['Wwpn'])
                                     kwargs['jData']['varInput'] = 'WWPN of the Target Appliance:'
                                     kwargs['jData']['varName'] = 'WWPN'
                                     boot_device.update({'target_wwpn':ezfunctions.varStringLoop(**kwargs)})
-
                                 if re.fullmatch('boot\.(SdCard|Usb|VirtualMedia)', objectType):
                                     if objectType == 'boot.SdCard':
                                         jsonVars = jsonData['boot.SdCard']['allOf'][1]['properties']
@@ -385,10 +459,15 @@ class policies(object):
                                         jsonVars = jsonData['boot.Usb']['allOf'][1]['properties']
                                     elif objectType == 'boot.VirtualMedia':
                                         jsonVars = jsonData['boot.VirtualMedia']['allOf'][1]['properties']
+                                    #==============================================
                                     # Configured Object Type - SubType
+                                    #==============================================
                                     kwargs['jData'] = deepcopy(jsonVars['Subtype'])
                                     kwargs['jData']['varType'] = 'Sub type'
                                     boot_device.update({'subtype':ezfunctions.variablesFromAPI(**kwargs)})
+                                #==============================================
+                                # Print Policy and Prompt User to Accept
+                                #==============================================
                                 print(f'\n-------------------------------------------------------------------------------------------\n')
                                 print(textwrap.indent(yaml.dump(boot_device, Dumper=MyDumper, default_flow_style=False
                                 ), ' '*4, predicate=None))
@@ -402,22 +481,19 @@ class policies(object):
                                         valid_exit = False
                                         while valid_exit == False:
                                             if inner_loop_count < 3:
-                                                loop_exit, valid_confirm = ezfunctions.exit_default(pol_type, 'Y')
-                                            else: loop_exit, valid_confirm = ezfunctions.exit_default(pol_type, 'N')
-                                            if loop_exit == 'Y':
-                                                inner_loop_count += 1
-                                                valid_exit = True
-                                            elif loop_exit == 'N':
-                                                sub_loop = True
-                                                valid_exit = True
-                                                valid_sub = True
-                                            else: ezfunctions.message_invalid_y_or_n('short')
+                                                loop_exit, sub_loop = ezfunctions.exit_default(pol_type, 'Y')
+                                            else: loop_exit, sub_loop = ezfunctions.exit_default(pol_type, 'N')
+                                            if loop_exit == False: inner_loop_count += 1; valid_confirm = True; valid_exit = True
+                                            elif loop_exit == True: valid_confirm = True; valid_sub = True; valid_exit = True
                                     elif confirm_config == 'N':
                                         ezfunctions.message_starting_over(pol_type)
                                         valid_confirm = True
                                     else: ezfunctions.message_invalid_y_or_n('short')
                         elif question == 'N': sub_loop = True
                         else: ezfunctions.message_invalid_y_or_n('short')
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -425,9 +501,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,boot_order'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -442,7 +523,7 @@ class policies(object):
     #==============================================
     # Certificate Management Policy Module
     #==============================================
-    def certificate_management_policies(self, **kwargs):
+    def certificate_management(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -464,45 +545,54 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    # Pull in the Policies for Certificate Management
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     jsonVars = jsonData['certificatemanagement.CertificateBase']['allOf'][1]['properties']
                     kwargs['multi_select'] = False
-
-                    # Request Certificate
+                    #==============================================
+                    # Prompt User for Certificate
+                    #==============================================
                     kwargs['Multi_Line_Input'] = True
                     kwargs['description'] = jsonVars['Certificate']['description']
                     kwargs['Variable'] = f'base64_certificate_{loop_count}'
-                    certificate = ezfunctions.sensitive_var_value(jsonData, **kwargs)
+                    kwargs = ezfunctions.sensitive_var_value(jsonData, **kwargs)
                     polVars['certificate'] = loop_count
-
-                    # Encode the Certificate as Base64
-                    base64Cert = base64.b64encode(str.encode(certificate)).decode()
+                    #==============================================
+                    # Base64 Encode the Certificate
+                    #==============================================
+                    base64Cert = base64.b64encode(str.encode(kwargs['var_value'])).decode()
                     print('base64 encoded:')
                     print(base64Cert)
                     TF_VAR = f'base64_certificate_{loop_count}'
                     os.environ[TF_VAR] = base64Cert
-
-                    # Request Private Key
+                    #==============================================
+                    # Prompt User for Private Key
+                    #==============================================
                     kwargs['Multi_Line_Input'] = True
                     kwargs['description'] = jsonVars['Privatekey']['description']
                     kwargs['Variable'] = f'base64_private_key_{loop_count}'
-                    privateKey = ezfunctions.sensitive_var_value(jsonData, **kwargs)
+                    kwargs = ezfunctions.sensitive_var_value(jsonData, **kwargs)
                     polVars['private_key'] = loop_count
-
-                    # Encode the Certificate as Base64
-                    base64Key = base64.b64encode(str.encode(privateKey)).decode()
+                    #==============================================
+                    # Base64 Encode the Private Key
+                    #==============================================
+                    base64Key = base64.b64encode(str.encode(kwargs['var_value'])).decode()
                     print('base64 encoded:')
                     print(base64Key)
                     TF_VAR = f'base64_certificate_{loop_count}'
                     os.environ[TF_VAR] = base64Key
-
-                    polVars['enabled'] = True
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -510,12 +600,15 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,certificate_management'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
-                            print(f'configure loop is {configure_loop}')
-                            print(f'policy loop is {policy_loop}')
                             loop_count += 1
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -530,10 +623,9 @@ class policies(object):
     #==============================================
     # Device Connector Policy Module
     #==============================================
-    def device_connector_policies(self, **kwargs):
+    def device_connector(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
-        ezData         = kwargs['ezData']
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         name_suffix    = 'devcon'
@@ -562,20 +654,30 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    jsonVars = jsonData['deviceconnector.Policy']['allOf'][1]['properties']
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     kwargs['multi_select'] = False
+                    jsonVars = jsonData['deviceconnector.Policy']['allOf'][1]['properties']
+                    #==============================================
+                    # Prompt User for Configuration Lockout
+                    #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['LockoutEnabled'])
+                    kwargs['jData']['default']  = False
                     kwargs['jData']['varInput'] = f'Do you want to lock down Configuration to Intersight only?'
-                    kwargs['jData']['varDefault'] = False
-                    kwargs['jData']['varName'] = 'Lockout Enabled'
+                    kwargs['jData']['varName']  = 'Lockout Enabled'
                     polVars['configuration_lockout'] = ezfunctions.varBoolLoop(**kwargs)
-
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -583,9 +685,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,device_connector'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -640,7 +747,7 @@ class policies(object):
     #==============================================
     # IMC Access Policy Module
     #==============================================
-    def imc_access_policies(self, **kwargs):
+    def imc_access(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -660,24 +767,32 @@ class policies(object):
             loop_count = 0
             policy_loop = False
             while policy_loop == False:
+                #==============================================
+                # Prompt User for Name and Description
+                #==============================================
                 polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 polVars['default_vlan'] = 0
-
-                # IMC Access Type
+                #==============================================
+                # Get API Data
+                #==============================================
                 kwargs["multi_select"] == True
                 jsonVars = jsonData['access.Policy']['allOf'][1]['properties']
+                #==============================================
+                # Prompt User for IMC Access Type(s)
+                #==============================================
                 kwargs['jData'] = deepcopy(jsonVars['ConfigurationType'])
-                polVars['description'] = jsonVars['ConfigurationType']['description']
-                polVars['jsonVars'] = ['inband', 'out_of_band']
-                polVars['defaultVar'] = 'inband'
-                polVars['varType'] = 'IMC Access Type'
+                kwargs['jData']['default'] = 'inband'
+                kwargs['jData']['enum']    = ['inband', 'out_of_band']
+                kwargs['jData']['varType'] = 'IMC Access Type'
                 imcBand = ezfunctions.variablesFromAPI(**kwargs)
                 kwargs["multi_select"] == False
-
+                #==============================================
+                # Loop through Inband and Out-of-Band
+                #==============================================
                 for i in imcBand:
                     kwargs['allow_opt_out'] = False
                     kwargs['policy'] = f'pools.ip.{i}_ip_pool'
@@ -685,6 +800,9 @@ class policies(object):
                     if i == 'inband':
                         valid = False
                         while valid == False:
+                            #==============================================
+                            # Prompt User for Inband VLAN Id
+                            #==============================================
                             kwargs['jData'] = deepcopy({})
                             kwargs['jData']['default']     = 4
                             kwargs['jData']['description'] = 'Inband VLAN Identifier'
@@ -693,8 +811,9 @@ class policies(object):
                             kwargs['jData']['varInput']    = 'Enter the VLAN ID for the Inband VLAN.'
                             kwargs['jData']['varName']     = 'Inband VLAN ID'
                             inband_vlan_id = ezfunctions.varNumberLoop(**kwargs)
-
-                            # Prompt User for VLAN Policy to Use
+                            #==============================================
+                            # Prompt User for VLAN Policy Source
+                            #==============================================
                             kwargs['policy'] = f'policies.vlan.vlan_policy'
                             kwargs = policy_select_loop(**kwargs)
                             vlan_lists = []
@@ -707,17 +826,24 @@ class policies(object):
                                 vlan_convert = vlan_convert + ',' + str(vlan)
                             vlan_list = ezfunctions.vlan_list_full(vlan_convert)
                             valid = ezfunctions.validate_vlan_in_policy(vlan_list, inband_vlan_id)
-
+                #==============================================
+                # Prompt User to Enable IPv4
+                #==============================================
                 jsonVars = jsonData['access.AddressType']['allOf'][1]['properties']
                 kwargs['jData'] = deepcopy(jsonVars['EnableIpV4'])
                 kwargs['jData']["varInput"] = f'Do you want to enable IPv4 for this Policy?'
-                kwargs['jData']["varName"] = 'Enable IPv4'
+                kwargs['jData']["varName"]  = 'Enable IPv4'
                 polVars['ipv4_address_configuration'] = ezfunctions.varBoolLoop(**kwargs)
+                #==============================================
+                # Prompt User to Enable IPv6
+                #==============================================
                 kwargs['jData'] = deepcopy(jsonVars['EnableIpV6'])
                 kwargs['jData']["varInput"] = f'Do you want to enable IPv6 for this Policy?'
-                kwargs['jData']["varName"] = 'Enable IPv6'
+                kwargs['jData']["varName"]  = 'Enable IPv6'
                 polVars['ipv6_address_configuration'] = ezfunctions.varBoolLoop(**kwargs)
-
+                #==============================================
+                # Print Policy and Prompt User to Accept
+                #==============================================
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -725,9 +851,14 @@ class policies(object):
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
+                        #==============================================
                         # Add Policy Variables to immDict
+                        #==============================================
                         kwargs['class_path'] = 'intersight,policies,imc_access'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        #==============================================
+                        # Create Additional Policy or Exit Loop
+                        #==============================================
                         configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                         valid_confirm = True
                     elif confirm_policy == 'N':
@@ -740,7 +871,7 @@ class policies(object):
     #==============================================
     # IPMI over LAN Policy Module
     #==============================================
-    def ipmi_over_lan_policies(self, **kwargs):
+    def ipmi_over_lan(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -762,14 +893,22 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['ipmioverlan.Policy']['allOf'][1]['properties']
+                    #==============================================
+                    # Prompt User for IPMI Encryption
+                    #==============================================
                     kwargs['jData'] = deepcopy({})
                     kwargs['jData']['default']     = True
                     kwargs['jData']['description'] = 'Encrypt IPMI over LAN.'
@@ -778,12 +917,16 @@ class policies(object):
                     encrypt_traffic = ezfunctions.varBoolLoop(**kwargs)
                     if encrypt_traffic == True:
                         kwargs['Variable'] = 'ipmi_key'
-                        kwargs['ipmi_key'] = ezfunctions.sensitive_var_value(**kwargs)
-
+                        kwargs = ezfunctions.sensitive_var_value(**kwargs)
+                    #==============================================
+                    # Prompt User for IPMI Priviledge
+                    #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['Privilege'])
                     kwargs['jData']['varType'] = 'IPMI Privilege'
                     polVars['privilege'] = ezfunctions.variablesFromAPI(**kwargs)
-
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -791,9 +934,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,ipmi_over_lan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -808,7 +956,7 @@ class policies(object):
     #==============================================
     # LDAP Policy Module
     #==============================================
-    def ldap_policies(self, **kwargs):
+    def ldap(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -833,13 +981,18 @@ class policies(object):
                 loop_count = 1
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     polVars['enable_ldap'] = True
-
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['iam.LdapBaseProperties']['allOf'][1]['properties']
                     #==============================================
@@ -857,19 +1010,19 @@ class policies(object):
                     #==============================================
                     base_dn_var = 'DC=%s' % (',DC='.join(domain.split('.')))
                     kwargs['jData'] = deepcopy(jsonVars['BaseDn'])
-                    kwargs['jData']['default']     = base_dn_var
-                    kwargs['jData']['minimum']     = 1
-                    kwargs['jData']['pattern']     = '^[[dD][cC]\\=[a-zA-Z0-9\\-]+,]+[[dD][cC]\\=[a-zA-Z0-9\\-]+]$'
-                    kwargs['jData']['varInput']    = 'What is your Base Distinguished Name?'\
+                    kwargs['jData']['default']  = base_dn_var
+                    kwargs['jData']['minimum']  = 1
+                    kwargs['jData']['pattern']  = '^[[dD][cC]\\=[a-zA-Z0-9\\-]+,]+[[dD][cC]\\=[a-zA-Z0-9\\-]+]$'
+                    kwargs['jData']['varInput'] = 'What is your Base Distinguished Name?'\
                         '  An example would be "dc=example,dc=com".'
-                    kwargs['jData']['varName']     = 'LDAP Base DN'
+                    kwargs['jData']['varName']  = 'LDAP Base DN'
                     base_dn = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
                     # Prompt User for LDAP Timeout
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['Timeout'])
-                    kwargs['jData']['varInput']    = 'What do you want set for LDAP Authentication Timeout?  Range is 0 to 180.'
-                    kwargs['jData']['varName']     = 'LDAP Timeout'
+                    kwargs['jData']['varInput'] = 'What do you want set for LDAP Authentication Timeout?  Range is 0 to 180.'
+                    kwargs['jData']['varName']  = 'LDAP Timeout'
                     base_timeout = ezfunctions.varNumberLoop(**kwargs)
                     polVars['base_settings'] = {'base_dn':base_dn, 'domain':domain, 'timeout':base_timeout}
                     #==============================================
@@ -884,15 +1037,15 @@ class policies(object):
                         # Prompt User for LDAP Bind DN
                         #==============================================
                         kwargs['jData'] = deepcopy({})
-                        kwargs['jData']['description']  = 'Username for the LDAP Bind Distinguished Name.'
-                        kwargs['jData']['pattern']      = '^[\\S]+$'
-                        kwargs['jData']['varInput']     = 'What is the username you want to use for authentication?'
-                        kwargs['jData']['varName']      = 'LDAP Bind Username'
+                        kwargs['jData']['description'] = 'Username for the LDAP Bind Distinguished Name.'
+                        kwargs['jData']['pattern']     = '^[\\S]+$'
+                        kwargs['jData']['varInput']    = 'What is the username you want to use for authentication?'
+                        kwargs['jData']['varName']     = 'LDAP Bind Username'
                         varUser = ezfunctions.varStringLoop(**kwargs)
-                        kwargs['jData']['description']  = 'Organizational Unit for the LDAP Bind Distinguished Name.'
-                        kwargs['jData']['pattern']      = '^[\\S]+$'
-                        kwargs['jData']['varInput']     = f'What is the Organizational Unit for {varUser}?'
-                        kwargs['jData']['varName']      = 'LDAP Bind Organizational Unit'
+                        kwargs['jData']['description'] = 'Organizational Unit for the LDAP Bind Distinguished Name.'
+                        kwargs['jData']['pattern']     = '^[\\S]+$'
+                        kwargs['jData']['varInput']    = f'What is the Organizational Unit for {varUser}?'
+                        kwargs['jData']['varName']     = 'LDAP Bind Organizational Unit'
                         varOU = ezfunctions.varStringLoop(**kwargs)
                         varOU = input(f'What is the Organizational Unit for {varUser}? ')
                         kwargs['jData'] = deepcopy(jsonVars['BindDn'])
@@ -905,7 +1058,7 @@ class policies(object):
                         # Prompt User for LDAP Binding Password
                         #==============================================
                         kwargs['Variable'] = 'binding_parameters_password'
-                        kwargs['binding_parameters_password'] = ezfunctions.sensitive_var_value(**kwargs)
+                        kwargs = ezfunctions.sensitive_var_value(**kwargs)
                         polVars['binding_parameters'] = {'bind_dn':bind_dn, 'bind_method':bind_method}
                     else: polVars['binding_parameters'] = {'bind_method':bind_method}
                     #==============================================
@@ -931,10 +1084,10 @@ class policies(object):
                     # Prompt User for Nested Group Search Depth
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['NestedGroupSearchDepth'])
-                    kwargs['jData']['default']     = 128
-                    kwargs['jData']['varInput']    = 'What is the Search depth to look for a nested LDAP group in an'\
+                    kwargs['jData']['default']  = 128
+                    kwargs['jData']['varInput'] = 'What is the Search depth to look for a nested LDAP group in an'\
                         ' LDAP group map?  Range is 1 to 128.'
-                    kwargs['jData']['varName']     = 'Nested Group Search Depth'
+                    kwargs['jData']['varName']  = 'Nested Group Search Depth'
                     polVars['nested_group_search_depth'] = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
                     # Prompt User for LDAP Attribute
@@ -991,11 +1144,11 @@ class policies(object):
                     # Prompt User for LDAP Server Discovery from DNS
                     #================================================
                     kwargs['jData'] = deepcopy(jsonVars['EnableDns'])
-                    kwargs['jData']['default']      = False
-                    kwargs['jData']['description']  = 'This Section gives you the option to query DNS for LDAP Server'\
+                    kwargs['jData']['default']     = False
+                    kwargs['jData']['description'] = 'This Section gives you the option to query DNS for LDAP Server'\
                         ' information isntead of defining the LDAP Servers.'
-                    kwargs['jData']['varInput']     = f'Do you want to use DNS for LDAP Server discovery?'
-                    kwargs['jData']['varName']      = 'DNS Server Discovery'
+                    kwargs['jData']['varInput']    = f'Do you want to use DNS for LDAP Server discovery?'
+                    kwargs['jData']['varName']     = 'DNS Server Discovery'
                     ldap_from_dns = ezfunctions.varBoolLoop(**kwargs)
                     if ldap_from_dns == True:
                         #================================================
@@ -1021,6 +1174,9 @@ class policies(object):
                                 'search_forest':SearchForest, 'source':varSource
                             }
                         else: polVars['ldap_From_dns'] = {'enable':True, 'source':varSource}
+                    #==============================================
+                    # Prompt User for LDAP Groups
+                    #==============================================
                     polVars['ldap_groups'] = []
                     inner_loop_count = 1
                     sub_loop = False
@@ -1045,6 +1201,9 @@ class policies(object):
                                 kwargs['jData']['varType'] = 'Group Role'
                                 role = ezfunctions.variablesFromAPI(**kwargs)
                                 ldap_group = {'group':varGroup,'role':role}
+                                #==============================================
+                                # Print Policy and Prompt User to Accept
+                                #==============================================
                                 print(f'\n{"-"*91}\n')
                                 print(textwrap.indent(yaml.dump(ldap_group, Dumper=MyDumper, default_flow_style=False
                                 ), ' '*4, predicate=None))
@@ -1055,18 +1214,23 @@ class policies(object):
                                     if confirm_config == 'Y' or confirm_config == '':
                                         pol_type = 'LDAP Group'
                                         polVars['ldap_groups'].append(ldap_group)
+                                        #==============================================
+                                        # Create Additional Policy or Exit Loop
+                                        #==============================================
                                         valid_exit = False
                                         while valid_exit == False:
-                                            loop_exit, valid_confirm = ezfunctions.exit_default(pol_type, 'N')
-                                            if loop_exit == 'Y': inner_loop_count += 1; valid_exit = True
-                                            elif loop_exit == 'N': sub_loop = True; valid_exit = True; valid_sub = True
-                                            else: ezfunctions.message_invalid_y_or_n('short')
+                                            loop_exit, sub_loop = ezfunctions.exit_default(pol_type, 'N')
+                                            if loop_exit == False: inner_loop_count += 1; valid_confirm = True; valid_exit = True
+                                            elif loop_exit == True: valid_confirm = True; valid_sub = True; valid_exit = True
                                     elif confirm_config == 'N':
                                         ezfunctions.message_starting_over(pol_type)
                                         valid_confirm = True
                                     else: ezfunctions.message_invalid_y_or_n('short')
                         elif question == 'N': sub_loop = True
                         else: ezfunctions.message_invalid_y_or_n('short')
+                    #==============================================
+                    # Prompt User for LDAP Providers/Servers
+                    #==============================================
                     polVars['ldap_servers'] = []
                     inner_loop_count = 1
                     sub_loop = False
@@ -1075,29 +1239,29 @@ class policies(object):
                         if question == '' or question == 'Y':
                             valid_sub = False
                             while valid_sub == False:
-                                jsonVars = jsonData['iam.LdapDnsParameters']['allOf'][1]['properties']
+                                jsonVars = jsonData['iam.LdapProvider']['allOf'][1]['properties']
                                 #================================================
                                 # Prompt User for LDAP Provider/Server
                                 #================================================
-                                valid = False
-                                while valid == False:
-                                    varServer = input(f'What is the Hostname/IP of the LDAP Server? ')
-                                    if re.fullmatch(r'^([0-9]{1,3}\.){3}[0-9]{1,3}$', varServer):
-                                        valid = validating.ip_address('LDAP Server', varServer)
-                                    else: valid = validating.dns_name('LDAP Server', varServer)
-
+                                kwargs['jData'] = deepcopy(jsonVars['Server'])
+                                kwargs['jData']["varInput"] = 'What is the Hostname/IP of the LDAP Server?'
+                                kwargs['jData']["varName"]  = 'LDAP Server Address'
+                                kwargs['jData']['varType']  = 'hostname'
+                                varServer = ezfunctions.varStringLoop(**kwargs)
                                 #================================================
                                 # Prompt User for LDAP Provider Port
                                 #================================================
                                 if polVars['enable_encryption'] == True: xPort = 636
                                 else: xPort = 389
-                                jsonVars = jsonData['iam.LdapProvider']['allOf'][1]['properties']
                                 kwargs['jData'] = deepcopy(jsonVars['Port'])
                                 kwargs['jData']['default']  = xPort
                                 kwargs['jData']['varInput'] = f'What is Port for {varServer}?'
                                 kwargs['jData']['varName']  = 'LDAP Port'
                                 varPort = ezfunctions.varNumberLoop(**kwargs)
                                 ldap_server = {'port':varPort, 'server':varServer}
+                                #==============================================
+                                # Print Policy and Prompt User to Accept
+                                #==============================================
                                 print(f'\n{"-"*91}\n')
                                 print(textwrap.indent(yaml.dump(ldap_group, Dumper=MyDumper, default_flow_style=False
                                 ), ' '*4, predicate=None))
@@ -1108,18 +1272,23 @@ class policies(object):
                                     if confirm_config == 'Y' or confirm_config == '':
                                         polVars['ldap_servers'].append(ldap_server)
                                         pol_type = 'LDAP Server'
+                                        #==============================================
+                                        # Create Additional Policy or Exit Loop
+                                        #==============================================
                                         valid_exit = False
                                         while valid_exit == False:
-                                            loop_exit, valid_confirm = ezfunctions.exit_default(pol_type, 'N')
-                                            if loop_exit == 'Y': inner_loop_count += 1; valid_exit = True
-                                            elif loop_exit == 'N': sub_loop = True; valid_exit = True; valid_sub = True
-                                            else: ezfunctions.message_invalid_y_or_n('short')
+                                            loop_exit, sub_loop = ezfunctions.exit_default(pol_type, 'N')
+                                            if loop_exit == False: inner_loop_count += 1; valid_confirm = True; valid_exit = True
+                                            elif loop_exit == True: valid_confirm = True; valid_sub = True; valid_exit = True
                                     elif confirm_config == 'N':
                                         ezfunctions.message_starting_over(pol_type)
                                         valid_confirm = True
                                     else: ezfunctions.message_invalid_y_or_n('short')
                         elif question == 'N': sub_loop = True
                         else: ezfunctions.message_invalid_y_or_n('short')
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -1127,9 +1296,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,ldap'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -1144,7 +1318,7 @@ class policies(object):
     #==============================================
     # Local User Policy Module
     #==============================================
-    def local_user_policies(self, **kwargs):
+    def local_user(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -1167,13 +1341,17 @@ class policies(object):
                 loop_count = 1
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    # Obtain Information for iam.EndpointPasswordProperties
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['iam.EndPointPasswordProperties']['allOf'][1]['properties']
                     #==============================================
@@ -1248,11 +1426,6 @@ class policies(object):
                         kwargs['jData']['varInput'] = 'How many passwords would you like to store for a user?  Range is 0 to 5.'
                         kwargs['jData']['varName']  = 'Password History'
                         polVars['password_history'] = ezfunctions.varNumberLoop(**kwargs)
-                    else:
-                        polVars['grace_period'] = 0
-                        polVars['notification_period'] = 15
-                        polVars['password_expiry_duration'] = 90
-                        polVars['password_history'] = 0
                     #==============================================
                     # Prompt User for Local Users
                     #==============================================
@@ -1266,7 +1439,9 @@ class policies(object):
                         elif question == 'N': user_loop = True
                         else: ezfunctions.message_invalid_y_or_n('short')
                     polVars['local_users'] = local_users
-
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -1274,9 +1449,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,local_user'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -1291,7 +1471,7 @@ class policies(object):
     #==============================================
     # Network Connectivity Policy Module
     #==============================================
-    def network_connectivity_policies(self, **kwargs):
+    def network_connectivity(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -1310,12 +1490,18 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                #==============================================
+                # Prompt User for Name and Description
+                #==============================================
                 polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
+                #==============================================
+                # Get API Data
+                #==============================================
+                kwargs['multi_select'] = False
                 jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
                 #==============================================
                 # Prompt User for Primary DNS Server
@@ -1353,6 +1539,9 @@ class policies(object):
                         kwargs['jData']['varInput'] = f'IPv6 Secondary DNS Server.  [press enter to skip]:'
                         kwargs['jData']['varName']  = f'Secondary DNS Server'
                         polVars['alternate_ipv6_dns_server'] = ezfunctions.varStringLoop(**kwargs)
+                #==============================================
+                # Print Policy and Prompt User to Accept
+                #==============================================
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -1360,9 +1549,14 @@ class policies(object):
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
+                        #==============================================
                         # Add Policy Variables to immDict
+                        #==============================================
                         kwargs['class_path'] = 'intersight,policies,network_connectivity'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        #==============================================
+                        # Create Additional Policy or Exit Loop
+                        #==============================================
                         configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                         valid_confirm = True
                     elif confirm_policy == 'N':
@@ -1375,7 +1569,7 @@ class policies(object):
     #==============================================
     # NTP Policy Module
     #==============================================
-    def ntp_policies(self, **kwargs):
+    def ntp(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -1396,6 +1590,9 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                #==============================================
+                # Prompt User for Name and Description
+                #==============================================
                 polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
@@ -1440,7 +1637,9 @@ class policies(object):
                 kwargs['jData']['enum']        = sorted(region_tzs)
                 kwargs['jData']['varType']     = 'Region Timezones'
                 polVars['timezone'] = ezfunctions.variablesFromAPI(**kwargs)
-
+                #==============================================
+                # Print Policy and Prompt User to Accept
+                #==============================================
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -1448,9 +1647,14 @@ class policies(object):
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
+                        #==============================================
                         # Add Policy Variables to immDict
+                        #==============================================
                         kwargs['class_path'] = 'intersight,policies,ntp'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        #==============================================
+                        # Create Additional Policy or Exit Loop
+                        #==============================================
                         configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                         valid_confirm = True
                     elif confirm_policy == 'N':
@@ -1463,10 +1667,9 @@ class policies(object):
     #==============================================
     # Persistent Memory Policy Module
     #==============================================
-    def persistent_memory_policies(self, **kwargs):
+    def persistent_memory(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
-        ezData         = kwargs['ezData']
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         name_suffix    = 'pmem'
@@ -1502,12 +1705,17 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['memory.PersistentMemoryPolicy']['allOf'][1]['properties']
                     #==============================================
@@ -1529,7 +1737,8 @@ class policies(object):
                         kwargs['jData']["varName"]  = 'Persistent Memory Secure Passphrase'
                         encrypt_memory = ezfunctions.varBoolLoop(**kwargs)
                         if encrypt_memory == True:
-                            kwargs['secure_passphrase'] = ezfunctions.sensitive_var_value(jsonData, **kwargs)
+                            kwargs['Variable'] = 'secure_passphrase'
+                            kwargs = ezfunctions.sensitive_var_value(jsonData, **kwargs)
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  The percentage of volatile memory required for goal creation.')
                         print(f'  The actual volatile and persistent memory size allocated to the region may differ with')
@@ -1612,6 +1821,9 @@ class policies(object):
                                     'capacity':capacity, 'mode':mode, 'name':namespace_name,
                                     'socket_id':socket_id, 'socket_memory_id':socket_memory_id
                                 }
+                                #==============================================
+                                # Print Policy and Prompt User to Accept
+                                #==============================================
                                 print(f'\n{"-"*91}\n')
                                 print(textwrap.indent(yaml.dump(namespace, Dumper=MyDumper, default_flow_style=False
                                 ), ' '*4, predicate=None))
@@ -1622,6 +1834,9 @@ class policies(object):
                                     if confirm_namespace == 'Y' or confirm_namespace == '':
                                         pol_type = 'Namespace'
                                         polVars['namespaces'].append(namespace)
+                                        #==============================================
+                                        # Create Additional Policy or Exit Loop
+                                        #==============================================
                                         valid_exit = False
                                         while valid_exit == False:
                                             sub_exit, valid_confirm = ezfunctions.exit_default(pol_type, 'N')
@@ -1632,6 +1847,9 @@ class policies(object):
                                         ezfunctions.message_starting_over(pol_type)
                                         valid_confirm = True
                                     else: ezfunctions.message_invalid_y_or_n('short')
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -1639,9 +1857,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,persistent_memory'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -1656,119 +1879,101 @@ class policies(object):
     #==============================================
     # Port Policy Module
     #==============================================
-    def port_policies(self, **kwargs):
+    def port(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
-        ezData         = kwargs['ezData']
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         org            = self.org
         path_sep       = kwargs['path_sep']
         policy_type    = 'Port Policy'
         yaml_file      = 'port'
-        polVars = {}
-
-        port_count = 0
-        configure_loop = False
         while configure_loop == False:
+            port_type_list = [
+                'Appliance Port-Channels:port_channel_appliances',
+                'Appliance Ports:port_role_appliances',
+                'Ethernet Uplink Port-Channels:port_channel_ethernet_uplinks',
+                'Ethernet Uplinks:port_role_ethernet_uplinks',
+                'FCoE Uplink Port-Channels:port_channel_fcoe_uplinks',
+                'FCoE Uplinks:port_role_fcoe_uplinks',
+                'FC Storage:port_role_fc_storage',
+                'FC Uplink Port-Channels:port_channel_fc_uplinks',
+                'FC Uplinks:port_role_fc_uplinks',
+                'Server Ports:port_role_servers',
+            ]
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} is used to configure the ports for a UCS Domain Profile.  This includes:')
             print(f'   - Unified Ports - Ports to convert to Fibre-Channel Mode.')
-            print(f'   - Appliance Ports')
-            print(f'   - Appliance Port-Channels')
-            print(f'   - Ethernet Uplinks')
-            print(f'   - Ethernet Uplink Port-Channels')
-            print(f'   - FCoE Uplinks')
-            print(f'   - FCoE Uplink Port-Channels')
-            print(f'   - Fibre-Channel Storage')
-            print(f'   - Fibre-Channel Uplinks')
-            print(f'   - Fibre-Channel Uplink Port-Channels')
-            print(f'   - Server Ports\n')
+            for i in port_type_list:
+                print(f'   - {i.split(":")[0]}')
             print(f'  This wizard will save the configuration for this section to the following file:')
             print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
-
-                print(f'   IMPORTANT NOTE: The wizard will create a Port Policy for Fabric A and Fabric B')
-                print(f'                   automatically.  The Policy Name will be appended with [name]_A for ')
-                print(f'                   Fabric A and [name]_B for Fabric B.  You only need one Policy per')
-                print(f'                   Domain.')
+                #==============================================
+                # Prompt User for Name and Description
+                #==============================================
+                polVars = {}
+                if not name_prefix == '': name = '%s' % (name_prefix)
+                else: name = '%s' % (org)
+                name = ezfunctions.policy_name(name, policy_type)
+                polVars['names'] = [f'{name}-a', f'{name}-b']
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                if not name_prefix == '':
-                    name = '%s' % (name_prefix)
-                else:
-                    name = '%s' % (org)
-
-                polVars['name']        = ezfunctions.policy_name(name, policy_type)
-                polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                polVars['multi_select'] = False
+                print(f'   NOTE: The wizard will create a Port Policy for Fabric A and Fabric B')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                polVars['description'] = ezfunctions.policy_descr(name, policy_type)
+                kwargs['name_prefix'] = self.name_prefix
+                kwargs['name'] = name
+                #==============================================
+                # Get API Data
+                #==============================================
+                kwargs['multi_select'] = False
                 jsonVars = jsonData['fabric.PortPolicy']['allOf'][1]['properties']
-                polVars['description'] = jsonVars['DeviceModel']['description']
-                polVars['jsonVars'] = sorted(jsonVars['DeviceModel']['enum'])
-                polVars['defaultVar'] = jsonVars['DeviceModel']['default']
-                polVars['varType'] = 'Device Model'
+                #==============================================
+                # Prompt User for FI Device Model
+                #==============================================
+                kwargs['jData'] = deepcopy(jsonVars['DeviceModel'])
+                kwargs['jData']['varType'] = 'Device Model'
                 polVars['device_model'] = ezfunctions.variablesFromAPI(**kwargs)
-                
-                fc_mode,ports_in_use,fc_converted_ports,port_modes = port_modes_fc(jsonData, ezData, name_prefix, **kwargs)
-                polVars['fc_mode'] = fc_mode
-                polVars['ports_in_use'] = ports_in_use
-                polVars['fc_converted_ports'] = fc_converted_ports
-                polVars['port_modes'] = port_modes
-                polVars['fc_ports'] = polVars['port_modes']['port_list']
-
-                # Appliance Port-Channel
-                polVars['port_type'] = 'Appliance Port-Channel'
-                port_channel_appliances,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **kwargs)
-
-                # Ethernet Uplink Port-Channel
-                polVars['port_type'] = 'Ethernet Uplink Port-Channel'
-                port_channel_ethernet_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **kwargs)
-
-                # Fibre-Channel Port-Channel
-                polVars['fc_ports_in_use'] = []
-                polVars['port_type'] = 'Fibre-Channel Port-Channel'
-                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, ezData, name_prefix, **kwargs)
-                Fabric_A_fc_port_channels = Fab_A
-                Fabric_B_fc_port_channels = Fab_B
-                polVars['fc_ports_in_use'] = fc_ports_in_use
-
-                # FCoE Uplink Port-Channel
-                polVars['port_type'] = 'FCoE Uplink Port-Channel'
-                port_channel_fcoe_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **kwargs)
-
-                # Appliance Ports
-                polVars['port_type'] = 'Appliance Ports'
-                port_role_appliances,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **kwargs)
-
-                # Ethernet Uplink
-                polVars['port_type'] = 'Ethernet Uplink'
-                port_role_ethernet_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **kwargs)
-
-                # Fibre-Channel Storage
-                polVars['port_type'] = 'Fibre-Channel Storage'
-                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, ezData, name_prefix, **kwargs)
-                Fabric_A_port_role_fc_storage = Fab_A
-                Fabric_B_port_role_fc_storage = Fab_B
-                polVars['fc_ports_in_use'] = fc_ports_in_use
-
-                # Fibre-Channel Uplink
-                polVars['port_type'] = 'Fibre-Channel Uplink'
-                Fab_A,Fab_B,fc_ports_in_use = port_list_fc(jsonData, ezData, name_prefix, **kwargs)
-                Fabric_A_port_role_fc_uplink = Fab_A
-                Fabric_B_port_role_fc_uplink = Fab_B
-                polVars['fc_ports_in_use'] = fc_ports_in_use
-
-                # FCoE Uplink
-                polVars['port_type'] = 'FCoE Uplink'
-                port_role_fcoe_uplinks,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **kwargs)
-
-                # Server Ports
-                polVars['port_type'] = 'Server Ports'
-                port_role_servers,polVars['ports_in_use'] = port_list_eth(jsonData, ezData, name_prefix, **kwargs)
-
+                kwargs['device_model'] = polVars['device_model']
+                #==============================================
+                # Prompt User for Fibre-Channel Configuration
+                #==============================================
+                kwargs = port_modes_fc(**kwargs)
+                #==============================================
+                # Prompt User for Appliance Port-Channel(s)
+                #==============================================
+                for i in port_type_list:
+                    kwargs['portDict'] = []
+                    kwargs['port_type'] = i.split(':')[0]
+                    if 'fc' in i.split(':')[1]:
+                        if len(kwargs['fc_converted_ports']) > 0: kwargs = port_list_fc(**kwargs)
+                    else: kwargs = port_list_eth(**kwargs)
+                    kwargs[i.split(':')[1]] = deepcopy(kwargs['portDict'])
+                #==============================================
+                # Build Port Policy Dictionary
+                #==============================================
+                port_type = ['port_channel', 'port_role']
+                port_type_list = ['appliances', 'ethernet_uplinks', 'fcoe_uplinks']
+                for item in port_type:
+                    for i in port_type_list:
+                        if len(kwargs[f'{item}_{i}']) > 0:
+                            polVars.update({f'{item}_{i}': deepcopy(kwargs[f'{item}_{i}'])})
+                if len(kwargs['port_role_servers']) > 0:
+                    polVars.update({'port_role_servers': deepcopy(kwargs['port_role_servers'])})
+                if len(kwargs['fc_converted_ports']) > 0:
+                    if len(kwargs['port_modes']) > 0:
+                        polVars.update({'port_modes': kwargs['port_modes']})
+                    if len(kwargs['port_channel_fc_uplinks']) > 0:
+                        polVars.update({'port_channel_fc_uplinks': deepcopy(kwargs['port_channel_fc_uplinks'])})
+                    port_type_list = ['fc_storage', 'fc_uplinks']
+                    for i in port_type_list:
+                        if len(kwargs[f'port_role_{i}']) > 0:
+                            polVars.update({f'port_role_{i}': deepcopy(kwargs[f'port_role_{i}'])})
+                #==============================================
+                # Print Policy and Prompt User to Accept
+                #==============================================
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -1776,28 +1981,14 @@ class policies(object):
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
+                        #==============================================
                         # Add Policy Variables to immDict
+                        #==============================================
                         kwargs['class_path'] = 'intersight,policies,port'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
-                        polVars['port_channel_appliances'] = port_channel_appliances
-                        polVars['port_channel_ethernet_uplinks'] = port_channel_ethernet_uplinks
-                        polVars['port_channel_fcoe_uplinks'] = port_channel_fcoe_uplinks
-                        polVars['port_role_appliances'] = port_role_appliances
-                        polVars['port_role_ethernet_uplinks'] = port_role_ethernet_uplinks
-                        polVars['port_role_fcoe_uplinks'] = port_role_fcoe_uplinks
-                        polVars['port_role_servers'] = port_role_servers
-
-                        original_name = polVars['name']
-                        polVars['name']        = '%s_A' % (original_name)
-                        polVars['port_channel_fc_uplinks'] = Fabric_A_fc_port_channels
-                        polVars['port_role_fc_storage'] = Fabric_A_port_role_fc_storage
-                        polVars['port_role_fc_uplinks'] = Fabric_A_port_role_fc_uplink
-
-                        polVars['name']        = '%s_B' % (original_name)
-                        polVars['port_channel_fc_uplinks'] = Fabric_B_fc_port_channels
-                        polVars['port_role_fc_storage'] = Fabric_B_port_role_fc_storage
-                        polVars['port_role_fc_uplinks'] = Fabric_B_port_role_fc_uplink
-
+                        #==============================================
+                        # Create Additional Policy or Exit Loop
+                        #==============================================
                         configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                         valid_confirm = True
                     elif confirm_policy == 'N':
@@ -1810,7 +2001,7 @@ class policies(object):
     #==============================================
     # Power Policy Module
     #==============================================
-    def power_policies(self, **kwargs):
+    def power(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -1820,9 +2011,6 @@ class policies(object):
         path_sep       = kwargs['path_sep']
         policy_type    = 'Power Policy'
         yaml_file      = 'environment'
-        polVars = {}
-
-        configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} will configure the Power Redundancy Policies for Chassis and Servers.')
@@ -1833,81 +2021,81 @@ class policies(object):
             loop_count = 1
             policy_loop = False
             while policy_loop == False:
-
-                print('staring loop again')
-                polVars['multi_select'] = False
-                polVars['description'] = ezData['policies']['power.Policy']['systemType']['description']
-                polVars['jsonVars'] = sorted(ezData['policies']['power.Policy']['systemType']['enum'])
-                polVars['defaultVar'] = ezData['policies']['power.Policy']['systemType']['default']
-                polVars['varType'] = 'System Type'
+                #==============================================
+                # Get API Data
+                #==============================================
+                polVars = {}
+                kwargs['multi_select'] = False
+                jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['power.Policy']
+                #==============================================
+                # Prompt User for System Type
+                #==============================================
+                kwargs['jData'] = deepcopy(jsonVars['systemType'])
+                kwargs['jData']['varType'] = 'System Type'
                 system_type = ezfunctions.variablesFromAPI(**kwargs)
-
-                if not name_prefix == '':
-                    name = '%s-%s' % (name_prefix, system_type)
-                else:
-                    name = '%s-%s' % (org, system_type)
-
+                #==============================================
+                # Prompt User for Name and Description
+                #==============================================
+                if not name_prefix == '': name = '%s-%s' % (name_prefix, system_type)
+                else: name = '%s-%s' % (org, system_type)
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
 
-                polVars['multi_select'] = False
                 jsonVars = jsonData['power.Policy']['allOf'][1]['properties']
-
                 if system_type == '9508':
-                    valid = False
-                    while valid == False:
-                        polVars['power_allocation'] = input('What is the Power Budget you would like to Apply?\n'
-                            'This should be a value between 2800 Watts and 16800 Watts. [5600]: ')
-                        if polVars['power_allocation'] == '':
-                            polVars['power_allocation'] = 5600
-                        valid = validating.number_in_range('Chassis Power Budget', polVars['power_allocation'], 2800, 16800)
-
-                    polVars['description'] = jsonVars['DynamicRebalancing']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['DynamicRebalancing']['enum'])
-                    polVars['defaultVar'] = jsonVars['DynamicRebalancing']['default']
-                    polVars['varType'] = 'Dynamic Power Rebalancing'
+                    #==============================================
+                    # Prompt User for Power Allocation
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['AllocatedBudget'])
+                    kwargs['jData']["default"]  = 8400
+                    kwargs['jData']["maximum"]  = 16800
+                    kwargs['jData']["minimum"]  = 2800
+                    kwargs['jData']["varInput"] = 'What is the Power Budget you would like to Apply?\n'\
+                        '  This should be a value between 2800 Watts and 16800 Watts.'
+                    kwargs['jData']["varName"]  = 'Power Allocation'
+                    polVars['power_allocation'] = ezfunctions.varNumberLoop(**kwargs)
+                    #==============================================
+                    # Prompt User for Dynamic Rebalancing
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['DynamicRebalancing'])
+                    kwargs['jData']['varType'] = 'Dynamic Power Rebalancing'
                     polVars['dynamic_power_rebalancing'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    polVars['description'] = jsonVars['PowerSaveMode']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['PowerSaveMode']['enum'])
-                    polVars['defaultVar'] = jsonVars['PowerSaveMode']['default']
-                    polVars['varType'] = 'Power Save Mode'
+                    #==============================================
+                    # Prompt User for Power Save Mode
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['PowerSaveMode'])
+                    kwargs['jData']['varType'] = 'Power Save Mode'
                     polVars['power_save_mode'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                else:
-                    polVars['power_allocation'] = 0
-                    polVars['dynamic_power_rebalancing'] = 'Enabled'
-                    polVars['power_save_mode'] = 'Enabled'
-
                 if system_type == 'Server':
-                    polVars['description'] = jsonVars['PowerPriority']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['PowerPriority']['enum'])
-                    polVars['defaultVar'] = jsonVars['PowerPriority']['default']
-                    polVars['varType'] = 'Power Priority'
+                    #==============================================
+                    # Prompt User for Power Priority
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['PowerPriority'])
+                    kwargs['jData']['varType'] = 'Power Priority'
                     polVars['power_priority'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    polVars['description'] = jsonVars['PowerProfiling']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['PowerProfiling']['enum'])
-                    polVars['defaultVar'] = jsonVars['PowerProfiling']['default']
-                    polVars['varType'] = 'Power Profiling'
+                    #==============================================
+                    # Prompt User for Power Profiling
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['PowerProfiling'])
+                    kwargs['jData']['varType'] = 'Power Profiling'
                     polVars['power_profiling'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    polVars['description'] = jsonVars['PowerRestoreState']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['PowerRestoreState']['enum'])
-                    polVars['defaultVar'] = jsonVars['PowerRestoreState']['default']
-                    polVars['varType'] = 'Power Restore'
+                    #==============================================
+                    # Prompt User for Power Restore
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['PowerRestoreState'])
+                    kwargs['jData']['varType'] = 'Power Restore'
                     polVars['power_restore'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                if system_type == '5108':
-                    polVars['popList'] = ['N+2']
-                elif system_type == 'Server':
-                    polVars['popList'] = ['N+1','N+2']
-                polVars['description'] = jsonVars['RedundancyMode']['description']
-                polVars['jsonVars'] = sorted(jsonVars['RedundancyMode']['enum'])
-                polVars['defaultVar'] = jsonVars['RedundancyMode']['default']
-                polVars['varType'] = 'Power Redundancy Mode'
+                #==============================================
+                # Prompt User for Power Redundancy Mode
+                #==============================================
+                kwargs['jData'] = deepcopy(jsonVars['RedundancyMode'])
+                if system_type == '5108': kwargs['jData']['popList'] = ['N+2']
+                elif system_type == 'Server': kwargs['jData']['popList'] = ['N+1','N+2']
+                kwargs['jData']['varType'] = 'Power Redundancy Mode'
                 polVars['power_redundancy'] = ezfunctions.variablesFromAPI(**kwargs)
-
+                #==============================================
+                # Print Policy and Prompt User to Accept
+                #==============================================
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -1915,9 +2103,14 @@ class policies(object):
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
+                        #==============================================
                         # Add Policy Variables to immDict
+                        #==============================================
                         kwargs['class_path'] = 'intersight,policies,power'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        #==============================================
+                        # Create Additional Policy or Exit Loop
+                        #==============================================
                         if loop_count < 3:
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'Y')
                         else: configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
@@ -1933,22 +2126,22 @@ class policies(object):
     #==============================================
     # SD Card Policy Module
     #==============================================
-    def sd_card_policies(self, **kwargs):
+    def sd_card(self, **kwargs):
         name_prefix    = self.name_prefix
         name_suffix    = 'sdcard'
         org            = self.org
         policy_type    = 'SD Card Policy'
         yaml_file      = 'storage'
-        polVars = {}
-
-        configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
 
@@ -1976,7 +2169,7 @@ class policies(object):
     #==============================================
     # Serial over LAN Policy Module
     #==============================================
-    def serial_over_lan_policies(self, **kwargs):
+    def serial_over_lan(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -1986,9 +2179,6 @@ class policies(object):
         path_sep       = kwargs['path_sep']
         policy_type    = 'Serial over LAN Policy'
         yaml_file      = 'management'
-        polVars = {}
-
-        configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} will configure the Server to allow access to the Communications Port over')
@@ -2004,36 +2194,41 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
-
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars['enabled'] = True
-
-                    polVars['multi_select'] = False
+                    #==============================================
+                    # Get API Data
+                    #==============================================
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['sol.Policy']['allOf'][1]['properties']
-                    polVars['description'] = jsonVars['BaudRate']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['BaudRate']['enum'])
-                    polVars['defaultVar'] = jsonVars['BaudRate']['default']
-                    polVars['varType'] = 'Baud Rate'
+                    #==============================================
+                    # Prompt User for Baud Rate
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['BaudRate'])
+                    kwargs['jData']['varType'] = 'Baud Rate'
                     polVars['baud_rate'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    polVars['description'] = jsonVars['ComPort']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['ComPort']['enum'])
-                    polVars['defaultVar'] = jsonVars['ComPort']['default']
-                    polVars['varType'] = 'Com Port'
+                    #==============================================
+                    # Prompt User for Com Port
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['ComPort'])
+                    kwargs['jData']['varType'] = 'Com Port'
                     polVars['com_port'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    valid = False
-                    while valid == False:
-                        polVars['ssh_port'] = input('What is the SSH Port you would like to assign?\n'
-                            'This should be a value between 1024-65535. [2400]: ')
-                        if polVars['ssh_port'] == '':
-                            polVars['ssh_port'] = 2400
-                        valid = validating.number_in_range('SSH Port', polVars['ssh_port'], 1024, 65535)
-
+                    #==============================================
+                    # Prompt User for SSH Port
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SshPort'])
+                    kwargs['jData']["varInput"] = 'What is the SSH Port you would like to assign?  Range is 1024-65535.'
+                    kwargs['jData']["varName"]  = 'SSH Port'
+                    polVars['ssh_port'] = ezfunctions.varNumberLoop(**kwargs)
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -2041,9 +2236,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,serial_over_lan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -2058,7 +2258,7 @@ class policies(object):
     #==============================================
     # SMTP Policy Module
     #==============================================
-    def smtp_policies(self, **kwargs):
+    def smtp(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -2068,9 +2268,6 @@ class policies(object):
         path_sep       = kwargs['path_sep']
         policy_type    = 'SMTP Policy'
         yaml_file      = 'management'
-        polVars = {}
-
-        configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  An {policy_type} sends server faults as email alerts to the configured SMTP server.')
@@ -2083,92 +2280,58 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
-
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars['enable_smtp'] = True
-
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  IP address or hostname of the SMTP server. The SMTP server is used by the managed device ')
-                    print(f'  to send email notifications.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        polVars['smtp_server_address'] = input('What is the SMTP Server Address? ')
-                        if re.search(r'^[a-zA-Z0-9]:', polVars['smtp_server_address']):
-                            valid = validating.ip_address('SMTP Server Address', polVars['smtp_server_address'])
-                        if re.search(r'[a-zA-Z]', polVars['smtp_server_address']):
-                            valid = validating.dns_name('SMTP Server Address', polVars['smtp_server_address'])
-                        elif re.search (r'^([0-9]{1,3}\.){3}[0-9]{1,3}$'):
-                            valid = validating.ip_address('SMTP Server Address', polVars['smtp_server_address'])
-                        else:
-                            smtp_add = polVars['smtp_server_address']
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  "{smtp_add}" is not a valid address.')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Port number used by the SMTP server for outgoing SMTP communication.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        polVars['smtp_port'] = input('What is the SMTP Port?  [25]: ')
-                        if polVars['smtp_port'] == '':
-                            polVars['smtp_port'] = 25
-                        if re.search(r'[\d]+', str(polVars['smtp_port'])):
-                            valid = validating.number_in_range('SMTP Port', polVars['smtp_port'], 1, 65535)
-                        else:
-                            smtp_port = polVars['smtp_port']
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  "{smtp_port}" is not a valid port.')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                    polVars['multi_select'] = False
+                    #==============================================
+                    # Get API Data
+                    #==============================================
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['smtp.Policy']['allOf'][1]['properties']
-                    polVars['description'] = jsonVars['MinSeverity']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['MinSeverity']['enum'])
-                    polVars['defaultVar'] = jsonVars['MinSeverity']['default']
-                    polVars['varType'] = 'Minimum Severity'
+                    #==============================================
+                    # Prompt User for SMTP Server
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SmtpServer'])
+                    kwargs['jData']["varInput"] = 'What is the SMTP Server Address?'
+                    kwargs['jData']["varName"]  = 'SMTP Server Address'
+                    kwargs['jData']['varType']  = 'hostname'
+                    polVars['smtp_server_address'] = ezfunctions.varStringLoop(**kwargs)
+                    #==============================================
+                    # Prompt User for SMTP Port
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SmtpPort'])
+                    kwargs['jData']["varInput"] = 'What is the SMTP Port?  Range is 1-65535.'
+                    kwargs['jData']["varName"]  = 'SMTP Port'
+                    polVars['smtp_port'] = ezfunctions.varNumberLoop(**kwargs)
+                    #==============================================
+                    # Prompt User for Minimum Severity
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['MinSeverity'])
+                    kwargs['jData']['varType'] = 'Minimum Severity'
                     polVars['minimum_severity'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  The email address entered here will be displayed as the from address (mail received from ')
-                    print(f'  address) of all the SMTP mail alerts that are received. If not configured, the hostname ')
-                    print(f'  of the server is used in the from address field.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        polVars['smtp_alert_sender_address'] = input(f'What is the SMTP Alert Sender Address?  '\
-                            '[press enter to use server hostname]: ')
-                        if polVars['smtp_alert_sender_address'] == '':
-                            polVars['smtp_alert_sender_address'] = ''
-                            valid = True
-                        else:
-                            valid = validating.email('SMTP Alert Sender Address', polVars['smtp_alert_sender_address'])
-
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  List of email addresses that will receive notifications for faults.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    #==============================================
+                    # Prompt User for Sender Email Address
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SenderEmail'])
+                    kwargs['jData']["varInput"] = 'What is the SMTP Alert Sender Address?'
+                    kwargs['jData']["varName"]  = 'Sender Email'
+                    polVars['smtp_alert_sender_address'] = ezfunctions.varStringLoop(**kwargs)
+                    #==============================================
+                    # Prompt User for SMTP Recipients
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SmtpRecipients'])
+                    kwargs['jData']["varInput"] = 'Enter the List of Email Addresses to Recieve Alerts?'
+                    kwargs['jData']["varName"]  = 'SMTP Recipients'
+                    polVars['mail_alert_recipients'] = ezfunctions.varStringLoop(**kwargs)
                     polVars['mail_alert_recipients'] = []
-                    valid = False
-                    while valid == False:
-                        mail_recipient = input(f'What is address you would like to send these notifications to?  ')
-                        valid_email = validating.email('Mail Alert Recipient', mail_recipient)
-                        if valid_email == True:
-                            polVars['mail_alert_recipients'].append(mail_recipient)
-                            valid_answer = False
-                            while valid_answer == False:
-                                add_another = input(f'Would you like to add another E-mail?  Enter "Y" or "N" [N]: ')
-                                if add_another == '' or add_another == 'N':
-                                    valid = True
-                                    valid_answer = True
-                                elif add_another == 'Y':
-                                    valid_answer = True
-                                else: ezfunctions.message_invalid_y_or_n('short')
-
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -2176,9 +2339,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,smtp'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -2193,7 +2361,7 @@ class policies(object):
     #==============================================
     # SNMP Policy Module
     #==============================================
-    def snmp_policies(self, **kwargs):
+    def snmp(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -2203,9 +2371,6 @@ class policies(object):
         path_sep       = kwargs['path_sep']
         policy_type    = 'SNMP Policy'
         yaml_file      = 'management'
-        polVars = {}
-
-        configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  An {policy_type} will configure chassis, domains, and servers with SNMP parameters.')
@@ -2218,151 +2383,125 @@ class policies(object):
                 loop_count = 1
                 policy_loop = False
                 while policy_loop == False:
-
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
-
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars['enabled'] = True
-
-                    valid = False
-                    while valid == False:
-                        polVars['port'] = input(f'Note: The following Ports cannot be chosen: [22, 23, 80, 123, 389, 443, 623, 636, 2068, 3268, 3269]\n'\
-                            'Enter the Port to Assign to this SNMP Policy.  Valid Range is 1-65535.  [161]: ')
-                        if polVars['port'] == '':
-                            polVars['port'] = 161
-                        if re.search(r'[0-9]{1,4}', str(polVars['port'])):
-                            valid = validating.snmp_port('SNMP Port', polVars['port'], 1, 65535)
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
-                            print(f'  Excluding [22, 23, 80, 123, 389, 443, 623, 636, 2068, 3268, 3269].')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                    polVars['multi_select'] = False
+                    #==============================================
+                    # Get API Data
+                    #==============================================
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['snmp.Policy']['allOf'][1]['properties']
-
-                    # SNMP Contact
-                    polVars['description'] = jsonVars['SysContact']['description']
-                    polVars['varDefault'] = 'UCS Admins'
-                    polVars['varInput'] = 'SNMP System Contact:'
-                    polVars['varName'] = 'SNMP System Contact'
-                    polVars['varRegex'] = '.*'
-                    polVars['minLength'] = 1
-                    polVars['maxLength'] = jsonVars['SysContact']['maxLength']
+                    #==============================================
+                    # Prompt User for SNMP Port
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SnmpPort'])
+                    kwargs['jData']["varInput"] = 'Enter the Port to Assign to this SNMP Policy.'
+                    kwargs['jData']["varName"]  = 'SNMP Port'
+                    kwargs['jData']["varType"]  = 'SnmpPort'
+                    polVars['port'] = ezfunctions.varNumberLoop(**kwargs)
+                    #==============================================
+                    # Prompt User for SNMP Contact
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SysContact'])
+                    kwargs['jData']['pattern']  = '.*'
+                    kwargs['jData']['varInput'] = 'SNMP System Contact:'
+                    kwargs['jData']['varName']  = 'System Contact'
                     polVars['system_contact'] = ezfunctions.varStringLoop(**kwargs)
-
-                    # SNMP Location
-                    polVars['description'] = jsonVars['SysLocation']['description']
-                    polVars['varDefault'] = 'Data Center'
-                    polVars['varInput'] = 'What is the Location of the host on which the SNMP agent (server) runs?'
-                    polVars['varName'] = 'System Location'
-                    polVars['varRegex'] = '.*'
-                    polVars['minLength'] = 1
-                    polVars['maxLength'] = jsonVars['SysLocation']['maxLength']
+                    #==============================================
+                    # Prompt User for SNMP Location
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SysLocation'])
+                    kwargs['jData']['pattern']  = '.*'
+                    kwargs['jData']['varInput'] = 'What is the SNMP Location?'
+                    kwargs['jData']['varName']  = 'System Location'
                     polVars['system_location'] = ezfunctions.varStringLoop(**kwargs)
-
+                    #==============================================
+                    # Prompt User for SNMP Access Community String
+                    #==============================================
                     polVars['access_community_string'] = ''
-                    valid = False
-                    while valid == False:
-                        question = input(f'Would you like to configure an SNMP Access Community String?  Enter "Y" or "N" [N]: ')
-                        if question == 'Y':
-                            input_valid = False
-                            while input_valid == False:
-                                input_string = stdiomask.getpass(f'What is your SNMP Access Community String? ')
-                                if not input_string == '':
-                                    input_valid = validating.snmp_string('SNMP Access Community String', input_string)
-                                else:
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Access Community String.')
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                            polVars['access_community_string'] = loop_count
-                            TF_VAR = 'TF_VAR_access_community_string_%s' % (loop_count)
-                            os.environ[TF_VAR] = '%s' % (input_string)
-                            valid = True
-                        elif question == '' or question == 'N':
-                            valid = True
-                        else: ezfunctions.message_invalid_y_or_n('short')
-
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = False
+                    kwargs['jData']['description'] = 'Configure SNMP Community Access'
+                    kwargs['jData']['varInput']    = f'Would you like to configure an SNMP Access Community String?'
+                    kwargs['jData']['varName']     = 'SNMP Community Access'
+                    configure_snmp_access = ezfunctions.varBoolLoop(**kwargs)
+                    if configure_snmp_access == True:
+                        kwargs['Variable'] = f'access_community_string_{loop_count}'
+                        kwargs = ezfunctions.sensitive_var_value(jsonData, **kwargs)
+                        polVars['access_community_string'] = loop_count
                     if not polVars['access_community_string'] == '':
                         polVars['description'] = jsonVars['CommunityAccess']['description']
                         polVars['jsonVars'] = sorted(jsonVars['CommunityAccess']['enum'])
                         polVars['defaultVar'] = jsonVars['CommunityAccess']['default']
-                        polVars['varType'] = 'Community Access'
+                        polVars['varType']    = 'Community Access'
                         polVars['community_access'] = ezfunctions.variablesFromAPI(**kwargs)
-                    else:
-                        polVars['community_access'] = 'Disabled'
-
+                    else: polVars.pop('access_community_string')
+                    #==============================================
+                    # Prompt User for SNMP Trap Community String
+                    #==============================================
                     polVars['trap_community_string'] = ''
-                    valid = False
-                    while valid == False:
-                        question = input(f'Would you like to configure an SNMP Trap Community String?  Enter "Y" or "N" [N]: ')
-                        if question == 'Y':
-                            input_valid = False
-                            while input_valid == False:
-                                input_string = stdiomask.getpass(f'What is your SNMP Trap Community String? ')
-                                if not input_string == '':
-                                    input_valid = validating.snmp_string('SNMP Trap Community String', input_string)
-                                else:
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Trap Community String.')
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                            polVars['trap_community_string'] = loop_count
-                            TF_VAR = 'TF_VAR_snmp_trap_community_%s' % (loop_count)
-                            os.environ[TF_VAR] = '%s' % (input_string)
-                            valid = True
-                        elif question == '' or question == 'N':
-                            valid = True
-                        else: ezfunctions.message_invalid_y_or_n('short')
-
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = False
+                    kwargs['jData']['description'] = 'Configure SNMP Trap Community String'
+                    kwargs['jData']['varInput']    = f'Would you like to configure an SNMP Trap Community String?'
+                    kwargs['jData']['varName']     = 'SNMP Trap Community String'
+                    configure_trap_community_string = ezfunctions.varBoolLoop(**kwargs)
+                    if configure_trap_community_string == True:
+                        kwargs['Variable'] = f'trap_community_string_{loop_count}'
+                        kwargs = ezfunctions.sensitive_var_value(jsonData, **kwargs)
+                        polVars[f'trap_community_string'] = loop_count
+                    if polVars['trap_community_string'] == '':
+                        polVars.pop('trap_community_string')
+                    #==============================================
+                    # Prompt User for SNMP Engine Identifier
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['EngineId'])
+                    kwargs['jData']['default']     = False
+                    kwargs['jData']['description'] = jsonVars['EngineId']['description'] + \
+                        '\nNote: By default this is derived from the BMC serial number.'
+                    kwargs['jData']['varInput']    = f'Would you like to configure a Unique string to identify the device'\
+                        ' for administration purposes?'
+                    kwargs['jData']['varName']     = 'SNMP Trap Community String'
                     polVars['engine_input_id'] = ''
-                    valid = False
-                    while valid == False:
-                        question = input(f'Note: By default this is derived from the BMC serial number.\n'\
-                            'Would you like to configure a Unique string to identify the device for administration purpose?  Enter "Y" or "N" [N]: ')
-                        if question == 'Y':
-                            input_valid = False
-                            while input_valid == False:
-                                input_string = input(f'What is the SNMP Engine Input ID? ')
-                                if not input_string == '':
-                                    input_valid = validating.string_length('SNMP Engine Input ID', input_string, 1, 27)
-                                else:
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                                    print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Engine Input ID.')
-                                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                            polVars['snmp_engine_input_id'] = input_string
-                            valid = True
-                        elif question == '' or question == 'N':
-                            valid = True
-                        else: ezfunctions.message_invalid_y_or_n('short')
-
-                    # SNMP Users
-                    ilCount = 1
-                    snmp_user_list = []
-                    polVars['description'] = 'Configure SNMP Users'
-                    polVars['varInput'] = f'Would you like to configure an SNMPv3 User?'
-                    polVars['varDefault'] = 'Y'
-                    polVars['varName'] = 'Enable Trunking'
+                    configure_snmp_engine_id = ezfunctions.varBoolLoop(**kwargs)
+                    if configure_snmp_engine_id == True:
+                        kwargs['jData'] = deepcopy(jsonVars['EngineId'])
+                        kwargs['jData']['minimum']  = 1
+                        kwargs['jData']['varInput'] = 'What is the SNMP Engine Id?'
+                        kwargs['jData']['varName']  = 'SNMP Engine Id'
+                        polVars['snmp_engine_input_id'] = ezfunctions.varStringLoop(**kwargs)
+                    #==============================================
+                    # Prompt User for SNMP Users
+                    #==============================================
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = True
+                    kwargs['jData']['description'] = 'Configure SNMP Users'
+                    kwargs['jData']['varInput']    = f'Would you like to configure SNMPv3 User(s)?'
+                    kwargs['jData']['varName']     = 'SNMP Users'
                     configure_snmp_users = ezfunctions.varBoolLoop(**kwargs)
                     if configure_snmp_users == True:
-                        snmp_loop = False
-                        while snmp_loop == False:
-                            snmp_user_list,snmp_loop = ezfunctions.snmp_users(jsonData, ilCount, **kwargs)
-
-                    # SNMP Trap Destinations
-                    ilCount = 1
-                    snmp_dests = []
-                    snmp_loop = False
-                    while snmp_loop == False:
-                        question = input(f'Would you like to configure SNMP Trap Destionations?  Enter "Y" or "N" [Y]: ')
-                        if question == '' or question == 'Y':
-                            snmp_dests,snmp_loop = ezfunctions.snmp_trap_servers(jsonData, ilCount, snmp_user_list, **kwargs)
-                        elif question == 'N':
-                            snmp_loop = True
-                        else: ezfunctions.message_invalid_y_or_n('short')
-                    polVars['trap_destinations'] = snmp_dests
-
+                        kwargs = ezfunctions.snmp_users(**kwargs)
+                        polVars['snmp_users'] = kwargs['snmp_users']
+                    #==============================================
+                    # Prompt User for SNMP Trap Destinations
+                    #==============================================
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = True
+                    kwargs['jData']['description'] = 'Configure SNMP Trap Destinations'
+                    kwargs['jData']['varInput']    = f'Would you like to configure SNMP Trap Destination(s)?'
+                    kwargs['jData']['varName']     = 'SNMP Trap Destinations'
+                    configure_snmp_traps = ezfunctions.varBoolLoop(**kwargs)
+                    if configure_snmp_traps == True:
+                        kwargs = ezfunctions.snmp_trap_servers(**kwargs)
+                        polVars['snmp_traps'] = kwargs['snmp_traps']
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -2370,9 +2509,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,snmp'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -2387,7 +2531,7 @@ class policies(object):
     #==============================================
     # SSH Policy Module
     #==============================================
-    def ssh_policies(self, **kwargs):
+    def ssh(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -2409,26 +2553,36 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars['enable_ssh'] = True
-
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['ssh.Policy']['allOf'][1]['properties']
-
+                    #==============================================
+                    # Prompt User for SSH Port
+                    #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['Port'])
                     kwargs['jData']['varInput']    = 'What is the SSH Port?'
                     kwargs['jData']['varName']     = 'SSH Port'
                     polVars['ssh_port'] = ezfunctions.varNumberLoop(**kwargs)
-
+                    #==============================================
+                    # Prompt User for SSH Timeout
+                    #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['Timeout'])
-                    kwargs['jData']['varInput']    = 'What is the SSH Port?'
-                    kwargs['jData']['varName']     = 'SSH Port'
+                    kwargs['jData']['varInput']    = 'What value do you want to set for the SSH Timeout?'
+                    kwargs['jData']['varName']     = 'SSH Timeout'
                     polVars['ssh_timeout'] = ezfunctions.varNumberLoop(**kwargs)
-
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -2436,9 +2590,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,ssh'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -2453,10 +2612,9 @@ class policies(object):
     #========================================
     # Storage Policy Module
     #========================================
-    def storage_policies(self, **kwargs):
+    def storage(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
-        ezData         = kwargs['ezData']
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         name_suffix    = 'storage'
@@ -2464,10 +2622,6 @@ class policies(object):
         path_sep       = kwargs['path_sep']
         policy_type    = 'Storage Policy'
         yaml_file      = 'storage'
-        policy_names = []
-        polVars = {}
-
-        configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} allows you to create drive groups, virtual drives, configure the ')
@@ -2480,50 +2634,51 @@ class policies(object):
                 loop_count = 1
                 policy_loop = False
                 while policy_loop == False:
-
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
-
-                    # Obtain Policy Name
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
-                    # Obtain Policy Description
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    # Configure the Global Host Spares Setting
-                    polVars['multi_select'] = False
+                    #==============================================
+                    # Get API Data
+                    #==============================================
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['storage.StoragePolicy']['allOf'][1]['properties']
-
-                    # Configure the Global Host Spares Setting
-                    polVars['description'] = jsonVars['GlobalHotSpares']['description']
-                    polVars['varDefault'] = ''
-                    polVars['varInput'] = 'Specify the disks that are to be used as hot spares,\n globally,'\
+                    #==============================================
+                    # Prompt User for Global Hot Spares
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['GlobalHotSpares'])
+                    kwargs['jData']['maximum']  = 128
+                    kwargs['jData']['varInput'] = 'Specify the disks that are to be used as hot spares,\n globally,'\
                         ' for all the Drive Groups. [press enter to skip]:'
-                    polVars['varName'] = 'Global Hot Spares'
-                    polVars['varRegex'] = jsonVars['GlobalHotSpares']['pattern']
-                    polVars['minLength'] = 0
-                    polVars['maxLength'] = 128
+                    kwargs['jData']['varName'] = 'Global Hot Spares'
                     polVars['global_hot_spares'] = ezfunctions.varStringLoop(**kwargs)
-
-                    # Obtain Unused Disks State
-                    polVars['description'] = jsonVars['UnusedDisksState']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['UnusedDisksState']['enum'])
-                    polVars['defaultVar'] = jsonVars['UnusedDisksState']['default']
-                    polVars['varType'] = 'Unused Disks State'
+                    #==============================================
+                    # Prompt User for Unused Disks State
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['UnusedDisksState'])
+                    kwargs['jData']['varType'] = 'Unused Disks State'
                     polVars['unused_disks_state'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    # Configure the Global Host Spares Setting
-                    polVars['description'] = jsonVars['UseJbodForVdCreation']['description']
-                    polVars['varInput'] = f'Do you want to Use JBOD drives for Virtual Drive creation?'
-                    polVars['varDefault'] = 'N'
-                    polVars['varName'] = 'Use Jbod For Vd Creation'
+                    #==============================================
+                    # Prompt User for Using JBODs for VD Creation
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['UseJbodForVdCreation'])
+                    kwargs['jData']['default']  = False
+                    kwargs['jData']['varInput'] = f'Do you want to Use JBOD drives for Virtual Drive creation?'
+                    kwargs['jData']['varName']  = 'Use Jbod For Vd Creation'
                     polVars['use_jbod_for_vd_creation'] = ezfunctions.varBoolLoop(**kwargs)
-
-                    # Ask if Drive Groups should be configured
-                    polVars['description'] = 'Drive Group Configuration - Enable to add RAID drive groups that can be used to create'\
-                        ' virtual drives.  You can also specify the Global Hot Spares information.'
-                    polVars['varInput'] = f'Do you want to Configure Drive Groups?'
-                    polVars['varDefault'] = 'N'
-                    polVars['varName'] = 'Drive Groups'
+                    #==============================================
+                    # Prompt User to Configure Virtual Drives
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['GlobalHotSpares'])
+                    kwargs['jData']['default'] = False
+                    kwargs['jData']['description'] = 'Drive Group Configuration - Enable to add RAID drive groups that'\
+                        ' can be used to create virtual drives.  You can also specify the Global Hot Spares information.'
+                    kwargs['jData']['varInput'] = f'Do you want to Configure Drive Groups?'
+                    kwargs['jData']['varName'] = 'Drive Groups'
                     driveGroups = ezfunctions.varBoolLoop(**kwargs)
 
                     # If True configure Drive Groups
@@ -2534,15 +2689,17 @@ class policies(object):
                         drive_group_loop = False
                         while drive_group_loop == False:
                             jsonVars = jsonData['storage.DriveGroup']['allOf'][1]['properties']
-
-                            # Request Drive Group Name
+                            #==============================================
+                            # Prompt User for Drive Group Name
+                            #==============================================
                             kwargs['jData'] = deepcopy(jsonVars['Name'])
                             kwargs['jData']['default'] = f'dg{inner_loop_count - 1}'
                             kwargs['jData']['varInput'] = f'Enter the Drive Group Name.'
                             kwargs['jData']['varName'] = 'Drive Group Name'
                             dgName = ezfunctions.varStringLoop(**kwargs)
-
-                            # Obtain Raid Level for Drive Group
+                            #==============================================
+                            # Prompt User for Drive Group Raid Level
+                            #==============================================
                             kwargs['jData'] = deepcopy(jsonVars['RaidLevel'])
                             kwargs['jData']['varType'] = 'Raid Level'
                             RaidLevel = ezfunctions.variablesFromAPI(**kwargs)
@@ -2550,6 +2707,9 @@ class policies(object):
                             jsonVars = jsonData['storage.ManualDriveGroup']['allOf'][1]['properties']
                             # If Raid Level is anything other than Raid0 ask for Hot Spares
                             if not RaidLevel == 'Raid0':
+                                #==============================================
+                                # Prompt User for Dedicated Hot Spares
+                                #==============================================
                                 kwargs['jData'] = deepcopy(jsonVars['DedicatedHotSpares'])
                                 kwargs['jData']['varInput'] = 'Enter the Drives to add as Dedicated Hot Spares [press enter to skip]:'
                                 kwargs['jData']['varName'] = 'Dedicated Hot Spares'
@@ -2558,19 +2718,25 @@ class policies(object):
 
                             # Configure Span Slots
                             SpanSlots = []
-                            # If Riad is 10, 50 or 60 allow multiple Span Slots
+                            # If Raid is 10, 50 or 60 allow multiple Span Slots
                             if re.fullmatch('^Raid(10|50|60)$', RaidLevel):
-                                polVars['description'] = jsonVars['SpanGroups']['items']['description']
-                                polVars['jsonVars'] = [2, 4, 6, 8]
-                                polVars['defaultVar'] = 2
-                                polVars['varType'] = 'Span Groups'
+                                #==============================================
+                                # Prompt User for Drive Group Span Groups
+                                #==============================================
+                                kwargs['jData'] = deepcopy(jsonVars['SpanGroups'])
+                                kwargs['jData']['default']     = 2
+                                kwargs['jData']['description'] = jsonVars['SpanGroups']['items']['description']
+                                kwargs['jData']['enum']        = [2, 4, 6, 8]
+                                kwargs['jData']['varType']     = 'Span Groups'
                                 SpanGroups = ezfunctions.variablesFromAPI(**kwargs)
                                 if SpanGroups == 2: SpanGroups = [0, 1]
                                 elif SpanGroups == 4: SpanGroups = [0, 1, 2, 3]
                                 elif SpanGroups == 6: SpanGroups = [0, 1, 2, 3, 4, 5]
                                 elif SpanGroups == 8: SpanGroups = [0, 1, 2, 3, 4, 5, 6, 7]
-
                                 for span in SpanGroups:
+                                    #==============================================
+                                    # Prompt User for Span Group Drive Slots
+                                    #==============================================
                                     jsonVars = jsonData['storage.SpanDrives']['allOf'][1]['properties']
                                     kwargs['jData'] = deepcopy(jsonVars['Slots'])
                                     if re.fullmatch('^Raid10$', RaidLevel):
@@ -2583,6 +2749,9 @@ class policies(object):
                                     kwargs['jData']['varName'] = 'Drive Slots'
                                     SpanSlots.append({'slots':ezfunctions.varStringLoop(**kwargs)})
                             elif re.fullmatch('^Raid(0|1|5|6)$', RaidLevel):
+                                #==============================================
+                                # Prompt User for Span Group Drive Slots
+                                #==============================================
                                 jsonVars = jsonData['storage.SpanDrives']['allOf'][1]['properties']
                                 kwargs['jData'] = deepcopy(jsonVars['Slots'])
                                 if re.fullmatch('^Raid(0|1)$', RaidLevel):
@@ -2600,122 +2769,88 @@ class policies(object):
                             sub_loop = False
                             while sub_loop == False:
                                 jsonVars = jsonData['storage.VirtualDriveConfiguration']['allOf'][1]['properties']
-
-                                polVars['description'] = jsonVars['Name']['description']
-                                polVars['varDefault'] = f'vd{sub_loop_count}'
-                                polVars['varInput'] = f'Enter the name of the Virtual Drive.  [vd{sub_loop_count}]'
-                                polVars['varName'] = 'Drive Group Name'
-                                polVars['varRegex'] = jsonVars['Name']['pattern']
-                                polVars['minLength'] = 1
-                                polVars['maxLength'] = 60
+                                #==============================================
+                                # Prompt User for Virtual Drive Name
+                                #==============================================
+                                kwargs['jData'] = deepcopy(jsonVars['Name'])
+                                kwargs['jData']['default']  = f'vd{sub_loop_count}'
+                                kwargs['jData']['minimum']  = 1
+                                kwargs['jData']['varInput'] = f'Enter the name of the Virtual Drive.  [vd{sub_loop_count}]'
+                                kwargs['jData']['varName']  = 'Virtual Drive Name'
                                 vd_name = ezfunctions.varStringLoop(**kwargs)
-
-                                polVars['description'] = jsonVars['ExpandToAvailable']['description']
-                                polVars['varInput'] = f'Do you want to expand to all the space in the drive group?'
-                                polVars['varDefault'] = 'Y'
-                                polVars['varName'] = 'Expand To Available'
+                                #==============================================
+                                # Prompt User for Expand to Available
+                                #==============================================
+                                kwargs['jData'] = deepcopy(jsonVars['ExpandToAvailable'])
+                                kwargs['jData']['default'] = True
+                                kwargs['jData']['varInput'] = f'Do you want to expand to all the space available in the Virtual Drive?'
+                                kwargs['jData']['varName'] = 'Expand To Available'
                                 ExpandToAvailable = ezfunctions.varBoolLoop(**kwargs)
 
                                 # If Expand to Available is Disabled obtain Virtual Drive disk size
                                 if ExpandToAvailable == False:
-                                    polVars['description'] = jsonVars['Size']['description']
-                                    polVars['varDefault'] =  '1'
-                                    polVars['varInput'] = 'What is the Size for this Virtual Drive?'
-                                    polVars['varName'] = 'Size'
-                                    polVars['varRegex'] = '[0-9]+'
-                                    polVars['minNum'] = jsonVars['Size']['minimum']
-                                    polVars['maxNum'] = 9999999999
+                                    #==============================================
+                                    # Prompt User for Virtual Drive Size
+                                    #==============================================
+                                    kwargs['jData'] = deepcopy(jsonVars['Size'])
+                                    kwargs['jData']['default'] =  240
+                                    kwargs['jData']['minimum'] = 64
+                                    kwargs['jData']['maximum'] = 9999999999
+                                    kwargs['jData']['varInput'] = 'What is the Size for this Virtual Drive?'
+                                    kwargs['jData']['varName'] = 'Size'
                                     vdSize = ezfunctions.varNumberLoop(**kwargs)
-                                else:
-                                    vdSize = 1
-                                
-                                polVars['description'] = jsonVars['BootDrive']['description']
-                                polVars['varInput'] = f'Do you want to configure {vd_name} as a boot drive?'
-                                polVars['varDefault'] = 'Y'
-                                polVars['varName'] = 'Boot Drive'
+                                else: vdSize = 1
+                                #==============================================
+                                # Determine if it is a Boot Drive
+                                #==============================================
+                                kwargs['jData'] = deepcopy(jsonVars['BootDrive'])
+                                kwargs['jData']['default'] = True
+                                kwargs['jData']['varInput'] = f'Do you want to configure {vd_name} as a boot drive?'
+                                kwargs['jData']['varName'] = 'Boot Drive'
                                 BootDrive = ezfunctions.varBoolLoop(**kwargs)
 
                                 jsonVars = jsonData['storage.VirtualDrivePolicy']['allOf'][1]['properties']
-
-                                polVars['description'] = jsonVars['AccessPolicy']['description']
-                                polVars['jsonVars'] = sorted(jsonVars['AccessPolicy']['enum'])
-                                polVars['defaultVar'] = jsonVars['AccessPolicy']['default']
-                                polVars['varType'] = 'Access Policy'
-                                AccessPolicy = ezfunctions.variablesFromAPI(**kwargs)
-
-                                polVars['description'] = jsonVars['DriveCache']['description']
-                                polVars['jsonVars'] = sorted(jsonVars['DriveCache']['enum'])
-                                polVars['defaultVar'] = jsonVars['DriveCache']['default']
-                                polVars['varType'] = 'Drive Cache'
-                                DriveCache = ezfunctions.variablesFromAPI(**kwargs)
-
-                                polVars['description'] = jsonVars['ReadPolicy']['description']
-                                polVars['jsonVars'] = sorted(jsonVars['ReadPolicy']['enum'])
-                                polVars['defaultVar'] = jsonVars['ReadPolicy']['default']
-                                polVars['varType'] = 'Read Policy'
-                                ReadPolicy = ezfunctions.variablesFromAPI(**kwargs)
-
-                                polVars['description'] = jsonVars['StripSize']['description']
-                                polVars['jsonVars'] = sorted(jsonVars['StripSize']['enum'])
-                                polVars['defaultVar'] = jsonVars['StripSize']['default']
-                                polVars['varType'] = 'Strip Size'
-                                StripSize = ezfunctions.variablesFromAPI(**kwargs)
-
-                                polVars['description'] = jsonVars['WritePolicy']['description']
-                                polVars['jsonVars'] = sorted(jsonVars['WritePolicy']['enum'])
-                                polVars['defaultVar'] = jsonVars['WritePolicy']['default']
-                                polVars['varType'] = 'Write Policy'
-                                WritePolicy = ezfunctions.variablesFromAPI(**kwargs)
-
+                                #==============================================
+                                # Prompt User for Virtual Drive Policies
+                                #==============================================
+                                vd_policies = ['Access.Policy', 'Drive.Cache', 'Read.Policy', 'Strip.Size', 'Write.Policy']
+                                for i in vd_policies:
+                                    ptype = i.replace('.', '')
+                                    vtype = i.replace('.', ' ')
+                                    kwargs['jData'] = deepcopy(jsonVars[f'{ptype}'])
+                                    kwargs['jData']['varType'] = f'{vtype}'
+                                    kwargs[f'{ptype}'] = ezfunctions.variablesFromAPI(**kwargs)
                                 virtual_drive = {
-                                    'access_policy':AccessPolicy,
-                                    'boot_drive':BootDrive,
-                                    'disk_cache':DriveCache,
-                                    'expand_to_available':ExpandToAvailable,
-                                    'name':vd_name,
-                                    'read_policy':ReadPolicy,
-                                    'size':vdSize,
-                                    'strip_size':StripSize,
-                                    'write_policy':WritePolicy,
+                                    'access_policy':kwargs['AccessPolicy'], 'boot_drive':BootDrive,
+                                    'disk_cache':kwargs['DriveCache'], 'expand_to_available':ExpandToAvailable,
+                                    'name':vd_name, 'read_policy':kwargs['ReadPolicy'], 'size':vdSize,
+                                    'strip_size':kwargs['StripSize'], 'write_policy':kwargs['WritePolicy'],
                                 }
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                                #==============================================
+                                # Print Policy and Prompt User to Accept
+                                #==============================================
+                                print(f'\n{"-"*91}\n')
                                 print(textwrap.indent(yaml.dump(virtual_drive, Dumper=MyDumper, default_flow_style=False
                                 ), " "*4, predicate=None))
-                                #print(f'    "{virtual_drive['name']}" = ''{')
-                                #print(f'      access_policy       = "{virtual_drive['access_policy']}"')
-                                #print(f'      boot_drive          = {virtual_drive['boot_drive']}')
-                                #print(f'      disk_cache          = "{virtual_drive['disk_cache']}"')
-                                #print(f'      expand_to_available = {virtual_drive['expand_to_available']}')
-                                #print(f'      read_policy         = "{virtual_drive['read_policy']}"')
-                                #print(f'      size                = {virtual_drive['size']}')
-                                #print(f'      strip_size          = "{virtual_drive['strip_size']}"')
-                                #print(f'      write_policy        = "{virtual_drive['write_policy']}"')
-                                #print(f'    ''}')
-                                print(f'-------------------------------------------------------------------------------------------\n')
+                                print(f'{"-"*91}\n')
                                 valid_confirm = False
                                 while valid_confirm == False:
                                     confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                                     if confirm_v == 'Y' or confirm_v == '':
                                         virtualDrives.append(virtual_drive)
+                                        #==============================================
+                                        # Create Additional Policy or Exit Loop
+                                        #==============================================
                                         valid_exit = False
                                         while valid_exit == False:
-                                            loop_exit = input(f'Would You like to Configure another Virtual Drive for {dgName}?  Enter "Y" or "N" [N]: ')
-                                            if loop_exit == 'Y':
-                                                inner_loop_count += 1
-                                                valid_confirm = True
-                                                valid_exit = True
-                                            elif loop_exit == 'N' or loop_exit == '':
-                                                drive_group_loop = True
-                                                valid_confirm = True
-                                                valid_exit = True
-                                            else: ezfunctions.message_invalid_y_or_n('short')
-
+                                            loop_exit, sub_loop = ezfunctions.exit_default(pol_type, 'N')
+                                            if loop_exit == False: inner_loop_count += 1; valid_confirm = True; valid_exit = True
+                                            elif loop_exit == True: valid_confirm = True; valid_exit = True
                                     elif confirm_v == 'N':
                                         pol_type = 'Virtual Drive Configuration'
                                         ezfunctions.message_starting_over(pol_type)
                                         valid_confirm = True
                                     else: ezfunctions.message_invalid_y_or_n('short')
-
                             drive_group = {
                                 'drive_group_name':dgName,
                                 'manual_drive_selection':{
@@ -2725,113 +2860,77 @@ class policies(object):
                                 'raid_level':RaidLevel,
                                 'virtual_drives':virtualDrives
                             }
-                            dg_count = 0
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            #==============================================
+                            # Print Policy and Prompt User to Accept
+                            #==============================================
+                            print(f'\n{"-"*91}\n')
                             print(textwrap.indent(yaml.dump(drive_group, Dumper=MyDumper, default_flow_style=False
                             ), " "*4, predicate=None))
-                            #print(f'      "{drive_group['drive_group_name']}" = ''{')
-                            #print(f'        manual_drive_group = ''{')
-                            #print(f'          "{dg_count}" = ''{')
-                            #print(f'            dedicated_hot_spares = "{drive_group['manual_drive_group']['dedicated_hot_spares']}"')
-                            #print(f'            drive_array_spans = ''{')
-                            #span_count = 0
-                            #for i in drive_group['manual_drive_group']['drive_array_spans']:
-                            #    print(f'              "span_{span_count}" = ''{slots = "'f'{i['slots']}"''}')
-                            #    span_count += 1
-                            #    print(f'              ''}')
-                            #print(f'              ''}')
-                            #print(f'            ''}')
-                            #print(f'          ''}')
-                            #print(f'          ''}')
-                            #print(f'        ''}')
-                            #print(f'        raid_level = "{RaidLevel}"')
-                            #print(f'        virtual_drives = ''{')
-                            #for virtual_drive in virtualDrives:
-                            #    print(f'          "{virtual_drive['name']}" = ''{')
-                            #    print(f'            access_policy       = "{virtual_drive['access_policy']}"')
-                            #    print(f'            boot_drive          = "{virtual_drive['boot_drive']}"')
-                            #    print(f'            disk_cache          = "{virtual_drive['disk_cache']}"')
-                            #    print(f'            expand_to_available = {virtual_drive['expand_to_available']}')
-                            #    print(f'            read_policy         = "{virtual_drive['read_policy']}"')
-                            #    print(f'            size                = {virtual_drive['size']}')
-                            #    print(f'            strip_size          = "{virtual_drive['strip_size']}"')
-                            #    print(f'            write_policy        = "{virtual_drive['write_policy']}"')
-                            #    print(f'          ''}')
-                            #print(f'        ''}')
-                            #print(f'      ''}')
-                            print(f'-------------------------------------------------------------------------------------------\n')
+                            print(f'{"-"*91}\n')
                             valid_confirm = False
                             while valid_confirm == False:
                                 confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                                 if confirm_v == 'Y' or confirm_v == '':
                                     polVars['drive_groups'].append(drive_group)
+                                    #==============================================
+                                    # Create Additional Policy or Exit Loop
+                                    #==============================================
                                     valid_exit = False
                                     while valid_exit == False:
-                                        loop_exit = input(f'Would You like to Configure another Drive Group?  Enter "Y" or "N" [N]: ')
-                                        if loop_exit == 'Y':
-                                            inner_loop_count += 1
-                                            valid_confirm = True
-                                            valid_exit = True
-                                        elif loop_exit == 'N' or loop_exit == '':
-                                            drive_group_loop = True
-                                            valid_confirm = True
-                                            valid_exit = True
-                                        else: ezfunctions.message_invalid_y_or_n('short')
-
+                                        loop_exit, sub_loop = ezfunctions.exit_default(pol_type, 'N')
+                                        if loop_exit == False: inner_loop_count += 1; valid_confirm = True; valid_exit = True
+                                        elif loop_exit == True: valid_confirm = True; valid_exit = True
                                 elif confirm_v == 'N':
-                                    pol_type = 'Drive Grouop Configuration'
+                                    pol_type = 'Drive Group Configuration'
                                     ezfunctions.message_starting_over(pol_type)
                                     valid_confirm = True
                                 else: ezfunctions.message_invalid_y_or_n('short')
-                    else:
-                        polVars['drive_groups'] = []
-
-                    # Ask if M2 should be configured
+                    #==============================================
+                    # Prompt User for M2 Virtual Drive
+                    #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['M2VirtualDrive'])
                     kwargs['jData']['default'] = True
                     kwargs['jData']['varInput'] = f'Do you want to Enable the M.2 Virtual Drive Configuration?'
                     kwargs['jData']['varName'] = 'M.2 Virtual Drive'
                     M2VirtualDrive = ezfunctions.varBoolLoop(**kwargs)
-
-                    # Configure M2 if it is True if not Pop it from the list
                     if M2VirtualDrive == True:
                         jsonVars = jsonData['storage.M2VirtualDriveConfig']['allOf'][1]['properties']
-
+                        #==============================================
+                        # Prompt User for Controller Slot
+                        #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['ControllerSlot'])
                         kwargs['jData']['default'] = 'MSTOR-RAID-1'
                         kwargs['jData']['varType'] = 'Controller Slot'
                         ControllerSlot = ezfunctions.variablesFromAPI(**kwargs)
-
-                        polVars['m2_configuration'] = {
-                            'controller_slot':ControllerSlot,
-                            'enable':True
-                        }
-                    else: polVars.pop('m2_configuration')
-
-                    # Ask if Drive Groups should be configured
+                        polVars['m2_configuration'] = {'controller_slot':ControllerSlot, 'enable':True}
+                    #==============================================
+                    # Prompt User for Single Drive Raid Config
+                    #==============================================
                     kwargs['jData'] = deepcopy({})
                     kwargs['jData']['default'] = False
                     kwargs['jData']['description'] = 'Enable to create RAID0 virtual drives on each physical drive..'
                     kwargs['jData']['varInput'] = f"Do you want to Configure Single Drive RAID's?"
                     kwargs['jData']['varName'] = 'Single Drive RAID'
                     singledriveRaid = ezfunctions.varBoolLoop(**kwargs)
-
-                    # If True configure Drive Groups
                     if singledriveRaid == True:
                         single_drive_loop = False
                         while single_drive_loop == False:
-                            # Obtain the Single Drive Raid Slots
+                            #==============================================
+                            # Prompt User for Single Drive Raid Slots
+                            #==============================================
                             jsonVars = jsonData['storage.R0Drive']['allOf'][1]['properties']
                             kwargs['jData'] = deepcopy(jsonVars['DriveSlots'])
                             kwargs['jData']['default'] = f'1-2'
                             kwargs['jData']['varInput'] = f'Enter the Drive Slots for Drive Array Span 0.'
                             kwargs['jData']['varName'] = 'Drive Slots'
                             DriveSlots = ezfunctions.varStringLoop(**kwargs)
-                                
+
                             # Obtain the Virtual Drive Policies
                             jsonVars = jsonData['storage.VirtualDrivePolicy']['allOf'][1]['properties']
-
-                            vd_policies = ['Access.Policy', 'Drive.Cache', 'Read.Policy', 'Strip.Size']
+                            #==============================================
+                            # Prompt User for Virtual Drive Policies
+                            #==============================================
+                            vd_policies = ['Access.Policy', 'Drive.Cache', 'Read.Policy', 'Strip.Size', 'Write.Policy']
                             for i in vd_policies:
                                 ptype = i.replace('.', '')
                                 vtype = i.replace('.', ' ')
@@ -2844,19 +2943,13 @@ class policies(object):
                                 'drive_slots':DriveSlots, 'enable':True, 'read_policy':kwargs['ReadPolicy'],
                                 'strip_size':kwargs['StripSize'], 'write_policy':kwargs['WritePolicy'],
                             }
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            #==============================================
+                            # Print Policy and Prompt User to Accept
+                            #==============================================
+                            print(f'\n{"-"*91}\n')
                             print(textwrap.indent(yaml.dump(polVars['single_drive_raid_configuration'
                             ], Dumper=MyDumper, default_flow_style=False), " "*4, predicate=None))
-                            #print(f'    "0" = ''{')
-                            #print(f'      access_policy = "{polVars['single_drive_raid_configuration']['access_policy']}"')
-                            #print(f'      disk_cache    = "{polVars['single_drive_raid_configuration']['disk_cache']}"')
-                            #print(f'      drive_slots   = "{polVars['single_drive_raid_configuration']['drive_slots']}"')
-                            #print(f'      enable        = {polVars['single_drive_raid_configuration']['enable']}')
-                            #print(f'      read_policy   = "{polVars['single_drive_raid_configuration']['read_policy']}"')
-                            #print(f'      strip_size    = "{polVars['single_drive_raid_configuration']['strip_size']}"')
-                            #print(f'      write_policy  = "{polVars['single_drive_raid_configuration']['write_policy']}"')
-                            #print(f'    ''}')
-                            print(f'-------------------------------------------------------------------------------------------\n')
+                            print(f'{"-"*91}\n')
                             valid_confirm = False
                             while valid_confirm == False:
                                 confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
@@ -2869,7 +2962,9 @@ class policies(object):
                                     ezfunctions.message_starting_over(pol_type)
                                     valid_confirm = True
                                 else: ezfunctions.message_invalid_y_or_n('short')
-
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -2877,9 +2972,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,storage'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -2894,10 +2994,9 @@ class policies(object):
     #==============================================
     # Syslog Policy Module
     #==============================================
-    def syslog_policies(self, **kwargs):
+    def syslog(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
-        ezData         = kwargs['ezData']
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         name_suffix    = 'syslog'
@@ -2905,9 +3004,6 @@ class policies(object):
         path_sep       = kwargs['path_sep']
         policy_type    = 'Syslog Policy'
         yaml_file      = 'management'
-        polVars = {}
-
-        configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} will configure domain and servers with remote syslog servers.')
@@ -2920,27 +3016,33 @@ class policies(object):
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{org}-{name_suffix}'
-
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    # Syslog Local Logging
-                    polVars['multi_select'] = False
+                    #==============================================
+                    # Get API Data
+                    #==============================================
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['syslog.LocalClientBase']['allOf'][1]['properties']
-                    polVars['description'] = jsonVars['MinSeverity']['description']
-                    polVars['jsonVars'] = sorted(jsonVars['MinSeverity']['enum'])
-                    polVars['defaultVar'] = jsonVars['MinSeverity']['default']
-                    polVars['varType'] = 'Syslog Local Minimum Severity'
-                    polVars['min_severity'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    polVars['local_logging'] = {'file':{'min_severity':polVars['min_severity']}}
-
-                    remote_logging = ezfunctions.syslog_servers(jsonData, **kwargs)
-                    polVars['remote_logging'] = remote_logging
-
+                    #==============================================
+                    # Prompt User for Local Minimum Severity
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['MinSeverity'])
+                    kwargs['jData']['varType'] = 'Syslog Local Minimum Severity'
+                    polVars['local_min_severity'] = ezfunctions.variablesFromAPI(**kwargs)
+                    #==============================================
+                    # Prompt User for Syslog Servers
+                    #==============================================
+                    kwargs = ezfunctions.syslog_servers(**kwargs)
+                    polVars['remote_clients'] = kwargs['remote_clients']
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -2948,9 +3050,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,syslog'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -2965,7 +3072,7 @@ class policies(object):
     #==============================================
     # Thermal Policy Module
     #==============================================
-    def thermal_policies(self, **kwargs):
+    def thermal(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -2985,33 +3092,36 @@ class policies(object):
             policy_loop = False
             while policy_loop == False:
                 polVars = {}
-                polVars['multi_select'] = False
-                jsonVars = ezData['policies']['thermal.Policy']
-                polVars['description'] = jsonVars['chassisType']['description']
-                polVars['jsonVars'] = sorted(jsonVars['chassisType']['enum'])
-                polVars['defaultVar'] = jsonVars['chassisType']['default']
-                polVars['varType'] = 'Chassis Type'
+                #==============================================
+                # Get API Data
+                #==============================================
+                kwargs['multi_select'] = False
+                jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['thermal.Policy']
+                #==============================================
+                # Prompt User for Chassis Type
+                #==============================================
+                kwargs['jData'] = deepcopy(jsonVars['chassisType'])
+                kwargs['jData']['varType'] = 'Chassis Type'
                 polVars['chassis_type'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                if not name_prefix == '':
-                    name = '%s-%s' % (name_prefix, polVars['chassis_type'])
-                else:
-                    name = '%s-%s' % (org, polVars['chassis_type'])
-
+                #==============================================
+                # Prompt User for Name and Description
+                #==============================================
+                if not name_prefix == '': name = '%s-%s' % (name_prefix, polVars['chassis_type'])
+                else: name = '%s-%s' % (org, polVars['chassis_type'])
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                if polVars['chassis_type'] == '5108':
-                    polVars['popList'] = ['Acoustic', 'HighPower', 'MaximumPower']
-                if polVars['chassis_type'] == '9508':
-                    polVars['popList'] = []
+                #==============================================
+                # Prompt User for Fan Control Mode
+                #==============================================
                 jsonVars = jsonData['thermal.Policy']['allOf'][1]['properties']
-                polVars['description'] = jsonVars['FanControlMode']['description']
-                polVars['jsonVars'] = sorted(jsonVars['FanControlMode']['enum'])
-                polVars['defaultVar'] = jsonVars['FanControlMode']['default']
-                polVars['varType'] = 'Fan Control Mode'
+                kwargs['jData'] = deepcopy(jsonVars['FanControlMode'])
+                if polVars['chassis_type'] == '5108':
+                    kwargs['jData']['popList'] = ['Acoustic', 'HighPower', 'MaximumPower']
+                kwargs['jData']['varType'] = 'Fan Control Mode'
                 polVars['fan_control_mode'] = ezfunctions.variablesFromAPI(**kwargs)
-
+                #==============================================
+                # Print Policy and Prompt User to Accept
+                #==============================================
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -3019,9 +3129,14 @@ class policies(object):
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
+                        #==============================================
                         # Add Policy Variables to immDict
+                        #==============================================
                         kwargs['class_path'] = 'intersight,policies,thermal'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        #==============================================
+                        # Create Additional Policy or Exit Loop
+                        #==============================================
                         configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                         valid_confirm = True
                     elif confirm_policy == 'N':
@@ -3067,10 +3182,9 @@ class policies(object):
     #==============================================
     # Virtual KVM Policy Module
     #==============================================
-    def virtual_kvm_policies(self, **kwargs):
+    def virtual_kvm(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
-        ezData         = kwargs['ezData']
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         name_suffix    = 'vkvm'
@@ -3078,9 +3192,6 @@ class policies(object):
         path_sep       = kwargs['path_sep']
         policy_type    = 'Virtual KVM Policy'
         yaml_file      = 'management'
-        polVars = {}
-
-        configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} will configure the Server for KVM access.  Settings include:')
@@ -3092,51 +3203,51 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
+                #==============================================
+                # Prompt User for Name and Description
+                #==============================================
+                polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                 else: name = f'{org}-{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                polVars['enable_virtual_kvm'] = True
-                polVars['maximum_sessions'] = 4
-
-                # Pull in the Policies for Virtual KVM
+                #==============================================
+                # Get API Data
+                #==============================================
+                kwargs['multi_select'] = False
                 jsonVars = jsonData['kvm.Policy']['allOf'][1]['properties']
-                polVars['multi_select'] = False
-
-                # Enable Local Server Video
-                polVars['description'] = 'Enables Tunneled vKVM on the endpoint. Applicable only for Device Connectors that support Tunneled vKVM'
-                polVars['varInput'] = f'Do you want to Tunneled vKVM through Intersight for this Policy?\n'
-                '* Note: Make sure to Enable Virtual Tunneled KVM Launch and Configuration under:\n'
-                'Setttings > Settings > Security & Privacy.'
-                polVars['varDefault'] = 'N'
-                polVars['varName'] = 'Allow Tunneled vKVM'
+                #==============================================
+                # Prompt User for Tunneled KVM
+                #==============================================
+                kwargs['jData'] = deepcopy(jsonVars['TunneledKvmEnabled'])
+                kwargs['jData']['default'] = False
+                kwargs['jData']['description'] = jsonVars['TunneledKvmEnabled']['description'] + \
+                    '\n* Note: Make sure to Enable Virtual Tunneled KVM Launch and Configuration under:'\
+                    '\n  Setttings > Settings > Security & Privacy.'
+                kwargs['jData']['varInput'] = f'Do you want to allow Tunneled vKVM?'
+                kwargs['jData']['varName']  = 'Allow Tunneled vKVM'
                 polVars['allow_tunneled_vkvm'] = ezfunctions.varBoolLoop(**kwargs)
-
-                # Enable Local Server Video
-                polVars['description'] = jsonVars['EnableLocalServerVideo']['description']
-                polVars['varInput'] = f'Do you want to Display KVM on Monitors attached to the Server?'
-                polVars['varDefault'] = 'Y'
-                polVars['varName'] = 'Enable Local Server Video'
+                #==============================================
+                # Prompt User for Enable Local Server Video
+                #==============================================
+                kwargs['jData'] = deepcopy(jsonVars['EnableLocalServerVideo'])
+                kwargs['jData']['default']  = True
+                kwargs['jData']['varInput'] = f'Do you want to Display KVM on Monitors attached to the Server?'
+                kwargs['jData']['varName']  = 'Enable Local Server Video'
                 polVars['enable_local_server_video'] = ezfunctions.varBoolLoop(**kwargs)
-
-                # Enable Video Encryption
-                polVars['description'] = jsonVars['EnableVideoEncryption']['description']
-                polVars['varInput'] = f'Do you want to Enable video Encryption?'
-                polVars['varDefault'] = 'Y'
-                polVars['varName'] = 'Enable Video Encryption'
-                polVars['enable_video_encryption'] = ezfunctions.varBoolLoop(**kwargs)
-
-                # Obtain the Port to Use for vKVM
-                polVars['description'] = jsonVars['RemotePort']['description']
-                polVars['varDefault'] =  jsonVars['RemotePort']['default']
-                polVars['varInput'] = 'What is the Port you would like to Assign for Remote Access?\n'
-                'This should be a value between 1024-65535. [2068]: '
-                polVars['varName'] = 'Remote Port'
-                polVars['varRegex'] = '^[0-9]+$'
-                polVars['minNum'] = 1
-                polVars['maxNum'] = 65535
+                polVars['enable_video_encryption'] = True
+                #==============================================
+                # Prompt User for Port to Use for vKVM
+                #==============================================
+                kwargs['jData'] = deepcopy(jsonVars['RemotePort'])
+                kwargs['jData']['varInput'] = 'What is the Port you would like to Assign for Remote Access?'\
+                    '  This should be a value between 1024-65535.'
+                kwargs['jData']['varName'] = 'Remote Port'
+                kwargs['jData']['minimum'] = 1024
                 polVars['remote_port'] = ezfunctions.varNumberLoop(**kwargs)
-
+                #==============================================
+                # Print Policy and Prompt User to Accept
+                #==============================================
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -3144,9 +3255,14 @@ class policies(object):
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
+                        #==============================================
                         # Add Policy Variables to immDict
+                        #==============================================
                         kwargs['class_path'] = 'intersight,policies,virtual_kvm'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        #==============================================
+                        # Create Additional Policy or Exit Loop
+                        #==============================================
                         configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                         valid_confirm = True
                     elif confirm_policy == 'N':
@@ -3159,7 +3275,7 @@ class policies(object):
     #==============================================
     # Virtual Media Policy Policy Module
     #==============================================
-    def virtual_media_policies(self, **kwargs):
+    def virtual_media(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -3170,9 +3286,6 @@ class policies(object):
         path_sep       = kwargs['path_sep']
         policy_type    = 'Virtual Media Policy'
         yaml_file      = 'management'
-        polVars = {}
-
-        configure_loop = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} enables you to install an operating system on the server using the ')
@@ -3184,362 +3297,249 @@ class policies(object):
             print(f'  This wizard will save the configuration for this section to the following file:')
             print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
-            if configure == 'Y' or configure == '':
-                loop_count = 1
-                policy_loop = False
-                while policy_loop == False:
-
-                    if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
-
-                    polVars['name']        = ezfunctions.policy_name(name, policy_type)
-                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars['enable_virtual_media'] = True
-
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    Select this option to enable the appearance of virtual drives on the boot selection menu')
-                    print(f'    after mapping the image and rebooting the host. This property is enabled by default.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        question = input(f'Do you want to Enable Low Power USB?  Enter "Y" or "N" [Y]: ')
-                        if question == 'N':
-                            polVars['enable_low_power_usb'] = False
-                            valid = True
-                        elif question == '' or question == 'Y':
-                            polVars['enable_low_power_usb'] = True
-                            valid = True
-                        else: ezfunctions.message_invalid_y_or_n('short')
-
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    Select this option to enable encryption of the virtual media communications. ')
-                    print(f'    This property is enabled by default.')
-                    print(f'    Note: For firmware versions 4.2(1a) or higher, this encryption parameter is deprecated ')
-                    print(f'          and disabling the encryption will further result in validation failure during')
-                    print(f'          the server profile deployment.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    valid = False
-                    while valid == False:
-                        question = input(f'Do you want to Enable Virtual Media Encryption?  Enter "Y" or "N" [Y]: ')
-                        if question == 'N':
-                            polVars['enable_virtual_media_encryption'] = False
-                            valid = True
-                        elif question == '' or question == 'Y':
-                            polVars['enable_virtual_media_encryption'] = True
-                            valid = True
-                        else: ezfunctions.message_invalid_y_or_n('short')
-
-                    polVars['virtual_media'] = []
-                    inner_loop_count = 1
-                    sub_loop = False
-                    while sub_loop == False:
-                        question = input(f'\nWould you like to add vMedia to this Policy?  Enter "Y" or "N" [Y]: ')
-                        if question == '' or question == 'Y':
-                            valid_sub = False
-                            while valid_sub == False:
-                                polVars['multi_select'] = False
-                                jsonVars = jsonData['vmedia.Mapping']['allOf'][1]['properties']
-                                polVars['description'] = jsonVars['MountProtocol']['description']
-                                polVars['jsonVars'] = sorted(jsonVars['MountProtocol']['enum'])
-                                polVars['defaultVar'] = jsonVars['MountProtocol']['default']
-                                polVars['varType'] = 'vMedia Mount Protocol'
-                                Protocol = ezfunctions.variablesFromAPI(**kwargs)
-
-                                polVars['description'] = jsonVars['MountProtocol']['description']
-                                polVars['jsonVars'] = sorted(jsonVars['MountProtocol']['enum'])
-                                polVars['defaultVar'] = jsonVars['MountProtocol']['default']
-                                polVars['varType'] = 'vMedia Mount Protocol'
-                                deviceType = ezfunctions.variablesFromAPI(**kwargs)
-
-                                if Protocol == 'cifs':
-                                    polVars['description'] = jsonVars['AuthenticationProtocol']['description']
-                                    polVars['jsonVars'] = sorted(jsonVars['AuthenticationProtocol']['enum'])
-                                    polVars['defaultVar'] = jsonVars['AuthenticationProtocol']['default']
-                                    polVars['varType'] = 'CIFS Authentication Protocol'
-                                    authProtocol = ezfunctions.variablesFromAPI(**kwargs)
-
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Provide the remote file location path: Host Name or IP address/file path/file name')
-                                print(f'  * IP Address—The IP address or the hostname of the remote server.')
-                                print(f'  * File Path—The path to the location of the image on the remote server.')
-                                print(f'  The format of the File Location should be:')
-                                if deviceType == 'cdd' and re.search('(cifs|nfs)', Protocol):
-                                    print(f'  * hostname-or-ip-address/filePath/fileName.iso')
-                                elif deviceType == 'hdd' and re.search('(cifs|nfs)', Protocol):
-                                    print(f'  * hostname-or-ip-address/filePath/fileName.img')
-                                elif deviceType == 'cdd' and Protocol == 'http':
-                                    print(f'  * http://hostname-or-ip-address/filePath/fileName.iso')
-                                elif deviceType == 'hdd' and Protocol == 'http':
-                                    print(f'  * http://hostname-or-ip-address/filePath/fileName.img')
-                                elif deviceType == 'cdd' and Protocol == 'https':
-                                    print(f'  * https://hostname-or-ip-address/filePath/fileName.iso')
-                                elif deviceType == 'hdd' and Protocol == 'https':
-                                    print(f'  * https://hostname-or-ip-address/filePath/fileName.img')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                valid = False
-                                while valid == False:
-                                    Question = input(f'What is the file Location? ')
-                                    if not Question == '':
-                                        polVars['varName'] = 'File Location'
-                                        varValue = Question
-                                        if re.search('(http|https)', Protocol):
-                                            valid = validating.url(polVars['varName'], varValue)
-                                        else:
-                                            varValue = 'http://%s' % (Question)
-                                            valid = validating.url(polVars['varName'], varValue)
-                                    else:
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please Re-enter the LDAP Group.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                                # Assign the Variable
-                                file_location = Question
-
-                                valid = False
-                                while valid == False:
-                                    Question = input(f'What is the Username you would like to configure for Authentication? [press enter for no username]: ')
-                                    if not Question == '':
-                                        polVars['minLength'] = 1
-                                        polVars['maxLength'] = 255
-                                        polVars['varName'] = 'Username'
-                                        varValue = Question
-                                        valid = validating.string_length(polVars['varName'], varValue, polVars['minLength'], polVars['maxLength'])
-                                    if Question == '':
-                                        valid = True
-                                    else:
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                        print(f'  Error!! Invalid Value.  Please Re-enter the LDAP Group.')
-                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-
-                                # Assign the Variable
-                                Username = Question
-
-                                if not Username == '':
-                                    valid = False
-                                    while valid == False:
-                                        Password = stdiomask.getpass(prompt='What is the password for authentication? ')
-                                        polVars['minLength'] = 1
-                                        polVars['maxLength'] = 255
-                                        polVars['rePattern'] = '^[\\S]+$'
-                                        polVars['varName'] = 'Password'
-                                        varValue = Password
-                                        valid_passphrase = validating.length_and_regex_sensitive(polVars['rePattern'], polVars['varName'], varValue, polVars['minLength'], polVars['maxLength'])
-                                        if valid_passphrase == True:
-                                            env_password = 'TF_VAR_vmedia_password_%s' % (inner_loop_count)
-                                            os.environ[env_password] = '%s' % (Password)
-                                            Password = inner_loop_count
-                                            valid = True
-                                else:
-                                    Password = 0
-
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  The mount options for the virtual media mapping.')
-                                if Protocol == 'cifs':
-                                    print(f'  * supported options are soft, nounix, noserverino, guest, ver=3.0, or ver=2.0.')
-                                elif Protocol == 'nfs':
-                                    print(f'  * supported options are ro, rw, nolock, noexec, soft, port=VALUE, timeo=VALUE, retry=VALUE.')
-                                else:
-                                    print(f'  * the only supported option is noauto')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                valid = False
-                                while valid == False:
-                                    Question = input(f'Would you like to assign any mount options?  Enter "Y" or "N" [N]: ')
-                                    if Question == '' or Question == 'N':
-                                        assignOptions = False
-                                        valid = True
-                                    elif Question == 'Y':
-                                        assignOptions = True
-                                        valid = True
-                                    else: ezfunctions.message_invalid_y_or_n('short')
-
-                                if assignOptions == True:
-                                    polVars['multi_select'] = True
-                                    jsonVars = ezData['policies']['vmedia.Mapping']
-                                    if Protocol == 'cifs':
-                                        polVars['description'] = jsonVars['cifs.mountOptions']['description']
-                                        polVars['jsonVars'] = sorted(jsonVars['cifs.mountOptions']['enum'])
-                                        polVars['defaultVar'] = jsonVars['cifs.mountOptions']['default']
-                                    elif Protocol == 'nfs':
-                                        polVars['description'] = jsonVars['nfs.mountOptions']['description']
-                                        polVars['jsonVars'] = sorted(jsonVars['nfs.mountOptions']['enum'])
-                                        polVars['defaultVar'] = jsonVars['nfs.mountOptions']['default']
-                                    else:
-                                        polVars['multi_select'] = False
-                                        polVars['description'] = jsonVars['http.mountOptions']['description']
-                                        polVars['jsonVars'] = sorted(jsonVars['http.mountOptions']['enum'])
-                                        polVars['defaultVar'] = jsonVars['http.mountOptions']['default']
-                                    polVars['varType'] = 'Mount Options'
-                                    mount_loop = ezfunctions.variablesFromAPI(**kwargs)
-
-                                    mount_output = []
-                                    for x in mount_loop:
-                                        mount_output.append(x)
-                                    print(mount_output)
-                                    for x in mount_loop:
-                                        if x == 'port':
-                                            valid = False
-                                            while valid == False:
-                                                Question = input(f'What Port would you like to assign?  [2049]: ')
-                                                if Question == '':
-                                                    Question = 2049
-                                                if re.fullmatch(r'^[0-9]{1,4}$', str(Question)):
-                                                    polVars['minNum'] = 1
-                                                    polVars['maxNum'] = 65535
-                                                    polVars['varName'] = 'NFS Port'
-                                                    varValue = Question
-                                                    valid = validating.number_in_range(polVars['varName'], varValue, polVars['minNum'], polVars['maxNum'])
-                                            port = 'port=%s' % (Question)
-                                            mount_output.remove(x)
-                                            mount_output.append(port)
-                                        elif x == 'retry':
-                                            valid = False
-                                            while valid == False:
-                                                Question = input(f'What Retry would you like to assign?  [2]: ')
-                                                if Question == '':
-                                                    Question = 2
-                                                if re.fullmatch(r'^[0-9]{1,4}$', str(Question)):
-                                                    polVars['minNum'] = 1
-                                                    polVars['maxNum'] = 65535
-                                                    polVars['varName'] = 'NFS Port'
-                                                    varValue = Question
-                                                    valid = validating.number_in_range(polVars['varName'], varValue, polVars['minNum'], polVars['maxNum'])
-                                            retry = 'retry=%s' % (Question)
-                                            mount_output.remove(x)
-                                            mount_output.append(retry)
-                                        elif x == 'timeo':
-                                            valid = False
-                                            while valid == False:
-                                                Question = input(f'What Timeout (timeo) would you like to assign?  [600]: ')
-                                                if Question == '':
-                                                    Question = 600
-                                                if re.fullmatch(r'^[0-9]{1,4}$', str(Question)):
-                                                    polVars['minNum'] = 60
-                                                    polVars['maxNum'] = 600
-                                                    polVars['varName'] = 'NFS timeo'
-                                                    varValue = Question
-                                                    valid = validating.number_in_range(polVars['varName'], varValue, polVars['minNum'], polVars['maxNum'])
-                                            timeo = 'timeo=%s' % (Question)
-                                            mount_output.remove(x)
-                                            mount_output.append(timeo)
-                                        elif re.search('(rsize|wsize)', x):
-                                            valid = False
-                                            while valid == False:
-                                                Question = input(f'What is the value of {x} you want to assign?  [1024]: ')
-                                                if Question == '':
-                                                    Question = 1024
-                                                if re.fullmatch(r'^[0-9]{4,7}$', str(Question)):
-                                                    polVars['minNum'] = 1024
-                                                    polVars['maxNum'] = 1048576
-                                                    polVars['varName'] = 'NFS timeo'
-                                                    varValue = Question
-                                                    validCount = 0
-                                                    validNum = validating.number_in_range(polVars['varName'], varValue, polVars['minNum'], polVars['maxNum'])
-                                                    if validNum == True:
-                                                        validCount += 1
-                                                    if int(Question) % 1024 == 0:
-                                                        validCount += 1
-                                                    else:
-                                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                                        print(f'  {x} should be a divisable value of 1024 between 1024 and 1048576')
-                                                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                                                    if validCount == 2:
-                                                        valid = True
-                                            xValue = '%s=%s' % (x, Question)
-                                            mount_output.remove(x)
-                                            mount_output.append(xValue)
-                                    mount_options = ','.join(mount_output)
-                                else:
-                                    mount_options = ''
-
-                                print(mount_options)
-
-                                if Protocol == 'cifs':
-                                    vmedia_map = {
-                                        'authentication_protocol':authProtocol,
-                                        'device_type':deviceType,
-                                        'file_location':file_location,
-                                        'mount_options':mount_options,
-                                        'name':name,
-                                        'password':Password,
-                                        'protocol':Protocol,
-                                        'username':Username
-                                    }
-                                else:
-                                    vmedia_map = {
-                                        'device_type':deviceType,
-                                        'file_location':file_location,
-                                        'mount_options':mount_options,
-                                        'name':name,
-                                        'password':Password,
-                                        'protocol':Protocol,
-                                        'username':Username
-                                    }
-
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                if Protocol == 'cifs':
-                                    print(f'   authentication_protocol = "{authProtocol}"')
-                                print(f'   device_type             = "{deviceType}"')
-                                print(f'   file_location           = "{file_location}"')
-                                if not mount_options == '':
-                                    print(f'   mount_options           = "{mount_options}"')
-                                print(f'   name                    = "{name}"')
-                                if not Password == 0:
-                                    print(f'   password                = "{Password}"')
-                                print(f'   protocol                = "{Protocol}"')
-                                if not Username == '':
-                                    print(f'   username                = "{Username}"')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                valid_confirm = False
-                                while valid_confirm == False:
-                                    confirm_config = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
-                                    if confirm_config == 'Y' or confirm_config == '':
-                                        polVars['virtual_media'].append(vmedia_map)
-                                        valid_exit = False
-                                        while valid_exit == False:
-                                            loop_exit = input(f'Would You like to Configure another Virtual Media Map?  Enter "Y" or "N" [N]: ')
-                                            if loop_exit == 'Y':
-                                                inner_loop_count += 1
-                                                valid_confirm = True
-                                                valid_exit = True
-                                            elif loop_exit == 'N' or loop_exit == '':
-                                                sub_loop = True
-                                                valid_confirm = True
-                                                valid_exit = True
-                                                valid_sub = True
-                                            else: ezfunctions.message_invalid_y_or_n('short')
-                                    elif confirm_config == 'N':
-                                        pol_type = 'Virtual Media Configuration'
-                                        ezfunctions.message_starting_over(pol_type)
-                                        valid_confirm = True
-                                    else: ezfunctions.message_invalid_y_or_n('short')
-                        elif question == 'N': sub_loop = True
-                        else: ezfunctions.message_invalid_y_or_n('short')
-
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                    print(f'-------------------------------------------------------------------------------------------\n')
-                    valid_confirm = False
-                    while valid_confirm == False:
-                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
-                        if confirm_policy == 'Y' or confirm_policy == '':
-                            # Add Policy Variables to immDict
-                            kwargs['class_path'] = 'intersight,policies,virtual_media'
-                            kwargs = ezfunctions.ez_append(polVars, **kwargs)
-                            configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
-                            valid_confirm = True
-                        elif confirm_policy == 'N':
-                            ezfunctions.message_starting_over(policy_type)
-                            valid_confirm = True
-                        else: ezfunctions.message_invalid_y_or_n('short')
-            elif configure == 'N': configure_loop = True
-            else: ezfunctions.message_invalid_y_or_n('long')
+            loop_count = 1
+            policy_loop = False
+            while policy_loop == False:
+                #==============================================
+                # Prompt User for Name and Description
+                #==============================================
+                polVars = {}
+                if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
+                else: name = f'{org}-{name_suffix}'
+                polVars['name']        = ezfunctions.policy_name(name, policy_type)
+                polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
+                #==============================================
+                # Get API Data
+                #==============================================
+                kwargs['multi_select'] = False
+                jsonVars = jsonData['vmedia.Policy']['allOf'][1]['properties']
+                #==============================================
+                # Prompt User for Low Power USB
+                #==============================================
+                kwargs['jData'] = deepcopy(jsonVars['LowPowerUsb'])
+                kwargs['jData']['default']  = True
+                kwargs['jData']['varInput'] = 'Do you want to Enable Low Power USB?'
+                kwargs['jData']['varName']  = 'Low Power USB'
+                polVars['enable_low_power_usb'] = ezfunctions.varBoolLoop(**kwargs)
+                polVars['enable_virtual_media_encryption'] = True
+                #==============================================
+                # Prompt User for Virtual Media Mappings
+                #==============================================
+                polVars['add_virtual_media'] = []
+                inner_loop_count = 1
+                sub_loop = False
+                while sub_loop == False:
+                    kwargs['jData'] = deepcopy(jsonVars['Mappings']['items'])
+                    kwargs['jData']['default']  = True
+                    kwargs['jData']['varInput'] = 'Would you like to add vMedia Mappings for images?'
+                    kwargs['jData']['varName']  = 'vMedia Mappings'
+                    question = ezfunctions.varBoolLoop(**kwargs)
+                    if question == True:
+                        valid_sub = False
+                        while valid_sub == False:
+                            jsonVars = jsonData['vmedia.Mapping']['allOf'][1]['properties']
+                            #==============================================
+                            # Prompt User for vMedia Mount Protocol
+                            #==============================================
+                            kwargs['jData'] = deepcopy(jsonVars['MountProtocol'])
+                            kwargs['jData']['varType'] = 'vMedia Mount Protocol'
+                            Protocol = ezfunctions.variablesFromAPI(**kwargs)
+                            #==============================================
+                            # Prompt User for vMedia Device Type
+                            #==============================================
+                            kwargs['jData'] = deepcopy(jsonVars['DeviceType'])
+                            kwargs['jData']['varType'] = 'vMedia Device Type'
+                            deviceType = ezfunctions.variablesFromAPI(**kwargs)
+                            if Protocol == 'cifs':
+                                #==============================================
+                                # Prompt User for vMedia Device Type
+                                #==============================================
+                                kwargs['jData'] = deepcopy(jsonVars['AuthenticationProtocol'])
+                                kwargs['jData']['varType'] = 'CIFS Authentication Protocol'
+                                authProtocol = ezfunctions.variablesFromAPI(**kwargs)
+                            #==============================================
+                            # Prompt User for Remote File Location
+                            #==============================================
+                            valid = False
+                            while valid == False:
+                                kwargs['jData'] = deepcopy(jsonVars['RemoteFile'])
+                                kwargs['jData']['varInput'] = 'What is the Remote file Location?'
+                                kwargs['jData']['varName']  = 'Remote file Location'
+                                kwargs['jData']['varType']  = 'url'
+                                file_location = ezfunctions.varStringLoop(**kwargs)
+                                if deviceType == 'cdd':
+                                    if re.search('\.iso$', file_location): valid = True
+                                    else: validating.error_file_location('Remote File Location', file_location)
+                                elif deviceType == 'hdd':
+                                    if re.search('\.img$', file_location): valid = True
+                                    else: validating.error_file_location('Remote File Location', file_location)
+                            #==============================================
+                            # Prompt User for Mount Username
+                            #==============================================
+                            kwargs['jData'] = deepcopy(jsonVars['Username'])
+                            kwargs['jData']['pattern']  = '^[\\S]+$'
+                            kwargs['jData']['varInput'] = 'What is the Username you would like to configure for'\
+                                ' Authentication?  [press enter to skip]:'
+                            kwargs['jData']['varName']  = 'Username'
+                            Username = ezfunctions.varStringLoop(**kwargs)
+                            if not Username == '':
+                                #==============================================
+                                # Prompt User for Mount Password
+                                #==============================================
+                                kwargs['Variable'] = f'vmedia_password_{inner_loop_count}'
+                                kwargs = ezfunctions.sensitive_var_value(**kwargs)
+                            #==============================================
+                            # Prompt User for Mount Options
+                            #==============================================
+                            kwargs['jData'] = deepcopy(jsonVars['MountOptions'])
+                            kwargs['jData']['default']  = False
+                            kwargs['jData']['varInput'] = 'Would you like to assign any mount options?'
+                            kwargs['jData']['varName']  = 'Mount Options'
+                            assignOptions = ezfunctions.varBoolLoop(**kwargs)
+                            if assignOptions == True:
+                                kwargs['multi_select'] = True
+                                jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['vmedia.Mapping']
+                                if Protocol == 'cifs': kwargs['jData'] = deepcopy(jsonVars['cifs.mountOptions'])
+                                elif Protocol == 'nfs': kwargs['jData'] = deepcopy(jsonVars['nfs.mountOptions'])
+                                else: kwargs['jData'] = deepcopy(jsonVars['http.mountOptions'])
+                                kwargs['jData']['varType'] = 'Mount Options'
+                                mount_loop = ezfunctions.variablesFromAPI(**kwargs)
+                                kwargs['multi_select'] = False
+                                mount_output = []
+                                for x in mount_loop: mount_output.append(x)
+                                for x in mount_loop:
+                                    if x == 'port':
+                                        #==============================================
+                                        # Prompt User for NFS Port
+                                        #==============================================
+                                        kwargs['jData'] = deepcopy(jsonVars['nfs.Port'])
+                                        kwargs['jData']['varInput'] = 'What Port would you like to assign?'
+                                        kwargs['jData']['varName']  = 'NFS Port'
+                                        Question = ezfunctions.varNumberLoop(**kwargs)
+                                        port = f'port={Question}'
+                                        mount_output.remove(x); mount_output.append(port)
+                                    elif x == 'retry':
+                                        #==============================================
+                                        # Prompt User for NFS Retry Count
+                                        #==============================================
+                                        kwargs['jData'] = deepcopy(jsonVars['nfs.Retry'])
+                                        kwargs['jData']['varInput']     = 'What Retry would you like to assign?'
+                                        kwargs['jData']['varName']      = 'NFS Retry'
+                                        Question = ezfunctions.varNumberLoop(**kwargs)
+                                        retry = f'retry={Question}'
+                                        mount_output.remove(x); mount_output.append(retry)
+                                    elif x == 'timeo':
+                                        #==============================================
+                                        # Prompt User for NFS Timeout
+                                        #==============================================
+                                        kwargs['jData'] = deepcopy(jsonVars['nfs.Timeout'])
+                                        kwargs['jData']['varInput']     = 'What Timeout (timeo) would you like to assign?'
+                                        kwargs['jData']['varName']      = 'NFS Timeout'
+                                        Question = ezfunctions.varNumberLoop(**kwargs)
+                                        timeo = f'timeo={Question}'
+                                        mount_output.remove(x); mount_output.append(timeo)
+                                    elif re.search('(rsize|wsize)', x):
+                                        #==============================================
+                                        # Prompt User for NFS Read/Write Size
+                                        #==============================================
+                                        valid = False
+                                        while valid == False:
+                                            kwargs['jData'] = deepcopy(jsonVars['nfs.Size'])
+                                            kwargs['jData']['description']  = f'NFS {x} Size'
+                                            kwargs['jData']['varInput']     = f'What is the value of {x} you want to assign?'
+                                            kwargs['jData']['varName']      = f'NFS {x}'
+                                            Question = ezfunctions.varNumberLoop(**kwargs)
+                                            if int(Question) % 1024 == 0: valid = True
+                                            else:
+                                                print(f'\n{"-"*91}\n')
+                                                print(f'  {x} should be a divisable by 1024 and be between 1024 and 1048576')
+                                                print(f'\n{"-"*91}\n')
+                                        xValue = '%s=%s' % (x, Question)
+                                        mount_output.remove(x); mount_output.append(xValue)
+                                    elif x == 'vers':
+                                        #==============================================
+                                        # Prompt User for Version
+                                        #==============================================
+                                        kwargs['jData'] = deepcopy({})
+                                        kwargs['jData']['default'] = '3.0'
+                                        kwargs['jData']['description']  = 'Mount Option Version'
+                                        if Protocol == 'cifs':  kwargs['jData']['enum'] = ['1.0', '2.0', '2.1', '3.0']
+                                        elif Protocol == 'nfs': kwargs['jData']['enum'] = ['3.0', '4.0']
+                                        kwargs['jData']['varType'] = f'{Protocol} Version'
+                                        Question = ezfunctions.variablesFromAPI(**kwargs)
+                                        vers = f'vers={Question}'
+                                        mount_output.remove(x)
+                                        mount_output.append(vers)
+                                mount_options = mount_output.sort()
+                                mount_options = ','.join(mount_output)
+                            else: mount_options = ''
+                            #==============================================
+                            # Create vMedia Mapping Dictionary
+                            #==============================================
+                            vmedia_map = {
+                                'device_type':deviceType, 'file_location':file_location, 'name':name, 'protocol':Protocol
+                            }
+                            if not mount_options == '': vmedia_map.update({'mount_options':mount_options})
+                            if not Username == '': vmedia_map.update({'password':inner_loop_count, 'username':Username})
+                            if Protocol == 'cifs': vmedia_map.update({'authentication_protocol':authProtocol})
+                            #==============================================
+                            # Print Policy and Prompt User to Accept
+                            #==============================================
+                            print(f'\n{"-"*91}\n')
+                            print(textwrap.indent(yaml.dump(vmedia_map, Dumper=MyDumper, default_flow_style=False
+                            ), ' '*4, predicate=None))
+                            print(f'{"-"*91}\n')
+                            valid_confirm = False
+                            while valid_confirm == False:
+                                confirm_config = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                                if confirm_config == 'Y' or confirm_config == '':
+                                    polVars['add_virtual_media'].append(vmedia_map)
+                                    pol_type = 'Virtual Media'
+                                    valid_exit = False
+                                    while valid_exit == False:
+                                        loop_exit, sub_loop = ezfunctions.exit_default(policy_type, 'N')
+                                        if loop_exit == False: inner_loop_count += 1; valid_exit = True; valid_confirm = True
+                                        elif loop_exit == True: valid_confirm = True; valid_sub = True; valid_exit = True
+                                elif confirm_config == 'N':
+                                    pol_type = 'Virtual Media Configuration'
+                                    ezfunctions.message_starting_over(pol_type)
+                                    valid_confirm = True
+                                else: ezfunctions.message_invalid_y_or_n('short')
+                    elif question == False: sub_loop = True
+                #==============================================
+                # Print Policy and Prompt User to Accept
+                #==============================================
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                print(f'-------------------------------------------------------------------------------------------\n')
+                valid_confirm = False
+                while valid_confirm == False:
+                    confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                    if confirm_policy == 'Y' or confirm_policy == '':
+                        #==============================================
+                        # Add Policy Variables to immDict
+                        #==============================================
+                        kwargs['class_path'] = 'intersight,policies,virtual_media'
+                        kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        #==============================================
+                        # Create Additional Policy or Exit Loop
+                        #==============================================
+                        configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
+                        valid_confirm = True
+                    elif confirm_policy == 'N':
+                        ezfunctions.message_starting_over(policy_type)
+                        valid_confirm = True
+                    else: ezfunctions.message_invalid_y_or_n('short')
         # Return kwargs
         return kwargs
 
+#==============================================
+# Select Policy Function
+#==============================================
 def policy_select_loop(**kwargs):
     ezData = kwargs['ezData']
     policy = kwargs['policy']
+    name   = kwargs['name']
     name_prefix = kwargs['name_prefix']
     org = kwargs['org']
     loop_valid = False
@@ -3550,27 +3550,22 @@ def policy_select_loop(**kwargs):
         kwargs['inner_var']    = policy.split('.')[2]
         inner_policy = kwargs['inner_policy']
         inner_type   = kwargs['inner_type']
+        inner_var    = kwargs['inner_var']
         kwargs = ezfunctions.policies_parse(inner_type, inner_policy, **kwargs)
-        if not len(kwargs['policies']) > 0:
+        if not len(kwargs['policies'][kwargs['inner_policy']]) > 0:
             valid = False
             while valid == False:
+                policy_description = ezfunctions.mod_pol_description(inner_var)
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'   There was no {inner_policy} found.')
+                print(f'   There was no {policy_description} found.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                policy_description = ezfunctions.mod_pol_description(inner_policy)
                 if kwargs['allow_opt_out'] == True:
                     Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
-                    if Question == '' or Question == 'Y':
-                        create_policy = True
-                        valid = True
-                    elif Question == 'N':
-                        create_policy = False
-                        valid = True
-                        return kwargs
-                else:
-                    create_policy = True
-                    valid = True
+                    if Question == '' or Question == 'Y': create_policy = True; valid = True
+                    elif Question == 'N': create_policy = False; valid = True; return kwargs
+                else: create_policy = True; valid = True
         else:
+            kwargs['name'] = name
             kwargs = ezfunctions.choose_policy(inner_policy, **kwargs)
             if kwargs['policy'] == 'create_policy': create_policy = True
             elif kwargs['policy'] == '' and kwargs['allow_opt_out'] == True:
@@ -3591,7 +3586,7 @@ def policy_select_loop(**kwargs):
         # Create Policy if Option was Selected
         if create_policy == True:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Starting module to create {inner_policy} in {org}')
+            print(f'  Starting module to create {policy_description} in Organization {org}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             lansan_list = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
             policies_list = ezData['ezimm']['allOf'][1]['properties']['policies_list']['enum']
@@ -3605,6 +3600,9 @@ def policy_select_loop(**kwargs):
             elif inner_policy in profile_list:
                 kwargs = eval(f'profiles(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
 
+#==============================================
+# Ethernet Port Policy Function
+#==============================================
 def port_list_eth(**kwargs):
     device_model       = kwargs['device_model']
     jsonData           = kwargs['jsonData']
@@ -3621,24 +3619,24 @@ def port_list_eth(**kwargs):
     for item in ports_in_use:
         for i in uplink_list:
             if int(item) == int(i): uplinks.remove(i)
-    if   port_type == 'Appliance Port-Channel' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-4]},{uplinks[-1]}'
-    elif port_type == 'Appliance Port-Channel' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[1]},{uplinks[0]}'
-    elif port_type == 'Appliance Port-Channel': portx = f'{uplinks[-2]},{uplinks[-1]}'
-    elif port_type == 'Ethernet Uplink Port-Channel' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-4]},{uplinks[-1]}'
-    elif port_type == 'Ethernet Uplink Port-Channel' and device_model == 'UCS-FI-6536' : portx =f'{uplinks[1]},{uplinks[0]}'
-    elif port_type == 'Ethernet Uplink Port-Channel': portx = f'{uplinks[-2]},{uplinks[-1]}'
-    elif port_type == 'FCoE Uplink Port-Channel' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-4]},{uplinks[-1]}'
-    elif port_type == 'FCoE Uplink Port-Channel' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[1]},{uplinks[0]}'
-    elif port_type == 'FCoE Uplink Port-Channel': portx = f'{uplinks[-2]},{uplinks[-1]}'
+    if   port_type == 'Appliance Port-Channels' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-4]},{uplinks[-1]}'
+    elif port_type == 'Appliance Port-Channels' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[1]},{uplinks[0]}'
+    elif port_type == 'Appliance Port-Channels': portx = f'{uplinks[-2]},{uplinks[-1]}'
+    elif port_type == 'Ethernet Uplink Port-Channels' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-4]},{uplinks[-1]}'
+    elif port_type == 'Ethernet Uplink Port-Channels' and device_model == 'UCS-FI-6536' : portx =f'{uplinks[1]},{uplinks[0]}'
+    elif port_type == 'Ethernet Uplink Port-Channels': portx = f'{uplinks[-2]},{uplinks[-1]}'
+    elif port_type == 'FCoE Uplink Port-Channels' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-4]},{uplinks[-1]}'
+    elif port_type == 'FCoE Uplink Port-Channels' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[1]},{uplinks[0]}'
+    elif port_type == 'FCoE Uplink Port-Channels': portx = f'{uplinks[-2]},{uplinks[-1]}'
     elif port_type == 'Appliance Ports' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-1]}'
     elif port_type == 'Appliance Ports' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}'
     elif port_type == 'Appliance Ports': portx = f'{uplinks[-1]}'
-    elif port_type == 'Ethernet Uplink' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-1]}'
-    elif port_type == 'Ethernet Uplink' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}'
-    elif port_type == 'Ethernet Uplink': portx = f'{uplinks[-1]}'
-    elif port_type == 'FCoE Uplink' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-1]}'
-    elif port_type == 'FCoE Uplink' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}'
-    elif port_type == 'FCoE Uplink': portx = f'{uplinks[-1]}'
+    elif port_type == 'Ethernet Uplinks' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-1]}'
+    elif port_type == 'Ethernet Uplinks' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}'
+    elif port_type == 'Ethernet Uplinks': portx = f'{uplinks[-1]}'
+    elif port_type == 'FCoE Uplinks' and device_model == 'UCS-FI-64108': portx = f'{uplinks[-1]}'
+    elif port_type == 'FCoE Uplinks' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}'
+    elif port_type == 'FCoE Uplinks': portx = f'{uplinks[-1]}'
     elif port_type == 'Server Ports' and device_model == 'UCS-FI-64108': portx = f'{fc_count + 1}-36'
     elif port_type == 'Server Ports' and device_model == 'UCS-FI-6536' : portx = f'{uplinks[0]}-32'
     elif port_type == 'Server Ports': portx = f'{fc_count + 1}-18'
@@ -3661,7 +3659,6 @@ def port_list_eth(**kwargs):
                 print(f'\n------------------------------------------------------\n')
                 port_list = input(f'Please enter the list of ports you want to add to the {port_type}?  [{portx}]: ')
                 if port_list == '': port_list = portx
-
                 if re.search(r'(^\d+$|^\d+,{1,48}\d+$|^(\d+[\-,\d+]+){1,48}\d+$)', port_list):
                     original_port_list = port_list
                     ports_expanded = ezfunctions.vlan_list_full(port_list)
@@ -3727,14 +3724,14 @@ def port_list_eth(**kwargs):
                             interfaces = []
                             pc_id = port_list[0]
                             for i in port_list: interfaces.append({'port_id':i})
-                            if port_type == 'Appliance Port-Channel':
+                            if port_type == 'Appliance Port-Channels':
                                 port_config = {
                                     'admin_speed':admin_speed,
                                     'ethernet_network_control_policy':kwargs['ethernet_network_control_policy'],
                                     'ethernet_network_group_policy':kwargs['ethernet_network_group_policy'],
-                                    'interfaces':interfaces, 'mode':kwargs['mode'], 'pc_ids':[pc_id, pc_id], 'priority':priority
+                                    'interfaces':interfaces, 'mode':mode, 'pc_ids':[pc_id, pc_id], 'priority':priority
                                 }
-                            elif port_type == 'Ethernet Uplink Port-Channel':
+                            elif port_type == 'Ethernet Uplink Port-Channels':
                                 port_config = {
                                     'admin_speed':admin_speed,
                                     'ethernet_network_group_policy':kwargs['ethernet_network_group_policy'],
@@ -3742,7 +3739,7 @@ def port_list_eth(**kwargs):
                                     'interfaces':interfaces, 'link_aggregation_policy':kwargs['link_aggregation_policy'],
                                     'link_control_policy':kwargs['link_control_policy'], 'pc_ids':[pc_id, pc_id]
                                 }
-                            elif port_type == 'FCoE Uplink Port-Channel':
+                            elif port_type == 'FCoE Uplink Port-Channels':
                                 port_config = {
                                     'admin_speed':admin_speed, 'interfaces':interfaces,
                                     'link_aggregation_policy':kwargs['link_aggregation_policy'],
@@ -3754,16 +3751,16 @@ def port_list_eth(**kwargs):
                                     'admin_speed':admin_speed,
                                     'ethernet_network_control_policy':kwargs['ethernet_network_control_policy'],
                                     'ethernet_network_group_policy':kwargs['ethernet_network_group_policy'],
-                                    'fec':fec, 'mode':kwargs['mode'], 'port_list':original_port_list, 'priority':priority
+                                    'fec':fec, 'mode':mode, 'port_list':original_port_list, 'priority':priority
                                 }
-                            elif port_type == 'Ethernet Uplink':
+                            elif port_type == 'Ethernet Uplinks':
                                 port_config = {
                                     'admin_speed':admin_speed,
                                     'ethernet_network_group_policy':kwargs['ethernet_network_group_policy'],
                                     'fec':fec, 'flow_control_policy':kwargs['flow_control_policy'],
                                     'link_control_policy':kwargs['link_control_policy'], 'port_list':original_port_list
                                 }
-                            elif port_type == 'FCoE Uplink':
+                            elif port_type == 'FCoE Uplinks':
                                 port_config = {
                                     'admin_speed':admin_speed, 'fec':fec,
                                     'link_control_policy':kwargs['link_control_policy'],
@@ -3814,6 +3811,9 @@ def port_list_eth(**kwargs):
     # Return kwargs
     return kwargs
     
+#==============================================
+# Fibre-Channel Port Policy Function
+#==============================================
 def port_list_fc(**kwargs):
     jsonData  = kwargs['jsonData']
     org       = kwargs['org']
@@ -3831,7 +3831,7 @@ def port_list_fc(**kwargs):
         '  switchport fill-pattern IDLE speed 8000\n\n'\
         'mds-a(config-if)#\n'
 
-    if port_type == 'Fibre-Channel Port-Channel': default_answer = 'Y'
+    if port_type == 'FC Uplink Port-Channels': default_answer = 'Y'
     else: default_answer = 'N'
     port_count = 1
     if len(kwargs['fc_converted_ports']) > 0: configure_fc = True
@@ -3843,15 +3843,13 @@ def port_list_fc(**kwargs):
             if question == 'Y' or (default_answer == 'Y' and question == ''):
                 configure_valid = False
                 while configure_valid == False:
-                    if port_type == 'Fibre-Channel Port-Channel':
+                    kwargs['multi_select'] = False
+                    if port_type == 'FC Uplink Port-Channels':
                         kwargs['multi_select'] = True
-                        kwargs['Description'] = '    Please Select a Port for the Port-Channel:\n'
-                    elif port_type == 'Fibre-Channel Storage':
-                        kwargs['multi_select'] = False
-                        kwargs['Description'] = '    Please Select a Port for the Storage Port:\n'
-                    else:
-                        kwargs['multi_select'] = False
-                        kwargs['Description'] = '    Please Select a Port for the Uplink Port:\n'
+                        kwargs['Description'] = '    Please Select a Port for the FC Uplink Port-Channel:\n'
+                    elif port_type == 'FC Storage':
+                        kwargs['Description']   = '    Please Select a Port for the FC Storage Port:\n'
+                    else: kwargs['Description'] = '    Please Select a Port for the FC Uplink Port:\n'
                     kwargs['var_type'] = 'Unified Port'
                     port_list = ezfunctions.vars_from_list(kwargs['fc_converted_ports'], **kwargs)
 
@@ -3891,15 +3889,15 @@ def port_list_fc(**kwargs):
                         vsan_list = ezfunctions.vlan_list_full(vsan_list)
 
                         kwargs['multi_select'] = False
-                        if port_type == 'Fibre-Channel Port-Channel': fc_type = 'Port-Channel'
-                        elif port_type == 'Fibre-Channel Storage': fc_type = 'Storage Port'
+                        if port_type == 'FC Uplink Port-Channels': fc_type = 'Port-Channel'
+                        elif port_type == 'FC Storage': fc_type = 'Storage Port'
                         else: fc_type = 'Uplink Port'
                         kwargs['Description'] = f'    Please Select a VSAN for the Fibre-Channel {fc_type} Port:\n'
                         kwargs['var_type'] = 'VSAN'
                         vsan_x = ezfunctions.vars_from_list(vsan_list, **kwargs)
                         for vs in vsan_x: vsan = vs
                         vsans.update({fabric:vsan})
-                    if port_type == 'Fibre-Channel Port-Channel':
+                    if port_type == 'FC Uplink Port-Channels':
                         interfaces = []
                         for i in port_list: interfaces.append({'port_id':i})
                         pc_id = port_list[0]
@@ -3928,6 +3926,8 @@ def port_list_fc(**kwargs):
                         confirm_port = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_port == 'Y' or confirm_port == '':
                             kwargs['portDict'].append(port_config)
+                            if not kwargs.get('fc_ports_in_use'):
+                                kwargs['fc_ports_in_use'] = []
                             for i in port_list: kwargs['fc_ports_in_use'].append(i)
                             valid_exit = False
                             while valid_exit == False:
@@ -3951,6 +3951,9 @@ def port_list_fc(**kwargs):
     # Return kwargs
     return kwargs
 
+#==============================================
+# Port Mode Port Policy Function
+#==============================================
 def port_modes_fc(**kwargs):
     ezData             = kwargs['ezData']
     fc_converted_ports = []

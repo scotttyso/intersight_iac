@@ -47,14 +47,14 @@ class pools(object):
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     # Pull Information from API Documentation
-                    kwargs["multi_select"] = False
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
-                    kwargs['jData']["varType"] = 'Assignment Order'
-                    polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
+                    kwargs['jData']['varType'] = 'Assignment Order'
+                    polVars['assignment_order'] = ezfunctions.variablesFromAPI(**kwargs)
                     valid = False
                     while valid == False:
                         config_ipv4 = input('Do you want to configure IPv4 for this Pool?  Enter "Y" or "N" [Y]: ')
@@ -99,11 +99,11 @@ class pools(object):
                         #==============================================
                         # Configure IPv4 Configuration Parameters
                         #==============================================
-                        polVars["ipv4_configuration"] = {
+                        polVars['ipv4_configuration'] = {
                             'gateway':kwargs['defaultGateway'], 'netmask':kwargs['subnetMask'],
                             'primary_dns':primaryDns, 'secondary_dns':secondaryDns
                         }
-                        polVars["ipv4_blocks"] = []
+                        polVars['ipv4_blocks'] = []
                         inner_loop_count = 0
                         ipv4_loop = False
                         while ipv4_loop == False:
@@ -123,9 +123,9 @@ class pools(object):
                             #==============================================
                             jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
                             kwargs['jData'] = deepcopy(jsonVars['Size'])
-                            kwargs['jData']["default"]  = len(subnetList)-10
-                            kwargs['jData']["varInput"] = 'How Many IP Addresses should be added to the Block?  Range is 1-1024.'
-                            kwargs['jData']["varName"] = 'Block Size'
+                            kwargs['jData']['default']  = len(subnetList)-10
+                            kwargs['jData']['varInput'] = 'How Many IP Addresses should be added to the Block?  Range is 1-1024.'
+                            kwargs['jData']['varName'] = 'Block Size'
                             pool_size = ezfunctions.varNumberLoop(**kwargs)
                             #==============================================
                             # Configure IP Block Parameters
@@ -133,7 +133,7 @@ class pools(object):
                             beginx = int(ipaddress.IPv4Address(kwargs['pool_from']))
                             add_dec = (beginx + int(pool_size) - 1)
                             kwargs['pool_to'] = str(ipaddress.IPv4Address(add_dec))
-                            valid = validating.subnet_check(**kwargs)
+                            valid = validating.error_subnet_check(**kwargs)
                             ipv4_block = {'from':str(kwargs['pool_from']), 'size':pool_size}
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(textwrap.indent(yaml.dump(ipv4_block, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
@@ -201,11 +201,11 @@ class pools(object):
                         #==============================================
                         # Configure IPv6 Configuration Parameters
                         #==============================================
-                        polVars["ipv6_configuration"] = {
+                        polVars['ipv6_configuration'] = {
                             'gateway':kwargs['defaultGateway'], 'prefix':kwargs['Prefix'],
                             'primary_dns':primaryDns, 'secondary_dns':secondaryDns
                         }
-                        polVars["ipv6_blocks"] = []
+                        polVars['ipv6_blocks'] = []
                         inner_loop_count = 0
                         ipv6_loop = False
                         while ipv6_loop == False:
@@ -225,9 +225,9 @@ class pools(object):
                             #==============================================
                             jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
                             kwargs['jData'] = deepcopy(jsonVars['Size'])
-                            kwargs['jData']["default"]  = len(subnetList)-10
-                            kwargs['jData']["varInput"] = 'How Many IPv6 Addresses should be added to the Pool?  Range is 1-1024.'
-                            kwargs['jData']["varName"] = 'Pool Size'
+                            kwargs['jData']['default']  = len(subnetList)-10
+                            kwargs['jData']['varInput'] = 'How Many IPv6 Addresses should be added to the Pool?  Range is 1-1024.'
+                            kwargs['jData']['varName'] = 'Pool Size'
                             pool_size = ezfunctions.varNumberLoop(**kwargs)
                             #==============================================
                             # Configure IP Block Parameters
@@ -235,7 +235,7 @@ class pools(object):
                             beginx = int(ipaddress.IPv6Address(kwargs['pool_from']))
                             add_dec = (beginx + int(pool_size) - 1)
                             kwargs['pool_to'] = str(ipaddress.IPv6Address(add_dec))
-                            valid = validating.subnet_check(**kwargs)
+                            valid = validating.error_subnet_check(**kwargs)
                             ipv6_block = {'from':str(kwargs['pool_from']), 'size':pool_size}
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(textwrap.indent(yaml.dump(ipv6_block, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
@@ -245,7 +245,7 @@ class pools(object):
                                 confirm_conf = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                                 pol_type = 'IPv6 Block'
                                 if confirm_conf == 'Y' or confirm_conf == '':
-                                    polVars["ipv6_blocks"].append(ipv6_block)
+                                    polVars['ipv6_blocks'].append(ipv6_block)
                                     valid_exit = False
                                     while valid_exit == False:
                                         ipv6_loop, valid_confirm = ezfunctions.exit_default(pol_type, 'N')
@@ -304,11 +304,11 @@ class pools(object):
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    kwargs["multi_select"] = False
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
-                    kwargs['jData']["varType"] = 'Assignment Order'
-                    polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
+                    kwargs['jData']['varType'] = 'Assignment Order'
+                    polVars['assignment_order'] = ezfunctions.variablesFromAPI(**kwargs)
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  The iSCSI Qualified Name (IQN) format is: iqn.yyyy-mm.naming-authority:unique name, where:')
                     print(f'    - literal iqn (iSCSI Qualified Name) - always iqn')
@@ -327,40 +327,40 @@ class pools(object):
                         # Prompt User for IQN Prefix
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['Prefix'])
-                        kwargs['jData']["default"]  = 'iqn.1984-12.com.cisco'
-                        kwargs['jData']["maximum"]  = 64
-                        kwargs['jData']["minimum"]  = 7
-                        kwargs['jData']["pattern"]  = '^$|^(?:iqn\\.[0-9]{4}-[0-9]{2}(?:\\.[A-Za-z](?:[A-Za-z0-9\\-]*[A-Za-z0-9])?)+?'
-                        kwargs['jData']["varInput"] = 'What is the IQN Prefix you would like to assign to the Pool?'
-                        kwargs['jData']["varName"]  = 'IQN Prefix'
+                        kwargs['jData']['default']  = 'iqn.1984-12.com.cisco'
+                        kwargs['jData']['maximum']  = 64
+                        kwargs['jData']['minimum']  = 7
+                        kwargs['jData']['pattern']  = '^$|^(?:iqn\\.[0-9]{4}-[0-9]{2}(?:\\.[A-Za-z](?:[A-Za-z0-9\\-]*[A-Za-z0-9])?)+?'
+                        kwargs['jData']['varInput'] = 'What is the IQN Prefix you would like to assign to the Pool?'
+                        kwargs['jData']['varName']  = 'IQN Prefix'
                         prefix = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
                         # Prompt User for Starting Address
                         #==============================================
                         jsonVars = jsonData['iqnpool.IqnSuffixBlock']['allOf'][1]['properties']
                         kwargs['jData'] = deepcopy(jsonVars['From'])
-                        kwargs['jData']["default"]  = 0
-                        kwargs['jData']["maximum"]  = 60000000000
-                        kwargs['jData']["varInput"] = f"{jsonVars['From']['description'] }?"
-                        kwargs['jData']["varName"]  = 'Starting Address'
+                        kwargs['jData']['default']  = 0
+                        kwargs['jData']['maximum']  = 60000000000
+                        kwargs['jData']['varInput'] = f"{jsonVars['From']['description'] }?"
+                        kwargs['jData']['varName']  = 'Starting Address'
                         pool_from = ezfunctions.varNumberLoop(**kwargs)
                         #==============================================
                         # Prompt User for IQN Suffix
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['Suffix'])
-                        kwargs['jData']["default"]  = 'ucs-host'
-                        kwargs['jData']["pattern"]  = '^[0-9a-zA-Z]{3,32}$'
-                        kwargs['jData']["varInput"] = 'What is the IQN Suffix you would like to assign to the Pool?'
-                        kwargs['jData']["varName"]  = 'IQN Suffix'
+                        kwargs['jData']['default']  = 'ucs-host'
+                        kwargs['jData']['pattern']  = '^[0-9a-zA-Z]{3,32}$'
+                        kwargs['jData']['varInput'] = 'What is the IQN Suffix you would like to assign to the Pool?'
+                        kwargs['jData']['varName']  = 'IQN Suffix'
                         suffix = ezfunctions.varStringLoop(**kwargs)
                         #==============================================
                         # Prompt User for Pool Size
                         #==============================================
                         jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
                         kwargs['jData'] = deepcopy(jsonVars['Size'])
-                        kwargs['jData']["default"]  = 1024
-                        kwargs['jData']["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1024.'
-                        kwargs['jData']["varName"]  = 'Pool Size'
+                        kwargs['jData']['default']  = 1024
+                        kwargs['jData']['varInput'] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1024.'
+                        kwargs['jData']['varName']  = 'Pool Size'
                         pool_size = ezfunctions.varNumberLoop(**kwargs)
                         #==============================================
                         # Configure Pool Parameters
@@ -422,15 +422,15 @@ class pools(object):
                 name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                polVars["multi_select"] = False
+                polVars['multi_select'] = False
                 jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                 #==============================================
                 #
                 # Prompt User for Assignment Order
                 #==============================================
                 kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
-                kwargs['jData']["varType"] = 'Assignment Order'
-                polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
+                kwargs['jData']['varType'] = 'Assignment Order'
+                polVars['assignment_order'] = ezfunctions.variablesFromAPI(**kwargs)
                 #==============================================
                 #
                 # Prompt User for Starting MAC Address
@@ -438,15 +438,15 @@ class pools(object):
                 jsonVars = jsonData['macpool.Block']['allOf'][1]['properties']
                 kwargs['jData'] = deepcopy(jsonVars['From'])
                 if loop_count % 2 == 0: 
-                    kwargs['jData']["default"] = '00:25:B5:0A:00:00'
-                    kwargs['jData']["varInput"] = 'What is the Starting MAC Address to Assign to the Pool?'
+                    kwargs['jData']['default'] = '00:25:B5:0A:00:00'
+                    kwargs['jData']['varInput'] = 'What is the Starting MAC Address to Assign to the Pool?'
                 else:
-                    kwargs['jData']["default"] = '00:25:B5:0B:00:00'
-                    kwargs['jData']["varInput"] = 'What is the Starting MAC Address to Assign to the Pool?'
-                kwargs['jData']["maximum"] = 17
-                kwargs['jData']["minimum"] = 17
-                kwargs['jData']["pattern"] = '^([0-9a-zA-Z]{2}:){5}[0-9a-zA-Z]{2}$'
-                kwargs['jData']["varName"] = 'Starting MAC Address'
+                    kwargs['jData']['default'] = '00:25:B5:0B:00:00'
+                    kwargs['jData']['varInput'] = 'What is the Starting MAC Address to Assign to the Pool?'
+                kwargs['jData']['maximum'] = 17
+                kwargs['jData']['minimum'] = 17
+                kwargs['jData']['pattern'] = '^([0-9a-zA-Z]{2}:){5}[0-9a-zA-Z]{2}$'
+                kwargs['jData']['varName'] = 'Starting MAC Address'
                 pool_from = ezfunctions.varStringLoop(**kwargs)
                 #==============================================
                 #
@@ -454,9 +454,9 @@ class pools(object):
                 #==============================================
                 jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
                 kwargs['jData'] = deepcopy(jsonVars['Size'])
-                kwargs['jData']["default"]  = 1024
-                kwargs['jData']["varInput"] = 'How Many MAC Addresses should be added to the Pool?  Range is 1-1024.'
-                kwargs['jData']["varName"]  = 'Block Size'
+                kwargs['jData']['default']  = 1024
+                kwargs['jData']['varInput'] = 'How Many MAC Addresses should be added to the Pool?  Range is 1-1024.'
+                kwargs['jData']['varName']  = 'Block Size'
                 pool_size = ezfunctions.varNumberLoop(**kwargs)
                 #==============================================
                 #
@@ -468,7 +468,7 @@ class pools(object):
                 pool_to = ':'.join(['{}{}'.format(a, b)
                     for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                 pool_to = pool_to.upper()
-                polVars["mac_blocks"] = [{'from':pool_from, 'size':pool_size}]
+                polVars['mac_blocks'] = [{'from':pool_from, 'size':pool_size}]
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -520,13 +520,13 @@ class pools(object):
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
 
                     # Pull in the Policies from API Documentation
-                    polVars["multi_select"] = False
+                    polVars['multi_select'] = False
                     #==============================================
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
-                    kwargs['jData']["varType"] = 'Assignment Order'
-                    polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
+                    kwargs['jData']['varType'] = 'Assignment Order'
+                    polVars['assignment_order'] = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
                     # Prompt User for Serial Number List
                     #==============================================
@@ -535,17 +535,17 @@ class pools(object):
                     while valid == False:
                         kwargs['jData'] = deepcopy({})
                         kwargs['jData']['description'] = 'A List of Serial Numbers to add to the Resource Pool.'
-                        kwargs['jData']["pattern"]  = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
-                        kwargs['jData']["minimum"]  = 11
-                        kwargs['jData']["maximum"]  = 11
-                        kwargs['jData']["varInput"] = 'Enter the Server Serial Number:'
-                        kwargs['jData']["varName"]  = 'Serial Number'
+                        kwargs['jData']['pattern']  = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
+                        kwargs['jData']['minimum']  = 11
+                        kwargs['jData']['maximum']  = 11
+                        kwargs['jData']['varInput'] = 'Enter the Server Serial Number:'
+                        kwargs['jData']['varName']  = 'Serial Number'
                         polVars['serial_number_list'].append(ezfunctions.varStringLoop(**kwargs))
                         kwargs['jData'] = deepcopy({})
-                        kwargs['jData']["default"]     = True
+                        kwargs['jData']['default']     = True
                         kwargs['jData']['description'] = 'Add Additional Serial Numbers.'
-                        kwargs['jData']["varInput"]    = f'Do you want to add another Serial Number?'
-                        kwargs['jData']["varName"]     = 'Additional Serial Numbers'
+                        kwargs['jData']['varInput']    = f'Do you want to add another Serial Number?'
+                        kwargs['jData']['varName']     = 'Additional Serial Numbers'
                         valid = ezfunctions.varBoolLoop(**kwargs)
                     #==============================================
                     # Prompt User for Server Type
@@ -553,10 +553,10 @@ class pools(object):
                     jsonVars = ezData['pools']['resourcepool.Pool']
                     kwargs['jData'] = deepcopy(jsonVars['server_type'])
                     kwargs['jData']['description'] = jsonVars['server_type']['description']
-                    kwargs['jData']["jsonVars"] = sorted(jsonVars['server_type']['enum'])
-                    kwargs['jData']["defaultVar"] = jsonVars['server_type']['default']
-                    kwargs['jData']["varType"] = 'Server Type'
-                    polVars["server_type"] = ezfunctions.variablesFromAPI(**kwargs)
+                    kwargs['jData']['jsonVars'] = sorted(jsonVars['server_type']['enum'])
+                    kwargs['jData']['defaultVar'] = jsonVars['server_type']['default']
+                    kwargs['jData']['varType'] = 'Server Type'
+                    polVars['server_type'] = ezfunctions.variablesFromAPI(**kwargs)
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -606,42 +606,42 @@ class pools(object):
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars["multi_select"] = False
+                    polVars['multi_select'] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
-                    kwargs['jData']["varType"] = 'Assignment Order'
-                    polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
+                    kwargs['jData']['varType'] = 'Assignment Order'
+                    polVars['assignment_order'] = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
                     # Prompt User for UUID Prefix
                     #==============================================
                     jsonVars = jsonData['uuidpool.Pool']['allOf'][1]['properties']
                     kwargs['jData'] = deepcopy(jsonVars['Prefix'])
-                    kwargs['jData']["default"]  = '000025B5-0000-0000'
-                    kwargs['jData']["maximum"]  = 18
-                    kwargs['jData']["minimum"]  = 18
-                    kwargs['jData']["varInput"] = 'What is the UUID Prefix you would like to assign to the Pool?'
-                    kwargs['jData']["varName"]  = 'UUID Prefix'
-                    polVars["prefix"] = ezfunctions.varStringLoop(**kwargs)
+                    kwargs['jData']['default']  = '000025B5-0000-0000'
+                    kwargs['jData']['maximum']  = 18
+                    kwargs['jData']['minimum']  = 18
+                    kwargs['jData']['varInput'] = 'What is the UUID Prefix you would like to assign to the Pool?'
+                    kwargs['jData']['varName']  = 'UUID Prefix'
+                    polVars['prefix'] = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
                     # Prompt User for UUID First Suffix
                     #==============================================
                     jsonVars = jsonData['uuidpool.UuidBlock']['allOf'][1]['properties']
                     kwargs['jData'] = deepcopy(jsonVars['From'])
-                    kwargs['jData']["default"]  = '0000-000000000000'
-                    kwargs['jData']["varInput"] = 'What is the First UUID Suffix in the Block?'
-                    kwargs['jData']["varName"]  = 'UUID First Suffix'
+                    kwargs['jData']['default']  = '0000-000000000000'
+                    kwargs['jData']['varInput'] = 'What is the First UUID Suffix in the Block?'
+                    kwargs['jData']['varName']  = 'UUID First Suffix'
                     pool_from = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
                     # Prompt User for Pool Size
                     #==============================================
                     jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
                     kwargs['jData'] = deepcopy(jsonVars['Size'])
-                    kwargs['jData']["default"]  = 1024
-                    kwargs['jData']["varInput"] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1024.'
-                    kwargs['jData']["varName"]  = 'Pool Size'
+                    kwargs['jData']['default']  = 1024
+                    kwargs['jData']['varInput'] = 'How Many IP Addresses should be added to the Pool?  Range is 1-1024.'
+                    kwargs['jData']['varName']  = 'Pool Size'
                     pool_size = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
                     # Configure UUID Pool Parameters
@@ -654,7 +654,7 @@ class pools(object):
                     if not add_zeros == 0:
                         pool_to = str(from_split[0]) + '-' + ('0' * add_zeros) + pool_to
                     pool_to = pool_to.upper()
-                    polVars["uuid_blocks"] = [{'from':pool_from, 'size':pool_size}]
+                    polVars['uuid_blocks'] = [{'from':pool_from, 'size':pool_size}]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -708,31 +708,31 @@ class pools(object):
                     else: name = f'{org}-{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars["multi_select"] = False
+                    polVars['multi_select'] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
-                    kwargs['jData']["varType"] = 'Assignment Order'
-                    polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
+                    kwargs['jData']['varType'] = 'Assignment Order'
+                    polVars['assignment_order'] = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
                     # Prompt User for Starting Address
                     #==============================================
                     jsonVars = jsonData['fcpool.Block']['allOf'][1]['properties']
                     kwargs['jData'] = deepcopy(jsonVars['From'])
-                    kwargs['jData']["default"]  = '20:00:00:25:B5:00:00:00'
-                    kwargs['jData']["varInput"] = 'What is the Starting WWNN Address to Assign to the Pool?'
-                    kwargs['jData']["varName"]  = 'Starting WWNN Address'
+                    kwargs['jData']['default']  = '20:00:00:25:B5:00:00:00'
+                    kwargs['jData']['varInput'] = 'What is the Starting WWNN Address to Assign to the Pool?'
+                    kwargs['jData']['varName']  = 'Starting WWNN Address'
                     pool_from = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
                     # Prompt User for Block Size
                     #==============================================
                     jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
                     kwargs['jData'] = deepcopy(jsonVars['Size'])
-                    kwargs['jData']["default"]  = 1024
-                    kwargs['jData']["varInput"] = 'How Many WWNN Addresses should be added to the Pool?  Range is 1-1024.'
-                    kwargs['jData']["varName"]  = 'Pool Size'
+                    kwargs['jData']['default']  = 1024
+                    kwargs['jData']['varInput'] = 'How Many WWNN Addresses should be added to the Pool?  Range is 1-1024.'
+                    kwargs['jData']['varName']  = 'Pool Size'
                     pool_size = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
                     # Configure Pool Parameters
@@ -743,7 +743,7 @@ class pools(object):
                     pool_to = ':'.join(['{}{}'.format(a, b)
                     for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                     pool_to = pool_to.upper()
-                    polVars["wwnn_blocks"] = [{'from':pool_from, 'size':pool_size}]
+                    polVars['wwnn_blocks'] = [{'from':pool_from, 'size':pool_size}]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -797,35 +797,35 @@ class pools(object):
                     name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars["multi_select"] = False
+                    polVars['multi_select'] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
                     # Prompt User for Assignment Order
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AssignmentOrder'])
-                    kwargs['jData']["varType"] = 'Assignment Order'
-                    polVars["assignment_order"] = ezfunctions.variablesFromAPI(**kwargs)
+                    kwargs['jData']['varType'] = 'Assignment Order'
+                    polVars['assignment_order'] = ezfunctions.variablesFromAPI(**kwargs)
                     jsonVars = jsonData['fcpool.Block']['allOf'][1]['properties']
                     #==============================================
                     # Prompt User for Starting Address
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['From'])
                     if loop_count % 2 == 0: 
-                        kwargs['jData']["default"] = '20:00:00:25:B5:0A:00:00'
-                        kwargs['jData']["varInput"] = 'What is the Starting WWPN Address to Assign to the Pool?'
+                        kwargs['jData']['default'] = '20:00:00:25:B5:0A:00:00'
+                        kwargs['jData']['varInput'] = 'What is the Starting WWPN Address to Assign to the Pool?'
                     else:
-                        kwargs['jData']["default"] = '20:00:00:25:B5:0B:00:00'
-                        kwargs['jData']["varInput"] = 'What is the Starting WWPN Address to Assign to the Pool?'
-                    kwargs['jData']["varName"] = 'Starting WWPN Address'
+                        kwargs['jData']['default'] = '20:00:00:25:B5:0B:00:00'
+                        kwargs['jData']['varInput'] = 'What is the Starting WWPN Address to Assign to the Pool?'
+                    kwargs['jData']['varName'] = 'Starting WWPN Address'
                     pool_from = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
                     # Prompt User for Block Size
                     #==============================================
                     jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
                     kwargs['jData'] = deepcopy(jsonVars['Size'])
-                    kwargs['jData']["default"]  = 1024
-                    kwargs['jData']["varInput"] = 'How Many WWPN Addresses should be added to the Pool?  Range is 1-1024.'
-                    kwargs['jData']["varName"]  = 'Pool Size'
+                    kwargs['jData']['default']  = 1024
+                    kwargs['jData']['varInput'] = 'How Many WWPN Addresses should be added to the Pool?  Range is 1-1024.'
+                    kwargs['jData']['varName']  = 'Pool Size'
                     pool_size = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
                     # Configure Pool Parameters
@@ -836,7 +836,7 @@ class pools(object):
                     pool_to = ':'.join(['{}{}'.format(a, b)
                     for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                     pool_to = pool_to.upper()
-                    polVars["wwpn_blocks"] = [{'from':pool_from, 'size':pool_size}]
+                    polVars['wwpn_blocks'] = [{'from':pool_from, 'size':pool_size}]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')

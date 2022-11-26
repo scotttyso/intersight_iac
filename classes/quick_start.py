@@ -390,7 +390,7 @@ class quick_start(object):
                         # Configure Fibre-Channel Uplink Port-Channels
                         #==============================================
                         kwargs['portDict'] = []
-                        kwargs['port_type'] = 'Fibre-Channel Port-Channel'
+                        kwargs['port_type'] = 'FC Uplink Port-Channels'
                         kwargs = policies.port_list_fc(**kwargs)
                         kwargs['port_channel_fc_uplinks'] = kwargs['portDict']
                     #==============================================
@@ -1152,7 +1152,7 @@ class quick_start(object):
                     print(f'  Need to obtain the IPMI Key for IPMI over LAN Policy Encryption.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     kwargs['Variable'] = 'ipmi_key'
-                    kwargs['ipmi_key'] = ezfunctions.sensitive_var_value(**kwargs)
+                    kwargs = ezfunctions.sensitive_var_value(**kwargs)
                     #==============================================
                     # Prompt User for Local User Policy
                     #==============================================

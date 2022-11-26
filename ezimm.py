@@ -24,6 +24,7 @@ import re
 import requests
 import sys
 import urllib3
+import yaml
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 sys.path.insert(0, './classes')
@@ -401,18 +402,21 @@ def prompt_main_menu(**kwargs):
             return policy_list
         if type_menu == 'Policies':
             kwargs['jData'] = deepcopy(jsonVars['Policies'])
+            kwargs['jData']['dontsort'] = True
             kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
             kwargs['jData']['varType'] = 'Policies'
             policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Pools':
             kwargs['jData'] = deepcopy(jsonVars['Pools'])
+            kwargs['jData']['dontsort'] = True
             kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
             kwargs['jData']['varType'] = 'Pools'
             policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Profiles':
             kwargs['jData'] = deepcopy(jsonVars['Profiles'])
+            kwargs['jData']['dontsort'] = True
             kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
             kwargs['jData']['varType'] = 'Profiles'
             policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
@@ -429,6 +433,39 @@ def prompt_org(**kwargs):
         if org == '': org = 'default'
         valid = classes.validating.org_rule('Intersight Organization', org, 1, 62)
     kwargs['org'] = org
+    return kwargs
+
+def prompt_previous_configurations(**kwargs):
+    baseRepo = kwargs['args'].dir
+    ezData   = kwargs['ezData']['ezimm']['allOf'][1]['properties']
+    vclasses = ezData['classes']['enum']
+    org      = kwargs['org']
+    existing_files = False
+    use_configs    = False
+    if os.path.isdir(baseRepo):
+        dir_list = os.listdir(kwargs['args'].dir)
+        if len(dir_list) > 0:
+            existing_files = True
+    if existing_files == True:
+        kwargs['jData'] = {}
+        kwargs['jData']['default']     = True
+        kwargs['jData']['description'] = 'Load Previous Configurations'
+        kwargs['jData']['varInput']    = f'Do You want to Import Configuration found in "{baseRepo}"?'
+        kwargs['jData']['varName']     = 'Existing Configuration'
+        use_configs = classes.ezfunctions.varBoolLoop(**kwargs)
+    if use_configs == True:
+        for item in vclasses:
+            dest_dir = ezData[f'class.{item}']['directory']
+            if os.path.isdir(os.path.join(baseRepo, org, dest_dir)):
+                dest_path = f'{os.path.join(baseRepo, org, dest_dir)}'
+                dir_list = os.listdir(dest_path)
+                for i in dir_list:
+                    yfile = open(os.path.join(dest_path, i), 'r')
+                    data = yaml.safe_load(yfile)
+                    if not kwargs['immDict']['orgs'][org]['intersight'].get(item):
+                        kwargs['immDict']['orgs'][org]['intersight'][item] = {}
+                    kwargs['immDict']['orgs'][org]['intersight'][item].update(data['intersight'][item])
+    # Return kwargs
     return kwargs
 
 def process_wizard(**kwargs):
@@ -467,7 +504,6 @@ def process_wizard(**kwargs):
         plist = ezData['ezimm']['allOf'][1]['properties']['list_pools']['enum']
         for i in plist:
             if policy == i: kwargs = eval(f"{cpool}(name_prefix, org, type).{policy}(**kwargs)")
-
         #==============================================
         # Intersight Policies
         #==============================================
@@ -481,7 +517,6 @@ def process_wizard(**kwargs):
                     kwargs = eval(f"classes.lansan.policies(name_prefix, org, type).{i}(**kwargs)")
                 elif policy in policies_list:
                     kwargs = eval(f"classes.policies.policies(name_prefix, org, type).{i}(**kwargs)")
-
         #==============================================
         # Intersight Profiles
         #==============================================
@@ -491,7 +526,6 @@ def process_wizard(**kwargs):
         for i in plist:
             if policy == i:
                 kwargs = eval(f"classes.profiles.profiles(name_prefix, org, type).{i}(**kwargs)")
-        
         #==============================================
         # Quick Start - Pools
         #==============================================
@@ -500,25 +534,23 @@ def process_wizard(**kwargs):
         type = 'pools'
         if 'quick_start_pools' in policy:
             kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
-
         #==============================================
         # TESTING TEMP PARAMETERS
         #==============================================
-        script_path = kwargs['script_path']
-        path_sep = kwargs['path_sep']
-        jsonFile = f'{script_path}{path_sep}asgard.json'
-        jsonOpen = open(jsonFile, 'r')
-        kwargs['immDict'] = json.load(jsonOpen)
-        jsonOpen.close()
-        kwargs['primary_dns'] = '208.67.220.220'
-        kwargs['secondary_dns'] = '208.67.220.220'
-        kwargs['fc_ports_in_use'] = [1, 4]
-        kwargs['mtu']           = 9216
-        kwargs['tpm_installed'] = True
-        kwargs['vlan_list']     = '1-99'
-        kwargs['vsan_id_a']     = 100
-        kwargs['vsan_id_b']     = 200
-
+        #script_path = kwargs['script_path']
+        #path_sep = kwargs['path_sep']
+        #jsonFile = f'{script_path}{path_sep}asgard.json'
+        #jsonOpen = open(jsonFile, 'r')
+        #kwargs['immDict'] = json.load(jsonOpen)
+        #jsonOpen.close()
+        #kwargs['primary_dns'] = '208.67.220.220'
+        #kwargs['secondary_dns'] = '208.67.220.220'
+        #kwargs['fc_ports_in_use'] = [1, 4]
+        #kwargs['mtu']           = 9216
+        #kwargs['tpm_installed'] = True
+        #kwargs['vlan_list']     = '1-99'
+        #kwargs['vsan_id_a']     = 100
+        #kwargs['vsan_id_b']     = 200
         #==============================================
         # Quick Start - Policies
         #==============================================
@@ -549,7 +581,13 @@ def process_wizard(**kwargs):
                 kwargs = eval(f"{quick}(name_prefix, org, type).server_profiles(**kwargs)")
     return kwargs
 
+#==============================================
+# Main Script
+#==============================================
 def main():
+    #==============================================
+    # Import Parser and Setup Arguments
+    #==============================================
     Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
     Parser.add_argument(
         '-a', '--api-key-id', default=os.getenv('TF_VAR_apikey'),
@@ -584,33 +622,37 @@ def main():
     args.api_key_file = classes.ezfunctions.api_secret(args)
     args.url = f'https://{args.endpoint}'
 
-    # Setup Main Script Arguments
+    #==============================================
+    # Setup Main Script Parameters
+    #==============================================
     opSystem = platform.system()
-    kwargs = {}
-    kwargs['args'] = args
-    kwargs['home'] = Path.home()
-    kwargs['opSystem'] = platform.system()
     if opSystem == 'Windows': path_sep = '\\'
     else: path_sep = '/'
-    kwargs['path_sep'] = path_sep
-
     script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
-    kwargs['script_path'] = script_path
-
-    jsonFile = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
-    jsonOpen = open(jsonFile, 'r')
-    jsonData = json.load(jsonOpen)
+    jsonFile    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
+    jsonOpen    = open(jsonFile, 'r')
+    jsonData    = json.load(jsonOpen)
     jsonOpen.close()
-    kwargs['jsonData'] = jsonData['components']['schemas']
-
     jsonFile = f'{script_path}{path_sep}variables{path_sep}easy_variables.json'
     jsonOpen = open(jsonFile, 'r')
-    ezData = json.load(jsonOpen)
+    ezData   = json.load(jsonOpen)
     jsonOpen.close()
-    kwargs['ezData'] = ezData['components']['schemas']
-    kwargs['immDict'] = {'orgs':{}}
+    #==============================================
+    # Build kwargs
+    #==============================================
+    kwargs = {}
+    kwargs['args']        = args
+    kwargs['home']        = Path.home()
+    kwargs['opSystem']    = platform.system()
+    kwargs['path_sep']    = path_sep
+    kwargs['script_path'] = script_path
+    kwargs['jsonData']    = jsonData['components']['schemas']
+    kwargs['ezData']      = ezData['components']['schemas']
+    kwargs['immDict']     = {'orgs':{}}
     kwargs['ez_settings'] = {}
-
+    #==============================================
+    # Check Folder Naming for Illegal Characters
+    #==============================================
     destdirCheck = False
     while destdirCheck == False:
         splitDir = args.dir.split(path_sep)
@@ -627,7 +669,13 @@ def main():
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 exit()
         destdirCheck = True
+    #==============================================
+    # Run IMM Transition if json Arg Present
+    #==============================================
     if not args.json_file == None:
+        #==============================================
+        # Validate the Existence of the json File
+        #==============================================
         if not os.path.isfile(args.json_file):
             print(folder)
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -641,6 +689,9 @@ def main():
             json_open = open(json_file, 'r')
             kwargs['json_data'] = json.load(json_open)
             device_type = kwargs['json_data']['easyucs']['metadata'][0]['device_type']
+            #==============================================
+            # Validate the device_type in json file
+            #==============================================
             if not device_type == 'intersight':
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  !!ERROR!!')
@@ -653,19 +704,34 @@ def main():
                 print(f'  Exiting Wizard...')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 exit()
+            #==============================================
+            # Run through the IMM Transition Wizard
+            #==============================================
             kwargs = classes.imm.transition('transition').policy_loop(**kwargs)
-            #print(json.dumps(kwargs['immDict']['orgs'], indent=4))
             orgs = list(kwargs['immDict']['orgs'].keys())
     else:
+        #==============================================
+        # Run through the Wizard
+        #==============================================
         kwargs = prompt_main_menu(**kwargs)
         kwargs = prompt_org(**kwargs)
-        kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{}}))
+        kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{'intersight':{}}}))
+        kwargs = prompt_previous_configurations(**kwargs)
         kwargs = process_wizard(**kwargs)
         orgs = list(kwargs['immDict']['orgs'].keys())
+    #==============================================
+    # Merge Repostiroy and Create YAML Files
+    #==============================================
     classes.ezfunctions.merge_easy_imm_repository(orgs, **kwargs)
     classes.ezfunctions.create_yaml(orgs, **kwargs)
+    #==============================================
+    # Create Terraform Config and Workspaces
+    #==============================================
     kwargs = classes.ezfunctions.terraform_provider_config(**kwargs)
     kwargs = create_terraform_workspaces(orgs, **kwargs)
+    #==============================================
+    # Check Existence of Intersight Orgs
+    #==============================================
     for org in orgs:
         kwargs['org'] = org
         intersight_org_check(**kwargs)

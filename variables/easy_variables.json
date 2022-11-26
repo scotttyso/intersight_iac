@@ -349,33 +349,6 @@
                                     "virtual_kvm"
                                 ]
                             },
-                            "class.port": {
-                                "enum": [
-                                    "port"
-                                ]
-                            },
-                            "class.san_connectivity": {
-                                "enum": [
-                                    "san_connectivity"
-                                ]
-                            },
-                            "class.storage": {
-                                "enum": [
-                                    "sd_card",
-                                    "storage"
-                                ]
-                            },
-                            "class.vlan": {
-                                "enum": [
-                                    "multicast",
-                                    "vlan"
-                                ]
-                            },
-                            "class.vsan": {
-                                "enum": [
-                                    "vsan"
-                                ]
-                            },
                             "class.policies": {
                                 "directory": "policies",
                                 "enum": [
@@ -399,6 +372,11 @@
                                     "pools"
                                 ]
                             },
+                            "class.port": {
+                                "enum": [
+                                    "port"
+                                ]
+                            },
                             "class.profiles": {
                                 "directory": "profiles",
                                 "enum": [
@@ -407,10 +385,32 @@
                                     "server"
                                 ]
                             },
+                            "class.san_connectivity": {
+                                "enum": [
+                                    "san_connectivity"
+                                ]
+                            },
+                            "class.storage": {
+                                "enum": [
+                                    "sd_card",
+                                    "storage"
+                                ]
+                            },
                             "class.templates": {
                                 "directory": "templates",
                                 "enum": [
                                     "server"
+                                ]
+                            },
+                            "class.vlan": {
+                                "enum": [
+                                    "multicast",
+                                    "vlan"
+                                ]
+                            },
+                            "class.vsan": {
+                                "enum": [
+                                    "vsan"
                                 ]
                             },
                             "intersightEndpoint": {
@@ -428,25 +428,25 @@
                                 "description": "List of LAN, SAN, VLAN, and VSAN Policies.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "ethernet_adapter_policies",
-                                    "ethernet_network_control_policies",
-                                    "ethernet_network_group_policies",
-                                    "ethernet_network_policies",
-                                    "ethernet_qos_policies",
-                                    "fibre_channel_adapter_policies",
-                                    "fibre_channel_network_policies",
-                                    "fibre_channel_qos_policies",
-                                    "flow_control_policies",
-                                    "iscsi_adapter_policies",
-                                    "iscsi_boot_policies",
-                                    "iscsi_static_target_policies",
-                                    "lan_connectivity_policies",
-                                    "link_aggregation_policies",
-                                    "link_control_policies",
-                                    "multicast_policies",
-                                    "san_connectivity_policies",
-                                    "vlan_policies",
-                                    "vsan_policies"
+                                    "ethernet_adapter",
+                                    "ethernet_network_control",
+                                    "ethernet_network_group",
+                                    "ethernet_network",
+                                    "ethernet_qos",
+                                    "fibre_channel_adapter",
+                                    "fibre_channel_network",
+                                    "fibre_channel_qos",
+                                    "flow_control",
+                                    "iscsi_adapter",
+                                    "iscsi_boot",
+                                    "iscsi_static_target",
+                                    "lan_connectivity",
+                                    "link_aggregation",
+                                    "link_control",
+                                    "multicast",
+                                    "san_connectivity",
+                                    "vlan",
+                                    "vsan"
                                 ],
                                 "x-omitempty": true
                             },
@@ -454,10 +454,10 @@
                                 "description": "List of Chassis Policies.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "imc_access_policies",
-                                    "power_policies",
-                                    "thermal_policies",
-                                    "ucs_chassis_profiles"
+                                    "imc_access",
+                                    "power",
+                                    "thermal",
+                                    "ucs_chassis"
                                 ],
                                 "x-omitempty": true
                             },
@@ -465,20 +465,20 @@
                                 "description": "List of Domain Policies and Profiles.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "multicast_policies",
-                                    "vlan_policies",
-                                    "vsan_policies",
-                                    "flow_control_policies",
-                                    "link_aggregation_policies",
-                                    "link_control_policies",
-                                    "port_policies",
-                                    "network_connectivity_policies",
-                                    "ntp_policies",
-                                    "syslog_policies",
-                                    "snmp_policies",
-                                    "system_qos_policies",
-                                    "switch_control_policies",
-                                    "ucs_domain_profiles"
+                                    "multicast",
+                                    "vlan",
+                                    "vsan",
+                                    "flow_control",
+                                    "link_aggregation",
+                                    "link_control",
+                                    "port",
+                                    "network_connectivity",
+                                    "ntp",
+                                    "syslog",
+                                    "snmp",
+                                    "system_qos",
+                                    "switch_control",
+                                    "ucs_domain"
                                 ],
                                 "x-omitempty": true
                             },
@@ -486,31 +486,31 @@
                                 "description": "List of FIAttached Policies and Profiles.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "bios_policies",
-                                    "boot_order_policies",
-                                    "virtual_media_policies",
-                                    "certificate_management_policies",
-                                    "imc_access_policies",
-                                    "ipmi_over_lan_policies",
-                                    "local_user_policies",
-                                    "serial_over_lan_policies",
-                                    "virtual_kvm_policies",
-                                    "sd_card_policies",
-                                    "storage_policies",
-                                    "ethernet_adapter_policies",
-                                    "ethernet_network_control_policies",
-                                    "ethernet_network_group_policies",
-                                    "ethernet_qos_policies",
-                                    "iscsi_adapter_policies",
-                                    "iscsi_boot_policies",
-                                    "iscsi_static_target_policies",
-                                    "fibre_channel_adapter_policies",
-                                    "fibre_channel_network_policies",
-                                    "fibre_channel_qos_policies",
-                                    "san_connectivity_policies",
-                                    "lan_connectivity_policies",
-                                    "ucs_server_template_profiles",
-                                    "ucs_server_profiles"
+                                    "bios",
+                                    "boot_order",
+                                    "virtual_media",
+                                    "certificate_management",
+                                    "imc_access",
+                                    "ipmi_over_lan",
+                                    "local_user",
+                                    "serial_over_lan",
+                                    "virtual_kvm",
+                                    "sd_card",
+                                    "storage",
+                                    "ethernet_adapter",
+                                    "ethernet_network_control",
+                                    "ethernet_network_group",
+                                    "ethernet_qos",
+                                    "iscsi_adapter",
+                                    "iscsi_boot",
+                                    "iscsi_static_target",
+                                    "fibre_channel_adapter",
+                                    "fibre_channel_network",
+                                    "fibre_channel_qos",
+                                    "san_connectivity",
+                                    "lan_connectivity",
+                                    "ucs_server_template",
+                                    "ucs_server"
                                 ],
                                 "x-omitempty": true
                             },
@@ -532,62 +532,62 @@
                                 "description": "List of Policies.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "adapter_configuration_policies",
-                                    "bios_policies",
-                                    "boot_order_policies",
-                                    "certificate_management_policies",
-                                    "device_connector_policies",
-                                    "ethernet_adapter_policies",
-                                    "ethernet_network_control_policies",
-                                    "ethernet_network_group_policies",
-                                    "ethernet_network_policies",
-                                    "ethernet_qos_policies",
-                                    "fibre_channel_adapter_policies",
-                                    "fibre_channel_network_policies",
-                                    "fibre_channel_qos_policies",
-                                    "flow_control_policies",
-                                    "imc_access_policies",
-                                    "ipmi_over_lan_policies",
-                                    "iscsi_adapter_policies",
-                                    "iscsi_boot_policies",
-                                    "iscsi_static_target_policies",
-                                    "lan_connectivity_policies",
-                                    "ldap_policies",
-                                    "link_aggregation_policies",
-                                    "link_control_policies",
-                                    "local_user_policies",
-                                    "multicast_policies",
-                                    "network_connectivity_policies",
-                                    "ntp_policies",
-                                    "persistent_memory_policies",
-                                    "port_policies",
-                                    "power_policies",
-                                    "san_connectivity_policies",
-                                    "sd_card_policies",
-                                    "serial_over_lan_policies",
-                                    "smtp_policies",
-                                    "snmp_policies",
-                                    "ssh_policies",
-                                    "storage_policies",
-                                    "switch_control_policies",
-                                    "syslog_policies",
-                                    "system_qos_policies",
-                                    "thermal_policies",
-                                    "virtual_kvm_policies",
-                                    "virtual_media_policies",
-                                    "vlan_policies",
-                                    "vsan_policies"
+                                    "adapter_configuration",
+                                    "bios",
+                                    "boot_order",
+                                    "certificate_management",
+                                    "device_connector",
+                                    "ethernet_adapter",
+                                    "ethernet_network_control",
+                                    "ethernet_network_group",
+                                    "ethernet_network",
+                                    "ethernet_qos",
+                                    "fibre_channel_adapter",
+                                    "fibre_channel_network",
+                                    "fibre_channel_qos",
+                                    "flow_control",
+                                    "imc_access",
+                                    "ipmi_over_lan",
+                                    "iscsi_adapter",
+                                    "iscsi_boot",
+                                    "iscsi_static_target",
+                                    "lan_connectivity",
+                                    "ldap",
+                                    "link_aggregation",
+                                    "link_control",
+                                    "local_user",
+                                    "multicast",
+                                    "network_connectivity",
+                                    "ntp",
+                                    "persistent_memory",
+                                    "port",
+                                    "power",
+                                    "san_connectivity",
+                                    "sd_card",
+                                    "serial_over_lan",
+                                    "smtp",
+                                    "snmp",
+                                    "ssh",
+                                    "storage",
+                                    "switch_control",
+                                    "syslog",
+                                    "system_qos",
+                                    "thermal",
+                                    "virtual_kvm",
+                                    "virtual_media",
+                                    "vlan",
+                                    "vsan"
                                 ],
                                 "x-omitempty": true
                             },
                             "list_profiles": {
-                                "description": "List of Pools.",
+                                "description": "List of Profiles.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "ucs_chassis_profiles",
-                                    "ucs_domain_profiles",
-                                    "ucs_server_profile_templates",
-                                    "ucs_server_profiles"
+                                    "ucs_chassis",
+                                    "ucs_domain",
+                                    "ucs_server",
+                                    "ucs_server_profile_templates"
                                 ],
                                 "x-omitempty": true
                             },
@@ -595,37 +595,37 @@
                                 "description": "List of Standalone Policies and Profiles.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "bios_policies",
-                                    "boot_order_policies",
-                                    "persistent_memory_policies",
-                                    "virtual_media_policies",
-                                    "device_connector_policies",
-                                    "ipmi_over_lan_policies",
-                                    "ldap_policies",
-                                    "local_user_policies",
-                                    "network_connectivity_policies",
-                                    "ntp_policies",
-                                    "serial_over_lan_policies",
-                                    "smtp_policies",
-                                    "snmp_policies",
-                                    "ssh_policies",
-                                    "syslog_policies",
-                                    "virtual_kvm_policies",
-                                    "sd_card_policies",
-                                    "storage_policies",
-                                    "adapter_configuration_policies",
-                                    "ethernet_adapter_policies",
-                                    "ethernet_network_control_policies",
-                                    "ethernet_network_policies",
-                                    "ethernet_qos_policies",
-                                    "iscsi_adapter_policies",
-                                    "iscsi_boot_policies",
-                                    "iscsi_static_target_policies",
-                                    "fibre_channel_adapter_policies",
-                                    "fibre_channel_network_policies",
-                                    "fibre_channel_qos_policies",
-                                    "san_connectivity_policies",
-                                    "lan_connectivity_policies",
+                                    "bios",
+                                    "boot_order",
+                                    "persistent_memory",
+                                    "virtual_media",
+                                    "device_connector",
+                                    "ipmi_over_lan",
+                                    "ldap",
+                                    "local_user",
+                                    "network_connectivity",
+                                    "ntp",
+                                    "serial_over_lan",
+                                    "smtp",
+                                    "snmp",
+                                    "ssh",
+                                    "syslog",
+                                    "virtual_kvm",
+                                    "sd_card",
+                                    "storage",
+                                    "adapter_configuration",
+                                    "ethernet_adapter",
+                                    "ethernet_network_control",
+                                    "ethernet_network",
+                                    "ethernet_qos",
+                                    "iscsi_adapter",
+                                    "iscsi_boot",
+                                    "iscsi_static_target",
+                                    "fibre_channel_adapter",
+                                    "fibre_channel_network",
+                                    "fibre_channel_qos",
+                                    "san_connectivity",
+                                    "lan_connectivity",
                                     "ucs_server_template_profiles",
                                     "ucs_server_profiles"
                                 ],
@@ -635,61 +635,30 @@
                                 "description": "List of Policies.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "adapter_configuration_policies",
-                                    "bios_policies",
-                                    "boot_order_policies",
-                                    "certificate_management_policies",
-                                    "device_connector_policies",
-                                    "imc_access_policies",
-                                    "ipmi_over_lan_policies",
-                                    "ldap_policies",
-                                    "local_user_policies",
-                                    "multicast_policies",
-                                    "network_connectivity_policies",
-                                    "ntp_policies",
-                                    "persistent_memory_policies",
-                                    "port_policies",
-                                    "sd_card_policies",
-                                    "serial_over_lan_policies",
-                                    "smtp_policies",
-                                    "snmp_policies",
-                                    "ssh_policies",
-                                    "storage_policies",
-                                    "syslog_policies",
-                                    "virtual_kvm_policies",
-                                    "virtual_media_policies"
-                                ],
-                                "x-omitempty": true
-                            },
-                            "p2_list": {
-                                "description": "List of Pools.",
-                                "type": "list_of_values",
-                                "enum": [
-                                    "local_user_policies",
-                                    "network_connectivity_policies",
-                                    "ntp_policies",
-                                    "persistent_memory_policies",
-                                    "port_policies"
-                                ],
-                                "x-omitempty": true
-                            },
-                            "p3_list": {
-                                "description": "List of Pools.",
-                                "type": "list_of_values",
-                                "enum": [
-                                    "power_policies",
-                                    "sd_card_policies",
-                                    "serial_over_lan_policies",
-                                    "smtp_policies",
-                                    "snmp_policies",
-                                    "ssh_policies",
-                                    "storage_policies",
-                                    "switch_control_policies",
-                                    "syslog_policies",
-                                    "system_qos_policies",
-                                    "thermal_policies",
-                                    "virtual_kvm_policies",
-                                    "virtual_media_policies"
+                                    "adapter_configuration",
+                                    "bios",
+                                    "boot_order",
+                                    "certificate_management",
+                                    "device_connector",
+                                    "imc_access",
+                                    "ipmi_over_lan",
+                                    "ldap",
+                                    "local_user",
+                                    "multicast",
+                                    "network_connectivity",
+                                    "ntp",
+                                    "persistent_memory",
+                                    "port",
+                                    "sd_card",
+                                    "serial_over_lan",
+                                    "smtp",
+                                    "snmp",
+                                    "ssh",
+                                    "storage",
+                                    "syslog",
+                                    "thermal",
+                                    "virtual_kvm",
+                                    "virtual_media"
                                 ],
                                 "x-omitempty": true
                             },
@@ -841,20 +810,14 @@
                                             "noserverino",
                                             "nounix",
                                             "soft",
-                                            "vers=2.0",
-                                            "vers=3.0"
+                                            "vers"
                                         ],
                                         "default": ""
                                     },
                                     "http.mountOptions": {
                                         "description": "Mount Options you would like to assign to the Mapping Policy.",
                                         "enum":[
-                                            "guest",
-                                            "noserverino",
-                                            "nounix",
-                                            "soft",
-                                            "vers=2.0",
-                                            "vers=3.0"
+                                            "noauto"
                                         ],
                                         "default": ""
                                     },
@@ -871,10 +834,33 @@
                                             "soft",
                                             "timeou",
                                             "wsize",
-                                            "vers=4.0",
-                                            "vers=3.0"
+                                            "vers"
                                         ],
                                         "default": ""
+                                    },
+                                    "nfs.Port": {
+                                        "description": "NFS Port.",
+                                        "maximum":65535,
+                                        "minimum":1,
+                                        "default": 2049
+                                    },
+                                    "nfs.Retry": {
+                                        "description": "NFS Retry Count.",
+                                        "maximum":65535,
+                                        "minimum":1,
+                                        "default": 2
+                                    },
+                                    "nfs.Size": {
+                                        "description": "NFS Size.",
+                                        "maximum":1048576,
+                                        "minimum":1024,
+                                        "default": 1024
+                                    },
+                                    "nfs.Timeout": {
+                                        "description": "NFS Timeout.",
+                                        "maximum":600,
+                                        "minimum":60,
+                                        "default": 600
                                     }
                                 },
                                 "vnic.EthNetworkPolicy":{
@@ -1018,98 +1004,6 @@
                                 }
                             },
                             "wizard":{
-                                "files":{
-                                    "description": "Files to Pull down from the Easy IMM Project.",
-                                    "policies": [
-                                        "README.md",
-                                        "adapter_configuration_policies.tf",
-                                        "bios_policies.tf",
-                                        "boot_order_policies.tf",
-                                        "certificate_management_policies.tf",
-                                        "data_sources.tf",
-                                        "device_connector_policies.tf",
-                                        "ethernet_adapter_policies.tf",
-                                        "ethernet_network_control_policies.tf",
-                                        "ethernet_network_group_policies.tf",
-                                        "ethernet_network_policies.tf",
-                                        "ethernet_qos_policies.tf",
-                                        "fc_zone_policies.tf",
-                                        "fibre_channel_adapter_policies.tf",
-                                        "fibre_channel_network_policies.tf",
-                                        "fibre_channel_qos_policies.tf",
-                                        "flow_control_policies.tf",
-                                        "imc_access_policies.tf",
-                                        "ipmi_over_lan_policies.tf",
-                                        "iscsi_adapter_policies.tf",
-                                        "iscsi_boot_policies.tf",
-                                        "iscsi_static_target_policies.tf",
-                                        "lan_connectivity_policies.tf",
-                                        "ldap_policies.tf",
-                                        "link_aggregation_policies.tf",
-                                        "link_control_policies.tf",
-                                        "local_user_policies.tf",
-                                        "locals.tf",
-                                        "multicast_policies.tf",
-                                        "network_connectivity_policies.tf",
-                                        "ntp_policies.tf",
-                                        "output.tf",
-                                        "persistent_memory_policies.tf",
-                                        "port_policies.tf",
-                                        "power_policies.tf",
-                                        "provider.tf",
-                                        "san_connectivity_policies.tf",
-                                        "sd_card_policies.tf",
-                                        "serial_over_lan_policies.tf",
-                                        "smtp_policies.tf",
-                                        "snmp_policies.tf",
-                                        "ssh_policies.tf",
-                                        "storage_policies.tf",
-                                        "switch_control_policies.tf",
-                                        "syslog_policies.tf",
-                                        "system_qos_policies.tf",
-                                        "thermal_policies.tf",
-                                        "variables.tf",
-                                        "virtual_kvm_policies.tf",
-                                        "virtual_media_policies.tf",
-                                        "vlan_policies.tf",
-                                        "vsan_policies.tf"
-                                    ],
-                                    "pools": [
-                                        "README.md",
-                                        "data_sources.tf",
-                                        "ip_pools.tf",
-                                        "iqn_pools.tf",
-                                        "locals.tf",
-                                        "mac_pools.tf",
-                                        "resource_pools.tf",
-                                        "uuid_pools.tf",
-                                        "wwnn_pools.tf",
-                                        "wwpn_pools.tf",
-                                        "outputs.tf",
-                                        "provider.tf",
-                                        "variables.tf"
-                                    ],
-                                    "profiles": [
-                                        "README.md",
-                                        "data_sources.tf",
-                                        "locals.tf",
-                                        "output.tf",
-                                        "provider.tf",
-                                        "ucs_chassis_profiles.tf",
-                                        "ucs_server_profile_templates.tf",
-                                        "ucs_server_profiles.tf",
-                                        "variables.tf"
-                                    ],
-                                    "ucs_domain_profiles": [
-                                        "README.md",
-                                        "data_sources.tf",
-                                        "locals.tf",
-                                        "outputs.tf",
-                                        "provider.tf",
-                                        "ucs_domain_profiles.tf",
-                                        "variables.tf"
-                                    ]
-                                },
                                 "Individual":{
                                     "description": "Select what type to Deploy:",
                                     "enum": [
@@ -1138,74 +1032,74 @@
                                 "Policies":{
                                     "description": "Select what type to Deploy:",
                                     "enum": [
-                                        "Adapter Configuration Policies",
-                                        "BIOS Policies",
-                                        "Boot Order Policies",
-                                        "Certificate Management Policies",
-                                        "Device Connector Policies",
-                                        "Ethernet Adapter Policies",
-                                        "Ethernet Network Policies",
-                                        "Ethernet Network Control Policies",
-                                        "Ethernet Network Group Policies",
-                                        "Ethernet QoS Policies",
-                                        "Fibre-Channel Adapter Policies",
-                                        "Fibre-Channel Network Policies",
-                                        "Fibre-Channel QoS Policies",
-                                        "Flow Control Policies",
-                                        "IMC Access Policies",
-                                        "IPMI over LAN Policies",
-                                        "iSCSI Adapter Policies",
-                                        "iSCSI Boot Policies",
-                                        "iSCSI Static Target Policies",
-                                        "LAN Connectivity Policies",
-                                        "LDAP Policies",
-                                        "Link Aggregation Policies",
-                                        "Link Control Policies",
-                                        "Local User Policies",
-                                        "Multicast Policies",
-                                        "Network Connectivity Policies",
-                                        "NTP Policies",
-                                        "Persistent Memory Policies",
-                                        "Port Policies",
-                                        "Power Policies",
-                                        "SAN Connectivity Policies",
-                                        "SD Card Policies",
-                                        "Serial over LAN Policies",
-                                        "SMTP Policies",
-                                        "SNMP Policies",
-                                        "SSH Policies",
-                                        "Storage Policies",
-                                        "Switch Control Policies",
-                                        "Syslog Policies",
-                                        "Thermal Policies",
-                                        "Virtual KVM Policies",
-                                        "Virtual Media Policies",
-                                        "VLAN Policies",
-                                        "VSAN Policies"
+                                        "Adapter Configuration",
+                                        "BIOS",
+                                        "Boot Order",
+                                        "Certificate Management",
+                                        "Device Connector",
+                                        "Ethernet Adapter",
+                                        "Ethernet Network",
+                                        "Ethernet Network Control",
+                                        "Ethernet Network Group",
+                                        "Ethernet QoS",
+                                        "Fibre-Channel Adapter",
+                                        "Fibre-Channel Network",
+                                        "Fibre-Channel QoS",
+                                        "Flow Control",
+                                        "IMC Access",
+                                        "IPMI over LAN",
+                                        "iSCSI Adapter",
+                                        "iSCSI Boot",
+                                        "iSCSI Static Target",
+                                        "LAN Connectivity",
+                                        "LDAP",
+                                        "Link Aggregation",
+                                        "Link Control",
+                                        "Local User",
+                                        "Multicast",
+                                        "Network Connectivity",
+                                        "NTP",
+                                        "Persistent Memory",
+                                        "Port",
+                                        "Power",
+                                        "SAN Connectivity",
+                                        "SD Card",
+                                        "Serial over LAN",
+                                        "SMTP",
+                                        "SNMP",
+                                        "SSH",
+                                        "Storage",
+                                        "Switch Control",
+                                        "Syslog",
+                                        "Thermal",
+                                        "Virtual KVM",
+                                        "Virtual Media",
+                                        "VLAN",
+                                        "VSAN"
                                     ],
-                                    "default":"Adapter Configuration Policies"
+                                    "default":"Adapter Configuration"
                                 },
                                 "Pools":{
                                     "description": "Select what type to Deploy:",
                                     "enum": [
-                                        "IP Pools",
-                                        "IQN Pools",
-                                        "MAC Pools",
-                                        "UUID Pools",
-                                        "WWNN Pools",
-                                        "WWPN Pools"
+                                        "IP",
+                                        "IQN",
+                                        "MAC",
+                                        "UUID",
+                                        "WWNN",
+                                        "WWPN"
                                     ],
-                                    "default":"IP Pools"
+                                    "default":"IP"
                                 },
                                 "Profiles":{
                                     "description": "Select what type to Deploy:",
                                     "enum": [
-                                        "UCS Chassis Profiles",
-                                        "UCS Domain Profiles",
-                                        "UCS Server Profiles",
+                                        "UCS Chassis",
+                                        "UCS Domain",
+                                        "UCS Server",
                                         "UCS Server Profile Templates"
                                     ],
-                                    "default":"UCS Server Profiles"
+                                    "default":"UCS Server"
                                 }
                             }
                         

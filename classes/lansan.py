@@ -20,7 +20,7 @@ class policies(object):
     #==============================================
     # Ethernet Adapter Policy Module
     #==============================================
-    def ethernet_adapter_policies(self, **kwargs):
+    def ethernet_adapter(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -79,7 +79,7 @@ class policies(object):
     #==============================================
     # Ethernet Network Control Policy Module
     #==============================================
-    def ethernet_network_control_policies(self, **kwargs):
+    def ethernet_network_control(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -163,7 +163,7 @@ class policies(object):
     #==============================================
     # Ethernet Network Group Policy Module
     #==============================================
-    def ethernet_network_group_policies(self, **kwargs):
+    def ethernet_network_group(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         name_prefix    = self.name_prefix
@@ -204,11 +204,13 @@ class policies(object):
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 polVars['action_on_uplink_fail'] = 'linkDown'
+                kwargs['name_prefix'] = name_prefix
+                kwargs['name']        = polVars['name']
                 kwargs['policy'] = 'policies.vlan.vlan_policy'
                 kwargs['allow_opt_out'] = False
                 kwargs = policy_select_loop(**kwargs)
                 vlan_list = []
-                for item in kwargs['immDict']['orgs'][org]['vlan']:
+                for item in kwargs['immDict']['orgs'][org]['intersight']['policies']['vlan']:
                     if item['name'] == kwargs['vlan_policy']:
                         for i in item['vlans']:
                             vlan_list.append(i['vlan_list'])
@@ -216,7 +218,7 @@ class policies(object):
                 vlan_policy_list = ezfunctions.vlan_list_full(all_vlans)
                 valid = False
                 while valid == False:
-                    VlanList = input('Enter the VLAN or List of VLANs to add to this VLAN Group: ')
+                    VlanList = input('Enter the VLAN or List of VLANs to add to {}: '.format(polVars['name']))
                     if not VlanList == '':
                         vlanListExpanded = ezfunctions.vlan_list_full(VlanList)
                         valid_vlan = True
@@ -240,6 +242,7 @@ class policies(object):
                             print(f'  - Has VLANs: "{all_vlans}"')
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             valid_vlan = False
+                        else: valid = True
                     else:
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  The allowed vlan list can be in the format of:')
@@ -277,7 +280,7 @@ class policies(object):
     #==============================================
     # Ethernet Network Policy Module
     #==============================================
-    def ethernet_network_policies(self, **kwargs):
+    def ethernet_network(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -345,7 +348,7 @@ class policies(object):
     #==============================================
     # Ethernet QoS Policy Module
     #==============================================
-    def ethernet_qos_policies(self, **kwargs):
+    def ethernet_qos(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -481,7 +484,7 @@ class policies(object):
     #==============================================
     # Fibre-Channel Adapter Policy Module
     #==============================================
-    def fibre_channel_adapter_policies(self, **kwargs):
+    def fibre_channel_adapter(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -543,7 +546,7 @@ class policies(object):
     #==============================================
     # Fibre-Channel Network Policy Module
     #==============================================
-    def fibre_channel_network_policies(self, **kwargs):
+    def fibre_channel_network(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -637,7 +640,7 @@ class policies(object):
     #==============================================
     # Fibre-Channel QoS Policy Module
     #==============================================
-    def fibre_channel_qos_policies(self, **kwargs):
+    def fibre_channel_qos(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         name_prefix    = self.name_prefix
@@ -690,7 +693,7 @@ class policies(object):
     #==============================================
     # Flow Control Policy Module
     #==============================================
-    def flow_control_policies(self, **kwargs):
+    def flow_control(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         name_prefix    = self.name_prefix
@@ -739,7 +742,7 @@ class policies(object):
     #==============================================
     # iSCSI Adapter Policy Module
     #==============================================
-    def iscsi_adapter_policies(self, **kwargs):
+    def iscsi_adapter(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -817,7 +820,7 @@ class policies(object):
     #==============================================
     # iSCSI Boot Policy Module
     #==============================================
-    def iscsi_boot_policies(self, **kwargs):
+    def iscsi_boot(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -988,7 +991,7 @@ class policies(object):
     #==============================================
     # iSCSI Static Target Policy Module
     #==============================================
-    def iscsi_static_target_policies(self, **kwargs):
+    def iscsi_static_target(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -1081,7 +1084,7 @@ class policies(object):
     #==============================================
     # Multicast Policy Module
     #==============================================
-    def multicast_policies(self, **kwargs):
+    def multicast(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -1147,7 +1150,7 @@ class policies(object):
     #==============================================
     # LAN Connectivity Policy Module
     #==============================================
-    def lan_connectivity_policies(self, **kwargs):
+    def lan_connectivity(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -1483,7 +1486,7 @@ class policies(object):
     #==============================================
     # Link Aggregation Policy Module
     #==============================================
-    def link_aggregation_policies(self, **kwargs):
+    def link_aggregation(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         name_prefix    = self.name_prefix
@@ -1532,7 +1535,7 @@ class policies(object):
     #==============================================
     # Link Control Policy Module
     #==============================================
-    def link_control_policies(self, **kwargs):
+    def link_control(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         name_prefix    = self.name_prefix
@@ -1582,7 +1585,7 @@ class policies(object):
     #==============================================
     # SAN Connectivity Policy Module
     #==============================================
-    def san_connectivity_policies(self, **kwargs):
+    def san_connectivity(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -1805,7 +1808,7 @@ class policies(object):
     #==============================================
     # Switch Control Policy Module
     #==============================================
-    def switch_control_policies(self, **kwargs):
+    def switch_control(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -1871,7 +1874,7 @@ class policies(object):
     #==============================================
     # System QoS Policy Module
     #==============================================
-    def system_qos_policies(self, **kwargs):
+    def system_qos(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -1960,7 +1963,7 @@ class policies(object):
     #==============================================
     # VLAN Policy Module
     #==============================================
-    def vlan_policies(self, **kwargs):
+    def vlan(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         name_prefix    = self.name_prefix
@@ -1978,7 +1981,7 @@ class policies(object):
             print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
             print(f'     1-10,20-30 - Ranges and Lists of VLANs')
             print(f'  When configuring a VLAN List or Range the name will be used as a prefix in the format of:')
-            print(f'     {name}-vlXXXX')
+            print('     {name}-vlXXXX')
             print(f'  Where XXXX would be 0001 for vlan 1, 0100 for vlan 100, and 4094 for vlan 4094.')
             print(f'  If you want to Assign a Native VLAN Make sure it is in the vlan list for this wizard.')
             print(f'  IMPORTANT NOTE: You can only have one Native VLAN for the Fabric at this time,')
@@ -2008,11 +2011,13 @@ class policies(object):
                             valid_name = False
                             while valid_name == False:
                                 if len(vlan_list_expanded) == 1:
-                                    vlan_name = '%s' % (input(f'Enter the Name you want to assign to "{vlan_list}": '))
-                                    valid_name = validating.name_rule('VLAN Name', vlan_name, 1, 62)
+                                    vlan_name = '%s' % (input(f'Enter the Name you want to assign to "{vlan_list}".  [{org}]: '))
+                                    max = 62
                                 else:
-                                    vlan_name = '%s' % (input(f'Enter the Prefix Name you want to assign to "{vlan_list}": '))
-                                    valid_name = validating.name_rule('VLAN Name', vlan_name, 1, 55)
+                                    vlan_name = '%s' % (input(f'Enter the Prefix Name you want to assign to "{vlan_list}".  [{org}]: '))
+                                    max = 55
+                                if vlan_name == '': vlan_name = org
+                                valid_name = validating.name_rule('VLAN Name', vlan_name, 1, max)
                             nativeVlan = input('Do you want to configure one of the VLANs as a Native VLAN? [press enter to skip]:')
                         if not nativeVlan == '' and valid_vlan == True:
                             native_vlan = ezfunctions.vlan_native_function(vlan_list_expanded, vlan_list)
@@ -2021,6 +2026,7 @@ class policies(object):
                                 if native_name == '': native_name = 'default'
                                 valid_name = validating.name_rule('VLAN Name', vlan_name, 1, 62)
                             valid = True
+                        else: native_vlan = ''; valid = True
                     else:
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  The allowed vlan list can be in the format of:')
@@ -2029,27 +2035,26 @@ class policies(object):
                         print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
                         print(f'     1-10,20-30 - Ranges and Lists of VLANs')
                         print(f'\n-------------------------------------------------------------------------------------------\n')
-                    if not native_vlan == '':
-                        vlan_list_expanded.remove(int(native_vlan))
+                if not native_vlan == '':
+                    vlan_list_expanded.remove(int(native_vlan))
                 vlan_list = ezfunctions.vlan_list_format(vlan_list_expanded)
+                kwargs['name'] = polVars['name']
                 kwargs['policy'] = 'policies.multicast.multicast_policy'
                 kwargs['allow_opt_out'] = False
                 kwargs = policy_select_loop(**kwargs)
-                polVars['vlans']
+                polVars['vlans'] = []
                 if not native_vlan == '' and len(vlan_list) > 1:
                     if int(native_vlan) == 1: auto_native = True
                     else: auto_native = False
                     polVars['vlans'].append({
                         'auto_allow_on_uplinks':auto_native,
-                        'id':native_vlan,
                         'multicast_policy':kwargs['multicast_policy'],
-                        'name':native_name,
-                        'native_vlan':True
+                        'name':native_name, 'native_vlan':True,
+                        'vlan_list':native_vlan
                     })
                 polVars['vlans'].append({
-                        'id':vlan_list,
                         'multicast_policy':kwargs['multicast_policy'],
-                        'name':vlan_name,
+                        'name':vlan_name, 'vlan_list':vlan_list
                 })
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
@@ -2074,7 +2079,7 @@ class policies(object):
     #==============================================
     # VSAN Policy Module
     #==============================================
-    def vsan_policies(self, **kwargs):
+    def vsan(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -2099,31 +2104,35 @@ class policies(object):
                 loop_count = 0
                 policy_loop = False
                 while policy_loop == False:
+                    polVars = {}
+                    kwargs['name_prefix'] = name_prefix
                     name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
-                    kwargs['name'] = ezfunctions.policy_name(name, policy_type)
-                    kwargs['description'] = ezfunctions.policy_descr(kwargs['name'], policy_type)
-                    kwargs['auto_allow_on_uplinks'] = True
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Uplink Trunking: Default is No.')
-                    print(f'     Most deployments do not enable Uplink Trunking for Fibre-Channel. ')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    polVars['name'] = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
+                    polVars['auto_allow_on_uplinks'] = True
                     # Pull Information from the API
+                    kwargs['name'] = polVars['name']
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['fabric.FcNetworkPolicy']['allOf'][1]['properties']
 
                     # Uplink Trunking
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  Uplink Trunking: Default is No.')
+                    print(f'     Most deployments do not enable Uplink Trunking for Fibre-Channel. ')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
                     kwargs['jData'] = deepcopy(jsonVars['EnableTrunking'])
+                    kwargs['jData']['default']  = False
                     kwargs['jData']['varInput'] = f'Do you want to Enable Uplink Trunking for this VSAN Policy?'
                     kwargs['jData']['varName']  = 'Enable Trunking'
                     kwargs['uplink_trunking'] = ezfunctions.varBoolLoop(**kwargs)
-                    kwargs['vsan'] = []
+                    polVars['vsans'] = []
                     vsan_count = 0
                     vsan_loop = False
                     while vsan_loop == False:
                         valid = False
                         while valid == False:
-                            if loop_count % 2 == 0: vsan_id = input(f"Enter the VSAN id to add to {polVars['name']}. [100]: ")
-                            else: vsan_id = input(f"Enter the VSAN id to add to {polVars['name']}. [200]: ")
+                            if loop_count % 2 == 0: vsan_id = input(f"Enter the VSAN id to add to {name}. [100]: ")
+                            else: vsan_id = input(f"Enter the VSAN id to add to {name}. [200]: ")
                             if loop_count % 2 == 0 and vsan_id == '': vsan_id = 100
                             elif vsan_id == '': vsan_id = 200
                             if re.search(r'[0-9]{1,4}', str(vsan_id)):
@@ -2137,11 +2146,11 @@ class policies(object):
                             if re.search(r'[0-9]{1,4}', str(fcoe_id)):
                                 valid_vlan = validating.number_in_range('VSAN ID', fcoe_id, 1, 4094)
                                 if valid_vlan == True:
-                                    kwargs['policy'] = 'policies.vlan_policies.vlan_policy'
+                                    kwargs['policy'] = 'policies.vlan.vlan_policy'
                                     kwargs['allow_opt_out'] = False
                                     kwargs = policy_select_loop(**kwargs)
                                     vlan_list = []
-                                    for item in kwargs['immDict']['orgs'][org]['vlan']:
+                                    for item in kwargs['immDict']['orgs'][org]['intersight']['policies']['vlan']:
                                         if item['name'] == kwargs['vlan_policy']:
                                             for i in item['vlans']:
                                                 vlan_list.append(i['vlan_list'])
@@ -2159,41 +2168,38 @@ class policies(object):
                         # VSAN Name
                         kwargs['jData'] = deepcopy(jsonVars['Name'])
                         kwargs['jData']['default'] = f'vsan-{vsan_id}'
+                        kwargs['jData']['pattern'] = '^[a-zA-Z0-9\\_\\-]{1,62}$'
                         kwargs['jData']['varInput'] = f'What Name would you like to assign to "{vsan_id}"?'
                         kwargs['jData']['varName'] = 'VSAN Name'
                         vsan_name = ezfunctions.varStringLoop(**kwargs)
                         # Assign the VSAN Scope for this List
-                        kwargs['jData'] = deepcopy(jsonVars['Name'])
+                        kwargs['jData'] = deepcopy(jsonVars['VsanScope'])
                         kwargs['jData']['varType'] = 'Vsan Scope'
                         vsan_scope = ezfunctions.variablesFromAPI(**kwargs)
                         vsan = {
                             'fcoe_vlan_id':fcoe_id, 'name':vsan_name,
-                            'id':vsan_id, 'vsan_scope':vsan_scope
+                            'vsan_id':vsan_id, 'vsan_scope':vsan_scope
                         }
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(textwrap.indent(yaml.dump(vsan, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                         print(f'-------------------------------------------------------------------------------------------\n')
                         valid_confirm = False
                         while valid_confirm == False:
+                            pol_type = 'VSAN'
                             confirm_vsan = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                             if confirm_vsan == 'Y' or confirm_vsan == '':
-                                kwargs['vsan'].append(vsan)
+                                polVars['vsans'].append(vsan)
                                 valid_exit = False
                                 while valid_exit == False:
-                                    if vsan_count < 2: configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'Y')
-                                    else: vsan_loop, valid_confirm = ezfunctions.exit_default(policy_type, 'N')
-                                    if vsan_loop == False and valid_confirm == False:
-                                        vsan_count += 1
-                                        valid_confirm = True
-                                        valid_exit = True
-                                    else:
-                                        valid_confirm = True
-                                        valid_exit = True
+                                    valid_exit, vsan_loop = ezfunctions.exit_default(pol_type, 'N')
+                                    if valid_exit == True: vsan_count += 1; valid_confirm = True; valid_exit = True
+                                    else: valid_confirm = True; valid_exit = True
                             elif confirm_vsan == 'N':
-                                ezfunctions.message_starting_over(policy_type)
+                                ezfunctions.message_starting_over(pol_type)
                                 valid_confirm = True
                             else: ezfunctions.message_invalid_y_or_n('short')
 
+                    # Add VSANs to VSAN Policy List
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -2201,11 +2207,6 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            # Add VSANs to VSAN Policy List
-                            polVars = {
-                                'name': kwargs['name'], 'description': kwargs['description'],
-                                'uplink_trunking': kwargs['uplink_trunking'], 'vsan': kwargs['vsan']
-                            }
                             # Add Policy Variables to immDict
                             kwargs['class_path'] = 'intersight,policies,vsan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -2221,9 +2222,13 @@ class policies(object):
         # Return kwargs
         return kwargs
 
+#==============================================
+# Select Policy Function
+#==============================================
 def policy_select_loop(**kwargs):
     ezData = kwargs['ezData']
     policy = kwargs['policy']
+    name   = kwargs['name']
     name_prefix = kwargs['name_prefix']
     org = kwargs['org']
     loop_valid = False
@@ -2234,14 +2239,15 @@ def policy_select_loop(**kwargs):
         kwargs['inner_var']    = policy.split('.')[2]
         inner_policy = kwargs['inner_policy']
         inner_type   = kwargs['inner_type']
+        inner_var    = kwargs['inner_var']
         kwargs = ezfunctions.policies_parse(inner_type, inner_policy, **kwargs)
-        if not len(kwargs['policies']) > 0:
+        if not len(kwargs['policies'][kwargs['inner_policy']]) > 0:
             valid = False
             while valid == False:
+                policy_description = ezfunctions.mod_pol_description(inner_var)
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'   There was no {inner_policy} found.')
+                print(f'   There was no {policy_description} found.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                policy_description = ezfunctions.mod_pol_description(inner_policy)
                 if kwargs['allow_opt_out'] == True:
                     Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
                     if Question == '' or Question == 'Y':
@@ -2255,6 +2261,7 @@ def policy_select_loop(**kwargs):
                     create_policy = True
                     valid = True
         else:
+            kwargs['name'] = name
             kwargs = ezfunctions.choose_policy(inner_policy, **kwargs)
             if kwargs['policy'] == 'create_policy': create_policy = True
             elif kwargs['policy'] == '' and kwargs['allow_opt_out'] == True:
@@ -2275,7 +2282,7 @@ def policy_select_loop(**kwargs):
         # Create Policy if Option was Selected
         if create_policy == True:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Starting module to create {inner_policy} in {org}')
+            print(f'  Starting module to create {policy_description} in Organization {org}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             lansan_list = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
             if re.search('pools$', inner_policy):

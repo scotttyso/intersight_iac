@@ -89,16 +89,16 @@ def choose_policy(policy_type, **kwargs):
     valid = False
     while valid == False:
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        if kwargs.get('optional_message'): print(kwargs["optional_message"])
-        print(f'  {policy_descr} Options:')
+        if kwargs.get('optional_message'): print(kwargs['optional_message'])
+        print(f'  {policy_descr} Policy Options:')
         for i, v in enumerate(policy_list):
             i += 1
             if i < 10: print(f'     {i}. {v}')
             else: print(f'    {i}. {v}')
-        if kwargs["allow_opt_out"] == True: print(f'     99. Do not assign a(n) {policy_descr}.')
+        if kwargs['allow_opt_out'] == True: print(f'     99. Do not assign a(n) {policy_descr}.')
         print(f'     100. Create a New {policy_descr}.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        policyOption = input(f'Select the Option Number for the {policy_descr} to Assign to {kwargs["name"]}: ')
+        policyOption = input(f"Select the Option Number for the {policy_descr} Policy to Assign to {kwargs['name']} Policy: ")
         if re.search(r'^[0-9]{1,3}$', policyOption):
             for i, v in enumerate(policy_list):
                 i += 1
@@ -155,8 +155,6 @@ def create_yaml(orgs, **kwargs):
         wr_file.write(f'#{dash_length}\n')
         wr_file.write(f'#   {title1} - Variables\n')
         wr_file.write(f'#{dash_length}\n')
-        # stream = yaml.dump(dict, default_flow_style=False)
-        # wr_file.write(stream.replace('\n- ', '\n\n- '))
         wr_file.write(yaml.dump(dict, Dumper=MyDumper, default_flow_style=False))
         wr_file.close()
     for org in orgs:
@@ -165,7 +163,7 @@ def create_yaml(orgs, **kwargs):
                 if item == 'policies':
                     dest_dir = ezData[f'class.{item}']['directory']
                     if not os.path.isdir(os.path.join(baseRepo, org, dest_dir)):
-                        dest_path = f'{os.path.join(baseRepo, org)}{path_sep}{dest_dir}'
+                        dest_path = f'{os.path.join(baseRepo, org, dest_dir)}'
                         os.makedirs(dest_path)
                     dest_dir = os.path.join(baseRepo, org, dest_dir)
                     for i in ezData[f'class.{item}']['enum']:
@@ -177,7 +175,8 @@ def create_yaml(orgs, **kwargs):
                                 )
                         dest_file = f"{i}.yaml"
                         title1 = f"{str.title(item)} -> {i}"
-                        write_file(dest_dir, dest_file, idict, title1)
+                        if len(idict['intersight'][item]) > 0:
+                            write_file(dest_dir, dest_file, idict, title1)
                 else:
                     dest_dir = ezData[f'class.{item}']['directory']
                     if not os.path.isdir(os.path.join(baseRepo, org, dest_dir)):
@@ -226,17 +225,19 @@ def exit_loop_default_yes(loop_count, policy_type):
             exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [Y]: ')
         else: exit_answer = input(f'Would You like to Configure another {policy_type}?  Enter "Y" or "N" [N]: ')
         if (loop_count % 2 == 0 and exit_answer == '') or exit_answer == 'Y':
-            policy_loop = False
             configure_loop = False
             loop_count += 1
+            policy_loop = False
             valid_exit = True
         elif not loop_count % 2 == 0 and exit_answer == '':
-            policy_loop = True
             configure_loop = True
+            loop_count += 1
+            policy_loop = True
             valid_exit = True
         elif exit_answer == 'N':
-            policy_loop = True
             configure_loop = True
+            loop_count += 1
+            policy_loop = True
             valid_exit = True
         else: message_invalid_y_or_n('short')
     return configure_loop, loop_count, policy_loop
@@ -347,26 +348,26 @@ def local_users_function(**kwargs):
     kwargs['local_users'] = []
     valid_users = False
     while valid_users == False:
-        kwargs["multi_select"] = False
+        kwargs['multi_select'] = False
         jsonVars = jsonData['iam.EndPointUser']['allOf'][1]['properties']
         #==============================================
         # Prompt User for Local Username
         #==============================================
         kwargs['jData'] = deepcopy(jsonVars['Name'])
-        kwargs['jData']["default"] = 'admin'
-        kwargs['jData']["minimum"] = 1
-        kwargs['jData']["varInput"] = 'What is the Local username?'
-        kwargs['jData']["varName"] = 'Local User'
+        kwargs['jData']['default'] = 'admin'
+        kwargs['jData']['minimum'] = 1
+        kwargs['jData']['varInput'] = 'What is the Local username?'
+        kwargs['jData']['varName'] = 'Local User'
         username = varStringLoop(**kwargs)
         #==============================================
         # Prompt User for User Role
         #==============================================
         jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['iam.LocalUserPasswordPolicy']
         kwargs['jData'] = deepcopy(jsonVars['role'])
-        kwargs['jData']["varType"] = 'User Role'
+        kwargs['jData']['varType'] = 'User Role'
         role = variablesFromAPI(**kwargs)
 
-        if kwargs["enforce_strong_password"] == True:
+        if kwargs['enforce_strong_password'] == True:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print('Enforce Strong Password is enabled.  The following rules must be followed:')
             print('  - The password must have a minimum of 8 and a maximum of 20 characters.')
@@ -425,22 +426,18 @@ def merge_easy_imm_repository(orgs, **kwargs):
     if not os.path.isdir(tfe_dir):
         os.mkdir(tfe_dir)
         Repo.clone_from(git_url, tfe_dir)
-    if not os.path.isfile(os.path.join(tfe_dir, 'README.md')):
-        Repo.clone_from(git_url, tfe_dir)
-    else:
-        g = cmd.Git(tfe_dir)
-        g.pull()
-
+    if not os.path.isfile(os.path.join(tfe_dir, 'README.md')): Repo.clone_from(git_url, tfe_dir)
+    else: g = cmd.Git(tfe_dir); g.pull()
     for org in orgs:
         org_dir = os.path.join(baseRepo, org)
-        if not os.path.isdir(org_dir):
-            os.mkdir(org_dir)
+        if not os.path.isdir(org_dir): os.mkdir(org_dir)
         
         # Now Loop over the folders and merge the module files
         for folder in [org, 'defaults']:
             if folder == 'defaults':
                 dest_dir = os.path.join(baseRepo, org, folder)
                 src_dir = os.path.join(tfe_dir, 'defaults')
+                if not os.path.isdir(dest_dir): os.mkdir(dest_dir)
             else:
                 dest_dir = os.path.join(baseRepo, org)
                 src_dir = os.path.join(tfe_dir)
@@ -541,7 +538,6 @@ def mod_pol_description(pol_description):
     pol_description = pol_description.replace('Wwnn', 'WWNN')
     pol_description = pol_description.replace('Wwpn', 'WWPN')
     pol_description = pol_description.replace('Vsan', 'VSAN')
-
     return pol_description
 
 #======================================================
@@ -625,7 +621,7 @@ def policy_descr(name, policy_type):
     while valid == False:
         descr = input(f'What is the Description for the {policy_type}?  [{name} {policy_type}]: ')
         if descr == '': descr = '%s %s' % (name, policy_type)
-        valid = classes.validating.description(f'{policy_type} polVars["descr"]', descr, 1, 62)
+        valid = classes.validating.description(f"{policy_type} polVars['descr']", descr, 1, 62)
         if valid == True: return descr
 
 #======================================================
@@ -730,7 +726,7 @@ def sensitive_var_value(**kwargs):
         valid = False
         while valid == False:
             if kwargs.get('Multi_Line_Input'):
-                print(f'Enter the value for {kwargs["Variable"]}:')
+                print(f"Enter the value for {kwargs['Variable']}:")
                 lines = []
                 while True:
                     # line = input('')
@@ -742,13 +738,12 @@ def sensitive_var_value(**kwargs):
             else:
                 valid_pass = False
                 while valid_pass == False:
-                    password1 = stdiomask.getpass(prompt=f'Enter the value for {kwargs["Variable"]}: ')
-                    password2 = stdiomask.getpass(prompt=f'Re-Enter the value for {kwargs["Variable"]}: ')
+                    password1 = stdiomask.getpass(prompt=f"Enter the value for {kwargs['Variable']}: ")
+                    password2 = stdiomask.getpass(prompt=f"Re-Enter the value for {kwargs['Variable']}: ")
                     if password1 == password2:
                         secure_value = password1
                         valid_pass = True
                     else: print('!!!Error!!! Sensitive Values did not match.  Please re-enter...')
-
 
             # Validate Sensitive Passwords
             cert_regex = re.compile(r'^\-{5}BEGIN (CERTIFICATE|PRIVATE KEY)\-{5}.*\-{5}END (CERTIFICATE|PRIVATE KEY)\-{5}$')
@@ -839,7 +834,10 @@ def snmp_trap_servers(**kwargs):
     kwargs['snmp_traps'] = []
     valid_traps = False
     while valid_traps == False:
-        kwargs["multi_select"] = False
+        #==============================================
+        # Get API Data
+        #==============================================
+        kwargs['multi_select'] = False
         jsonVars = jsonData['snmp.Trap']['allOf'][1]['properties']
         if len(kwargs['snmp_users']) == 0:
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -847,30 +845,32 @@ def snmp_trap_servers(**kwargs):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             snmp_version = 'V2'
         else:
-            kwargs["Description"] = jsonVars['Version']['description']
-            kwargs["jsonVars"] = sorted(jsonVars['Version']['enum'])
-            kwargs["defaultVar"] = jsonVars['Version']['default']
-            kwargs["varType"] = 'SNMP Version'
+            #==============================================
+            # Prompt User for SNMP Version
+            #==============================================
+            kwargs['jData'] = deepcopy(jsonVars['Version'])
+            kwargs['jData']['varType'] = 'SNMP Version'
             snmp_version = variablesFromAPI(**kwargs)
 
         if snmp_version == 'V2':
             kwargs['Variable'] = f'snmp_community_string_{loop_count}'
             kwargs = sensitive_var_value(**kwargs)
-
-        if snmp_version == 'V3':
-            kwargs["multi_select"] = False
-            kwargs["Description"] = '    Please Select the SNMP User to assign to this Destination:\n'
-            kwargs["var_type"] = 'SNMP User'
+        elif snmp_version == 'V3':
+            #==============================================
+            # Prompt User for SNMP Username
+            #==============================================
+            kwargs['Description'] = '    Please Select the SNMP User to assign to this Destination:\n'
+            kwargs['var_type'] = 'SNMP User'
             snmp_users = []
             for item in kwargs['snmp_users']: snmp_users.append(item['name'])
             snmp_user = vars_from_list(snmp_users, **kwargs)
             snmp_user = snmp_user[0]
 
         if snmp_version == 'V2':
-            kwargs["Description"] = jsonVars['Type']['description']
-            kwargs["jsonVars"] = sorted(jsonVars['Type']['enum'])
-            kwargs["defaultVar"] = jsonVars['Type']['default']
-            kwargs["varType"] = 'SNMP Trap Type'
+            kwargs['Description'] = jsonVars['Type']['description']
+            kwargs['jsonVars'] = sorted(jsonVars['Type']['enum'])
+            kwargs['defaultVar'] = jsonVars['Type']['default']
+            kwargs['varType'] = 'SNMP Trap Type'
             trap_type = variablesFromAPI(**kwargs)
         else: trap_type = 'Trap'
 
@@ -897,7 +897,6 @@ def snmp_trap_servers(**kwargs):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-
         if snmp_version == 'V3':
             snmp_destination = {
                 'destination_address':destination_address, 'enabled':True,
@@ -908,35 +907,21 @@ def snmp_trap_servers(**kwargs):
                 'community':loop_count, 'destination_address':destination_address,
                 'enabled':True, 'port':port, 'trap_type':trap_type, 'version':snmp_version
             }
-
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        if snmp_version == 'V2':
-            print(f'   community_string    = "Sensitive"')
-        print(f'   destination_address = "{destination_address}"')
-        print(f'   enable              = True')
-        print(f'   trap_type           = "{trap_type}"')
-        print(f'   snmp_version        = "{snmp_version}"')
-        if snmp_version == 'V3':
-            print(f'   user                = "{snmp_user}"')
+        print(textwrap.indent(yaml.dump(snmp_destination, Dumper=MyDumper, default_flow_style=False
+        ), ' '*4, predicate=None))
         print(f'\n-------------------------------------------------------------------------------------------\n')
         valid_confirm = False
         while valid_confirm == False:
             confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
             if confirm_v == 'Y' or confirm_v == '':
                 kwargs['snmp_traps'].append(snmp_destination)
+                policy_type = 'SNMP Trap Destination'
                 valid_exit = False
                 while valid_exit == False:
-                    loop_exit = input(f'Would You like to Configure another SNMP Trap Destination?  Enter "Y" or "N" [N]: ')
-                    if loop_exit == 'Y':
-                        loop_count += 1
-                        valid_confirm = True
-                        valid_exit = True
-                    elif loop_exit == 'N' or loop_exit == '':
-                        valid_confirm = True
-                        valid_exit = True
-                        valid_traps = True
-                    else: message_invalid_y_or_n('short')
-
+                    loop_exit, valid_confirm = exit_default(policy_type, 'N')
+                    if loop_exit == 'Y': loop_count += 1; valid_exit = True
+                    elif loop_exit == 'N': valid_exit = True; valid_traps = True
             elif confirm_v == 'N':
                 policy_type = 'SNMP Trap Server'
                 message_starting_over(policy_type)
@@ -953,38 +938,50 @@ def snmp_users(**kwargs):
     kwargs['snmp_users'] = []
     valid_users = False
     while valid_users == False:
-        kwargs["multi_select"] = False
+        kwargs['multi_select'] = False
         jsonVars = jsonData['snmp.User']['allOf'][1]['properties']
         snmpUser = False
         while snmpUser == False:
+            #================================================
+            # Prompt User for SNMP Username
+            #================================================
             kwargs['jData'] = deepcopy(jsonVars['Name'])
-            kwargs['jData']["default"]  = 'snmpadmin'
-            kwargs['jData']["pattern"]  = '^([a-zA-Z]+[a-zA-Z0-9\\-\\_\\.\\@]+)$'
-            kwargs['jData']["varInput"] = 'What is the SNMPv3 Username?'
-            kwargs['jData']["varName"]  = 'SNMP User'
+            kwargs['jData']['default']  = 'snmpadmin'
+            kwargs['jData']['pattern']  = '^([a-zA-Z]+[a-zA-Z0-9\\-\\_\\.\\@]+)$'
+            kwargs['jData']['varInput'] = 'What is the SNMPv3 Username?'
+            kwargs['jData']['varName']  = 'SNMP User'
             snmp_user = varStringLoop(**kwargs)
             if snmp_user == 'admin':
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'\n{"-"*91}\n')
                 print(f'  Error!! Invalid Value.  admin may not be used for the snmp user value.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'\n{"-"*91}\n')
             else: snmpUser = True
+        #================================================
+        # Prompt User for SNMP Security Level
+        #================================================
         kwargs['jData'] = deepcopy(jsonVars['SecurityLevel'])
-        kwargs['jData']["varType"] = 'SNMP Security Level'
+        kwargs['jData']['varType'] = 'SNMP Security Level'
         security_level = variablesFromAPI(**kwargs)
         if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
+            #================================================
+            # Prompt User for SNMP Authentication Type
+            #================================================
             kwargs['jData'] = deepcopy(jsonVars['AuthType'])
-            kwargs['jData']["default"] = 'SHA'
-            kwargs['jData']["popList"] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
-            kwargs['jData']["varType"] = 'SNMP Auth Type'
+            kwargs['jData']['default'] = 'SHA'
+            kwargs['jData']['popList'] = ['NA', 'SHA-224', 'SHA-256', 'SHA-384', 'SHA-512']
+            kwargs['jData']['varType'] = 'SNMP Auth Type'
             auth_type = variablesFromAPI(**kwargs)
         if security_level == 'AuthNoPriv' or security_level == 'AuthPriv':
             kwargs['Variable'] = f'snmp_auth_password_{loop_count}'
             kwargs = sensitive_var_value(**kwargs)
         if security_level == 'AuthPriv':
+            #================================================
+            # Prompt User for SNMP Privacy Type
+            #================================================
             kwargs['jData'] = deepcopy(jsonVars['PrivacyType'])
-            kwargs['jData']["default"] = 'AES'
-            kwargs['jData']["popList"] = ['NA']
-            kwargs['jData']["varType"] = 'SNMP Auth Type'
+            kwargs['jData']['default'] = 'AES'
+            kwargs['jData']['popList'] = ['NA']
+            kwargs['jData']['varType'] = 'SNMP Auth Type'
             privacy_type = variablesFromAPI(**kwargs)
             kwargs['Variable'] = f'snmp_privacy_password_{loop_count}'
             kwargs = sensitive_var_value(**kwargs)
@@ -1003,18 +1000,15 @@ def snmp_users(**kwargs):
             confirm_v = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
             if confirm_v == 'Y' or confirm_v == '':
                 kwargs['snmp_users'].append(snmp_user)
+                policy_type = 'SNMP User'
+                #==============================================
+                # Create Additional Policy or Exit Loop
+                #==============================================
                 valid_exit = False
                 while valid_exit == False:
-                    loop_exit = input(f'Would You like to Configure another SNMP User?  Enter "Y" or "N" [N]: ')
-                    if loop_exit == 'Y':
-                        loop_count += 1
-                        valid_confirm = True
-                        valid_exit = True
-                    elif loop_exit == 'N' or loop_exit == '':
-                        valid_confirm = True
-                        valid_exit = True
-                        valid_users = True
-                    else: message_invalid_y_or_n('short')
+                    loop_exit, valid_confirm = exit_default(policy_type, 'N')
+                    if loop_exit == 'Y': loop_count += 1; valid_exit = True
+                    elif loop_exit == 'N': valid_exit = True; valid_users = True
             elif confirm_v == 'N':
                 policy_type = 'SNMP User'
                 message_starting_over(policy_type)
@@ -1044,64 +1038,58 @@ def stdout_log(sheet, line):
 def syslog_servers(**kwargs):
     jsonData = kwargs['jsonData']
     kwargs['remote_clients'] = []
+    policy_type = 'Syslog Server'
     syslog_count = 1
     syslog_loop = False
     while syslog_loop == False:
-        valid = False
-        while valid == False:
-            hostname = input(f'Enter the Hostname/IP Address of the Remote Server: ')
-            if re.search(r'[a-zA-Z]+', hostname):
-                valid = classes.validating.dns_name('Remote Logging Server', hostname)
-            else: valid = classes.validating.ip_address('Remote Logging Server', hostname)
-
         jsonVars = jsonData['syslog.RemoteClientBase']['allOf'][1]['properties']
+        #================================================
+        # Prompt User for Syslog Server
+        #================================================
+        kwargs['jData'] = deepcopy(jsonVars['Hostname'])
+        kwargs['jData']["pattern"]  = '.*'
+        kwargs['jData']["varInput"] = 'What is the Hostname/IP of the Remote Server?'
+        kwargs['jData']["varName"]  = 'Remote Logging Server'
+        kwargs['jData']['varType']  = 'hostname'
+        hostname = varStringLoop(**kwargs)
+        #================================================
+        # Prompt User for Syslog Minimum Severity
+        #================================================
         kwargs['jData'] = deepcopy(jsonVars['MinSeverity'])
-        kwargs['jData']["varType"] = 'Syslog Remote Minimum Severity'
+        kwargs['jData']['varType'] = 'Syslog Minimum Severity'
         min_severity = variablesFromAPI(**kwargs)
-
+        #================================================
+        # Prompt User for Syslog Protocol
+        #================================================
         kwargs['jData'] = deepcopy(jsonVars['Protocol'])
-        kwargs['jData']["varType"] = 'Syslog Protocol'
+        kwargs['jData']['varType'] = 'Syslog Protocol'
         protocol = variablesFromAPI(**kwargs)
-        valid = False
-        while valid == False:
-            port = input(f'Enter the Port to Assign to this Policy.  Valid Range is 1-65535.  [514]: ')
-            if port == '': port = 514
-            if re.search(r'[0-9]{1,4}', str(port)): valid = classes.validating.number_in_range('Port', port, 1, 65535)
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+        #================================================
+        # Prompt User for LDAP Provider Port
+        #================================================
+        kwargs['jData'] = deepcopy(jsonVars['Port'])
+        kwargs['jData']['varInput'] = f'What is Port for {hostname}?'
+        kwargs['jData']['varName']  = 'LDAP Port'
+        port = varNumberLoop(**kwargs)
         remote_host = {'enable':True, 'hostname':hostname, 'min_severity':min_severity, 'port':port, 'protocol':protocol}
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(textwrap.indent(yaml.dump(remote_host, Dumper=MyDumper, default_flow_style=False
         ), " "*3, predicate=None))
-        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'-------------------------------------------------------------------------------------------\n')
         valid_confirm = False
         while valid_confirm == False:
             confirm_host = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
             if confirm_host == 'Y' or confirm_host == '':
-                if syslog_count == 1:
-                    kwargs['remote_clients'].append({'server1':remote_host})
-                elif syslog_count == 2:
-                    kwargs['remote_clients'].append({'server2':remote_host})
-                    syslog_loop = True
-                    valid_confirm = True
+                kwargs['remote_clients'].append(remote_host)
+                if syslog_count == 2: syslog_loop = True; valid_confirm = True
                 if syslog_count == 1:
                     valid_exit = False
                     while valid_exit == False:
-                        remote_exit = input(f'Would You like to Configure another Remote Host?  Enter "Y" or "N" [Y]: ')
-                        if remote_exit == 'Y' or remote_exit == '':
-                            syslog_count += 1
-                            valid_confirm = True
-                            valid_exit = True
-                        elif remote_exit == 'N':
-                            kwargs['remote_clients'].append({'server2':{}})
-                            syslog_loop = True
-                            valid_confirm = True
-                            valid_exit = True
-                        else: message_invalid_y_or_n('short')
+                        loop_exit, syslog_loop = exit_default(policy_type, 'Y')
+                        print(loop_exit, valid_confirm)
+                        if loop_exit == False: syslog_count += 1; valid_confirm = True; valid_exit = True
+                        elif loop_exit == True: valid_confirm = True; valid_exit = True
             elif confirm_host == 'N':
-                policy_type = 'Syslog Server'
                 message_starting_over(policy_type)
                 valid_confirm = True
             else: message_invalid_y_or_n('long')
@@ -1181,19 +1169,19 @@ def terraform_provider_config(**kwargs):
 # Function - Prompt User for Sensitive Variables
 #======================================================
 def tfc_sensitive_variables(varValue, jsonData, polVars):
-    polVars["Variable"] = varValue
-    if 'ipmi_key' in varValue: polVars["Description"] = 'IPMI over LAN Encryption Key'
-    elif 'iscsi' in varValue: polVars["Description"] = 'iSCSI Boot Password'
-    elif 'local_user' in varValue: polVars["Description"] = 'Local User Password'
-    elif 'access_comm' in varValue: polVars["Description"] = 'SNMP Access Community String'
-    elif 'snmp_auth' in varValue: polVars["Description"] = 'SNMP Authorization Password'
-    elif 'snmp_priv' in varValue: polVars["Description"] = 'SNMP Privacy Password'
-    elif 'trap_comm' in varValue: polVars["Description"] = 'SNMP Trap Community String'
-    polVars["varValue"] = sensitive_var_value(jsonData, **polVars)
-    polVars["varId"] = varValue
-    polVars["varKey"] = varValue
-    polVars["Sensitive"] = True
-    print(f'* Adding {polVars["Description"]} to {polVars["workspaceName"]}')
+    polVars['Variable'] = varValue
+    if 'ipmi_key' in varValue: polVars['Description'] = 'IPMI over LAN Encryption Key'
+    elif 'iscsi' in varValue: polVars['Description'] = 'iSCSI Boot Password'
+    elif 'local_user' in varValue: polVars['Description'] = 'Local User Password'
+    elif 'access_comm' in varValue: polVars['Description'] = 'SNMP Access Community String'
+    elif 'snmp_auth' in varValue: polVars['Description'] = 'SNMP Authorization Password'
+    elif 'snmp_priv' in varValue: polVars['Description'] = 'SNMP Privacy Password'
+    elif 'trap_comm' in varValue: polVars['Description'] = 'SNMP Trap Community String'
+    polVars['varValue'] = sensitive_var_value(jsonData, **polVars)
+    polVars['varId'] = varValue
+    polVars['varKey'] = varValue
+    polVars['Sensitive'] = True
+    print('* Adding "{}" to "{}"').format(polVars['Description'], polVars['workspaceName'])
     return polVars
 
 #======================================================
@@ -1214,17 +1202,17 @@ def ucs_domain_serials(**kwargs):
         polVars = {}
         fabrics = ['A','B']
         for x in fabrics:
-            polVars[f"serial_{x}"] = input(f'What is the Serial Number of Fabric {x}? [press enter to skip]: ')
-            if polVars[f"serial_{x}"] == '':
-                polVars[f"serial_{x}"] = 'unknown'
+            polVars[f'serial_{x}'] = input(f'What is the Serial Number of Fabric {x}? [press enter to skip]: ')
+            if polVars[f'serial_{x}'] == '':
+                polVars[f'serial_{x}'] = 'unknown'
                 valid = True
-            elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', polVars[f"serial_{x}"]):
+            elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', polVars[f'serial_{x}']):
                 valid = True
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Serial Number.  "{polVars[f"serial_{x}"]}" is not a valid serial.')
+                print('  Error!! Invalid Serial Number.  "{}" is not a valid serial.').format(polVars[f'serial_{x}'])
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-    serials = [polVars["serial_A"], polVars["serial_B"]]
+    serials = [polVars['serial_A'], polVars['serial_B']]
     return serials
 
 #======================================================
@@ -1259,9 +1247,9 @@ def variablesFromAPI(**kwargs):
     valid = False
     while valid == False:
         json_vars = jVars
-        if not kwargs.get('popList') == None:
-            if len(kwargs["popList"]) > 0:
-                for x in kwargs["popList"]:
+        if not kwargs['jData'].get('popList') == None:
+            if len(kwargs['jData']['popList']) > 0:
+                for x in kwargs['jData']['popList']:
                     for r in range(0, len(json_vars)):
                         if json_vars[r] == x:
                             json_vars.pop(r)
@@ -1280,7 +1268,7 @@ def variablesFromAPI(**kwargs):
             if index < 10: print(f'     {index}. {value}')
             else: print(f'    {index}. {value}')
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        if kwargs["multi_select"] == True:
+        if kwargs['multi_select'] == True:
             if not vDefault == '':
                 var_selection = input(f'Please Enter the Option Number(s) to Select for {varType}.  [{defaultIndex}]: ')
             else: var_selection = input(f'Please Enter the Option Number(s) to Select for {varType}: ')
@@ -1289,13 +1277,13 @@ def variablesFromAPI(**kwargs):
                 var_selection = input(f'Please Enter the Option Number to Select for {varType}.  [{defaultIndex}]: ')
             else: var_selection = input(f'Please Enter the Option Number to Select for {varType}: ')
         if not vDefault == '' and var_selection == '': var_selection = defaultIndex
-        if kwargs["multi_select"] == False and re.search(r'^[0-9]+$', str(var_selection)):
+        if kwargs['multi_select'] == False and re.search(r'^[0-9]+$', str(var_selection)):
             for index, value in enumerate(json_vars):
                 index += 1
                 if int(var_selection) == index:
                     selection = value
                     valid = True
-        elif kwargs["multi_select"] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
+        elif kwargs['multi_select'] == True and re.search(r'(^[0-9]+$|^[0-9\-,]+[0-9]$)', str(var_selection)):
             var_list = vlan_list_full(var_selection)
             var_length = int(len(var_list))
             var_count = 0
@@ -1354,12 +1342,14 @@ def varBoolLoop(**kwargs):
 # Function - Prompt User for Input Number
 #======================================================
 def varNumberLoop(**kwargs):
-    varDefault = kwargs['jData']["default"]
+    varDefault = kwargs['jData']['default']
     varDesc    = kwargs['jData']['description']
-    maximum    = kwargs['jData']["maximum"]
-    minimum    = kwargs['jData']["minimum"]
+    maximum    = kwargs['jData']['maximum']
+    minimum    = kwargs['jData']['minimum']
     varInput   = kwargs['jData']['varInput']
-    varName    = kwargs['jData']["varName"]
+    varName    = kwargs['jData']['varName']
+    if kwargs['jData'].get('varType'): varType = kwargs['jData']['varType']
+    else: varType = 'undefined'
 
     print(f'\n-------------------------------------------------------------------------------------------\n')
     if '\n' in varDesc:
@@ -1374,7 +1364,9 @@ def varNumberLoop(**kwargs):
         varValue = input(f'{varInput}  [{varDefault}]: ')
         if varValue == '': varValue = varDefault
         if re.fullmatch(r'^[0-9]+$', str(varValue)):
-            valid = classes.validating.number_in_range(varName, varValue, minimum, maximum)
+            if varType == 'SnmpPort':
+                valid = classes.validating.snmp_port(varName, varValue, minimum, maximum)
+            else: valid = classes.validating.number_in_range(varName, varValue, minimum, maximum)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'   {varName} value of "{varValue}" is Invalid!!! ')
@@ -1388,8 +1380,8 @@ def varNumberLoop(**kwargs):
 def varSensitiveStringLoop(**kwargs):
     jDict      = kwargs['jDict']
     varDescr   = jDict['description']
-    varName    = kwargs['jData']["varName"]
-    varRegex   = kwargs['jData']["pattern"]
+    varName    = kwargs['jData']['varName']
+    varRegex   = kwargs['jData']['pattern']
     if kwargs['jData'].get('default'):  varDefault = kwargs['jData']['default']
     else: varDefault = ''
     if kwargs['jData'].get('maximum'):  maximum = kwargs['jData']['maximum']
@@ -1402,11 +1394,11 @@ def varSensitiveStringLoop(**kwargs):
         for line in newDescr:
             if '*' in line: print(textwrap.fill(f'{line}',width=88, subsequent_indent='    '))
             else: print(textwrap.fill(f'{line}',88))
-    else: print(textwrap.fill(f'{kwargs["description"]}',88))
+    else: print(textwrap.fill(f"{kwargs['description']}",88))
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
-        varValue = stdiomask.getpass(f'{kwargs["varInput"]} ')
+        varValue = stdiomask.getpass(f"{kwargs['varInput']} ")
         if not varValue == '':
             valid = classes.validating.length_and_regex_sensitive(varRegex, varName, varValue, minimum, maximum)
         else:
@@ -1421,8 +1413,8 @@ def varSensitiveStringLoop(**kwargs):
 def varStringLoop(**kwargs):
     varDesc    = kwargs['jData']['description']
     varInput   = kwargs['jData']['varInput']
-    varName    = kwargs['jData']["varName"]
-    varRegex   = kwargs['jData']["pattern"]
+    varName    = kwargs['jData']['varName']
+    varRegex   = kwargs['jData']['pattern']
     if kwargs['jData'].get('default'):  varDefault = kwargs['jData']['default']
     else: varDefault = ''
     if   kwargs['jData'].get('maximum'):   maximum = kwargs['jData']['maximum']
@@ -1431,6 +1423,8 @@ def varStringLoop(**kwargs):
     if   kwargs['jData'].get('minimum'):   minimum = kwargs['jData']['minimum']
     elif kwargs['jData'].get('minLength'): minimum = kwargs['jData']['minLength']
     else: minimum = 0
+    if kwargs['jData'].get('varType'): varType = kwargs['jData']['varType']
+    else: varType = 'undefined'
     print(f'\n-------------------------------------------------------------------------------------------\n')
     if '\n' in varDesc:
         newDescr = varDesc.split('\n')
@@ -1447,7 +1441,24 @@ def varStringLoop(**kwargs):
         elif not varDefault == '' and varValue == '':
             varValue = varDefault
             valid = True
-        elif not varValue == '': valid = classes.validating.length_and_regex(varRegex, varName, varValue, minimum, maximum)
+        elif not varValue == '':
+            if varType == 'hostname':
+                if re.search(r'^[a-zA-Z0-9]:', varValue):
+                    valid = classes.validating.ip_address(varName, varValue)
+                if re.search(r'[a-zA-Z]', varValue):
+                    valid = classes.validating.dns_name(varName, varValue)
+                elif re.search(r'^([0-9]{1,3}\.){3}[0-9]{1,3}$', varValue):
+                    valid = classes.validating.ip_address(varName, varValue)
+                else:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print('  "{}" is not a valid address.').format(varValue)
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+            elif varType == 'url':
+                if re.search('^http', varValue): valid = classes.validating.url(varName, varValue)
+                else:
+                    varUrl = f'http://{varValue}'
+                    valid = classes.validating.url(varName, varUrl)
+            else: valid = classes.validating.length_and_regex(varRegex, varName, varValue, minimum, maximum)
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'   {varName} value of "{varValue}" is Invalid!!! ')
@@ -1463,7 +1474,7 @@ def vars_from_list(var_options, **kwargs):
     valid = False
     while valid == False:
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'{kwargs["Description"]}')
+        print(f"{kwargs['Description']}")
         for index, value in enumerate(var_options):
             index += 1
             if index < 10: print(f'     {index}. {value}')
@@ -1471,7 +1482,7 @@ def vars_from_list(var_options, **kwargs):
         print(f'\n-------------------------------------------------------------------------------------------\n')
         exit_answer = False
         while exit_answer == False:
-            var_selection = input(f'Please Enter the Option Number to Select for {kwargs["var_type"]}: ')
+            var_selection = input(f"Please Enter the Option Number to Select for {kwargs['var_type']}: ")
             if not var_selection == '':
                 if re.search(r'[0-9]+', str(var_selection)):
                     xcount = 1
@@ -1481,13 +1492,13 @@ def vars_from_list(var_options, **kwargs):
                             selection.append(value)
                             xcount = 0
                     if xcount == 0:
-                        if selection_count % 2 == 0 and kwargs["multi_select"] == True:
-                            answer_finished = input(f'Would you like to add another port to the {kwargs["port_type"]}?'\
-                                '  Enter "Y" or "N" [Y]: ')
-                        elif kwargs["multi_select"] == True:
-                            answer_finished = input(f'Would you like to add another port to the {kwargs["port_type"]}?'\
-                                '  Enter "Y" or "N" [N]: ')
-                        elif kwargs["multi_select"] == False:
+                        if selection_count % 2 == 0 and kwargs['multi_select'] == True:
+                            answer_finished = input('Would you like to add another port to the'\
+                                f" {kwargs['port_type']}?"'  Enter "Y" or "N" [Y]: ')
+                        elif kwargs['multi_select'] == True:
+                            answer_finished = input('Would you like to add another port to the'\
+                                f" {kwargs['port_type']}?"'  Enter "Y" or "N" [N]: ')
+                        elif kwargs['multi_select'] == False:
                             answer_finished = 'N'
                         if (selection_count % 2 == 0 and answer_finished == '') or answer_finished == 'Y':
                             exit_answer = True
@@ -1495,7 +1506,7 @@ def vars_from_list(var_options, **kwargs):
                         elif answer_finished == '' or answer_finished == 'N':
                             exit_answer = True
                             valid = True
-                        elif kwargs["multi_select"] == False:
+                        elif kwargs['multi_select'] == False:
                             exit_answer = True
                             valid = True
                         else: message_invalid_y_or_n('short')
@@ -1527,19 +1538,15 @@ def vlan_list_full(vlan_list):
                 a = int(a)
                 b = int(b)
                 vrange = range(a,b+1)
-                for vl in vrange:
-                    full_vlan_list.append(int(vl))
-            elif re.fullmatch('^\\d{1,4}$', v):
-                full_vlan_list.append(int(v))
+                for vl in vrange: full_vlan_list.append(int(vl))
+            elif re.fullmatch('^\\d{1,4}$', v): full_vlan_list.append(int(v))
     elif re.search('\\-', str(vlan_list)):
         a,b = vlan_list.split('-')
         a = int(a)
         b = int(b)
         vrange = range(a,b+1)
-        for v in vrange:
-            full_vlan_list.append(int(v))
-    else:
-        full_vlan_list.append(vlan_list)
+        for v in vrange: full_vlan_list.append(int(v))
+    else: full_vlan_list.append(vlan_list)
     return full_vlan_list
 
 #======================================================
@@ -1579,7 +1586,7 @@ def vlan_pool():
             vlanListExpanded = vlan_list_full(VlanList)
             valid_vlan = True
             for vlan in vlanListExpanded:
-                valid_vlan = classes.validating.number_in_range('VLAN ID', vlan, 1, 4094)
+                valid_vlan = classes.validating.error_number_in_range('VLAN ID', vlan, 1, 4094)
                 if valid_vlan == False: continue
             if valid_vlan == False:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -1606,14 +1613,14 @@ def vlan_pool():
 #========================================================
 def write_to_org_folder(polVars, **kwargs):
     baseRepo   = kwargs['args'].dir
-    dest_file  = kwargs["dest_file"]
+    dest_file  = kwargs['dest_file']
     org        = kwargs['org']
     # Setup jinja2 Environment
     template_path = pkg_resources.resource_filename(f'policies', 'templates/')
     templateLoader = jinja2.FileSystemLoader(searchpath=(template_path + 'org/'))
     templateEnv = jinja2.Environment(loader=templateLoader)
     # Define the Template Source
-    template = templateEnv.get_template(kwargs["template_file"])
+    template = templateEnv.get_template(kwargs['template_file'])
     # Make sure the Destination Path and Folder Exist
     if not os.path.isdir(os.path.join(baseRepo, org)):
         dest_path = f'{os.path.join(baseRepo, org)}'
