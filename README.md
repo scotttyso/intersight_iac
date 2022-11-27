@@ -4,6 +4,11 @@
 
 ## Updates/News
 
+11-15-2022
+* Changing Script output from HCL to YAML
+* Remove requirements for Go Compiler
+* Remove requirements for the HCL2JSON Tool - No longer utilized
+
 09-11-2022
 * Renamed main.py to ezimm.py to allow execution from remote directory
 
@@ -50,72 +55,14 @@ git config --global user.name "<username>"
 git config --global user.email "<email>"
 ```
 
-### Install the Go Compiler - Linux (Ubuntu Example)
-
-```bash
-sudo apt update
-sudo apt install golang
-```
-### Install the Go Compiler - Windows
-
-- Download Here: [Go](https://go.dev/dl/)
-
-- Add the Go Compiler to the System Path as Administrator.
-
-```powershell
-$oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
-$newpath = "$oldpath;C:\Program Files\Go\bin"
-Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newpath
-```
-
-- Update the System Path in the Visual Studio Terminal Window
-
-```powershell
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-```
-
-### Build hcl2json - Linux & Windows
-
-```bash
-git clone https://github.com/tmccombs/hcl2json
-cd hcl2json
-go build
-```
-### Move the hcl2json binary to a system Path
-
-- Linux Example
-
-```bash
-mv ./hcl2json /usr/local/bin/
-or 
-mv ./hcl2json /usr/bin/
-```
-
-- Windows Example - Administrator Session
-
-```powershell
-move hcl2json.exe C:\Windows\
-```
-
 ## Python Requirements
 
 - Python 3.6 or Greater
 - Linux - Use the System Package Manager - apt/yum etc.
 - Windows Download Here: [Python](https://www.python.org/downloads/) 
+  Note: Make sure to select the Add To System Path Option during the installation
 - For Windows.  Make sure python.exe and pip.exe are available via the system path.
 - Windows Example (The Folder Python310 would be according to the Python Release) - Administrator Session
-
-```powershell
-$oldpath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
-$newpath = "$oldpath;%USERPROFILE%\AppData\Local\Programs\Python\Python310\;%USERPROFILE%\AppData\Local\Programs\Python\Python310\Scripts\"
-Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newpath
-```
-
-- Update the System Path in the Visual Studio Terminal Window
-
-```powershell
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-```
 
 ### Clone this Repository
 
@@ -132,7 +79,7 @@ $ pip install -r requirements.txt
 
 ## Terraform Requirements
 
-The script utilizes features introduced in 0.14 of Terraform.  So we need 0.14 or preferrably >1.0
+The script utilizes features introduced in 1.3.0 of Terraform.  So we need 1.3.0 or preferrably >1.3.0
 
 - Download Here [terraform](https://www.terraform.io/downloads.html) 
 - For Windows Make sure it is in a Directory that is in the system path.
@@ -142,8 +89,7 @@ The script utilizes features introduced in 0.14 of Terraform.  So we need 0.14 o
 This script will utilize the Intersight Terraform Provider and two modules built off of the Intersight Provider.
 
 - [Intersight Provider](https://registry.terraform.io/providers/CiscoDevNet/intersight/latest)
-- [IMM Module](https://registry.terraform.io/modules/terraform-cisco-modules/imm/intersight/latest)
-- [Easy IMM](https://github.com/terraform-cisco-modules/terraform-intersight-easy-imm)
+- [Easy IMM Comprehensive Example](https://github.com/terraform-cisco-modules/easy-imm-comprehensive-example)
 
 ## Running the Wizard
 
@@ -210,13 +156,7 @@ optional arguments:
 
 ## Terraform Plan and Apply
 
-After the Script has generated the Terraform Directories and downloaded the resources from the Easy IMM Repository, the data will need to be pushed to Intersight using Terraform Cloud.  It is important to execute the Workspaces in the following Order:
-
-1. pools and ucs_domain_profiles*
-2. policies
-3. profiles
-
-* It doesn't matter if you run pools or ucs_domain_profiles first as there is no dependency between both of them.  Both Just need to be run before you run policies and profiles.
+After the Script has generated the Repository and downloaded the resources from the Easy IMM Comprehensive Example, the data will need to be pushed to Intersight using Terraform Cloud.
 
 ## Disclaimer
 
@@ -229,18 +169,10 @@ The purpose of this Python Tool is to deploy Policy/Profiles to Intersight using
 The goal of this module is to begin to familiarize you with Terraform through the following steps:  
 
 1. Begin to familiarize users with Terraform format and variable creation.  
-2. Once a user feels conformatable with auto generated files, Transition towards writing your own modules to consume the IMM Modules.
+2. Once a user feels conformatable with the auto generated files, Transition towards writing your own modules to consume.
 3. And lastly build your confidence to write your own code as well.  
 
-The wizard will show after each section what the Terraform code being generated will look like.  Point you to the directly where the code will be stored.  And lastly, publish the code to Terraform Cloud and when you are ready.
-
-## Contents
-
-- Use Cases
-- Create Pools
-- Create Policies
-- Deploy UCS Domains in IMM Mode
-- Create UCS Service Profiles and Templates
+The wizard will show after each section what the YAML Data being generated will look like.  In the Heading for each section it will point you to the directly and file where the code will be created.  And lastly, publish the code to Terraform Cloud and when you are ready.
 
 ### Use Cases
 
@@ -253,11 +185,13 @@ The wizard will show after each section what the Terraform code being generated 
 
 This set of modules support creating the following Pool Types:
 
-- FC Pools
 - IP Pools
 - IQN Pools
 - MAC Pools
+- Resource Pools
 - UUID Pools
+- WWNN Pools
+- WWPN Pools
 
 ### Intersight Policies
 
@@ -273,6 +207,7 @@ This set of modules support creating the following Policy Types:
 - Ethernet Network Control
 - Ethernet Network Group
 - Ethernet QoS
+- FC Zone
 - Fibre Channel Adapter
 - Fibre Channel Network
 - Fibre Channel QoS
@@ -313,13 +248,11 @@ This set of modules support creating the following Policy Types:
 
 This set of modules support creating the following Profile Types:
 
-- UCS Chassis Profile
-- UCS Domain Profile
-- UCS Server Profile
+- UCS Chassis Profile(s)
+- UCS Domain Profile(s)
+- UCS Server Profile(s)
 - UCS Server Template - Important Note.  The script only uses Server Templates for holding policies.  This allows for flexibility around allowing the script to override policies by assigning unique policies to servers that is not supported by standard templates.
 
 To sum this up... the goal is to deploy the infrastructure using Terraform through an easy to consume wizard.
 
 ## Resources
-
-Youtube Video's to follow.  This is still a work in progress
