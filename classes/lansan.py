@@ -2155,7 +2155,7 @@ class policies(object):
                         # Prompt User for Policy Assignments
                         #================================================
                         policy_list = [
-                            #'policies.fc_zone.fc_zone_policies',
+                            'policies.fc_zone.fc_zone_policies',
                             'policies.fibre_channel_adapter.fibre_channel_adapter_policy',
                             'policies.fibre_channel_qos.fibre_channel_qos_policy'
                         ]
