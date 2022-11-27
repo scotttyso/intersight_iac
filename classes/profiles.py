@@ -678,14 +678,14 @@ def policy_select_loop(self, **kwargs):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Starting module to create {inner_policy} in {org}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            lansan_list   = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
-            policies_list = ezData['ezimm']['allOf'][1]['properties']['policies_list']['enum']
-            profiles_list = ['chassis', 'domain', 'server', 'server_profile_templates']
-            if inner_policy in lansan_list:
+            list_lansan   = ezData['ezimm']['allOf'][1]['properties']['list_lansan']['enum']
+            list_policies = ezData['ezimm']['allOf'][1]['properties']['list_policies']['enum']
+            list_profiles = ezData['ezimm']['allOf'][1]['properties']['list_profiles']['enum']
+            if inner_policy in list_lansan:
                 kwargs = eval(f"lan.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
             elif re.search('pools$', inner_policy):
                 kwargs = eval(f"pools.pools(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in policies_list:
+            elif inner_policy in list_policies:
                 kwargs = eval(f"policies.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in profiles_list:
+            elif inner_policy in list_profiles:
                 kwargs = eval(f"profiles(name_prefix, org, inner_type).{inner_policy}(**kwargs)")

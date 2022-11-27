@@ -6,7 +6,6 @@ import ezfunctions
 import json
 import os
 import re
-import stdiomask
 import textwrap
 import validating
 import yaml
@@ -780,11 +779,10 @@ class policies(object):
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 kwargs['name']         = polVars['name']
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                polVars['default_vlan'] = 0
                 #==============================================
                 # Get API Data
                 #==============================================
-                kwargs["multi_select"] == True
+                kwargs['multi_select'] == True
                 jsonVars = jsonData['access.Policy']['allOf'][1]['properties']
                 #==============================================
                 # Prompt User for IMC Access Type(s)
@@ -794,14 +792,18 @@ class policies(object):
                 kwargs['jData']['enum']    = ['inband', 'out_of_band']
                 kwargs['jData']['varType'] = 'IMC Access Type'
                 imcBand = ezfunctions.variablesFromAPI(**kwargs)
-                kwargs["multi_select"] == False
+                kwargs['multi_select'] == False
                 #==============================================
                 # Loop through Inband and Out-of-Band
                 #==============================================
                 for i in imcBand:
                     kwargs['allow_opt_out'] = False
+                    kwargs['optional_message'] = f'* Select the IP Pool for {i}'
                     kwargs['policy'] = f'pools.ip.{i}_ip_pool'
+                    ptype = kwargs['policy'].split('.')[2]
                     kwargs = policy_select_loop(self, **kwargs)
+                    kwargs.pop('optional_message')
+                    polVars[ptype] = kwargs[ptype]
                     if i == 'inband':
                         valid = False
                         while valid == False:
@@ -821,30 +823,31 @@ class policies(object):
                             #==============================================
                             kwargs['policy'] = f'policies.vlan.vlan_policy'
                             kwargs = policy_select_loop(self, **kwargs)
-                            vlan_lists = []
+                            vlan_list = []
                             for item in kwargs['immDict']['orgs'][org]['intersight']['policies']['vlan']:
                                 if item['name'] == kwargs['vlan_policy']:
                                     for i in item['vlans']:
-                                        vlan_lists.append(i['vlan_list'])
+                                        vlan_list.append(i['vlan_list'])
                             vlan_convert = ''
                             for vlan in vlan_list:
                                 vlan_convert = vlan_convert + ',' + str(vlan)
                             vlan_list = ezfunctions.vlan_list_full(vlan_convert)
                             valid = ezfunctions.validate_vlan_in_policy(vlan_list, inband_vlan_id)
+                        polVars['inband_vlan_id'] = inband_vlan_id
                 #==============================================
                 # Prompt User to Enable IPv4
                 #==============================================
                 jsonVars = jsonData['access.AddressType']['allOf'][1]['properties']
                 kwargs['jData'] = deepcopy(jsonVars['EnableIpV4'])
-                kwargs['jData']["varInput"] = f'Do you want to enable IPv4 for this Policy?'
-                kwargs['jData']["varName"]  = 'Enable IPv4'
+                kwargs['jData']['varInput'] = f'Do you want to enable IPv4 for this Policy?'
+                kwargs['jData']['varName']  = 'Enable IPv4'
                 polVars['ipv4_address_configuration'] = ezfunctions.varBoolLoop(**kwargs)
                 #==============================================
                 # Prompt User to Enable IPv6
                 #==============================================
                 kwargs['jData'] = deepcopy(jsonVars['EnableIpV6'])
-                kwargs['jData']["varInput"] = f'Do you want to enable IPv6 for this Policy?'
-                kwargs['jData']["varName"]  = 'Enable IPv6'
+                kwargs['jData']['varInput'] = f'Do you want to enable IPv6 for this Policy?'
+                kwargs['jData']['varName']  = 'Enable IPv6'
                 polVars['ipv6_address_configuration'] = ezfunctions.varBoolLoop(**kwargs)
                 #==============================================
                 # Print Policy and Prompt User to Accept
@@ -1249,8 +1252,8 @@ class policies(object):
                                 # Prompt User for LDAP Provider/Server
                                 #================================================
                                 kwargs['jData'] = deepcopy(jsonVars['Server'])
-                                kwargs['jData']["varInput"] = 'What is the Hostname/IP of the LDAP Server?'
-                                kwargs['jData']["varName"]  = 'LDAP Server Address'
+                                kwargs['jData']['varInput'] = 'What is the Hostname/IP of the LDAP Server?'
+                                kwargs['jData']['varName']  = 'LDAP Server Address'
                                 kwargs['jData']['varType']  = 'hostname'
                                 varServer = ezfunctions.varStringLoop(**kwargs)
                                 #================================================
@@ -1523,27 +1526,32 @@ class policies(object):
                 kwargs['jData']['varInput'] = f'IPv4 Secondary DNS Server.  [press enter to skip]:'
                 kwargs['jData']['varName']  = f'Secondary DNS Server'
                 polVars['alternate_ipv4_dns_server'] = ezfunctions.varStringLoop(**kwargs)
-                valid = False
-                while valid == False:
-                    enable_ipv6 = input('Do you want to Configure IPv6 DNS?  Enter "Y" or "N" [N]: ')
-                    if enable_ipv6 == 'Y':
-                        polVars['enable_ipv6'] = True
-                        jsonVars = jsonData['ippool.IpV6Config']['allOf'][1]['properties']
-                        #==============================================
-                        # Prompt User for Primary DNS Server
-                        #==============================================
-                        kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
-                        kwargs['jData']['default']  = '2620:119:53::53'
-                        kwargs['jData']['varInput'] = f'IPv6 Primary DNS Server.'
-                        kwargs['jData']['varName']  = f'Primary DNS Server'
-                        polVars['preferred_ipv6_dns_server'] = ezfunctions.varStringLoop(**kwargs)
-                        #==============================================
-                        # Prompt User for Secondary DNS Server
-                        #==============================================
-                        kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
-                        kwargs['jData']['varInput'] = f'IPv6 Secondary DNS Server.  [press enter to skip]:'
-                        kwargs['jData']['varName']  = f'Secondary DNS Server'
-                        polVars['alternate_ipv6_dns_server'] = ezfunctions.varStringLoop(**kwargs)
+                #==============================================
+                # Prompt User for IPv6 DNS
+                #==============================================
+                kwargs['jData'] = deepcopy({})
+                kwargs['jData']['default']     = False
+                kwargs['jData']['description'] = 'Enable IPv6 DNS Lookup.'
+                kwargs['jData']['varInput'] = f'Do you want to Configure IPv6 DNS?'
+                kwargs['jData']['varName']  = 'IPv6 DNS'
+                polVars['enable_ipv6'] = ezfunctions.varBoolLoop(**kwargs)
+                if polVars['enable_ipv6'] == True:
+                    jsonVars = jsonData['ippool.IpV6Config']['allOf'][1]['properties']
+                    #==============================================
+                    # Prompt User for Primary DNS Server
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
+                    kwargs['jData']['default']  = '2620:119:53::53'
+                    kwargs['jData']['varInput'] = f'IPv6 Primary DNS Server.'
+                    kwargs['jData']['varName']  = f'Primary DNS Server'
+                    polVars['preferred_ipv6_dns_server'] = ezfunctions.varStringLoop(**kwargs)
+                    #==============================================
+                    # Prompt User for Secondary DNS Server
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
+                    kwargs['jData']['varInput'] = f'IPv6 Secondary DNS Server.  [press enter to skip]:'
+                    kwargs['jData']['varName']  = f'Secondary DNS Server'
+                    polVars['alternate_ipv6_dns_server'] = ezfunctions.varStringLoop(**kwargs)
                 #==============================================
                 # Print Policy and Prompt User to Accept
                 #==============================================
@@ -1735,11 +1743,11 @@ class policies(object):
                         # Prompt User for Secure Passphrase
                         #==============================================
                         kwargs['jData'] = deepcopy({})
-                        kwargs['jData']["default"]     = True
+                        kwargs['jData']['default']     = True
                         kwargs['jData']['description'] = 'A Secure passphrase will enable the protection of data on'\
                             ' the persistent memory modules.'
-                        kwargs['jData']["varInput"] = f'Do you want to enable a secure passphrase?'
-                        kwargs['jData']["varName"]  = 'Persistent Memory Secure Passphrase'
+                        kwargs['jData']['varInput'] = f'Do you want to enable a secure passphrase?'
+                        kwargs['jData']['varName']  = 'Persistent Memory Secure Passphrase'
                         encrypt_memory = ezfunctions.varBoolLoop(**kwargs)
                         if encrypt_memory == True:
                             kwargs['Variable'] = 'secure_passphrase'
@@ -1754,9 +1762,9 @@ class policies(object):
                         #==============================================
                         jsonVars = jsonData['memory.PersistentMemoryGoal']['allOf'][1]['properties']
                         kwargs['jData'] = deepcopy(jsonVars['MemoryModePercentage'])
-                        kwargs['jData']["default"]  = 0
-                        kwargs['jData']["varInput"] = 'What is the Percentage of Valatile Memory to assign to this Policy?'
-                        kwargs['jData']["varName"]  = 'Memory Mode Percentage'
+                        kwargs['jData']['default']  = 0
+                        kwargs['jData']['varInput'] = 'What is the Percentage of Valatile Memory to assign to this Policy?'
+                        kwargs['jData']['varName']  = 'Memory Mode Percentage'
                         polVars['memory_mode_percentage'] = ezfunctions.varNumberLoop(**kwargs)
                         #==============================================
                         # Prompt User for Persistent Memory Type
@@ -1771,9 +1779,9 @@ class policies(object):
                         kwargs['jData'] = deepcopy(jsonVars['RetainNamespaces'])
                         kwargs['jData']['description'] = 'This Flag will enable or Disable the retention of Namespaces'\
                             ' between Server Profile association and dissassociation.'
-                        kwargs['jData']["varInput"] = f'Do you want to Retain Namespaces?'
-                        kwargs['jData']["varName"]  = 'Namespace Retention'
-                        polVars["retain_namespaces"] = ezfunctions.varBoolLoop(**kwargs)
+                        kwargs['jData']['varInput'] = f'Do you want to Retain Namespaces?'
+                        kwargs['jData']['varName']  = 'Namespace Retention'
+                        polVars['retain_namespaces'] = ezfunctions.varBoolLoop(**kwargs)
                         polVars['namespaces'] = []
                         print(f'\n-------------------------------------------------------------------------------------------\n')
                         print(f'  Namespace is a partition made in one or more Persistent Memory Regions. You can create a')
@@ -1788,17 +1796,17 @@ class policies(object):
                                 #==============================================
                                 jsonVars = jsonData['memory.PersistentMemoryLogicalNamespace']['allOf'][1]['properties']
                                 kwargs['jData'] = deepcopy(jsonVars['Name'])
-                                kwargs['jData']["varInput"] = 'What is the Name for this Namespace?'
-                                kwargs['jData']["varName"]  = 'Logical Namespace Name'
+                                kwargs['jData']['varInput'] = 'What is the Name for this Namespace?'
+                                kwargs['jData']['varName']  = 'Logical Namespace Name'
                                 namespace_name = ezfunctions.varStringLoop(**kwargs)
                                 #==============================================
                                 # Prompt User for Logical Namespace Capacity
                                 #==============================================
                                 kwargs['jData'] = deepcopy(jsonVars['Capacity'])
-                                kwargs['jData']["default"]  = 1024
-                                kwargs['jData']["varInput"] = 'What is the Capacity to assign to this Namespace?'\
+                                kwargs['jData']['default']  = 1024
+                                kwargs['jData']['varInput'] = 'What is the Capacity to assign to this Namespace?'\
                                     '  Range is 1-9223372036854775807'
-                                kwargs['jData']["varName"]  = 'Logical Namespace Capacity'
+                                kwargs['jData']['varName']  = 'Logical Namespace Capacity'
                                 capacity = ezfunctions.varNumberLoop(**kwargs)
                                 #==============================================
                                 # Prompt User for Logical Namespace Mode
@@ -2043,7 +2051,7 @@ class policies(object):
                 # Prompt User for Name and Description
                 #==============================================
                 if not name_prefix == '': name = '%s-%s' % (name_prefix, system_type)
-                else: name = '%s-%s' % (org, system_type)
+                else: name = system_type
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
 
@@ -2053,12 +2061,12 @@ class policies(object):
                     # Prompt User for Power Allocation
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['AllocatedBudget'])
-                    kwargs['jData']["default"]  = 8400
-                    kwargs['jData']["maximum"]  = 16800
-                    kwargs['jData']["minimum"]  = 2800
-                    kwargs['jData']["varInput"] = 'What is the Power Budget you would like to Apply?\n'\
+                    kwargs['jData']['default']  = 8400
+                    kwargs['jData']['maximum']  = 16800
+                    kwargs['jData']['minimum']  = 2800
+                    kwargs['jData']['varInput'] = 'What is the Power Budget you would like to Apply?\n'\
                         '  This should be a value between 2800 Watts and 16800 Watts.'
-                    kwargs['jData']["varName"]  = 'Power Allocation'
+                    kwargs['jData']['varName']  = 'Power Allocation'
                     polVars['power_allocation'] = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
                     # Prompt User for Dynamic Rebalancing
@@ -2089,6 +2097,7 @@ class policies(object):
                     # Prompt User for Power Restore
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['PowerRestoreState'])
+                    kwargs['jData']['default'] = 'LastState'
                     kwargs['jData']['varType'] = 'Power Restore'
                     polVars['power_restore'] = ezfunctions.variablesFromAPI(**kwargs)
                 #==============================================
@@ -2217,6 +2226,7 @@ class policies(object):
                     # Prompt User for Baud Rate
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['BaudRate'])
+                    kwargs['jData']['default'] = 115200
                     kwargs['jData']['varType'] = 'Baud Rate'
                     polVars['baud_rate'] = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
@@ -2229,8 +2239,8 @@ class policies(object):
                     # Prompt User for SSH Port
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['SshPort'])
-                    kwargs['jData']["varInput"] = 'What is the SSH Port you would like to assign?  Range is 1024-65535.'
-                    kwargs['jData']["varName"]  = 'SSH Port'
+                    kwargs['jData']['varInput'] = 'What is the SSH Port you would like to assign?  Range is 1024-65535.'
+                    kwargs['jData']['varName']  = 'SSH Port'
                     polVars['ssh_port'] = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
                     # Print Policy and Prompt User to Accept
@@ -2303,16 +2313,17 @@ class policies(object):
                     # Prompt User for SMTP Server
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['SmtpServer'])
-                    kwargs['jData']["varInput"] = 'What is the SMTP Server Address?'
-                    kwargs['jData']["varName"]  = 'SMTP Server Address'
+                    kwargs['jData']['pattern']  = '^\\S$'
+                    kwargs['jData']['varInput'] = 'What is the SMTP Server Address?'
+                    kwargs['jData']['varName']  = 'SMTP Server Address'
                     kwargs['jData']['varType']  = 'hostname'
                     polVars['smtp_server_address'] = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
                     # Prompt User for SMTP Port
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['SmtpPort'])
-                    kwargs['jData']["varInput"] = 'What is the SMTP Port?  Range is 1-65535.'
-                    kwargs['jData']["varName"]  = 'SMTP Port'
+                    kwargs['jData']['varInput'] = 'What is the SMTP Port?  Range is 1-65535.'
+                    kwargs['jData']['varName']  = 'SMTP Port'
                     polVars['smtp_port'] = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
                     # Prompt User for Minimum Severity
@@ -2324,17 +2335,17 @@ class policies(object):
                     # Prompt User for Sender Email Address
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['SenderEmail'])
-                    kwargs['jData']["varInput"] = 'What is the SMTP Alert Sender Address?'
-                    kwargs['jData']["varName"]  = 'Sender Email'
+                    kwargs['jData']['varInput'] = 'What is the SMTP Alert Sender Address?'
+                    kwargs['jData']['varName']  = 'Sender Email'
                     polVars['smtp_alert_sender_address'] = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
                     # Prompt User for SMTP Recipients
                     #==============================================
-                    kwargs['jData'] = deepcopy(jsonVars['SmtpRecipients'])
-                    kwargs['jData']["varInput"] = 'Enter the List of Email Addresses to Recieve Alerts?'
-                    kwargs['jData']["varName"]  = 'SMTP Recipients'
+                    kwargs['jData'] = deepcopy(jsonVars['SmtpRecipients']['items'])
+                    kwargs['jData']['varInput'] = 'Enter the List of comma seperated Email Addresses to Recieve Alerts?'
+                    kwargs['jData']['varName']  = 'SMTP Recipients'
+                    kwargs['jData']['varType']  = 'list'
                     polVars['mail_alert_recipients'] = ezfunctions.varStringLoop(**kwargs)
-                    polVars['mail_alert_recipients'] = []
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================
@@ -2406,9 +2417,9 @@ class policies(object):
                     # Prompt User for SNMP Port
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['SnmpPort'])
-                    kwargs['jData']["varInput"] = 'Enter the Port to Assign to this SNMP Policy.'
-                    kwargs['jData']["varName"]  = 'SNMP Port'
-                    kwargs['jData']["varType"]  = 'SnmpPort'
+                    kwargs['jData']['varInput'] = 'Enter the Port to Assign to this SNMP Policy.'
+                    kwargs['jData']['varName']  = 'SNMP Port'
+                    kwargs['jData']['varType']  = 'SnmpPort'
                     polVars['port'] = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
                     # Prompt User for SNMP Contact
@@ -3108,12 +3119,12 @@ class policies(object):
                 #==============================================
                 kwargs['jData'] = deepcopy(jsonVars['chassisType'])
                 kwargs['jData']['varType'] = 'Chassis Type'
-                polVars['chassis_type'] = ezfunctions.variablesFromAPI(**kwargs)
+                chassis_type = ezfunctions.variablesFromAPI(**kwargs)
                 #==============================================
                 # Prompt User for Name and Description
                 #==============================================
-                if not name_prefix == '': name = '%s-%s' % (name_prefix, polVars['chassis_type'])
-                else: name = '%s-%s' % (org, polVars['chassis_type'])
+                if not name_prefix == '': name = '%s-%s' % (name_prefix, chassis_type)
+                else: name = chassis_type
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 #==============================================
@@ -3121,7 +3132,7 @@ class policies(object):
                 #==============================================
                 jsonVars = jsonData['thermal.Policy']['allOf'][1]['properties']
                 kwargs['jData'] = deepcopy(jsonVars['FanControlMode'])
-                if polVars['chassis_type'] == '5108':
+                if chassis_type == '5108':
                     kwargs['jData']['popList'] = ['Acoustic', 'HighPower', 'MaximumPower']
                 kwargs['jData']['varType'] = 'Fan Control Mode'
                 polVars['fan_control_mode'] = ezfunctions.variablesFromAPI(**kwargs)
@@ -3602,16 +3613,16 @@ def policy_select_loop(self, **kwargs):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Starting module to create {policy_description} in Organization {org}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            lansan_list = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
-            policies_list = ezData['ezimm']['allOf'][1]['properties']['policies_list']['enum']
-            profile_list = ['ucs_server_profiles', 'ucs_server_profile_templates']
+            list_lansan = ezData['ezimm']['allOf'][1]['properties']['list_lansan']['enum']
+            list_policies = ezData['ezimm']['allOf'][1]['properties']['list_policies']['enum']
+            list_profiles = ['ucs_server_profiles', 'ucs_server_profile_templates']
             if re.search('pool$', inner_var):
                 kwargs = eval(f'pools.pools(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
-            elif inner_policy in lansan_list:
+            elif inner_policy in list_lansan:
                 kwargs = eval(f'lansan.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
-            elif inner_policy in policies_list:
+            elif inner_policy in list_policies:
                 kwargs = eval(f'policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
-            elif inner_policy in profile_list:
+            elif inner_policy in list_profiles:
                 kwargs = eval(f'profiles(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
     # Return kwargs
     return kwargs

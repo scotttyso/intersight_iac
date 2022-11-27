@@ -196,7 +196,7 @@ class policies(object):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         name_prefix    = self.name_prefix
-        name_suffix    = ['mgmt', 'migration', 'storage', 'dvs']
+        name_suffix    = ['dvs', 'mgmt', 'migration', 'storage']
         org            = self.org
         path_sep       = kwargs['path_sep']
         policy_type    = 'Ethernet Network Group Policy'
@@ -206,10 +206,10 @@ class policies(object):
             print(f'  An {policy_type} will define the Allowed VLANs on a Server vNIC Template.')
             print(f'  As a recommendation you will need an {policy_type} per vNIC Grouping.')
             print(f'  For Instance with a Virtual Host that may have the following vNIC Pairs:')
-            print(f'     1. mgmt')
-            print(f'     2. migration')
-            print(f'     3. storage')
-            print(f'     4. dvs')
+            print(f'     1. dvs')
+            print(f'     2. mgmt')
+            print(f'     3. migration')
+            print(f'     4. storage')
             print(f'  You will want to configure 1 {policy_type} per Group.')
             print(f'  The allowed vlan list can be in the format of:')
             print(f'     5 - Single VLAN')
@@ -413,7 +413,7 @@ class policies(object):
         configure_loop = False
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
-        name_suffix    = ['Silver', 'Bronze', 'Platinum', 'Gold']
+        name_suffix    = ['Bronze', 'Gold', 'Platinum', 'Silver']
         org            = self.org
         path_sep       = kwargs['path_sep']
         policy_type    = 'Ethernet QoS Policy'
@@ -463,9 +463,8 @@ class policies(object):
                 #==============================================
                 # Prompt User for Name and Description
                 #==============================================
-                polVars['target_platform'] = target_platform
                 name = ''
-                if polVars['target_platform'] == 'FIAttached':
+                if target_platform == 'FIAttached':
                     for i, v in enumerate(name_suffix):
                         if int(loop_count) == i:
                             if not name_prefix == '': name = f'{name_prefix}-{v}'
@@ -494,7 +493,7 @@ class policies(object):
                 kwargs['jData']['varName']  = 'Rate Limit'
                 polVars['rate_limit'] = ezfunctions.varNumberLoop(**kwargs)
 
-                if polVars['target_platform'] == 'Standalone':
+                if target_platform == 'Standalone':
                     #==============================================
                     # Prompt User for Class of Service
                     #==============================================
@@ -2723,12 +2722,12 @@ class policies(object):
 # Select Policy Function
 #==============================================
 def policy_select_loop(self, **kwargs):
-    ezData = kwargs['ezData']
-    policy = kwargs['policy']
-    name   = kwargs['name']
+    ezData      = kwargs['ezData']
+    policy      = kwargs['policy']
+    name        = kwargs['name']
     name_prefix = self.name_prefix
-    org = kwargs['org']
-    loop_valid = False
+    org         = kwargs['org']
+    loop_valid  = False
     while loop_valid == False:
         create_policy = True
         kwargs['inner_policy'] = policy.split('.')[1]
@@ -2772,10 +2771,10 @@ def policy_select_loop(self, **kwargs):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  Starting module to create {policy_description} in Organization {org}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            lansan_list = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
+            list_lansan = ezData['ezimm']['allOf'][1]['properties']['list_lansan']['enum']
             if re.search('pool$', inner_var):
                 kwargs = eval(f'pools.pools(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
-            elif inner_policy in lansan_list:
+            elif inner_policy in list_lansan:
                 kwargs = eval(f'policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
     # Return kwargs
     return kwargs

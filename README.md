@@ -4,10 +4,12 @@
 
 ## Updates/News
 
-11-15-2022
+11-30-2022
 * Changing Script output from HCL to YAML
 * Remove requirements for Go Compiler
 * Remove requirements for the HCL2JSON Tool - No longer utilized
+* Added Support for Importing Existing YAML Files to be consumed by Script
+* Added FC Zone Policy
 
 09-11-2022
 * Renamed main.py to ezimm.py to allow execution from remote directory

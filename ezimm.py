@@ -509,14 +509,15 @@ def process_wizard(**kwargs):
         # Intersight Policies
         #==============================================
         type = 'policies'
-        plist         = ezData['ezimm']['allOf'][1]['properties']['list_policies']['enum']
-        lansan_list   = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
-        policies_list = ezData['ezimm']['allOf'][1]['properties']['policies_list']['enum']
+        list_lansan   = ezData['ezimm']['allOf'][1]['properties']['list_lansan']['enum']
+        list_policies = ezData['ezimm']['allOf'][1]['properties']['list_policies']['enum']
+        plist         = list_lansan + list_policies
+        plist.sort()
         for i in plist:
             if policy == i:
-                if policy in lansan_list:
+                if policy in list_lansan:
                     kwargs = eval(f"classes.lansan.policies(name_prefix, org, type).{i}(**kwargs)")
-                elif policy in policies_list:
+                elif policy in list_policies:
                     kwargs = eval(f"classes.policies.policies(name_prefix, org, type).{i}(**kwargs)")
         #==============================================
         # Intersight Profiles
@@ -524,8 +525,7 @@ def process_wizard(**kwargs):
         plist = ezData['ezimm']['allOf'][1]['properties']['list_profiles']['enum']
         type = 'profiles'
         for i in plist:
-            if policy == i:
-                kwargs = eval(f"classes.profiles.profiles(name_prefix, org, type).{i}(**kwargs)")
+            if policy == i: kwargs = eval(f"classes.profiles.profiles(name_prefix, org, type).{i}(**kwargs)")
         #==============================================
         # Quick Start - Pools
         #==============================================

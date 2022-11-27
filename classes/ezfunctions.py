@@ -1471,6 +1471,13 @@ def varStringLoop(**kwargs):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print('  "{}" is not a valid address.').format(varValue)
                     print(f'\n-------------------------------------------------------------------------------------------\n')
+            elif varType == 'list':
+                varValue = varValue.split(',')
+                for i in varValue:
+                    valid_item = classes.validating.length_and_regex(varRegex, varName, i, minimum, maximum)
+                    if valid_item == False: valid = False; break
+                if valid_item == True:
+                    valid = True
             elif varType == 'url':
                 if re.search('^http', varValue): valid = classes.validating.url(varName, varValue)
                 else:

@@ -1593,7 +1593,8 @@ class quick_start(object):
 def policy_select_loop(self, **kwargs):
     ezData      = kwargs['ezData']
     policy      = kwargs['policy']
-    name_prefix = kwargs['name_prefix']
+    name        = kwargs['name']
+    name_prefix = self.name_prefix
     org         = kwargs['org']
     loop_valid  = False
     while loop_valid == False:
@@ -1603,26 +1604,20 @@ def policy_select_loop(self, **kwargs):
         kwargs['inner_var']    = policy.split('.')[2]
         inner_policy = kwargs['inner_policy']
         inner_type   = kwargs['inner_type']
+        inner_var    = kwargs['inner_var']
+        policy_description = ezfunctions.mod_pol_description(inner_var)
         kwargs = ezfunctions.policies_parse(inner_type, inner_policy, **kwargs)
         if not len(kwargs['policies']) > 0:
             valid = False
             while valid == False:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'   There was no {inner_policy} found.')
+                print(f'   There was no {policy_description} found.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                policy_description = ezfunctions.mod_pol_description(inner_policy)
                 if kwargs['allow_opt_out'] == True:
                     Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
-                    if Question == '' or Question == 'Y':
-                        create_policy = True
-                        valid = True
-                    elif Question == 'N':
-                        create_policy = False
-                        valid = True
-                        return kwargs
-                else:
-                    create_policy = True
-                    valid = True
+                    if Question == '' or Question == 'Y': create_policy = True; valid = True
+                    elif Question == 'N': create_policy = False; valid = True; return kwargs
+                else: create_policy = True; valid = True
         else:
             kwargs = ezfunctions.choose_policy(inner_policy, **kwargs)
             if kwargs['policy'] == 'create_policy': create_policy = True
@@ -1642,13 +1637,13 @@ def policy_select_loop(self, **kwargs):
         # Create Policy if Option was Selected
         if create_policy == True:
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Starting module to create {inner_policy} in {org}')
+            print(f'  Starting module to create {policy_description} in {org}')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            lansan_list   = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
-            policies_list = ezData['ezimm']['allOf'][1]['properties']['policies_list']['enum']
-            if re.search('pools$', inner_policy):
+            list_lansan   = ezData['ezimm']['allOf'][1]['properties']['list_lansan']['enum']
+            list_policies = ezData['ezimm']['allOf'][1]['properties']['list_policies']['enum']
+            if re.search('pool$', inner_var):
                 kwargs = eval(f"pools.pools(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in policies_list:
-                kwargs = eval(f"policies.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
-            elif inner_policy in lansan_list:
+            elif inner_policy in list_lansan:
                 kwargs = eval(f"lansan.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
+            elif inner_policy in list_policies:
+                kwargs = eval(f"policies.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
