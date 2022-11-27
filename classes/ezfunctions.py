@@ -1095,7 +1095,7 @@ def syslog_servers(**kwargs):
 def subnet_list(**kwargs):
     ip_version = kwargs['ip_version']
     if ip_version == 'v4': prefix = kwargs['subnetMask']
-    else: prefix = kwargs['Prefix']
+    else: prefix = kwargs['prefix']
     gateway = kwargs['defaultGateway']
     subnetList = list(ipaddress.ip_network(f"{gateway}/{prefix}", strict=False).hosts())
     return subnetList

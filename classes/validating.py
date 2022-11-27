@@ -21,18 +21,17 @@ def error_request(status, text):
 def error_subnet_check(**kwargs):
     ip_version = kwargs['ip_version']
     if ip_version == 'v4': prefix = kwargs['subnetMask']
-    else: prefix = kwargs['Prefix']
+    else: prefix = kwargs['prefix']
     gateway = kwargs['defaultGateway']
-    pool_from = kwargs['pool_from']
-    pool_to = kwargs['pool_to']
-    subnetList = list(ipaddress.ip_network(f"{gateway}/{prefix}", strict=False).hosts())
-    if not pool_from in subnetList:
+    pool_from = ipaddress.ip_address(kwargs['pool_from'])
+    pool_to = ipaddress.ip_address(kwargs['pool_to'])
+    if not pool_from in ipaddress.ip_network(f"{gateway}/{prefix}", strict=False):
         print(f'\n{"-"*91}\n')
         print(f'   Error!!!  {pool_from} is not in network {gateway}/{prefix}:')
         print(f'   Exiting....')
         print(f'\n{"-"*91}\n')
         exit()
-    if not pool_from in subnetList:
+    if not pool_to in ipaddress.ip_network(f"{gateway}/{prefix}", strict=False):
         print(f'\n{"-"*91}\n')
         print(f'   Error!!!  {pool_to} is not in network {gateway}/{prefix}:')
         print(f'   Exiting....')

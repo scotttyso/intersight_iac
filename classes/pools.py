@@ -158,11 +158,11 @@ class pools(object):
                                 else: ezfunctions.message_invalid_y_or_n('short')
                     valid = False
                     while valid == False:
-                        config_ipv6 = input('Do you want to configure IPv6 for this Pool?  Enter "Y" or "N" [Y]: ')
-                        if config_ipv6 == 'Y' or config_ipv6 == '': 
+                        config_ipv6 = input('Do you want to configure IPv6 for this Pool?  Enter "Y" or "N" [N]: ')
+                        if config_ipv6 == 'Y': 
                             config_ipv6 = 'Y'
                             valid = True
-                        elif config_ipv6 == 'N': valid = True
+                        elif config_ipv6 == 'N' or config_ipv6 == '': valid = True
                         else: ezfunctions.message_invalid_y_or_n('short')
 
                     if config_ipv6 == 'Y':
@@ -171,10 +171,10 @@ class pools(object):
                         # Prompt User for Subnet Prefix
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['Prefix'])
-                        kwargs['jData']['default']  = '64'
+                        kwargs['jData']['default']  = 64
                         kwargs['jData']['varInput'] = f'Prefix:'
                         kwargs['jData']['varName']  = f'Prefix'
-                        kwargs['Prefix'] = ezfunctions.varStringLoop(**kwargs)
+                        kwargs['prefix'] = ezfunctions.varNumberLoop(**kwargs)
                         #==============================================
                         # Prompt User for Default Gateway
                         #==============================================
@@ -202,7 +202,7 @@ class pools(object):
                         # Configure IPv6 Configuration Parameters
                         #==============================================
                         polVars['ipv6_configuration'] = {
-                            'gateway':kwargs['defaultGateway'], 'prefix':kwargs['Prefix'],
+                            'gateway':kwargs['defaultGateway'], 'prefix':kwargs['prefix'],
                             'primary_dns':primaryDns, 'secondary_dns':secondaryDns
                         }
                         polVars['ipv6_blocks'] = []
@@ -213,10 +213,10 @@ class pools(object):
                             #==============================================
                             # Prompt User for IPv6 Block Starting Address
                             #==============================================
+                            v6network = ipaddress.ip_network(f"{kwargs['defaultGateway']}/{kwargs['prefix']}", strict=False)
                             kwargs['ip_version'] = 'v6'
-                            subnetList = ezfunctions.subnet_list(**kwargs)
                             kwargs['jData'] = deepcopy(jsonVars['From'])
-                            kwargs['jData']['default']  = subnetList[9]
+                            kwargs['jData']['default']  = v6network[10]
                             kwargs['jData']['varInput'] = f'What is the Starting IPv6 Address to Assign to the Block?'
                             kwargs['jData']['varName']  = f'IPv6 Block Starting IP Address'
                             kwargs['pool_from'] = ezfunctions.varStringLoop(**kwargs)
@@ -225,7 +225,7 @@ class pools(object):
                             #==============================================
                             jsonVars = jsonData['pool.AbstractBlockType']['allOf'][1]['properties']
                             kwargs['jData'] = deepcopy(jsonVars['Size'])
-                            kwargs['jData']['default']  = len(subnetList)-10
+                            kwargs['jData']['default']  = 1024
                             kwargs['jData']['varInput'] = 'How Many IPv6 Addresses should be added to the Pool?  Range is 1-1024.'
                             kwargs['jData']['varName'] = 'Pool Size'
                             pool_size = ezfunctions.varNumberLoop(**kwargs)
