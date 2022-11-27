@@ -20,88 +20,134 @@ class profiles(object):
     #==============================================
     # UCS Chassis Profile Module
     #==============================================
-    def ucs_chassis_profiles(self, jsonData, ezData, **kwargs):
-        name_prefix = self.name_prefix
-        name_suffix = 'chassis'
-        opSystem = kwargs['opSystem']
-        org = self.org
-        policy_type = 'UCS Chassis Profile'
-        polVars = {}
-
+    def chassis(self, **kwargs):
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'UCS Chassis Profile'
+        yaml_file      = 'chassis'
         while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  This will create {policy_type}(s).  The Wizard will will first ask for the policies to')
+            print(f'  assign.  Then you can assign multiple Names/Serials to the same Profile Policy.')
+            print(f'  This wizard will save the configuration for this section to the following file:')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
-                    if not name_prefix == '':
-                        name = '%s' % (name_prefix)
-                    else: name = f'{org}-{name_suffix}'
-
-                    polVars['name']        = ezfunctions.policy_name(name, policy_type)
-                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    polVars["multi_select"] = False
-                    jsonVars = ezData['profiles']
-                    polVars['description'] = jsonVars['action']['description']
-                    polVars["jsonVars"] = sorted(jsonVars['action']['enum'])
-                    polVars["defaultVar"] = jsonVars['action']['default']
-                    polVars["varType"] = 'Action'
-                    polVars["action"] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    valid = False
-                    while valid == False:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  Note: If you do not have the Serial Number at this time you can manually add it to the:')
-                        print(f'        - profiles/ucs_chassis_profiles.auto.tfvars file later.')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        polVars["serial_number"] = input('What is the Serial Number of the Chassis? [press enter to skip]: ')
-                        if polVars["serial_number"] == '':
-                            valid = True
-                        elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', polVars["serial_number"]):
-                            valid = True
-                        else:
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-                            print(f'  Error!! Invalid Serial Number.  "{polVars["serial_number"]}" is not a valid serial.')
-                            print(f'\n-------------------------------------------------------------------------------------------\n')
-
+                    #==============================================
+                    # Prompt User for Policies to Assign
+                    #==============================================
+                    polVars = {}
+                    kwargs['name'] = 'Chassis Profiles'
+                    kwargs['allow_opt_out'] = True
                     policy_list = [
                         'policies.imc_access.imc_access_policy',
                         'policies.power.power_policy',
                         'policies.snmp.snmp_policy',
                         'policies.thermal.thermal_policy'
                     ]
-                    polVars["allow_opt_out"] = True
                     for policy in policy_list:
-                        policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
-                        polVars.update(policyData)
-
+                        kwargs['policy'] = policy
+                        kwargs = policy_select_loop(self, **kwargs)
+                    for i in policy_list:
+                        x = i.split('.')[2]
+                        if not kwargs[x] == '':
+                            if not 'profiles' in policy:
+                                polVars.update({f'{x}':kwargs[x]})
+                    #==============================================
+                    # Prompt User for Domain Profile
+                    #==============================================
+                    kwargs['allow_opt_out'] = False
+                    kwargs['policy'] = 'profiles.domain.domain_profile'
+                    kwargs = policy_select_loop(self, **kwargs)
+                    #==============================================
+                    # Prompt User for Version
+                    #==============================================
+                    #kwargs['multi_select'] = False
+                    #jsonVars = ezData['ezimm']['allOf'][1]['properties']['profiles']
+                    #kwargs['jData'] = deepcopy(jsonVars['action'])
+                    #kwargs['jData']['varType'] = 'Action'
+                    #polVars['action'] = ezfunctions.variablesFromAPI(**kwargs)
+                    #==============================================
+                    # Assign Chassis Names to Profile
+                    #==============================================
+                    polVars['chassis']    = []
+                    domain_name           = kwargs['domain_profile']
+                    inner_loop_count      = 1
+                    sub_loop              = False
+                    kwargs['device_type'] = 'Chassis'
+                    kwargs['yaml_file']   = yaml_file
+                    while sub_loop == False:
+                        #==============================================
+                        # Prompt User for Chassis Name
+                        #==============================================
+                        name        = ezfunctions.policy_name(f'{domain_name}-{inner_loop_count}', policy_type)
+                        #==============================================
+                        # Determine if Description Should be Configured
+                        #==============================================
+                        kwargs['jData'] = deepcopy({})
+                        kwargs['jData']['default']      = True
+                        kwargs['jData']['description']  = 'Chassis Description'
+                        kwargs['jData']['varInput']     = f'Do you want to Assign a Description to the Chassis?'
+                        kwargs['jData']['varName']      = 'Chassis Description'
+                        question = ezfunctions.varBoolLoop(**kwargs)
+                        if question == True: description = ezfunctions.policy_descr(name, policy_type)
+                        else: description = ''
+                        #==============================================
+                        # Prompt User for Chassis Serial
+                        #==============================================
+                        serial      = ezfunctions.ucs_serial(**kwargs)
+                        cprofile = {'name':name}
+                        if not description == '':
+                            cprofile.update({'description':description})
+                        if not serial == '':
+                            cprofile.update({'serial':serial})
+                        #==============================================
+                        # Print Policy and Prompt User to Accept
+                        #==============================================
+                        print(f'\n{"-"*91}\n')
+                        print(textwrap.indent(yaml.dump(cprofile, Dumper=MyDumper, default_flow_style=False
+                        ), ' '*4, predicate=None))
+                        print(f'{"-"*91}\n')
+                        valid_confirm = False
+                        while valid_confirm == False:
+                            confirm_config = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                            if confirm_config == 'Y' or confirm_config == '':
+                                pol_type = 'Chassis Name/Description/Serial'
+                                polVars['names_serials'].append(cprofile)
+                                #==============================================
+                                # Create Additional Policy or Exit Loop
+                                #==============================================
+                                valid_exit = False
+                                while valid_exit == False:
+                                    loop_exit, sub_loop = ezfunctions.exit_default(pol_type, 'N')
+                                    if loop_exit == False: inner_loop_count += 1; valid_confirm = True; valid_exit = True
+                                    elif loop_exit == True: valid_confirm = True; valid_exit = True
+                            elif confirm_config == 'N':
+                                ezfunctions.message_starting_over(pol_type)
+                                valid_confirm = True
+                            else: ezfunctions.message_invalid_y_or_n('short')
+                    
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    action            = "No-op"')
-                    if not polVars["serial_number"] == '':
-                        print(f'    assign_chassis    = True')
-                    else:
-                        print(f'    assign_chassis    = False')
-                    print(f'    name              = "{polVars["name"]}"')
-                    print(f'    imc_access_policy = "{polVars["imc_access_policy"]}"')
-                    print(f'    power_policy      = "{polVars["power_policy"]}"')
-                    print(f'    serial_number     = "{polVars["serial_number"]}"')
-                    print(f'    snmp_policy       = "{polVars["snmp_policy"]}"')
-                    print(f'    thermal_policy    = "{polVars["thermal_policy"]}"')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    print(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
-                        confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                        confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            confirm_policy = 'Y'
-
-                            # Write Policies to Template File
-                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-                            ezfunctions.write_to_template(self, **kwargs)
-
+                            #==============================================
+                            # Add Policy Variables to immDict
+                            #==============================================
+                            kwargs['class_path'] = 'intersight,profiles,chassis'
+                            kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -116,40 +162,40 @@ class profiles(object):
     #==============================================
     # UCS Domain Profile Module
     #==============================================
-    def ucs_domain_profiles(self, jsonData, ezData, policy_prefix, **kwargs):
-        name_prefix = self.name_prefix
-        name_suffix = 'ucs'
-        opSystem = kwargs['opSystem']
-        org = self.org
-        policy_type = 'UCS Domain Profile'
-        polVars = {}
-
+    def domain(self, **kwargs):
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        domain_prefix  = kwargs['domain_prefix']
+        ezData         = kwargs['ezData']
+        name_suffix    = 'ucs'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'UCS Domain Profile'
+        yaml_file      = 'domain'
         while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  This will create {policy_type}(s).')
+            print(f'  This wizard will save the configuration for this section to the following file:')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
-                    if not name_prefix == '':
-                        name = '%s' % (name_prefix)
-                    else: name = f'{org}-{name_suffix}'
+                    polVars = {}
+                    if not domain_prefix == '': name = '%s' % (domain_prefix, name_suffix)
+                    else: name = f'{name_suffix}'
 
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    polVars["multi_select"] = False
-                    jsonVars = ezData['profiles']
-                    polVars['description'] = jsonVars['action']['description']
-                    polVars["jsonVars"] = sorted(jsonVars['action']['enum'])
-                    polVars["defaultVar"] = jsonVars['action']['default']
-                    polVars["varType"] = 'Action'
-                    polVars["action"] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    serial_a,serial_b = ezfunctions.ucs_domain_serials()
-                    polVars["serial_number_fabric_a"] = serial_a
-                    polVars["serial_number_fabric_b"] = serial_b
+                    name = polVars['name']
+                    kwargs['name'] = name
+                    #kwargs['multi_select'] = False
+                    #jsonVars = ezData['ezimm']['allOf'][1]['properties']['profiles']
+                    #kwargs['jData'] = deepcopy(jsonVars['action'])
+                    #kwargs['jData']['varType'] = 'Action'
+                    #polVars['action'] = ezfunctions.variablesFromAPI(**kwargs)
+                    polVars['serials'] = ezfunctions.ucs_domain_serials()
 
                     policy_list = [
                         'policies.network_connectivity.network_connectivity_policy',
@@ -159,92 +205,45 @@ class profiles(object):
                         'policies.syslog.syslog_policy',
                         'policies.system_qos.system_qos_policy'
                     ]
-                    polVars["allow_opt_out"] = True
+                    kwargs['allow_opt_out'] = True
                     for policy in policy_list:
-                        policy_short = policy.split('.')[2]
-                        if re.search(r'(switch_control|system_qos)', policy):
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
-                        else:
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, policy_prefix, policy, **kwargs)
-                        polVars.update(policyData)
-
+                        kwargs['policy'] = policy
+                        kwargs = policy_select_loop(self, **kwargs)
+                        if not kwargs[f"{policy.split('.')[2]}"] == '':
+                            polVars.update({f"{policy.split('.')[2]}":kwargs[f"{policy.split('.')[2]}"]})
+                    polVars.update({'port_policies':[f'{name}-a', f'{name}-b']})
                     policy_list = [
-                        'policies.port.port_policy',
                         'policies.vlan.vlan_policy',
                         'policies.vsan.vsan_policy'
                     ]
-                    polVars["allow_opt_out"] = False
+                    kwargs['allow_opt_out'] = False
                     for policy in policy_list:
-                        policy_long = policy.split('.')[1]
-                        policy_short = policy.split('.')[2]
-                        x = policy_short.split('_')
-                        ezfunctions.policy_description = []
-                        for y in x:
-                            y = y.capitalize()
-                            ezfunctions.policy_description.append(y)
-                        ezfunctions.policy_description = " ".join(ezfunctions.policy_description)
-
-                        polVars[policy_long] = {}
-                        # polVars["policy"] = '%s Fabric A' % (ezfunctions.policy_description)
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  !!! Select the {ezfunctions.policy_description} for Fabric A !!!')
-                        fabric_a,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
-                        # polVars["policy"] = '%s Fabric B' % (ezfunctions.policy_description)
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  !!! Select the {ezfunctions.policy_description} for Fabric B !!!')
-                        fabric_b,policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
-                        polVars[policy_long].update({'fabric_a':fabric_a})
-                        polVars[policy_long].update({'fabric_b':fabric_b})
-                        if policy_long == 'port':
-                            device_model_a = policyData['port'][0][fabric_a][0]['device_model']
-                            device_model_b = policyData['port'][0][fabric_b][0]['device_model']
-                            if not device_model_a == device_model_b:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  !!! Error.  Device Model for the port Policies does not match !!!')
-                                print(f'  Fabric A Port Policy device_model is {device_model_a}.')
-                                print(f'  Fabric B Port Policy device_model is {device_model_b}.')
-                                print(f'  The script is going to set the device_model to match Fabric A for now but you should.')
-                                print(f'  either reject this configuration assuming you mistakenly chose non-matching port policies.')
-                                print(f'  or re-run the port-policy wizard again to correct the configuration.')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                polVars["device_model"] = device_model_a
-                            else:
-                                polVars["device_model"] = device_model_a
-
+                        kwargs['policy'] = policy
+                        policy_description = ezfunctions.mod_pol_description(policy.split('.')[2])
+                        for fab in ['Fabric A', 'Fabric B']:
+                            print(f'\n{"-"*91}\n')
+                            print(f'  !!! Select the {policy_description} for {fab} !!!')
+                            kwargs = policy_select_loop(self, **kwargs)
+                            print(f'\n{"-"*91}\n')
+                            ptype = policy.split('.')[1] + '_policies'
+                            if not polVars.get('ptype'): polVars[ptype] = []
+                            polVars[f"{ptype}"].append(kwargs[f"{policy.split('.')[2]}"])
 
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    action                      = "No-op"')
-                    if not (polVars["serial_number_fabric_a"] == '' and polVars["serial_number_fabric_a"] == ''):
-                        print(f'    assign_switches             = True')
-                    else:
-                        print(f'    assign_switches             = False')
-                    print(f'    device_model                = "{polVars["device_model"]}"')
-                    print(f'    name                        = "{polVars["name"]}"')
-                    print(f'    network_connectivity_policy = "{polVars["network_connectivity_policy"]}"')
-                    print(f'    ntp_policy                  = "{polVars["ntp_policy"]}"')
-                    print(f'    port_policy_fabric_a        = "{polVars["port"]["fabric_a"]}"')
-                    print(f'    port_policy_fabric_b        = "{polVars["port"]["fabric_b"]}"')
-                    print(f'    serial_number_fabric_a      = "{polVars["serial_number_fabric_a"]}"')
-                    print(f'    serial_number_fabric_b      = "{polVars["serial_number_fabric_b"]}"')
-                    print(f'    snmp_policy                 = "{polVars["snmp_policy"]}"')
-                    print(f'    switch_control_policy       = "{polVars["switch_control_policy"]}"')
-                    print(f'    syslog_policy               = "{polVars["syslog_policy"]}"')
-                    print(f'    system_qos_policy           = "{polVars["system_qos_policy"]}"')
-                    print(f'    vlan_policy_fabric_a        = "{polVars["vlan_policies"]["fabric_a"]}"')
-                    print(f'    vlan_policy_fabric_b        = "{polVars["vlan_policies"]["fabric_b"]}"')
-                    print(f'    vsan_policy_fabric_a        = "{polVars["vsan_policies"]["fabric_a"]}"')
-                    print(f'    vsan_policy_fabric_b        = "{polVars["vsan_policies"]["fabric_b"]}"')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    print(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            confirm_policy = 'Y'
-
-                            # Write Policies to Template File
-                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-                            ezfunctions.write_to_template(self, **kwargs)
-
+                            #==============================================
+                            # Add Policy Variables to immDict
+                            #==============================================
+                            kwargs['class_path'] = 'intersight,profiles,domain'
+                            kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -259,187 +258,214 @@ class profiles(object):
     #==============================================
     # UCS Server Profile Module
     #==============================================
-    def ucs_server_profiles(self, jsonData, ezData, **kwargs):
-        name_prefix = self.name_prefix
-        name_suffix = 'server'
-        opSystem = kwargs['opSystem']
-        org = self.org
-        policy_type = 'UCS Server Profile'
-        polVars = {}
-
+    def server(self, **kwargs):
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'server'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'UCS Server Profile'
+        yaml_file      = 'servers'
         while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  This will create {policy_type}(s).  The Wizard will will first ask for the policies to')
+            print(f'  assign.  Then you can assign multiple Names/Serials to the same Profile Policy.')
+            print(f'  This wizard will save the configuration for this section to the following file:')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
-
-                if not name_prefix == '':
-                    name = f'{name_prefix}-{name_suffix}'
-                else:
-                    name = f'{org}-{name_suffix}'
-
-                polVars['name']        = ezfunctions.policy_name(name, policy_type)
-                polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                polVars["allow_opt_out"] = False
-                polVars["multi_select"] = False
-                jsonVars = ezData['profiles']
-                polVars['description'] = jsonVars['action']['description']
-                polVars["jsonVars"] = sorted(jsonVars['action']['enum'])
-                polVars["defaultVar"] = jsonVars['action']['default']
-                polVars["varType"] = 'Action'
-                polVars["action"] = ezfunctions.variablesFromAPI(**kwargs)
-
+                polVars = {}
+                kwargs['allow_opt_out'] = False
+                kwargs['multi_select'] = False
+                #jsonVars = ezData['ezimm']['allOf'][1]['properties']['profiles']
+                #kwargs['jData'] = deepcopy(jsonVars['action'])
+                #kwargs['jData']['varType'] = 'Action'
+                #polVars['action'] = ezfunctions.variablesFromAPI(**kwargs)
 
                 jsonVars = jsonData['server.Profile']['allOf'][1]['properties']
-                polVars['description'] = jsonVars['ServerAssignmentMode']['description']
-                polVars["jsonVars"] = sorted(jsonVars['ServerAssignmentMode']['enum'])
-                polVars["defaultVar"] = jsonVars['ServerAssignmentMode']['default']
-                polVars["varType"] = 'Server Assignment Mode'
-                polVars["server_assignment_mode"] = ezfunctions.variablesFromAPI(**kwargs)
-
-                if polVars["server_assignment_mode"] == 'Static':
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Note: If you do not have the Serial Number at this time you can manually add it to the:')
-                    print(f'        - profiles/ucs_server_profiles.auto.tfvars file later.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    polVars['description'] = 'Serial Number of the Physical Compute Resource to assign to the Profile.'
-                    polVars["varDefault"] = ''
-                    polVars["varInput"] = 'What is the Serial Number of the Server? [press enter to skip]:'
-                    polVars["varName"] = 'Serial Number'
-                    polVars["varRegex"] = '^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$'
-                    polVars["minLength"] = 11
-                    polVars["maxLength"] = 11
-                    polVars['serial_number'] = ezfunctions.varStringLoop(**kwargs)
-                elif polVars["server_assignment_mode"] == 'Pool':
-                    policy_list = [
-                        'pools.resource_pools.resource_pool'
-                    ]
-                    polVars["allow_opt_out"] = False
-                    for policy in policy_list:
-                        policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
-                        polVars.update(policyData)
-                        server_template = True
-                        valid = True
-
-                valid = False
-                while valid == False:
-                    server_template = input('Do you want to Associate to a UCS Server Profile Template?  Enter "Y" or "N" [Y]: ')
-                    if server_template == '' or server_template == 'Y':
-                        policy_list = [
-                            'profiles.ucs_server_profile_templates.ucs_server_profile_template'
-                        ]
-                        polVars["allow_opt_out"] = False
-                        for policy in policy_list:
-                            policy_short = policy.split('.')[2]
-                            polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
-                            polVars.update(policyData)
-                            server_template = True
-                            valid = True
-                    elif server_template == 'N':
-                        server_template = False
-                        valid = True
-                    else: ezfunctions.message_invalid_y_or_n('short')
-
-                if server_template == False:
-                    polVars["multi_select"] = False
+                #==============================================
+                # Prompt User for Server Assignment Mode
+                #==============================================
+                kwargs['jData'] = deepcopy(jsonVars['ServerAssignmentMode'])
+                kwargs['jData']["varType"] = 'Server Assignment Mode'
+                server_assignment_mode = ezfunctions.variablesFromAPI(**kwargs)
+                #==============================================
+                # Prompt User for Resource Pool if Mode is Pool
+                #==============================================
+                kwargs['name'] = 'Server Profiles'
+                if server_assignment_mode == 'Pool':
+                   kwargs['policy'] = 'pools.resource.resource_pool'
+                   kwargs = policy_select_loop(self, **kwargs)
+                   polVars.update({'resource_pool':kwargs['resource_pool']})
+                #==============================================
+                # Prompt User for Template Association
+                #==============================================
+                kwargs['jData'] = deepcopy({})
+                kwargs['jData']['default']      = True
+                kwargs['jData']['description']  = 'UCS Server Profile Template Association'
+                kwargs['jData']['varInput']     = f'Do you want to Associate the profile(s) to a UCS Server Profile Template?'
+                kwargs['jData']['varName']      = 'Server Profile Template'
+                server_template = ezfunctions.varBoolLoop(**kwargs)
+                if server_template == True:
+                    kwargs['policy'] = 'profiles.server_profile_templates.ucs_server_profile_template'
+                    kwargs = policy_select_loop(self, **kwargs)
+                    polVars.update({'ucs_server_profile_template':kwargs['ucs_server_profile_template']})
+                else:
+                    #==============================================
+                    # Prompt User for Target Platform
+                    #==============================================
                     jsonVars = jsonData['server.BaseProfile']['allOf'][1]['properties']
-                    polVars['description'] = jsonVars['TargetPlatform']['description']
-                    polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
-                    polVars["defaultVar"] = jsonVars['TargetPlatform']['default']
-                    polVars["varType"] = 'Target Platform'
-                    polVars["target_platform"] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    #==============================================____
-                    #
-                    # Policies On Hold for Right Now
-                    # 'policies.certificate_management_policies.certificate_management_policy',
-                    #==============================================____
-                    polVars["uuid_pool"] = ''
-                    polVars["static_uuid_address"] = ''
-                    if polVars["target_platform"] == 'FIAttached':
-                        policy_list = [
-                            #___________________________
-                            #
+                    kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
+                    kwargs['jData']['varType'] = 'Target Platform'
+                    polVars['target_platform'] = ezfunctions.variablesFromAPI(**kwargs)
+                    #==============================================
+                    # Prompt User with Policies to Select
+                    #==============================================
+                    policy_list = [
+                        #==============================================
+                        # Compute Configuration
+                        #==============================================
+                        'policies.bios.bios_policy',
+                        'policies.boot_order.boot_order_policy',
+                        'policies.virtual_media.virtual_media_policy',
+                        #==============================================
+                        # Management Configuration
+                        #==============================================
+                        'policies.ipmi_over_lan.ipmi_over_lan_policy',
+                        'policies.local_user.local_user_policy',
+                        'policies.serial_over_lan.serial_over_lan_policy',
+                        'policies.snmp.snmp_policy',
+                        'policies.syslog.syslog_policy',
+                        'policies.virtual_kvm.virtual_kvm_policy',
+                        #==============================================
+                        # Storage Configuration
+                        #==============================================
+                        'policies.sd_card.sd_card_policy',
+                        'policies.storage.storage_policy',
+                        #==============================================
+                        # Network Configuration
+                        #==============================================
+                        'policies.lan_connectivity.lan_connectivity_policy',
+                        'policies.san_connectivity.san_connectivity_policy',
+                    ]
+                    if polVars['target_platform'] == 'FIAttached':
+                        policy_list.extend([
+                            #==============================================
                             # Compute Configuration
-                            #___________________________
-                            'pools.uuid_pools.uuid_pool',
-                            'policies.bios_policies.bios_policy',
-                            'policies.boot_order_policies.boot_order_policy',
-                            'policies.power_policies.power_policy',
-                            'policies.virtual_media_policies.virtual_media_policy',
-                            #___________________________
-                            #
+                            #==============================================
+                            'pools.uuid.uuid_pool',
+                            'policies.certificate_management.certificate_management_policy',
+                            'policies.power.power_policy',
+                            #==============================================
                             # Management Configuration
-                            #___________________________
-                            'policies.imc_access_policies.imc_access_policy',
-                            'policies.ipmi_over_lan_policies.ipmi_over_lan_policy',
-                            'policies.local_user_policies.local_user_policy',
-                            'policies.serial_over_lan_policies.serial_over_lan_policy',
-                            'policies.snmp_policies.snmp_policy',
-                            'policies.syslog_policies.syslog_policy',
-                            'policies.virtual_kvm_policies.virtual_kvm_policy',
-                            #___________________________
-                            #
-                            # Storage Configuration
-                            #___________________________
-                            'policies.sd_card_policies.sd_card_policy',
-                            'policies.storage_policies.storage_policy',
-                            #___________________________
-                            #
-                            # Network Configuration
-                            #___________________________
-                            'policies.lan_connectivity_policies.lan_connectivity_policy',
-                            'policies.san_connectivity_policies.san_connectivity_policy',
-                        ]
-                    elif polVars["target_platform"] == 'Standalone':
-                        policy_list = [
-                            #___________________________
-                            #
+                            #==============================================
+                            'policies.imc_access.imc_access_policy',
+                        ])
+                    elif polVars['target_platform'] == 'Standalone':
+                        policy_list.extend([
+                            #==============================================
                             # Compute Configuration
-                            #___________________________
-                            'policies.bios_policies.bios_policy',
-                            'policies.boot_order_policies.boot_order_policy',
-                            'policies.persistent_memory_policies.persistent_memory_policy',
-                            'policies.virtual_media_policies.virtual_media_policy',
-                            #___________________________
-                            #
+                            #==============================================
+                            'policies.persistent_memory.persistent_memory_policy',
+                            #==============================================
                             # Management Configuration
-                            #___________________________
-                            'policies.device_connector_policies.device_connector_policy',
-                            'policies.ipmi_over_lan_policies.ipmi_over_lan_policy',
-                            'policies.ldap_policies.ldap_policy',
-                            'policies.local_user_policies.local_user_policy',
-                            'policies.network_connectivity_policies.network_connectivity_policy',
-                            'policies.ntp_policies.ntp_policy',
-                            'policies.serial_over_lan_policies.serial_over_lan_policy',
-                            'policies.smtp_policies.smtp_policy',
-                            'policies.snmp_policies.snmp_policy',
-                            'policies.ssh_policies.ssh_policy',
-                            'policies.syslog_policies.syslog_policy',
-                            'policies.virtual_kvm_policies.virtual_kvm_policy',
-                            #___________________________
-                            #
-                            # Storage Configuration
-                            #___________________________
-                            'policies.sd_card_policies.sd_card_policy',
-                            'policies.storage_policies.storage_policy',
-                            #___________________________
-                            #
+                            #==============================================
+                            'policies.device_connector.device_connector_policy',
+                            'policies.ldap.ldap_policy',
+                            'policies.network_connectivity.network_connectivity_policy',
+                            'policies.ntp.ntp_policy',
+                            'policies.smtp.smtp_policy',
+                            'policies.ssh.ssh_policy',
+                            #==============================================
                             # Network Configuration
-                            #___________________________
-                            'policies.adapter_configuration_policies.adapter_configuration_policy',
-                            'policies.lan_connectivity_policies.lan_connectivity_policy',
-                            'policies.san_connectivity_policies.san_connectivity_policy',
-                        ]
-                    polVars["allow_opt_out"] = True
+                            #==============================================
+                            'policies.adapter_configuration.adapter_configuration_policy',
+                        ])
+                    policy_list.sort()
+                    kwargs['allow_opt_out'] = True
                     for policy in policy_list:
-                        policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
-                        polVars.update(policyData)
-
-                polVars["boot_policy"] = polVars["boot_order_policy"]
+                        kwargs['policy'] = policy
+                        kwargs = policy_select_loop(self, **kwargs)
+                        ptype = policy.split('.')[2]
+                        if not kwargs[ptype] == '':
+                            polVars.update({f'{ptype}':kwargs[ptype]})
+                #==============================================
+                # Prompt User for Server Name Prefix
+                #==============================================
+                kwargs['jData'] = deepcopy({})
+                kwargs['jData']['default']      = True
+                kwargs['jData']['description']  = 'Server Name Prefix'
+                kwargs['jData']['varInput']     = f'Do you want to use a Server Name Prefix for the Server Names?'
+                kwargs['jData']['varName']      = 'Server Name Prefix'
+                question = ezfunctions.varBoolLoop(**kwargs)
+                if question == True:
+                    if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
+                    else: name = f'{name_suffix}'
+                    server_prefix = ezfunctions.policy_name(name, policy_type)
+                else: server_prefix = ''
+                #==============================================
+                # Assign Server Names to Profile
+                #==============================================
+                polVars['servers']    = []
+                inner_loop_count      = 1
+                sub_loop              = False
+                kwargs['device_type'] = 'Server'
+                kwargs['yaml_file']   = yaml_file
+                while sub_loop == False:
+                    #==============================================
+                    # Prompt User for Server Name
+                    #==============================================
+                    if not server_prefix == '':
+                        name    = ezfunctions.policy_name(f'{server_prefix}-{inner_loop_count}', policy_type)
+                    else: name  = ezfunctions.policy_name(f'{name_prefix}-{inner_loop_count}', policy_type)
+                    #==============================================
+                    # Determine if Description Should be Configured
+                    #==============================================
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']      = True
+                    kwargs['jData']['description']  = 'Server Description'
+                    kwargs['jData']['varInput']     = f'Do you want to Assign a Description to the Server?'
+                    kwargs['jData']['varName']      = 'Server Description'
+                    question = ezfunctions.varBoolLoop(**kwargs)
+                    if question == True: description = ezfunctions.policy_descr(name, policy_type)
+                    else: description = ''
+                    #==============================================
+                    # Prompt User for Server Serial
+                    #==============================================
+                    serial      = ezfunctions.ucs_serial(**kwargs)
+                    sprofile = {'name':name}
+                    if not description == '':
+                        sprofile.update({'description':description})
+                    if not serial == '':
+                        sprofile.update({'serial':serial})
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
+                    print(f'\n{"-"*91}\n')
+                    print(textwrap.indent(yaml.dump(sprofile, Dumper=MyDumper, default_flow_style=False
+                    ), ' '*4, predicate=None))
+                    print(f'{"-"*91}\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_config = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                        if confirm_config == 'Y' or confirm_config == '':
+                            pol_type = 'Server Name/Description/Serial'
+                            polVars['servers'].append(sprofile)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
+                            valid_exit = False
+                            while valid_exit == False:
+                                loop_exit, sub_loop = ezfunctions.exit_default(pol_type, 'N')
+                                if loop_exit == False: inner_loop_count += 1; valid_confirm = True; valid_exit = True
+                                elif loop_exit == True: valid_confirm = True; valid_exit = True
+                        elif confirm_config == 'N':
+                            ezfunctions.message_starting_over(pol_type)
+                            valid_confirm = True
+                        else: ezfunctions.message_invalid_y_or_n('short')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                 print(f'-------------------------------------------------------------------------------------------\n')
@@ -447,141 +473,133 @@ class profiles(object):
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
-                        confirm_policy = 'Y'
-
-                        # Write Policies to Template File
-                        polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-                        ezfunctions.write_to_template(self, **kwargs)
-
+                        #==============================================
+                        # Add Policy Variables to immDict
+                        #==============================================
+                        kwargs['class_path'] = 'intersight,profiles,chassis'
+                        kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        #==============================================
+                        # Create Additional Policy or Exit Loop
+                        #==============================================
                         configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                         valid_confirm = True
                     elif confirm_policy == 'N':
                         ezfunctions.message_starting_over(policy_type)
                         valid_confirm = True
-                    else: ezfunctions.message_invalid_y_or_n('long')
+                    else: ezfunctions.message_invalid_y_or_n('short')
         # Return kwargs
         return kwargs
 
     #==============================================
     # UCS Server Profile Template Module
     #==============================================
-    def ucs_server_profile_templates(self, jsonData, ezData, **kwargs):
-        name_prefix = self.name_prefix
-        name_suffix = 'template'
-        opSystem = kwargs['opSystem']
-        org = self.org
-        policy_type = 'UCS Server Profile Template'
-        polVars = {}
-
+    def server_profile_templates(self, **kwargs):
+        baseRepo       = kwargs['args'].dir
         configure_loop = False
+        ezData         = kwargs['ezData']
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'template'
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'UCS Server Profile Template'
+        yaml_file      = 'servers'
         while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  This will create {policy_type}(s).')
+            print(f'  This wizard will save the configuration for this section to the following file:')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}templates{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
                 while policy_loop == False:
-
+                    #==============================================
+                    # Prompt User for Template Profile
+                    #==============================================
+                    polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
-
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    polVars["multi_select"] = False
+                    kwargs['name']         = polVars['name']
+                    #==============================================
+                    # Prompt User for Target Platform
+                    #==============================================
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['server.BaseProfile']['allOf'][1]['properties']
-                    polVars['description'] = jsonVars['TargetPlatform']['description']
-                    polVars["jsonVars"] = sorted(jsonVars['TargetPlatform']['enum'])
-                    polVars["defaultVar"] = jsonVars['TargetPlatform']['default']
-                    polVars["varType"] = 'Target Platform'
-                    polVars["target_platform"] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    #==============================================____
-                    #
-                    # Policies On Hold for Right Now
-                    # 'policies.certificate_management_policies.certificate_management_policy',
-                    #==============================================____
-                    if polVars["target_platform"] == 'FIAttached':
-                        policy_list = [
-                            #___________________________
-                            #
+                    kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
+                    kwargs['jData']['varType'] = 'Target Platform'
+                    polVars['target_platform'] = ezfunctions.variablesFromAPI(**kwargs)
+                    policy_list = [
+                        #==============================================
+                        # Compute Configuration
+                        #==============================================
+                        'policies.bios.bios_policy',
+                        'policies.boot_order.boot_order_policy',
+                        'policies.virtual_media.virtual_media_policy',
+                        #==============================================
+                        # Management Configuration
+                        #==============================================
+                        'policies.ipmi_over_lan.ipmi_over_lan_policy',
+                        'policies.local_user.local_user_policy',
+                        'policies.serial_over_lan.serial_over_lan_policy',
+                        'policies.snmp.snmp_policy',
+                        'policies.syslog.syslog_policy',
+                        'policies.virtual_kvm.virtual_kvm_policy',
+                        #==============================================
+                        # Storage Configuration
+                        #==============================================
+                        'policies.sd_card.sd_card_policy',
+                        'policies.storage.storage_policy',
+                        #==============================================
+                        # Network Configuration
+                        #==============================================
+                        'policies.lan_connectivity.lan_connectivity_policy',
+                        'policies.san_connectivity.san_connectivity_policy',
+                    ]
+                    if polVars['target_platform'] == 'FIAttached':
+                        policy_list.extend([
+                            #==============================================
                             # Compute Configuration
-                            #___________________________
-                            'pools.uuid_pools.uuid_pool',
-                            'policies.bios_policies.bios_policy',
-                            'policies.boot_order_policies.boot_order_policy',
-                            'policies.power_policies.power_policy',
-                            'policies.virtual_media_policies.virtual_media_policy',
-                            #___________________________
-                            #
+                            #==============================================
+                            'pools.uuid.uuid_pool',
+                            'policies.certificate_management.certificate_management_policy',
+                            'policies.power.power_policy',
+                            #==============================================
                             # Management Configuration
-                            #___________________________
-                            'policies.imc_access_policies.imc_access_policy',
-                            'policies.ipmi_over_lan_policies.ipmi_over_lan_policy',
-                            'policies.local_user_policies.local_user_policy',
-                            'policies.serial_over_lan_policies.serial_over_lan_policy',
-                            'policies.snmp_policies.snmp_policy',
-                            'policies.syslog_policies.syslog_policy',
-                            'policies.virtual_kvm_policies.virtual_kvm_policy',
-                            #___________________________
-                            #
-                            # Storage Configuration
-                            #___________________________
-                            'policies.sd_card_policies.sd_card_policy',
-                            'policies.storage_policies.storage_policy',
-                            #___________________________
-                            #
-                            # Network Configuration
-                            #___________________________
-                            'policies.lan_connectivity_policies.lan_connectivity_policy',
-                            'policies.san_connectivity_policies.san_connectivity_policy',
-                        ]
-                    elif polVars["target_platform"] == 'Standalone':
-                        policy_list = [
-                            #___________________________
-                            #
+                            #==============================================
+                            'policies.imc_access.imc_access_policy',
+                        ])
+                    elif polVars['target_platform'] == 'Standalone':
+                        policy_list.extend([
+                            #==============================================
                             # Compute Configuration
-                            #___________________________
-                            'policies.bios_policies.bios_policy',
-                            'policies.boot_order_policies.boot_order_policy',
-                            'policies.persistent_memory_policies.persistent_memory_policy',
-                            'policies.virtual_media_policies.virtual_media_policy',
-                            #___________________________
-                            #
+                            #==============================================
+                            'policies.persistent_memory.persistent_memory_policy',
+                            #==============================================
                             # Management Configuration
-                            #___________________________
-                            'policies.device_connector_policies.device_connector_policy',
-                            'policies.ipmi_over_lan_policies.ipmi_over_lan_policy',
-                            'policies.ldap_policies_policies.ldap_policy',
-                            'policies.local_user_policies.local_user_policy',
-                            'policies.network_connectivity_policies.network_connectivity_policy',
-                            'policies.ntp_policies.ntp_policy',
-                            'policies.serial_over_lan_policies.serial_over_lan_policy',
-                            'policies.smtp_policies.smtp_policy',
-                            'policies.snmp_policies.snmp_policy',
-                            'policies.ssh_policies.ssh_policy',
-                            'policies.syslog_policies.syslog_policy',
-                            'policies.virtual_kvm_policies.virtual_kvm_policy',
-                            #___________________________
-                            #
-                            # Storage Configuration
-                            #___________________________
-                            'policies.sd_card_policies.sd_card_policy',
-                            'policies.storage_policies.storage_policy',
-                            #___________________________
-                            #
+                            #==============================================
+                            'policies.device_connector.device_connector_policy',
+                            'policies.ldap.ldap_policy',
+                            'policies.network_connectivity.network_connectivity_policy',
+                            'policies.ntp.ntp_policy',
+                            'policies.smtp.smtp_policy',
+                            'policies.ssh.ssh_policy',
+                            #==============================================
                             # Network Configuration
-                            #___________________________
-                            'policies.adapter_configuration_policies.adapter_configuration_policy',
-                            'policies.lan_connectivity_policies.lan_connectivity_policy',
-                            'policies.san_connectivity_policies.san_connectivity_policy',
-                        ]
-                    polVars["allow_opt_out"] = True
+                            #==============================================
+                            'policies.adapter_configuration.adapter_configuration_policy',
+                        ])
+                    policy_list.sort()
+                    kwargs['allow_opt_out'] = True
                     for policy in policy_list:
-                        policy_short = policy.split('.')[2]
-                        polVars[policy_short],policyData = policy_select_loop(jsonData, ezData, name_prefix, policy, **kwargs)
-                        polVars.update(policyData)
+                        kwargs['policy'] = policy
+                        kwargs = policy_select_loop(self, **kwargs)
+                        ptype = policy.split('.')[2]
+                        if not kwargs[ptype] == '':
+                            polVars.update({f'{ptype}':kwargs[ptype]})
 
-                    polVars["boot_policy"] = polVars["boot_order_policy"]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -589,12 +607,14 @@ class profiles(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            confirm_policy = 'Y'
-
-                            # Write Policies to Template File
-                            polVars["template_file"] = '%s.jinja2' % (polVars["template_type"])
-                            ezfunctions.write_to_template(self, **kwargs)
-
+                            #==============================================
+                            # Add Policy Variables to immDict
+                            #==============================================
+                            kwargs['class_path'] = 'intersight,profiles,chassis'
+                            kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -606,10 +626,11 @@ class profiles(object):
         # Return kwargs
         return kwargs
 
-def policy_select_loop(**kwargs):
+def policy_select_loop(self, **kwargs):
     ezData = kwargs['ezData']
     policy = kwargs['policy']
-    name_prefix = kwargs['name_prefix']
+    name   = kwargs['name']
+    name_prefix = self.name_prefix
     org = kwargs['org']
     loop_valid = False
     while loop_valid == False:
@@ -619,30 +640,25 @@ def policy_select_loop(**kwargs):
         kwargs['inner_var']    = policy.split('.')[2]
         inner_policy = kwargs['inner_policy']
         inner_type   = kwargs['inner_type']
+        inner_var    = kwargs['inner_var']
         kwargs = ezfunctions.policies_parse(inner_type, inner_policy, **kwargs)
-        if not len(kwargs["policies"]) > 0:
+        if not len(kwargs['policies'][kwargs['inner_policy']]) > 0:
             valid = False
             while valid == False:
+                policy_description = ezfunctions.mod_pol_description(inner_var)
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'   There was no {inner_policy} found.')
+                print(f'   There was no {policy_description} found.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                policy_description = ezfunctions.mod_pol_description(inner_policy)
-                if kwargs["allow_opt_out"] == True:
+                if kwargs['allow_opt_out'] == True:
                     Question = input(f'Do you want to create a(n) {policy_description}?  Enter "Y" or "N" [Y]: ')
-                    if Question == '' or Question == 'Y':
-                        create_policy = True
-                        valid = True
-                    elif Question == 'N':
-                        create_policy = False
-                        valid = True
-                        return kwargs
-                else:
-                    create_policy = True
-                    valid = True
+                    if Question == '' or Question == 'Y': create_policy = True; valid = True
+                    elif Question == 'N': create_policy = False; valid = True; return kwargs
+                else: create_policy = True; valid = True
         else:
+            kwargs['name'] = name
             kwargs = ezfunctions.choose_policy(inner_policy, **kwargs)
             if kwargs['policy'] == 'create_policy': create_policy = True
-            elif kwargs['policy'] == '' and kwargs["allow_opt_out"] == True:
+            elif kwargs['policy'] == '' and kwargs['allow_opt_out'] == True:
                 loop_valid = True
                 create_policy = False
                 kwargs[kwargs['inner_var']] = ''
@@ -664,7 +680,7 @@ def policy_select_loop(**kwargs):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             lansan_list   = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
             policies_list = ezData['ezimm']['allOf'][1]['properties']['policies_list']['enum']
-            profiles_list = ['ucs_server_profiles', 'ucs_server_profile_templates']
+            profiles_list = ['chassis', 'domain', 'server', 'server_profile_templates']
             if inner_policy in lansan_list:
                 kwargs = eval(f"lan.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)")
             elif re.search('pools$', inner_policy):

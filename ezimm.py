@@ -496,6 +496,7 @@ def process_wizard(**kwargs):
             name_prefix = org
 
     for policy in policy_list:
+        kwargs['domain_prefix'] = domain_prefix
         #==============================================
         # Intersight Pools
         #==============================================
@@ -520,7 +521,6 @@ def process_wizard(**kwargs):
         #==============================================
         # Intersight Profiles
         #==============================================
-        kwargs['domain_prefix'] = domain_prefix
         plist = ezData['ezimm']['allOf'][1]['properties']['list_profiles']['enum']
         type = 'profiles'
         for i in plist:
@@ -530,7 +530,6 @@ def process_wizard(**kwargs):
         # Quick Start - Pools
         #==============================================
         quick = 'classes.quick_start.quick_start'
-        kwargs['domain_prefix'] = domain_prefix
         type = 'pools'
         if 'quick_start_pools' in policy:
             kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")

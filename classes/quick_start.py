@@ -381,8 +381,8 @@ class quick_start(object):
                     #==============================================
                     # Configure Ethernet Uplink Port-Channels
                     #==============================================
-                    kwargs['port_type'] = 'Ethernet Uplink Port-Channel'
-                    kwargs = policies.port_list_eth(**kwargs)
+                    kwargs['port_type'] = 'Ethernet Uplink Port-Channels'
+                    kwargs = policies.port_list_eth(self, **kwargs)
                     kwargs['port_channel_ethernet_uplinks'] = kwargs['portDict']
                     kwargs['fc_ports_in_use'] = []
                     if len(kwargs['fc_converted_ports']) > 0:
@@ -391,14 +391,14 @@ class quick_start(object):
                         #==============================================
                         kwargs['portDict'] = []
                         kwargs['port_type'] = 'FC Uplink Port-Channels'
-                        kwargs = policies.port_list_fc(**kwargs)
+                        kwargs = policies.port_list_fc(self, **kwargs)
                         kwargs['port_channel_fc_uplinks'] = kwargs['portDict']
                     #==============================================
                     # Configure Server Ports
                     #==============================================
                     kwargs['portDict'] = []
                     kwargs['port_type'] = 'Server Ports'
-                    kwargs = policies.port_list_eth(**kwargs)
+                    kwargs = policies.port_list_eth(self, **kwargs)
                     kwargs['port_role_servers'] = kwargs['portDict']
 
                     kwargs['port_policy'] = {
@@ -433,7 +433,7 @@ class quick_start(object):
                     #==============================================
                     # Prompt User for Timezone
                     #==============================================
-                    polVars['multi_select'] = False
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['appliance.SystemInfo']['allOf'][1]['properties']['TimeZone']['enum']
                     tz_regions = []
                     for i in jsonVars:
@@ -1590,7 +1590,7 @@ class quick_start(object):
 #==============================================
 # Function - Prompt User to Select Policy
 #==============================================
-def policy_select_loop(**kwargs):
+def policy_select_loop(self, **kwargs):
     ezData      = kwargs['ezData']
     policy      = kwargs['policy']
     name_prefix = kwargs['name_prefix']

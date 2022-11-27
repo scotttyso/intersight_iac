@@ -555,19 +555,13 @@ def naming_rule(name_prefix, name_suffix, org):
 #======================================================
 def naming_rule_fabric(loop_count, name_prefix, org):
     if loop_count % 2 == 0:
-        if not name_prefix == '':
-            name = '%s_A' % (name_prefix)
-        elif not org == 'default':
-            name = '%s_A' % (org)
-        else:
-            name = 'Fabric_A'
+        if not name_prefix == '': name = f'{name_prefix}-a'
+        elif not org == 'default': name = f'{org}-a'
+        else: name = 'fabric-a'
     else:
-        if not name_prefix == '':
-            name = '%s_B' % (name_prefix)
-        elif not org == 'default':
-            name = '%s_B' % (org)
-        else:
-            name = 'Fabric_B'
+        if not name_prefix == '': name = f'{name_prefix}-b'
+        elif not org == 'default': name = f'{org}-a'
+        else: name = 'fabric-b'
     return name
 
 #======================================================
@@ -1184,12 +1178,36 @@ def tfc_sensitive_variables(varValue, jsonData, polVars):
     print('* Adding "{}" to "{}"').format(polVars['Description'], polVars['workspaceName'])
     return polVars
 
+#==========================================================
+# Function - Prompt User for Chassis/Server Serial Numbers
+#==========================================================
+def ucs_serial(**kwargs):
+    baseRepo    = kwargs['args'].dir
+    device_type = kwargs['device_type']
+    org         = kwargs['org']
+    path_sep    = kwargs['path_sep']
+    yaml_file   = kwargs['yaml_file']
+    valid = False
+    while valid == False:
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f'  Note: If you do not have the Serial Number at this time you can manually add it to:')
+        print(f'    - {baseRepo}{path_sep}{org}{path_sep}profiles{path_sep}{yaml_file}.yaml')
+        print(f'      file later.')
+        print(f'\n-------------------------------------------------------------------------------------------\n')
+        serial = input(f'What is the Serial Number of the {device_type}? [press enter to skip]: ')
+        if serial == '': valid = True
+        elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', serial): valid = True
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  Error!! Invalid Serial Number.  "{serial}" is not a valid serial.')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+    return serial
+
 #======================================================
 # Function - Prompt User for Domain Serial Numbers
 #======================================================
 def ucs_domain_serials(**kwargs):
-    args = kwargs['args']
-    baseRepo = args.dir
+    baseRepo = kwargs['args'].dir
     org = kwargs['org']
     path_sep = kwargs['path_sep']
     print(f'\n-------------------------------------------------------------------------------------------\n')

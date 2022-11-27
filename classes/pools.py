@@ -19,7 +19,7 @@ class pools(object):
     #==============================================
     # IP Pools Module
     #==============================================
-    def ip_pools(self, **kwargs):
+    def ip(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -43,7 +43,7 @@ class pools(object):
                 while policy_loop == False:
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     # Pull Information from API Documentation
@@ -283,7 +283,7 @@ class pools(object):
     #==============================================
     # IQN Pools Module
     #==============================================
-    def iqn_pools(self, **kwargs):
+    def iqn(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -301,7 +301,7 @@ class pools(object):
                 while policy_loop == False:
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     kwargs['multi_select'] = False
@@ -396,7 +396,7 @@ class pools(object):
     #==============================================
     # MAC Pools Module
     #==============================================
-    def mac_pools(self, **kwargs):
+    def mac(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -419,10 +419,11 @@ class pools(object):
             policy_loop = False
             while policy_loop == False:
                 polVars = {}
+                if name_prefix == '': name_prefix = 'mac'
                 name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                polVars['multi_select'] = False
+                kwargs['multi_select'] = False
                 jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                 #==============================================
                 #
@@ -492,7 +493,7 @@ class pools(object):
     #==============================================
     # Resource Pool Module
     #==============================================
-    def resource_pools(self, **kwargs):
+    def resource(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
@@ -515,12 +516,12 @@ class pools(object):
                 while policy_loop == False:
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
 
                     # Pull in the Policies from API Documentation
-                    polVars['multi_select'] = False
+                    kwargs['multi_select'] = False
                     #==============================================
                     # Prompt User for Assignment Order
                     #==============================================
@@ -582,7 +583,7 @@ class pools(object):
     #==============================================
     # UUID Pools Module
     #==============================================
-    def uuid_pools(self, **kwargs):
+    def uuid(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -603,10 +604,10 @@ class pools(object):
                 while policy_loop == False:
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars['multi_select'] = False
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
                     # Prompt User for Assignment Order
@@ -680,7 +681,7 @@ class pools(object):
     #==============================================
     # WWNN Pools Module
     #==============================================
-    def wwnn_pools(self, **kwargs):
+    def wwnn(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -705,10 +706,10 @@ class pools(object):
                 while policy_loop == False:
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars['multi_select'] = False
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
                     # Prompt User for Assignment Order
@@ -769,7 +770,7 @@ class pools(object):
     #==============================================
     # WWPN Pools Module
     #==============================================
-    def wwpn_pools(self, **kwargs):
+    def wwpn(self, **kwargs):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
@@ -794,10 +795,11 @@ class pools(object):
                 policy_loop = False
                 while policy_loop == False:
                     polVars = {}
+                    if name_prefix == '': name_prefix = 'wwpn'
                     name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars['multi_select'] = False
+                    kwargs['multi_select'] = False
                     jsonVars = jsonData['pool.AbstractPool']['allOf'][1]['properties']
                     #==============================================
                     # Prompt User for Assignment Order

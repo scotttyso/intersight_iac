@@ -1,5 +1,4 @@
 from copy import deepcopy
-from textwrap import fill
 import base64
 import lansan
 import pools
@@ -51,7 +50,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -134,6 +133,7 @@ class policies(object):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         ezData         = kwargs['ezData']
+        name_prefix    = self.name_prefix
         org            = self.org
         path_sep       = kwargs['path_sep']
         policy_type    = 'BIOS Policy'
@@ -159,18 +159,17 @@ class policies(object):
                     #==============================================
                     # Prompt User for BIOS Template Name
                     #==============================================
-                    jsonVars = ezData['policies']['bios.Policy']
+                    jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['bios.Policy']
                     kwargs['jData'] = deepcopy(jsonVars['templates'])
                     kwargs['jData']['varType'] = 'BIOS Template'
                     polVars['policy_template'] = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
                     # Prompt User for Name and Description
                     #==============================================
-                    if not polVars['name_prefix'] == '':
-                        name = '%s-%s' % (polVars['name_prefix'], polVars['policy_template'])
-                    else: name = '%s-%s' % (polVars['org'], polVars['policy_template'])
-                    polVars['name']        = ezfunctions.policy_name(name, polVars['policy_type'])
-                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], polVars['policy_type'])
+                    if not name_prefix == '': name = '{}-{}'.format(name_prefix, polVars['policy_template'])
+                    else: name = polVars['policy_template']
+                    polVars['name']        = ezfunctions.policy_name(name, policy_type)
+                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================
@@ -231,8 +230,9 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
+                    kwargs['name']         = polVars['name']
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
                     # Get API Data
@@ -279,6 +279,7 @@ class policies(object):
                                 # Prompt User for Boot Device Name
                                 #==============================================
                                 kwargs['jData'] = deepcopy(jsonVars['Name'])
+                                kwargs['jData']['default']  = objectType.split('.')[1].lower()
                                 kwargs['jData']['maximum']  = 30
                                 kwargs['jData']['minimum']  = 1
                                 kwargs['jData']['varInput'] = 'Boot Device Name:'
@@ -312,13 +313,13 @@ class policies(object):
                                     # Prompt User for Slot
                                     #==============================================
                                     jsonVars = jsonData['boot.LocalDisk']['allOf'][1]['properties']
-                                    ezVars = ezData['policies']['boot.PrecisionPolicy']
+                                    ezVars = ezData['ezimm']['allOf'][1]['properties']['policies']['boot.PrecisionPolicy']
                                     kwargs['jData'] = deepcopy(jsonVars['Slot'])
                                     kwargs['jData']['default'] = ezVars['boot.Localdisk']['default']
                                     kwargs['jData']['enum'] = ezVars['boot.Localdisk'][target_platform]
                                     kwargs['jData']['varType'] = 'Slot'
                                     Slot = ezfunctions.variablesFromAPI(**kwargs)
-                                    if re.search('[0-9]+', Slot):
+                                    if re.search('^[0-9]+$', Slot):
                                         kwargs['jData'] = deepcopy({})
                                         kwargs['jData']['default']     =  1
                                         kwargs['jData']['description'] = 'Slot Number between 1 and 205.'
@@ -349,8 +350,8 @@ class policies(object):
                                     #==============================================
                                     kwargs['allow_opt_out'] = False
                                     kwargs['policy'] = 'policies.lan_connectivity.lan_connectivity_policy'
+                                    kwargs = policy_select_loop(self, **kwargs)
                                     lan_connectivity_policy = kwargs['lan_connectivity_policy']
-                                    kwargs = policy_select_loop(**kwargs)
                                     vnicNames = []
                                     for item in kwargs['immDict']['orgs'][org]['intersight']['policies']['lan_connectivity']:
                                         if item['name'] == lan_connectivity_policy:
@@ -425,9 +426,12 @@ class policies(object):
                                     kwargs['jData']['varName'] = 'LUN ID'
                                     boot_device.update({'lun':ezfunctions.varNumberLoop(**kwargs)})
                                 if objectType == 'boot.San':
+                                    #==============================================
+                                    # Prompt User for SAN Connectivity Policy
+                                    #==============================================
                                     kwargs['allow_opt_out'] = False
                                     kwargs['policy'] = 'policies.san_connectivity.san_connectivity_policy'
-                                    kwargs = policy_select_loop(**kwargs)
+                                    kwargs = policy_select_loop(self, **kwargs)
                                     vnicNames = []
                                     for i in kwargs['immDict']['orgs'][org]['intersight']['policies']['san_connectivity']:
                                         if item['name'] == kwargs['san_connectivity_policy']:
@@ -550,7 +554,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -659,7 +663,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -772,8 +776,9 @@ class policies(object):
                 #==============================================
                 polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                else: name = f'{org}-{name_suffix}'
+                else: name = f'{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
+                kwargs['name']         = polVars['name']
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 polVars['default_vlan'] = 0
                 #==============================================
@@ -796,7 +801,7 @@ class policies(object):
                 for i in imcBand:
                     kwargs['allow_opt_out'] = False
                     kwargs['policy'] = f'pools.ip.{i}_ip_pool'
-                    kwargs = policy_select_loop(**kwargs)
+                    kwargs = policy_select_loop(self, **kwargs)
                     if i == 'inband':
                         valid = False
                         while valid == False:
@@ -815,7 +820,7 @@ class policies(object):
                             # Prompt User for VLAN Policy Source
                             #==============================================
                             kwargs['policy'] = f'policies.vlan.vlan_policy'
-                            kwargs = policy_select_loop(**kwargs)
+                            kwargs = policy_select_loop(self, **kwargs)
                             vlan_lists = []
                             for item in kwargs['immDict']['orgs'][org]['intersight']['policies']['vlan']:
                                 if item['name'] == kwargs['vlan_policy']:
@@ -898,7 +903,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -986,7 +991,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     polVars['enable_ldap'] = True
@@ -1346,7 +1351,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -1495,7 +1500,7 @@ class policies(object):
                 #==============================================
                 polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                else: name = f'{org}-{name_suffix}'
+                else: name = f'{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 #==============================================
@@ -1595,7 +1600,7 @@ class policies(object):
                 #==============================================
                 polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                else: name = f'{org}-{name_suffix}'
+                else: name = f'{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 #==============================================
@@ -1710,7 +1715,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -1883,7 +1888,6 @@ class policies(object):
         baseRepo       = kwargs['args'].dir
         configure_loop = False
         jsonData       = kwargs['jsonData']
-        name_prefix    = self.name_prefix
         org            = self.org
         path_sep       = kwargs['path_sep']
         policy_type    = 'Port Policy'
@@ -1911,17 +1915,19 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
-                #==============================================
-                # Prompt User for Name and Description
-                #==============================================
-                polVars = {}
-                if not name_prefix == '': name = '%s' % (name_prefix)
-                else: name = '%s' % (org)
-                name = ezfunctions.policy_name(name, policy_type)
-                polVars['names'] = [f'{name}-a', f'{name}-b']
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'   NOTE: The wizard will create a Port Policy for Fabric A and Fabric B')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
+                #==============================================
+                # Prompt User for Domain Profile
+                #==============================================
+                kwargs['name'] = 'Port Policy'
+                kwargs['allow_opt_out'] = False
+                kwargs['policy'] = 'profiles.domain.domain_profile'
+                kwargs = policy_select_loop(self, **kwargs)
+                name = kwargs['domain_profile']
+                polVars = {}
+                polVars['names'] = [f'{name}-a', f'{name}-b']
                 polVars['description'] = ezfunctions.policy_descr(name, policy_type)
                 kwargs['name_prefix'] = self.name_prefix
                 kwargs['name'] = name
@@ -1948,8 +1954,8 @@ class policies(object):
                     kwargs['portDict'] = []
                     kwargs['port_type'] = i.split(':')[0]
                     if 'fc' in i.split(':')[1]:
-                        if len(kwargs['fc_converted_ports']) > 0: kwargs = port_list_fc(**kwargs)
-                    else: kwargs = port_list_eth(**kwargs)
+                        if len(kwargs['fc_converted_ports']) > 0: kwargs = port_list_fc(self, **kwargs)
+                    else: kwargs = port_list_eth(self, **kwargs)
                     kwargs[i.split(':')[1]] = deepcopy(kwargs['portDict'])
                 #==============================================
                 # Build Port Policy Dictionary
@@ -2143,7 +2149,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
 
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
@@ -2199,7 +2205,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -2285,7 +2291,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -2388,7 +2394,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -2558,7 +2564,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -2639,7 +2645,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -3021,7 +3027,7 @@ class policies(object):
                     #==============================================
                     polVars = {}
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                    else: name = f'{org}-{name_suffix}'
+                    else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
@@ -3208,7 +3214,7 @@ class policies(object):
                 #==============================================
                 polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                else: name = f'{org}-{name_suffix}'
+                else: name = f'{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 #==============================================
@@ -3305,7 +3311,7 @@ class policies(object):
                 #==============================================
                 polVars = {}
                 if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
-                else: name = f'{org}-{name_suffix}'
+                else: name = f'{name_suffix}'
                 polVars['name']        = ezfunctions.policy_name(name, policy_type)
                 polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                 #==============================================
@@ -3345,6 +3351,14 @@ class policies(object):
                             kwargs['jData']['varType'] = 'vMedia Mount Protocol'
                             Protocol = ezfunctions.variablesFromAPI(**kwargs)
                             #==============================================
+                            # Prompt User for vMedia Mount Name
+                            #==============================================
+                            kwargs['jData'] = deepcopy(jsonVars['VolumeName'])
+                            kwargs['jData']['default'] = f'{Protocol}-map'
+                            kwargs['jData']['varInput'] = 'What is the Name for the Virtual Media Mount?'
+                            kwargs['jData']['varType']  = 'vMedia Name'
+                            vName = ezfunctions.varStringLoop(**kwargs)
+                            #==============================================
                             # Prompt User for vMedia Device Type
                             #==============================================
                             kwargs['jData'] = deepcopy(jsonVars['DeviceType'])
@@ -3373,21 +3387,23 @@ class policies(object):
                                 elif deviceType == 'hdd':
                                     if re.search('\.img$', file_location): valid = True
                                     else: validating.error_file_location('Remote File Location', file_location)
-                            #==============================================
-                            # Prompt User for Mount Username
-                            #==============================================
-                            kwargs['jData'] = deepcopy(jsonVars['Username'])
-                            kwargs['jData']['pattern']  = '^[\\S]+$'
-                            kwargs['jData']['varInput'] = 'What is the Username you would like to configure for'\
-                                ' Authentication?  [press enter to skip]:'
-                            kwargs['jData']['varName']  = 'Username'
-                            Username = ezfunctions.varStringLoop(**kwargs)
-                            if not Username == '':
+                            if not Protocol == 'nfs':
                                 #==============================================
-                                # Prompt User for Mount Password
+                                # Prompt User for Mount Username
                                 #==============================================
-                                kwargs['Variable'] = f'vmedia_password_{inner_loop_count}'
-                                kwargs = ezfunctions.sensitive_var_value(**kwargs)
+                                kwargs['jData'] = deepcopy(jsonVars['Username'])
+                                kwargs['jData']['pattern']  = '^[\\S]+$'
+                                kwargs['jData']['varInput'] = 'What is the Username you would like to configure for'\
+                                    ' Authentication?  [press enter to skip]:'
+                                kwargs['jData']['varName']  = 'Username'
+                                Username = ezfunctions.varStringLoop(**kwargs)
+                                if not Username == '':
+                                    #==============================================
+                                    # Prompt User for Mount Password
+                                    #==============================================
+                                    kwargs['Variable'] = f'vmedia_password_{inner_loop_count}'
+                                    kwargs = ezfunctions.sensitive_var_value(**kwargs)
+                            else: Username = ''
                             #==============================================
                             # Prompt User for Mount Options
                             #==============================================
@@ -3477,7 +3493,7 @@ class policies(object):
                             # Create vMedia Mapping Dictionary
                             #==============================================
                             vmedia_map = {
-                                'device_type':deviceType, 'file_location':file_location, 'name':name, 'protocol':Protocol
+                                'device_type':deviceType, 'file_location':file_location, 'name':vName, 'protocol':Protocol
                             }
                             if not mount_options == '': vmedia_map.update({'mount_options':mount_options})
                             if not Username == '': vmedia_map.update({'password':inner_loop_count, 'username':Username})
@@ -3536,11 +3552,11 @@ class policies(object):
 #==============================================
 # Select Policy Function
 #==============================================
-def policy_select_loop(**kwargs):
+def policy_select_loop(self, **kwargs):
     ezData = kwargs['ezData']
     policy = kwargs['policy']
     name   = kwargs['name']
-    name_prefix = kwargs['name_prefix']
+    name_prefix = self.name_prefix
     org = kwargs['org']
     loop_valid = False
     while loop_valid == False:
@@ -3578,11 +3594,9 @@ def policy_select_loop(**kwargs):
                 create_policy = False
                 kwargs[kwargs['inner_var']] = kwargs['policy']
                 return kwargs
-
         # Simple Loop to show name_prefix in Use
         ncount = 0
         if ncount == 5: print(name_prefix)
-        
         # Create Policy if Option was Selected
         if create_policy == True:
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -3591,7 +3605,7 @@ def policy_select_loop(**kwargs):
             lansan_list = ezData['ezimm']['allOf'][1]['properties']['lansan_list']['enum']
             policies_list = ezData['ezimm']['allOf'][1]['properties']['policies_list']['enum']
             profile_list = ['ucs_server_profiles', 'ucs_server_profile_templates']
-            if re.search('pools$', inner_policy):
+            if re.search('pool$', inner_var):
                 kwargs = eval(f'pools.pools(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
             elif inner_policy in lansan_list:
                 kwargs = eval(f'lansan.policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
@@ -3599,11 +3613,13 @@ def policy_select_loop(**kwargs):
                 kwargs = eval(f'policies(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
             elif inner_policy in profile_list:
                 kwargs = eval(f'profiles(name_prefix, org, inner_type).{inner_policy}(**kwargs)')
+    # Return kwargs
+    return kwargs
 
 #==============================================
 # Ethernet Port Policy Function
 #==============================================
-def port_list_eth(**kwargs):
+def port_list_eth(self, **kwargs):
     device_model       = kwargs['device_model']
     jsonData           = kwargs['jsonData']
     kwargs['portDict'] = []
@@ -3720,7 +3736,7 @@ def port_list_eth(**kwargs):
                             if not kwargs['port_type'] == 'Server Ports':
                                 for i in policy_list:
                                     kwargs['policy'] = i
-                                    kwargs = policy_select_loop(**kwargs)
+                                    kwargs = policy_select_loop(self, **kwargs)
                             interfaces = []
                             pc_id = port_list[0]
                             for i in port_list: interfaces.append({'port_id':i})
@@ -3814,7 +3830,7 @@ def port_list_eth(**kwargs):
 #==============================================
 # Fibre-Channel Port Policy Function
 #==============================================
-def port_list_fc(**kwargs):
+def port_list_fc(self, **kwargs):
     jsonData  = kwargs['jsonData']
     org       = kwargs['org']
     port_type = kwargs['port_type']
@@ -3878,7 +3894,7 @@ def port_list_fc(**kwargs):
                         print(f'  Please Select the VSAN Policy for {fabric}')
                         kwargs['allow_opt_out'] = False
                         kwargs['policy'] = 'policies.vsan.vsan_policy'
-                        kwargs = policy_select_loop(**kwargs)
+                        kwargs = policy_select_loop(self, **kwargs)
                         print(kwargs['vsan_policy'])
                         vsan_list = []
                         for i in kwargs['immDict']['orgs'][org]['intersight']['policies']['vsan']:

@@ -445,6 +445,8 @@
                                     "link_control",
                                     "multicast",
                                     "san_connectivity",
+                                    "switch_control",
+                                    "system_qos",
                                     "vlan",
                                     "vsan"
                                 ],
@@ -457,7 +459,7 @@
                                     "imc_access",
                                     "power",
                                     "thermal",
-                                    "ucs_chassis"
+                                    "chassis"
                                 ],
                                 "x-omitempty": true
                             },
@@ -478,7 +480,7 @@
                                     "snmp",
                                     "system_qos",
                                     "switch_control",
-                                    "ucs_domain"
+                                    "domain"
                                 ],
                                 "x-omitempty": true
                             },
@@ -509,8 +511,8 @@
                                     "fibre_channel_qos",
                                     "san_connectivity",
                                     "lan_connectivity",
-                                    "ucs_server_template",
-                                    "ucs_server"
+                                    "server_template",
+                                    "server"
                                 ],
                                 "x-omitempty": true
                             },
@@ -518,13 +520,13 @@
                                 "description": "List of Pools.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "ip_pools",
-                                    "iqn_pools",
-                                    "mac_pools",
-                                    "resource_pools",
-                                    "uuid_pools",
-                                    "wwnn_pools",
-                                    "wwpn_pools"
+                                    "ip",
+                                    "iqn",
+                                    "mac",
+                                    "resource",
+                                    "uuid",
+                                    "wwnn",
+                                    "wwpn"
                                 ],
                                 "x-omitempty": true
                             },
@@ -584,10 +586,10 @@
                                 "description": "List of Profiles.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "ucs_chassis",
-                                    "ucs_domain",
-                                    "ucs_server",
-                                    "ucs_server_profile_templates"
+                                    "domain",
+                                    "chassis",
+                                    "server_profile_templates",
+                                    "server"
                                 ],
                                 "x-omitempty": true
                             },
@@ -626,8 +628,8 @@
                                     "fibre_channel_qos",
                                     "san_connectivity",
                                     "lan_connectivity",
-                                    "ucs_server_template_profiles",
-                                    "ucs_server_profiles"
+                                    "server_profile_templates",
+                                    "server"
                                 ],
                                 "x-omitempty": true
                             },
@@ -685,7 +687,7 @@
                                             "Windows",
                                             "Windows_tpm"
                                         ],
-                                        "default": "Virtualization_tpm"
+                                        "default": "M6_Virtualization_tpm"
                                     }
                                 },
                                 "boot.PrecisionPolicy":{
@@ -954,8 +956,8 @@
                                 "description": "List of Rackmount Pools to Remove.",
                                 "type": "list_of_values",
                                 "enum": [
-                                    "ip_pools",
-                                    "resource_pools"
+                                    "ip",
+                                    "resource"
                                 ],
                                 "x-omitempty": true
                             },
@@ -1094,12 +1096,12 @@
                                 "Profiles":{
                                     "description": "Select what type to Deploy:",
                                     "enum": [
-                                        "UCS Chassis",
-                                        "UCS Domain",
-                                        "UCS Server",
-                                        "UCS Server Profile Templates"
+                                        "Chassis",
+                                        "Domain",
+                                        "Server",
+                                        "Server Profile Templates"
                                     ],
-                                    "default":"UCS Server"
+                                    "default":"Server"
                                 }
                             }
                         
