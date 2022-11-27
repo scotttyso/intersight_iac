@@ -565,6 +565,169 @@ class policies(object):
         return kwargs
 
     #==============================================
+    # Fibre-Channel Network Policy Module
+    #==============================================
+    def fc_zone(self, **kwargs):
+        baseRepo       = kwargs['args'].dir
+        configure_loop = False
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        org            = self.org
+        path_sep       = kwargs['path_sep']
+        policy_type    = 'FC Zone Policy'
+        yaml_file      = 'fibre_channel'
+        while configure_loop == False:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
+            print(f'  FC Zone Policy Notes:')
+            print(f'  - You will need at a Minimum One Zone Policy per Fabric.\n')
+            print(f'  This wizard will save the configuration for this section to the following file:')
+            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
+            if configure == 'Y' or configure == '':
+                loop_count = 0
+                policy_loop = False
+                while policy_loop == False:
+                    polVars = {}
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
+                    if name_prefix == '': name_prefix = 'vsan'
+                    name = ezfunctions.naming_rule_fabric(loop_count, name_prefix, org)
+                    polVars['name']        = ezfunctions.policy_name(name, policy_type)
+                    kwargs['name']         = polVars['name']
+                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
+
+                    #==============================================
+                    # Get API Data
+                    #==============================================
+                    kwargs['multi_select'] = False
+                    jsonVars = jsonData['fabric.FcZonePolicy']['allOf'][1]['properties']
+                    #==============================================
+                    # Prompt User for FC Target Zoning Type
+                    #==============================================
+                    kwargs['jData'] = deepcopy(jsonVars['FcTargetZoningType'])
+                    kwargs['jData']['varType']  = 'FC Target Zoning Type'
+                    polVars['fc_target_zoning_type'] = ezfunctions.variablesFromAPI(**kwargs)
+
+                    #==============================================
+                    # Prompt User for Target(s) for the Policy
+                    #==============================================
+                    polVars['targets'] = []
+                    inner_loop_count = 0
+                    sub_loop = False
+                    while sub_loop == False:
+                        tg = {}
+                        jsonVars = jsonData['fabric.FcZoneMember']['allOf'][1]['properties']
+                        #==============================================
+                        # Prompt User for FC Zone Target Name
+                        #==============================================
+                        kwargs['jData'] = deepcopy(jsonVars['Name'])
+                        kwargs['jData']['pattern'] = '^[\\S]{1,64}$'
+                        kwargs['jData']['varInput'] = f'What is the FC Zone Target Name?'
+                        kwargs['jData']['varName'] = 'FC Zone Target Name'
+                        tg['name'] = ezfunctions.varStringLoop(**kwargs)
+                        name = tg['name']
+                        #==============================================
+                        # Prompt User for Target WWPN
+                        #==============================================
+                        kwargs['jData'] = deepcopy(jsonVars['Wwpn'])
+                        kwargs['jData']['varInput'] = f'What is the Target WWPN?'
+                        kwargs['jData']['varName'] = 'Target WWPN'
+                        tg['wwpn'] = ezfunctions.varStringLoop(**kwargs)
+                        #==============================================
+                        # Prompt User for Target Switch Id
+                        #==============================================
+                        kwargs['jData'] = deepcopy(jsonVars['SwitchId'])
+                        kwargs['jData']['varType'] = 'Target Switch ID'
+                        tg['switch_id'] = ezfunctions.variablesFromAPI(**kwargs)
+                        valid = False
+                        while valid == False:
+                            #==============================================
+                            # Prompt User for Target VSAN
+                            #==============================================
+                            kwargs['jData'] = deepcopy(jsonVars['VsanId'])
+                            if loop_count % 2 == 0:  kwargs['jData']['default'] = 100
+                            else:  kwargs['jData']['default'] = 200
+                            kwargs['jData']['varInput'] = f'What is the Target VSAN Id?'
+                            kwargs['jData']['varName'] = 'VSAN ID'
+                            vsan_id = ezfunctions.varNumberLoop(**kwargs)
+                            #==============================================
+                            # Prompt User for Fabric VSAN Policy
+                            #==============================================
+                            kwargs['allow_opt_out'] = False
+                            kwargs['policy'] = 'policies.vsan.vsan_policy'
+                            kwargs = policy_select_loop(self, **kwargs)
+                            vsan_list = []
+                            for item in kwargs['immDict']['orgs'][org]['intersight']['policies']['vsan']:
+                                if item['name'] == kwargs['vsan_policy']:
+                                    for i in item['vsans']: vsan_list.append(i['vsan_id'])
+                            if len(vsan_list) > 1: vsan_string = ','.join(str(vsan_list))
+                            else: vsan_string = vsan_list[0]
+                            vsan_list = ezfunctions.vlan_list_full(vsan_string)
+                            vcount = 0
+                            for vsan in vsan_list:
+                                if int(vsan_id) == int(vsan):
+                                    vcount = 1
+                                    break
+                            if vcount == 0: ezfunctions.message_invalid_vsan_id(kwargs['vsan_policy'], vsan_id, vsan_list)
+                            else: valid = True
+                        tg['vsan_id'] = vsan_id
+                        #==============================================
+                        # Print Policy and Prompt User to Accept
+                        #==============================================
+                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                        print(textwrap.indent(yaml.dump(tg, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                        print(f'-------------------------------------------------------------------------------------------\n')
+                        valid_confirm = False
+                        while valid_confirm == False:
+                            pol_type = 'FC Zone Targets'
+                            confirm_vsan = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                            if confirm_vsan == 'Y' or confirm_vsan == '':
+                                polVars['targets'].append(tg)
+                                #==============================================
+                                # Create Additional Policy or Exit Loop
+                                #==============================================
+                                valid_exit = False
+                                while valid_exit == False:
+                                    valid_exit, sub_loop = ezfunctions.exit_default(pol_type, 'Y')
+                                    if valid_exit == True: inner_loop_count += 1; valid_confirm = True; valid_exit = True
+                                    else: valid_confirm = True; valid_exit = True
+                            elif confirm_vsan == 'N':
+                                ezfunctions.message_starting_over(pol_type)
+                                valid_confirm = True
+                            else: ezfunctions.message_invalid_y_or_n('short')
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    print(f'-------------------------------------------------------------------------------------------\n')
+                    valid_confirm = False
+                    while valid_confirm == False:
+                        confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
+                        if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
+                            # Add Policy Variables to immDict
+                            #==============================================
+                            kwargs['class_path'] = 'intersight,policies,fc_zone'
+                            kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
+                            configure_loop, loop_count, policy_loop = ezfunctions.exit_loop_default_yes(loop_count, policy_type)
+                            valid_confirm = True
+                        elif confirm_policy == 'N':
+                            ezfunctions.message_starting_over(policy_type)
+                            valid_confirm = True
+                        else: ezfunctions.message_invalid_y_or_n('short')
+            elif configure == 'N': configure_loop = True
+            else: ezfunctions.message_invalid_y_or_n('long')
+        # Return kwargs
+        return kwargs
+
+    #==============================================
     # Fibre-Channel Adapter Policy Module
     #==============================================
     def fibre_channel_adapter(self, **kwargs):
