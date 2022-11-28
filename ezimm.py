@@ -343,17 +343,36 @@ def intersight_org_check(**kwargs):
 
 def prompt_main_menu(**kwargs):
     ezData = kwargs['ezData']
+    jsonData = kwargs['jsonData']
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Starting the Easy IMM Initial Configuration Wizard!')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
     kwargs['multi_select'] = False
     jsonVars = ezData['ezimm']['allOf'][1]['properties']['wizard']
+    #==============================================
+    # Prompt User for Main Menu
+    #==============================================
     kwargs['jData'] = deepcopy(jsonVars['mainMenu'])
     kwargs['jData']['varType'] = 'Main Menu'
     main_menu = classes.ezfunctions.variablesFromAPI(**kwargs)
     main_menu = main_menu.replace(' ', '_').lower()
-
+    #==============================================
+    # Prompt User for Target Platform
+    #==============================================
+    jsonVars = jsonData['vnic.EthNetworkPolicy']['allOf'][1]['properties']
+    if 'domain' in main_menu: kwargs['target_platform'] = 'FIAttached'
+    elif 'standalone' in main_menu: kwargs['target_platform'] = 'Standalone'
+    else:
+        kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
+        kwargs['jData']['default'] = 'FIAttached'
+        kwargs['jData']['varType'] = 'Target Platform'
+        kwargs['target_platform'] = classes.ezfunctions.variablesFromAPI(**kwargs)
+        target_platform = kwargs['target_platform']
+    #==============================================
+    # Get Policy Data
+    #==============================================
+    jsonVars         = ezData['ezimm']['allOf'][1]['properties']['wizard']
     list_chassis     = ezData['ezimm']['allOf'][1]['properties']['list_chassis']
     list_domains     = ezData['ezimm']['allOf'][1]['properties']['list_domains']
     list_fi_attached = ezData['ezimm']['allOf'][1]['properties']['list_fi_attached']
@@ -387,35 +406,40 @@ def prompt_main_menu(**kwargs):
         elif 'stateless' in main_menu: policy_list.append('quick_start_vmware_stateless')
         policy_list.append('quick_start_server_profile')
 
-    if main_menu == 'deploy_individual_policies':
+    if 'deploy_individual_policies' in main_menu:
+        #==============================================
+        # Prompt User for Indivdual Policy Type
+        #==============================================
         kwargs['jData'] = deepcopy(jsonVars['Individual'])
         kwargs['jData']['varType'] = 'Configuration Type'
         type_menu = classes.ezfunctions.variablesFromAPI(**kwargs)
-        multi_select_descr = '\n'\
-            '    - Single policy: 1 or 5\n'\
-            '    - List of Policies: 1,2,3\n'\
-            '    - Range of Policies: 1-3,5-6\n'
+        if   type_menu == 'Policies': multi_select_descr = '\n    - Single Policy: 1 or 5\n'
+        elif type_menu == 'Pools':    multi_select_descr = '\n    - Single Pool: 1 or 5\n'
+        elif type_menu == 'Profiles': multi_select_descr = '\n    - Single Profile: 1 or 5\n'
+        multi_select_descr = multi_select_descr + ''\
+            '    - List of {type_menu}: 1,2,3\n'\
+            '    - Range of {type_menu}: 1-3,5-6\n'
         kwargs['multi_select'] = True
         def policy_list_modify(policies_list):
             for line in policies_list:
                 policy_list.append((line.replace(' ', '_')).replace('-', '_').lower())
             return policy_list
         if type_menu == 'Policies':
-            kwargs['jData'] = deepcopy(jsonVars['Policies'])
+            kwargs['jData'] = deepcopy(jsonVars[f'Policies.{target_platform}'])
             kwargs['jData']['dontsort'] = True
             kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
             kwargs['jData']['varType'] = 'Policies'
             policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Pools':
-            kwargs['jData'] = deepcopy(jsonVars['Pools'])
+            kwargs['jData'] = deepcopy(jsonVars[f'Pools.{target_platform}'])
             kwargs['jData']['dontsort'] = True
             kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
             kwargs['jData']['varType'] = 'Pools'
             policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Profiles':
-            kwargs['jData'] = deepcopy(jsonVars['Profiles'])
+            kwargs['jData'] = deepcopy(jsonVars[f'Profiles.{target_platform}'])
             kwargs['jData']['dontsort'] = True
             kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
             kwargs['jData']['varType'] = 'Profiles'
@@ -547,7 +571,7 @@ def process_wizard(**kwargs):
         #kwargs['fc_ports_in_use'] = [1, 4]
         #kwargs['mtu']           = 9216
         #kwargs['tpm_installed'] = True
-        #kwargs['vlan_list']     = '1-99'
+        #kwargs['vlan_list']     = '2-99'
         #kwargs['vsan_id_a']     = 100
         #kwargs['vsan_id_b']     = 200
         #==============================================

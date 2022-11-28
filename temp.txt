@@ -1,0 +1,25 @@
+    fc_zone:
+      - description: vsan-a FC Zone Policy
+        fc_target_zoning_type: SIMT
+        name: vsan-a
+        targets:
+          - name: netapp01
+            switch_id: A
+            vsan_id: 100
+            wwpn: 50:00:00:25:B5:0A:00:01
+          - name: pure01
+            switch_id: A
+            vsan_id: 100
+            wwpn: 50:00:00:25:B5:0A:00:02
+      - description: vsan-b FC Zone Policy
+        fc_target_zoning_type: SIMT
+        name: vsan-b
+        targets:
+          - name: netapp01
+            switch_id: A
+            vsan_id: 200
+            wwpn: 50:00:00:25:B5:0B:00:01
+          - name: pure01
+            switch_id: B
+            vsan_id: 200
+            wwpn: 50:00:00:25:B5:0B:00:02

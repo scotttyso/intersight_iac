@@ -38,12 +38,6 @@ def error_subnet_check(**kwargs):
         print(f'\n{"-"*91}\n')
         exit()
 
-def error_number_in_range(varName, varValue, minNum, maxNum):
-    print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  Error!! {varName} with value {varValue}.')
-    print(f'  Please enter a number in the range of {minNum} and {maxNum}.')
-    print(f'\n-------------------------------------------------------------------------------------------\n')
-
 # Validations
 def description(varName, varValue, minLength, maxLength):
     if not (re.search(r'^[a-zA-Z0-9\\!#$%()*,-./:;@ _{|}~?&+]+$',  varValue) and \
@@ -65,27 +59,22 @@ def domain(varName, varValue):
         print(f'   Please Validate the domain and retry.')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def dns_name(varName, varValue):
     hostname = varValue
     valid_count = 0
-    if len(hostname) > 255:
-        valid_count =+ 1
-    if hostname[-1] == ".":
-        hostname = hostname[:-1] # strip exactly one dot from the right, if present
+    if len(hostname) > 255: valid_count =+ 1
+    if hostname[-1] == ".": hostname = hostname[:-1] # strip exactly one dot from the right, if present
     allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-    if not all(allowed.match(x) for x in hostname.split(".")):
-        valid_count =+ 1
+    if not all(allowed.match(x) for x in hostname.split(".")): valid_count =+ 1
     if not valid_count == 0:
         print(f'\n--------------------------------------------------------------------------------\n')
         print(f'   Error with {varName}.  "{varValue}" is not a valid Hostname.')
         print(f'   Confirm that you have entered the DNS Name Correctly.')
         print(f'\n--------------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def email(varName, varValue):
     if not validators.email(varValue, whitelist=None):
@@ -94,22 +83,18 @@ def email(varName, varValue):
         print(f'   is invalid.  Please Validate the email and retry.')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def ip_address(varName, varValue):
     if re.search('/', varValue):
         x = varValue.split('/')
         address = x[0]
-    else:
-        address = varValue
+    else: address = varValue
     valid_count = 0
     if re.search(r'\.', address):
-        if not validators.ip_address.ipv4(address):
-            valid_count =+ 1
+        if not validators.ip_address.ipv4(address): valid_count =+ 1
     else:
-        if not validators.ip_address.ipv6(address):
-            valid_count =+ 1
+        if not validators.ip_address.ipv6(address): valid_count =+ 1
     if not valid_count == 0 and re.search(r'\.', address):
         print(f'\n-----------------------------------------------------------------------------\n')
         print(f'   Error with {varName}. "{varValue}" is not a valid IPv4 Address.')
@@ -120,18 +105,14 @@ def ip_address(varName, varValue):
         print(f'   Error with {varName}. "{varValue}" is not a valid IPv6 Address.')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def ipmi_key_check(varValue):
     valid_count = 0
     varValue = varValue.capitalize()
-    if ((varValue < '0' or varValue > '9') and (varValue < 'A' or varValue > 'F')):
-        valid_count += 1
-    if not validators.length(varValue, min=2, max=40):
-        valid_count += 1
-    if not len(varValue) % 2 == 0:
-        valid_count += 1
+    if ((varValue < '0' or varValue > '9') and (varValue < 'A' or varValue > 'F')): valid_count += 1
+    if not validators.length(varValue, min=2, max=40): valid_count += 1
+    if not len(varValue) % 2 == 0: valid_count += 1
     if not valid_count == 0:
         print(f'\n-----------------------------------------------------------------------------\n')
         print(f'   Error with ipmi_key!!  The encryption key should have an even number of ')
@@ -140,8 +121,7 @@ def ipmi_key_check(varValue):
         print(f'    - {string.hexdigits}')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def iqn_prefix(varName, varValue):
     invalid_count = 0
@@ -156,8 +136,7 @@ def iqn_prefix(varName, varValue):
         print(f'       number ends with a letter or number and may have a dash in the middle.')
         print(f'\n---------------------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def iqn_address(varName, varValue):
     invalid_count = 0
@@ -173,8 +152,7 @@ def iqn_address(varName, varValue):
         print(f'     - it must have a colon to mark the beginning of the prefix.')
         print(f'\n---------------------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def length_and_regex(regex_pattern, varName, varValue, minLength, maxLength):
     invalid_count = 0
@@ -194,8 +172,7 @@ def length_and_regex(regex_pattern, varName, varValue, minLength, maxLength):
         print(f'\n--------------------------------------------------------------------------------------\n')
     if invalid_count == 0:
         return True
-    else:
-        return False
+    else: return False
 
 def length_and_regex_sensitive(regex_pattern, varName, varValue, minLength, maxLength):
     invalid_count = 0
@@ -213,8 +190,7 @@ def length_and_regex_sensitive(regex_pattern, varName, varValue, minLength, maxL
         print(f'\n--------------------------------------------------------------------------------------\n')
     if invalid_count == 0:
         return True
-    else:
-        return False
+    else: return False
 
 def mac_address(varName, varValue):
     if not validators.mac_address(varValue):
@@ -222,8 +198,7 @@ def mac_address(varName, varValue):
         print(f'   Error with {varName}. "{varValue}" is not a valid MAC Address.')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def wwxn_address(varName, varValue):
     if not re.search(r'([0-9A-F]{2}[:-]){7}([0-9A-F]{2})', varValue):
@@ -231,8 +206,7 @@ def wwxn_address(varName, varValue):
         print(f'   Error with {varName}. "{varValue}" is not a valid WWxN Address.')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def name_rule(varName, varValue, minLength, maxLength):
     if not (re.search(r'^[a-zA-Z0-9_-]+$',  varValue) and validators.length(str(varValue), min=int(minLength), max=int(maxLength))):
@@ -244,8 +218,7 @@ def name_rule(varName, varValue, minLength, maxLength):
         print(f'      or an underscore(_)')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def org_rule(varName, varValue, minLength, maxLength):
     if not (re.search(r'^[a-zA-Z0-9:_-]+$',  varValue) and validators.length(str(varValue), min=int(minLength), max=int(maxLength))):
@@ -257,8 +230,7 @@ def org_rule(varName, varValue, minLength, maxLength):
         print(f'      period(.), colon(:), or an underscore(_)')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def number_in_range(varName, varValue, minNum, maxNum):
     if not validators.between(int(varValue), min=int(minNum), max=int(maxNum)):
@@ -267,8 +239,7 @@ def number_in_range(varName, varValue, minNum, maxNum):
         print(f'   Valid values are between {minNum} and {maxNum}.')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def snmp_port(varName, varValue, minNum, maxNum):
     valid_count = 1
@@ -285,10 +256,8 @@ def snmp_port(varName, varValue, minNum, maxNum):
         print(f'   [22, 23, 80, 123, 389, 443, 623, 636, 2068, 3268, 3269]')
         print(f'\n-----------------------------------------------------------------------------\n')
         valid_count = 0
-    if valid_count == 0:
-        return False
-    else:
-        return True
+    if valid_count == 0: return False
+    else: return True
 
 def snmp_string(varName, varValue):
     if not (re.fullmatch(r'^([a-zA-Z]+[a-zA-Z0-9\-\_\.\@]+)$', varValue) and validators.length(varValue, min=8, max=32)):
@@ -299,8 +268,7 @@ def snmp_string(varName, varValue):
         print(f'   characters of underscore (_), hyphen (-), at sign (@), or period (.).')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def string_length(varName, varValue, minLength, maxLength):
     if not validators.length(str(varValue), min=int(minLength), max=int(maxLength)):
@@ -309,8 +277,7 @@ def string_length(varName, varValue, minLength, maxLength):
         print(f'   {minLength} and {maxLength} characters.')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def url(varName, varValue):
     if not validators.url(varValue):
@@ -320,23 +287,16 @@ def url(varName, varValue):
         print(f'    - {varValue}')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def strong_password(varName, varValue, minLength, maxLength):
     invalid_count = 0
-    if re.search(varName, varValue, re.IGNORECASE):
-        invalid_count += 1
-    if not validators.length(str(varValue), min=int(minLength), max=int(maxLength)):
-        invalid_count += 1
-    if not re.search(r'[a-z]', varValue):
-        invalid_count += 1
-    if not re.search(r'[A-Z]', varValue):
-        invalid_count += 1
-    if not re.search(r'[0-9]', varValue):
-        invalid_count += 1
-    if not re.search(r'[\!\@\#\$\%\^\&\*\-\_\+\=]', varValue):
-        invalid_count += 1
+    if re.search(varName, varValue, re.IGNORECASE): invalid_count += 1
+    if not validators.length(str(varValue), min=int(minLength), max=int(maxLength)): invalid_count += 1
+    if not re.search(r'[a-z]', varValue): invalid_count += 1
+    if not re.search(r'[A-Z]', varValue): invalid_count += 1
+    if not re.search(r'[0-9]', varValue): invalid_count += 1
+    if not re.search(r'[\!\@\#\$\%\^\&\*\-\_\+\=]', varValue): invalid_count += 1
     if not invalid_count == 0:
         print(f'\n---------------------------------------------------------------------------------------\n')
         print(f"   Error with {varName}! The password failed one of the following complexity rules:")
@@ -349,8 +309,7 @@ def strong_password(varName, varValue, minLength, maxLength):
         print(f'       * Non-alphabetic characters (! , @, #, $, %, ^, &, *, -, _, +, =)')
         print(f'\n---------------------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def username(varName, varValue, minLength, maxLength):
     if not re.search(r'^[a-zA-Z0-9\.\-\_]+$', varValue) and validators.length(str(varValue), min=int(minLength), max=int(maxLength)):
@@ -361,8 +320,7 @@ def username(varName, varValue, minLength, maxLength):
         print(f'    Exiting....')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def uuid(varName, varValue):
     if not re.fullmatch(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', varValue):
@@ -371,8 +329,7 @@ def uuid(varName, varValue):
         print(f'   Is not a Valid UUID Identifier.')
         print(f'\n---------------------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def uuid_prefix(varName, varValue):
     if not re.fullmatch(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}$', varValue):
@@ -381,8 +338,7 @@ def uuid_prefix(varName, varValue):
         print(f'   Is not a Valid UUID Prefix.')
         print(f'\n---------------------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def uuid_suffix(varName, varValue):
     if not re.fullmatch(r'^[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', varValue):
@@ -391,8 +347,7 @@ def uuid_suffix(varName, varValue):
         print(f'   Is not a Valid UUID Suffix.')
         print(f'\n---------------------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True
 
 def vname(varName, varValue):
     if not re.fullmatch(r'^[a-zA-Z0-9\-\.\_:]{1,31}$', varValue):
@@ -402,5 +357,4 @@ def vname(varName, varValue):
         print(f'   and colon ":". and be between 1 and 31 characters.')
         print(f'\n---------------------------------------------------------------------------------------\n')
         return False
-    else:
-        return True
+    else: return True

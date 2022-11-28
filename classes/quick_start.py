@@ -233,21 +233,12 @@ class quick_start(object):
                     #==============================================
                     # Prompt User for VLANs for Domain
                     #==============================================
-                    valid = False
-                    while valid == False:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  IMPORTANT NOTE: The FCoE VLAN will be assigned based on the VSAN Identifier.')
-                        print(f'                  Be sure to exclude the VSAN for Fabric A and B from the VLAN Pool.')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        VlanList,vlanListExpanded = ezfunctions.vlan_pool()
-                        nativeVlan = input('Do you want to configure one of these VLANs as the Native VLAN?  [press enter to skip]: ')
-                        if nativeVlan == '': valid = True
-                        else:
-                            native_count = 0
-                            for vlan in vlanListExpanded:
-                                if int(nativeVlan) == int(vlan): native_count = 1
-                            if not native_count == 1: ezfunctions.message_invalid_native_vlan(nativeVlan, VlanList)
-                            else: valid = True
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  IMPORTANT NOTE: The FCoE VLAN will be assigned based on the VSAN Identifier.')
+                    print(f'                  Be sure to exclude the VSAN for Fabric A and B from the VLAN Pool.')
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    VlanList,vlanListExpanded = ezfunctions.vlan_pool(org)
+                    nativeVlan = ezfunctions.vlan_native_function(vlanListExpanded, VlanList)
                     #==============================================
                     # Configure Multicast Policy
                     #==============================================
@@ -258,26 +249,26 @@ class quick_start(object):
                     # Configure VLAN Policy
                     #==============================================
                     polVars = {'name': org}
-                    vlan_list_expanded = ezfunctions.vlan_list_full(VlanList)
+                    policy_vlan_list = deepcopy(vlanListExpanded)
                     if not nativeVlan == '':
-                        if int(nativeVlan) in vlan_list_expanded:
-                            vlan_list_expanded.remove(int(nativeVlan))
-                    elif nativeVlan == '' and 1 in vlan_list_expanded:
+                        if int(nativeVlan) in vlanListExpanded:
+                            vlanListExpanded.remove(int(nativeVlan))
+                    elif nativeVlan == '' and 1 in vlanListExpanded:
                         nativeVlan == 1
-                        vlan_list_expanded.remove(1)
+                        vlanListExpanded.remove(1)
                     #==============================================
                     # Prepare Values to Return to main module
                     #==============================================
-                    kwargs['vlan_list_expanded'] = vlan_list_expanded
-                    kwargs['vlan_list'] = ezfunctions.vlan_list_format(vlan_list_expanded)
+                    kwargs['vlan_list_expanded'] = policy_vlan_list
+                    kwargs['vlan_list'] = ezfunctions.vlan_list_format(vlanListExpanded)
                     polVars['vlans'] = []
                     if not nativeVlan == '':
                         polVars["vlans"].append({
                             'auto_allow_on_uplinks':True, 'multicast_policy':'mcast',
-                            'name':'default', 'native_vlan':True, 'vlan_list':kwargs['native_vlan']
+                            'name':'default', 'native_vlan':True, 'vlan_list':nativeVlan
                         })
                     polVars["vlans"].append({
-                        'multicast_policy':'mcast', 'name':org, 'vlan_list':kwargs['vlan_list']
+                        'multicast_policy':'mcast', 'name':org, 'vlan_list':vlanListExpanded
                     })
                     kwargs['class_path'] = 'intersight,policies,vlan'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -423,6 +414,7 @@ class quick_start(object):
                     answer = ezfunctions.varBoolLoop(**kwargs)
                     if answer == True: mtu = 9216
                     else: mtu = 1500
+                    kwargs['mtu'] = mtu
                     #==============================================
                     # Prompt User for NTP Servers
                     #==============================================
@@ -686,15 +678,16 @@ class quick_start(object):
                             kwargs['jData']['maximum']     = 4094
                             kwargs['jData']['varInput']    = f"Enter the VLAN ID for {vnic_name}:"
                             kwargs['jData']['varName']     = f"{vnic_name} VLAN ID"
+                            vnic_vlan = ezfunctions.varNumberLoop(**kwargs)
                             valid = ezfunctions.validate_vlan_in_policy(vlan_policy_list, vnic_vlan)
-                        kwargs[f'{vnic_name}_vlan']  = ezfunctions.varNumberLoop(**kwargs)
+                        kwargs[f'{vnic_name}_vlan']  = vnic_vlan
 
                     #==============================================
                     # Prompt User for DVS VLAN(s)
                     #==============================================
                     valid = False
                     while valid == False:
-                        VlanList = input('Enter the VLAN or List of VLANs to add to the dvs (Virtual Machine) vNICs: ')
+                        VlanList = input('Enter the VLAN or List of VLANs to add to the dvs/(Virtual Machine) vNICs: ')
                         if not VlanList == '':
                             valid_vlan = True
                             vlans_not_in_domain_policy = []
@@ -836,7 +829,7 @@ class quick_start(object):
                                 #==============================================
                                 polVars = {}
                                 polVars['name'] = f'{org}-scp'
-                                polVars['target_platform'] = "FIAttached"
+                                polVars['target_platform'] = 'FIAttached'
                                 polVars['vhbas'] = [{
                                     'fibre_channel_adapter_policy':'VMware',
                                     'fibre_channel_network_policy':f'san-{fab}',
@@ -846,7 +839,7 @@ class quick_start(object):
                                     'wwpn_allocation_type':'POOL',
                                     'wwpn_pools':[f'{org}-a', f'{org}-b']
                                 }]
-                                polVars['wwnn_allocation_type'] = "POOL"
+                                polVars['wwnn_allocation_type'] = 'POOL'
                                 polVars['wwnn_pool'] = org
                                 Order += 2
                                 kwargs['class_path'] = 'intersight,policies,san_connectivity'
@@ -856,7 +849,7 @@ class quick_start(object):
                             #==============================================
                             polVars = {}
                             polVars['name'] = 'vmware-lcp'
-                            polVars['target_platform'] = "FIAttached"
+                            polVars['target_platform'] = 'FIAttached'
                             polVars['vnics'] = []
                             names = ['mgmt_Silver', 'migration_Bronze', 'storage_Platinum', 'dvs_Gold']
                             for nam in names:

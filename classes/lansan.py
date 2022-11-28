@@ -409,15 +409,16 @@ class policies(object):
     # Ethernet QoS Policy Module
     #==============================================
     def ethernet_qos(self, **kwargs):
-        baseRepo       = kwargs['args'].dir
-        configure_loop = False
-        jsonData       = kwargs['jsonData']
-        name_prefix    = self.name_prefix
-        name_suffix    = ['Bronze', 'Gold', 'Platinum', 'Silver']
-        org            = self.org
-        path_sep       = kwargs['path_sep']
-        policy_type    = 'Ethernet QoS Policy'
-        yaml_file      = 'ethernet'
+        baseRepo        = kwargs['args'].dir
+        configure_loop  = False
+        jsonData        = kwargs['jsonData']
+        name_prefix     = self.name_prefix
+        name_suffix     = ['Bronze', 'Gold', 'Platinum', 'Silver']
+        org             = self.org
+        path_sep        = kwargs['path_sep']
+        policy_type     = 'Ethernet QoS Policy'
+        target_platform = kwargs['target_platform']
+        yaml_file       = 'ethernet'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  An {policy_type} will configure QoS on a Server vNIC Template.')
@@ -436,18 +437,6 @@ class policies(object):
             print(f'  This wizard will save the configuration for this section to the following file:')
             print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            #==============================================
-            # Get API Data
-            #==============================================
-            kwargs['multi_select'] = False
-            jsonVars = jsonData['vnic.EthNetworkPolicy']['allOf'][1]['properties']
-            #==============================================
-            # Prompt User for Target Platform
-            #==============================================
-            kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
-            kwargs['jData']['default'] = 'FIAttached'
-            kwargs['jData']['varType'] = 'Target Platform'
-            target_platform = ezfunctions.variablesFromAPI(**kwargs)
             #================================================
             # Prompt User for Sytem QoS Policy if FIAttached
             #================================================
@@ -477,6 +466,7 @@ class policies(object):
                 #==============================================
                 # Get API Data
                 #==============================================
+                kwargs['multi_select'] = False
                 jsonVars = jsonData['vnic.EthQosPolicy']['allOf'][1]['properties']
                 #==============================================
                 # Prompt User for Trust Host CoS
@@ -607,6 +597,7 @@ class policies(object):
                     # Prompt User for FC Target Zoning Type
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['FcTargetZoningType'])
+                    kwargs['jData']['default']  = 'SIMT'
                     kwargs['jData']['varType']  = 'FC Target Zoning Type'
                     polVars['fc_target_zoning_type'] = ezfunctions.variablesFromAPI(**kwargs)
 
@@ -804,14 +795,15 @@ class policies(object):
     # Fibre-Channel Network Policy Module
     #==============================================
     def fibre_channel_network(self, **kwargs):
-        baseRepo       = kwargs['args'].dir
-        configure_loop = False
-        jsonData       = kwargs['jsonData']
-        name_prefix    = self.name_prefix
-        org            = self.org
-        path_sep       = kwargs['path_sep']
-        policy_type    = 'Fibre-Channel Network Policy'
-        yaml_file      = 'fibre_channel'
+        baseRepo        = kwargs['args'].dir
+        configure_loop  = False
+        jsonData        = kwargs['jsonData']
+        name_prefix     = self.name_prefix
+        org             = self.org
+        path_sep        = kwargs['path_sep']
+        policy_type     = 'Fibre-Channel Network Policy'
+        target_platform = kwargs['target_platform']
+        yaml_file       = 'fibre_channel'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
@@ -822,18 +814,6 @@ class policies(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
-                #==============================================
-                # Get API Data
-                #==============================================
-                kwargs['multi_select'] = False
-                jsonVars = jsonData['server.BaseProfile']['allOf'][1]['properties']
-                #==============================================
-                # Prompt User for Target Platform
-                #==============================================
-                kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
-                kwargs['jData']['default'] = 'FIAttached'
-                kwargs['jData']['varType'] = 'Target Platform'
-                target_platform = ezfunctions.variablesFromAPI(**kwargs)
                 loop_count = 0
                 policy_loop = False
                 while policy_loop == False:
@@ -846,10 +826,9 @@ class policies(object):
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     kwargs['name']         = polVars['name']
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-                    polVars['target_platform'] = target_platform
 
                     jsonVars = jsonData['vnic.VsanSettings']['allOf'][1]['properties']
-                    if polVars['target_platform'] == 'Standalone':
+                    if target_platform == 'Standalone':
                         #==============================================
                         # Prompt User for Default VLAN Id
                         #==============================================
@@ -873,7 +852,7 @@ class policies(object):
                         #==============================================
                         # Prompt User for VSAN Policy
                         #==============================================
-                        if polVars['target_platform'] == 'FIAttached':
+                        if target_platform == 'FIAttached':
                             kwargs['allow_opt_out'] = False
                             kwargs['policy'] = 'policies.vsan.vsan_policy'
                             kwargs = policy_select_loop(self, **kwargs)
@@ -893,7 +872,6 @@ class policies(object):
                             if vcount == 0: ezfunctions.message_invalid_vsan_id(kwargs['vsan_policy'], vsan_id, vsan_list)
                             else: valid = True
                     polVars['vsan_id'] = vsan_id
-                    if polVars['target_platform'] == 'FIAttached': polVars.pop('target_platform')
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================
@@ -1161,27 +1139,32 @@ class policies(object):
                 policy_loop = False
                 while policy_loop == False:
                     polVars = {}
+                    #==============================================
+                    # Prompt User for Name and Description
+                    #==============================================
                     if not name_prefix == '': name = f'{name_prefix}-{name_suffix}'
                     else: name = f'{name_suffix}'
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     kwargs['name']         = polVars['name']
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
-
-                    # Pull in the Policies for iSCSI Boot from API Data
+                    #==============================================
+                    # Get API Data
+                    #==============================================
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['vnic.IscsiBootPolicy']['allOf'][1]['properties']
-
+                    #==============================================
+                    # Prompt User for Target Source Type
+                    #==============================================
                     # Target Source Type
                     kwargs['jData'] = deepcopy(jsonVars['TargetSourceType'])
                     kwargs['jData']['varType'] = 'Target Source Type'
                     polVars['target_source_type'] = ezfunctions.variablesFromAPI(**kwargs)
-
                     if polVars['target_source_type'] == 'Auto':
+                        #==============================================
+                        # Prompt User for DHCP Vendor ID or IQN
+                        #==============================================
                         polVars['authentication'] = 'none'
                         polVars['initiator_ip_source'] = 'DHCP'
-                        polVars['primary_target_policy'] = ''
-                        polVars['secondary_target_policy'] = ''
-
                         kwargs['jData'] = deepcopy(jsonVars['AutoTargetvendorName'])
                         kwargs['jData']['default']  = ''
                         kwargs['jData']['minimum'] = 1
@@ -1190,30 +1173,36 @@ class policies(object):
                         kwargs['jData']['varInput'] = 'DHCP Vendor ID or IQN:'
                         kwargs['jData']['varName']  = 'DHCP Vendor ID or IQN'
                         polVars['dhcp_vendor_id_iqn'] = ezfunctions.varStringLoop(**kwargs)
-
                     elif polVars['target_source_type'] == 'Static':
+                        #==============================================
+                        # Prompt User for Primary Static Target
+                        #==============================================
                         kwargs['optional_message'] = '  !!! Select the Primary Static Target !!!\n'
                         kwargs['allow_opt_out'] = False
                         kwargs['policy'] = 'policies.iscsi_static_target.iscsi_static_target_policy'
                         kwargs = policy_select_loop(self, **kwargs)
                         polVars['primary_target_policy'] = kwargs['iscsi_static_target_policy']
-                        
+                        #==============================================
+                        # Prompt User for Secondary Static Target
+                        #==============================================
                         kwargs['optional_message'] = ''\
-                            '  !!! Optionally Select the Secondary Static Target or enter 100 for no Secondary !!!\n'
+                            '  !!! Optionally Select the Secondary Static Target or enter 99 for no Secondary !!!\n'
                         kwargs['allow_opt_out'] = True
+                        kwargs['policy'] = 'policies.iscsi_static_target.iscsi_static_target_policy'
                         kwargs = policy_select_loop(self, **kwargs)
                         polVars['secondary_target_policy'] = kwargs['iscsi_static_target_policy']
                         kwargs.pop('optional_message')
-                        # polVars.update(policyData)
-                        # polVars.update(policyData)
-
-                        # Initiator IP Source
+                        #==============================================
+                        # Prompt User for Initiator IP Source
+                        #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['InitiatorIpSource'])
                         kwargs['jData']['varType'] = 'Initiator IP Source'
                         polVars['initiator_ip_source'] = ezfunctions.variablesFromAPI(**kwargs)
 
                         if polVars['initiator_ip_source'] == 'Pool':
-                            # Prompt User for the IP Pool
+                            #==============================================
+                            # Prompt User for IP Pool
+                            #==============================================
                             kwargs['optional_message'] = '  !!! Initiator IP Pool !!!\n'
                             kwargs['allow_opt_out'] = False
                             kwargs['policy'] = 'pools.ip.ip_pool'
@@ -1225,67 +1214,84 @@ class policies(object):
                             print(f'\n-------------------------------------------------------------------------------------------\n')
                             print(jsonVars['InitiatorStaticIpV4Config']['description'])
                             print(f'\n-------------------------------------------------------------------------------------------\n')
-
+                            #==============================================
+                            # Prompt User for IP Address
+                            #==============================================
+                            polVars['initiator_static_ip_v4_config'] = {}
                             jsonVars = jsonData['vnic.IscsiStaticTargetPolicyInventory']['allOf'][1]['properties']
                             kwargs['jData'] = deepcopy(jsonVars['IpAddress'])
                             kwargs['jData']['varInput'] = f'IP Address:'
                             kwargs['jData']['varName']  = f'IP Address'
-                            ipAddress = ezfunctions.varStringLoop(**kwargs)
-
+                            polVars['initiator_static_ip_v4_config']['ip_address'] = ezfunctions.varStringLoop(**kwargs)
+                            #==============================================
+                            # Prompt User for Subnet Mask
+                            #==============================================
                             jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
                             kwargs['jData'] = deepcopy(jsonVars['Netmask'])
                             kwargs['jData']['varInput'] = f'Subnet Mask:'
                             kwargs['jData']['varName']  = f'Subnet Mask'
-                            subnetMask = ezfunctions.varStringLoop(**kwargs)
-
+                            polVars['initiator_static_ip_v4_config']['subnet_mask'] = ezfunctions.varStringLoop(**kwargs)
+                            #==============================================
+                            # Prompt User for Default Gateway
+                            #==============================================
                             kwargs['jData'] = deepcopy(jsonVars['Gateway'])
                             kwargs['jData']['varInput'] = f'Default Gateway:'
                             kwargs['jData']['varName']  = f'Default Gateway'
-                            defaultGateway = ezfunctions.varStringLoop(**kwargs)
-
+                            polVars['initiator_static_ip_v4_config']['default_gateway'] = ezfunctions.varStringLoop(**kwargs)
+                            #==============================================
+                            # Prompt User for Primary DNS Server
+                            #==============================================
                             kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
                             kwargs['jData']['varInput'] = f'Primary DNS Server.  [press enter to skip]:'
                             kwargs['jData']['varName']  = f'Primary DNS Server'
-                            primaryDns = ezfunctions.varStringLoop(**kwargs)
-
+                            polVars['initiator_static_ip_v4_config']['primary_dns'] = ezfunctions.varStringLoop(**kwargs)
+                            if polVars['initiator_static_ip_v4_config']['primary_dns'] == '':
+                                polVars['initiator_static_ip_v4_config'].pop('primary_dns')
+                            #==============================================
+                            # Prompt User for Secondary DNS Server
+                            #==============================================
                             kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
                             kwargs['jData']['varInput'] = f'Secondary DNS Server.  [press enter to skip]:'
                             kwargs['jData']['varName']  = f'Secondary DNS Server'
-                            secondaryDns = ezfunctions.varStringLoop(**kwargs)
-
-                            polVars['initiator_static_ip_v4_config'] = {
-                                'ip_address':ipAddress, 'subnet_mask':subnetMask,
-                                'default_gateway':defaultGateway,
-                                'primary_dns':primaryDns, 'secondary_dns':secondaryDns,
-                            }
-
-                        # Type of Authentication
-                        kwargs['jData'] = deepcopy()
+                            polVars['initiator_static_ip_v4_config']['secondary_dns'] = ezfunctions.varStringLoop(**kwargs)
+                            if polVars['initiator_static_ip_v4_config']['secondary_dns'] == '':
+                                polVars['initiator_static_ip_v4_config'].pop('secondary_dns')
+                        #==============================================
+                        # Prompt User for Type of Authentication
+                        #==============================================
+                        kwargs['jData'] = deepcopy({})
                         kwargs['jData']['description'] = 'Select Which Type of Authentication you want to Perform.'
                         kwargs['jData']['enum'] = ['chap', 'mutual_chap', 'none']
                         kwargs['jData']['default'] = 'none'
                         kwargs['jData']['varType'] = 'Authentication Type'
                         polVars['authentication'] = ezfunctions.variablesFromAPI(**kwargs)
+                        if polVars['authentication'] == 'none': polVars.pop('authentication')
 
                         if re.search('chap', polVars['authentication']):
                             jsonVars = jsonData['vnic.IscsiAuthProfile']['allOf'][1]['properties']
                             auth_type = str.title(polVars['authentication'].replace('_', ' '))
-
+                            #==============================================
+                            # Prompt User for Username
+                            #==============================================
                             kwargs['jData'] = deepcopy(jsonVars['UserId'])
                             kwargs['jData']['varInput'] = f'{auth_type} Username:'
                             kwargs['jData']['varName']  = f'{auth_type} Username'
                             polVars['username'] = ezfunctions.varStringLoop(**kwargs)
-
+                            #==============================================
+                            # Prompt User for Password
+                            #==============================================
                             kwargs['Variable'] = 'iscsi_boot_password'
                             kwargs['iscsi_boot_password'] = ezfunctions.sensitive_var_value(**kwargs)
-
-                    # Prompt User for the iSCSI Adapter Policy
+                    #==============================================
+                    # Prompt User for iSCSI Adapter Policy
+                    #==============================================
                     kwargs['allow_opt_out'] = True
                     kwargs['policy'] = 'policies.iscsi_adapter.iscsi_adapter_policy'
                     kwargs = policy_select_loop(self, **kwargs)
                     polVars['iscsi_adapter_policy'] = kwargs['iscsi_adapter_policy']
-                    if polVars['authentication'] == 'none': polVars.pop('authentication')
-
+                    #==============================================
+                    # Print Policy and Prompt User to Accept
+                    #==============================================
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -1293,9 +1299,14 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
+                            #==============================================
                             # Add Policy Variables to immDict
+                            #==============================================
                             kwargs['class_path'] = 'intersight,policies,iscsi_boot'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                            #==============================================
+                            # Create Additional Policy or Exit Loop
+                            #==============================================
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
                         elif confirm_policy == 'N':
@@ -1350,8 +1361,8 @@ class policies(object):
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['TargetName'])
                     kwargs['jData']['description'] = kwargs['jData']['description'] + desc_add
-                    polVars['jData']['varInput'] = 'Enter the name of the target:'
-                    polVars['jData']['varName']  = 'Target Name'
+                    kwargs['jData']['varInput'] = 'Enter the name of the target:'
+                    kwargs['jData']['varName']  = 'Target Name'
                     polVars['target_name'] = ezfunctions.varStringLoop(**kwargs)
                     #==============================================
                     # Prompt User for IP Address
@@ -1371,21 +1382,23 @@ class policies(object):
                     #==============================================
                     # Prompt User for LUN Identifier
                     #==============================================
-                    kwargs['jData'] = deepcopy(jsonVars['Port'])
+                    jsonVars = jsonData['vnic.Lun']['allOf'][1]['properties']
+                    kwargs['jData'] = deepcopy(jsonVars['LunId'])
                     kwargs['jData']['default']  = 0
-                    polVars['jData']['maximum'] = 1024
-                    polVars['jData']['minimum'] = 0
+                    kwargs['jData']['maximum'] = 1024
+                    kwargs['jData']['minimum'] = 0
                     kwargs['jData']['varInput'] = 'Enter the ID of the boot logical unit number.'
                     kwargs['jData']['varName']  = 'LUN Identifier'
-                    polVars['lun_id'] = ezfunctions.varNumberLoop(**kwargs)
+                    LunId = ezfunctions.varNumberLoop(**kwargs)
                     #==============================================
                     # Prompt User for LUN Bootable
                     #==============================================
-                    polVars['jData']['default']  = True
-                    polVars['jData']['varInput'] = 'Should LUN {} be bootable?'.format(polVars['lun_id'])
-                    polVars['jData']['varName']  = 'LUN Identifier'
-                    polVars['bootable'] = ezfunctions.varBoolLoop(**kwargs)
-                    polVars['lun'] = {'bootable':polVars['bootable'],'lun_id':polVars['lun_id']}
+                    kwargs['jData'] = deepcopy(jsonVars['Bootable'])
+                    kwargs['jData']['default']     = True
+                    kwargs['jData']['varInput']    = f'Should LUN {LunId} be bootable?'
+                    kwargs['jData']['varName']     = 'LUN Identifier'
+                    Bootable = ezfunctions.varBoolLoop(**kwargs)
+                    polVars['lun'] = {'bootable':Bootable,'lun_id':LunId}
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================
@@ -1419,15 +1432,16 @@ class policies(object):
     # LAN Connectivity Policy Module
     #==============================================
     def lan_connectivity(self, **kwargs):
-        baseRepo       = kwargs['args'].dir
-        configure_loop = False
-        jsonData       = kwargs['jsonData']
-        name_prefix    = self.name_prefix
-        name_suffix    = ['mgmt', 'migration', 'storage', 'dvs']
-        org            = self.org
-        path_sep       = kwargs['path_sep']
-        policy_type    = 'LAN Connectivity Policy'
-        yaml_file      = 'lan_connectivity'
+        baseRepo        = kwargs['args'].dir
+        configure_loop  = False
+        jsonData        = kwargs['jsonData']
+        name_prefix     = self.name_prefix
+        name_suffix     = ['mgmt', 'migration', 'storage', 'dvs']
+        org             = self.org
+        path_sep        = kwargs['path_sep']
+        policy_type     = 'LAN Connectivity Policy'
+        target_platform = kwargs['target_platform']
+        yaml_file       = 'lan_connectivity'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} will configure vNIC adapters for Server Profiles.\n')
@@ -1458,14 +1472,7 @@ class policies(object):
                     #==============================================
                     kwargs['multi_select'] = False
                     jsonVars = jsonData['vnic.LanConnectivityPolicy']['allOf'][1]['properties']
-                    #==============================================
-                    # Prompt User for Target Platform
-                    #==============================================
-                    kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
-                    kwargs['jData']['default'] = 'FIAttached'
-                    kwargs['jData']['varType'] = 'Target Platform'
-                    polVars['target_platform'] = ezfunctions.variablesFromAPI(**kwargs)
-                    if polVars['target_platform'] == 'FIAttached':
+                    if target_platform == 'FIAttached':
                         #==============================================
                         # Prompt User for Azure Stack Host QoS
                         #==============================================
@@ -1591,7 +1598,7 @@ class policies(object):
                         for x in fabrics: vnic['names'].append(f'{Name}-{x}')
                         kwargs['name'] = Name
 
-                        if polVars['target_platform'] == 'FIAttached':
+                        if target_platform == 'FIAttached':
                             #==================================================
                             # Prompt User for vNIC MAC Type
                             #==================================================
@@ -1634,7 +1641,7 @@ class policies(object):
                         placement_pci_links    = []
                         placement_slot_ids     = []
                         placement_uplink_ports = []
-                        if polVars['target_platform'] == 'Standalone': vnic['placement_uplink_ports'] = []
+                        if target_platform == 'Standalone': vnic['placement_uplink_ports'] = []
                         for x in fabrics:
                             #==================================================
                             # Prompt User for Placement PCI Link(s)
@@ -1658,14 +1665,14 @@ class policies(object):
                             #==================================================
                             # Prompt User for Placement Uplink Port(s)
                             #==================================================
-                            if polVars['target_platform'] == 'Standalone':
+                            if target_platform == 'Standalone':
                                 kwargs['jData'] = deepcopy(jsonVars['Uplink'])
                                 kwargs['jData']['varInput'] = 'What is the {}?'.format(jsonVars['Uplink']['description'])
                                 kwargs['jData']['varName']  = 'Adapter Port'
                                 placement_uplink_ports.append(ezfunctions.varNumberLoop(**kwargs))
                         vnic['placement_slot_ids']   = [*set(placement_slot_ids)]
                         if vnic['placement_slot_ids'] == ['MLOM']: vnic.pop('placement_slot_ids')
-                        if polVars['target_platform'] == 'Standalone':
+                        if target_platform == 'Standalone':
                             vnic['placement_uplink_ports'] = [*set(placement_uplink_ports)]
                             if vnic['placement_uplink_ports'] == [0]: vnic.pop('placement_uplink_ports')
                         #==============================================
@@ -1697,7 +1704,7 @@ class policies(object):
                         # Prompt User for Policy Assignments
                         #==================================================
                         policy_list = ['policies.ethernet_adapter.ethernet_adapter_policy']
-                        if polVars['target_platform'] == 'Standalone':
+                        if target_platform == 'Standalone':
                             policy_list.append('policies.ethernet_network.ethernet_network_policy')
                         else:
                             policy_list.append('policies.ethernet_network_control.ethernet_network_control_policy')
@@ -1754,6 +1761,7 @@ class policies(object):
                                 ezfunctions.message_starting_over(pol_type)
                                 valid_confirm = True
                             else: ezfunctions.message_invalid_y_or_n('short')
+                    if target_platform == 'Standalone': polVars['target_platform'] = target_platform
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================
@@ -1982,15 +1990,16 @@ class policies(object):
     # SAN Connectivity Policy Module
     #==============================================
     def san_connectivity(self, **kwargs):
-        baseRepo       = kwargs['args'].dir
-        configure_loop = False
-        jsonData       = kwargs['jsonData']
-        name_prefix    = self.name_prefix
-        name_suffix    = 'scp'
-        org            = self.org
-        path_sep       = kwargs['path_sep']
-        policy_type    = 'SAN Connectivity Policy'
-        yaml_file      = 'san_connectivity'
+        baseRepo        = kwargs['args'].dir
+        configure_loop  = False
+        jsonData        = kwargs['jsonData']
+        name_prefix     = self.name_prefix
+        name_suffix     = 'scp'
+        org             = self.org
+        path_sep        = kwargs['path_sep']
+        policy_type     = 'SAN Connectivity Policy'
+        target_platform = kwargs['target_platform']
+        yaml_file       = 'san_connectivity'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
@@ -2015,16 +2024,7 @@ class policies(object):
                     # Get API Data
                     #==============================================
                     kwargs['multi_select'] = False
-                    jsonVars = jsonData['vnic.SanConnectivityPolicy']['allOf'][1]['properties']
-                    #==============================================
-                    # Prompt User for Target Platform
-                    #==============================================
-                    kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
-                    kwargs['jData']['default'] = 'FIAttached'
-                    kwargs['jData']['varType'] = 'Target Platform'
-                    polVars['target_platform'] = ezfunctions.variablesFromAPI(**kwargs)
-
-                    if polVars['target_platform'] == 'FIAttached':
+                    if target_platform == 'FIAttached':
                         #==============================================
                         # Prompt User for WWNN Allocation Type
                         #==============================================
@@ -2093,7 +2093,7 @@ class policies(object):
                         #==================================================
                         # Prompt User for vHBA WWPN Type
                         #==================================================
-                        if polVars['target_platform'] == 'FIAttached':
+                        if target_platform == 'FIAttached':
                             kwargs['jData'] = deepcopy(jsonVars['WwpnAddressType'])
                             kwargs['jData']['varType'] = 'WWPN Allocation Type'
                             kwargs['wwpn_allocation_type'] = ezfunctions.variablesFromAPI(**kwargs)
@@ -2121,7 +2121,7 @@ class policies(object):
                         placement_pci_links    = []
                         placement_slot_ids     = []
                         placement_uplink_ports = []
-                        if polVars['target_platform'] == 'Standalone': vhba['placement_uplink_ports'] = []
+                        if target_platform == 'Standalone': vhba['placement_uplink_ports'] = []
                         for x in fabrics:
                             #==================================================
                             # Prompt User for Placement PCI Link(s)
@@ -2140,14 +2140,14 @@ class policies(object):
                             kwargs['jData']['varInput'] = 'What is the {}?'.format(jsonVars['Id']['description'])
                             kwargs['jData']['varName']  = 'vHBA PCIe Slot'
                             placement_slot_ids.append(ezfunctions.varStringLoop(**kwargs))
-                            if polVars['target_platform'] == 'Standalone':
+                            if target_platform == 'Standalone':
                                 kwargs['jData'] = deepcopy(jsonVars['Uplink'])
                                 kwargs['jData']['varInput'] = 'What is the {}?'.format(jsonVars['Uplink']['description'])
                                 kwargs['jData']['varName']  = 'Adapter Port'
                                 placement_uplink_ports.append(ezfunctions.varNumberLoop(**kwargs))
                         vhba['placement_slot_ids']   = [*set(placement_slot_ids)]
                         if vhba['placement_slot_ids'] == ['MLOM']: vhba.pop('placement_slot_ids')
-                        if polVars['target_platform'] == 'Standalone':
+                        if target_platform == 'Standalone':
                             vhba['placement_uplink_ports'] = [*set(placement_uplink_ports)]
                             if vhba['placement_uplink_ports'] == [0]: vhba.pop('placement_uplink_ports')
                         #================================================
@@ -2212,7 +2212,7 @@ class policies(object):
                                 ezfunctions.message_starting_over(pol_type)
                                 valid_confirm = True
                             else: ezfunctions.message_invalid_y_or_n('short')
-
+                    if target_platform == 'Standalone': polVars['target_platform'] = target_platform
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -2431,11 +2431,6 @@ class policies(object):
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} will define the VLANs Assigned to the Fabric Interconnects.')
-            print(f'  The vlan list can be in the format of:')
-            print(f'     5 - Single VLAN')
-            print(f'     1-10 - Range of VLANs')
-            print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
-            print(f'     1-10,20-30 - Ranges and Lists of VLANs')
             print(f'  When configuring a VLAN List or Range the name will be used as a prefix in the format of:')
             print('     {name}-vlXXXX')
             print(f'  Where XXXX would be 0001 for vlan 1, 0100 for vlan 100, and 4094 for vlan 4094.')
@@ -2459,46 +2454,22 @@ class policies(object):
                 #==============================================
                 # Prompt User for VLANs for the Policy
                 #==============================================
-                valid = False
-                while valid == False:
-                    vlan_list = input(f"Enter the VLAN or List of VLANs to add to {polVars['name']}: ")
-                    if not vlan_list == '':
-                        vlan_list_expanded = ezfunctions.vlan_list_full(vlan_list)
-                        valid_vlan = True
-                        for vlan in vlan_list_expanded:
-                            valid_vlan = validating.number_in_range('VLAN ID', vlan, 1, 4094)
-                            if valid_vlan == False: break
-                        if valid_vlan == True:
-                            valid_name = False
-                            while valid_name == False:
-                                if len(vlan_list_expanded) == 1:
-                                    vlan_name = '%s' % (input(f'Enter the Name you want to assign to "{vlan_list}".  [{org}]: '))
-                                    max = 62
-                                else:
-                                    vlan_name = '%s' % (input(f'Enter the Prefix Name you want to assign to "{vlan_list}".  [{org}]: '))
-                                    max = 55
-                                if vlan_name == '': vlan_name = org
-                                valid_name = validating.name_rule('VLAN Name', vlan_name, 1, max)
-                            nativeVlan = input('Do you want to configure one of the VLANs as a Native VLAN? [press enter to skip]:')
-                        if not nativeVlan == '' and valid_vlan == True:
-                            native_vlan = ezfunctions.vlan_native_function(vlan_list_expanded, vlan_list)
-                            while valid_name == False:
-                                native_name = '%s' % (input(f'Enter the Name to assign to the Native VLAN {native_vlan}.  [default]: '))
-                                if native_name == '': native_name = 'default'
-                                valid_name = validating.name_rule('VLAN Name', vlan_name, 1, 62)
-                            valid = True
-                        else: native_vlan = ''; valid = True
-                    else:
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
-                        print(f'  The allowed vlan list can be in the format of:')
-                        print(f'     5 - Single VLAN')
-                        print(f'     1-10 - Range of VLANs')
-                        print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
-                        print(f'     1-10,20-30 - Ranges and Lists of VLANs')
-                        print(f'\n-------------------------------------------------------------------------------------------\n')
+                VlanList,vlanListExpanded = ezfunctions.vlan_pool(polVars['name'])
+                if len(vlanListExpanded) == 1:
+                    vlan_name = '%s' % (input(f'Enter the Name you want to assign to "{VlanList}".  [{org}]: '))
+                    max = 62
+                else:
+                    vlan_name = '%s' % (input(f'Enter the Prefix Name you want to assign to "{VlanList}".  [{org}]: '))
+                    max = 55
+                if vlan_name == '': vlan_name = org
+                valid_name = validating.name_rule('VLAN Name', vlan_name, 1, max)
+                native_vlan = ezfunctions.vlan_native_function(vlanListExpanded, VlanList)
                 if not native_vlan == '':
-                    vlan_list_expanded.remove(int(native_vlan))
-                vlan_list = ezfunctions.vlan_list_format(vlan_list_expanded)
+                    valid_name = False
+                    while valid_name == False:
+                        native_name = '%s' % (input(f'Enter the Name to assign to the Native VLAN {native_vlan}.  [default]: '))
+                        if native_name == '': native_name = 'default'
+                        valid_name = validating.name_rule('VLAN Name', vlan_name, 1, 62)
                 #==============================================
                 # Prompt User for Multicast Policy
                 #==============================================
@@ -2506,15 +2477,17 @@ class policies(object):
                 kwargs['allow_opt_out'] = False
                 kwargs = policy_select_loop(self, **kwargs)
                 polVars['vlans'] = []
-                if not native_vlan == '' and len(vlan_list) > 1:
+                if not native_vlan == '' and len(VlanList) > 1:
                     if int(native_vlan) == 1: auto_native = True
                     else: auto_native = False
+                    vlanListExpanded.remove(1)
                     polVars['vlans'].append({
                         'auto_allow_on_uplinks':auto_native,
                         'multicast_policy':kwargs['multicast_policy'],
                         'name':native_name, 'native_vlan':True,
                         'vlan_list':native_vlan
                     })
+                vlan_list = ezfunctions.vlan_list_format(vlanListExpanded)
                 polVars['vlans'].append({
                         'multicast_policy':kwargs['multicast_policy'],
                         'name':vlan_name, 'vlan_list':vlan_list

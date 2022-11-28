@@ -428,6 +428,7 @@ def merge_easy_imm_repository(orgs, **kwargs):
         Repo.clone_from(git_url, tfe_dir)
     if not os.path.isfile(os.path.join(tfe_dir, 'README.md')): Repo.clone_from(git_url, tfe_dir)
     else: g = cmd.Git(tfe_dir); g.pull()
+    if not os.path.isdir(baseRepo): os.mkdir(baseRepo)
     for org in orgs:
         org_dir = os.path.join(baseRepo, org)
         if not os.path.isdir(org_dir): os.mkdir(org_dir)
@@ -837,19 +838,17 @@ def snmp_trap_servers(**kwargs):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  There are no valid SNMP Users so Trap Destinations can only be set to SNMPv2.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            snmp_version = 'V2'
-        else:
-            #==============================================
-            # Prompt User for SNMP Version
-            #==============================================
-            kwargs['jData'] = deepcopy(jsonVars['Version'])
-            kwargs['jData']['varType'] = 'SNMP Version'
-            snmp_version = variablesFromAPI(**kwargs)
-
-        if snmp_version == 'V2':
             kwargs['Variable'] = f'snmp_community_string_{loop_count}'
             kwargs = sensitive_var_value(**kwargs)
-        elif snmp_version == 'V3':
+            #==============================================
+            # Prompt User for SNMP Trap Type
+            #==============================================
+            kwargs['Description'] = jsonVars['Type']['description']
+            kwargs['jsonVars'] = sorted(jsonVars['Type']['enum'])
+            kwargs['defaultVar'] = jsonVars['Type']['default']
+            kwargs['varType'] = 'SNMP Trap Type'
+            trap_type = variablesFromAPI(**kwargs)
+        else:
             #==============================================
             # Prompt User for SNMP Username
             #==============================================
@@ -859,15 +858,6 @@ def snmp_trap_servers(**kwargs):
             for item in kwargs['snmp_users']: snmp_users.append(item['name'])
             snmp_user = vars_from_list(snmp_users, **kwargs)
             snmp_user = snmp_user[0]
-
-        if snmp_version == 'V2':
-            kwargs['Description'] = jsonVars['Type']['description']
-            kwargs['jsonVars'] = sorted(jsonVars['Type']['enum'])
-            kwargs['defaultVar'] = jsonVars['Type']['default']
-            kwargs['varType'] = 'SNMP Trap Type'
-            trap_type = variablesFromAPI(**kwargs)
-        else: trap_type = 'Trap'
-
         valid = False
         while valid == False:
             destination_address = input(f'What is the SNMP Trap Destination Hostname/Address? ')
@@ -880,27 +870,19 @@ def snmp_trap_servers(**kwargs):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error!! Invalid Value.  Please Re-enter the SNMP Trap Destination Hostname/Address.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-
         valid = False
         while valid == False:
             port = input(f'Enter the Port to Assign to this Destination.  Valid Range is 1-65535.  [162]: ')
             if port == '': port = 162
-            if re.search(r'[0-9]{1,4}', str(port)):
-                valid = classes.validating.snmp_port('SNMP Port', port, 1, 65535)
+            if re.search(r'[0-9]{1,4}', str(port)): valid = classes.validating.snmp_port('SNMP Port', port, 1, 65535)
             else:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Invalid Entry!  Please Enter a valid Port in the range of 1-65535.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-        if snmp_version == 'V3':
-            snmp_destination = {
-                'destination_address':destination_address, 'enabled':True,
-                'port':port, 'trap_type':trap_type, 'user':snmp_user, 'version':snmp_version
-            }
-        else:
-            snmp_destination = {
-                'community':loop_count, 'destination_address':destination_address,
-                'enabled':True, 'port':port, 'trap_type':trap_type, 'version':snmp_version
-            }
+        if len(kwargs['snmp_users']) == 0:
+            snmp_destination = {'community':loop_count, 'destination_address':destination_address, 'port':port}
+            if not trap_type == 'Trap': snmp_destination.update({'trap_type':trap_type})
+        else: snmp_destination = {'destination_address':destination_address, 'port':port, 'user':snmp_user}
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(textwrap.indent(yaml.dump(snmp_destination, Dumper=MyDumper, default_flow_style=False
         ), ' '*4, predicate=None))
@@ -913,9 +895,9 @@ def snmp_trap_servers(**kwargs):
                 policy_type = 'SNMP Trap Destination'
                 valid_exit = False
                 while valid_exit == False:
-                    loop_exit, valid_confirm = exit_default(policy_type, 'N')
-                    if loop_exit == 'Y': loop_count += 1; valid_exit = True
-                    elif loop_exit == 'N': valid_exit = True; valid_traps = True
+                    loop_exit, valid_traps = exit_default(policy_type, 'N')
+                    if loop_exit == True: loop_count += 1; valid_confirm = True; valid_exit = True
+                    elif loop_exit == False: valid_confirm = True; valid_exit = True
             elif confirm_v == 'N':
                 policy_type = 'SNMP Trap Server'
                 message_starting_over(policy_type)
@@ -1000,9 +982,9 @@ def snmp_users(**kwargs):
                 #==============================================
                 valid_exit = False
                 while valid_exit == False:
-                    loop_exit, valid_confirm = exit_default(policy_type, 'N')
-                    if loop_exit == 'Y': loop_count += 1; valid_exit = True
-                    elif loop_exit == 'N': valid_exit = True; valid_users = True
+                    loop_exit, valid_users = exit_default(policy_type, 'N')
+                    if loop_exit == True: loop_count += 1; valid_confirm = True; valid_exit = True
+                    elif loop_exit == False: valid_confirm = True; valid_exit = True
             elif confirm_v == 'N':
                 policy_type = 'SNMP User'
                 message_starting_over(policy_type)
@@ -1195,7 +1177,7 @@ def ucs_serial(**kwargs):
         print(f'      file later.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
         serial = input(f'What is the Serial Number of the {device_type}? [press enter to skip]: ')
-        if serial == '': valid = True
+        if serial == '': serial = 'unknown'; valid = True
         elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', serial): valid = True
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -1238,19 +1220,19 @@ def ucs_domain_serials(**kwargs):
 #======================================================
 def validate_vlan_in_policy(vlan_policy_list, vlan_id):
     valid = False
-    vlan_count = 0
-    for vlan in vlan_policy_list:
-        if int(vlan) == int(vlan_id):
-            vlan_count = 1
-            continue
-    if vlan_count == 1:
-        valid = True
-    else:
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'  VLAN {vlan_id} not found in the VLAN Policy List.  Please us a VLAN from the list below:')
-        print(f'  {vlan_policy_list}')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-    return valid
+    while valid == False:
+        vlan_count = 0
+        for vlan in vlan_policy_list:
+            if int(vlan) == int(vlan_id):
+                vlan_count = 1
+                continue
+        if vlan_count == 1: valid = True; return valid
+        else:
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            print(f'  VLAN {vlan_id} not found in the VLAN Policy List.  Please us a VLAN from the list below:')
+            print(f'  {vlan_policy_list}')
+            print(f'\n-------------------------------------------------------------------------------------------\n')
+            return valid
 
 #======================================================
 # Function - Prompt User with List of Options
@@ -1596,7 +1578,7 @@ def vlan_native_function(vlan_policy_list, vlan_list):
 #======================================================
 # Function - Prompt for VLANs and Configure Policy
 #======================================================
-def vlan_pool():
+def vlan_pool(name):
     valid = False
     while valid == False:
         print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -1606,13 +1588,14 @@ def vlan_pool():
         print(f'     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
         print(f'     1-10,20-30 - Ranges and Lists of VLANs')
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        VlanList = input('Enter the VLAN or List of VLANs to assign to the Domain VLAN Pool: ')
+        VlanList = input(f'Enter the VLAN or List of VLANs to assign to the Domain VLAN Pool {name}: ')
         if not VlanList == '':
             vlanListExpanded = vlan_list_full(VlanList)
             valid_vlan = True
             for vlan in vlanListExpanded:
-                valid_vlan = classes.validating.error_number_in_range('VLAN ID', vlan, 1, 4094)
-                if valid_vlan == False: continue
+                valid_vlan = classes.validating.number_in_range('VLAN ID', vlan, 1, 4094)
+                if valid_vlan == False:
+                    break
             if valid_vlan == False:
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 print(f'  Error with VLAN(s) assignment!!! VLAN List: "{VlanList}" is not Valid.')

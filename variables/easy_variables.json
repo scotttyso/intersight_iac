@@ -317,11 +317,15 @@
                                     "ethernet_network",
                                     "ethernet_network_control",
                                     "ethernet_network_group",
-                                    "ethernet_qos"
+                                    "ethernet_qos",
+                                    "iscsi_adapter",
+                                    "iscsi_boot",
+                                    "iscsi_static_target"
                                 ]
                             },
                             "class.fibre_channel": {
                                 "enum": [
+                                    "fc_zone",
                                     "fibre_channel_adapter",
                                     "fibre_channel_network",
                                     "fibre_channel_qos"
@@ -738,6 +742,7 @@
                                     "systemType": {
                                         "description": "The Generation of UCS to Apply these Policies to.",
                                         "enum":[
+                                            "M4",
                                             "M5",
                                             "M6",
                                             "M7"
@@ -958,7 +963,7 @@
                             },
                             "wizard":{
                                 "Individual":{
-                                    "description": "Select what type to Deploy:",
+                                    "description": "* Select the Individual Type:",
                                     "enum": [
                                         "Policies",
                                         "Pools",
@@ -974,7 +979,7 @@
                                         "Deploy Domain Fabric Interconnects Wizard",
                                         "Deploy Domain Servers Wizard",
                                         "Deploy Standalone Servers Wizard",
-                                        "Deploy Individual Policies",
+                                        "Deploy Individual Policies/Pools/Profiles",
                                         "Quick Start Deployment - Domain - VMware M2",
                                         "Quick Start Deployment - Domain - VMware Raid1",
                                         "Quick Start Deployment - Domain - VMware Stateless",
@@ -982,16 +987,13 @@
                                     ],
                                     "default":"Quick Start Deployment - Domain - VMware M2"
                                 },
-                                "Policies":{
-                                    "description": "Select what type to Deploy:",
+                                "Policies.FIAttached":{
+                                    "description": "* Select the Policy or Policies to Deploy:",
                                     "enum": [
-                                        "Adapter Configuration",
                                         "BIOS",
                                         "Boot Order",
                                         "Certificate Management",
-                                        "Device Connector",
                                         "Ethernet Adapter",
-                                        "Ethernet Network",
                                         "Ethernet Network Control",
                                         "Ethernet Network Group",
                                         "Ethernet QoS",
@@ -1006,22 +1008,18 @@
                                         "iSCSI Boot",
                                         "iSCSI Static Target",
                                         "LAN Connectivity",
-                                        "LDAP",
                                         "Link Aggregation",
                                         "Link Control",
                                         "Local User",
                                         "Multicast",
                                         "Network Connectivity",
                                         "NTP",
-                                        "Persistent Memory",
                                         "Port",
                                         "Power",
                                         "SAN Connectivity",
                                         "SD Card",
                                         "Serial over LAN",
-                                        "SMTP",
                                         "SNMP",
-                                        "SSH",
                                         "Storage",
                                         "Switch Control",
                                         "Syslog",
@@ -1032,25 +1030,74 @@
                                         "VLAN",
                                         "VSAN"
                                     ],
+                                    "default":"BIOS"
+                                },
+                                "Policies.Standalone":{
+                                    "description": "* Select the Policy or Policies to Deploy:",
+                                    "enum": [
+                                        "Adapter Configuration",
+                                        "BIOS",
+                                        "Boot Order",
+                                        "Device Connector",
+                                        "Ethernet Adapter",
+                                        "Ethernet Network",
+                                        "Ethernet QoS",
+                                        "Fibre-Channel Adapter",
+                                        "Fibre-Channel Network",
+                                        "Fibre-Channel QoS",
+                                        "IPMI over LAN",
+                                        "LAN Connectivity",
+                                        "LDAP",
+                                        "Local User",
+                                        "Network Connectivity",
+                                        "NTP",
+                                        "Persistent Memory",
+                                        "SAN Connectivity",
+                                        "SD Card",
+                                        "Serial over LAN",
+                                        "SMTP",
+                                        "SNMP",
+                                        "SSH",
+                                        "Storage",
+                                        "Syslog",
+                                        "Virtual KVM",
+                                        "Virtual Media"
+                                    ],
                                     "default":"Adapter Configuration"
                                 },
-                                "Pools":{
-                                    "description": "Select what type to Deploy:",
+                                "Pools.FIAttached":{
+                                    "description": "* Select the Pool(s) to Deploy:",
                                     "enum": [
                                         "IP",
                                         "IQN",
                                         "MAC",
+                                        "Resource",
                                         "UUID",
                                         "WWNN",
                                         "WWPN"
                                     ],
                                     "default":"IP"
                                 },
-                                "Profiles":{
-                                    "description": "Select what type to Deploy:",
+                                "Pools.Standalone":{
+                                    "description": "* Select the Pool(s) to Deploy:",
+                                    "enum": [
+                                        "Resource"
+                                    ],
+                                    "default":"Resource"
+                                },
+                                "Profiles.FIAttached":{
+                                    "description": "* Select the Profile(s) to Deploy:",
                                     "enum": [
                                         "Chassis",
                                         "Domain",
+                                        "Server",
+                                        "Server Profile Templates"
+                                    ],
+                                    "default":"Server"
+                                },
+                                "Profiles.Standalone":{
+                                    "description": "* Select the Profile(s) to Deploy:",
+                                    "enum": [
                                         "Server",
                                         "Server Profile Templates"
                                     ],
