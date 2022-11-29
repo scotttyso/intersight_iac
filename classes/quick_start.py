@@ -104,23 +104,20 @@ class quick_start(object):
                 polVars['enable_secure_boot'] = i
             else: polVars['enable_secure_boot'] = False
             polVars['boot_devices'] = [{
-                'device_name':'KVM-DVD', 'device_type':'virtual_media',
-                'object_type':'boot.VirtualMedia', 'subtype':'kvm-mapped-dvd'
+                'name':'KVM-DVD', 'object_type':'boot.VirtualMedia', 'subtype':'kvm-mapped-dvd'
             }]
             if boot_type == 'm2':
                 polVars['boot_devices'].append({
-                    'device_name':'M2', 'device_type':'local_disk', 'enabled':True,
-                    'object_type':'boot.LocalDisk', 'slot':'MSTOR-RAID'
+                    'name':'M2', 'enabled':True, 'object_type':'boot.LocalDisk', 'slot':'MSTOR-RAID'
                 })
             if boot_type == 'raid1':
                 polVars['boot_devices'].append({
-                    'device_name':'MRAID', 'device_type':'local_disk', 'enabled':True,
+                    'name':'MRAID', 'enabled':True,
                     'object_type':'boot.LocalDisk', 'slot':'MRAID'
                 })
             if i == False:
                 polVars['boot_devices'].append({
-                    'device_name':'PXE', 'device_type':'pxe_boot', 'enabled':True,
-                    'interface_name':'mgmt-a', 'interface_source':'name',
+                    'name':'PXE', 'enabled':True, 'interface_name':'mgmt-a', 'interface_source':'name',
                     'ip_type':'IPv4', 'object_type':'boot.Pxe', 'slot':'MLOM'
                 })
             # Add Policy Variables to immDict
@@ -132,13 +129,13 @@ class quick_start(object):
         polVars = {}
         if boot_type == 'm2':
             polVars['name'] = 'M2-Raid'
-            polVars['m2_configuration'] = {'controller_slot':'MSTOR-RAID-1'}
+            polVars['m2_configuration'] = [{'controller_slot':'MSTOR-RAID-1'}]
             polVars['use_jbod_for_vd_creation'] = True
         elif boot_type == 'raid1':
             polVars['name'] = 'Raid1'
             polVars['drive_group'] = [{
-                'drive_group_name':'DG1',
-                'manual_drive_selection':{'drive_array_spans':[{'slots':'1,2'}]},
+                'manual_drive_group':[{'drive_array_spans':[{'slots':'1,2'}]}],
+                'name':'DG1',
                 'raid_level':'Raid1',
                 'virtual_drives':[{
                     'access_policy':'Default', 'boot_drive':True, 'disk_cache':'Default',
@@ -1409,18 +1406,6 @@ class quick_start(object):
                     print(f'   - Serial Number of the Server Profile(s).')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     #==============================================
-                    # Configure UCS Server Profiles
-                    #==============================================
-                    kwargs['multi_select'] = False
-                    kwargs['jData'] = deepcopy({})
-                    kwargs['jData']['default']     = 1
-                    kwargs['jData']['description'] = f'Number of Server Profiles.'
-                    kwargs['jData']['maximum']     = 160
-                    kwargs['jData']['minimum']     = 1
-                    kwargs['jData']['varInput']    = f'Enter the Number of Server Profiles to Create:'
-                    kwargs['jData']['varName']     = 'Server Count'
-                    server_count = ezfunctions.varNumberLoop(**kwargs)
-                    #==============================================
                     # Prompt for Generation of UCS Servers
                     #==============================================
                     jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['server.Generation']
@@ -1447,19 +1432,43 @@ class quick_start(object):
                     elif boot_type == 'raid1': template_name = 'Raid1-pxe'
                     else: template_name = 'pxe'
                     #==============================================
+                    # Configure UCS Server Profiles
+                    #==============================================
+                    kwargs['multi_select'] = False
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']     = 1
+                    kwargs['jData']['description'] = f'Number of Server Profiles.'
+                    kwargs['jData']['maximum']     = 160
+                    kwargs['jData']['minimum']     = 1
+                    kwargs['jData']['varInput']    = f'Enter the Number of Server Profiles to Create:'
+                    kwargs['jData']['varName']     = 'Server Count'
+                    server_count = ezfunctions.varNumberLoop(**kwargs)
+                    #==============================================
+                    # Prompt User for Server Name Prefix
+                    #==============================================
+                    kwargs['jData'] = deepcopy({})
+                    kwargs['jData']['default']      = True
+                    kwargs['jData']['description']  = 'Server Name Prefix'
+                    kwargs['jData']['varInput']     = f'Do you want to use a Server Name Prefix for the Server Names?'
+                    kwargs['jData']['varName']      = 'Server Name Prefix'
+                    question = ezfunctions.varBoolLoop(**kwargs)
+                    policy_type     = 'UCS Server Profile'
+                    if question == True:
+                        name = 'server'
+                        server_prefix = ezfunctions.policy_name(name, policy_type)
+                    else: server_prefix = ''
+                    #==============================================
                     # Prompt for Server Profile Names
                     #==============================================
-                    names_serials = []
+                    targets = []
                     rangex = int(server_count) + 1
                     for x in range(1,rangex):
+                        x = x+1
                         valid = False
                         while valid == False:
-                            name = input(f'What is the Name for the Server Profile? ')
-                            if not name == '': valid = validating.name_rule(f'Server Profile Name', name, 1, 62)
-                            else:
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
-                                print(f'  Error!! Invalid Value.  Please Re-enter the Server Profile Name.')
-                                print(f'\n-------------------------------------------------------------------------------------------\n')
+                            if not server_prefix == '':
+                                name    = ezfunctions.policy_name(f'{server_prefix}-{x}', policy_type)
+                            else: name  = ezfunctions.policy_name(f'server-{x}', policy_type)
                         #==============================================
                         # Prompt for Server Serial Number or Skip
                         #==============================================
@@ -1472,12 +1481,12 @@ class quick_start(object):
                         kwargs['jData']['varName'] = 'Serial Number'
                         serial_number = ezfunctions.varStringLoop(**kwargs)
                         if serial_number == '': serial_number = 'unknown'
-                        names_serials.append([name,serial_number])
+                        targets.append({'name':name,'serial_number':serial_number})
                     #==============================================
                     # Configure Server Profiles
                     #==============================================
                     polVars = {}
-                    polVars['names_serials'] = names_serials
+                    polVars['targets'] = targets
                     polVars['ucs_server_profile_template'] = template_name
                     kwargs['class_path'] = 'intersight,profiles,server'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)

@@ -103,7 +103,7 @@ class profiles(object):
                         if not description == '':
                             cprofile.update({'description':description})
                         if not serial == '':
-                            cprofile.update({'serial':serial})
+                            cprofile.update({'serial_number':serial})
                         #==============================================
                         # Print Policy and Prompt User to Accept
                         #==============================================
@@ -198,7 +198,7 @@ class profiles(object):
                     #==============================================
                     # Prompt User for Serials
                     #==============================================
-                    polVars['serials'] = ezfunctions.ucs_domain_serials(**kwargs)
+                    polVars['serial_numbers'] = ezfunctions.ucs_domain_serials(**kwargs)
 
                     policy_list = [
                         'policies.network_connectivity.network_connectivity_policy',
@@ -444,7 +444,7 @@ class profiles(object):
                     if not description == '':
                         sprofile.update({'description':description})
                     if not serial == '':
-                        sprofile.update({'serial':serial})
+                        sprofile.update({'serial_number':serial})
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================

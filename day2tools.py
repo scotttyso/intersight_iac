@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from copy import deepcopy
 import argparse
 import classes.day2tools
 import classes.ezfunctions
@@ -88,6 +89,12 @@ def main():
             else:
                 json_open = open(json_file, 'r')
             kwargs['json_data'] = json.load(json_open)
+        if args.process == 'hcl_inventory':
+            json_data = []
+            for item in kwargs['json_data']:
+                if 'Cisco' in item['Hostname']['Manufacturer']:
+                    json_data.append(item)
+            kwargs['json_data'] = deepcopy(json_data)
 
     # Verify the SecretKey
     if not args.api_key_file == None:

@@ -99,10 +99,10 @@ class pools(object):
                         #==============================================
                         # Configure IPv4 Configuration Parameters
                         #==============================================
-                        polVars['ipv4_configuration'] = {
+                        polVars['ipv4_config'] = [{
                             'gateway':kwargs['defaultGateway'], 'netmask':kwargs['subnetMask'],
                             'primary_dns':primaryDns, 'secondary_dns':secondaryDns
-                        }
+                        }]
                         polVars['ipv4_blocks'] = []
                         inner_loop_count = 0
                         ipv4_loop = False
@@ -201,10 +201,10 @@ class pools(object):
                         #==============================================
                         # Configure IPv6 Configuration Parameters
                         #==============================================
-                        polVars['ipv6_configuration'] = {
+                        polVars['ipv6_config'] = [{
                             'gateway':kwargs['defaultGateway'], 'prefix':kwargs['prefix'],
                             'primary_dns':primaryDns, 'secondary_dns':secondaryDns
-                        }
+                        }]
                         polVars['ipv6_blocks'] = []
                         inner_loop_count = 0
                         ipv6_loop = False
@@ -744,7 +744,7 @@ class pools(object):
                     pool_to = ':'.join(['{}{}'.format(a, b)
                     for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                     pool_to = pool_to.upper()
-                    polVars['wwnn_blocks'] = [{'from':pool_from, 'size':pool_size}]
+                    polVars['id_blocks'] = [{'from':pool_from, 'size':pool_size}]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')
@@ -838,7 +838,7 @@ class pools(object):
                     pool_to = ':'.join(['{}{}'.format(a, b)
                     for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                     pool_to = pool_to.upper()
-                    polVars['wwpn_blocks'] = [{'from':pool_from, 'size':pool_size}]
+                    polVars['id_blocks'] = [{'from':pool_from, 'size':pool_size}]
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
                     print(f'-------------------------------------------------------------------------------------------\n')

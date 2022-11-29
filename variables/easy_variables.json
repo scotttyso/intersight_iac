@@ -922,7 +922,7 @@
                                     "bandwidth_percent":10,
                                     "cos":255,
                                     "multicast_optimize":false,
-                                    "packet_drop":false,
+                                    "packet_drop":true,
                                     "weight":5
                                 },
                                 "Bronze" : {
@@ -943,7 +943,7 @@
                                     "bandwidth_percent":18,
                                     "cos":4,
                                     "multicast_optimize":false,
-                                    "packet_drop":false,
+                                    "packet_drop":true,
                                     "weight":9
                                 },
                                 "Platinum" : {

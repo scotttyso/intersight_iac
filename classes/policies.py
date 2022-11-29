@@ -88,14 +88,14 @@ class policies(object):
 
                     jsonVars = jsonData['adapter.DceInterfaceSettings']['allOf'][1]['properties']
                     intList = [1, 2, 3, 4]
+                    polVars['fec_modes'] = []
                     for x in intList:
                         #==============================================
                         # Prompt User for FEC Mode
                         #==============================================
-                        intFec = f'fec_mode_{x}'
                         kwargs['jData'] = deepcopy(jsonVars['FecMode'])
                         kwargs['jData']['varType'] = f'DCE Interface {x} FEC Mode'
-                        polVars[intFec] = ezfunctions.variablesFromAPI(**kwargs)
+                        polVars['fec_modes'].append(ezfunctions.variablesFromAPI(**kwargs))
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================
@@ -284,7 +284,7 @@ class policies(object):
                                 kwargs['jData']['varInput'] = 'Boot Device Name:'
                                 kwargs['jData']['varName']  = 'Boot Device Name'
                                 device_name = ezfunctions.varStringLoop(**kwargs)
-                                boot_device = {"device_name":device_name, "object_type":objectType}
+                                boot_device = {"name":device_name, "object_type":objectType}
                                 #==============================================
                                 # Get Boot Device API Data
                                 #==============================================
@@ -1178,7 +1178,7 @@ class policies(object):
                                 kwargs['jData'] = deepcopy(jsonVars['role'])
                                 kwargs['jData']['varType'] = 'Group Role'
                                 role = ezfunctions.variablesFromAPI(**kwargs)
-                                ldap_group = {'group':varGroup,'role':role}
+                                ldap_group = {'name':varGroup,'role':role}
                                 #==============================================
                                 # Print Policy and Prompt User to Accept
                                 #==============================================
@@ -1483,6 +1483,7 @@ class policies(object):
                 #==============================================
                 kwargs['multi_select'] = False
                 jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
+                polVars['dns_servers_v4'] = []; polVars['dns_servers_v6'] = []
                 #==============================================
                 # Prompt User for Primary DNS Server
                 #==============================================
@@ -1490,14 +1491,16 @@ class policies(object):
                 kwargs['jData']['default']  = '208.67.220.220'
                 kwargs['jData']['varInput'] = f'IPv4 Primary DNS Server.'
                 kwargs['jData']['varName']  = f'Primary DNS Server'
-                polVars['preferred_ipv4_dns_server'] = ezfunctions.varStringLoop(**kwargs)
+                polVars['dns_servers_v4'].append(ezfunctions.varStringLoop(**kwargs))
                 #==============================================
                 # Prompt User for Secondary DNS Server
                 #==============================================
                 kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
                 kwargs['jData']['varInput'] = f'IPv4 Secondary DNS Server.  [press enter to skip]:'
                 kwargs['jData']['varName']  = f'Secondary DNS Server'
-                polVars['alternate_ipv4_dns_server'] = ezfunctions.varStringLoop(**kwargs)
+                alternate_ipv4_dns_server = ezfunctions.varStringLoop(**kwargs)
+                if not alternate_ipv4_dns_server == '':
+                    polVars['dns_servers_v4'].append(alternate_ipv4_dns_server)
                 #==============================================
                 # Prompt User for IPv6 DNS
                 #==============================================
@@ -1516,14 +1519,17 @@ class policies(object):
                     kwargs['jData']['default']  = '2620:119:53::53'
                     kwargs['jData']['varInput'] = f'IPv6 Primary DNS Server.'
                     kwargs['jData']['varName']  = f'Primary DNS Server'
-                    polVars['preferred_ipv6_dns_server'] = ezfunctions.varStringLoop(**kwargs)
+                    polVars['dns_servers_v6'].append(ezfunctions.varStringLoop(**kwargs))
                     #==============================================
                     # Prompt User for Secondary DNS Server
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
                     kwargs['jData']['varInput'] = f'IPv6 Secondary DNS Server.  [press enter to skip]:'
                     kwargs['jData']['varName']  = f'Secondary DNS Server'
-                    polVars['alternate_ipv6_dns_server'] = ezfunctions.varStringLoop(**kwargs)
+                    alternate_ipv6_dns_server = ezfunctions.varStringLoop(**kwargs)
+                    if not alternate_ipv6_dns_server == '': polVars['dns_server_v6'].append(alternate_ipv6_dns_server)
+                    else: polVars['dns_servers_v6'].append('::')
+                else: polVars['dns_servers_v6'] = ['::', '::']
                 #==============================================
                 # Print Policy and Prompt User to Accept
                 #==============================================
@@ -2775,7 +2781,8 @@ class policies(object):
                         drive_group = []
                         drive_group_loop = False
                         while drive_group_loop == False:
-                            drive_group = {'manual_drive_group':{}}
+                            drive_group = {'manual_drive_group':[]}
+                            mdg = {}
                             jsonVars = jsonData['storage.DriveGroup']['allOf'][1]['properties']
                             #==============================================
                             # Prompt User for Drive Group Name
@@ -2784,7 +2791,7 @@ class policies(object):
                             kwargs['jData']['default'] = f'dg{inner_loop_count - 1}'
                             kwargs['jData']['varInput'] = f'Enter the Drive Group Name.'
                             kwargs['jData']['varName'] = 'Drive Group Name'
-                            drive_group['manual_drive_group']['name'] = ezfunctions.varStringLoop(**kwargs)
+                            drive_group['name'] = ezfunctions.varStringLoop(**kwargs)
                             #==============================================
                             # Prompt User for Drive Group Raid Level
                             #==============================================
@@ -2803,9 +2810,8 @@ class policies(object):
                                 kwargs['jData']['varInput'] = 'Enter the Drives to add as Dedicated Hot Spares '\
                                     '[press enter to skip]:'
                                 kwargs['jData']['varName'] = 'Dedicated Hot Spares'
-                                drive_group['manual_drive_group']['dedicated_hot_spares'] = ezfunctions.varStringLoop(**kwargs)
-                                if drive_group['manual_drive_group']['dedicated_hot_spares'] == '':
-                                    drive_group['manual_drive_group'].pop('dedicated_hot_spares')
+                                mdg['dedicated_hot_spares'] = ezfunctions.varStringLoop(**kwargs)
+                                if mdg['dedicated_hot_spares'] == '': mdg.pop('dedicated_hot_spares')
                             # Configure Span Slots
                             SpanSlots = []
                             # If Raid is 10, 50 or 60 allow multiple Span Slots
@@ -2853,7 +2859,8 @@ class policies(object):
                                 kwargs['jData']['varInput'] = f'Enter the Drive Slots for Drive Array Span 0.'
                                 kwargs['jData']['varName'] = 'Drive Slots'
                                 SpanSlots.append({'slots':ezfunctions.varStringLoop(**kwargs)})
-                            drive_group['manual_drive_group'].update({'drive_array_spans':SpanSlots})
+                            mdg['drive_array_spans'] = SpanSlots
+                            drive_group['manual_drive_group'].append(mdg)
                             virtualDrives = []
                             sub_loop_count = 0
                             sub_loop = False
@@ -2982,7 +2989,7 @@ class policies(object):
                         kwargs['jData']['default'] = 'MSTOR-RAID-1'
                         kwargs['jData']['varType'] = 'Controller Slot'
                         ControllerSlot = ezfunctions.variablesFromAPI(**kwargs)
-                        polVars['m2_configuration'] = {'controller_slot':ControllerSlot, 'enable':True}
+                        polVars['m2_configuration'] = [{'controller_slot':ControllerSlot, 'enable':True}]
                     #==============================================
                     # Prompt User for Single Drive Raid Config
                     #==============================================
@@ -4042,13 +4049,13 @@ def port_list_fc(self, **kwargs):
 def port_modes_fc(**kwargs):
     ezData             = kwargs['ezData']
     fc_converted_ports = []
-    port_modes         = {}
+    port_modes         = []
     ports_in_use       = []
+    kwargs['port_modes'] = []
     valid = False
     while valid == False:
         fc_mode = input('Do you want to convert ports to Fibre-Channel Mode?  Enter "Y" or "N" [Y]: ')
         if fc_mode == '' or fc_mode == 'Y':
-            fc_mode = 'Y'
             if kwargs['device_model'] == 'UCS-FI-6536':
                 jsonVars   = ezData['ezimm']['allOf'][1]['properties']['policies']['fabric.PortPolicy_Gen5']
             else: jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['fabric.PortPolicy_Gen4']
@@ -4067,13 +4074,13 @@ def port_modes_fc(**kwargs):
             valid = True
         elif fc_mode == 'N':
             fc_ports = []
-            port_modes = {}
+            port_modes = []
             valid = True
         else: ezfunctions.message_invalid_y_or_n('short')
     # Return kwargs
     kwargs['fc_converted_ports'] = fc_converted_ports
-    kwargs['fc_mode']    = fc_mode
-    kwargs['fc_ports']   = fc_ports
-    kwargs['port_modes'] = port_modes
+    kwargs['fc_mode']  = fc_mode
+    kwargs['fc_ports'] = fc_ports
+    kwargs['port_modes'].update(port_modes)
     kwargs['ports_in_use'] = ports_in_use
     return kwargs

@@ -646,7 +646,6 @@ class intersight_api(object):
         args     = kwargs['args']
         pyDict   = {}
         jsonData = kwargs['json_data']
-
         # Obtain Server Profile Data
         api_client = credentials.config_credentials(home, args)
         for item in jsonData:
@@ -658,6 +657,7 @@ class intersight_api(object):
                 toolDate    = item['InstallDate']
                 toolName    = item['Name']
                 toolVersion = item['Version']
+                print(f'Checking Hostname {Hostname}')
 
                 # Query API for Server Details
                 api_client = credentials.config_credentials(home, args)
@@ -665,7 +665,7 @@ class intersight_api(object):
                 api_filter = f"Serial eq '{Serial}'"
                 api_args = dict(filter= api_filter, _preload_content = False)
                 if re.search('UCSB', item['Hostname']['Model']):
-                    apiQuery = json.loads(api_handle.get_compute_blade_identity_list(**api_args).data)
+                    apiQuery = json.loads(api_handle.get_compute_blade_list(**api_args).data)
                 else:
                     apiQuery = json.loads(api_handle.get_compute_rack_unit_list(**api_args).data)
                 if apiQuery.get('Results'):
@@ -682,28 +682,28 @@ class intersight_api(object):
                         domainParent = json.loads(api_handle.get_asset_device_registration_by_moid(
                             i['RegisteredDevice']['Moid'], **api_args).data
                         )
-                # Obtain Server Profile Data
-                api_filter = f"ManagedObject.Moid eq '{physMoid}'"
-                api_args = dict(filter=api_filter, _preload_content = False)
-                api_handle = cond_api.CondApi(api_client)
-                apiQuery = json.loads((api_handle.get_cond_hcl_status_list(**api_args)).data)
-                if apiQuery.get('Results'):
-                    hostResults = {
-                        Serial:{
-                            'Domain':domainParent['DeviceHostname'][0],
-                            'Model':apiQuery['Results'][0]['HclModel'],
-                            'Serial':Serial,
-                            'Server':serverDn,
-                            'Profile':serverP,
-                            'Firmware':apiQuery['Results'][0]['HclFirmwareVersion'],
-                            'Hostname':Hostname,
-                            'ESX Version':esxVersion,
-                            'ESX Build':esxBuild,
-                            'UCS Tools Install Date':toolDate,
-                            'UCS Tools Version':toolVersion
+                    # Obtain Server Profile Data
+                    api_filter = f"ManagedObject.Moid eq '{physMoid}'"
+                    api_args = dict(filter=api_filter, _preload_content = False)
+                    api_handle = cond_api.CondApi(api_client)
+                    apiQuery = json.loads((api_handle.get_cond_hcl_status_list(**api_args)).data)
+                    if apiQuery.get('Results'):
+                        hostResults = {
+                            Serial:{
+                                'Domain':domainParent['DeviceHostname'][0],
+                                'Model':apiQuery['Results'][0]['HclModel'],
+                                'Serial':Serial,
+                                'Server':serverDn,
+                                'Profile':serverP,
+                                'Firmware':apiQuery['Results'][0]['HclFirmwareVersion'],
+                                'Hostname':Hostname,
+                                'ESX Version':esxVersion,
+                                'ESX Build':esxBuild,
+                                'UCS Tools Install Date':toolDate,
+                                'UCS Tools Version':toolVersion
+                            }
                         }
-                    }
-                    pyDict.update(hostResults)
+                        pyDict.update(hostResults)
 
         if len(pyDict) > 0:
             # Build Named Style Sheets for Workbook
