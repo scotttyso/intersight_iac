@@ -6,6 +6,7 @@ git_status_checker
 intersight
 ipaddress
 jinja2
+requests
 simplejson
 stdiomask
 openpyxl

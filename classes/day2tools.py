@@ -699,6 +699,7 @@ class intersight_api(object):
                                 'Hostname':Hostname,
                                 'ESX Version':esxVersion,
                                 'ESX Build':esxBuild,
+                                'HCL Component Status':apiQuery['Results'][0]['ComponentStatus'],
                                 'UCS Tools Install Date':toolDate,
                                 'UCS Tools Version':toolVersion
                             }
@@ -745,7 +746,7 @@ class intersight_api(object):
             # Read Server Inventory to Create Column Headers
             column_headers = [
                 'Domain','Model','Serial','Server','Profile','Firmware','Hostname','ESX Version','ESX Build',
-                'UCS Tools Install Date', 'UCS Tools Version'
+                'HCL Component Status', 'UCS Tools Install Date', 'UCS Tools Version'
             ]
             for i in range(len(column_headers)):
                 ws.column_dimensions[chr(ord('@')+i+1)].width = 30
