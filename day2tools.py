@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 import argparse
+import codecs
 import classes.day2tools
 import classes.ezfunctions
 import json
@@ -83,9 +84,21 @@ def main():
             print(f'\n-------------------------------------------------------------------------------------------\n')
             exit()
         else:
+            def try_utf8(json_file):
+                try:
+                    f = codecs.open(json_file, encoding='utf-8', errors='strict')
+                    for line in f: pass
+                    print("Valid utf-8")
+                    return 'Good'
+                except UnicodeDecodeError:
+                    print("invalid utf-8")
+                    return None
+
             json_file = args.json_file
             if 'hcl_inventory' in args.process:
-                json_open = open(json_file, 'r', encoding='utf-16')
+                udata = try_utf8(json_file)
+                if udata is None: json_open = open(json_file, 'r', encoding='utf-16')
+                else: json_open = open(json_file, 'r')
             else:
                 json_open = open(json_file, 'r')
             kwargs['json_data'] = json.load(json_open)
