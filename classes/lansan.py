@@ -53,14 +53,15 @@ class policies(object):
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['templates'])
                     kwargs['jData']['varType'] = 'Ethernet Adapter Template'
-                    policy_template = ezfunctions.variablesFromAPI(**kwargs)
+                    adapter_template = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
                     # Prompt User for Name and Description
                     #==============================================
-                    if not name_prefix == '': name = '%s-%s' % (name_prefix, policy_template)
-                    else: name = policy_template
-                    polVars['name']        = ezfunctions.policy_name(name, policy_type)
-                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
+                    if not name_prefix == '': name = '%s-%s' % (name_prefix, adapter_template)
+                    else: name = adapter_template
+                    polVars['adapter_template'] = adapter_template
+                    polVars['name']             = ezfunctions.policy_name(name, policy_type)
+                    polVars['description']      = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================
@@ -754,14 +755,15 @@ class policies(object):
                     #==============================================
                     kwargs['jData'] = deepcopy(jsonVars['templates'])
                     kwargs['jData']['varType'] = 'Fibre-Channel Adapter Template'
-                    policy_template = ezfunctions.variablesFromAPI(**kwargs)
+                    adapter_template = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
                     # Prompt User for Name and Description
                     #==============================================
-                    if not name_prefix == '': name = '%s-%s' % (name_prefix, policy_template)
-                    else: name = policy_template
-                    polVars['name']        = ezfunctions.policy_name(name, policy_template)
-                    polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
+                    if not name_prefix == '': name = '%s-%s' % (name_prefix, adapter_template)
+                    else: name = adapter_template
+                    polVars['adapter_template'] = adapter_template
+                    polVars['name']             = ezfunctions.policy_name(name, adapter_template)
+                    polVars['description']      = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================

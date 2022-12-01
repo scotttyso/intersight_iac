@@ -161,12 +161,12 @@ class policies(object):
                     jsonVars = ezData['ezimm']['allOf'][1]['properties']['policies']['bios.Policy']
                     kwargs['jData'] = deepcopy(jsonVars['templates'])
                     kwargs['jData']['varType'] = 'BIOS Template'
-                    polVars['policy_template'] = ezfunctions.variablesFromAPI(**kwargs)
+                    polVars['bios_template'] = ezfunctions.variablesFromAPI(**kwargs)
                     #==============================================
                     # Prompt User for Name and Description
                     #==============================================
-                    if not name_prefix == '': name = '{}-{}'.format(name_prefix, polVars['policy_template'])
-                    else: name = polVars['policy_template']
+                    if not name_prefix == '': name = '{}-{}'.format(name_prefix, polVars['bios_template'])
+                    else: name = polVars['bios_template']
                     polVars['name']        = ezfunctions.policy_name(name, policy_type)
                     polVars['description'] = ezfunctions.policy_descr(polVars['name'], policy_type)
                     #==============================================
