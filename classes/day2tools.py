@@ -651,6 +651,7 @@ class intersight_api(object):
         for item in jsonData:
             if 'Cisco' in item['Hostname']['Manufacturer']:
                 vCenter     = item['vCenter']
+                Cluster     = item['Cluster']
                 esxBuild    = item['Hostname']['Build']
                 esxVersion  = item['Hostname']['Version']
                 Hostname    = item['Hostname']['Name']
@@ -698,6 +699,7 @@ class intersight_api(object):
                                 'Profile':serverP,
                                 'Firmware':apiQuery['Results'][0]['HclFirmwareVersion'],
                                 'vCenter':vCenter,
+                                'Cluster':Cluster,
                                 'Hostname':Hostname,
                                 'ESX Version':esxVersion,
                                 'ESX Build':esxBuild,
@@ -747,8 +749,8 @@ class intersight_api(object):
 
             # Read Server Inventory to Create Column Headers
             column_headers = [
-                'Domain','Model','Serial','Server','Profile','Firmware','vCenter','Hostname','ESX Version','ESX Build',
-                'HCL Component Status', 'UCS Tools Install Date', 'UCS Tools Version'
+                'Domain','Model','Serial','Server','Profile','Firmware','vCenter','Cluster','Hostname',
+                'ESX Version','ESX Build','HCL Component Status', 'UCS Tools Install Date', 'UCS Tools Version'
             ]
             for i in range(len(column_headers)):
                 ws.column_dimensions[chr(ord('@')+i+1)].width = 30
