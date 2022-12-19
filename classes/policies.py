@@ -3915,9 +3915,9 @@ def port_list_fc(self, **kwargs):
     org       = kwargs['org']
     port_type = kwargs['port_type']
     fill_pattern_descr = 'For Cisco UCS 6400 Series fabric interconnect, if the FC uplink speed is 8 Gbps, set the '\
-        'fill pattern as IDLE on the uplink switch. If the fill pattern is not set as IDLE, FC '\
+        'fill pattern as IDLE on the uplink switch. If the fill pattern is not set as Idle, FC '\
         'uplinks operating at 8 Gbps might go to an errDisabled state, lose SYNC intermittently, or '\
-        'notice errors or bad packets.  For speeds greater than 8 Gbps we recommend Arbff.  Below '\
+        'notice errors or bad packets.  For speeds greater than 8 Gbps we recommend Idle.  Below '\
         'is a configuration example on MDS to match this setting:\n\n'\
         'mds-a(config-if)# switchport fill-pattern IDLE speed 8000\n'\
         'mds-a(config-if)# show port internal inf interface fc1/1 | grep FILL\n'\
@@ -3963,7 +3963,6 @@ def port_list_fc(self, **kwargs):
                     if not port_type == 'Fibre-Channel Storage':
                         kwargs['jData'] = deepcopy(jsonVars['FillPattern'])
                         kwargs['jData']['description'] = kwargs['jData']['description'] + '\n' + fill_pattern_descr
-                        kwargs['jData']['default'] = kwargs['jData']['enum'][1]
                         kwargs['jData']['varType'] = 'Fill Pattern'
                         fill_pattern = ezfunctions.variablesFromAPI(**kwargs)
 
