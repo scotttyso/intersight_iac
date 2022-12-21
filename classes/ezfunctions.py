@@ -216,6 +216,25 @@ def exit_default(policy_type, y_or_n):
     return configure_loop, policy_loop
 
 #======================================================
+# Function - Ask User to Configure Additional Policy
+#======================================================
+def exit_default_del_tfc(policy_type, y_or_n):
+    valid_exit = False
+    while valid_exit == False:
+        exit_answer = input(f'Would You like to {policy_type}?  Enter "Y" or "N" [{y_or_n}]: ')
+        if exit_answer == '': exit_answer = y_or_n
+        if exit_answer == 'N':
+            policy_loop = True
+            configure_loop = True
+            valid_exit = True
+        elif exit_answer == 'Y':
+            policy_loop = False
+            configure_loop = False
+            valid_exit = True
+        else: message_invalid_y_or_n('short')
+    return configure_loop, policy_loop
+
+#======================================================
 # Function - Prompt User with question
 #======================================================
 def exit_loop_default_yes(loop_count, policy_type):

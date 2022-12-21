@@ -9,129 +9,101 @@ It uses argparse to take in the following CLI arguments:
     f or api-key-file:       Name of file containing secret key for the HTTP signature scheme
 """
 
+from copy import deepcopy
 from intersight.api import organization_api
 from intersight.api import resource_api
 from pathlib import Path
 import argparse
-import classes.tf
 import credentials
-import classes.ezfunctions
+import json
 import os
+import platform
 import re
+import sys
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+sys.path.insert(0, './classes')
+import classes.ezfunctions
+import classes.tf
 
 home = Path.home()
 Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
 
-def delete_terraform_workspaces(org):
+def delete_terraform_workspaces(org, **kwargs):
     tfcb_config = []
     valid = False
     while valid == False:
-        templateVars = {}
-        templateVars["Description"] = 'Terraform Cloud Workspaces'
-        templateVars["varInput"] = f'Do you want to Proceed with Deleting Workspaces in Terraform Cloud?'
-        templateVars["varDefault"] = 'Y'
-        templateVars["varName"] = 'Terraform Cloud Workspaces'
-        runTFCB = classes.ezfunctions.varBoolLoop(**templateVars)
+        kwargs['jData'] = deepcopy({})
+        kwargs['jData']["default"]     = True
+        kwargs['jData']["description"] = 'Terraform Cloud Workspaces'
+        kwargs['jData']["varInput"]    = f'Do you want to Proceed with Deleting Workspaces in Terraform Cloud?'
+        kwargs['jData']["varName"]     = 'Terraform Cloud Workspaces'
+        runTFCB = classes.ezfunctions.varBoolLoop(**kwargs)
         valid = True
     if runTFCB == True:
-        templateVars = {}
-        templateVars["class_terraform.terraform_cloud_token"] = classes.tf.terraform_cloud().terraform_token()
-        templateVars["tfc_organization"] = classes.tf.terraform_cloud().tfc_organization(**templateVars)
-        tfcb_config.append({'tfc_organization':templateVars["tfc_organization"]})
+        polVars = {}
+        #==============================================
+        # Obtain Terraform Target
+        #==============================================
+        kwargs['multi_select'] = False
+        kwargs['jData'] = deepcopy({})
+        kwargs['jData']['default']     = 'Terraform Cloud'
+        kwargs['jData']['description'] = 'Select the Terraform Target.'
+        kwargs['jData']['enum']        = ['Terraform Cloud', 'Terraform Enterprise']
+        kwargs['jData']['varType']     = 'Target'
+        terraform_target = classes.ezfunctions.variablesFromAPI(**kwargs)
 
-        # Obtain Version Control Provider
-        if os.environ.get('tfc_vcs_provider') is None:
-            tfc_vcs_provider,templateVars["tfc_oath_token"] = classes.tf.terraform_cloud().tfc_vcs_providers(**templateVars)
-            templateVars["tfc_vcs_provider"] = tfc_vcs_provider
-            os.environ['tfc_vcs_provider'] = tfc_vcs_provider
-            os.environ['tfc_oath_token'] = templateVars["tfc_oath_token"]
+        if terraform_target[0] == 'Terraform Enterprise':
+            kwargs['jData'] = deepcopy({})
+            kwargs['jData']['default']     = f'app.terraform.io'
+            kwargs['jData']['description'] = f'Hostname of the Terraform Enterprise Instance'
+            kwargs['jData']['pattern']     = '^[a-zA-Z0-9\\-\\.\\:]+$'
+            kwargs['jData']['minimum']     = 1
+            kwargs['jData']['maximum']     = 90
+            kwargs['jData']['varInput']    = f'What is the Hostname of the TFE Instance?'
+            kwargs['jData']['varName']     = f'Terraform Target Name'
+            polVars['tfc_host'] = classes.ezfunctions.varStringLoop(**kwargs)
+            if re.search(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", polVars['tfc_host']):
+                classes.validating.ip_address('Terraform Target', polVars['tfc_host'])
+            elif ':' in polVars['tfc_host']:
+                classes.validating.ip_address('Terraform Target', polVars['tfc_host'])
+            else: classes.validating.dns_name('Terraform Target', polVars['tfc_host'])
         else:
-            templateVars["tfc_vcs_provider"] = os.environ.get('tfc_vcs_provider')
-            templateVars["tfc_oath_token"] = os.environ['tfc_oath_token']
-
-        # Obtain Version Control Base Repo
-        if os.environ.get('vcsBaseRepo') is None:
-            templateVars["vcsBaseRepo"] = classes.tf.terraform_cloud().tfc_vcs_repository(**templateVars)
-            os.environ['vcsBaseRepo'] = templateVars["vcsBaseRepo"]
-        else:
-            templateVars["vcsBaseRepo"] = os.environ.get('vcsBaseRepo')
-
-        repoFoldercheck = False
-        while repoFoldercheck == False:
-            if not os.environ.get('tfWorkDir') is None:
-                tfDir = os.environ.get('tfWorkDir')
-            else:
-                if os.environ.get('TF_DEST_DIR') is None:
-                    tfDir = 'Intersight'
-                    os.environ['tfWorkDir'] = 'Intersight'
-                else:
-                    tfDir = os.environ.get('TF_DEST_DIR')
-            if re.search(r'(^\/|^\.\.)', tfDir):
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Within Terraform Cloud, the Workspace will be configured with the directory where the ')
-                print(f'  configuration files are stored in the repo: {templateVars["vcsBaseRepo"]}.')
-                print(f'  For Example if the shortpath was "Intersight", The Repo URL end up like:\n')
-                print(f'    - {templateVars["vcsBaseRepo"]}/Intersight/policies')
-                print(f'    - {templateVars["vcsBaseRepo"]}/Intersight/pools')
-                print(f'    - {templateVars["vcsBaseRepo"]}/Intersight/profiles')
-                print(f'    - {templateVars["vcsBaseRepo"]}/Intersight/ucs_domain_profiles\n')
-                print(f'  The Destination Directory has been entered as:\n')
-                print(f'  {tfDir}\n')
-                print(f'  Which looks to be a system path instead of a Repository Directory.')
-                print(f'  Please confirm the Path Below is the short Path to the Repository Directory.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                dirLength = len(tfDir.split('/'))
-                if re.search(r'\/$', tfDir):
-                    question = input(f'Press Enter to Confirm or Make Corrections: [{tfDir.split("/")[dirLength -2]}]: ')
-                else:
-                    question = input(f'Press Enter to Confirm or Make Corrections: [{tfDir.split("/")[dirLength -1]}]: ')
-                if question == '':
-                    if re.search(r'\/$', tfDir):
-                        tfDir = tfDir.split("/")[dirLength -2]
-                    else:
-                        tfDir = tfDir.split("/")[dirLength -1]
-                    os.environ['tfWorkDir'] = tfDir
-                    repoFoldercheck = True
-                else:
-                    tfDir = question
-                    os.environ['tfWorkDir'] = tfDir
-                    repoFoldercheck = True
-            else:
-                repoFoldercheck = True
-        folder_list = [
-            f'{tfDir}/{org}/policies',
-            f'{tfDir}/{org}/pools',
-            f'{tfDir}/{org}/profiles',
-            f'{tfDir}/{org}/ucs_domain_profiles'
-        ]
-        for folder in folder_list:
-            folder_length = len(folder.split('/'))
-
-            templateVars["autoApply"] = True
-            templateVars["Description"] = f'Intersight Organization {org} - %s' % (folder.split('/')[folder_length -2])
-            if re.search('(pools|policies|ucs_domain_profiles)', folder.split('/')[folder_length -1]):
-                templateVars["globalRemoteState"] = True
-            else:
-                templateVars["globalRemoteState"] = False
-            templateVars["workingDirectory"] = folder
-
-            templateVars["Description"] = 'Name of the Workspace to Delete in Terraform Cloud'
-            folder_value = folder.split('/')[folder_length -1]
-            templateVars["varDefault"] = f'{org}_{folder_value}'
-            templateVars["varInput"] = f'Terraform Cloud Workspace Name. [{org}_{folder_value}]: '
-            templateVars["varName"] = f'Workspace Name'
-            templateVars["varRegex"] = '^[a-zA-Z0-9\\-\\_]+$'
-            templateVars["minLength"] = 1
-            templateVars["maxLength"] = 90
-            templateVars["workspaceName"] = classes.ezfunctions.varStringLoop(**templateVars)
-            tfcb_config.append({folder_value:templateVars["workspaceName"]})
-            classes.tf.terraform_cloud().tfcWorkspace_remove(**templateVars)
+            polVars['tfc_host'] = 'app.terraform.io'
+        #==============================================
+        # Obtain Terraform Token
+        #==============================================
+        polVars["terraform_cloud_token"] = classes.tf.terraform_cloud().terraform_token()
+        #==============================================
+        # Obtain Terraform Organization
+        #==============================================
+        polVars["tfc_organization"] = classes.tf.terraform_cloud().tfc_organization(polVars, **kwargs)
+        #==============================================
+        # Delete Terraform Workspaces
+        #==============================================
+        workspaceLoop = False
+        deLoop = False
+        while workspaceLoop == False:
+            #==============================================
+            # Obtain Terraform Workspace Name
+            #==============================================
+            kwargs['jData'] = deepcopy({})
+            kwargs['jData']["description"] = 'Name of the Workspace to Delete in Terraform Cloud'
+            kwargs['jData']["default"]     = org
+            kwargs['jData']["pattern"]     = '^[a-zA-Z0-9\\-\\_]+$'
+            kwargs['jData']["minimum"]     = 1
+            kwargs['jData']["maximum"]     = 90
+            kwargs['jData']["varInput"]    = f'Terraform Cloud Workspace Name.'
+            kwargs['jData']["varName"]     = f'Workspace Name'
+            polVars["workspaceName"]       = classes.ezfunctions.varStringLoop(**kwargs)
+            classes.tf.terraform_cloud().tfcWorkspace_remove(**polVars)
+            policy_type = 'Delete another Workspace'
+            deLoop, workspaceLoop = classes.ezfunctions.exit_default_del_tfc(policy_type, 'Y')
 
     else:
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'  Skipping Step to Create Terraform Cloud Workspaces.')
+        print(f'  Skipping Step to Delete Terraform Cloud Workspaces.')
         print(f'  Moving to last step to Confirm the Intersight Organization Exists.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
      
@@ -214,7 +186,35 @@ def main():
 
     os.environ['TF_DEST_DIR'] = '%s' % (args.dir)
 
-    delete_terraform_workspaces(org)
+    #==============================================
+    # Setup Main Script Parameters
+    #==============================================
+    opSystem = platform.system()
+    if opSystem == 'Windows': path_sep = '\\'
+    else: path_sep = '/'
+    script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+    jsonFile    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
+    jsonOpen    = open(jsonFile, 'r')
+    jsonData    = json.load(jsonOpen)
+    jsonOpen.close()
+    jsonFile = f'{script_path}{path_sep}variables{path_sep}easy_variables.json'
+    jsonOpen = open(jsonFile, 'r')
+    ezData   = json.load(jsonOpen)
+    jsonOpen.close()
+    #==============================================
+    # Build kwargs
+    #==============================================
+    kwargs = {}
+    kwargs['args']        = args
+    kwargs['home']        = Path.home()
+    kwargs['opSystem']    = platform.system()
+    kwargs['path_sep']    = path_sep
+    kwargs['script_path'] = script_path
+    kwargs['jsonData']    = jsonData['components']['schemas']
+    kwargs['ezData']      = ezData['components']['schemas']
+    kwargs['immDict']     = {'orgs':{}}
+    kwargs['ez_settings'] = {}
+    delete_terraform_workspaces(org, **kwargs)
     intersight_org_delete(home, org, args)
 
 if __name__ == '__main__':

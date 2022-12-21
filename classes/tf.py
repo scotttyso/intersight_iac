@@ -281,9 +281,7 @@ class terraform_cloud(object):
         workspaceName = polVars['workspaceName']
         url = f'https://{tfc_host}/api/v2/organizations/{tfc_organization}/workspaces/{workspaceName}'
         tf_token = 'Bearer %s' % (polVars['terraform_cloud_token'])
-        tf_header = {'Authorization': tf_token,
-                'Content-Type': 'application/vnd.api+json'
-        }
+        tf_header = {'Authorization': tf_token, 'Content-Type': 'application/vnd.api+json'}
 
         #----------------------------------------------------------------------------------
         # Delete the Workspace of the Organization to Search for the Workspace

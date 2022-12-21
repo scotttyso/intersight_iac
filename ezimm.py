@@ -39,13 +39,9 @@ import classes.tf
 import classes.validating
 
 def create_terraform_workspaces(orgs, **kwargs):
-    args = kwargs['args']
-    baseRepo = args.dir
-    ezData = kwargs['ezData']
     jsonData = kwargs['jsonData']
     opSystem = kwargs['opSystem']
     org = kwargs['org']
-    path_sep = kwargs['path_sep']
     tfcb_config = []
     polVars = {}
     kwargs['jData'] = deepcopy({})
