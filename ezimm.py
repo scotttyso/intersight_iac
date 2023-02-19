@@ -4,11 +4,12 @@ Use This Wizard to Create Terraform HCL configuration from Question and Answer o
 It uses argparse to take in the following CLI arguments:
     a or api-key:            API client key id for the HTTP signature scheme
     d or dir:                Base Directory to use for creation of the HCL Configuration Files
+    e or endoint:            The intersight hostname for the api endpoint. (The default is intersight.com)
     i or ignore-tls:         Ignores TLS server-side certificate verification
     j or json_file:          IMM Transition JSON export to convert to HCL
-    l or api-key-legacy:     Use legacy API client (v2) key
-    s or api-key-file:       Name of file containing secret key for the HTTP signature scheme
-    e or endoint:            The intersight hostname for the api endpoint. (The default is intersight.com)
+    k or api-key-file:       Name of file containing the Intersight secret key for the HTTP signature scheme
+    t or deploy-type:        Deployment Type.  Values are: Intersight or Terraform
+    y or yaml-file:          The YAML File to use to Load Configurations
 """
 from copy import deepcopy
 from intersight.api import organization_api
@@ -30,6 +31,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 sys.path.insert(0, './classes')
 import classes.ezfunctions
 import classes.imm
+import classes.isdk
 import classes.lansan
 import classes.policies
 import classes.pools
@@ -37,6 +39,10 @@ import classes.profiles
 import classes.quick_start
 import classes.tf
 import classes.validating
+
+class MyDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyDumper, self).increase_indent(flow, False)
 
 def create_terraform_workspaces(orgs, **kwargs):
     jsonData = kwargs['jsonData']
@@ -264,6 +270,24 @@ def create_terraform_workspaces(orgs, **kwargs):
     # Return kwargs
     return kwargs
      
+def import_configurations(**kwargs):
+    org      = kwargs['org']
+    yaml_file = kwargs['args'].yaml_file
+    valid = False
+    while valid == False:
+        if not os.path.isfile(yaml_file):
+            kwargs['jData']['description'] = 'YAML Configuration File'
+            kwargs['jData']['pattern'] = '.*'
+            kwargs['jData']['varInput'] = 'What is the Path for the YAML Configuration FIle to Load?'
+            kwargs['jData']['varName']  = 'YAML Configuration File'
+            yaml_file = classes.ezfunctions.varStringLoop(**kwargs)
+        else: valid = True
+    yfile = open(yaml_file, 'r')
+    data = yaml.safe_load(yfile)
+    kwargs['immDict']['orgs'][org]['intersight'].update(data['intersight'])
+    # Return kwargs
+    return kwargs
+
 def intersight_org_check(**kwargs):
     args = kwargs['args']
     home = kwargs['home']
@@ -337,6 +361,23 @@ def intersight_org_check(**kwargs):
             print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
             print(f'\n-------------------------------------------------------------------------------------------\n')
 
+def prompt_deploy_type(**kwargs):
+    ezData = kwargs['ezData']
+    kwargs['multi_select'] = False
+    jsonVars = ezData['ezimm']['allOf'][1]['properties']['wizard']
+    #==============================================
+    # Prompt User for Deployment versus IaC
+    #==============================================
+    deploy_type = kwargs['args'].deploy_type
+    if deploy_type == None: deploy_type = ''
+    if re.search('Intersight|Terraform', deploy_type):
+        kwargs['deploy_type'] = deploy_type
+    else:
+        kwargs['jData'] = deepcopy(jsonVars['deployType'])
+        kwargs['jData']['varType'] = 'Deployment Type'
+        kwargs['deploy_type'] = classes.ezfunctions.variablesFromAPI(**kwargs)
+    return kwargs
+
 def prompt_main_menu(**kwargs):
     ezData = kwargs['ezData']
     jsonData = kwargs['jsonData']
@@ -346,6 +387,17 @@ def prompt_main_menu(**kwargs):
 
     kwargs['multi_select'] = False
     jsonVars = ezData['ezimm']['allOf'][1]['properties']['wizard']
+    #==============================================
+    # Prompt User for Deployment versus IaC
+    #==============================================
+    deploy_type = kwargs['args'].deploy_type
+    if deploy_type == None: deploy_type = ''
+    if re.search('Intersight|Terraform', deploy_type):
+        kwargs['deploy_type'] = deploy_type
+    else:
+        kwargs['jData'] = deepcopy(jsonVars['deployType'])
+        kwargs['jData']['varType'] = 'Deployment Type'
+        kwargs['deploy_type'] = classes.ezfunctions.variablesFromAPI(**kwargs)
     #==============================================
     # Prompt User for Main Menu
     #==============================================
@@ -359,6 +411,7 @@ def prompt_main_menu(**kwargs):
     jsonVars = jsonData['vnic.EthNetworkPolicy']['allOf'][1]['properties']
     if 'domain' in main_menu: kwargs['target_platform'] = 'FIAttached'
     elif 'standalone' in main_menu: kwargs['target_platform'] = 'Standalone'
+    elif 'skip' in main_menu: kwargs['target_platform'] = 'FIAttached'
     else:
         kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
         kwargs['jData']['default'] = 'FIAttached'
@@ -609,7 +662,7 @@ def main():
     #==============================================
     Parser = argparse.ArgumentParser(description='Intersight Easy IMM Deployment Module')
     Parser.add_argument(
-        '-a', '--api-key-id', default=os.getenv('TF_VAR_apikey'),
+        '-a', '--api-key-id', default=os.getenv('intersight_apikey'),
         help='The Intersight API client key id for HTTP signature scheme'
     )
     Parser.add_argument(
@@ -617,7 +670,7 @@ def main():
         help='The Directory to Publish the Terraform Files to.'
     )
     Parser.add_argument(
-        '-e', '--endpoint', default='intersight.com',
+        '-e', '--endpoint', default=os.getenv('intersight_endpoint'),
         help='The Intersight hostname for the API endpoint. The default is intersight.com'
     )
     Parser.add_argument(
@@ -629,17 +682,24 @@ def main():
         help='The IMM Transition Tool JSON Dump File to Convert to HCL.'
     )
     Parser.add_argument(
-        '-s', '--api-key-file', default='~/Downloads/SecretKey.txt',
+        '-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
+    )
+    Parser.add_argument(
+        '-t', '--deploy-type', default=None,
+        help = 'Deployment Type values are:\
+            1.  Intersight\
+            2.  Terraform'
     )
     Parser.add_argument(
         '-v', '--api-key-v3', action='store_true',
         help='Flag for API Key Version 3.'
     )
+    Parser.add_argument(
+        '-y', '--yaml-file', default=None,
+        help='The YAML File to use to Load Configurations.'
+    )
     args = Parser.parse_args()
-    args.api_key_id = classes.ezfunctions.api_key(args)
-    args.api_key_file = classes.ezfunctions.api_secret(args)
-    args.url = f'https://{args.endpoint}'
 
     #==============================================
     # Setup Main Script Parameters
@@ -648,6 +708,10 @@ def main():
     if opSystem == 'Windows': path_sep = '\\'
     else: path_sep = '/'
     script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+
+    #================================================
+    # Check if User has Stored Intersight Parameters
+    #================================================
     jsonFile    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
     jsonOpen    = open(jsonFile, 'r')
     jsonData    = json.load(jsonOpen)
@@ -669,6 +733,15 @@ def main():
     kwargs['ezData']      = ezData['components']['schemas']
     kwargs['immDict']     = {'orgs':{}}
     kwargs['ez_settings'] = {}
+    #==============================================
+    # Get Intersight Configuration
+    # - apikey
+    # - endpoint
+    # - keyfile
+    #==============================================
+    kwargs = classes.ezfunctions.intersight_config(**kwargs)
+    kwargs['args'].url = 'https://%s' % (kwargs['args'].endpoint)
+
     #==============================================
     # Check Folder Naming for Illegal Characters
     #==============================================
@@ -728,32 +801,80 @@ def main():
             #==============================================
             kwargs = classes.imm.transition('transition').policy_loop(**kwargs)
             orgs = list(kwargs['immDict']['orgs'].keys())
+    elif not args.yaml_file == None:
+        kwargs = prompt_org(**kwargs)
+        kwargs = prompt_deploy_type(**kwargs)
+        org = kwargs['org']
+        kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{'intersight':{}}}))
+        kwargs = import_configurations(**kwargs)
+        if not kwargs.get('deploy_type'): print('not found 3')
+        #print(json.dumps(kwargs['immDict']['orgs'][org], indent=4))
+        orgs = list(kwargs['immDict']['orgs'].keys())
     else:
         #==============================================
         # Run through the Wizard
         #==============================================
-        kwargs = prompt_main_menu(**kwargs)
         kwargs = prompt_org(**kwargs)
+        kwargs = prompt_deploy_type(**kwargs)
+        kwargs = prompt_main_menu(**kwargs)
         kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{'intersight':{}}}))
         kwargs = prompt_previous_configurations(**kwargs)
         kwargs = process_wizard(**kwargs)
         orgs = list(kwargs['immDict']['orgs'].keys())
     #==============================================
-    # Merge Repostiroy and Create YAML Files
-    #==============================================
-    classes.ezfunctions.merge_easy_imm_repository(orgs, **kwargs)
-    classes.ezfunctions.create_yaml(orgs, **kwargs)
-    #==============================================
-    # Create Terraform Config and Workspaces
-    #==============================================
-    kwargs = classes.ezfunctions.terraform_provider_config(**kwargs)
-    kwargs = create_terraform_workspaces(orgs, **kwargs)
-    #==============================================
     # Check Existence of Intersight Orgs
     #==============================================
     for org in orgs:
         kwargs['org'] = org
+
+        cwd = os.getcwd()
+        dest_file = f'{org}.yml'
+        if not os.path.exists(os.path.join(cwd, dest_file)):
+            create_file = f'type nul >> {os.path.join(cwd, dest_file)}'
+            os.system(create_file)
+        wr_file = open(os.path.join(cwd, dest_file), 'w')
+        wr_file.write('---\n')
+        wr_file = open(os.path.join(cwd, dest_file), 'a')
+        dash_length = '='*(len(org) + 20)
+        wr_file.write(f'#{dash_length}\n')
+        wr_file.write(f'#   {org} - Dump File\n')
+        wr_file.write(f'#{dash_length}\n')
+        dict = kwargs['immDict']['orgs'][org]
+        wr_file.write(yaml.dump(dict, Dumper=MyDumper, default_flow_style=False))
+        wr_file.close()
+
         intersight_org_check(**kwargs)
+    #==============================================
+    # Merge Repostiroy and Create YAML Files
+    #==============================================
+    if kwargs['deploy_type'] == 'Terraform':
+        classes.ezfunctions.merge_easy_imm_repository(orgs, **kwargs)
+        classes.ezfunctions.create_yaml(orgs, **kwargs)
+        #==============================================
+        # Create Terraform Config and Workspaces
+        #==============================================
+        kwargs = classes.ezfunctions.terraform_provider_config(**kwargs)
+        kwargs = create_terraform_workspaces(orgs, **kwargs)
+    elif kwargs['deploy_type'] == 'Intersight':
+        kwargs = classes.isdk.intersight_api('org_query').organizations(**kwargs)
+        #==============================================
+        # Intersight Pools
+        #==============================================
+        cpool = 'classes.isdk.intersight_api'
+        for org in orgs:
+            #type = 'pools'
+            #if kwargs['immDict']['orgs'][org]['intersight'].get('pools'):
+            #    for pool_type in kwargs['immDict']['orgs'][org]['intersight']['pools']:
+            #        eval(f"{cpool}(type).{pool_type}(**kwargs)")
+            if kwargs['immDict']['orgs'][org]['intersight'].get('policies'):
+                #print(kwargs['immDict']['orgs'][org]['intersight']['policies'])
+                for policy_type in kwargs['immDict']['orgs'][org]['intersight']['policies']:
+                    type = policy_type
+                    kwargs[f'{policy_type}'] = eval(f"{cpool}(type).{policy_type}(**kwargs)")
+            #type = 'domain_profiles'
+            #if kwargs['immDict']['orgs'][org]['intersight'].get('profiles'):
+            #    if kwargs['immDict']['orgs'][org]['intersight']['profiles'].get('domain'):
+            #        kwargs = eval(f"{cpool}(type).domain_profiles(**kwargs)")
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
     print(f'\n-------------------------------------------------------------------------------------------\n')

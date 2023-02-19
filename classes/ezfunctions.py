@@ -39,47 +39,6 @@ class MyDumper(yaml.Dumper):
         return super(MyDumper, self).increase_indent(flow, False)
 
 #======================================================
-# Function - Prompt User for the api_key
-#======================================================
-def api_key(args):
-    if args.api_key_id == None:
-        key_loop = False
-        while key_loop == False:
-            question = stdiomask.getpass(f'The Intersight API Key was not entered as a command line option.\n'\
-                'Please enter the Version 2 Intersight API key to use: ')
-            if len(question) == 74:
-                args.api_key_id = question
-                key_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! Invalid Value.  The API key length should be 74 characters.  Please Re-Enter.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-    # Return API Key
-    return args.api_key_id
-
-#======================================================
-# Function - Prompt User for the api_secret
-#======================================================
-def api_secret(args):
-    secret_loop = False
-    while secret_loop == False:
-        if '~' in args.api_key_file: secret_path = os.path.expanduser(args.api_key_file)
-        else: secret_path = args.api_key_file
-        if not os.path.isfile(secret_path):
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Error!! api_key_file not found.')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            args.api_key_file = input(f'Please Enter the Path to the File containing the Intersight API Secret: ')
-        else:
-            secret_file = open(secret_path, 'r')
-            if 'RSA PRIVATE KEY' in secret_file.read(): secret_loop = True
-            else:
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Error!! api_key_file does not seem to contain the Private Key.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-    return secret_path
-
-#======================================================
 # Function - Format Policy Description
 #======================================================
 def choose_policy(policy_type, **kwargs):
@@ -356,6 +315,89 @@ def findVars(ws, func, rows, count):
         var_dict[vcount]['row'] = i + vcount - 1
         vcount += 1
     return var_dict
+
+#========================================================
+# Function - Prompt User for the Intersight Configurtion
+#========================================================
+def intersight_config(**kwargs):
+    path_sep = kwargs['path_sep']
+    kwargs['jData'] = deepcopy({})
+    if kwargs['args'].api_key_id == None:
+        kwargs['Variable'] = 'intersight_apikey'
+        kwargs = sensitive_var_value(**kwargs)
+        kwargs['args'].api_key_id = kwargs['var_value']
+
+    #==============================================
+    # Prompt User for Intersight SecretKey File
+    #==============================================
+    secret_path = kwargs['args'].api_key_file
+    secret_loop = False
+    while secret_loop == False:
+        valid = False
+        if secret_path == None:
+            varName = 'intersight_keyfile'
+            print(f"\n-------------------------------------------------------------------------------------------\n")
+            print(f"  The Script did not find {varName} as an 'environment' variable.")
+            print(f"  To not be prompted for the value of {varName} each time")
+            print(f"  add the following to your local environemnt:\n")
+            print(f"    - Linux: export {varName}='{varName}_value'")
+            print(f"    - Windows: $env:{varName}='{varName}_value'")
+            secret_path = ''
+        if '~' in secret_path: secret_path = os.path.expanduser(secret_path)
+        if not secret_path == '':
+            if not os.path.isfile(secret_path):
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  !!!Error!!! intersight_keyfile not found.')
+            else:
+                secret_file = open(secret_path, 'r')
+                count = 0
+                if '-----BEGIN RSA PRIVATE KEY-----' in secret_file.read(): count += 1
+                secret_file.seek(0)
+                if '-----END RSA PRIVATE KEY-----' in secret_file.read(): count += 1
+                if count == 2:
+                    kwargs['args'].api_key_file = secret_path
+                    secret_loop = True
+                    valid = True
+                else:
+                    print(f'\n-------------------------------------------------------------------------------------------\n')
+                    print(f'  !!!Error!!! intersight_keyfile does not seem to contain a Valid Secret Key.')
+        if not valid == True:
+            kwargs['jData']['description'] = 'Intersight SecretKey'
+            kwargs['jData']['default'] = '%s%sDownloads%sSecretKey.txt' % (kwargs['home'], path_sep, path_sep)
+            kwargs['jData']['pattern'] = '.*'
+            kwargs['jData']['varInput'] = 'What is the Path for the Intersight SecretKey?'
+            kwargs['jData']['varName']  = 'intersight_keyfile'
+            secret_path = varStringLoop(**kwargs)
+
+    #==============================================
+    # Prompt User for Intersight Endpoint
+    #==============================================
+    valid = False
+    while valid == False:
+        varValue = kwargs['args'].endpoint
+        if not varValue == None:
+            varName = 'Intersight Endpoint'
+            if re.search(r'^[a-zA-Z0-9]:', varValue):
+                valid = classes.validating.ip_address(varName, varValue)
+            if re.search(r'[a-zA-Z]', varValue):
+                valid = classes.validating.dns_name(varName, varValue)
+            elif re.search(r'^([0-9]{1,3}\.){3}[0-9]{1,3}$', varValue):
+                valid = classes.validating.ip_address(varName, varValue)
+            else:
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print('  "{}" is not a valid address.').format(varValue)
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+        if valid == False:
+            kwargs['jData']['description'] = 'Hostname of the Intersight Endpoint'
+            kwargs['jData']['default'] = 'intersight.com'
+            kwargs['jData']['pattern'] = '.*'
+            kwargs['jData']['varInput'] = 'What is the Intersight Endpoint Hostname?'
+            kwargs['jData']['varName']  = 'Intersight Endpoint'
+            kwargs['jData']['varType']  = 'hostname'
+            kwargs['args'].endpoint = varStringLoop(**kwargs)
+            valid = True
+    # Return kwargs
+    return kwargs
 
 #======================================================
 # Function - Local User Policy - Users
@@ -715,8 +757,10 @@ def read_in(excel_workbook):
 #======================================================
 def sensitive_var_value(**kwargs):
     jsonData = kwargs['jsonData']
-    org = kwargs['org']
-    sensitive_var = 'TF_VAR_%s' % (kwargs['Variable'])
+    if kwargs['Variable'] == 'intersight_apikey':
+        sensitive_var = kwargs['Variable']
+    else:
+        sensitive_var = 'TF_VAR_%s' % (kwargs['Variable'])
     # -------------------------------------------------------------------------------------------------------------------------
     # Check to see if the Variable is already set in the Environment, and if not prompt the user for Input.
     #--------------------------------------------------------------------------------------------------------------------------
@@ -767,8 +811,12 @@ def sensitive_var_value(**kwargs):
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'    Error!!! Invalid Value for the {sensitive_var}.  Please re-enter the {sensitive_var}.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-            elif re.search('(apikey|secretkey)', sensitive_var):
-                if not sensitive_var == '': valid = True
+            elif re.search('intersight_apikey', sensitive_var):
+                minLength = 74
+                maxLength = 74
+                rePattern = '^[\\da-f]{24}/[\\da-f]{24}/[\\da-f]{24}$'
+                varName = 'Intersight API Key'
+                valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'bind' in sensitive_var:
                 jsonVars = jsonData['iam.LdapBaseProperties']['allOf'][1]['properties']
                 minLength = 1
@@ -824,9 +872,11 @@ def sensitive_var_value(**kwargs):
                 valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
 
         # Add Policy Variables to immDict
-        if not kwargs['immDict']['orgs'][org].get('sensitive_vars'):
-            kwargs['immDict']['orgs'][org]['sensitive_vars'] = []
-        kwargs['immDict']['orgs'][org]['sensitive_vars'].append(sensitive_var)
+        if not kwargs['Variable'] == 'intersight_apikey':
+            org = kwargs['org']
+            if not kwargs['immDict']['orgs'][org].get('sensitive_vars'):
+                kwargs['immDict']['orgs'][org]['sensitive_vars'] = []
+            kwargs['immDict']['orgs'][org]['sensitive_vars'].append(sensitive_var)
 
         # Add the Variable to the Environment
         os.environ[sensitive_var] = '%s' % (secure_value)
@@ -1242,6 +1292,9 @@ def validate_vlan_in_policy(vlan_policy_list, vlan_id):
     while valid == False:
         vlan_count = 0
         for vlan in vlan_policy_list:
+            if int(vlan_id) == 1:
+                vlan_count = 1
+                continue
             if int(vlan) == int(vlan_id):
                 vlan_count = 1
                 continue

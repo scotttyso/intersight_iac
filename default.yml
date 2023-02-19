@@ -1,0 +1,628 @@
+---
+#===========================
+#   default - Dump File
+#===========================
+intersight:
+  policies:
+    bios:
+      - baud_rate: 115200
+        bios_template: Virtualization
+        console_redirection: serial-port-a
+        description: M5-virtualization BIOS Policy
+        execute_disable_bit: disabled
+        lv_ddr_mode: auto
+        name: M5-virtualization
+        serial_port_aenable: enabled
+        terminal_type: vt100
+      - baud_rate: 115200
+        bios_template: Virtualization_tpm
+        console_redirection: serial-port-a
+        description: M5-virtualization-tpm BIOS Policy
+        execute_disable_bit: disabled
+        lv_ddr_mode: auto
+        name: M5-virtualization-tpm
+        serial_port_aenable: enabled
+        terminal_type: vt100
+      - baud_rate: 115200
+        bios_template: M6_Virtualization_tpm
+        console_redirection: serial-port-a
+        description: M6-virtualization-tpm BIOS Policy
+        execute_disable_bit: disabled
+        lv_ddr_mode: auto
+        name: M6-virtualization-tpm
+        serial_port_aenable: enabled
+        terminal_type: vt100
+    boot_order:
+      - boot_devices:
+          - name: KVM-DVD
+            object_type: boot.VirtualMedia
+            subtype: kvm-mapped-dvd
+          - enabled: true
+            name: M2
+            object_type: boot.LocalDisk
+            slot: MSTOR-RAID
+          - enabled: true
+            interface_name: mgmt-a
+            interface_source: name
+            ip_type: IPv4
+            name: PXE
+            object_type: boot.Pxe
+            slot: MLOM
+        boot_mode: Uefi
+        enable_secure_boot: false
+        name: M2-pxe
+      - boot_devices:
+          - name: KVM-DVD
+            object_type: boot.VirtualMedia
+            subtype: kvm-mapped-dvd
+          - enabled: true
+            name: M2
+            object_type: boot.LocalDisk
+            slot: MSTOR-RAID
+        boot_mode: Uefi
+        enable_secure_boot: true
+        name: M2
+    ethernet_adapter:
+      - adapter_template: VMware
+        name: VMware
+    ethernet_network_control:
+      - action_on_uplink_fail: linkDown
+        cdp_enable: false
+        description: LLDP Ethernet Network Control Policy
+        lldp_receive_enable: true
+        lldp_transmit_enable: true
+        mac_register_mode: nativeVlanOnly
+        mac_security_forge: allow
+        name: LLDP
+    ethernet_network_group:
+      - allowed_vlans: 1-99
+        name: pod01-uplink
+      - allowed_vlans: '1'
+        name: mgmt
+        native_vlan: '1'
+      - allowed_vlans: '2'
+        name: migration
+        native_vlan: '2'
+      - allowed_vlans: '3'
+        name: storage
+        native_vlan: '3'
+      - allowed_vlans: 1-99
+        name: dvs
+        native_vlan: '3'
+    ethernet_qos:
+      - burst: 1024
+        description: Bronze Ethernet QoS Policy
+        enable_trust_host_cos: false
+        mtu: 9000
+        name: Bronze
+        priority: Bronze
+        rate_limit: 0
+      - burst: 1024
+        description: Gold Ethernet QoS Policy
+        enable_trust_host_cos: false
+        mtu: 9000
+        name: Gold
+        priority: Gold
+        rate_limit: 0
+      - burst: 1024
+        description: Platinum Ethernet QoS Policy
+        enable_trust_host_cos: false
+        mtu: 9000
+        name: Platinum
+        priority: Platinum
+        rate_limit: 0
+      - burst: 1024
+        description: Silver Ethernet QoS Policy
+        enable_trust_host_cos: false
+        mtu: 9000
+        name: Silver
+        priority: Silver
+        rate_limit: 0
+    fibre_channel_adapter:
+      - description: VMware Fibre-Channel Adapter Policy
+        name: VMware
+        policy_template: VMware
+    fibre_channel_network:
+      - default_vlan: 0
+        name: san-a
+        vsan_id: 100
+      - default_vlan: 0
+        name: san-b
+        vsan_id: 200
+    fibre_channel_qos:
+      - burst: 1024
+        max_data_field_size: 2112
+        name: fc-qos
+        rate_limit: 0
+    flow_control:
+      - name: flow-ctrl
+    imc_access:
+      - inband_ip_pool: 198.18.0.10
+        inband_vlan_id: 4
+        name: 198.18.0.10
+    ipmi_over_lan:
+      - enabled: true
+        name: default-ipmi
+    lan_connectivity:
+      - name: vmware-lcp
+        target_platform: FIAttached
+        vnics:
+          - ethernet_adapter_policy: VMware
+            ethernet_network_control_policy: LLDP
+            ethernet_network_group_policy: mgmt
+            ethernet_qos_policy: Silver
+            mac_address_pools:
+              - mgmt-a
+              - mgmt-b
+            names:
+              - mgmt-a
+              - mgmt-b
+            pci_order:
+              - 2
+              - 3
+          - ethernet_adapter_policy: VMware
+            ethernet_network_control_policy: LLDP
+            ethernet_network_group_policy: migration
+            ethernet_qos_policy: Bronze
+            mac_address_pools:
+              - migration-a
+              - migration-b
+            names:
+              - migration-a
+              - migration-b
+            pci_order:
+              - 4
+              - 5
+          - ethernet_adapter_policy: VMware
+            ethernet_network_control_policy: LLDP
+            ethernet_network_group_policy: storage
+            ethernet_qos_policy: Platinum
+            mac_address_pools:
+              - storage-a
+              - storage-b
+            names:
+              - storage-a
+              - storage-b
+            pci_order:
+              - 6
+              - 7
+          - ethernet_adapter_policy: VMware
+            ethernet_network_control_policy: LLDP
+            ethernet_network_group_policy: dvs
+            ethernet_qos_policy: Gold
+            mac_address_pools:
+              - dvs-a
+              - dvs-b
+            names:
+              - dvs-a
+              - dvs-b
+            pci_order:
+              - 8
+              - 9
+    link_aggregation:
+      - name: link-agg
+    link_control:
+      - name: link-ctrl
+    local_user:
+      - name: default-users
+        users:
+          - enabled: true
+            password: 1
+            role: admin
+            username: admin
+    multicast:
+      - name: mcast
+    network_connectivity:
+      - dns_servers_v4:
+          - 208.67.220.220
+        name: dns
+    ntp:
+      - name: ntp
+        ntp_servers:
+          - 0.north-america.pool.ntp.org
+          - 1.north-america.pool.ntp.org
+        timezone: America/New_York
+    port:
+      - names:
+          - pod01-a
+          - pod01-b
+        port_channel_ethernet_uplinks:
+          - admin_speed: Auto
+            ethernet_network_group_policy: pod01-uplink
+            flow_control_policy: flow-ctrl
+            interfaces:
+              - port_id: 53
+              - port_id: 54
+            link_aggregation_policy: link-agg
+            link_control_policy: link-ctrl
+            pc_ids:
+              - 53
+              - 53
+        port_channel_fc_uplinks:
+          - admin_speed: 32Gbps
+            fill_pattern: Idle
+            interfaces:
+              - port_id: 1
+              - port_id: 2
+            pc_ids:
+              - 1
+              - 1
+            vsan_ids:
+              - 100
+              - 200
+        port_modes:
+          - custom_mode: FibreChannel
+            port_list:
+              - 1
+              - 4
+        port_role_servers:
+          - port_list: 5-18
+    power:
+      - allocated_budget: 0
+        name: '5108'
+        power_redundancy: Grid
+      - allocated_budget: 0
+        name: '9508'
+        power_allocation: 8400
+        power_redundancy: Grid
+      - allocated_budget: 0
+        name: Server
+        power_allocation: 8400
+        power_redundancy: Grid
+        power_restore: LastState
+    san_connectivity:
+      - name: default-scp
+        target_platform: FIAttached
+        vhbas:
+          - fibre_channel_adapter_policy: VMware
+            fibre_channel_network_policy: san-b
+            fibre_channel_qos_policy: fc-qos
+            names:
+              - hba-a
+              - hba-b
+            pci_order:
+              - 0
+              - 1
+            wwpn_allocation_type: POOL
+            wwpn_pools:
+              - default-a
+              - default-b
+        wwnn_allocation_type: POOL
+        wwnn_pool: default
+    serial_over_lan:
+      - description: Server Serial over LAN Policy
+        enabled: true
+        name: sol
+    snmp:
+      - enabled: true
+        name: snmp
+        snmp_traps: []
+        snmp_users: []
+        system_contact: pod01
+        system_location: pod01
+      - enabled: true
+        name: snmp-domain
+        snmp_traps: []
+        snmp_users: []
+        system_contact: pod01
+        system_location: pod01
+    storage:
+      - m2_configuration:
+          - controller_slot: MSTOR-RAID-1
+        name: M2-Raid
+        use_jbod_for_vd_creation: true
+    switch_control:
+      - name: sw_ctrl
+        vlan_port_count_optimization: false
+    syslog:
+      - local_min_severity: warning
+        name: syslog
+        remote_clients:
+          server1: {}
+          server2: {}
+      - local_min_severity: warning
+        name: syslog-domain
+        remote_clients:
+          server1: {}
+          server2: {}
+    system_qos:
+      - classes:
+          - bandwidth_percent: 20
+            cos: 5
+            mtu: 9216
+            multicast_optimize: false
+            packet_drop: false
+            priority: Platinum
+            state: Enabled
+            weight: 10
+          - bandwidth_percent: 18
+            cos: 4
+            mtu: 9216
+            multicast_optimize: false
+            packet_drop: true
+            priority: Gold
+            state: Enabled
+            weight: 9
+          - bandwidth_percent: 20
+            cos: 3
+            mtu: 2240
+            multicast_optimize: false
+            packet_drop: false
+            priority: FC
+            state: Enabled
+            weight: 10
+          - bandwidth_percent: 18
+            cos: 2
+            mtu: 9216
+            multicast_optimize: false
+            packet_drop: true
+            priority: Silver
+            state: Enabled
+            weight: 8
+          - bandwidth_percent: 14
+            cos: 1
+            mtu: 9216
+            multicast_optimize: false
+            packet_drop: true
+            priority: Bronze
+            state: Enabled
+            weight: 7
+          - bandwidth_percent: 10
+            cos: 255
+            mtu: 9216
+            multicast_optimize: false
+            packet_drop: true
+            priority: Best Effort
+            state: Enabled
+            weight: 5
+        name: system-qos
+    thermal:
+      - fan_control_mode: Balanced
+        name: '5108'
+      - fan_control_mode: Balanced
+        name: '9508'
+    virtual_kvm:
+      - allow_tunneled_kvm: true
+        name: vkvm
+    virtual_media:
+      - enable_virtual_media_encryption: true
+        name: vmedia
+    vlan:
+      - name: default
+        vlans:
+          - auto_allow_on_uplinks: true
+            multicast_policy: mcast
+            name: vlan
+            native_vlan: true
+            vlan_list: 1
+          - multicast_policy: mcast
+            name: vlan
+            vlan_list:
+              - 2
+              - 3
+              - 4
+              - 5
+              - 6
+              - 7
+              - 8
+              - 9
+              - 10
+              - 11
+              - 12
+              - 13
+              - 14
+              - 15
+              - 16
+              - 17
+              - 18
+              - 19
+              - 20
+              - 21
+              - 22
+              - 23
+              - 24
+              - 25
+              - 26
+              - 27
+              - 28
+              - 29
+              - 30
+              - 31
+              - 32
+              - 33
+              - 34
+              - 35
+              - 36
+              - 37
+              - 38
+              - 39
+              - 40
+              - 41
+              - 42
+              - 43
+              - 44
+              - 45
+              - 46
+              - 47
+              - 48
+              - 49
+              - 50
+              - 51
+              - 52
+              - 53
+              - 54
+              - 55
+              - 56
+              - 57
+              - 58
+              - 59
+              - 60
+              - 61
+              - 62
+              - 63
+              - 64
+              - 65
+              - 66
+              - 67
+              - 68
+              - 69
+              - 70
+              - 71
+              - 72
+              - 73
+              - 74
+              - 75
+              - 76
+              - 77
+              - 78
+              - 79
+              - 80
+              - 81
+              - 82
+              - 83
+              - 84
+              - 85
+              - 86
+              - 87
+              - 88
+              - 89
+              - 90
+              - 91
+              - 92
+              - 93
+              - 94
+              - 95
+              - 96
+              - 97
+              - 98
+              - 99
+    vsan:
+      - name: vsan-100
+        vsans:
+          - fcoe_vlan_id: 100
+            name: vsan-a
+            vsan_id: 100
+      - name: vsan-200
+        vsans:
+          - fcoe_vlan_id: 200
+            name: vsan-b
+            vsan_id: 200
+  pools:
+    ip:
+      - ipv4_blocks:
+          - from: 198.18.0.10
+            size: 245
+        ipv4_configuration:
+          gateway: 198.18.0.1
+          prefix: 255.255.255.0
+          primary_dns: 208.67.220.220
+          secondary_dns: ''
+        name: 198.18.0.10
+    mac:
+      - mac_blocks:
+          - from: 00:25:B5:00:10:00
+            size: 1024
+        name: dvs-a
+      - mac_blocks:
+          - from: 00:25:B5:00:20:00
+            size: 1024
+        name: dvs-b
+      - mac_blocks:
+          - from: 00:25:B5:00:A0:00
+            size: 1024
+        name: mgmt-a
+      - mac_blocks:
+          - from: 00:25:B5:00:B0:00
+            size: 1024
+        name: mgmt-b
+      - mac_blocks:
+          - from: 00:25:B5:00:C0:00
+            size: 1024
+        name: migration-a
+      - mac_blocks:
+          - from: 00:25:B5:00:D0:00
+            size: 1024
+        name: migration-b
+      - mac_blocks:
+          - from: 00:25:B5:00:E0:00
+            size: 1024
+        name: storage-a
+      - mac_blocks:
+          - from: 00:25:B5:00:F0:00
+            size: 1024
+        name: storage-b
+    uuid:
+      - description: default UUID Pool
+        name: default
+        prefix: 000025B5-0000-0000
+        uuid_blocks:
+          - from: 0000-000000000000
+            size: 1024
+    wwnn:
+      - id_blocks:
+          - from: 20:00:00:25:B5:00:00:00
+            size: 1024
+        name: default
+    wwpn:
+      - id_blocks:
+          - from: 20:00:00:25:B5:00:A0:00
+            size: 1024
+        name: default-a
+      - id_blocks:
+          - from: 20:00:00:25:B5:00:B0:00
+            size: 1024
+        name: default-b
+  profiles:
+    chassis:
+      - imc_access_policy: 198.18.0.10
+        names:
+          - - pod01-1
+            - unknown
+        power_policy: '9508'
+        snmp_policy: snmp
+        thermal_policy: '9508'
+    domain:
+      - name: pod01
+        network_connectivity_policy: dns
+        ntp_policy: ntp
+        port_policies:
+          - pod01-a
+          - pod01-b
+        serial_numbers:
+          - unknown
+          - unknown
+        snmp_policy: snmp-domain
+        switch_control_policy: sw_ctrl
+        syslog_policy: syslog-domain
+        system_qos_policy: system-qos
+        vlan_policies:
+          - default
+        vsan_policies:
+          - vsan-100', f'vsan-200
+    server:
+      - targets:
+          - name: server-1
+            serial_number: unknown
+        ucs_server_profile_template: M2-pxe
+  templates:
+    server:
+      - bios_policy: M6-virtualization-tpm
+        boot_order_policy: M2-pxe
+        certificate_management_policy: ''
+        description: M2-pxe Server Profile Template
+        imc_access_policy: default
+        ipmi_over_lan_policy: default-ipmi
+        lan_connectivity_policy: vmware-lcp
+        local_user_policy: default-users
+        name: M2-pxe
+        power_policy: Server
+        san_connectivity_policy: default-scp
+        sd_card_policy: ''
+        serial_over_lan_policy: sol
+        snmp_policy: snmp
+        storage_policy: M2-Raid
+        syslog_policy: syslog
+        target_platform: FIAttached
+        uuid_pool: default
+        virtual_kvm_policy: vkvm
+        virtual_media_policy: vmedia

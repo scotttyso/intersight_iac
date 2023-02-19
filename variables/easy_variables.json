@@ -962,6 +962,14 @@
                                 }
                             },
                             "wizard":{
+                                "deployType":{
+                                    "description": "* This Wizard Can Deploy to Intersight or Build Terraform Configuration Files\n  for IaC Management.  Which Deployment Type you would like to utilize?",
+                                    "enum": [
+                                        "Intersight",
+                                        "Terraform"
+                                    ],
+                                    "default":"Intersight"
+                                },
                                 "Individual":{
                                     "description": "* Select the Individual Type:",
                                     "enum": [

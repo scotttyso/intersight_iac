@@ -259,13 +259,20 @@ class quick_start(object):
                     kwargs['vlan_list_expanded'] = policy_vlan_list
                     kwargs['vlan_list'] = ezfunctions.vlan_list_format(vlanListExpanded)
                     polVars['vlans'] = []
+                    if org == 'default': vname = 'vlan'
+                    else: vname = org
                     if not nativeVlan == '':
                         polVars["vlans"].append({
                             'auto_allow_on_uplinks':True, 'multicast_policy':'mcast',
-                            'name':'default', 'native_vlan':True, 'vlan_list':nativeVlan
+                            'name':vname, 'native_vlan':True, 'vlan_list':nativeVlan
+                        })
+                    if nativeVlan == '':
+                        polVars["vlans"].append({
+                            'auto_allow_on_uplinks':True, 'multicast_policy':'mcast',
+                            'name':vname, 'native_vlan':True, 'vlan_list':1
                         })
                     polVars["vlans"].append({
-                        'multicast_policy':'mcast', 'name':org, 'vlan_list':vlanListExpanded
+                        'multicast_policy':'mcast', 'name':vname, 'vlan_list':vlanListExpanded
                     })
                     kwargs['class_path'] = 'intersight,policies,vlan'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -580,7 +587,7 @@ class quick_start(object):
                             #==============================================
                             polVars = {
                                 'name': domain_name, 'network_connectivity_policy': f'dns', 'ntp_policy': f'ntp',
-                                'port_policies': [f'{domain_name}-a', f'{domain_name}-b'],
+                                'port_policies': [f'{domain_name}-a', f'{domain_name}-b'], 'serial_numbers': serials,
                                 'snmp_policy': f'snmp-domain', 'switch_control_policy': 'sw_ctrl',
                                 'syslog_policy': f'syslog-domain', 'system_qos_policy': 'system-qos',
                                 'vlan_policies': [org]
@@ -1186,6 +1193,8 @@ class quick_start(object):
                     kwargs['jData']['varName']  = 'SNMP System Location'
                     kwargs['system_location'] = ezfunctions.varStringLoop(**kwargs)
                     snmp_loop = False
+                    kwargs['snmp_users'] = []
+                    kwargs['snmp_traps'] = []
                     while snmp_loop == False:
                         question = input(f'Would you like to configure an SNMPv3 User?  Enter "Y" or "N" [Y]: ')
                         if question == '' or question == 'Y':
@@ -1452,10 +1461,15 @@ class quick_start(object):
                     kwargs['jData']['varInput']     = f'Do you want to use a Server Name Prefix for the Server Names?'
                     kwargs['jData']['varName']      = 'Server Name Prefix'
                     question = ezfunctions.varBoolLoop(**kwargs)
-                    policy_type     = 'UCS Server Profile'
+                    policy_type     = 'UCS Server Profiles'
                     if question == True:
                         name = 'server'
-                        server_prefix = ezfunctions.policy_name(name, policy_type)
+                        valid = False
+                        while valid == False:
+                            prefix = input(f'What is the Prefix for the {policy_type}?  [{name}]: ')
+                            if prefix == '': prefix = '%s' % (name)
+                            valid = validating.name_rule(f'{policy_type} Prefix', prefix, 1, 62)
+                            if valid == True: server_prefix = prefix
                     else: server_prefix = ''
                     #==============================================
                     # Prompt for Server Profile Names
@@ -1463,12 +1477,10 @@ class quick_start(object):
                     targets = []
                     rangex = int(server_count) + 1
                     for x in range(1,rangex):
-                        x = x+1
-                        valid = False
-                        while valid == False:
-                            if not server_prefix == '':
-                                name    = ezfunctions.policy_name(f'{server_prefix}-{x}', policy_type)
-                            else: name  = ezfunctions.policy_name(f'server-{x}', policy_type)
+                        x = x
+                        if not server_prefix == '':
+                            name    = ezfunctions.policy_name(f'{server_prefix}-{x}', policy_type)
+                        else: name  = ezfunctions.policy_name(f'server-{x}', policy_type)
                         #==============================================
                         # Prompt for Server Serial Number or Skip
                         #==============================================

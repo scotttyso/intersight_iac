@@ -3919,13 +3919,13 @@ def port_list_fc(self, **kwargs):
         'uplinks operating at 8 Gbps might go to an errDisabled state, lose SYNC intermittently, or '\
         'notice errors or bad packets.  For speeds greater than 8 Gbps we recommend Idle.  Below '\
         'is a configuration example on MDS to match this setting:\n\n'\
-        'mds-a(config-if)# switchport fill-pattern IDLE speed 8000\n'\
-        'mds-a(config-if)# show port internal inf interface fc1/1 | grep FILL\n'\
+        'mds(config-if)# switchport fill-pattern IDLE speed 8000\n'\
+        'mds(config-if)# show port internal inf interface fc1/1 | grep FILL\n'\
         '  FC_PORT_CAP_FILL_PATTERN_8G_CHANGE_CAPABLE (1)\n'\
-        'mds-a(config-if)# show run int fc1/16 | incl fill\n\n'\
+        'mds(config-if)# show run int fc1/16 | incl fill\n\n'\
         'interface fc1/16\n'\
         '  switchport fill-pattern IDLE speed 8000\n\n'\
-        'mds-a(config-if)#\n'
+        'mds(config-if)#\n'
 
     if port_type == 'FC Uplink Port-Channels': default_answer = 'Y'
     else: default_answer = 'N'
@@ -3961,10 +3961,16 @@ def port_list_fc(self, **kwargs):
 
                     # Prompt User for the Fill Pattern of the Port
                     if not port_type == 'Fibre-Channel Storage':
-                        kwargs['jData'] = deepcopy(jsonVars['FillPattern'])
-                        kwargs['jData']['description'] = kwargs['jData']['description'] + '\n' + fill_pattern_descr
-                        kwargs['jData']['varType'] = 'Fill Pattern'
-                        fill_pattern = ezfunctions.variablesFromAPI(**kwargs)
+                        if admin_speed == '8Gbps':
+                            varDesc = fill_pattern_descr
+                            print(f'\n-------------------------------------------------------------------------------------------\n')
+                            if '\n' in varDesc:
+                                varDesc = varDesc.split('\n')
+                                for line in varDesc:
+                                    if '*' in line: print(textwrap.fill(f'{line}',width=88, subsequent_indent='    '))
+                                    else: print(textwrap.fill(f'{line}',88))
+                            else: print(textwrap.fill(f'{varDesc}',88))
+                        fill_pattern = 'Idle'
 
                     vsans = {}
                     fabrics = ['Fabric_A', 'Fabric_B']
@@ -4080,6 +4086,6 @@ def port_modes_fc(**kwargs):
     kwargs['fc_converted_ports'] = fc_converted_ports
     kwargs['fc_mode']  = fc_mode
     kwargs['fc_ports'] = fc_ports
-    kwargs['port_modes'].update(port_modes)
+    kwargs['port_modes'].append(port_modes)
     kwargs['ports_in_use'] = ports_in_use
     return kwargs
