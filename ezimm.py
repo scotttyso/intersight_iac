@@ -8,8 +8,8 @@ It uses argparse to take in the following CLI arguments:
     i or ignore-tls:         Ignores TLS server-side certificate verification
     j or json_file:          IMM Transition JSON export to convert to HCL
     k or api-key-file:       Name of file containing the Intersight secret key for the HTTP signature scheme
+    l or load-config:        Skip Wizard and Just Load Configuration Files.
     t or deploy-type:        Deployment Type.  Values are: Intersight or Terraform
-    y or yaml-file:          The YAML File to use to Load Configurations
 """
 from copy import deepcopy
 from intersight.api import organization_api
@@ -270,24 +270,6 @@ def create_terraform_workspaces(orgs, **kwargs):
     # Return kwargs
     return kwargs
      
-def import_configurations(**kwargs):
-    org      = kwargs['org']
-    yaml_file = kwargs['args'].yaml_file
-    valid = False
-    while valid == False:
-        if not os.path.isfile(yaml_file):
-            kwargs['jData']['description'] = 'YAML Configuration File'
-            kwargs['jData']['pattern'] = '.*'
-            kwargs['jData']['varInput'] = 'What is the Path for the YAML Configuration FIle to Load?'
-            kwargs['jData']['varName']  = 'YAML Configuration File'
-            yaml_file = classes.ezfunctions.varStringLoop(**kwargs)
-        else: valid = True
-    yfile = open(yaml_file, 'r')
-    data = yaml.safe_load(yfile)
-    kwargs['immDict']['orgs'][org]['intersight'].update(data['intersight'])
-    # Return kwargs
-    return kwargs
-
 def intersight_org_check(**kwargs):
     args = kwargs['args']
     home = kwargs['home']
@@ -295,8 +277,9 @@ def intersight_org_check(**kwargs):
     check_org = True
     while check_org == True:
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        question = input(f'Do You Want to Check Intersight for the Organization {org}?  Enter "Y" or "N" [Y]: ')
-        if question == 'Y' or question == '':
+        question = input(f'Do You Want to Check Intersight for the Organization {org}?  Enter "Y" or "N" [N]: ')
+        #if question == 'Y' or question == '':
+        if question == 'Y':
             # Login to Intersight API
             api_client = credentials.config_credentials(home, args)
 
@@ -354,7 +337,7 @@ def intersight_org_check(**kwargs):
                 print(f'  which already exists.')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
             check_org = False
-        elif question == 'N':
+        elif question == 'N' or question == '':
             check_org = False
         else:
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -387,17 +370,6 @@ def prompt_main_menu(**kwargs):
 
     kwargs['multi_select'] = False
     jsonVars = ezData['ezimm']['allOf'][1]['properties']['wizard']
-    #==============================================
-    # Prompt User for Deployment versus IaC
-    #==============================================
-    deploy_type = kwargs['args'].deploy_type
-    if deploy_type == None: deploy_type = ''
-    if re.search('Intersight|Terraform', deploy_type):
-        kwargs['deploy_type'] = deploy_type
-    else:
-        kwargs['jData'] = deepcopy(jsonVars['deployType'])
-        kwargs['jData']['varType'] = 'Deployment Type'
-        kwargs['deploy_type'] = classes.ezfunctions.variablesFromAPI(**kwargs)
     #==============================================
     # Prompt User for Main Menu
     #==============================================
@@ -511,15 +483,19 @@ def prompt_org(**kwargs):
 def prompt_previous_configurations(**kwargs):
     baseRepo = kwargs['args'].dir
     ezData   = kwargs['ezData']['ezimm']['allOf'][1]['properties']
+    path_sep = kwargs['path_sep']
     vclasses = ezData['classes']['enum']
-    org      = kwargs['org']
-    existing_files = False
-    use_configs    = False
+    dir_check   = 0
+    use_configs = False
     if os.path.isdir(baseRepo):
-        dir_list = os.listdir(kwargs['args'].dir)
-        if len(dir_list) > 0:
-            existing_files = True
-    if existing_files == True:
+        dir_list = os.listdir(baseRepo)
+        for i in dir_list:
+            if i == 'main.tf': dir_check += 1
+            elif i == 'policies': dir_check += 1
+            elif i == 'pools': dir_check += 1
+            elif i == 'profiles': dir_check += 1
+            elif i == 'templates': dir_check += 1
+    if dir_check == 5:
         kwargs['jData'] = {}
         kwargs['jData']['default']     = True
         kwargs['jData']['description'] = 'Load Previous Configurations'
@@ -529,15 +505,16 @@ def prompt_previous_configurations(**kwargs):
     if use_configs == True:
         for item in vclasses:
             dest_dir = ezData[f'class.{item}']['directory']
-            if os.path.isdir(os.path.join(baseRepo, org, dest_dir)):
-                dest_path = f'{os.path.join(baseRepo, org, dest_dir)}'
-                dir_list = os.listdir(dest_path)
+            if os.path.isdir(os.path.join(baseRepo, dest_dir)):
+                dir_list = os.listdir(os.path.join(baseRepo, dest_dir))
                 for i in dir_list:
-                    yfile = open(os.path.join(dest_path, i), 'r')
+                    yfile = open(os.path.join(baseRepo, dest_dir, i), 'r')
                     data = yaml.safe_load(yfile)
-                    if not kwargs['immDict']['orgs'][org]['intersight'].get(item):
-                        kwargs['immDict']['orgs'][org]['intersight'][item] = {}
-                    kwargs['immDict']['orgs'][org]['intersight'][item].update(data['intersight'][item])
+                    for key, value in data.items():
+                        if not kwargs['immDict']['orgs'].get(key): kwargs['immDict']['orgs'][key] = {}
+                        for k, v in value.items():
+                            if not kwargs['immDict']['orgs'][key].get(k): kwargs['immDict']['orgs'][key][k] = {}
+                            kwargs['immDict']['orgs'][key][k].update(deepcopy(v))
     # Return kwargs
     return kwargs
 
@@ -686,6 +663,10 @@ def main():
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
     )
     Parser.add_argument(
+        '-l', '--load-config', action='store_true',
+        help='Skip Wizard and Just Load Configuration Files.'
+    )
+    Parser.add_argument(
         '-t', '--deploy-type', default=None,
         help = 'Deployment Type values are:\
             1.  Intersight\
@@ -694,10 +675,6 @@ def main():
     Parser.add_argument(
         '-v', '--api-key-v3', action='store_true',
         help='Flag for API Key Version 3.'
-    )
-    Parser.add_argument(
-        '-y', '--yaml-file', default=None,
-        help='The YAML File to use to Load Configurations.'
     )
     args = Parser.parse_args()
 
@@ -777,6 +754,7 @@ def main():
             print(f'\n-------------------------------------------------------------------------------------------\n')
             exit()
         else:
+            kwargs['deploy_type'] = 'Terraform'
             json_file = args.json_file
             json_open = open(json_file, 'r')
             kwargs['json_data'] = json.load(json_open)
@@ -801,55 +779,34 @@ def main():
             #==============================================
             kwargs = classes.imm.transition('transition').policy_loop(**kwargs)
             orgs = list(kwargs['immDict']['orgs'].keys())
-    elif not args.yaml_file == None:
-        kwargs = prompt_org(**kwargs)
-        kwargs = prompt_deploy_type(**kwargs)
-        org = kwargs['org']
-        kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{'intersight':{}}}))
-        kwargs = import_configurations(**kwargs)
-        if not kwargs.get('deploy_type'): print('not found 3')
-        #print(json.dumps(kwargs['immDict']['orgs'][org], indent=4))
-        orgs = list(kwargs['immDict']['orgs'].keys())
     else:
-        #==============================================
-        # Run through the Wizard
-        #==============================================
-        kwargs = prompt_org(**kwargs)
-        kwargs = prompt_deploy_type(**kwargs)
-        kwargs = prompt_main_menu(**kwargs)
-        kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{'intersight':{}}}))
+        #kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{'intersight':{}}}))
         kwargs = prompt_previous_configurations(**kwargs)
-        kwargs = process_wizard(**kwargs)
+        kwargs = prompt_deploy_type(**kwargs)
+        if args.load_config == False:
+            kwargs = prompt_org(**kwargs)
+            #==============================================
+            # Prompt User for Main Menu
+            #==============================================
+            kwargs = prompt_main_menu(**kwargs)
+            #==============================================
+            # Run through the Wizard
+            #==============================================
+            kwargs = process_wizard(**kwargs)
         orgs = list(kwargs['immDict']['orgs'].keys())
+
     #==============================================
-    # Check Existence of Intersight Orgs
+    # Merge Repository and Create YAML Files
     #==============================================
+    classes.ezfunctions.merge_easy_imm_repository(orgs, **kwargs)
+    classes.ezfunctions.create_yaml(orgs, **kwargs)
     for org in orgs:
         kwargs['org'] = org
-
-        cwd = os.getcwd()
-        dest_file = f'{org}.yml'
-        if not os.path.exists(os.path.join(cwd, dest_file)):
-            create_file = f'type nul >> {os.path.join(cwd, dest_file)}'
-            os.system(create_file)
-        wr_file = open(os.path.join(cwd, dest_file), 'w')
-        wr_file.write('---\n')
-        wr_file = open(os.path.join(cwd, dest_file), 'a')
-        dash_length = '='*(len(org) + 20)
-        wr_file.write(f'#{dash_length}\n')
-        wr_file.write(f'#   {org} - Dump File\n')
-        wr_file.write(f'#{dash_length}\n')
-        dict = kwargs['immDict']['orgs'][org]
-        wr_file.write(yaml.dump(dict, Dumper=MyDumper, default_flow_style=False))
-        wr_file.close()
-
+        #==============================================
+        # Check Existence of Intersight Orgs
+        #==============================================
         intersight_org_check(**kwargs)
-    #==============================================
-    # Merge Repostiroy and Create YAML Files
-    #==============================================
     if kwargs['deploy_type'] == 'Terraform':
-        classes.ezfunctions.merge_easy_imm_repository(orgs, **kwargs)
-        classes.ezfunctions.create_yaml(orgs, **kwargs)
         #==============================================
         # Create Terraform Config and Workspaces
         #==============================================
@@ -863,17 +820,16 @@ def main():
         cpool = 'classes.isdk.intersight_api'
         for org in orgs:
             #type = 'pools'
-            #if kwargs['immDict']['orgs'][org]['intersight'].get('pools'):
-            #    for pool_type in kwargs['immDict']['orgs'][org]['intersight']['pools']:
+            #if kwargs['immDict']['orgs'][org].get('pools'):
+            #    for pool_type in kwargs['immDict']['orgs'][org]['pools']:
             #        eval(f"{cpool}(type).{pool_type}(**kwargs)")
-            if kwargs['immDict']['orgs'][org]['intersight'].get('policies'):
-                #print(kwargs['immDict']['orgs'][org]['intersight']['policies'])
-                for policy_type in kwargs['immDict']['orgs'][org]['intersight']['policies']:
+            if kwargs['immDict']['orgs'][org].get('policies'):
+                for policy_type in kwargs['immDict']['orgs'][org]['policies']:
                     type = policy_type
                     kwargs[f'{policy_type}'] = eval(f"{cpool}(type).{policy_type}(**kwargs)")
             #type = 'domain_profiles'
-            #if kwargs['immDict']['orgs'][org]['intersight'].get('profiles'):
-            #    if kwargs['immDict']['orgs'][org]['intersight']['profiles'].get('domain'):
+            #if kwargs['immDict']['orgs'][org].get('profiles'):
+            #    if kwargs['immDict']['orgs'][org]['profiles'].get('domain'):
             #        kwargs = eval(f"{cpool}(type).domain_profiles(**kwargs)")
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')

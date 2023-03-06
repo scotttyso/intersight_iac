@@ -1122,6 +1122,131 @@
                     {},
                     {
                         "properties": {
+                            "bios": {
+                                "template_tuning":{
+                                    "M6_analytical_DB":{
+                                        "cpu_perf_enhancement":"Auto",
+                                        "energy_efficient_turbo":"enabled",
+                                        "intel_virtualization_technology":"disabled",
+                                        "intel_vt_for_directed_io":"disabled",
+                                        "memory_refresh_rate":"1x",
+                                        "patrol_scrub":"enabled",
+                                        "processor_c6report":"enabled",
+                                        "work_load_config":"Balanced"
+                                    },
+                                    "M6_HPC":{
+                                        "cpu_perf_enhancement":"Auto",
+                                        "intel_virtualization_technology":"disabled",
+                                        "intel_vt_for_directed_io":"disabled",
+                                        "llc_alloc":"disabled",
+                                        "llc_prefetch":"disabled",
+                                        "memory_inter_leave":"1 Way Node Interleave",
+                                        "memory_refresh_rate":"1x",
+                                        "patrol_scrub":"enabled",
+                                        "snc":"enabled",
+                                        "xpt_prefetch":"enabled",
+                                        "upi_power_management":"enabled",
+                                        "work_load_config":"Balanced"
+                                    },
+                                    "M6_relational_DB":{
+                                        "cpu_perf_enhancement":"Auto",
+                                        "llc_alloc":"disabled",
+                                        "llc_prefetch":"disabled",
+                                        "memory_inter_leave":"1 Way Node Interleave",
+                                        "memory_refresh_rate":"1x",
+                                        "patrol_scrub":"enabled",
+                                        "processor_c6report":"enabled",
+                                        "snc":"enabled",
+                                        "xpt_prefetch":"enabled",
+                                        "upi_power_management":"enabled"
+                                    },
+                                    "M6_Virtualization":{
+                                        "cpu_perf_enhancement":"Auto",
+                                        "energy_efficient_turbo":"enabled",
+                                        "processor_c1e":"enabled",
+                                        "processor_c6report":"enabled"
+                                    },
+                                    "tpm":{
+                                        "tpm_control":"enabled",
+                                        "tpm_support":"enabled"
+                                    },
+                                    "tpm_disabled":{
+                                        "tpm_control":"disabled",
+                                        "tpm_support":"disabled"
+                                    },
+                                    "Virtualization":{
+                                        "cpu_power_management":"custom",
+                                        "processor_c1e":"disabled",
+                                        "processor_c3report":"disabled",
+                                        "processor_c6report":"disabled",
+                                        "processor_cstate":"disabled"
+                                    }
+                                }
+                            },
+                            "boot_order": {
+                                "key_map": {
+                                    "boot_devices":"boot_devices",
+                                    "boot_mode":"configured_boot_mode",
+                                    "description":"description",
+                                    "enable_secure_boot":"enforce_uefi_secure_boot",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
+                                "key_map_loader": {
+                                    "bootloader_description":"Description",
+                                    "bootloader_name":"Name",
+                                    "bootloader_path":"Path"
+                                },
+                                "key_map_boot": {
+                                    "enabled":"enabled",
+                                    "interface_name":"interface_name",
+                                    "interface_source":"Interface_Source",
+                                    "ip_type":"ip_type",
+                                    "lun":"lun",
+                                    "mac_ddress":"mac_ddress",
+                                    "object_type":"object_type",
+                                    "port":"port",
+                                    "slot":"slot",
+                                    "sub_type":"subtype",
+                                    "wwpn":"wwpn"
+                                }
+                            },
+                            "ethernet_adapter": {
+                                "template_tuning":{
+                                    "VMware":{
+                                        "description":"Recommended adapter settings for VMware.",
+                                        "rss_settings":false,
+                                        "completion_queue_settings":{
+                                            "count":2
+                                        },
+                                        "interrupt_settings":{
+                                            "coalescing_time":125,
+                                            "coalescing_type":"MIN",
+                                            "count":4,
+                                            "mode":"MSIx"
+                                        },
+                                        "rx_queue_settings":{
+                                            "count":1,
+                                            "ring_size":512
+                                        }
+                                    }
+                                }
+                            },
+                            "ethernet_network_control": {
+                                "key_map": {
+                                    "action_on_uplink_fail":"uplink_fail_action",
+                                    "cdp_enable":"cdp_enabled",
+                                    "lldp_receive_enable":"receive_enabled",
+                                    "lldp_transmit_enable":"transmit_enabled",
+                                    "mac_register_mode":"mac_registration_mode",
+                                    "mac_security_forge":"forge_mac"
+                                }
+                            },
+                            "ethernet_qos": {
+                                "key_map": {
+                                    "enable_trust_host_cos":"trust_host_cos"
+                                }
+                            },
                             "FIAttached": {
                                 "description": "List of Policies for an FIAttached Profile.",
                                 "type": "list_of_values",
@@ -1147,12 +1272,112 @@
                                 "default": "BIOS",
                                 "x-omitempty": true
                             },
+                            "fibre_channel_adapter": {
+                                "template_tuning":{
+                                    "VMware":{
+                                        "description":"Recommended adapter settings for VMware.",
+                                        "error_recovery_settings":{
+                                            "port_down_timeout":30000
+                                        }
+                                    }
+                                }
+                            },
+                            "fibre_channel_network": {
+                                "key_map": {
+                                    "default_vlan":"default_vlan_id",
+                                    "vsan_id":"id"
+                                }
+                            },
+                            "imc_access": {
+                                "key_map": {
+                                    "inband_vlan_id":"inband_vlan",
+                                    "lldp_transmit_enable":"transmit_enabled",
+                                    "mac_register_mode":"mac_registration_mode",
+                                    "mac_security_forge":"forge_mac"
+                                }
+                            },
+                            "multicast": {
+                                "key_map": {
+                                    "source_ip_proxy_state":"src_ip_proxy"
+                                }
+                            },
+                            "network_connectivity": {
+                                "key_map": {
+                                    "obtain_ipv4_dns_from_dhcp":"enable_ipv4dns_from_dhcp",
+                                    "obtain_ipv6_dns_from_dhcp":"enable_ipv6dns_from_dhcp",
+                                    "update_domain":"dynamic_dns_domain"
+                                }
+                            },
+                            "power": {
+                                "key_map": {
+                                    "dynamic_power_rebalancing":"dynamic_rebalancing",
+                                    "power_allocation":"allocated_budget",
+                                    "power_redundancy":"redundancy_mode",
+                                    "power_restore":"power_restore_state"
+                                }
+                            },
+                            "lan_connectivity": {
+                                "key_map": {
+                                    "enable_azure_stack_host_qos":"azure_qos_enabled",
+                                    "iqn_static_identifier":"static_iqn_name",
+                                    "vnic_placement_mode":"placement_mode"
+                                }
+                            },
+                            "local_user": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags",
+                                    "users":"users"
+                                },
+                                "key_map_password": {
+                                    "always_send_user_password":"force_send_password",
+                                    "enable_password_expiry":"enable_password_expiry",
+                                    "enforce_strong_password":"enforce_strong_password",
+                                    "grace_period":"grace_period",
+                                    "notification_period":"notification_period",
+                                    "password_expiry_duration":"password_expiry_duration",
+                                    "password_history":"password_history"
+                                }
+                            },
+                            "remote_logging": {
+                                "key_map": {
+                                    "enabled":"enable",
+                                    "minimum_severity":"min_severity"
+                                }
+                            },
+                            "san_connectivity": {
+                                "key_map": {
+                                    "vhba_placement_mode":"placement_mode",
+                                    "wwnn_allocation_type":"wwnn_address_type"
+                                }
+                            },
+                            "snmp": {
+                                "key_map": {
+                                    "access_community_string":"access_community_string",
+                                    "enable_snmp":"enabled",
+                                    "snmp_community_access":"community_access",
+                                    "snmp_engine_input_id":"engine_id",
+                                    "snmp_port":"snmp_port",
+                                    "system_contact":"sys_contact",
+                                    "system_location":"sys_location",
+                                    "trap_community_string":"trap_community"
+                                }
+                            },
+                            "snmp_trap_destinations": {
+                                "key_map": {
+                                    "community_string":"community",
+                                    "destination_address":"destination",
+                                    "enable":"enabled"
+                                }
+                            },
                             "Standalone": {
                                 "enum": [
                                     "Adapter Configuration",
                                     "BIOS",
                                     "Boot Order",
                                     "Device Connector",
+                                    "Ethernet Network",
                                     "IMC Access",
                                     "IPMI Over LAN",
                                     "LAN Connectivity",
@@ -1171,6 +1396,75 @@
                                     "Syslog",
                                     "Virtual KVM",
                                     "Virtual Media"
+                                ]
+                            },
+                            "switch_control": {
+                                "key_map": {
+                                    "mac_address_table_aging":"mac_aging_option",
+                                    "mac_aging_time":"mac_aging_time",
+                                    "udld_message_interval":"message_interval",
+                                    "udld_recovery_action":"recovery_action",
+                                    "vlan_port_count_optimization":"vlan_port_optimization_enabled",
+                                    "vsan_id":"id"
+                                }
+                            },
+                            "vhbas": {
+                                "key_map": {
+                                    "persistent_lun_bindings":"persistent_bindings"
+                                },
+                                "pop_list": [
+                                    "fc_zone_policies",
+                                    "fibre_channel_adapter_policy",
+                                    "fibre_channel_network_policies",
+                                    "fibre_channel_qos_policy",
+                                    "names",
+                                    "persistent_lun_bindings",
+                                    "placement_pci_links",
+                                    "placement_pci_order",
+                                    "placement_slot_ids",
+                                    "placement_switch_id",
+                                    "placement_uplink_ports",
+                                    "vhba_type",
+                                    "wwpn_allocation_type",
+                                    "wwpn_pools",
+                                    "wwpn_static_addresses"
+                                ]
+                            },
+                            "virtual_kvm": {
+                                "key_map": {
+                                    "allow_tunneled_vkvm":"tunneled_kvm_enabled",
+                                    "enable_virtual_kvm":"enabled"
+                                }
+                            },
+                            "vnics": {
+                                "pop_list": [
+                                    "cdn_source",
+                                    "cdn_values",
+                                    "enable_failover",
+                                    "ethernet_adapter_policy",
+                                    "ethernet_network_control_policy",
+                                    "ethernet_network_group_policy",
+                                    "ethernet_network_policy",
+                                    "ethernet_qos_policy",
+                                    "iscsi_boot_policy",
+                                    "mac_address_allocation_type",
+                                    "mac_address_pools",
+                                    "mac_addresses_static",
+                                    "names",
+                                    "placement_pci_links",
+                                    "placement_pci_order",
+                                    "placement_slot_ids",
+                                    "placement_switch_id",
+                                    "placement_uplink_ports",
+                                    "usnic_adapter_policy",
+                                    "usnic_class_of_service",
+                                    "usnic_number_of_usnics",
+                                    "vmq_enable_virtual_machine_multi_queue",
+                                    "vmq_enabled",
+                                    "vmq_number_of_interrupts",
+                                    "vmq_number_of_sub_vnics",
+                                    "vmq_number_of_virtual_machine_queues",
+                                    "vmq_vmmq_adapter_policy"                                    
                                 ]
                             }
                         }

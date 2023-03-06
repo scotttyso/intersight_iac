@@ -140,7 +140,7 @@ class profiles(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,profiles,chassis'
+                            kwargs['class_path'] = 'profiles,chassis'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -244,7 +244,7 @@ class profiles(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,profiles,domain'
+                            kwargs['class_path'] = 'profiles,domain'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -483,7 +483,7 @@ class profiles(object):
                         #==============================================
                         # Add Policy Variables to immDict
                         #==============================================
-                        kwargs['class_path'] = 'intersight,profiles,server'
+                        kwargs['class_path'] = 'profiles,server'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
                         #==============================================
                         # Create Additional Policy or Exit Loop
@@ -611,7 +611,7 @@ class profiles(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,templates,server'
+                            kwargs['class_path'] = 'templates,server'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop

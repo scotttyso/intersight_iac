@@ -266,7 +266,7 @@ class pools(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             # Add Policy Variables to immDict
-                            kwargs['class_path'] = 'intersight,pools,ip'
+                            kwargs['class_path'] = 'pools,ip'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
@@ -380,7 +380,7 @@ class pools(object):
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             # Add Policy Variables to immDict
-                            kwargs['class_path'] = 'intersight,pools,iqn'
+                            kwargs['class_path'] = 'pools,iqn'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
                             valid_confirm = True
@@ -478,7 +478,7 @@ class pools(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         # Add Policy Variables to immDict
-                        kwargs['class_path'] = 'intersight,pools,mac'
+                        kwargs['class_path'] = 'pools,mac'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
                         configure_loop, loop_count, policy_loop = ezfunctions.exit_loop_default_yes(loop_count, policy_type)
@@ -566,7 +566,7 @@ class pools(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             # Add Policy Variables to immDict
-                            kwargs['class_path'] = 'intersight,pools,resource'
+                            kwargs['class_path'] = 'pools,resource'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
@@ -664,7 +664,7 @@ class pools(object):
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             # Add Policy Variables to immDict
-                            kwargs['class_path'] = 'intersight,pools,uuid'
+                            kwargs['class_path'] = 'pools,uuid'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
@@ -753,7 +753,7 @@ class pools(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             # Add Policy Variables to immDict
-                            kwargs['class_path'] = 'intersight,pools,wwnn'
+                            kwargs['class_path'] = 'pools,wwnn'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
@@ -847,7 +847,7 @@ class pools(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             # Add Policy Variables to immDict
-                            kwargs['class_path'] = 'intersight,pools,wwpn'
+                            kwargs['class_path'] = 'pools,wwpn'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             configure_loop, loop_count, policy_loop = ezfunctions.exit_loop_default_yes(loop_count, policy_type)
                             valid_confirm = True

@@ -88,14 +88,16 @@ class policies(object):
 
                     jsonVars = jsonData['adapter.DceInterfaceSettings']['allOf'][1]['properties']
                     intList = [1, 2, 3, 4]
-                    polVars['fec_modes'] = []
+                    polVars['dce_interface_settings'] = {'dce_interface_fec_modes':[]}
                     for x in intList:
                         #==============================================
                         # Prompt User for FEC Mode
                         #==============================================
                         kwargs['jData'] = deepcopy(jsonVars['FecMode'])
                         kwargs['jData']['varType'] = f'DCE Interface {x} FEC Mode'
-                        polVars['fec_modes'].append(ezfunctions.variablesFromAPI(**kwargs))
+                        polVars['dce_interface_settings']['dce_interface_fec_modes'].append(
+                            ezfunctions.variablesFromAPI(**kwargs)
+                        )
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================
@@ -109,7 +111,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,adapter_configuration'
+                            kwargs['class_path'] = 'policies,adapter_configuration'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -182,7 +184,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,bios'
+                            kwargs['class_path'] = 'policies,bios'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -336,7 +338,7 @@ class policies(object):
                                     kwargs = policy_select_loop(self, **kwargs)
                                     lan_connectivity_policy = kwargs['lan_connectivity_policy']
                                     vnicNames = []
-                                    for item in kwargs['immDict']['orgs'][org]['intersight']['policies']['lan_connectivity']:
+                                    for item in kwargs['immDict']['orgs'][org]['policies']['lan_connectivity']:
                                         if item['name'] == lan_connectivity_policy:
                                             for i in item['vnics']:
                                                 vnicNames.append(i['names'])
@@ -398,7 +400,7 @@ class policies(object):
                                     kwargs['policy'] = 'policies.san_connectivity.san_connectivity_policy'
                                     kwargs = policy_select_loop(self, **kwargs)
                                     vnicNames = []
-                                    for i in kwargs['immDict']['orgs'][org]['intersight']['policies']['san_connectivity']:
+                                    for i in kwargs['immDict']['orgs'][org]['policies']['san_connectivity']:
                                         if item['name'] == kwargs['san_connectivity_policy']:
                                             for i in item['vhbas']:
                                                 vnicNames.append(i['names'])
@@ -477,7 +479,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,boot_order'
+                            kwargs['class_path'] = 'policies,boot_order'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -576,7 +578,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,certificate_management'
+                            kwargs['class_path'] = 'policies,certificate_management'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -661,7 +663,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,device_connector'
+                            kwargs['class_path'] = 'policies,device_connector'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -794,7 +796,7 @@ class policies(object):
                             kwargs['policy'] = f'policies.vlan.vlan_policy'
                             kwargs = policy_select_loop(self, **kwargs)
                             vlan_list = []
-                            for item in kwargs['immDict']['orgs'][org]['intersight']['policies']['vlan']:
+                            for item in kwargs['immDict']['orgs'][org]['policies']['vlan']:
                                 if item['name'] == kwargs['vlan_policy']:
                                     for i in item['vlans']:
                                         vlan_list.append(i['vlan_list'])
@@ -832,7 +834,7 @@ class policies(object):
                         #==============================================
                         # Add Policy Variables to immDict
                         #==============================================
-                        kwargs['class_path'] = 'intersight,policies,imc_access'
+                        kwargs['class_path'] = 'policies,imc_access'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
                         #==============================================
                         # Create Additional Policy or Exit Loop
@@ -915,7 +917,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,ipmi_over_lan'
+                            kwargs['class_path'] = 'policies,ipmi_over_lan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -1278,7 +1280,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,ldap'
+                            kwargs['class_path'] = 'policies,ldap'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -1432,7 +1434,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,local_user'
+                            kwargs['class_path'] = 'policies,local_user'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -1543,7 +1545,7 @@ class policies(object):
                         #==============================================
                         # Add Policy Variables to immDict
                         #==============================================
-                        kwargs['class_path'] = 'intersight,policies,network_connectivity'
+                        kwargs['class_path'] = 'policies,network_connectivity'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
                         #==============================================
                         # Create Additional Policy or Exit Loop
@@ -1641,7 +1643,7 @@ class policies(object):
                         #==============================================
                         # Add Policy Variables to immDict
                         #==============================================
-                        kwargs['class_path'] = 'intersight,policies,ntp'
+                        kwargs['class_path'] = 'policies,ntp'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
                         #==============================================
                         # Create Additional Policy or Exit Loop
@@ -1850,7 +1852,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,persistent_memory'
+                            kwargs['class_path'] = 'policies,persistent_memory'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -1975,7 +1977,7 @@ class policies(object):
                         #==============================================
                         # Add Policy Variables to immDict
                         #==============================================
-                        kwargs['class_path'] = 'intersight,policies,port'
+                        kwargs['class_path'] = 'policies,port'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
                         #==============================================
                         # Create Additional Policy or Exit Loop
@@ -2098,7 +2100,7 @@ class policies(object):
                         #==============================================
                         # Add Policy Variables to immDict
                         #==============================================
-                        kwargs['class_path'] = 'intersight,policies,power'
+                        kwargs['class_path'] = 'policies,power'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
                         #==============================================
                         # Create Additional Policy or Exit Loop
@@ -2243,7 +2245,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,sd_card'
+                            kwargs['class_path'] = 'policies,sd_card'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -2333,7 +2335,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,serial_over_lan'
+                            kwargs['class_path'] = 'policies,serial_over_lan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -2437,7 +2439,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,smtp'
+                            kwargs['class_path'] = 'policies,smtp'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -2605,7 +2607,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,snmp'
+                            kwargs['class_path'] = 'policies,snmp'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -2686,7 +2688,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,ssh'
+                            kwargs['class_path'] = 'policies,ssh'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -3061,7 +3063,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,storage'
+                            kwargs['class_path'] = 'policies,storage'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -3125,7 +3127,7 @@ class policies(object):
                     # Prompt User for Syslog Servers
                     #==============================================
                     kwargs = ezfunctions.syslog_servers(**kwargs)
-                    polVars['remote_clients'] = kwargs['remote_clients']
+                    polVars['remote_logging'] = kwargs['remote_logging']
                     #==============================================
                     # Print Policy and Prompt User to Accept
                     #==============================================
@@ -3139,7 +3141,7 @@ class policies(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,syslog'
+                            kwargs['class_path'] = 'policies,syslog'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Create Additional Policy or Exit Loop
@@ -3218,7 +3220,7 @@ class policies(object):
                         #==============================================
                         # Add Policy Variables to immDict
                         #==============================================
-                        kwargs['class_path'] = 'intersight,policies,thermal'
+                        kwargs['class_path'] = 'policies,thermal'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
                         #==============================================
                         # Create Additional Policy or Exit Loop
@@ -3344,7 +3346,7 @@ class policies(object):
                         #==============================================
                         # Add Policy Variables to immDict
                         #==============================================
-                        kwargs['class_path'] = 'intersight,policies,virtual_kvm'
+                        kwargs['class_path'] = 'policies,virtual_kvm'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
                         #==============================================
                         # Create Additional Policy or Exit Loop
@@ -3615,7 +3617,7 @@ class policies(object):
                         #==============================================
                         # Add Policy Variables to immDict
                         #==============================================
-                        kwargs['class_path'] = 'intersight,policies,virtual_media'
+                        kwargs['class_path'] = 'policies,virtual_media'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
                         #==============================================
                         # Create Additional Policy or Exit Loop
@@ -3982,7 +3984,7 @@ def port_list_fc(self, **kwargs):
                         kwargs = policy_select_loop(self, **kwargs)
                         print(kwargs['vsan_policy'])
                         vsan_list = []
-                        for i in kwargs['immDict']['orgs'][org]['intersight']['policies']['vsan']:
+                        for i in kwargs['immDict']['orgs'][org]['policies']['vsan']:
                             if i['name'] == kwargs['vsan_policy']:
                                 for item in i['vsans']: vsan_list.append(item['vsan_id'])
                         kwargs['multi_select'] = False

@@ -66,7 +66,7 @@ class quick_start(object):
             #==============================================
             # Add Policy Variables to immDict
             #==============================================
-            kwargs['class_path'] = 'intersight,policies,bios'
+            kwargs['class_path'] = 'policies,bios'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
         # Return kwargs
         return kwargs
@@ -95,8 +95,8 @@ class quick_start(object):
         for i in secBootList:
             if i   == False and boot_type == 'm2': name = 'M2-pxe'
             elif i == True  and boot_type == 'm2': name = 'M2'
-            elif i == False and boot_type == 'raid1': name = 'Raid1-pxe'
-            elif i == True  and boot_type == 'raid1': name = 'Raid1'
+            elif i == False and boot_type == 'raid1': name = 'raid1-pxe'
+            elif i == True  and boot_type == 'raid1': name = 'raid1'
             elif boot_type == 'stateless': name = 'pxe'
             polVars['name'] = name
             polVars['boot_mode'] = 'Uefi'
@@ -104,24 +104,27 @@ class quick_start(object):
                 polVars['enable_secure_boot'] = i
             else: polVars['enable_secure_boot'] = False
             polVars['boot_devices'] = [{
-                'name':'KVM-DVD', 'object_type':'boot.VirtualMedia', 'subtype':'kvm-mapped-dvd'
+                'enabled':True, 'name':'kvm', 'object_type':'boot.VirtualMedia', 'sub_type':'kvm-mapped-dvd'
             }]
             if boot_type == 'm2':
                 polVars['boot_devices'].append({
-                    'name':'M2', 'enabled':True, 'object_type':'boot.LocalDisk', 'slot':'MSTOR-RAID'
+                    'enabled':True, 'name':'M2', 'object_type':'boot.LocalDisk', 'slot':'MSTOR-RAID'
                 })
             if boot_type == 'raid1':
                 polVars['boot_devices'].append({
-                    'name':'MRAID', 'enabled':True,
+                    'enabled':True, 'name':'mraid',
                     'object_type':'boot.LocalDisk', 'slot':'MRAID'
                 })
             if i == False:
                 polVars['boot_devices'].append({
-                    'name':'PXE', 'enabled':True, 'interface_name':'mgmt-a', 'interface_source':'name',
+                    'enabled':True, 'name':'pxe', 'interface_name':'mgmt-a', 'interface_source':'name',
                     'ip_type':'IPv4', 'object_type':'boot.Pxe', 'slot':'MLOM'
                 })
+            polVars['boot_devices'].append({
+                'enabled':True, 'name':'uefishell', 'object_type':'boot.UefiShell'
+            })
             # Add Policy Variables to immDict
-            kwargs['class_path'] = 'intersight,policies,boot_order'
+            kwargs['class_path'] = 'policies,boot_order'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
         #==============================================
         # Configure Storage Policy
@@ -129,10 +132,10 @@ class quick_start(object):
         polVars = {}
         if boot_type == 'm2':
             polVars['name'] = 'M2-Raid'
-            polVars['m2_configuration'] = [{'controller_slot':'MSTOR-RAID-1'}]
+            polVars['m2_raid_configuration'] = [{'slot':'MSTOR-RAID-1'}]
             polVars['use_jbod_for_vd_creation'] = True
         elif boot_type == 'raid1':
-            polVars['name'] = 'Raid1'
+            polVars['name'] = 'raid1'
             polVars['drive_group'] = [{
                 'manual_drive_group':[{'drive_array_spans':[{'slots':'1,2'}]}],
                 'name':'DG1',
@@ -145,9 +148,9 @@ class quick_start(object):
             }]
             polVars['unused_disks_state'] = 'No Change'
             polVars['use_jbod_for_vd_creation'] = True
-        if boot_type == 'm2' or boot_type == 'raid1':
+        if re.search('(m2|raid1)', boot_type):
             # Add Policy Variables to immDict
-            kwargs['class_path'] = 'intersight,policies,storage'
+            kwargs['class_path'] = 'policies,storage'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
         # Return kwargs
         return kwargs
@@ -240,12 +243,12 @@ class quick_start(object):
                     # Configure Multicast Policy
                     #==============================================
                     polVars = {'name':'mcast'}
-                    kwargs['class_path'] = 'intersight,policies,multicast'
+                    kwargs['class_path'] = 'policies,multicast'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     #==============================================
                     # Configure VLAN Policy
                     #==============================================
-                    polVars = {'name': org}
+                    polVars = {'name': 'vlans'}
                     policy_vlan_list = deepcopy(vlanListExpanded)
                     if not nativeVlan == '':
                         if int(nativeVlan) in vlanListExpanded:
@@ -274,25 +277,25 @@ class quick_start(object):
                     polVars["vlans"].append({
                         'multicast_policy':'mcast', 'name':vname, 'vlan_list':vlanListExpanded
                     })
-                    kwargs['class_path'] = 'intersight,policies,vlan'
+                    kwargs['class_path'] = 'policies,vlan'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     #==============================================
                     # Configure Flow Control Policy
                     #==============================================
                     polVars = {'name': 'flow-ctrl'}
-                    kwargs['class_path'] = 'intersight,policies,flow_control'
+                    kwargs['class_path'] = 'policies,flow_control'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     #==============================================
                     # Configure Link Aggregation Policy
                     #==============================================
                     polVars = {'name': 'link-agg'}
-                    kwargs['class_path'] = 'intersight,policies,link_aggregation'
+                    kwargs['class_path'] = 'policies,link_aggregation'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     #==============================================
                     # Configure Link Control Policy
                     #==============================================
                     polVars = {'name': 'link-ctrl'}
-                    kwargs['class_path'] = 'intersight,policies,link_control'
+                    kwargs['class_path'] = 'policies,link_control'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     #==============================================
                     # Determine if Fibre-Channel will be Utilized
@@ -342,7 +345,7 @@ class quick_start(object):
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,vsan'
+                            kwargs['class_path'] = 'policies,vsan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  IMPORTANT NOTE: If you want to assign one of the VLANs from the Pool as the Native VLAN')
@@ -371,7 +374,7 @@ class quick_start(object):
                     else:
                         polVars['native_vlan'] = ''
                         polVars.pop('native_vlan')
-                    kwargs['class_path'] = 'intersight,policies,ethernet_network_group'
+                    kwargs['class_path'] = 'policies,ethernet_network_group'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     #==============================================
                     # Configure Ethernet Uplink Port-Channels
@@ -497,7 +500,7 @@ class quick_start(object):
                                 polVars['classes'].append(kwargs[priority])
 
                             # Add Policy Variables to immDict
-                            kwargs['class_path'] = 'intersight,policies,system_qos'
+                            kwargs['class_path'] = 'policies,system_qos'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Network Connectivity Policy
@@ -507,7 +510,7 @@ class quick_start(object):
                             polVars['dns_servers_v4'] = [kwargs['primary_dns']]
                             if not kwargs['secondary_dns'] == '':
                                 polVars['dns_servers_v4'].append(kwargs['secondary_dns'])
-                            kwargs['class_path'] = 'intersight,policies,network_connectivity'
+                            kwargs['class_path'] = 'policies,network_connectivity'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure NTP Policy
@@ -516,7 +519,7 @@ class quick_start(object):
                             polVars['name'] = f'ntp'
                             polVars['ntp_servers'] = ntp_servers
                             polVars['timezone'] = timezone
-                            kwargs['class_path'] = 'intersight,policies,ntp'
+                            kwargs['class_path'] = 'policies,ntp'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Switch Control Policy
@@ -524,13 +527,13 @@ class quick_start(object):
                             polVars = {}
                             polVars['name'] = f'sw_ctrl'
                             polVars['vlan_port_count_optimization'] = False
-                            kwargs['class_path'] = 'intersight,policies,switch_control'
+                            kwargs['class_path'] = 'policies,switch_control'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Port Policy
                             #==============================================
                             polVars = kwargs['port_policy']
-                            kwargs['class_path'] = 'intersight,policies,port'
+                            kwargs['class_path'] = 'policies,port'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure UCS Chassis Profile
@@ -545,7 +548,7 @@ class quick_start(object):
                             chassis_count = ezfunctions.varNumberLoop(**kwargs)
                             chassis_models = ['5108', '9508']
                             chassis_dict = {}
-                            imc_policy = kwargs['immDict']['orgs'][org]['intersight']['pools']['ip'][0]['name']
+                            imc_policy = kwargs['immDict']['orgs'][org]['pools']['ip'][0]['name']
                             for i in chassis_models:
                                 chassis_dict.update({ i: {
                                     'imc_access_policy':imc_policy, 'names':[], 'power_policy':i,
@@ -573,14 +576,16 @@ class quick_start(object):
                                 kwargs['jData']['varName']     = 'Serial Number'
                                 serial_number = ezfunctions.varStringLoop(**kwargs)
                                 if serial_number == '': serial_number = 'unknown'
-                                chassis_dict[f'{chassis_model}']['names'].append([f'{domain_name}-{x}', serial_number])
+                                chassis_dict[f'{chassis_model}']['targets'].append({
+                                    'name':f'{domain_name}-{x}','serial_number':serial_number
+                                })
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
                             for i in chassis_models:
-                                if len(chassis_dict[i]['names']) > 0:
+                                if len(chassis_dict[i]['targets']) > 0:
                                     polVars = chassis_dict[i]
-                                    kwargs['class_path'] = 'intersight,profiles,chassis'
+                                    kwargs['class_path'] = 'profiles,chassis'
                                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure UCS Domain Profile
@@ -590,14 +595,14 @@ class quick_start(object):
                                 'port_policies': [f'{domain_name}-a', f'{domain_name}-b'], 'serial_numbers': serials,
                                 'snmp_policy': f'snmp-domain', 'switch_control_policy': 'sw_ctrl',
                                 'syslog_policy': f'syslog-domain', 'system_qos_policy': 'system-qos',
-                                'vlan_policies': [org]
+                                'vlan_policies': ['vlans']
                             }
                             if len(kwargs['fc_converted_ports']) > 0:
                                 polVars['vsan_policies'] = [f"vsan-{kwargs['vsan_id_a']}', f'vsan-{kwargs['vsan_id_b']}"]
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,profiles,domain'
+                            kwargs['class_path'] = 'profiles,domain'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             configure_loop = True
                             policy_loop = True
@@ -738,13 +743,13 @@ class quick_start(object):
                             polVars = {}
                             polVars['name'] = 'VMware'
                             polVars['adapter_template'] = 'VMware'
-                            kwargs['class_path'] = 'intersight,policies,ethernet_adapter'
+                            kwargs['class_path'] = 'policies,ethernet_adapter'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Ethernet Network Control Policy
                             #==============================================
                             polVars = {}
-                            polVars['name'] = neighbor_discovery
+                            polVars['name'] = neighbor_discovery.lower()
                             polVars['description'] = f'{neighbor_discovery} Ethernet Network Control Policy'
                             polVars['action_on_uplink_fail'] = "linkDown"
                             if neighbor_discovery == 'CDP': polVars['cdp_enable'] = True
@@ -757,7 +762,7 @@ class quick_start(object):
                                 polVars['lldp_transmit_enable'] = False
                             polVars['mac_register_mode'] = "nativeVlanOnly"
                             polVars['mac_security_forge'] = "allow"
-                            kwargs['class_path'] = 'intersight,policies,ethernet_network_control'
+                            kwargs['class_path'] = 'policies,ethernet_network_control'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Ethernet Network Group Policies
@@ -776,7 +781,7 @@ class quick_start(object):
                                 else:
                                     if not polVars.get('native_vlan') == None: polVars.pop('native_vlan')
                                 # Add Policy Variables to immDict
-                                kwargs['class_path'] = 'intersight,policies,ethernet_network_group'
+                                kwargs['class_path'] = 'policies,ethernet_network_group'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Ethernet QoS Policy
@@ -786,14 +791,14 @@ class quick_start(object):
                             for x in names:
                                 polVars['name'] = x
                                 polVars['description'] = f'{x} Ethernet QoS Policy'
-                                polVars['burst'] = 1024
+                                polVars['burst'] = 10240
                                 polVars['enable_trust_host_cos'] = False
                                 polVars['priority'] = x
                                 polVars['mtu'] = mtu
                                 polVars['rate_limit'] = 0
 
                                 # Add Policy Variables to immDict
-                                kwargs['class_path'] = 'intersight,policies,ethernet_qos'
+                                kwargs['class_path'] = 'policies,ethernet_qos'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             if len(fc_ports_in_use) > 0:
                                 #==============================================
@@ -802,8 +807,8 @@ class quick_start(object):
                                 polVars = {}
                                 polVars['name'] = 'VMware'
                                 polVars['description'] = f'VMware Fibre-Channel Adapter Policy'
-                                polVars['policy_template'] = 'VMware'
-                                kwargs['class_path'] = 'intersight,policies,fibre_channel_adapter'
+                                polVars['adapter_template'] = 'VMware'
+                                kwargs['class_path'] = 'policies,fibre_channel_adapter'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                                 #==============================================
                                 # Configure Fibre-Channel Network Policy
@@ -811,20 +816,20 @@ class quick_start(object):
                                 polVars = {}
                                 fabrics = ['a', 'b']
                                 for fab in fabrics:
-                                    polVars['name'] = f'san-{fab}'
+                                    polVars['name'] = f'vsan-{fab}'
                                     polVars['default_vlan'] = 0
                                     polVars['vsan_id'] = kwargs[f"vsan_id_{fab}"]
-                                    kwargs['class_path'] = 'intersight,policies,fibre_channel_network'
+                                    kwargs['class_path'] = 'policies,fibre_channel_network'
                                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                                 #==============================================
                                 # Configure Fibre-Channel QoS Policy
                                 #==============================================
                                 polVars = {}
                                 polVars['name'] = 'fc-qos'
-                                polVars['burst'] = 1024
+                                polVars['burst'] = 10240
                                 polVars['max_data_field_size'] = 2112
                                 polVars['rate_limit'] = 0
-                                kwargs['class_path'] = 'intersight,policies,fibre_channel_qos'
+                                kwargs['class_path'] = 'policies,fibre_channel_qos'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             Order = 0
                             if len(fc_ports_in_use) > 0:
@@ -832,21 +837,21 @@ class quick_start(object):
                                 # Configure SAN Connectivity Policy
                                 #==============================================
                                 polVars = {}
-                                polVars['name'] = f'{org}-scp'
+                                polVars['name'] = f'scp'
                                 polVars['target_platform'] = 'FIAttached'
                                 polVars['vhbas'] = [{
                                     'fibre_channel_adapter_policy':'VMware',
-                                    'fibre_channel_network_policy':f'san-{fab}',
+                                    'fibre_channel_network_policies':['vsan-a', 'vsan-b'],
                                     'fibre_channel_qos_policy':'fc-qos',
-                                    'names':['hba-a', 'hba-b'],
-                                    'pci_order':[Order, Order + 1],
+                                    'names':['vhba-a', 'vhba-b'],
+                                    'placement_pci_order':[Order, Order + 1],
                                     'wwpn_allocation_type':'POOL',
-                                    'wwpn_pools':[f'{org}-a', f'{org}-b']
+                                    'wwpn_pools':[f'wwpn-a', f'wwpn-b']
                                 }]
                                 polVars['wwnn_allocation_type'] = 'POOL'
-                                polVars['wwnn_pool'] = org
+                                polVars['wwnn_pool'] = 'wwnn'
                                 Order += 2
-                                kwargs['class_path'] = 'intersight,policies,san_connectivity'
+                                kwargs['class_path'] = 'policies,san_connectivity'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure LAN Connectivity Policy
@@ -861,19 +866,19 @@ class quick_start(object):
                                 qos = nam.split('_')[1]
                                 vnic = {
                                     'ethernet_adapter_policy':'VMware',
-                                    'ethernet_network_control_policy':neighbor_discovery,
+                                    'ethernet_network_control_policy':neighbor_discovery.lower(),
                                     'ethernet_network_group_policy':vname,
                                     'ethernet_qos_policy':qos,
                                     'mac_address_pools':[f'{vname}-a',f'{vname}-b',],
                                     'names':[f'{vname}-a',f'{vname}-b',],
-                                    'pci_order':[Order, Order + 1],
+                                    'placement_pci_order':[Order, Order + 1],
                                 }
                                 polVars['vnics'].append(vnic)
                                 Order += 2
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
-                            kwargs['class_path'] = 'intersight,policies,lan_connectivity'
+                            kwargs['class_path'] = 'policies,lan_connectivity'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             configure_loop = True
                             policy_loop = True
@@ -930,12 +935,12 @@ class quick_start(object):
                     print(f'      - storage-a:       00:25:B5:[prefix]:E0:00, size: 1024')
                     print(f'      - storage-b:       00:25:B5:[prefix]:F0:00, size: 1024')
                     print(f'    * UUID Pool')
-                    print(f'      - {org}:        000025B5-[prefix]00-0000, size: 1024')
+                    print(f'      - uuid:        000025B5-[prefix]00-0000, size: 1024')
                     print(f'    * WWNN Pool')
-                    print(f'      - {org}:   20:00:00:25:B5:[prefix]:00:00, size: 1024')
+                    print(f'      - wwnn:   20:00:00:25:B5:[prefix]:00:00, size: 1024')
                     print(f'    * WWPN Pools')
-                    print(f'      - {org}-a: 20:00:00:25:B5:[prefix]:A0:00, size: 1024')
-                    print(f'      - {org}-b: 20:00:00:25:B5:[prefix]:B0:00, size: 1024')
+                    print(f'      - wwpn-a: 20:00:00:25:B5:[prefix]:A0:00, size: 1024')
+                    print(f'      - wwpn-b: 20:00:00:25:B5:[prefix]:B0:00, size: 1024')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
 
                     kwargs['multi_select'] = False
@@ -1006,12 +1011,12 @@ class quick_start(object):
                             polVars['name'] = pool_from
                             pool_size = int(ipaddress.IPv4Address(pool_to)) - int(ipaddress.IPv4Address(pool_from)) + 1
                             polVars['ipv4_blocks'] = [{'from':pool_from, 'size':pool_size}]
-                            polVars['ipv4_configuration'] = {
-                                'gateway':gateway, 'prefix':netmask, 'primary_dns':primary_dns, 'secondary_dns':secondary_dns
-                            }
+                            polVars['ipv4_configuration'] = [{
+                                'gateway':gateway, 'netmask':netmask, 'primary_dns':primary_dns, 'secondary_dns':secondary_dns
+                            }]
                             kwargs['primary_dns'] = primary_dns
                             kwargs['secondary_dns'] = secondary_dns
-                            kwargs['class_path'] = 'intersight,pools,ip'
+                            kwargs['class_path'] = 'pools,ip'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure MAC Pools
@@ -1032,35 +1037,35 @@ class quick_start(object):
                                     polVars['name'] = f'{i}-{fab}'
                                     pool_from = f'00:25:B5:{pool_prefix}:{key_id}0:00'
                                     polVars['mac_blocks'] = [{'from':pool_from, 'size':1024}]
-                                    kwargs['class_path'] = 'intersight,pools,mac'
+                                    kwargs['class_path'] = 'pools,mac'
                                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure UUID Pool
                             #==============================================
                             polVars = {}
-                            polVars['name'] = org
-                            polVars['description'] = f'{org} UUID Pool'
+                            polVars['name'] = 'uuid'
+                            polVars['description'] = f'uuid UUID Pool'
                             polVars['prefix'] = f'000025B5-{pool_prefix}00-0000'
                             polVars['uuid_blocks'] = [{'from':'0000-000000000000', 'size':1024}]
-                            kwargs['class_path'] = 'intersight,pools,uuid'
+                            kwargs['class_path'] = 'pools,uuid'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure WWNN Pool
                             #==============================================
                             polVars = {}
-                            polVars['name'] = org
+                            polVars['name'] = 'wwnn'
                             pool_from = f'20:00:00:25:B5:{pool_prefix}:00:00'
                             polVars['id_blocks'] = [{'from':pool_from, 'size':1024}]
-                            kwargs['class_path'] = 'intersight,pools,wwnn'
+                            kwargs['class_path'] = 'pools,wwnn'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure WWPN Pools
                             #==============================================
                             for fab in fabrics:
-                                polVars['name'] = f'{org}-{fab}'
+                                polVars['name'] = f'wwpn-{fab}'
                                 pool_from = f'20:00:00:25:B5:{pool_prefix}:{fab.upper()}0:00'
                                 polVars['id_blocks'] = [{'from':pool_from, 'size':1024,}]
-                                kwargs['class_path'] = 'intersight,pools,wwpn'
+                                kwargs['class_path'] = 'pools,wwpn'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             configure_loop = True
                             policy_loop = True
@@ -1229,7 +1234,10 @@ class quick_start(object):
                             syslog_loop = True
                         elif question == 'N':
                             min_severity = 'warning'
-                            kwargs['remote_clients'] = {'server1':{},'server2':{}}
+                            kwargs['remote_logging'] = {
+                                'server1':{'enable':False,'hostname':'0.0.0.0','minimum_severity':'warning'},
+                                'server2':{'enable':False,'hostname':'0.0.0.0','minimum_severity':'warning'}
+                            }
                             syslog_loop = True
                         else: ezfunctions.message_invalid_y_or_n('short')
                     #==============================================
@@ -1239,7 +1247,7 @@ class quick_start(object):
                     kwargs['jData'] = deepcopy(jsonVars['TunneledKvmEnabled'])
                     kwargs['jData']['varInput'] = f'Do you want to enable Tunneled KVM in the KVM Policy?'
                     kwargs['jData']['varName']  = 'Tunneled KVM'
-                    allow_tunneled_kvm = ezfunctions.varBoolLoop(**kwargs)
+                    allow_tunneled_vkvm = ezfunctions.varBoolLoop(**kwargs)
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     print(f'  Policy Variables:')
                     if kwargs['server_type'] == 'FIAttached':
@@ -1260,7 +1268,7 @@ class quick_start(object):
                         print(textwrap.indent(yaml.dump({'snmp_users':kwargs['snmp_users']
                         }, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
                     print(f'    Syslog Remote Clients:')
-                    print(textwrap.indent(yaml.dump({'remote_clients':kwargs['remote_clients']
+                    print(textwrap.indent(yaml.dump({'remote_logging':kwargs['remote_logging']
                     }, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
                     print(f'\n-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
@@ -1272,29 +1280,29 @@ class quick_start(object):
                                 # Configure IMC Access Policy
                                 #==============================================
                                 polVars = {}
-                                name = kwargs['immDict']['orgs'][org]['intersight']['pools']['ip'][0]['name']
-                                polVars['name'] = name
-                                polVars[f'{imcBand}_ip_pool'] = name
+                                ip_pool = kwargs['immDict']['orgs'][org]['pools']['ip'][0]['name']
+                                polVars['name'] = 'kvm'
+                                polVars[f'{imcBand}_ip_pool'] = ip_pool
                                 if imcBand == 'inband':
                                     polVars['inband_vlan_id'] = inband_vlan_id
-                                kwargs['class_path'] = 'intersight,policies,imc_access'
+                                kwargs['class_path'] = 'policies,imc_access'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                                 kwargs['imc_access_policy'] = polVars['name']
                             #==============================================
                             # Configure IPMI over LAN Policy
                             #==============================================
                             polVars = {}
-                            polVars['name'] = f'{org}-ipmi'
+                            polVars['name'] = f'ipmi'
                             polVars['enabled'] = True
-                            kwargs['class_path'] = 'intersight,policies,ipmi_over_lan'
+                            kwargs['class_path'] = 'policies,ipmi_over_lan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Local User Policy
                             #==============================================
                             polVars = {}
-                            polVars['name'] = f'{org}-users'
+                            polVars['name'] = f'local_users'
                             polVars['users'] = kwargs['local_users']
-                            kwargs['class_path'] = 'intersight,policies,local_user'
+                            kwargs['class_path'] = 'policies,local_user'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Power Policy
@@ -1307,7 +1315,7 @@ class quick_start(object):
                                 if name == 'Server': polVars['power_restore'] = 'LastState'
                                 elif name == '9508': polVars['power_allocation'] = 8400
                                 polVars['power_redundancy'] = 'Grid'
-                                kwargs['class_path'] = 'intersight,policies,power'
+                                kwargs['class_path'] = 'policies,power'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Serial over LAN Policy
@@ -1316,7 +1324,7 @@ class quick_start(object):
                             polVars['name'] = 'sol'
                             polVars['description'] = f'{name} Serial over LAN Policy'
                             polVars['enabled'] = True
-                            kwargs['class_path'] = 'intersight,policies,serial_over_lan'
+                            kwargs['class_path'] = 'policies,serial_over_lan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure SNMP Policy
@@ -1325,12 +1333,12 @@ class quick_start(object):
                             names = ['snmp', 'snmp-domain']
                             for name in names:
                                 polVars['name'] = name
-                                polVars['enabled'] = True
+                                polVars['enable_snmp'] = True
                                 polVars['system_contact'] = kwargs['system_contact']
                                 polVars['system_location'] = kwargs['system_location']
                                 polVars['snmp_traps'] = kwargs['snmp_traps']
                                 polVars['snmp_users'] = kwargs['snmp_users']
-                                kwargs['class_path'] = 'intersight,policies,snmp'
+                                kwargs['class_path'] = 'policies,snmp'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Syslog Policy
@@ -1340,10 +1348,10 @@ class quick_start(object):
                             for name in names:
                                 polVars['name']               = name
                                 polVars['local_min_severity'] = min_severity
-                                polVars['remote_clients']     = kwargs['remote_clients']
+                                polVars['remote_logging']     = kwargs['remote_logging']
 
                                 # Add Policy Variables to immDict
-                                kwargs['class_path'] = 'intersight,policies,syslog'
+                                kwargs['class_path'] = 'policies,syslog'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Thermal Policy
@@ -1355,15 +1363,15 @@ class quick_start(object):
                                 polVars['fan_control_mode'] = 'Balanced'
 
                                 # Add Policy Variables to immDict
-                                kwargs['class_path'] = 'intersight,policies,thermal'
+                                kwargs['class_path'] = 'policies,thermal'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Virtual KVM Policy
                             #==============================================
                             polVars = {}
                             polVars['name'] = 'vkvm'
-                            polVars['allow_tunneled_kvm'] = allow_tunneled_kvm
-                            kwargs['class_path'] = 'intersight,policies,virtual_kvm'
+                            polVars['allow_tunneled_vkvm'] = allow_tunneled_vkvm
+                            kwargs['class_path'] = 'policies,virtual_kvm'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
                             # Configure Virtual Media Policy
@@ -1371,7 +1379,7 @@ class quick_start(object):
                             polVars = {}
                             polVars['name'] = 'vmedia'
                             polVars['enable_virtual_media_encryption'] = True
-                            kwargs['class_path'] = 'intersight,policies,virtual_media'
+                            kwargs['class_path'] = 'policies,virtual_media'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             configure_loop = True
                             policy_loop = True
@@ -1500,7 +1508,7 @@ class quick_start(object):
                     polVars = {}
                     polVars['targets'] = targets
                     polVars['ucs_server_profile_template'] = template_name
-                    kwargs['class_path'] = 'intersight,profiles,server'
+                    kwargs['class_path'] = 'profiles,server'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     #==============================================
                     # Configure Server Template
@@ -1513,10 +1521,10 @@ class quick_start(object):
                     polVars['boot_order_policy'] = template_name
                     polVars['description'] = f'{template_name} Server Profile Template'
                     polVars['name'] = template_name
-                    polVars['uuid_pool'] = org
+                    polVars['uuid_pool'] = 'uuid'
                     polVars['virtual_media_policy'] = 'vmedia'
-                    polVars['ipmi_over_lan_policy'] = f'{org}-ipmi'
-                    polVars['local_user_policy'] = f'{org}-users'
+                    polVars['ipmi_over_lan_policy'] = f'ipmi'
+                    polVars['local_user_policy'] = f'local_users'
                     polVars['serial_over_lan_policy'] = 'sol'
                     polVars['snmp_policy'] = 'snmp'
                     polVars['syslog_policy'] = 'syslog'
@@ -1527,26 +1535,26 @@ class quick_start(object):
                     else: polVars['storage_policy'] = ''
                     polVars['lan_connectivity_policy'] = 'vmware-lcp'
                     if len(fc_ports_in_use) > 0:
-                        polVars['san_connectivity_policy'] = f'{org}-scp'
+                        polVars['san_connectivity_policy'] = f'scp'
                     if kwargs['server_type'] == 'FIAttached':
                         polVars['certificate_management_policy'] = ''
                         polVars['imc_access_policy'] = f'{org}'
                         polVars['power_policy'] = 'Server'
                         polVars['target_platform'] = 'FIAttached'
                     if kwargs['server_type'] == 'Standalone':
-                        polVars['adapter_configuration_policy'] = f'{org}'
-                        polVars['device_connector_policy'] = f'{org}'
-                        polVars['ldap_policy'] = f'{org}-ldap'
+                        polVars['adapter_configuration_policy'] = f'acp'
+                        polVars['device_connector_policy'] = f'dcp'
+                        polVars['ldap_policy'] = f'ldap'
                         polVars['network_connectivity_policy'] = f'dns'
                         polVars['ntp_policy'] = f'ntp'
                         polVars['persistent_memory_policy'] = f'pmem'
-                        polVars['smtp_policy'] = f'{org}-smtp'
-                        polVars['ssh_policy'] = f'{org}-ssh'
+                        polVars['smtp_policy'] = f'smtp'
+                        polVars['ssh_policy'] = f'ssh'
                         polVars['target_platform'] = 'Standalone'
                     #==============================================
                     # Add Policy Variables to immDict
                     #==============================================
-                    kwargs['class_path'] = 'intersight,templates,server'
+                    kwargs['class_path'] = 'templates,server'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     policy_loop = True
                     configure_loop = True

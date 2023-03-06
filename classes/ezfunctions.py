@@ -101,7 +101,6 @@ def create_yaml(orgs, **kwargs):
     baseRepo = kwargs['args'].dir
     ezData   = kwargs['ezData']['ezimm']['allOf'][1]['properties']
     classes  = ezData['classes']['enum']
-    path_sep = kwargs['path_sep']
 
     def write_file(dest_dir, dest_file, dict, title1):
         if not os.path.exists(os.path.join(dest_dir, dest_file)):
@@ -116,44 +115,39 @@ def create_yaml(orgs, **kwargs):
         wr_file.write(f'#{dash_length}\n')
         wr_file.write(yaml.dump(dict, Dumper=MyDumper, default_flow_style=False))
         wr_file.close()
-    for org in orgs:
-        for item in classes:
-            if kwargs['immDict']['orgs'][org]['intersight'].get(item):
-                if item == 'policies':
-                    dest_dir = ezData[f'class.{item}']['directory']
-                    if not os.path.isdir(os.path.join(baseRepo, org, dest_dir)):
-                        dest_path = f'{os.path.join(baseRepo, org, dest_dir)}'
-                        os.makedirs(dest_path)
-                    dest_dir = os.path.join(baseRepo, org, dest_dir)
-                    for i in ezData[f'class.{item}']['enum']:
-                        idict = deepcopy({'intersight':{item:{}}})
-                        for x in ezData[f'class.{i}']['enum']:
-                            if kwargs['immDict']['orgs'][org]['intersight'][item].get(x):
-                                idict['intersight'][item].update(
-                                    deepcopy({x:kwargs['immDict']['orgs'][org]['intersight'][item][x]})
-                                )
-                        dest_file = f"{i}.yaml"
-                        title1 = f"{str.title(item)} -> {i}"
-                        if len(idict['intersight'][item]) > 0:
-                            write_file(dest_dir, dest_file, idict, title1)
+    for item in classes:
+        dest_dir = os.path.join(baseRepo, ezData[f'class.{item}']['directory'])
+        if item == 'policies':
+            if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
+            for i in ezData[f'class.{item}']['enum']:
+                for org in orgs:
+                    idict = deepcopy({org:{item:{}}})
+                    for x in ezData[f'class.{i}']['enum']:
+                        if kwargs['immDict']['orgs'][org][item].get(x):
+                            idict[org][item].update(deepcopy({x:kwargs['immDict']['orgs'][org][item][x]}))
+                    if len(idict[org][item]) == 0: idict.pop(org)
+                dest_file = f"{i}.yaml"
+                title1 = f"{str.title(item)} -> {i}"
+                write_file(dest_dir, dest_file, idict, title1)
+        else:
+            if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
+            for i in ezData[f'class.{item}']['enum']:
+                dict = {}
+                if item == i:
+                    for org in orgs:
+                        if kwargs['immDict']['orgs'][org].get(item):
+                            dict.update(deepcopy({org:{item:kwargs['immDict']['orgs'][org][item]}}))
+                    dest_file = f'{i}.yaml'
+                    title1 = str.title(item.replace('_', ' '))
+                    write_file(dest_dir, dest_file, dict, title1)
                 else:
-                    dest_dir = ezData[f'class.{item}']['directory']
-                    if not os.path.isdir(os.path.join(baseRepo, org, dest_dir)):
-                        dest_path = f'{os.path.join(baseRepo, org)}{path_sep}{dest_dir}'
-                        os.makedirs(dest_path)
-                    dest_dir = os.path.join(baseRepo, org, dest_dir)
-                    for i in ezData[f'class.{item}']['enum']:
-                        if item == i:
-                            dict = {'intersight':{item:kwargs['immDict']['orgs'][org]['intersight'][item]}}
-                            dest_file = f'{i}.yaml'
-                            title1 = str.title(item.replace('_', ' '))
-                            write_file(dest_dir, dest_file, dict, title1)
-                        else:
-                            if kwargs['immDict']['orgs'][org]['intersight'][item].get(i):
-                                dict = {'intersight':{item:{i:kwargs['immDict']['orgs'][org]['intersight'][item][i]}}}
-                                dest_file = f'{i}.yaml'
-                                title1 = f"{str.title(item.replace('_', ' '))} -> {str.title(i.replace('_', ' '))}"
-                                write_file(dest_dir, dest_file, dict, title1)
+                    for org in orgs:
+                        if kwargs['immDict']['orgs'][org].get(item):
+                            if kwargs['immDict']['orgs'][org][item].get(i):
+                                dict.update({org:{item:{i:kwargs['immDict']['orgs'][org][item][i]}}})
+                    dest_file = f'{i}.yaml'
+                    title1 = f"{str.title(item.replace('_', ' '))} -> {str.title(i.replace('_', ' '))}"
+                    write_file(dest_dir, dest_file, dict, title1)
                         
 #======================================================
 # Function - Ask User to Configure Additional Policy
@@ -662,9 +656,9 @@ def ntp_primary():
 def policies_parse(ptype, policy_type, **kwargs):
     org  = kwargs['org']
     kwargs['policies'] = []
-    if not kwargs['immDict']['orgs'][org]['intersight'].get(ptype) == None:
-        if not kwargs['immDict']['orgs'][org]['intersight'][ptype].get(policy_type) == None:
-            kwargs['policies'] = {policy_type:kwargs['immDict']['orgs'][org]['intersight'][ptype][policy_type]}
+    if not kwargs['immDict']['orgs'][org].get(ptype) == None:
+        if not kwargs['immDict']['orgs'][org][ptype].get(policy_type) == None:
+            kwargs['policies'] = {policy_type:kwargs['immDict']['orgs'][org][ptype][policy_type]}
         else: kwargs['policies'] = {policy_type:{}}
     else: kwargs['policies'] = {policy_type:{}}
     return kwargs
@@ -1082,9 +1076,9 @@ def stdout_log(sheet, line):
 #======================================================
 def syslog_servers(**kwargs):
     jsonData = kwargs['jsonData']
-    kwargs['remote_clients'] = []
+    kwargs['remote_logging'] = []
     policy_type = 'Syslog Server'
-    syslog_count = 1
+    syslog_count = 0
     syslog_loop = False
     while syslog_loop == False:
         jsonVars = jsonData['syslog.RemoteClientBase']['allOf'][1]['properties']
@@ -1101,7 +1095,7 @@ def syslog_servers(**kwargs):
         # Prompt User for Syslog Minimum Severity
         #================================================
         kwargs['jData'] = deepcopy(jsonVars['MinSeverity'])
-        kwargs['jData']['varType'] = 'Syslog Minimum Severity'
+        kwargs['jData']['varType'] = 'Minimum Severity To Report'
         min_severity = variablesFromAPI(**kwargs)
         #================================================
         # Prompt User for Syslog Protocol
@@ -1116,7 +1110,7 @@ def syslog_servers(**kwargs):
         kwargs['jData']['varInput'] = f'What is Port for {hostname}?'
         kwargs['jData']['varName']  = 'LDAP Port'
         port = varNumberLoop(**kwargs)
-        remote_host = {'enable':True, 'hostname':hostname, 'min_severity':min_severity, 'port':port, 'protocol':protocol}
+        remote_host = {'enable':True, 'hostname':hostname, 'minimum_severity':min_severity, 'port':port, 'protocol':protocol}
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(textwrap.indent(yaml.dump(remote_host, Dumper=MyDumper, default_flow_style=False
         ), " "*3, predicate=None))
@@ -1125,9 +1119,9 @@ def syslog_servers(**kwargs):
         while valid_confirm == False:
             confirm_host = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
             if confirm_host == 'Y' or confirm_host == '':
-                kwargs['remote_clients'].append(remote_host)
-                if syslog_count == 2: syslog_loop = True; valid_confirm = True
-                if syslog_count == 1:
+                kwargs['remote_logging'].append(remote_host)
+                if syslog_count == 1: syslog_loop = True; valid_confirm = True
+                if syslog_count == 0:
                     valid_exit = False
                     while valid_exit == False:
                         loop_exit, syslog_loop = exit_default(policy_type, 'Y')

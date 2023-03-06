@@ -6,13 +6,13 @@ import validators
 # Errors
 def error_file_location(varName, varValue):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  Error!! The "{varName}" "{varValue}"')
+    print(f'  !!!Error!!! The "{varName}" "{varValue}"')
     print(f'  is invalid.  Please valid the Entry for "{varName}".')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def error_request(status, text):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'   Error in Retreiving Terraform Cloud Organization Workspaces')
+    print(f'   !!!Error!!! in Retreiving Terraform Cloud Organization Workspaces')
     print(f'   Exiting on Error {status} with the following output:')
     print(f'   {text}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -27,17 +27,24 @@ def error_subnet_check(**kwargs):
     pool_to = ipaddress.ip_address(kwargs['pool_to'])
     if not pool_from in ipaddress.ip_network(f"{gateway}/{prefix}", strict=False):
         print(f'\n{"-"*91}\n')
-        print(f'   Error!!!  {pool_from} is not in network {gateway}/{prefix}:')
+        print(f'   !!!Error!!!  {pool_from} is not in network {gateway}/{prefix}:')
         print(f'   Exiting....')
         print(f'\n{"-"*91}\n')
         exit()
     if not pool_to in ipaddress.ip_network(f"{gateway}/{prefix}", strict=False):
         print(f'\n{"-"*91}\n')
-        print(f'   Error!!!  {pool_to} is not in network {gateway}/{prefix}:')
+        print(f'   !!!Error!!!  {pool_to} is not in network {gateway}/{prefix}:')
         print(f'   Exiting....')
         print(f'\n{"-"*91}\n')
         exit()
 
+
+def unmapped_keys(policy_type, name, key):
+    print(f'\n{"-"*91}\n')
+    print(f'   !!!Error!!!! For {policy_type}, {name}, unknown key {key}')
+    print(f'\n{"-"*91}\n')
+    exit()
+ 
 # Validations
 def description(varName, varValue, minLength, maxLength):
     if not (re.search(r'^[a-zA-Z0-9\\!#$%()*,-./:;@ _{|}~?&+]+$',  varValue) and \
