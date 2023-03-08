@@ -343,7 +343,7 @@ class intersight_api(object):
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Multicast Settings from Library
+        # Grab Ethernet Adapter Settings from Library
         #=====================================================
         jsonVars = ezData['policies']['allOf'][1]['properties']['ethernet_adapter']['template_tuning']
         #=====================================================
@@ -635,7 +635,7 @@ class intersight_api(object):
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Multicast Settings from Library
+        # Grab FC Zone Settings from Library
         #=====================================================
         jsonVars = ezData['policies']['allOf'][1]['properties']['fibre_channel_adapter']['template_tuning']
         #=====================================================
@@ -689,7 +689,7 @@ class intersight_api(object):
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Multicast Settings from Library
+        # Grab Fibre-Channel Adapter Settings from Library
         #=====================================================
         jsonVars = ezData['policies']['allOf'][1]['properties']['fibre_channel_adapter']['template_tuning']
         #=====================================================
@@ -1687,37 +1687,277 @@ class intersight_api(object):
     # Create/Patch Port Policies
     #=====================================================
     def port(self, **kwargs):
-        print(f'skipping {self.type} for now')
-        return 'empty'
         args      = kwargs['args']
         ezData    = kwargs['ezData']
         home      = kwargs['home']
         org       = kwargs['org']
-        org_moids = kwargs['org_moids']
+        org_moid  = kwargs['org_moids'][org]['Moid']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        get_policy = api_handle.get_fabric_eth_network_control_policy_list
+        e1, ethc   = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        get_policy = api_handle.get_fabric_eth_network_group_policy_list
+        e2, ethg   = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        get_policy = api_handle.get_fabric_flow_control_policy_list
+        e3, fctrl  = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        get_policy = api_handle.get_fabric_link_aggregation_policy_list
+        e4, lagg   = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        get_policy = api_handle.get_fabric_link_control_policy_list
+        e5, lctrl  = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        pargs = {
+            'ethernet_network_control_policy':{'empty':e1,'moids':ethc},
+            'ethernet_network_group_policy':{'empty':e2,'moids':ethg},
+            'flow_control_policy':{'empty':e3,'moids':fctrl},
+            'link_aggregation_policy':{'empty':e4,'moids':lagg},
+            'link_control_policy':{'empty':e5,'moids':lctrl},
+        }
         for item in policies:
-            query_filter = f"Name eq '{item['name']}' and Organization.Moid eq '{org_moids[org]['Moid']}'"
-            query_args   = dict(filter=query_filter, _preload_content = False)
-            api_query    = json.loads(api_handle.get_fabric_port_policy_list(**query_args).data)
-            empty, port_policies, policy_names = intersight_api('api_results').api_results(api_query)
-            if empty == True:
-                api_body = {}
+            for name_count in range(0,len(item['names'])):
+                #=====================================================
+                # Grab Port Policy Settings from Library
+                #=====================================================
+                jsonVars = ezData['policies']['allOf'][1]['properties']['port']
+                pname = item['names'][name_count]
+                #=====================================================
+                # Confirm if the Policy Already Exists
+                #=====================================================
+                get_policy = api_handle.get_fabric_port_policy_list
+                empty, port_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+                #=====================================================
+                # Construct API Body Payload
+                #=====================================================
+                api_body = deepcopy({})
                 api_body.update({'organization':{
-                    'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
+                    'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
                 }})
+                api_body['name'] = item['names'][name_count]
+                for k, v in item.items():
+                    if k in jsonVars['key_map']: api_body.update({jsonVars['key_map'][k]:v})
+                #=====================================================
+                # Create or Patch the Policy via the Intersight API
+                #=====================================================
                 try:
                     api_args = dict(_preload_content = False)
-                    api_post = json.loads(api_handle.create_fabric_port_policy(api_body, **api_args).data)
-                    print(json.dumps(api_post, indent=4))
+                    if empty == True:
+                        api_method = 'create'
+                        api_call = json.loads(api_handle.create_fabric_port_policy(api_body, **api_args).data)
+                        port_moid = api_call['Moid']
+                    else:
+                        api_method = 'patch'
+                        pmoid      = port_policies[api_body['name']]['Moid']
+                        api_call = json.loads(api_handle.patch_fabric_port_policy(pmoid, api_body, **api_args).data)
+                        port_moid = pmoid
+                    print(json.dumps(api_call, indent=4))
                 except ApiException as e:
-                    print("Exception when calling FabricApi->create_fabric_port_policy: %s\n" % e)
+                    print("Exception when calling FabricApi->%_fabric_port_policy: %s\n" % (api_method, e))
                     sys.exit(1)
+                if item.get('port_modes'):
+                    for i in item['port_modes']:
+                        intersight_api('mode').port_mode(api_client, i, port_moid)
+                for z in jsonVars['port_type_list']:
+                    if item.get(z):
+                        intersight_api(z).ports(api_client, jsonVars, item, name_count, port_moid, **pargs)
+
+    #=====================================================
+    # Assign Port Port Types to Port Policies
+    #=====================================================
+    def port_mode(self, api_client, i, port_moid):
+        api_handle = fabric_api.FabricApi(api_client)
+        api_body = {'class_id':'fabric.PortMode','object_type':'fabric.PortMode'}
+        api_body.update({'custom_mode':i['custom_mode'],'port_id_start':i['port_list'][0],'port_id_end':i['port_list'][1]})
+        api_body.update({'port_policy':{'class_id':'mo.MoRef','moid':port_moid,'object_type':'fabric.PortPolicy'}})
+        if i.get('slot_id'): api_body.update({'slot_id':i['port_modes']['slot_id']})
+        else: api_body.update({'slot_id':1})
+        get_policy   = api_handle.get_fabric_port_mode_list
+        query_filter = f"PortIdStart eq '{api_body['port_id_start']}' and PortPolicy.Moid eq '{port_moid}'"
+        empty, ports = intersight_api('get').get_subtype(get_policy, query_filter)
+        #=====================================================
+        # Create or Patch the Policy via the Intersight API
+        #=====================================================
+        try:
+            api_args = dict(_preload_content = False)
+            if empty == True:
+                api_method = 'create'
+                api_call = json.loads(api_handle.create_fabric_port_mode(api_body, **api_args).data)
+            else:
+                api_method = 'patch'
+                pmoid      = ports[api_body['port_id_start']]['Moid']
+                api_call = json.loads(api_handle.patch_fabric_port_mode(pmoid, api_body, **api_args).data)
+            print(json.dumps(api_call, indent=4))
+        except ApiException as e:
+            print("Exception when calling FabricApi->%s_fabric_port_mode: %s\n" % (api_method, e))
+            sys.exit(1)
+
+    #=====================================================
+    # Assign Port Port Types to Port Policies
+    #=====================================================
+    def ports(self, api_client, jsonVars, item, name_count, port_moid, **pargs):
+        api_handle = fabric_api.FabricApi(api_client)
+
+        def api_tasks(api_handle, api_body, port_moid, port_type):
+            api_handle = fabric_api.FabricApi(api_client)
+            if port_type == 'port_channel_appliances':      get_policy = api_handle.get_fabric_appliance_pc_role_list
+            elif port_type == 'port_channel_ethernet_uplinks': get_policy = api_handle.get_fabric_uplink_pc_role_list
+            elif port_type == 'port_channel_fc_uplinks':    get_policy = api_handle.get_fabric_fc_uplink_pc_role_list
+            elif port_type == 'port_channel_fcoe_uplinks':  get_policy = api_handle.get_fabric_fcoe_uplink_pc_role_list
+            elif port_type == 'port_role_appliances':       get_policy = api_handle.get_fabric_appliance_role_list
+            elif port_type == 'port_role_ethernet_uplinks': get_policy = api_handle.get_fabric_uplink_role_list
+            elif port_type == 'port_role_fc_storage':   get_policy = api_handle.get_fabric_fc_storage_role_list
+            elif port_type == 'port_role_fc_uplinks':   get_policy = api_handle.get_fabric_fc_uplink_role_list
+            elif port_type == 'port_role_fcoe_uplinks': get_policy = api_handle.get_fabric_fcoe_uplink_role_list
+            elif port_type == 'port_role_servers':      get_policy = api_handle.get_fabric_server_role_list
+            if re.search('port_channel', port_type):
+                query_filter = f"PcId eq '{api_body['pc_id']}' and PortPolicy.Moid eq '{port_moid}'"
+            else: query_filter = f"PortId eq '{api_body['port_id']}' and PortPolicy.Moid eq '{port_moid}'"
+            empty, ports = intersight_api('get').get_subtype(get_policy, query_filter)
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
+            try:
+                api_args = dict(_preload_content = False)
+                if empty == True:
+                    api_method = 'create'
+                    if port_type == 'port_channel_appliances':
+                        api_call = json.loads(api_handle.create_fabric_appliance_pc_role(api_body, **api_args).data)
+                    elif port_type == 'port_channel_ethernet_uplinks':
+                        api_call = json.loads(api_handle.create_fabric_uplink_pc_role(api_body, **api_args).data)
+                    elif port_type == 'port_channel_fc_uplinks':
+                        api_call = json.loads(api_handle.create_fabric_fc_uplink_pc_role(api_body, **api_args).data)
+                    elif port_type == 'port_channel_fcoe_uplinks':
+                        api_call = json.loads(api_handle.create_fabric_fcoe_uplink_pc_role(api_body, **api_args).data)
+                    elif port_type == 'port_role_appliances':
+                        api_call = json.loads(api_handle.create_fabric_appliance_role(api_body, **api_args).data)
+                    elif port_type == 'port_role_ethernet_uplinks':
+                        api_call = json.loads(api_handle.create_fabric_uplink_role(api_body, **api_args).data)
+                    elif port_type == 'port_role_fc_storage':
+                        api_call = json.loads(api_handle.create_fabric_fc_storage_role(api_body, **api_args).data)
+                    elif port_type == 'port_role_fc_uplinks':
+                        api_call = json.loads(api_handle.create_fabric_fc_uplink_role(api_body, **api_args).data)
+                    elif port_type == 'port_role_fcoe_uplinks':
+                        api_call = json.loads(api_handle.create_fabric_fcoe_uplink_role(api_body, **api_args).data)
+                    elif port_type == 'port_role_servers':
+                        api_call = json.loads(api_handle.create_fabric_server_role(api_body, **api_args).data)
+                else:
+                    api_method = 'patch'
+                    if re.search('port_channel', port_type): pmoid = ports[api_body['pc_id'][api_body['pc_id']]]['Moid']
+                    else: pmoid = ports[api_body['port_id'][api_body['port_id']]]['Moid']
+                    if port_type == 'port_channel_appliances':
+                        api_call = json.loads(api_handle.patch_fabric_appliance_pc_role(pmoid, api_body, **api_args).data)
+                    elif port_type == 'port_channel_ethernet_uplinks':
+                        api_call = json.loads(api_handle.patch_fabric_uplink_pc_role(pmoid, api_body, **api_args).data)
+                    elif port_type == 'port_channel_fc_uplinks':
+                        api_call = json.loads(api_handle.patch_fabric_fc_uplink_pc_role(pmoid, api_body, **api_args).data)
+                    elif port_type == 'port_channel_fcoe_uplinks':
+                        api_call = json.loads(api_handle.patch_fabric_fcoe_uplink_pc_role(pmoid, api_body, **api_args).data)
+                    elif port_type == 'port_role_appliances':
+                        api_call = json.loads(api_handle.patch_fabric_appliance_role(pmoid, api_body, **api_args).data)
+                    elif port_type == 'port_role_ethernet_uplinks':
+                        api_call = json.loads(api_handle.patch_fabric_uplink_role(pmoid, api_body, **api_args).data)
+                    elif port_type == 'port_role_fc_storage':
+                        api_call = json.loads(api_handle.patch_fabric_fc_storage_role(pmoid, api_body, **api_args).data)
+                    elif port_type == 'port_role_fc_uplinks':
+                        api_call = json.loads(api_handle.patch_fabric_fc_uplink_role(pmoid, api_body, **api_args).data)
+                    elif port_type == 'port_role_fcoe_uplinks':
+                        api_call = json.loads(api_handle.patch_fabric_fcoe_uplink_role(pmoid, api_body, **api_args).data)
+                    elif port_type == 'port_role_servers':
+                        api_call = json.loads(api_handle.patch_fabric_server_role(pmoid, api_body, **api_args).data)
+                print(json.dumps(api_call, indent=4))
+            except ApiException as e:
+                if port_type == 'port_channel_appliances':
+                    print("Exception when calling FabricApi->%s_fabric_appliance_pc_role: %s\n" % (api_method, e))
+                elif port_type == 'port_channel_ethernet_uplinks':
+                    print("Exception when calling FabricApi->%s_fabric_uplink_pc_role: %s\n" % (api_method, e))
+                elif port_type == 'port_channel_fc_uplinks':
+                    print("Exception when calling FabricApi->%s_fabric_fc_uplink_pc_role: %s\n" % (api_method, e))
+                elif port_type == 'port_channel_fcoe_uplinks':
+                    print("Exception when calling FabricApi->%s_fabric_fcoe_uplink_pc_role: %s\n" % (api_method, e))
+                elif port_type == 'port_role_appliances':
+                    print("Exception when calling FabricApi->%s_fabric_appliance_role: %s\n" % (api_method, e))
+                elif port_type == 'port_role_ethernet_uplinks':
+                    print("Exception when calling FabricApi->%s_fabric_uplink_role: %s\n" % (api_method, e))
+                elif port_type == 'port_role_fc_storage':
+                    print("Exception when calling FabricApi->%s_fabric_fc_storage_role: %s\n" % (api_method, e))
+                elif port_type == 'port_role_fc_uplinks':
+                    print("Exception when calling FabricApi->%s_fabric_fc_uplink_role: %s\n" % (api_method, e))
+                elif port_type == 'port_role_fcoe_uplinks':
+                    print("Exception when calling FabricApi->%s_fabric_fcoe_uplink_role: %s\n" % (api_method, e))
+                elif port_type == 'port_role_servers':
+                    print("Exception when calling FabricApi->%s_fabric_server_role: %s\n" % (api_method, e))
+                sys.exit(1)
+        
+        #=====================================================
+        # Create API Body for Port Policies
+        #=====================================================
+        for i in item[self.type]:
+            api_body = deepcopy(jsonVars['classes'][self.type])
+            api_body.update({'port_policy':{'class_id':'mo.MoRef','moid':port_moid,'object_type':'fabric.PortPolicy'}})
+            if i.get('ethernet_network_control_policy'):
+                pol_type = 'ethernet_network_control_policy'
+                api_body.update({'eth_network_control_policy':{
+                    'class_id':'mo.MoRef','moid':pargs[pol_type]['moids'][i[pol_type]]['Moid'],
+                    'object_type':'fabric.EthNetworkControlPolicy'
+                }})
+            if i.get('ethernet_network_group_policy'):
+                pol_type = 'ethernet_network_group_policy'
+                api_body.update({'eth_network_group_policy':[{
+                    'class_id':'mo.MoRef','moid':pargs[pol_type]['moids'][i[pol_type]]['Moid'],
+                    'object_type':'fabric.EthNetworkGroupPolicy'
+                }]})
+            if i.get('flow_control_policy'):
+                pol_type = 'flow_control_policy'
+                api_body.update({pol_type:{
+                    'class_id':'mo.MoRef','moid':pargs[pol_type]['moids'][i[pol_type]]['Moid'],
+                    'object_type':'fabric.FlowControlPolicy'
+                }})
+            if i.get('link_aggregation_policy'):
+                pol_type = 'link_aggregation_policy'
+                api_body.update({pol_type:{
+                    'class_id':'mo.MoRef','moid':pargs[pol_type]['moids'][i[pol_type]]['Moid'],
+                    'object_type':'fabric.LinkAggregationPolicy'
+                }})
+            if i.get('link_control_policy'):
+                pol_type = 'link_control_policy'
+                api_body.update({pol_type:{
+                    'class_id':'mo.MoRef','moid':pargs[pol_type]['moids'][i[pol_type]]['Moid'],
+                    'object_type':'fabric.LinkControlPolicy'
+                }})
+            if i.get('admin_speed'): api_body.update({'admin_speed':i['admin_speed']})
+            if i.get('fec'): api_body.update({'fec':i['fec']})
+            if i.get('mode'): api_body.update({'mode':i['mode']})
+            if i.get('priority'): api_body.update({'priority':i['priority']})
+            if re.search('port_channel', self.type):
+                if len(i['pc_ids']) > 1: api_body.update({'pc_id':i['pc_ids'][name_count]})
+                else: api_body.update({'pc_id':item['pc_id'][0]})
+                if i.get('vsan_ids'):
+                    if len(i['vsan_ids']) > 1: api_body.update({'vsan_id':i['vsan_ids'][name_count]})
+                    else: api_body.update({'vsan_id':i['vsan_ids'][0]})
+                api_body['ports'] = []
+                for intf in i['interfaces']:
+                    intf_body = {'class_id':'fabric.PortIdentifier','object_type':'fabric.PortIdentifier'}
+                    intf_body.update({'port_id':intf['port_id']})
+                    if intf.get('breakout_port_id'): intf_body.update({'aggregate_port_id':intf['breakout_port_id']})
+                    else: intf_body.update({'aggregate_port_id':0})
+                    if intf.get('slot_id'): intf_body.update({'slot_id':intf['slot_id']})
+                    else: intf_body.update({'slot_id':1})
+                    api_body['ports'].append(intf_body)
+                api_tasks(api_handle, api_body, port_moid, self.type)
+            elif re.search('role', self.type):
+                interfaces = ezfunctions.vlan_list_full(i['port_list'])
+                for intf in interfaces:
+                    intf_body = deepcopy(api_body)
+                    if i.get('breakout_port_id'): intf_body.update({'aggregate_port_id':intf['breakout_port_id']})
+                    else: intf_body.update({'aggregate_port_id':0})
+                    intf_body.update({'port_id':int(intf)})
+                    if i.get('device_number'): intf_body.update({'preferred_device_id':i['device_number']})
+                    if i.get('connected_device_type'): intf_body.update({'preferred_device_type':i['connected_device_type']})
+                    if i.get('slot_id'): intf_body.update({'slot_id':intf['slot_id']})
+                    else: intf_body.update({'slot_id':1})
+                    api_tasks(api_handle, intf_body, port_moid, self.type)
+
 
     #=====================================================
     # Create/Patch Power Policies
@@ -2010,37 +2250,139 @@ class intersight_api(object):
     # Create/Patch Storage Policies
     #=====================================================
     def storage(self, **kwargs):
-        print(f'skipping {self.type} for now')
-        return 'empty'
         args      = kwargs['args']
         ezData    = kwargs['ezData']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = storage_api.StorageApi(api_client)
         for item in policies:
-            query_filter = f"Name eq '{item['name']}' and Organization.Moid eq '{org_moids[org]['Moid']}'"
-            query_args   = dict(filter=query_filter, _preload_content = False)
-            api_query    = json.loads(api_handle.get_storage_storage_policy_list(**query_args).data)
-            empty, storage_policies, policy_names = intersight_api('api_results').api_results(api_query)
-            if empty == True:
-                api_body = {}
-                api_body.update({'organization':{
-                    'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
+            #=====================================================
+            # Grab Storage Policy Settings from Library
+            #=====================================================
+            jsonVars = ezData['policies']['allOf'][1]['properties']['storage']['key_map']
+            pname = item['name']
+            org_moid = org_moids[org]['Moid']
+            #=====================================================
+            # Confirm if the Policy Already Exists
+            #=====================================================
+            get_policy = api_handle.get_storage_storage_policy_list
+            empty, storage_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            #=====================================================
+            # Construct API Body Payload
+            #=====================================================
+            api_body = deepcopy({})
+            api_body.update({'organization':{
+                'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
+            }})
+            for k, v in item.items():
+                if k in jsonVars: api_body.update({jsonVars[k]:v})
+            if item.get('m2_raid_configuration'):
+                api_body.update({'m2_virtual_drive':{
+                    'class_id':'storage.M2VirtualDriveConfig','object_type':'storage.M2VirtualDriveConfig',
+                    'controller_slot':item['m2_raid_configuration'][0]['slot'],
+                    'enable':True
                 }})
-                try:
-                    api_args = dict(_preload_content = False)
-                    api_post = json.loads(api_handle.create_storage_storage_policy(api_body, **api_args).data)
-                    print(json.dumps(api_post, indent=4))
-                except ApiException as e:
-                    print("Exception when calling StorageApi->create_storage_storage_policy: %s\n" % e)
-                    sys.exit(1)
+            jsonVars = ezData['policies']['allOf'][1]['properties']['storage']['raid0_map']
+            if item.get('single_drive_raid_configuration'):
+                api_body.update({'raid0_drive':{}})
+                for k,v in item['single_drive_raid_configuration'].items():
+                    if k in jsonVars: api_body['raid0_drive'].update({jsonVars[k]:v})
+                jsonVars = ezData['policies']['allOf'][1]['properties']['storage']['drivep_map']
+                if item['single_drive_raid_configuration'].get('virtual_drive_policy'):
+                    api_body['raid0_drive']['virtual_drive_policy'] = item['single_drive_raid_configuration'
+                                                                           ]['virtual_drive_policy']
+                    api_body['raid0_drive']['virtual_drive_policy'].update({
+                        'class_id':'storage.VirtualDrivePolicy','object_type':'storage.VirtualDrivePolicy'
+                    })
+                api_body['raid0_drive'].update({'class_id':'storage.R0Drive','object_type':'storage.R0Drive'})
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
+            try:
+                api_args = dict(_preload_content = False)
+                if empty == True:
+                    api_method = 'create'
+                    api_call = json.loads(api_handle.create_storage_storage_policy(api_body, **api_args).data)
+                    storage_moid = api_call['Moid']
+                else:
+                    api_method = 'patch'
+                    pmoid      = storage_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_storage_storage_policy(pmoid, api_body, **api_args).data)
+                    storage_moid = pmoid
+                print(json.dumps(api_call, indent=4))
+            except ApiException as e:
+                print("Exception when calling StorageApi->%s_storage_storage_policy: %s\n" % (api_method, e))
+                sys.exit(1)
+            if item.get('drive_groups'):
+                intersight_api('dg').storage_dg(api_client, item, storage_moid)
+
+    #=====================================================
+    # Assign Drive Groups to Storage Policies
+    #=====================================================
+    def storage_dg(self, api_client, item, storage_moid):
+        api_handle = storage_api.StorageApi(api_client)
+        for i in item['drive_groups']:
+            #=====================================================
+            # Confirm if the VSAN is already Attached
+            #=====================================================
+            get_policy   = api_handle.get_storage_disk_group_list
+            query_filter = f"Name eq '{i['name']}' and StoragePolicy.Moid eq '{storage_moid}'"
+            empty, drive_groups = intersight_api('get').get_subtype(get_policy, query_filter)
+            #=====================================================
+            # Create API Body for VLANs
+            #=====================================================
+            api_body = deepcopy({
+                'class_id':'storage.DriveGroup','object_type':'storage.DriveGroup',
+                'name':i['name'],'raid_level':i['raid_level']
+                })
+            api_body.update({'storage_policy':{
+                'class_id':'mo.MoRef','moid':storage_moid,'object_type':'storage.StoragePolicy'}
+                })
+            if i.get('manual_drive_group'):
+                api_body['manual_drive_group'] = {
+                    'class_id':'storage.ManualDriveGroup','object_type':'storage.ManualDriveGroup'
+                }
+                if i['manual_drive_group'][0].get('dedicated_hot_spares'):
+                    api_body['manual_drive_group']['dedicated_hot_spares'] = i['manual_drive_group']['dedicated_hot_spares']
+                api_body['manual_drive_group']['span_groups'] = []
+                for x in i['manual_drive_group'][0]['drive_array_spans']:
+                    api_body['manual_drive_group']['span_groups'].append({
+                        'class_id':'storage.SpanDrives','object_type':'storage.SpanDrives','slots':x['slots']
+                    })
+            if i.get('virtual_drives'):
+                api_body['virtual_drives'] = []
+                for x in i['virtual_drives']:
+                    vd_body = deepcopy(x)
+                    vd_body.update({
+                        'class_id':'storage.VirtualDriveConfiguration','object_type':'storage.VirtualDriveConfiguration'
+                    })
+                    if vd_body.get('virtual_drive_policy'):
+                        vd_body['virtual_drive_policy'].update({
+                            'class_id':'storage.VirtualDrivePolicy','object_type':'storage.VirtualDrivePolicy'
+                        })
+                    api_body['virtual_drives'].append(vd_body)
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
+            try:
+                api_args = dict(_preload_content = False)
+                if empty == True:
+                    vapi_method = 'create'
+                    vapi_call = json.loads(api_handle.create_storage_drive_group(api_body, **api_args).data)
+                else:
+                    vapi_method = 'patch'
+                    pmoid      = drive_groups[item['name']]['Moid']
+                    vapi_call = json.loads(api_handle.create_storage_drive_group(pmoid, api_body, **api_args).data)
+                print(json.dumps(vapi_call, indent=4))
+            except ApiException as e:
+                print("Exception when calling StorageApi->%s_storage_drive_group: %s\n" % (vapi_method, e))
+                sys.exit(1)
 
     #=====================================================
     # Create/Patch Switch Control Policies
@@ -2472,7 +2814,7 @@ class intersight_api(object):
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Multicast Settings from Library
+        # Grab Virtual KVM Settings from Library
         #=====================================================
         jsonVars = ezData['policies']['allOf'][1]['properties']['virtual_kvm']['key_map']
         #=====================================================
@@ -2517,37 +2859,60 @@ class intersight_api(object):
     # Create/Patch Virtual Media Policies
     #=====================================================
     def virtual_media(self, **kwargs):
-        print(f'skipping {self.type} for now')
-        return 'empty'
         args      = kwargs['args']
         ezData    = kwargs['ezData']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-
+        #=====================================================
+        # Grab Virtual Media Settings from Library
+        #=====================================================
+        jsonVars = ezData['policies']['allOf'][1]['properties']['virtual_media']['key_map']
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = vmedia_api.VmediaApi(api_client)
         for item in policies:
-            query_filter = f"Name eq '{item['name']}' and Organization.Moid eq '{org_moids[org]['Moid']}'"
-            query_args   = dict(filter=query_filter, _preload_content = False)
-            api_query    = json.loads(api_handle.get_vmedia_policy_list(**query_args).data)
-            empty, vmedia_policies, policy_names = intersight_api('api_results').api_results(api_query)
-            if empty == True:
-                api_body = {}
-                api_body.update({'organization':{
-                    'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
-                }})
-                try:
-                    api_args = dict(_preload_content = False)
-                    api_post = json.loads(api_handle.create_vmedia_policy(api_body, **api_args).data)
-                    print(json.dumps(api_post, indent=4))
-                except ApiException as e:
-                    print("Exception when calling VmediaApi->create_boot_precision_policy: %s\n" % e)
-                    sys.exit(1)
+            pname = item['name']
+            org_moid = org_moids[org]['Moid']
+            #=====================================================
+            # Confirm if the Policy Already Exists
+            #=====================================================
+            get_policy = api_handle.get_vmedia_policy_list
+            empty, vmedia_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            #=====================================================
+            # Construct API Body Payload
+            #=====================================================
+            api_body = deepcopy({})
+            api_body.update({'organization':{
+                'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
+            }})
+            for k, v in item.items():
+                if k in jsonVars: api_body.update({jsonVars[k]:v})
+            jsonVars = ezData['policies']['allOf'][1]['properties']['virtual_media']['add_key_map']
+            if item.get('add_virtual_media'):
+                api_body.update({'mappings':[]})
+                for i in item['add_virtual_media']:
+                    vmedia_add = {}
+                    for k, v in i.items():
+                        if k in jsonVars: vmedia_add.update({jsonVars[k]:v})
+                    vmedia_add.update({'class_id':'vmeida.Mapping','object_type':'vmeida.Mapping'})
+                    api_body['mappings'].append(vmedia_add)
+            try:
+                api_args = dict(_preload_content = False)
+                if empty == True:
+                    api_method = 'create'
+                    api_call = json.loads(api_handle.create_vmedia_policy(api_body, **api_args).data)
+                else:
+                    api_method = 'patch'
+                    pmoid      = vmedia_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_vmedia_policy(pmoid, api_body, **api_args).data)
+                print(json.dumps(api_call, indent=4))
+            except ApiException as e:
+                print("Exception when calling VmediaApi->%s_vmedia_policy: %s\n" % (api_method, e))
+                sys.exit(1)
 
     #=====================================================
     # Create/Patch VLAN Policies
@@ -2863,7 +3228,6 @@ class intersight_api(object):
                     vapi_method = 'patch'
                     pmoid      = vsans[item['name']]['Moid']
                     vapi_call = json.loads(api_handle.patch_fabric_vsan(pmoid, api_body, **api_args).data)
-                    vpolicy_moid = pmoid
                 print(json.dumps(vapi_call, indent=4))
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_vsan: %s\n" % (vapi_method, e))

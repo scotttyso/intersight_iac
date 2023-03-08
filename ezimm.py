@@ -819,18 +819,18 @@ def main():
         #==============================================
         cpool = 'classes.isdk.intersight_api'
         for org in orgs:
-            #type = 'pools'
+            #ptype = 'pools'
             #if kwargs['immDict']['orgs'][org].get('pools'):
             #    for pool_type in kwargs['immDict']['orgs'][org]['pools']:
-            #        eval(f"{cpool}(type).{pool_type}(**kwargs)")
+            #        eval(f"{cpool}(ptype).{pool_type}(**kwargs)")
             if kwargs['immDict']['orgs'][org].get('policies'):
-                for policy_type in kwargs['immDict']['orgs'][org]['policies']:
-                    type = policy_type
-                    kwargs[f'{policy_type}'] = eval(f"{cpool}(type).{policy_type}(**kwargs)")
-            #type = 'domain_profiles'
+                for ptype in kwargs['immDict']['orgs'][org]['policies']:
+                    if re.search('(port)', ptype):
+                        kwargs[f'{ptype}'] = eval(f"{cpool}(ptype).{ptype}(**kwargs)")
+            #ptype = 'domain_profiles'
             #if kwargs['immDict']['orgs'][org].get('profiles'):
             #    if kwargs['immDict']['orgs'][org]['profiles'].get('domain'):
-            #        kwargs = eval(f"{cpool}(type).domain_profiles(**kwargs)")
+            #        kwargs = eval(f"{cpool}(ptype).domain_profiles(**kwargs)")
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
     print(f'\n-------------------------------------------------------------------------------------------\n')

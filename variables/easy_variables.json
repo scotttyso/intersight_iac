@@ -1308,6 +1308,73 @@
                                     "update_domain":"dynamic_dns_domain"
                                 }
                             },
+                            "port": {
+                                "classes": {
+                                    "port_channel_appliances": {
+                                        "class_id": "fabric.AppliancePcRole",
+                                        "object_type": "fabric.AppliancePcRole"
+                                    },
+                                    "port_channel_ethernet_uplinks": {
+                                        "class_id": "fabric.UplinkPcRole",
+                                        "object_type": "fabric.UplinkPcRole"
+                                    },
+                                    "port_channel_fc_uplinks": {
+                                        "class_id": "fabric.FcUplinkPcRole",
+                                        "object_type": "fabric.FcUplinkPcRole"
+                                    },
+                                    "port_channel_fcoe_uplinks": {
+                                        "class_id": "fabric.FcoeUplinkPcRole",
+                                        "object_type": "fabric.FcoeUplinkPcRole"
+                                    },
+                                    "port_role_appliances": {
+                                        "class_id": "fabric.ApplianceRole",
+                                        "object_type": "fabric.ApplianceRole"
+                                    },
+                                    "port_role_ethernet_uplinks": {
+                                        "class_id": "fabric.UplinkRole",
+                                        "object_type": "fabric.UplinkRole"
+                                    },
+                                    "port_role_fc_storage": {
+                                        "class_id": "fabric.FcStorageRole",
+                                        "object_type": "fabric.FcStorageRole"
+                                    },
+                                    "port_role_fc_uplinks": {
+                                        "class_id": "fabric.FcUplinkRole",
+                                        "object_type": "fabric.FcUplinkRole"
+                                    },
+                                    "port_role_fcoe_uplinks": {
+                                        "class_id": "fabric.FcoeUplinkRole",
+                                        "object_type": "fabric.FcoeUplinkRole"
+                                    },
+                                    "port_role_servers": {
+                                        "class_id": "fabric.ServerRole",
+                                        "object_type": "fabric.ServerRole"
+                                    }
+                                },
+                                "port_type_list": [
+                                    "port_channel_appliances",
+                                    "port_channel_ethernet_uplinks",
+                                    "port_channel_fc_uplinks",
+                                    "port_channel_fcoe_uplinks",
+                                    "port_role_appliances",
+                                    "port_role_ethernet_uplinks",
+                                    "port_role_fc_storage",
+                                    "port_role_fc_uplinks",
+                                    "port_role_fcoe_uplinks",
+                                    "port_role_servers"
+                                ],
+                                "port_map": {
+                                    "admin_speed":"drive_type",
+                                    "mode":"minimum_drive_size",
+                                    "priority":"num_dedicated_hot_spares"
+                                },
+                                "key_map": {
+                                    "description":"description",
+                                    "device_model":"device_model",
+                                    "name":"name",
+                                    "tags":"tags"
+                                }
+                            },
                             "power": {
                                 "key_map": {
                                     "dynamic_power_rebalancing":"dynamic_rebalancing",
@@ -1398,6 +1465,35 @@
                                     "Virtual Media"
                                 ]
                             },
+                            "storage": {
+                                "auto_map": {
+                                    "drive_type":"drive_type",
+                                    "minimum_drive_size":"minimum_drive_size",
+                                    "num_dedicated_hot_spares":"num_dedicated_hot_spares",
+                                    "number_of_spans":"number_of_spans",
+                                    "use_remaining_drives":"use_remaining_drives"
+                                },
+                                "drivep_map": {
+                                    "access_policy":"access_policy",
+                                    "drive_cache":"drive_cache",
+                                    "read_policy":"read_policy",
+                                    "strip_size":"strip_size",
+                                    "write_policy":"write_policy"
+                                },
+                                "key_map": {
+                                    "default_drive_state":"default_drive_mode",
+                                    "description":"description",
+                                    "global_hot_spares":"global_hot_spares",
+                                    "name":"name",
+                                    "tags":"tags",
+                                    "unused_disks_state":"unused_disks_state",
+                                    "use_jbod_for_vd_creation":"use_jbod_for_vd_creation"
+                                },
+                                "raid0_map": {
+                                    "drive_slots":"drive_slots",
+                                    "enable":"enable"
+                                }
+                            },
                             "switch_control": {
                                 "key_map": {
                                     "mac_address_table_aging":"mac_aging_option",
@@ -1434,6 +1530,25 @@
                                 "key_map": {
                                     "allow_tunneled_vkvm":"tunneled_kvm_enabled",
                                     "enable_virtual_kvm":"enabled"
+                                }
+                            },
+                            "virtual_media": {
+                                "add_key_map": {
+                                    "authentication_protocol":"authentication_protocol",
+                                    "device_type":"device_type",
+                                    "file_location":"file_location",
+                                    "mount_options":"mount_options",
+                                    "password":"password",
+                                    "protocol":"mount_protocol",
+                                    "username":"username"
+                                },
+                                "key_map": {
+                                    "description":"description",
+                                    "enable_low_power_usb":"low_power_usb",
+                                    "enable_virtual_media":"enabled",
+                                    "enable_virtual_media_encryption":"encryption",
+                                    "name":"name",
+                                    "tags":"tags"
                                 }
                             },
                             "vnics": {
