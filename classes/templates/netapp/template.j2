@@ -1,0 +1,79 @@
+{
+{%- for key, value in keys.items() %}
+  {%- if value == None %}
+  {%- elif value | int(-1) != -1 %}
+    {%- if not loop.last %}
+    "{{key}}": {{value}},
+    {%- else %}
+    "{{key}}": {{value}}
+    {%- endif %}
+  {%- elif v == False or v == True %}
+    {%- if not loop.last %}
+    "{{key}}": {{value}},
+    {%- else %}
+    "{{key}}": {{value}}
+    {%- endif %}
+  {%- elif value is iterable and (value is not string and v is not mapping) %}
+    "{{key}}": [
+   {%- for item in value %}
+    {%- if item is mapping %}
+        {
+      {%- for k, v in item.items() %}
+        {%- if v == None %}
+        {%- elif v | int(-1) != -1 %}
+          {%- if not loop.last %}
+            "{{k}}": {{v}},
+          {%- else %}
+            "{{k}}": {{v}}
+          {%- endif %}
+        {%- elif v == False or v == True %}
+          {%- if not loop.last %}
+            "{{k}}": {{v}},
+          {%- else %}
+            "{{k}}": {{v}}
+          {%- endif %}
+        {%- else %}
+          {%- if not loop.last %}
+            "{{k}}": "{{v}}",
+          {%- else %}
+            "{{k}}": "{{v}}"
+          {%- endif %}
+        {%- endif %}
+      {%- endfor %}
+      {%- if not loop.last %}
+        },
+      {%- else %}
+        }
+      {%- endif %}
+    {%- elif item | int(-1) != -1 %}
+      {%- if not loop.last  %}
+        {{ item }},
+      {%- else  %}
+        {{ item }},
+      {%- endif  %}
+    {%- elif item == False or item == True %}
+      {%- if not loop.last  %}
+        {{ item }},
+      {%- else  %}
+        {{ item }}
+      {%- endif  %}
+    {%- else %}
+      {%- if not loop.last  %}
+        "{{ item }}",
+      {%- else  %}
+        "{{ item }}"
+      {%- endif  %}
+    {%- endif %}
+    {%- endfor %}
+    {%- if not loop.last %}
+    ],
+    {%- else %}
+    ]
+    {%- endif %}
+  {%- elif not loop.last  %}
+  "{{key}}": "{{value}}",
+  {%- else %}
+  "{{key}}": "{{value}}"
+  {%- endif %}
+{%- endfor %}
+}

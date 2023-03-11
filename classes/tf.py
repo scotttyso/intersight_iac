@@ -7,6 +7,7 @@ import os
 import pkg_resources
 import requests
 import stdiomask
+import sys
 import time
 import validating
 
@@ -266,7 +267,7 @@ class terraform_cloud(object):
             print(f'\n   Unable to Determine the Workspace ID for "{workspace}".')
             print(f'\n   Exiting...')
             print(f'\n-----------------------------------------------------------------------------\n')
-            exit()
+            sys.exit(1)
         return workspace_id
 
     #==============================================
@@ -378,7 +379,7 @@ class terraform_cloud(object):
             print(f"\n   Unable to Determine the Variable ID for {polVars['Variable']}.")
             print(f"\n   Exiting...")
             print(f'\n-----------------------------------------------------------------------------\n')
-            exit()
+            sys.exit(1)
         return var_id
 
 # Function to get contents from URL
@@ -400,7 +401,7 @@ def get(url, site_header, section=''):
             time.sleep(5)
         except Exception as e:
             print("Method %s Failed. Exception: %s" % (section[:-5], e))
-            exit()
+            sys.exit(1)
 
 # Function to PATCH Contents to URL
 def patch(url, payload, site_header, section=''):
@@ -420,7 +421,7 @@ def patch(url, payload, site_header, section=''):
             time.sleep(5)
         except Exception as e:
             print("Method %s Failed. Exception: %s" % (section[:-5], e))
-            exit()
+            sys.exit(1)
 
 # Function to POST Contents to URL
 def post(url, payload, site_header, section=''):
@@ -440,4 +441,4 @@ def post(url, payload, site_header, section=''):
             time.sleep(5)
         except Exception as e:
             print("Method %s Failed. Exception: %s" % (section[:-5], e))
-            exit()
+            sys.exit(1)

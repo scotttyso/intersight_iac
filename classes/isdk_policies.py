@@ -1,13 +1,9 @@
 from copy import deepcopy
+from isdk_pools import isdk_pools
 from intersight.api import access_api
 from intersight.api import adapter_api
-#from intersight.api import asset_api
 from intersight.api import bios_api
 from intersight.api import boot_api
-from intersight.api import certificatemanagement_api
-from intersight.api import compute_api
-#from intersight.api import cond_api
-from intersight.api import deviceconnector_api
 from intersight.api import fabric_api
 from intersight.api import fcpool_api
 from intersight.api import iam_api
@@ -15,13 +11,9 @@ from intersight.api import ipmioverlan_api
 from intersight.api import ippool_api
 from intersight.api import kvm_api
 from intersight.api import macpool_api
-from intersight.api import memory_api
 from intersight.api import networkconfig_api
 from intersight.api import ntp_api
-from intersight.api import organization_api
 from intersight.api import power_api
-from intersight.api import resourcepool_api
-from intersight.api import server_api
 from intersight.api import smtp_api
 from intersight.api import snmp_api
 from intersight.api import sol_api
@@ -29,7 +21,6 @@ from intersight.api import ssh_api
 from intersight.api import storage_api
 from intersight.api import syslog_api
 from intersight.api import thermal_api
-from intersight.api import uuidpool_api
 from intersight.api import vmedia_api
 from intersight.api import vnic_api
 from intersight.exceptions import ApiException
@@ -43,27 +34,16 @@ import urllib3
 import validating
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# Global options for debugging
+print_payload = False
+print_response_always = False
+print_response_on_fail = True
+
 serial_regex = re.compile('^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\\dA-Z]{4}$')
 
-class intersight_api(object):
+class isdk_policies(object):
     def __init__(self, type):
         self.type = type
-
-    def api_results(self, apiQuery):
-        api_dict = {}
-        api_list = []
-        empty = False
-        if apiQuery.get('Results'):
-            for i in apiQuery['Results']:
-                iMoid = i['Moid']
-                iName = i['Name']
-                idict = {iName:{'Moid':iMoid}}
-                api_dict.update(idict)
-                api_list.append(iName)
-            return empty, api_dict, api_list
-        else:
-            empty = True
-            return empty, api_dict, api_list
 
     #=====================================================
     # Create/Patch BIOS Policies
@@ -73,16 +53,11 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies']['adapter_configuration']
-
-        #=====================================================
-        # Grab BIOS Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['adapter_configuration']['template_tuning']
 
         #=====================================================
         # Login to Intersight API
@@ -96,7 +71,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_adapter_config_policy_list
-            empty, adapter_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, adapter_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
 
     #=====================================================
     # Create/Patch BIOS Policies
@@ -106,22 +81,22 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies']['bios']
-
         #=====================================================
-        # Grab BIOS Settings from Library
+        # Grab ezData Settings from Library
         #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['bios']['template_tuning']
-
+        #jsonVars = ezData['policies']['allOf'][1]['properties']
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = bios_api.BiosApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -129,7 +104,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_bios_policy_list
-            empty, bios_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, bios_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -141,47 +116,57 @@ class intersight_api(object):
                     if type(v) == int or type(v) == float: api_body[k] = str(v)
                 if '_tpm' in template:
                     btemplate = template.replace('_tpm', '')
-                    api_body = dict(api_body, **jsonVars[btemplate])
-                    api_body = dict(api_body, **jsonVars['tpm'])
+                    api_body = dict(api_body, **jsonVars['bios']['template_tuning'][btemplate])
+                    api_body = dict(api_body, **jsonVars['bios']['template_tuning']['tpm'])
                 else:
-                    api_body = dict(api_body, **jsonVars[template])
-                    api_body = dict(api_body, **jsonVars['tpm_disabled'])
+                    api_body = dict(api_body, **jsonVars['bios']['template_tuning'][template])
+                    api_body = dict(api_body, **jsonVars['bios']['template_tuning']['tpm_disabled'])
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
             try:
                 api_args = dict(_preload_content = False)
                 if empty == True:
                     api_method = 'create'
-                    api_call   = json.loads(api_handle.create_bios_policy(api_body, **api_args).data)
+                    api_call = json.loads(api_handle.create_bios_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = bios_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_bios_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = bios_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_bios_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when Creating BiosApi->%s_bios_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Boot Order Policies
     #=====================================================
     def boot_order(self, **kwargs):
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Boot Order Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['boot_order']['key_map']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = boot_api.BootApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -189,7 +174,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_boot_precision_policy_list
-            empty, boot_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, boot_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -197,11 +182,11 @@ class intersight_api(object):
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
             }})
-            jsonVars = ezData['policies']['allOf'][1]['properties']['boot_order']['key_map']
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body.update({jsonVars[k]:v})
-                    if not k == jsonVars[k]: api_body.pop(k)
+                jVars1 = jsonVars['boot_order']['key_map']
+                if k in jVars1:
+                    api_body.update({jVars1[k]:v})
+                    if not k == jVars1[k]: api_body.pop(k)
             if item.get('boot_devices'):
                 api_body['boot_devices'] = []
                 for i in item['boot_devices']:
@@ -211,15 +196,19 @@ class intersight_api(object):
                     ) and api_body['configured_boot_mode'] == 'Uefi':
                         boot_dev['Bootloader'] = {'class_id':'boot.Bootloader','object_type':'boot.Bootloader'}
                         if 'bootloader' in i:
-                            jsonVars = ezData['policies']['allOf'][1]['properties']['boot_order']['key_map_loader']
+                            jVars1 = jsonVars['boot_order']['key_map_loader']
                             for k, v in i.items():
-                                if k in jsonVars: boot_dev['Bootloader'].update({jsonVars[k]:v})
+                                if k in jVars1: boot_dev['Bootloader'].update({jVars1[k]:v})
                         else: boot_dev['Bootloader'].update({'Name':'BOOTx64.EFI','Path':"\\EFI\\BOOT\\"})
-                    jsonVars = ezData['policies']['allOf'][1]['properties']['boot_order']['key_map_boot']
+                    jVars1 = jsonVars['boot_order']['key_map_boot']
                     for k, v in i.items():
-                        if k in jsonVars:
-                            boot_dev.update({jsonVars[k]:v})
+                        if k in jVars1:
+                            boot_dev.update({jVars1[k]:v})
                     api_body['boot_devices'].append(boot_dev)
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -228,107 +217,20 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_boot_precision_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = boot_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_boot_precision_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = boot_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_boot_precision_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling BootApi->%s_boot_precision_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
-    #=====================================================
-    # Create/Patch Chassis Profiles
-    #=====================================================
-    def chassis(self, **kwargs):
-        print(f'skipping {self.type} for now')
-
-    #=====================================================
-    # Return Error When apiQuery Returns Empty Results
-    #=====================================================
-    def empty_results(self, apiQuery):
-            print(f"The API Query Results were empty for {apiQuery['ObjectType']}.  Exiting...")
-            exit()
-
-    #=====================================================
-    # Create/Patch Domain Profiles
-    #=====================================================
-    def domain_profiles(self, **kwargs):
-        args      = kwargs['args']
-        home      = kwargs['home']
-        org       = kwargs['org']
-        org_moids = kwargs['org_moids']
-        profiles  = kwargs['immDict']['orgs'][org]['profiles']['domain']
-
-        def get_switch_moid(serial):
-            api_filter = f"Serial eq '{serial}'"
-            api_args   = dict(filter= api_filter, _preload_content = False)
-            api_query  = json.loads(api_handle.get_fabric_element_identity_list(**api_args).data)
-            if not api_query['Results'] == None:
-                return api_query['Results'][0]['Moid']
-
-        #=====================================================
-        # Login to Intersight API
-        #=====================================================
-        api_client = credentials.config_credentials(home, args)
-        api_handle = fabric_api.FabricApi(api_client)
-        for item in profiles:
-            query_filter = f"Name eq '{item['name']}' and Organization.Moid eq '{org_moids[org]['Moid']}'"
-            query_args   = dict(filter=query_filter, _preload_content = False)
-            api_query    = json.loads(api_handle.get_fabric_switch_cluster_profile_list(**query_args).data)
-            empty, domain_profiles,domain_profile_names = intersight_api('api_results').api_results(api_query)
-            if empty == True:
-                api_body = {}
-                api_body.update({'class_id':'fabric.SwitchClusterProfile', 'object_type':'fabric.SwitchClusterProfile'})
-                if item.get('description'):
-                    api_body.update({'description':item.get('description')})
-                api_body.update({'name':item['name']})
-                api_body.update({'organization':{
-                    'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
-                }})
-                try:
-                    api_args = dict(_preload_content = False)
-                    api_post = json.loads(api_handle.create_fabric_switch_cluster_profile(api_body, **api_args).data)
-                    print(json.dumps(api_post, indent=4))
-                except ApiException as e:
-                    print("Exception when calling FabricApi->create_fabric_switch_cluster_profile: %s\n" % e)
-                    sys.exit(1)
-                cluster_moid = api_post['Moid']
-            else: cluster_moid = domain_profiles[item['name']]['Moid']
-            fabrics = ['A', 'B']
-            for x in range(0,2):
-                sw_name = f"{item['name']}-{fabrics[x]}"
-                query_filter = f"Name eq '{sw_name}' and Parent.Moid eq '{cluster_moid}'"
-                query_args   = dict(filter=query_filter, _preload_content = False)
-                api_query    = json.loads(api_handle.get_fabric_switch_profile_list(**query_args).data)
-                swempty, sw_profiles,sw_profiles_names = intersight_api('api_results').api_results(api_query)
-                if swempty == True:
-                    api_body = {}
-                    api_body.update({'class_id':'fabric.SwitchProfile', 'object_type':'fabric.SwitchProfile'})
-                    api_body.update({'name':f"{item['name']}-{fabrics[x]}"})
-                    api_body.update({'SwitchClusterProfile':{
-                        'class_id':'mo.MoRef','moid':cluster_moid,'object_type':'fabric.SwitchClusterProfile'
-                    }})
-                    if item.get('serial_numbers'):
-                        if re.search(serial_regex, item['serial_numbers'][x]): serial_true = True
-                        else: serial_true = False
-                    if serial_true == True:
-                        switch_moid = get_switch_moid(item['serial_numbers'][x])
-                        api_body.update({'AssignedSwitch':{
-                            'class_id':'mo.MoRef','moid':switch_moid,'object_type':'network.Element'
-                        }})
-                    try:
-                        api_args = dict(_preload_content = False)
-                        api_post = json.loads(api_handle.create_fabric_switch_profile(api_body, **api_args).data)
-                        print(json.dumps(api_post, indent=4))
-                    except ApiException as e:
-                        print("Exception when calling FabricApi->create_fabric_switch_profile: %s\n" % e)
-                        sys.exit(1)
-                    kwargs[sw_name] = {'Moid':api_post['Moid']}
-                else: kwargs[sw_name] = {'Moid':sw_profiles[sw_name]['Moid']}
-        # return kwargs
-        return kwargs
-    
     #=====================================================
     # Create/Patch Ethernet Adapter Policies
     #=====================================================
@@ -337,20 +239,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Ethernet Adapter Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['ethernet_adapter']['template_tuning']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = vnic_api.VnicApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -358,7 +258,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_vnic_eth_adapter_policy_list
-            empty, eth_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, eth_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -366,10 +266,14 @@ class intersight_api(object):
             if api_body.get('adapter_template'):
                 template = api_body['adapter_template']
                 api_body.pop('adapter_template')
-                api_body = dict(api_body, **jsonVars[template])
+                api_body = dict(api_body, **jsonVars['ethernet_adapter']['template_tuning'][template])
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -378,14 +282,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_vnic_eth_adapter_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = eth_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_vnic_eth_adapter_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = eth_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_vnic_eth_adapter_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling VnicApi->%s_vnic_eth_adapter_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Ethernet Network Control Policies
@@ -395,20 +304,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Ethernet Network Control Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['ethernet_network_control']['key_map']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -416,22 +323,27 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_eth_network_control_policy_list
-            empty, eth_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, eth_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
+            jVars1 = jsonVars['ethernet_network_control']['key_map']
             api_body = deepcopy(item)
             api_body.update({'lldp_settings':{'receive_enabled':False,'transmit_enabled':False}})
             for k, v in item.items():
                 if 'lldp' in k:
-                    api_body['lldp_settings'].update({jsonVars[k]:v})
+                    api_body['lldp_settings'].update({jVars1[k]:v})
                     api_body.pop(k)
-                elif k in jsonVars:
-                    api_body.update({jsonVars[k]:v})
+                elif k in jVars1:
+                    api_body.update({jVars1[k]:v})
                     api_body.pop(k)
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -440,14 +352,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_eth_network_control_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = eth_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_eth_network_control_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = eth_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_eth_network_control_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_eth_network_control_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Ethernet Network Group Policies
@@ -457,6 +374,8 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -466,6 +385,7 @@ class intersight_api(object):
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -473,7 +393,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_eth_network_group_policy_list
-            empty, eth_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, eth_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -489,6 +409,10 @@ class intersight_api(object):
                         api_body['vlan_settings'].update({i:int(item[i])})
                     else: api_body['vlan_settings'].update({i:item[i]})
                     api_body.pop(i)
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -497,14 +421,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_eth_network_group_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = eth_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_eth_network_group_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = eth_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_eth_network_group_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_eth_network_group_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Ethernet QoS Policies
@@ -514,20 +443,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Ethernet QoS Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['ethernet_qos']['key_map']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = vnic_api.VnicApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -535,7 +462,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_vnic_eth_qos_policy_list
-            empty, eth_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, eth_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -544,9 +471,13 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
             }})
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body.update({jsonVars[k]:v})
+                if k in jsonVars['ethernet_qos']['key_map']:
+                    api_body.update({jsonVars['ethernet_qos']['key_map'][k]:v})
                     api_body.pop(k)
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -555,71 +486,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_vnic_eth_qos_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = eth_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_vnic_eth_qos_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = eth_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_vnic_eth_qos_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling VnicApi->%s_vnic_eth_qos_policy: %s\n" % (api_method, e))
                 sys.exit(1)
-
-    #=====================================================
-    # Create/Patch WWNN/WWPN Pools
-    #=====================================================
-    def fc(self, **kwargs):
-        #=====================================================
-        # Load Kwargs from Main
-        #=====================================================
-        args      = kwargs['args']
-        home      = kwargs['home']
-        org       = kwargs['org']
-        org_moids = kwargs['org_moids']
-        if self.type == 'WWPN': pools = kwargs['immDict']['orgs'][org]['pools']['wwpn']
-        else: pools = kwargs['immDict']['orgs'][org]['pools']['wwnn']
-        #=====================================================
-        # Login to Intersight API
-        #=====================================================
-        api_client = credentials.config_credentials(home, args)
-        api_handle = fcpool_api.FcpoolApi(api_client)
-        for item in pools:
-            pname = item['name']
-            org_moid = org_moids[org]['Moid']
-            #=====================================================
-            # Confirm if the Pool Already Exists
-            #=====================================================
-            get_policy = api_handle.get_fcpool_pool_list
-            empty, fc_pools = intersight_api('get').get_api(get_policy, pname, org_moid)
-            #=====================================================
-            # Construct API Body Payload
-            #=====================================================
-            if empty == True:
-                api_body = {}
-                if item.get('assignment_order'): api_body.update({'assignment_order':item['assignment_order']})
-                else: api_body.update({'assignment_order':'sequential'})
-                api_body.update({'class_id':'fcpool.Pool', 'name':item['name'], 'object_type':'fcpool.Pool'})
-                if item.get('description'): api_body.update({'description':item.get('description')})
-                api_body.update({'pool_purpose':self.type})
-                if item.get('id_blocks'):
-                    api_body.update({'IdBlocks':[]})
-                    for i in item['id_blocks']:
-                        api_body['IdBlocks'].append({
-                            'ClassId':'fcpool.Block', 'ObjectType':'fcpool.Block',
-                            'From':i['from'], 'Size':i['size']
-                        })
-                api_body.update({'organization':{
-                    'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
-                }})
-                #=====================================================
-                # Create the Pool via the Intersight API
-                #=====================================================
-                try:
-                    api_args = dict(_preload_content = False)
-                    api_post = json.loads(api_handle.create_fcpool_pool(api_body, **api_args).data)
-                    print(json.dumps(api_post, indent=4))
-                except ApiException as e:
-                    print("Exception when calling FcpoolApi->create_fcpool_pool: %s\n" % e)
-                    sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Fibre-Channel Adapter Policies
@@ -629,20 +508,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab FC Zone Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['fibre_channel_adapter']['template_tuning']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -650,7 +527,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_fc_zone_policy_list
-            empty, fc_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, fc_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -658,6 +535,10 @@ class intersight_api(object):
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -666,14 +547,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_fc_zone_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = fc_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_fc_zone_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = fc_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_fc_zone_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling VnicApi->%s_fabric_fc_zone_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Fibre-Channel Adapter Policies
@@ -683,20 +569,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Fibre-Channel Adapter Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['fibre_channel_adapter']['template_tuning']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = vnic_api.VnicApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -704,7 +588,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_vnic_fc_adapter_policy_list
-            empty, fc_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, fc_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -712,10 +596,14 @@ class intersight_api(object):
             if api_body.get('adapter_template'):
                 template = api_body['adapter_template']
                 api_body.pop('adapter_template')
-                api_body = dict(api_body, **jsonVars[template])
+                api_body = dict(api_body, **jsonVars['fibre_channel_adapter']['template_tuning'][template])
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -724,14 +612,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_vnic_fc_adapter_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = fc_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_vnic_fc_adapter_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = fc_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_vnic_fc_adapter_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling VnicApi->%s_vnic_fc_adapter_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Fibre-Channel Network Policies
@@ -741,20 +634,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Fibre-Channel Network Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['fibre_channel_network']['key_map']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = vnic_api.VnicApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -762,7 +653,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_vnic_fc_network_policy_list
-            empty, fc_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, fc_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -772,9 +663,13 @@ class intersight_api(object):
             }})
             api_body.update({'vsan_settings':{'object_type':'vnic.VsanSettings'}})
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body['vsan_settings'].update({jsonVars[k]:v})
+                if k in jsonVars['fibre_channel_network']['key_map']:
+                    api_body['vsan_settings'].update({jsonVars['fibre_channel_network']['key_map'][k]:v})
                     api_body.pop(k)
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -783,14 +678,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_vnic_fc_network_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = fc_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_vnic_fc_network_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = fc_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_vnic_fc_network_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling VnicApi->%s_vnic_fc_network_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Fibre-Channel QoS Policies
@@ -800,6 +700,8 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -809,6 +711,7 @@ class intersight_api(object):
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = vnic_api.VnicApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -816,7 +719,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_vnic_fc_qos_policy_list
-            empty, fc_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, fc_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -824,6 +727,10 @@ class intersight_api(object):
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -831,15 +738,20 @@ class intersight_api(object):
                 api_args = dict(_preload_content = False)
                 if empty == True:
                     api_method = 'create'
-                    api_call   = json.loads(api_handle.create_vnic_fc_qos_policy(api_body, **api_args).data)
+                    api_call = json.loads(api_handle.create_vnic_fc_qos_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = fc_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_vnic_fc_qos_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = fc_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_vnic_fc_qos_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling VnicApi->%s_vnic_fc_qos_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Flow Control Policies
@@ -849,6 +761,8 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -858,6 +772,7 @@ class intersight_api(object):
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -865,7 +780,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_flow_control_policy_list
-            empty, flow_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, flow_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -873,6 +788,10 @@ class intersight_api(object):
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -881,51 +800,20 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_flow_control_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = flow_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_flow_control_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = flow_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_flow_control_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_flow_control_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
-    #=====================================================
-    # Get Policies, Pools, and Profiles from API
-    #=====================================================
-    def get_api(self, get_policy, pname, org_moid):
-        if pname == 'ALLP': query_filter = f"Organization.Moid eq '{org_moid}'"
-        else:  query_filter = f"Name eq '{pname}' and Organization.Moid eq '{org_moid}'"
-        query_args   = dict(filter=query_filter, _preload_content = False)
-        api_query    = json.loads(get_policy(**query_args).data)
-        empty, policies, policy_names = intersight_api('api_results').api_results(api_query)
-        return empty, policies
-    
-    #=====================================================
-    # Get Policies, Pools, and Profiles from API
-    #=====================================================
-    def get_subtype(self, get_policy, query_filter):
-        query_args   = dict(filter=query_filter, _preload_content = False)
-        api_query    = json.loads(get_policy(**query_args).data)
-        empty, policies, policy_names = intersight_api('api_results').api_results(api_query)
-        return empty, policies
-    
-    #=====================================================
-    # Get IAM Endpoint User Roles Policies
-    #=====================================================
-    def get_iam_user_role(self, api_client, user_moid, lpolicy_moid):
-        api_handle = iam_api.IamApi(api_client)
-        query_filter = f"EndpointUser.Moid eq '{user_moid}' and EndPointUserPolicy eq '{lpolicy_moid}'"
-        query_args   = dict(filter=query_filter, _preload_content = False)
-        api_query    = json.loads(api_handle.get_iam_end_point_user_role_list(**query_args).data)
-        if api_query.get('Results'):
-            empty = False
-            roles = {api_query['Results']['EndPointUser']['Moid']:{'Moid':api_query['Results']['Moid']}}
-        else:
-            empty = True
-            roles = {}
-        return empty, roles
-    
     #=====================================================
     # Get IMC Access Policies
     #=====================================================
@@ -934,16 +822,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = access_api.AccessApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -951,7 +841,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_access_policy_list
-            empty, imc_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, imc_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -969,7 +859,6 @@ class intersight_api(object):
                     if f'ip{i}_address_configuration' == k:
                         api_body['address_type'].update({f'enable_ip_{i}':v})
                         api_body.pop(f'ip{i}_address_configuration')
-            
             #=====================================================
             # Attach Pools to the API Body
             #=====================================================
@@ -980,11 +869,15 @@ class intersight_api(object):
                     if i == k:
                         pname = v
                         get_policy = api_handle.get_ippool_pool_list
-                        empty, ip_pools = intersight_api('get').get_api(get_policy, pname, org_moid)
-                        if empty == False:
+                        pempty, ip_pools = isdk_pools('get').get_api(get_policy, pname, org_moid)
+                        if pempty == False:
                             api_body.update({i:{
                                 'class_id':'mo.MoRef','moid':ip_pools[v]['Moid'],'object_type':'ippool.Pool'
                             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -994,91 +887,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_access_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = imc_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_access_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = imc_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_access_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_access_policy: %s\n" % (api_method, e))
                 sys.exit(1)
-
-    #=====================================================
-    # Create/Patch IP Pools
-    #=====================================================
-    def ip(self, **kwargs):
-        #=====================================================
-        # Load Kwargs from Main
-        #=====================================================
-        args      = kwargs['args']
-        home      = kwargs['home']
-        org       = kwargs['org']
-        org_moids = kwargs['org_moids']
-        pools     = kwargs['immDict']['orgs'][org]['pools']['ip']
-        #=====================================================
-        # Login to Intersight API
-        #=====================================================
-        api_client = credentials.config_credentials(home, args)
-        api_handle = ippool_api.IppoolApi(api_client)
-        for item in pools:
-            pname = item['name']
-            org_moid = org_moids[org]['Moid']
-            #=====================================================
-            # Confirm if the Pool Already Exists
-            #=====================================================
-            get_policy = api_handle.get_ippool_pool_list
-            empty, ip_pools = intersight_api('get').get_api(get_policy, pname, org_moid)
-            #=====================================================
-            # Construct API Body Payload
-            #=====================================================
-            if empty == True:
-                api_body = {}
-                if item.get('assignment_order'): api_body.update({'assignment_order':item['assignment_order']})
-                else: api_body.update({'assignment_order':'sequential'})
-                api_body.update({'class_id':'ippool.Pool','name':item['name'],'object_type':'ippool.Pool'})
-                if item.get('description'): api_body.update({'description':item.get('description')})
-                if item.get('ipv4_blocks'):
-                    api_body.update({'IpV4Blocks':[]})
-                    for i in item['ipv4_blocks']:
-                        api_body['IpV4Blocks'].append({
-                            'ClassId':'ippool.IpV4Block', 'ObjectType':'ippool.IpV4Block',
-                            'From':i['from'],'Size':i['size']
-                        })
-                if item.get('ipv4_configuration'):
-                    ipcfg = item['ipv4_configuration']
-                    api_body.update({'IpV4Config':{
-                        'ClassId':'ippool.IpV4Config', 'ObjectType':'ippool.IpV4Config',
-                        'Gateway':ipcfg['gateway'], 'Netmask':ipcfg['prefix'],
-                        'PrimaryDns':ipcfg['primary_dns'], 'SecondaryDns':ipcfg['secondary_dns']
-                    }})
-                if item.get('ipv6_blocks'):
-                    api_body.update({'IpV6Blocks':[]})
-                    for i in item['ipv6_blocks']:
-                        api_body['IpV6Blocks'].append({
-                            'ClassId':'ippool.IpV6Block', 'ObjectType':'ippool.IpV6Block',
-                            'From':i['from'], 'Size':i['size']
-                        })
-                if item.get('ipv6_configuration'):
-                    ipcfg = item['ipv6_configuration']
-                    api_body.update({'IpV6Config':{
-                        'class_id':'ippool.IpV6Config', 'object_type':'ippool.IpV6Config',
-                        'Gateway':ipcfg['gateway'], 'Netmask':ipcfg['prefix'],
-                        'PrimaryDns':ipcfg['primary_dns'], 'SecondaryDns':ipcfg['secondary_dns']
-                    }})
-                api_body.update({'organization':{
-                    'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
-                }})
-                #=====================================================
-                # Create the Pool via the Intersight API
-                #=====================================================
-                try:
-                    api_args = dict(_preload_content = False)
-                    api_post = json.loads(api_handle.create_ippool_pool(api_body, **api_args).data)
-                    print(json.dumps(api_post, indent=4))
-                except ApiException as e:
-                    print("Exception when calling IppoolApi->create_ippool_pool: %s\n" % e)
-                    sys.exit(1)
-                exit()
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch IPMI over LAN Policies
@@ -1088,6 +909,8 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -1098,6 +921,7 @@ class intersight_api(object):
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = ipmioverlan_api.IpmioverlanApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -1105,7 +929,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_ipmioverlan_policy_list
-            empty, ipmi_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, ipmi_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -1115,19 +939,31 @@ class intersight_api(object):
             }})
             if not os.environ.get('TF_VAR_ipmi_key') == None:
                 api_body.update({'encryption_key':os.environ.get('TF_VAR_ipmi_key')})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
             try:
                 api_args = dict(_preload_content = False)
                 if empty == True:
                     api_method = 'create'
                     api_call   = json.loads(api_handle.create_ipmioverlan_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = ipmi_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_ipmioverlan_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = ipmi_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_ipmioverlan_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling IpmioverlanApi->%s_ipmioverlan_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch LAN Connectivity Policies
@@ -1137,7 +973,8 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -1145,12 +982,13 @@ class intersight_api(object):
         #=====================================================
         # Grab LAN Connectivity Settings from Library
         #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['lan_connectivity']
+        #jsonVars = ezData['policies']['allOf'][1]['properties']['lan_connectivity']
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = vnic_api.VnicApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -1158,7 +996,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_vnic_lan_connectivity_policy_list
-            empty, lan_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, lan_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -1168,10 +1006,14 @@ class intersight_api(object):
             }})
             if not api_body.get('vnic_placement_modes'): api_body.update({'placement_mode':'custom'})
             for k, v in item.items():
-                if k in jsonVars['key_map']:
-                    api_body.update({jsonVars[k]:v})
+                if k in jsonVars['lan_connectivity']['key_map']:
+                    api_body.update({jsonVars['lan_connectivity'][k]:v})
                     api_body.pop(k)
             api_body.pop('vnics')
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -1180,13 +1022,13 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_vnic_lan_connectivity_policy(api_body, **api_args).data)
-                    lcp_moid = api_call['Moid']
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = lan_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_vnic_lan_connectivity_policy(pmoid, api_body, **api_args).data)
-                    lcp_moid = pmoid
-                #print(json.dumps(api_call, indent=4))
+                    pol_moid = lan_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_vnic_lan_connectivity_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_vnic_lan_connectivity_policy: %s\n" % (api_method, e))
                 sys.exit(1)
@@ -1194,7 +1036,10 @@ class intersight_api(object):
             # Create and Attach VLANs to VLAN Policy
             #=====================================================
             if item.get('vnics'):
-                intersight_api('vnics').vnics(api_client, ezData, item, org_moid, lcp_moid)
+                isdk_policies('vnics').vnics(api_client, jsonVars, item, org_moid, pol_moid)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Link Aggregation Policies
@@ -1204,6 +1049,8 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -1213,6 +1060,7 @@ class intersight_api(object):
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -1220,7 +1068,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_link_aggregation_policy_list
-            empty, link_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, link_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -1228,6 +1076,10 @@ class intersight_api(object):
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -1236,14 +1088,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_link_aggregation_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = link_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_link_aggregation_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = link_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_link_aggregation_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_link_aggregation_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Link Control Policies
@@ -1253,6 +1110,8 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -1262,6 +1121,7 @@ class intersight_api(object):
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -1269,7 +1129,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_link_control_policy_list
-            empty, link_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, link_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -1277,6 +1137,10 @@ class intersight_api(object):
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -1285,21 +1149,25 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_link_control_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = link_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_link_control_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = link_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_link_control_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_link_control_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+        validating.end_section(self.type)
 
     #=====================================================
     # Create/Patch Local User Policies
     #=====================================================
     def local_user(self, **kwargs):
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -1309,6 +1177,7 @@ class intersight_api(object):
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = iam_api.IamApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -1316,7 +1185,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_iam_end_point_user_policy_list
-            empty, local_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, local_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -1327,40 +1196,48 @@ class intersight_api(object):
             #=====================================================
             # Grab Local User Settings from Library
             #=====================================================
-            jsonVars = ezData['policies']['allOf'][1]['properties']['local_user']['key_map']
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body.update({jsonVars[k]:v})
-                    if not k == jsonVars[k]: api_body.pop(k)
-            jsonVars = ezData['policies']['allOf'][1]['properties']['local_user']['key_map_password']
+                if k in jsonVars['local_user']['key_map']:
+                    api_body.update({jsonVars['local_user']['key_map'][k]:v})
+                    if not k == jsonVars['local_user']['key_map'][k]: api_body.pop(k)
             api_body['password_properties'] = {'object_type':'iam.EndPointPasswordProperties'}
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body['password_properties'].update({jsonVars[k]:v})
-                    if not k == jsonVars[k]: api_body.pop(k)
+                if k in jsonVars['local_user']['key_map_password']:
+                    api_body['password_properties'].update({jsonVars['local_user']['key_map_password'][k]:v})
+                    if not k == jsonVars['local_user']['key_map_password'][k]: api_body.pop(k)
             if api_body.get('users'): api_body.pop('users')
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
             try:
                 api_args = dict(_preload_content = False)
                 if empty == True:
                     api_method   = 'create'
-                    api_call     = json.loads(api_handle.create_iam_end_point_user_policy(api_body, **api_args).data)
-                    lpolicy_moid = api_call['Moid']
+                    api_call = json.loads(api_handle.create_iam_end_point_user_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = local_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_iam_end_point_user_policy(pmoid, api_body, **api_args).data)
-                    lpolicy_moid = pmoid
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = local_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_iam_end_point_user_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling IamApi->%s_iam_end_point_user_policy: %s\n" % (api_method, e))
                 sys.exit(1)
             if item.get('users'):
-                intersight_api('vlans').local_users(api_client, item, org_moid, lpolicy_moid, **kwargs)
+                isdk_policies('vlans').local_users(api_client, item, org_moid, pol_moid, **kwargs)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Assign Users to Local User Policies
     #=====================================================
-    def local_users(self, api_client, item, org_moid, lpolicy_moid, **kwargs):
+    def local_users(self, api_client, item, org_moid, pol_moid, **kwargs):
         api_handle = iam_api.IamApi(api_client)
         #=====================================================
         # Create API Body for Users
@@ -1377,7 +1254,7 @@ class intersight_api(object):
             # Create or Patch the Policy via the Intersight API
             #=====================================================
             get_policy = api_handle.get_iam_end_point_user_list
-            empty, users = intersight_api('get').get_api(get_policy, i['username'], org_moid)
+            empty, users = isdk_pools('get').get_api(get_policy, i['username'], org_moid)
             try:
                 api_args = dict(_preload_content = False)
                 if empty == True:
@@ -1386,16 +1263,15 @@ class intersight_api(object):
                     user_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = users[i['username']]['Moid']
-                    api_call = json.loads(api_handle.patch_iam_end_point_user(pmoid, api_body, **api_args).data)
-                    user_moid = pmoid
-                print(json.dumps(api_call, indent=4))
+                    user_moid = users[i['username']]['Moid']
+                    api_call  = json.loads(api_handle.patch_iam_end_point_user(user_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
             except ApiException as e:
                 print("Exception when calling IamApi->%s_iam_end_point_user: %s\n" % (api_method, e))
                 sys.exit(1)
             get_policy   = api_handle.get_iam_end_point_role_list
             query_filter = f"Name eq '{i['role']}' and Type eq 'IMC'"
-            empty, roles = intersight_api('get').get_subtype(get_policy, query_filter)
+            empty, roles = isdk_pools('get').get_subtype(get_policy, query_filter)
             role_moid = roles[i['role']]['Moid']
             kwargs['Variable'] = f"local_user_password_{i['password']}"
             kwargs = ezfunctions.sensitive_var_value(**kwargs)
@@ -1412,12 +1288,12 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':user_moid,'object_type':'iam.EndPointUser'
             }})
             api_body.update({'end_point_user_policy':{
-                'class_id':'mo.MoRef','moid':lpolicy_moid,'object_type':'iam.EndPointUserPolicy'
+                'class_id':'mo.MoRef','moid':pol_moid,'object_type':'iam.EndPointUserPolicy'
             }})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
-            empty, user_roles = intersight_api('get').get_iam_user_role(api_client, user_moid, lpolicy_moid)
+            empty, user_roles = isdk_pools('get').get_iam_user_role(api_client, user_moid, pol_moid)
             try:
                 api_args = dict(_preload_content = False)
                 if empty == True:
@@ -1425,67 +1301,13 @@ class intersight_api(object):
                     api_call = json.loads(api_handle.create_iam_end_point_user_role(api_body, **api_args).data)
                 else:
                     api_method = 'patch'
-                    pmoid      = user_roles[user_moid]['Moid']
-                    api_call = json.loads(api_handle.patch_iam_end_point_user_role(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = user_roles[user_moid]['Moid']
+                    api_call = json.loads(api_handle.patch_iam_end_point_user_role(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling IamApi->%s_iam_end_point_user_role: %s\n" % (api_method, e))
                 sys.exit(1)
-
-    #=====================================================
-    # Create/Patch MAC Pools
-    #=====================================================
-    def mac(self, **kwargs):
-        #=====================================================
-        # Load Kwargs from Main
-        #=====================================================
-        args      = kwargs['args']
-        home      = kwargs['home']
-        org       = kwargs['org']
-        org_moids = kwargs['org_moids']
-        pools     = kwargs['immDict']['orgs'][org]['pools']['mac']
-        #=====================================================
-        # Login to Intersight API
-        #=====================================================
-        api_client = credentials.config_credentials(home, args)
-        api_handle = macpool_api.MacpoolApi(api_client)
-        for item in pools:
-            pname = item['name']
-            org_moid = org_moids[org]['Moid']
-            #=====================================================
-            # Confirm if the Policy Already Exists
-            #=====================================================
-            get_policy = api_handle.get_macpool_pool_list
-            empty, mac_pools = intersight_api('get').get_api(get_policy, pname, org_moid)
-            #=====================================================
-            # Construct API Body Payload
-            #=====================================================
-            if empty == True:
-                api_body = {}
-                if item.get('assignment_order'): api_body.update({'assignment_order':item['assignment_order']})
-                else: api_body.update({'assignment_order':'sequential'})
-                api_body.update({'class_id':'macpool.Pool','name':item['name'],'object_type':'macpool.Pool'})
-                if item.get('description'): api_body.update({'description':item.get('description')})
-                if item.get('mac_blocks'):
-                    api_body.update({'MacBlocks':[]})
-                    for i in item['mac_blocks']:
-                        api_body['MacBlocks'].append({
-                            'ClassId':'macpool.Block', 'ObjectType':'macpool.Block',
-                            'From':i['from'], 'Size':i['size']
-                        })
-                api_body.update({'organization':{
-                    'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
-                }})
-                #=====================================================
-                # Create the Pool via the Intersight API
-                #=====================================================
-                try:
-                    api_args = dict(_preload_content = False)
-                    api_post = json.loads(api_handle.create_macpool_pool(api_body, **api_args).data)
-                    print(json.dumps(api_post, indent=4))
-                except ApiException as e:
-                    print("Exception when calling MacpoolApi->create_macpool_pool: %s\n" % e)
-                    sys.exit(1)
 
     #=====================================================
     # Create/Patch Multicast Policies
@@ -1495,20 +1317,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Multicast Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['multicast']['key_map']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -1516,7 +1336,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_multicast_policy_list
-            empty, mcast_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, mcast_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -1525,9 +1345,13 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body.update({jsonVars[k]:v})
+                if k in jsonVars['multicast']['key_map']:
+                    api_body.update({jsonVars['multicast']['key_map'][k]:v})
                     api_body.pop(k)
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -1536,14 +1360,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_multicast_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = mcast_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_multicast_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = mcast_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_multicast_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_multicast_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Network Connectivity Policies
@@ -1553,20 +1382,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-        #=====================================================
-        # Grab Network Connectivity Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['network_connectivity']['key_map']
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = networkconfig_api.NetworkconfigApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -1574,7 +1401,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_networkconfig_policy_list
-            empty, dns_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, dns_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -1583,8 +1410,8 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body.update({jsonVars[k]:v})
+                if k in jsonVars['network_connectivity']['key_map']:
+                    api_body.update({jsonVars['network_connectivity']['key_map'][k]:v})
                     api_body.pop(k)
             dns_list = ['v4', 'v6']
             for i in dns_list:
@@ -1594,6 +1421,10 @@ class intersight_api(object):
                     if len(item[f'dns_servers_{i}']) > 1:
                         api_body.update({f'preferred_ip{i}dns_server':item[f'dns_servers_{i}'][1]})
                     api_body.pop(f'dns_servers_{i}')
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -1602,14 +1433,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_networkconfig_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = dns_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_networkconfig_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = dns_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_networkconfig_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling NetworkconfigApi->%s_networkconfig_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch NTP Policies
@@ -1619,16 +1455,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = ntp_api.NtpApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -1636,14 +1474,21 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_ntp_policy_list
-            empty, ntp_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, ntp_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
             api_body = {}
+            for k, v in item.items():
+                if k in jsonVars['ntp']['key_map']:
+                    api_body.update({jsonVars['ntp']['key_map'][k]:v})
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -1652,62 +1497,46 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_ntp_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = ntp_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_ntp_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = ntp_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_ntp_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling NtpApi->%s_ntp_policy: %s\n" % (api_method, e))
                 sys.exit(1)
-
-    #=====================================================
-    # Get Organizations from Intersight
-    #=====================================================
-    def organizations(self, **kwargs):
-        #=====================================================
-        # Load Kwargs from Main
-        #=====================================================
-        args        = kwargs['args']
-        home        = kwargs['home']
-        #=====================================================
-        # Login to Intersight API
-        #=====================================================
-        api_client = credentials.config_credentials(home, args)
-        api_handle = organization_api.OrganizationApi(api_client)
-        api_args   = dict(_preload_content = False)
-        api_query = json.loads(api_handle.get_organization_organization_list(**api_args).data)
-        empty, org_moids, org_names = intersight_api('api_results').api_results(api_query)
-        if empty == True: intersight_api('api_results').empty_results(api_query)
-        kwargs['org_moids'] = org_moids
-        kwargs['org_names'] = org_names
-        return kwargs
+            dpolicies.update({item['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Port Policies
     #=====================================================
     def port(self, **kwargs):
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moid  = kwargs['org_moids'][org]['Moid']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
         get_policy = api_handle.get_fabric_eth_network_control_policy_list
-        e1, ethc   = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e1, ethc   = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         get_policy = api_handle.get_fabric_eth_network_group_policy_list
-        e2, ethg   = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e2, ethg   = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         get_policy = api_handle.get_fabric_flow_control_policy_list
-        e3, fctrl  = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e3, fctrl  = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         get_policy = api_handle.get_fabric_link_aggregation_policy_list
-        e4, lagg   = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e4, lagg   = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         get_policy = api_handle.get_fabric_link_control_policy_list
-        e5, lctrl  = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e5, lctrl  = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         pargs = {
             'ethernet_network_control_policy':{'empty':e1,'moids':ethc},
             'ethernet_network_group_policy':{'empty':e2,'moids':ethg},
@@ -1715,18 +1544,15 @@ class intersight_api(object):
             'link_aggregation_policy':{'empty':e4,'moids':lagg},
             'link_control_policy':{'empty':e5,'moids':lctrl},
         }
+        validating.begin_section(self.type)
         for item in policies:
             for name_count in range(0,len(item['names'])):
-                #=====================================================
-                # Grab Port Policy Settings from Library
-                #=====================================================
-                jsonVars = ezData['policies']['allOf'][1]['properties']['port']
                 pname = item['names'][name_count]
                 #=====================================================
                 # Confirm if the Policy Already Exists
                 #=====================================================
                 get_policy = api_handle.get_fabric_port_policy_list
-                empty, port_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+                empty, port_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
                 #=====================================================
                 # Construct API Body Payload
                 #=====================================================
@@ -1736,7 +1562,11 @@ class intersight_api(object):
                 }})
                 api_body['name'] = item['names'][name_count]
                 for k, v in item.items():
-                    if k in jsonVars['key_map']: api_body.update({jsonVars['key_map'][k]:v})
+                    if k in jsonVars['port']['key_map']: api_body.update({jsonVars['port']['key_map'][k]:v})
+                if item.get('tags'):
+                    api_body.update({'tags':item['tags']})
+                    api_body['tags'].append(jsonVars['tags'])
+                else: api_body.update({'tags':[jsonVars['tags']]})
                 #=====================================================
                 # Create or Patch the Policy via the Intersight API
                 #=====================================================
@@ -1745,36 +1575,39 @@ class intersight_api(object):
                     if empty == True:
                         api_method = 'create'
                         api_call = json.loads(api_handle.create_fabric_port_policy(api_body, **api_args).data)
-                        port_moid = api_call['Moid']
+                        pol_moid = api_call['Moid']
                     else:
                         api_method = 'patch'
-                        pmoid      = port_policies[api_body['name']]['Moid']
-                        api_call = json.loads(api_handle.patch_fabric_port_policy(pmoid, api_body, **api_args).data)
-                        port_moid = pmoid
-                    print(json.dumps(api_call, indent=4))
+                        pol_moid = port_policies[api_body['name']]['Moid']
+                        api_call = json.loads(api_handle.patch_fabric_port_policy(pol_moid, api_body, **api_args).data)
+                    if print_response_always == True: print(json.dumps(api_call, indent=4))
+                    validating.completed_item(self.type, api_body['name'], api_method, pol_moid)
                 except ApiException as e:
                     print("Exception when calling FabricApi->%_fabric_port_policy: %s\n" % (api_method, e))
                     sys.exit(1)
+                dpolicies.update({api_body['name']:pol_moid})
                 if item.get('port_modes'):
                     for i in item['port_modes']:
-                        intersight_api('mode').port_mode(api_client, i, port_moid)
-                for z in jsonVars['port_type_list']:
+                        isdk_policies('mode').port_mode(api_client, i, pol_moid)
+                for z in jsonVars['port']['port_type_list']:
                     if item.get(z):
-                        intersight_api(z).ports(api_client, jsonVars, item, name_count, port_moid, **pargs)
+                        isdk_policies(z).ports(api_client, jsonVars, item, name_count, pol_moid, **pargs)
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Assign Port Port Types to Port Policies
     #=====================================================
-    def port_mode(self, api_client, i, port_moid):
+    def port_mode(self, api_client, i, pol_moid):
         api_handle = fabric_api.FabricApi(api_client)
         api_body = {'class_id':'fabric.PortMode','object_type':'fabric.PortMode'}
         api_body.update({'custom_mode':i['custom_mode'],'port_id_start':i['port_list'][0],'port_id_end':i['port_list'][1]})
-        api_body.update({'port_policy':{'class_id':'mo.MoRef','moid':port_moid,'object_type':'fabric.PortPolicy'}})
+        api_body.update({'port_policy':{'class_id':'mo.MoRef','moid':pol_moid,'object_type':'fabric.PortPolicy'}})
         if i.get('slot_id'): api_body.update({'slot_id':i['port_modes']['slot_id']})
         else: api_body.update({'slot_id':1})
         get_policy   = api_handle.get_fabric_port_mode_list
-        query_filter = f"PortIdStart eq '{api_body['port_id_start']}' and PortPolicy.Moid eq '{port_moid}'"
-        empty, ports = intersight_api('get').get_subtype(get_policy, query_filter)
+        query_filter = f"PortIdStart eq '{api_body['port_id_start']}' and PortPolicy.Moid eq '{pol_moid}'"
+        empty, ports = isdk_pools('get').get_subtype(get_policy, query_filter)
         #=====================================================
         # Create or Patch the Policy via the Intersight API
         #=====================================================
@@ -1785,9 +1618,9 @@ class intersight_api(object):
                 api_call = json.loads(api_handle.create_fabric_port_mode(api_body, **api_args).data)
             else:
                 api_method = 'patch'
-                pmoid      = ports[api_body['port_id_start']]['Moid']
-                api_call = json.loads(api_handle.patch_fabric_port_mode(pmoid, api_body, **api_args).data)
-            print(json.dumps(api_call, indent=4))
+                port_moid = ports[api_body['port_id_start']]['Moid']
+                api_call  = json.loads(api_handle.patch_fabric_port_mode(port_moid, api_body, **api_args).data)
+            if print_response_always == True: print(json.dumps(api_call, indent=4))
         except ApiException as e:
             print("Exception when calling FabricApi->%s_fabric_port_mode: %s\n" % (api_method, e))
             sys.exit(1)
@@ -1811,9 +1644,11 @@ class intersight_api(object):
             elif port_type == 'port_role_fcoe_uplinks': get_policy = api_handle.get_fabric_fcoe_uplink_role_list
             elif port_type == 'port_role_servers':      get_policy = api_handle.get_fabric_server_role_list
             if re.search('port_channel', port_type):
-                query_filter = f"PcId eq '{api_body['pc_id']}' and PortPolicy.Moid eq '{port_moid}'"
-            else: query_filter = f"PortId eq '{api_body['port_id']}' and PortPolicy.Moid eq '{port_moid}'"
-            empty, ports = intersight_api('get').get_subtype(get_policy, query_filter)
+                query_filter = f"PcId eq {int(api_body['pc_id'])} and PortPolicy.Moid eq '{port_moid}'"
+            else:
+                query_filter = f"PortId eq {int(api_body['port_id'])} and PortPolicy.Moid eq '{port_moid}'"
+                #query_filter = f"PortPolicy.Moid eq '{port_moid}'"
+            empty, ports = isdk_pools('get').get_subtype(get_policy, query_filter)
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -1841,31 +1676,36 @@ class intersight_api(object):
                         api_call = json.loads(api_handle.create_fabric_fcoe_uplink_role(api_body, **api_args).data)
                     elif port_type == 'port_role_servers':
                         api_call = json.loads(api_handle.create_fabric_server_role(api_body, **api_args).data)
+                    port_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    if re.search('port_channel', port_type): pmoid = ports[api_body['pc_id'][api_body['pc_id']]]['Moid']
-                    else: pmoid = ports[api_body['port_id'][api_body['port_id']]]['Moid']
+                    if re.search('port_channel', port_type): port_moid = ports[api_body['pc_id']]['Moid']
+                    else: port_moid = ports[api_body['port_id']]['Moid']
                     if port_type == 'port_channel_appliances':
-                        api_call = json.loads(api_handle.patch_fabric_appliance_pc_role(pmoid, api_body, **api_args).data)
+                        api_call = json.loads(api_handle.patch_fabric_appliance_pc_role(port_moid, api_body, **api_args).data)
                     elif port_type == 'port_channel_ethernet_uplinks':
-                        api_call = json.loads(api_handle.patch_fabric_uplink_pc_role(pmoid, api_body, **api_args).data)
+                        api_call = json.loads(api_handle.patch_fabric_uplink_pc_role(port_moid, api_body, **api_args).data)
                     elif port_type == 'port_channel_fc_uplinks':
-                        api_call = json.loads(api_handle.patch_fabric_fc_uplink_pc_role(pmoid, api_body, **api_args).data)
+                        api_call = json.loads(api_handle.patch_fabric_fc_uplink_pc_role(port_moid, api_body, **api_args).data)
                     elif port_type == 'port_channel_fcoe_uplinks':
-                        api_call = json.loads(api_handle.patch_fabric_fcoe_uplink_pc_role(pmoid, api_body, **api_args).data)
+                        api_call = json.loads(api_handle.patch_fabric_fcoe_uplink_pc_role(port_moid, api_body, **api_args).data)
                     elif port_type == 'port_role_appliances':
-                        api_call = json.loads(api_handle.patch_fabric_appliance_role(pmoid, api_body, **api_args).data)
+                        api_call = json.loads(api_handle.patch_fabric_appliance_role(port_moid, api_body, **api_args).data)
                     elif port_type == 'port_role_ethernet_uplinks':
-                        api_call = json.loads(api_handle.patch_fabric_uplink_role(pmoid, api_body, **api_args).data)
+                        api_call = json.loads(api_handle.patch_fabric_uplink_role(port_moid, api_body, **api_args).data)
                     elif port_type == 'port_role_fc_storage':
-                        api_call = json.loads(api_handle.patch_fabric_fc_storage_role(pmoid, api_body, **api_args).data)
+                        api_call = json.loads(api_handle.patch_fabric_fc_storage_role(port_moid, api_body, **api_args).data)
                     elif port_type == 'port_role_fc_uplinks':
-                        api_call = json.loads(api_handle.patch_fabric_fc_uplink_role(pmoid, api_body, **api_args).data)
+                        api_call = json.loads(api_handle.patch_fabric_fc_uplink_role(port_moid, api_body, **api_args).data)
                     elif port_type == 'port_role_fcoe_uplinks':
-                        api_call = json.loads(api_handle.patch_fabric_fcoe_uplink_role(pmoid, api_body, **api_args).data)
+                        api_call = json.loads(api_handle.patch_fabric_fcoe_uplink_role(port_moid, api_body, **api_args).data)
                     elif port_type == 'port_role_servers':
-                        api_call = json.loads(api_handle.patch_fabric_server_role(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                        api_call = json.loads(api_handle.patch_fabric_server_role(port_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                if re.search('port_channel', port_type):
+                    validating.completed_sub_item(self.type, f"Port-Channel {api_body['pc_id']}", api_method, port_moid)
+                else:
+                    validating.completed_sub_item(self.type, f"Port {api_body['port_id']}", api_method, port_moid)
             except ApiException as e:
                 if port_type == 'port_channel_appliances':
                     print("Exception when calling FabricApi->%s_fabric_appliance_pc_role: %s\n" % (api_method, e))
@@ -1893,7 +1733,7 @@ class intersight_api(object):
         # Create API Body for Port Policies
         #=====================================================
         for i in item[self.type]:
-            api_body = deepcopy(jsonVars['classes'][self.type])
+            api_body = deepcopy(jsonVars['port']['classes'][self.type])
             api_body.update({'port_policy':{'class_id':'mo.MoRef','moid':port_moid,'object_type':'fabric.PortPolicy'}})
             if i.get('ethernet_network_control_policy'):
                 pol_type = 'ethernet_network_control_policy'
@@ -1958,7 +1798,6 @@ class intersight_api(object):
                     else: intf_body.update({'slot_id':1})
                     api_tasks(api_handle, intf_body, port_moid, self.type)
 
-
     #=====================================================
     # Create/Patch Power Policies
     #=====================================================
@@ -1967,20 +1806,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-        #=====================================================
-        # Grab Power Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['power']['key_map']
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = power_api.PowerApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -1988,7 +1825,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_power_policy_list
-            empty, power_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, power_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -1997,9 +1834,13 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body.update({jsonVars[k]:v})
+                if k in jsonVars['power']['key_map']:
+                    api_body.update({jsonVars['power']['key_map'][k]:v})
                     api_body.pop(k)
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -2008,14 +1849,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_power_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = power_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_power_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = power_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_power_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_power_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch SAN Connectivity Policies
@@ -2025,48 +1871,47 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-        #=====================================================
-        # Grab LAN Connectivity Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['san_connectivity']
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
             api_handle = fcpool_api.FcpoolApi(api_client)
             get_policy = api_handle.get_fcpool_pool_list
-            e4, wwnnp = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+            e4, wwnnp = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
             api_handle = vnic_api.VnicApi(api_client)
             #=====================================================
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_vnic_san_connectivity_policy_list
-            empty, san_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, san_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
-            api_body = deepcopy(item)
+            api_body = {}
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
-            if not api_body.get('vhba_placement_modes'): api_body.update({'placement_mode':'custom'})
             for k, v in item.items():
-                if k in jsonVars['key_map']:
-                    api_body.update({jsonVars['key_map'][k]:v})
-                    api_body.pop(k)
-            api_body.pop('vhbas')
-            if api_body.get('wwnn_pool'):
+                if k in jsonVars['san_connectivity']['key_map']:
+                    api_body.update({jsonVars['san_connectivity']['key_map'][k]:v})
+            if not api_body.get('vhba_placement_modes'): api_body.update({'placement_mode':'custom'})
+            if item.get('wwnn_pool'):
                 fc_moid = wwnnp[item['wwnn_pool']]['Moid']
                 api_body.update({'wwnn_pool':{'class_id':'mo.MoRef','moid':fc_moid,'object_type':'fcpool.Pool'}})
-                api_body.pop('wwnn_pool')
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -2075,20 +1920,23 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_vnic_san_connectivity_policy(api_body, **api_args).data)
-                    scp_moid = api_call['Moid']
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = san_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_vnic_san_connectivity_policy(pmoid, api_body, **api_args).data)
-                    scp_moid = pmoid
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = san_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_vnic_san_connectivity_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_vnic_san_connectivity_policy: %s\n" % (api_method, e))
                 sys.exit(1)
             #=====================================================
             # Create and Attach VLANs to VLAN Policy
             #=====================================================
-            intersight_api('vhbas').vhbas(api_client, ezData, item, org_moid, scp_moid)
+            isdk_policies('vhbas').vhbas(api_client, jsonVars, item, org_moid, pol_moid)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Serial over LAN Policies
@@ -2098,15 +1946,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = sol_api.SolApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -2114,7 +1965,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_sol_policy_list
-            empty, sol_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, sol_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2122,6 +1973,10 @@ class intersight_api(object):
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -2130,48 +1985,45 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_sol_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = sol_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_sol_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = sol_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_sol_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_sol_policy: %s\n" % (api_method, e))
                 sys.exit(1)
-
-    #=====================================================
-    # Create/Patch Server Profiles
-    #=====================================================
-    def server(self, **kwargs):
-        print(f'skipping {self.type} for now')
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch SNMP Policies
     #=====================================================
     def snmp(self, **kwargs):
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = snmp_api.SnmpApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
-            #=====================================================
-            # Grab Switch Control Settings from Library
-            #=====================================================
-            jsonVars = ezData['policies']['allOf'][1]['properties']['snmp']['key_map']
             pname = item['name']
             org_moid = org_moids[org]['Moid']
             #=====================================================
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_snmp_policy_list
-            empty, log_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, log_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2181,8 +2033,8 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
             }})
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body.update({jsonVars[k]:v})
+                if k in jsonVars['snmp']['key_map']:
+                    api_body.update({jsonVars['snmp']['key_map'][k]:v})
                     api_body.pop(k)
             if api_body.get('access_community_string'):
                 kwargs['Variable'] = f"access_community_string_{api_body['access_community_string']}"
@@ -2195,14 +2047,12 @@ class intersight_api(object):
                 api_body['trap_community'] = kwargs['var_value']
                 api_body['v2_enabled'] = True
             if 'snmp_trap_destinations' in item:
-                jsonVars = ezData['policies']['allOf'][1]['properties']['snmp_trap_destinations']['key_map']
                 api_body['snmp_traps'] = []
                 for i in item['snmp_trap_destinations']:
                     trap_item = dict({'class_id':'snmp.Trap','object_type':'snmp.Trap'}, **i)
                     for k, v in i.items():
-                        if k in jsonVars:
-                            trap_item.update({jsonVars[k]:v})
-                            trap_item.pop(k)
+                        if k in jsonVars['snmp_trap_destinations']['key_map']:
+                            trap_item.update({jsonVars['snmp_trap_destinations']['key_map'][k]:v})
                     if trap_item.get('community'):
                         kwargs['Variable'] = f"snmp_trap_community_{trap_item['community']}"
                         kwargs = ezfunctions.sensitive_var_value(**kwargs)
@@ -2218,10 +2068,6 @@ class intersight_api(object):
                 api_body['snmp_users'] = []
                 for i in item['snmp_users']:
                     user_item = dict({'class_id':'snmp.User','object_type':'snmp.User'}, **i)
-                    for k, v in i.items():
-                        if k in jsonVars:
-                            user_item.update({jsonVars[k]:v})
-                            user_item.pop(k)
                     if user_item.get('auth_password'):
                         kwargs['Variable'] = f"snmp_auth_password_{user_item['auth_password']}"
                         kwargs = ezfunctions.sensitive_var_value(**kwargs)
@@ -2232,47 +2078,60 @@ class intersight_api(object):
                         user_item['privacy_password'] = kwargs['var_value']
                     api_body['snmp_users'].append(user_item)
                 if len(item['snmp_users']) == 0: api_body.pop('snmp_users')
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
             try:
                 api_args = dict(_preload_content = False)
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_snmp_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = log_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_snmp_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = log_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_snmp_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling SnmpApi->%s_snmp_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Storage Policies
     #=====================================================
     def storage(self, **kwargs):
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = storage_api.StorageApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             #=====================================================
             # Grab Storage Policy Settings from Library
             #=====================================================
-            jsonVars = ezData['policies']['allOf'][1]['properties']['storage']['key_map']
             pname = item['name']
             org_moid = org_moids[org]['Moid']
             #=====================================================
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_storage_storage_policy_list
-            empty, storage_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, storage_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2281,19 +2140,18 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
             }})
             for k, v in item.items():
-                if k in jsonVars: api_body.update({jsonVars[k]:v})
+                if k in jsonVars['storage']['key_map']: api_body.update({jsonVars['storage']['key_map'][k]:v})
             if item.get('m2_raid_configuration'):
                 api_body.update({'m2_virtual_drive':{
                     'class_id':'storage.M2VirtualDriveConfig','object_type':'storage.M2VirtualDriveConfig',
                     'controller_slot':item['m2_raid_configuration'][0]['slot'],
                     'enable':True
                 }})
-            jsonVars = ezData['policies']['allOf'][1]['properties']['storage']['raid0_map']
             if item.get('single_drive_raid_configuration'):
                 api_body.update({'raid0_drive':{}})
                 for k,v in item['single_drive_raid_configuration'].items():
-                    if k in jsonVars: api_body['raid0_drive'].update({jsonVars[k]:v})
-                jsonVars = ezData['policies']['allOf'][1]['properties']['storage']['drivep_map']
+                    if k in jsonVars['storage']['raid0_map']:
+                        api_body['raid0_drive'].update({jsonVars['storage']['raid0_map'][k]:v})
                 if item['single_drive_raid_configuration'].get('virtual_drive_policy'):
                     api_body['raid0_drive']['virtual_drive_policy'] = item['single_drive_raid_configuration'
                                                                            ]['virtual_drive_policy']
@@ -2301,6 +2159,10 @@ class intersight_api(object):
                         'class_id':'storage.VirtualDrivePolicy','object_type':'storage.VirtualDrivePolicy'
                     })
                 api_body['raid0_drive'].update({'class_id':'storage.R0Drive','object_type':'storage.R0Drive'})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -2309,18 +2171,21 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_storage_storage_policy(api_body, **api_args).data)
-                    storage_moid = api_call['Moid']
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = storage_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_storage_storage_policy(pmoid, api_body, **api_args).data)
-                    storage_moid = pmoid
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = storage_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_storage_storage_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling StorageApi->%s_storage_storage_policy: %s\n" % (api_method, e))
                 sys.exit(1)
             if item.get('drive_groups'):
-                intersight_api('dg').storage_dg(api_client, item, storage_moid)
+                isdk_policies('dg').storage_dg(api_client, item, pol_moid)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Assign Drive Groups to Storage Policies
@@ -2333,7 +2198,7 @@ class intersight_api(object):
             #=====================================================
             get_policy   = api_handle.get_storage_disk_group_list
             query_filter = f"Name eq '{i['name']}' and StoragePolicy.Moid eq '{storage_moid}'"
-            empty, drive_groups = intersight_api('get').get_subtype(get_policy, query_filter)
+            empty, drive_groups = isdk_pools('get').get_subtype(get_policy, query_filter)
             #=====================================================
             # Create API Body for VLANs
             #=====================================================
@@ -2377,9 +2242,9 @@ class intersight_api(object):
                     vapi_call = json.loads(api_handle.create_storage_drive_group(api_body, **api_args).data)
                 else:
                     vapi_method = 'patch'
-                    pmoid      = drive_groups[item['name']]['Moid']
-                    vapi_call = json.loads(api_handle.create_storage_drive_group(pmoid, api_body, **api_args).data)
-                print(json.dumps(vapi_call, indent=4))
+                    pol_moid = drive_groups[item['name']]['Moid']
+                    vapi_call = json.loads(api_handle.create_storage_drive_group(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(vapi_call, indent=4))
             except ApiException as e:
                 print("Exception when calling StorageApi->%s_storage_drive_group: %s\n" % (vapi_method, e))
                 sys.exit(1)
@@ -2392,20 +2257,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-        #=====================================================
-        # Grab Switch Control Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['switch_control']['key_map']
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -2413,7 +2276,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_switch_control_policy_list
-            empty, ctrl_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, ctrl_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2430,10 +2293,14 @@ class intersight_api(object):
                 }
             })
             for k, v in item.items():
-                if k in jsonVars:
-                    if 'mac_' in k: api_body['mac_aging_settings'].update({jsonVars[k]:v})
-                    elif 'udld_' in k: api_body['udld_settings'].update({jsonVars[k]:v})
+                if k in jsonVars['switch_control']['key_map']:
+                    if 'mac_' in k: api_body['mac_aging_settings'].update({jsonVars['switch_control']['key_map'][k]:v})
+                    elif 'udld_' in k: api_body['udld_settings'].update({jsonVars['switch_control']['key_map'][k]:v})
                     api_body.pop(k)
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -2442,14 +2309,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_switch_control_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = ctrl_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_switch_control_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = ctrl_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_switch_control_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_switch_control_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Syslog Policies
@@ -2459,20 +2331,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
-        #=====================================================
-        # Grab Switch Control Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['remote_logging']['key_map']
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = syslog_api.SyslogApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -2480,7 +2350,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_syslog_policy_list
-            empty, log_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, log_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2499,8 +2369,8 @@ class intersight_api(object):
                 rsyslog = {'class_id':'syslog.RemoteLoggingClient','object_type':'syslog.RemoteLoggingClient'}
                 for key, value in item['remote_logging'].items():
                     for k, v in value.items():
-                        if k in jsonVars:
-                            api_body['remote_logging'][key].update({jsonVars[k]:v})
+                        if k in jsonVars['remote_logging']['key_map']:
+                            api_body['remote_logging'][key].update({jsonVars['remote_logging']['key_map'][k]:v})
                             api_body['remote_logging'][key].pop(k)
                     api_body['remote_logging'][key].update(rsyslog)
                 for key, value in item['remote_logging'].items():
@@ -2510,19 +2380,31 @@ class intersight_api(object):
                     for key, value in api_body['remote_logging'].items():
                         api_body['remote_clients'].append(deepcopy(value))
                 api_body.pop('remote_logging')
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
             try:
                 api_args = dict(_preload_content = False)
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_syslog_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = log_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_syslog_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = log_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_syslog_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_syslog_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch System QoS Policies
@@ -2533,14 +2415,17 @@ class intersight_api(object):
         #=====================================================
         args      = kwargs['args']
         home      = kwargs['home']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -2548,7 +2433,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_system_qos_policy_list
-            empty, qos_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, qos_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2560,6 +2445,10 @@ class intersight_api(object):
                 i.update({'admin_state':i['state'],'name':i['priority'],'object_type':'fabric.QosClass'})
                 i.pop('priority')
                 i.pop('state')
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -2568,14 +2457,19 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_system_qos_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = qos_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_system_qos_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = qos_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_system_qos_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_system_qos_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Thermal Policies
@@ -2586,14 +2480,17 @@ class intersight_api(object):
         #=====================================================
         args      = kwargs['args']
         home      = kwargs['home']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
+        dpolicies = {}
         #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = thermal_api.ThermalApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -2601,7 +2498,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_thermal_policy_list
-            empty, thermal_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, thermal_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2609,6 +2506,10 @@ class intersight_api(object):
             api_body.update({'organization':{
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -2617,92 +2518,40 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_thermal_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = thermal_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_thermal_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = thermal_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_thermal_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_thermal_policy: %s\n" % (api_method, e))
                 sys.exit(1)
-
-    #=====================================================
-    # Create/Patch UUID Pools
-    #=====================================================
-    def uuid(self, **kwargs):
-        #=====================================================
-        # Load Kwargs from Main
-        #=====================================================
-        args      = kwargs['args']
-        home      = kwargs['home']
-        org       = kwargs['org']
-        org_moids = kwargs['org_moids']
-        pools     = kwargs['immDict']['orgs'][org]['pools']['uuid']
-
-        #=====================================================
-        # Login to Intersight API
-        #=====================================================
-        api_client = credentials.config_credentials(home, args)
-        api_handle = uuidpool_api.UuidpoolApi(api_client)
-        for item in pools:
-            pname = item['name']
-            org_moid = org_moids[org]['Moid']
-            #=====================================================
-            # Confirm if the Policy Already Exists
-            #=====================================================
-            get_policy = api_handle.get_uuidpool_pool_list
-            empty, uuid_pools = intersight_api('get').get_api(get_policy, pname, org_moid)
-            #=====================================================
-            # Construct API Body Payload
-            #=====================================================
-            if empty == True:
-                api_body = {}
-                if item.get('assignment_order'): api_body.update({'assignment_order':item['assignment_order']})
-                else: api_body.update({'assignment_order':'sequential'})
-                api_body.update({'class_id':'uuidpool.Pool','name':item['name'],'object_type':'uuidpool.Pool'})
-                if item.get('description'): api_body.update({'description':item.get('description')})
-                api_body.update({'prefix':item['prefix']})
-                if item.get('uuid_blocks'):
-                    api_body.update({'UuidSuffixBlocks':[]})
-                    for i in item['uuid_blocks']:
-                        api_body['UuidSuffixBlocks'].append({
-                            'ClassId':'uuidpool.UuidBlock', 'ObjectType':'uuidpool.UuidBlock',
-                            'From':i['from'], 'Size':i['size']
-                        })
-                api_body.update({'organization':{
-                    'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
-                }})
-                #=====================================================
-                # Create the Pool via the Intersight API
-                #=====================================================
-                try:
-                    api_args = dict(_preload_content = False)
-                    api_post = json.loads(api_handle.create_uuidpool_pool(api_body, **api_args).data)
-                    print(json.dumps(api_post, indent=4))
-                except ApiException as e:
-                    print("Exception when calling uuidpool_api->create_uuidpool_pool: %s\n" % e)
-                    sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Assign VNICs to LAN Connectivity Policies
     #=====================================================
-    def vhbas(self, api_client, ezData, item, org_moid, scp_moid):
+    def vhbas(self, api_client, jsonVars, item, org_moid, scp_moid):
         #=====================================================
         # Get Ethernet Policies and MAC Pools
         #=====================================================
         api_handle = fabric_api.FabricApi(api_client)
         get_policy = api_handle.get_fabric_fc_zone_policy_list
-        e1, fcz = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e1, fcz = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         api_handle = fcpool_api.FcpoolApi(api_client)
         get_policy = api_handle.get_fcpool_pool_list
-        e2, wwpnp = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e2, wwpnp = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         api_handle = vnic_api.VnicApi(api_client)
         get_policy = api_handle.get_vnic_fc_adapter_policy_list
-        e3, fca = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e3, fca = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         get_policy = api_handle.get_vnic_fc_network_policy_list
-        e4, fcn = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e4, fcn = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         get_policy = api_handle.get_vnic_fc_qos_policy_list
-        e5, fcq = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e5, fcq = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         #=====================================================
         # Create API Body for VNICs
         #=====================================================
@@ -2712,8 +2561,11 @@ class intersight_api(object):
                 fcap = fca[i['fibre_channel_adapter_policy']]['Moid']
                 fcnp = fcn[i['fibre_channel_network_policies'][x]]['Moid']
                 fcqp = fcq[i['fibre_channel_qos_policy']]['Moid']
-                jsonVars = ezData['policies']['allOf'][1]['properties']['vhbas']
-                api_body = deepcopy(i)
+                api_body = {}
+                for k, v in i.items():
+                    if k in jsonVars['vhbas']['key_map']:
+                        api_body.update({jsonVars['vhbas']['key_map'][k]:v})
+                        api_body.pop(k)
                 api_body.update({'class_id':'vnic.FcIf','object_type':'vnic.FcIf'})
                 api_body.update({
                     'placement':{'id':'MLOM','object_type':'vnic.PlacementSettings','pci_link':0,'uplink':0}
@@ -2730,7 +2582,6 @@ class intersight_api(object):
                 api_body.update({'name':i['names'][x],'order':i['placement_pci_order'][x]})
                 if i.get('placement_switch_id'):
                     api_body['placement'].update({'switch_id':i['placement_switch_id']})
-                    api_body.pop('placement_switch_id')
                 else:
                     if x == 0: s_id = 'A'
                     else: s_id = 'B'
@@ -2763,26 +2614,18 @@ class intersight_api(object):
                 if i.get('vhba_type'):
                     api_body.update({'type':i['vhba_type']})
                     api_body.pop('vhba_type')
-                else:
-                    api_body.update({'type':'fc-initiator'})
-                if i.get('wwpn_address_pools'):
-                    wwpnpool = wwpnp[i['wwpn_address_pools'][x]]['Moid']
+                else: api_body.update({'type':'fc-initiator'})
+                if i.get('wwpn_pools'):
+                    wwpnpool = wwpnp[i['wwpn_pools'][x]]['Moid']
                     api_body.update({
                         'wwpn_address_type':'POOL',
                         'wwpn_pool':{
                             'class_id':'mo.MoRef','moid':wwpnpool,'object_type':'fcpool.Pool'
                         }
                     })
-                for k, v in i.items():
-                    if k in jsonVars['key_map']:
-                        api_body.update({jsonVars['key_map'][k]:v})
-                        api_body.pop(k)
-                pop_list = jsonVars['pop_list']
-                for p in pop_list:
-                    if api_body.get(p): api_body.pop(p)
                 get_policy   = api_handle.get_vnic_fc_if_list
                 query_filter = f"Name eq '{api_body['name']}' and SanConnectivityPolicy.Moid eq '{scp_moid}'"
-                empty, vhbas = intersight_api('get').get_subtype(get_policy, query_filter)
+                empty, vhbas = isdk_pools('get').get_subtype(get_policy, query_filter)
                 #=====================================================
                 # Create or Patch the Policy via the Intersight API
                 #=====================================================
@@ -2791,11 +2634,12 @@ class intersight_api(object):
                     if empty == True:
                         api_method = 'create'
                         api_call = json.loads(api_handle.create_vnic_fc_if(api_body, **api_args).data)
+                        pol_moid = api_call['Moid']
                     else:
                         api_method = 'patch'
-                        pmoid      = vhbas[api_body['name']]['Moid']
-                        api_call = json.loads(api_handle.patch_vnic_fc_if(pmoid, api_body, **api_args).data)
-                    print(json.dumps(api_call, indent=4))
+                        pol_moid = vhbas[api_body['name']]['Moid']
+                        api_call = json.loads(api_handle.patch_vnic_fc_if(pol_moid, api_body, **api_args).data)
+                    if print_response_always == True: print(json.dumps(api_call, indent=4))
                 except ApiException as e:
                     print("Exception when calling VnicApi->%s_vnic_fc_if: %s\n" % (api_method, e))
                     sys.exit(1)
@@ -2808,20 +2652,18 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Virtual KVM Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['virtual_kvm']['key_map']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = kvm_api.KvmApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -2829,7 +2671,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_kvm_policy_list
-            empty, kvm_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, kvm_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2838,42 +2680,52 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
             }})
             for k, v in item.items():
-                if k in jsonVars:
-                    api_body.update({jsonVars[k]:v})
+                if k in jsonVars['virtual_kvm']['key_map']:
+                    api_body.update({jsonVars['virtual_kvm']['key_map'][k]:v})
                     api_body.pop(k)
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
             try:
                 api_args = dict(_preload_content = False)
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_kvm_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = kvm_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_kvm_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = kvm_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_kvm_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_kvm_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch Virtual Media Policies
     #=====================================================
     def virtual_media(self, **kwargs):
         args      = kwargs['args']
-        ezData    = kwargs['ezData']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
         policies  = kwargs['immDict']['orgs'][org]['policies'][self.type]
         #=====================================================
-        # Grab Virtual Media Settings from Library
-        #=====================================================
-        jsonVars = ezData['policies']['allOf'][1]['properties']['virtual_media']['key_map']
-        #=====================================================
         # Login to Intersight API
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = vmedia_api.VmediaApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -2881,7 +2733,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_vmedia_policy_list
-            empty, vmedia_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, vmedia_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2890,29 +2742,41 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moids[org]['Moid'],'object_type':'organization.Organization'
             }})
             for k, v in item.items():
-                if k in jsonVars: api_body.update({jsonVars[k]:v})
-            jsonVars = ezData['policies']['allOf'][1]['properties']['virtual_media']['add_key_map']
+                if k in jsonVars['virtual_media']['key_map']: api_body.update({jsonVars['virtual_media']['key_map'][k]:v})
             if item.get('add_virtual_media'):
                 api_body.update({'mappings':[]})
                 for i in item['add_virtual_media']:
                     vmedia_add = {}
                     for k, v in i.items():
-                        if k in jsonVars: vmedia_add.update({jsonVars[k]:v})
+                        if k in jsonVars['virtual_media']['add_key_map']:
+                            vmedia_add.update({jsonVars['virtual_media']['add_key_map'][k]:v})
                     vmedia_add.update({'class_id':'vmeida.Mapping','object_type':'vmeida.Mapping'})
                     api_body['mappings'].append(vmedia_add)
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
             try:
                 api_args = dict(_preload_content = False)
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_vmedia_policy(api_body, **api_args).data)
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = vmedia_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_vmedia_policy(pmoid, api_body, **api_args).data)
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = vmedia_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_vmedia_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling VmediaApi->%s_vmedia_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Create/Patch VLAN Policies
@@ -2922,6 +2786,8 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -2931,6 +2797,7 @@ class intersight_api(object):
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -2938,7 +2805,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_eth_network_policy_list
-            empty, vlan_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, vlan_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -2947,6 +2814,10 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
             api_body.pop('vlans')
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -2955,21 +2826,24 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_eth_network_policy(api_body, **api_args).data)
-                    vpolicy_moid = api_call['Moid']
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = vlan_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_eth_network_policy(pmoid, api_body, **api_args).data)
-                    vpolicy_moid = pmoid
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = vlan_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_eth_network_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_eth_network_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
             #=====================================================
             # Create and Attach VLANs to VLAN Policy
             #=====================================================
             if item.get('vlans'):
-                intersight_api('vlans').vlans(api_client, item, org_moid, vpolicy_moid)
+                isdk_policies('vlans').vlans(api_client, item, org_moid, pol_moid)
+        validating.end_section(self.type)
+        return dpolicies
             
     #=====================================================
     # Assign VLANs to VLAN Policies
@@ -2980,7 +2854,7 @@ class intersight_api(object):
         # Get Organization Multicast Policies
         #=====================================================
         get_policy = api_handle.get_fabric_multicast_policy_list
-        mempty, mcast_policies = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        mempty, mcast_policies = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         #=====================================================
         # Create API Body for VLANs
         #=====================================================
@@ -2994,10 +2868,12 @@ class intersight_api(object):
                 if i.get('native_vlan'):
                     api_body.update({'is_native':i['native_vlan']})
                     api_body.pop('native_vlan')
-                if re.search('^[\d]$', str(x)): api_body.update({'name':f"{i['name']}-vl000{x}"})
-                elif re.search('^[\d]{2}$', str(x)): api_body.update({'name':f"{i['name']}-vl00{x}"})
-                elif re.search('^[\d]{3}$', str(x)): api_body.update({'name':f"{i['name']}-vl0{x}"})
-                elif re.search('^[\d]{4}$', str(x)): api_body.update({'name':f"{i['name']}-vl{x}"})
+                if re.search('^[\d]$', str(x)): zeros = '000'
+                elif re.search('^[\d]{2}$', str(x)): zeros = '00'
+                elif re.search('^[\d]{3}$', str(x)): zeros = '0'
+                elif re.search('^[\d]{4}$', str(x)): zeros = ''
+                if i['name'] == 'vlan': api_body.update({'name':f"{i['name']}{zeros}{x}"})
+                else: api_body.update({'name':f"{i['name']}-vl{zeros}{x}"})
                 api_body.update({'eth_network_policy':{
                     'class_id':'mo.MoRef',
                     'moid':vpolicy_moid,
@@ -3010,44 +2886,46 @@ class intersight_api(object):
                 }})
                 get_policy   = api_handle.get_fabric_vlan_list
                 query_filter = f"VlanId eq '{int(x)}' and EthNetworkPolicy.Moid eq '{vpolicy_moid}'"
-                empty, vlans = intersight_api('get').get_subtype(get_policy, query_filter)
+                empty, vlans = isdk_pools('get').get_subtype(get_policy, query_filter)
                 #=====================================================
                 # Create or Patch the Policy via the Intersight API
                 #=====================================================
                 try:
                     api_args = dict(_preload_content = False)
                     if empty == True:
-                        vapi_method = 'create'
-                        vapi_call = json.loads(api_handle.create_fabric_vlan(api_body, **api_args).data)
+                        api_method = 'create'
+                        api_call = json.loads(api_handle.create_fabric_vlan(api_body, **api_args).data)
+                        pol_moid = api_call['Moid']
                     else:
-                        vapi_method = 'patch'
-                        pmoid      = vlans[item['name']]['Moid']
-                        vapi_call = json.loads(api_handle.patch_fabric_vlan(pmoid, api_body, **api_args).data)
-                    print(json.dumps(vapi_call, indent=4))
+                        api_method = 'patch'
+                        pol_moid = vlans[api_body['name']]['Moid']
+                        api_call = json.loads(api_handle.patch_fabric_vlan(pol_moid, api_body, **api_args).data)
+                    if print_response_always == True: print(json.dumps(api_call, indent=4))
+                    validating.completed_sub_item(self.type, api_body['name'], api_method, pol_moid)
                 except ApiException as e:
-                    print("Exception when calling FabricApi->%s_fabric_vlan: %s\n" % (vapi_method, e))
+                    print("Exception when calling FabricApi->%s_fabric_vlan: %s\n" % (api_method, e))
                     sys.exit(1)
 
     #=====================================================
     # Assign VNICs to LAN Connectivity Policies
     #=====================================================
-    def vnics(self, api_client, ezData, item, org_moid, lcp_moid):
+    def vnics(self, api_client, jsonVars, item, org_moid, lcp_moid):
         #=====================================================
         # Get Ethernet Policies and MAC Pools
         #=====================================================
         api_handle = fabric_api.FabricApi(api_client)
         get_policy = api_handle.get_fabric_eth_network_control_policy_list
-        e1, ethc = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e1, ethc = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         get_policy = api_handle.get_fabric_eth_network_group_policy_list
-        e2, ethg = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e2, ethg = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         api_handle = macpool_api.MacpoolApi(api_client)
         get_policy = api_handle.get_macpool_pool_list
-        e3, macp = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e3, macp = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         api_handle = vnic_api.VnicApi(api_client)
         get_policy = api_handle.get_vnic_eth_adapter_policy_list
-        e4, etha = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e4, etha = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         get_policy = api_handle.get_vnic_eth_qos_policy_list
-        e5, ethq = intersight_api('get').get_api(get_policy, 'ALLP', org_moid)
+        e5, ethq = isdk_pools('get').get_api(get_policy, 'ALLP', org_moid)
         #=====================================================
         # Create API Body for VNICs
         #=====================================================
@@ -3058,7 +2936,6 @@ class intersight_api(object):
                 ethcp = ethc[i['ethernet_network_control_policy']]['Moid']
                 ethgp = ethg[i['ethernet_network_group_policy']]['Moid']
                 ethqp = ethq[i['ethernet_qos_policy']]['Moid']
-                jsonVars = ezData['policies']['allOf'][1]['properties']['vnics']
                 api_body = deepcopy(i)
                 api_body.update({'class_id':'vnic.EthIf','object_type':'vnic.EthIf'})
                 if not api_body.get('cdn_values'):
@@ -3115,12 +2992,12 @@ class intersight_api(object):
                             'class_id':'mo.MoRef','moid':macpool,'object_type':'macpool.Pool'
                         }
                     })
-                pop_list = jsonVars['pop_list']
+                pop_list = jsonVars['vnics']['pop_list']
                 for p in pop_list:
                     if api_body.get(p): api_body.pop(p)
                 get_policy   = api_handle.get_vnic_eth_if_list
                 query_filter = f"Name eq '{api_body['name']}' and LanConnectivityPolicy.Moid eq '{lcp_moid}'"
-                empty, vnics = intersight_api('get').get_subtype(get_policy, query_filter)
+                empty, vnics = isdk_pools('get').get_subtype(get_policy, query_filter)
                 #=====================================================
                 # Create or Patch the Policy via the Intersight API
                 #=====================================================
@@ -3129,11 +3006,13 @@ class intersight_api(object):
                     if empty == True:
                         api_method = 'create'
                         api_call = json.loads(api_handle.create_vnic_eth_if(api_body, **api_args).data)
+                        pol_moid = api_call['Moid']
                     else:
                         api_method = 'patch'
-                        pmoid      = vnics[api_body['name']]['Moid']
-                        api_call = json.loads(api_handle.patch_vnic_eth_if(pmoid, api_body, **api_args).data)
-                    print(json.dumps(api_call, indent=4))
+                        pol_moid = vnics[api_body['name']]['Moid']
+                        api_call = json.loads(api_handle.patch_vnic_eth_if(pol_moid, api_body, **api_args).data)
+                    if print_response_always == True: print(json.dumps(api_call, indent=4))
+                    validating.completed_sub_item(self.type, api_body['name'], api_method, pol_moid)
                 except ApiException as e:
                     print("Exception when calling VnicApi->%s_vnic_eth_if: %s\n" % (api_method, e))
                     sys.exit(1)
@@ -3146,6 +3025,8 @@ class intersight_api(object):
         # Load Kwargs from Main
         #=====================================================
         args      = kwargs['args']
+        dpolicies = {}
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']
@@ -3155,6 +3036,7 @@ class intersight_api(object):
         #=====================================================
         api_client = credentials.config_credentials(home, args)
         api_handle = fabric_api.FabricApi(api_client)
+        validating.begin_section(self.type)
         for item in policies:
             pname = item['name']
             org_moid = org_moids[org]['Moid']
@@ -3162,7 +3044,7 @@ class intersight_api(object):
             # Confirm if the Policy Already Exists
             #=====================================================
             get_policy = api_handle.get_fabric_fc_network_policy_list
-            empty, vsan_policies = intersight_api('get').get_api(get_policy, pname, org_moid)
+            empty, vsan_policies = isdk_pools('get').get_api(get_policy, pname, org_moid)
             #=====================================================
             # Construct API Body Payload
             #=====================================================
@@ -3171,6 +3053,10 @@ class intersight_api(object):
                 'class_id':'mo.MoRef','moid':org_moid,'object_type':'organization.Organization'
             }})
             api_body.pop('vsans')
+            if item.get('tags'):
+                api_body.update({'tags':item['tags']})
+                api_body['tags'].append(jsonVars['tags'])
+            else: api_body.update({'tags':[jsonVars['tags']]})
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
@@ -3179,21 +3065,24 @@ class intersight_api(object):
                 if empty == True:
                     api_method = 'create'
                     api_call = json.loads(api_handle.create_fabric_fc_network_policy(api_body, **api_args).data)
-                    vpolicy_moid = api_call['Moid']
+                    pol_moid = api_call['Moid']
                 else:
                     api_method = 'patch'
-                    pmoid      = vsan_policies[item['name']]['Moid']
-                    api_call = json.loads(api_handle.patch_fabric_fc_network_policy(pmoid, api_body, **api_args).data)
-                    vpolicy_moid = pmoid
-                print(json.dumps(api_call, indent=4))
+                    pol_moid = vsan_policies[item['name']]['Moid']
+                    api_call = json.loads(api_handle.patch_fabric_fc_network_policy(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(api_call, indent=4))
+                validating.completed_item(self.type, item['name'], api_method, pol_moid)
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_fc_network_policy: %s\n" % (api_method, e))
                 sys.exit(1)
+            dpolicies.update({api_body['name']:pol_moid})
             #=====================================================
             # Create and Attach VSANs to VSAN Policy
             #=====================================================
             if item.get('vsans'):
-                intersight_api('vsans').vsans(api_client, item, vpolicy_moid)
+                isdk_policies('vsans').vsans(api_client, item, pol_moid)
+        validating.end_section(self.type)
+        return dpolicies
 
     #=====================================================
     # Assign VSANs to VSAN Policies
@@ -3206,7 +3095,7 @@ class intersight_api(object):
             #=====================================================
             get_policy   = api_handle.get_fabric_vsan_list
             query_filter = f"VSanId eq '{int(i['vsan_id'])}' and FcNetworkPolicy.Moid eq '{vpolicy_moid}'"
-            empty, vsans = intersight_api('get').get_subtype(get_policy, query_filter)
+            empty, vsans = isdk_pools('get').get_subtype(get_policy, query_filter)
             #=====================================================
             # Create API Body for VLANs
             #=====================================================
@@ -3226,21 +3115,9 @@ class intersight_api(object):
                     vapi_call = json.loads(api_handle.create_fabric_vsan(api_body, **api_args).data)
                 else:
                     vapi_method = 'patch'
-                    pmoid      = vsans[item['name']]['Moid']
-                    vapi_call = json.loads(api_handle.patch_fabric_vsan(pmoid, api_body, **api_args).data)
-                print(json.dumps(vapi_call, indent=4))
+                    pol_moid = vsans[item['name']]['Moid']
+                    vapi_call = json.loads(api_handle.patch_fabric_vsan(pol_moid, api_body, **api_args).data)
+                if print_response_always == True: print(json.dumps(vapi_call, indent=4))
             except ApiException as e:
                 print("Exception when calling FabricApi->%s_fabric_vsan: %s\n" % (vapi_method, e))
                 sys.exit(1)
-
-    #=====================================================
-    # Create/Patch WWNN Pools
-    #=====================================================
-    def wwnn(self, **kwargs):
-        intersight_api('WWNN').fc(**kwargs)
-    
-    #=====================================================
-    # Create/Patch WWPN Pools
-    #=====================================================
-    def wwpn(self, **kwargs):
-        intersight_api('WWPN').fc(**kwargs)

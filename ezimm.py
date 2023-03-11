@@ -11,6 +11,7 @@ It uses argparse to take in the following CLI arguments:
     l or load-config:        Skip Wizard and Just Load Configuration Files.
     t or deploy-type:        Deployment Type.  Values are: Intersight or Terraform
 """
+from collections import OrderedDict
 from copy import deepcopy
 from intersight.api import organization_api
 from intersight.api import resource_api
@@ -29,9 +30,12 @@ import yaml
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 sys.path.insert(0, './classes')
+from classes.isdk_pools import isdk_pools
+# These are used but they are in quotes so it shows unused
+from classes.isdk_policies import isdk_policies
+from classes.isdk_profiles import isdk_profiles
 import classes.ezfunctions
 import classes.imm
-import classes.isdk
 import classes.lansan
 import classes.policies
 import classes.pools
@@ -483,19 +487,18 @@ def prompt_org(**kwargs):
 def prompt_previous_configurations(**kwargs):
     baseRepo = kwargs['args'].dir
     ezData   = kwargs['ezData']['ezimm']['allOf'][1]['properties']
-    path_sep = kwargs['path_sep']
     vclasses = ezData['classes']['enum']
     dir_check   = 0
     use_configs = False
     if os.path.isdir(baseRepo):
         dir_list = os.listdir(baseRepo)
         for i in dir_list:
-            if i == 'main.tf': dir_check += 1
-            elif i == 'policies': dir_check += 1
+            #if i == 'main.tf': dir_check += 1
+            if i == 'policies': dir_check += 1
             elif i == 'pools': dir_check += 1
             elif i == 'profiles': dir_check += 1
             elif i == 'templates': dir_check += 1
-    if dir_check == 5:
+    if dir_check == 4:
         kwargs['jData'] = {}
         kwargs['jData']['default']     = True
         kwargs['jData']['description'] = 'Load Previous Configurations'
@@ -736,7 +739,7 @@ def main():
                 print(f'  It can be a short path or a fully qualified path.  "{folder}" does not qualify.')
                 print(f'  Exiting...')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                exit()
+                sys.exit(1)
         destdirCheck = True
     #==============================================
     # Run IMM Transition if json Arg Present
@@ -752,7 +755,7 @@ def main():
             print(f'  Did not find the file {args.json_file}.')
             print(f'  Please Validate that you have specified the correct file and path.')
             print(f'\n-------------------------------------------------------------------------------------------\n')
-            exit()
+            sys.exit(1)
         else:
             kwargs['deploy_type'] = 'Terraform'
             json_file = args.json_file
@@ -773,7 +776,7 @@ def main():
                 print(f'  API Key and Secret would be entered to upload to Intersight.')
                 print(f'  Exiting Wizard...')
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                exit()
+                sys.exit(1)
             #==============================================
             # Run through the IMM Transition Wizard
             #==============================================
@@ -813,24 +816,38 @@ def main():
         kwargs = classes.ezfunctions.terraform_provider_config(**kwargs)
         kwargs = create_terraform_workspaces(orgs, **kwargs)
     elif kwargs['deploy_type'] == 'Intersight':
-        kwargs = classes.isdk.intersight_api('org_query').organizations(**kwargs)
+        kwargs = isdk_pools('org_query').organizations(**kwargs)
         #==============================================
         # Intersight Pools
         #==============================================
-        cpool = 'classes.isdk.intersight_api'
+        kwargs['isdk_deployed'] = {}
         for org in orgs:
-            #ptype = 'pools'
+            ptype = 'pools'
+            cisdk = 'isdk_pools'
             #if kwargs['immDict']['orgs'][org].get('pools'):
             #    for pool_type in kwargs['immDict']['orgs'][org]['pools']:
-            #        eval(f"{cpool}(ptype).{pool_type}(**kwargs)")
+            #        eval(f"{cisdk}(ptype).{pool_type}(**kwargs)")
+            policies_in_order = OrderedDict(sorted(kwargs['immDict']['orgs'][org]['policies'].items()))
+            cisdk = 'isdk_policies'
             if kwargs['immDict']['orgs'][org].get('policies'):
-                for ptype in kwargs['immDict']['orgs'][org]['policies']:
-                    if re.search('(port)', ptype):
-                        kwargs[f'{ptype}'] = eval(f"{cpool}(ptype).{ptype}(**kwargs)")
-            #ptype = 'domain_profiles'
-            #if kwargs['immDict']['orgs'][org].get('profiles'):
-            #    if kwargs['immDict']['orgs'][org]['profiles'].get('domain'):
-            #        kwargs = eval(f"{cpool}(ptype).domain_profiles(**kwargs)")
+                for ptype in policies_in_order:
+                    if re.search('snmp', ptype):
+                        dpolicies = eval(f"{cisdk}(ptype).{ptype}(**kwargs)")
+                        kwargs['isdk_deployed'].update({ptype:dpolicies})
+            exit()
+            cisdk = 'isdk_profiles'
+            ptype = 'templates'
+            if kwargs['immDict']['orgs'][org].get(ptype):
+                if kwargs['immDict']['orgs'][org][ptype].get('server'):
+                    kwargs = eval(f"{cisdk}(ptype).server_templates(**kwargs)")
+            ptype = 'profiles'
+            if kwargs['immDict']['orgs'][org].get(ptype):
+                if kwargs['immDict']['orgs'][org][ptype].get('domain'):
+                    kwargs = eval(f"{cisdk}(ptype).domain_profiles(**kwargs)")
+                if kwargs['immDict']['orgs'][org][ptype].get('chassis'):
+                    kwargs = eval(f"{cisdk}(ptype).chassis_profiles(**kwargs)")
+                if kwargs['immDict']['orgs'][org][ptype].get('server'):
+                    kwargs = eval(f"{cisdk}(ptype).server_profiles(**kwargs)")
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
     print(f'\n-------------------------------------------------------------------------------------------\n')

@@ -87,7 +87,7 @@ class intersight_api(object):
         
         def empty_results(apiQuery):
                 print(f"The API Query Results were empty for {apiQuery['ObjectType']}.  Exiting...")
-                exit()
+                sys.exit(1)
 
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print('  Beginning Policy Append to Profiles...')
@@ -248,7 +248,7 @@ class intersight_api(object):
         
         def empty_results(apiQuery):
                 print(f"The API Query Results were empty for {apiQuery['ObjectType']}.  Exiting...")
-                exit()
+                sys.exit(1)
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print('  Beginning VLAN Addition...')
         print(f'\n-------------------------------------------------------------------------------------------\n')

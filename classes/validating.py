@@ -1,14 +1,42 @@
 import ipaddress
 import re
 import string
+import sys
 import validators
 
-# Errors
+# Errors & Notifications
+def begin_section(type):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f"   Beginning {' '.join(type.split('_')).title()} Deployments.\n")
+
+def completed_item(type, name, api_method, pol_moid):
+    print(f'    - Completed {api_method} for name: {name} - Moid: {pol_moid}')
+
+def completed_sub_item(type, name, api_method, pol_moid):
+    print(f'      * Completed {api_method} for name: {name} - Moid: {pol_moid}')
+
+def deploy_notification(profile, profile_type):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'   Deploy Action Still ongoing for {profile_type} Profile {profile}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+
 def error_file_location(varName, varValue):
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  !!!Error!!! The "{varName}" "{varValue}"')
     print(f'  is invalid.  Please valid the Entry for "{varName}".')
     print(f'\n-------------------------------------------------------------------------------------------\n')
+
+def end_section(type):
+    print(f"\n   Completed {' '.join(type.split('_')).title()} Deployments.\n")
+
+def error_policy_exist(policy_type, policy_name, profile, profile_type, ptype):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'   !!!Error!!! The Following policy was attached to {profile_type} {ptype} {profile}')
+    print(f'   But it has not been created:')
+    print(f'   Policy Type: {policy_type}')
+    print(f'   Policy Name: {policy_name}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    sys.exit(1)
 
 def error_request(status, text):
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -16,7 +44,13 @@ def error_request(status, text):
     print(f'   Exiting on Error {status} with the following output:')
     print(f'   {text}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    exit()
+    sys.exit(1)
+
+def error_serial_number(name, serial):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'  !!!Error!!! The Serial Number "{serial}" for "{name}" was not found in inventory.')
+    print(f'  Please the serial number for "{name}".')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def error_subnet_check(**kwargs):
     ip_version = kwargs['ip_version']
@@ -30,20 +64,20 @@ def error_subnet_check(**kwargs):
         print(f'   !!!Error!!!  {pool_from} is not in network {gateway}/{prefix}:')
         print(f'   Exiting....')
         print(f'\n{"-"*91}\n')
-        exit()
+        sys.exit(1)
     if not pool_to in ipaddress.ip_network(f"{gateway}/{prefix}", strict=False):
         print(f'\n{"-"*91}\n')
         print(f'   !!!Error!!!  {pool_to} is not in network {gateway}/{prefix}:')
         print(f'   Exiting....')
         print(f'\n{"-"*91}\n')
-        exit()
+        sys.exit(1)
 
 
 def unmapped_keys(policy_type, name, key):
     print(f'\n{"-"*91}\n')
     print(f'   !!!Error!!!! For {policy_type}, {name}, unknown key {key}')
     print(f'\n{"-"*91}\n')
-    exit()
+    sys.exit(1)
  
 # Validations
 def description(varName, varValue, minLength, maxLength):

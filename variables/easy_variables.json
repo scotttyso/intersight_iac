@@ -1211,6 +1211,27 @@
                                     "wwpn":"wwpn"
                                 }
                             },
+                            "chassis_profile": {
+                                "policy_list": [
+                                    "imc_access_policy",
+                                    "power_policy",
+                                    "snmp_policy",
+                                    "thermal_policy"
+                                ]
+                            },
+                            "domain_profile": {
+                                "policy_list": [
+                                    "network_connectivity_policy",
+                                    "ntp_policy",
+                                    "port_policies",
+                                    "snmp_policy",
+                                    "switch_control_policy",
+                                    "syslog_policy",
+                                    "system_qos_policy",
+                                    "vlan_policies",
+                                    "vsan_policies"
+                                ]
+                            },
                             "ethernet_adapter": {
                                 "template_tuning":{
                                     "VMware":{
@@ -1306,6 +1327,16 @@
                                     "obtain_ipv4_dns_from_dhcp":"enable_ipv4dns_from_dhcp",
                                     "obtain_ipv6_dns_from_dhcp":"enable_ipv6dns_from_dhcp",
                                     "update_domain":"dynamic_dns_domain"
+                                }
+                            },
+                            "ntp": {
+                                "key_map": {
+                                    "description":"description",
+                                    "enabled":"enabled",
+                                    "name":"name",
+                                    "ntp_servers":"ntp_servers",
+                                    "timezone":"timezone",
+                                    "tags":"tags"
                                 }
                             },
                             "port": {
@@ -1415,9 +1446,48 @@
                             },
                             "san_connectivity": {
                                 "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags",
+                                    "target_platform":"target_platform",
                                     "vhba_placement_mode":"placement_mode",
-                                    "wwnn_allocation_type":"wwnn_address_type"
+                                    "wwnn_allocation_type":"wwnn_address_type",
+                                    "wwnn_pool":"wwnn_pool",
+                                    "wwnn_static_address":"static_wwnn_address"
                                 }
+                            },
+                            "server_profile": {
+                                "policy_list": [
+                                    "bios_policy",
+                                    "boot_order_policy",
+                                    "imc_access_policy",
+                                    "ipmi_over_lan_policy",
+                                    "lan_connectivity_policy",
+                                    "local_user_policy",
+                                    "power_policy",
+                                    "san_connectivity_policy",
+                                    "serial_over_lan_policy",
+                                    "snmp_policy",
+                                    "storage_policy",
+                                    "syslog_policy",
+                                    "uuid_policy",
+                                    "virtual_kvm_policy",
+                                    "virtual_media_policy"
+                                ]
+                            },
+                            "server_profile_temp": {
+                                "policy_list": [
+                                    "adapter_configuration_policy",
+                                    "certificate_management_policy",
+                                    "device_connector_policy",
+                                    "ldap_policy",
+                                    "network_connectivity_policy",
+                                    "ntp_policy",
+                                    "persistent_memory_policy",
+                                    "resource_policy",
+                                    "smtp_policy",
+                                    "ssh_policy"
+                                ]
                             },
                             "snmp": {
                                 "key_map": {
@@ -1504,27 +1574,15 @@
                                     "vsan_id":"id"
                                 }
                             },
+                            "tags": {
+                                    "key": "easy-imm",
+                                    "value": "2.5.1"
+                                },
                             "vhbas": {
                                 "key_map": {
-                                    "persistent_lun_bindings":"persistent_bindings"
-                                },
-                                "pop_list": [
-                                    "fc_zone_policies",
-                                    "fibre_channel_adapter_policy",
-                                    "fibre_channel_network_policies",
-                                    "fibre_channel_qos_policy",
-                                    "names",
-                                    "persistent_lun_bindings",
-                                    "placement_pci_links",
-                                    "placement_pci_order",
-                                    "placement_slot_ids",
-                                    "placement_switch_id",
-                                    "placement_uplink_ports",
-                                    "vhba_type",
-                                    "wwpn_allocation_type",
-                                    "wwpn_pools",
-                                    "wwpn_static_addresses"
-                                ]
+                                    "persistent_lun_bindings":"persistent_bindings",
+                                    "wwpn_allocation_type":"wwpn_allocation_type"
+                                }
                             },
                             "virtual_kvm": {
                                 "key_map": {
@@ -1586,7 +1644,7 @@
                     }
                 ]
             },
-            "version":"2.0.1"
+            "version":"2.5.1"
         }
     }
 }
