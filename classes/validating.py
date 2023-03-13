@@ -5,15 +5,22 @@ import sys
 import validators
 
 # Errors & Notifications
-def begin_section(type):
+def begin_section(ptype1, ptype2):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f"   Beginning {' '.join(type.split('_')).title()} Deployments.\n")
+    print(f"   Beginning {' '.join(ptype1.split('_')).title()} {ptype2.capitalize()} Deployments.\n")
 
-def completed_item(type, name, api_method, pol_moid):
-    print(f'    - Completed {api_method} for name: {name} - Moid: {pol_moid}')
-
-def completed_sub_item(type, name, api_method, pol_moid):
-    print(f'      * Completed {api_method} for name: {name} - Moid: {pol_moid}')
+def completed_item(ptype, pargs, pmoid):
+    ptype1 = ptype
+    method = pargs.apiMethod
+    if 'vlans' == ptype1: name = f"VLAN {pargs.apiBody['vlan_id']}"
+    elif 'vsans' == ptype1: name = f"VSAN {pargs.apiBody['vlan_id']}"
+    elif 'port_channel' in ptype1: name = f"PC {pargs.apiBody['pc_id']}"
+    elif 'port_role' in ptype1: name = f"Port {pargs.apiBody['port_id']}"
+    else: name = pargs.apiBody['name']
+    if re.search('(vlans|vsans|port_(channel|role))', ptype1):
+        print(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
+    else:
+        print(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
 
 def deploy_notification(profile, profile_type):
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -26,8 +33,8 @@ def error_file_location(varName, varValue):
     print(f'  is invalid.  Please valid the Entry for "{varName}".')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
-def end_section(type):
-    print(f"\n   Completed {' '.join(type.split('_')).title()} Deployments.\n")
+def end_section(ptype1, ptype2):
+    print(f"\n   Completed {' '.join(ptype1.split('_')).title()} {ptype2.capitalize()} Deployments.")
 
 def error_policy_exist(policy_type, policy_name, profile, profile_type, ptype):
     print(f'\n-------------------------------------------------------------------------------------------\n')

@@ -82,7 +82,7 @@ class isdk_policies(object):
         #=====================================================
         args      = kwargs['args']
         dpolicies = {}
-        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']
+        jsonVars  = kwargs['ezData']['policies']['allOf'][1]['properties']['bios']
         home      = kwargs['home']
         org       = kwargs['org']
         org_moids = kwargs['org_moids']

@@ -1,6 +1,7 @@
 # pip freeze -q -r requirements.txt
 argparse
 collection
+dotmap
 GitPython
 git_status_checker
 intersight

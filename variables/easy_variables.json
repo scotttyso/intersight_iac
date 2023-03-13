@@ -1123,6 +1123,403 @@
                     {
                         "properties": {
                             "bios": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags",
+                                    "acs_control_gpu1state": "acs_control_gpu1state",
+                                    "acs_control_gpu2state": "acs_control_gpu2state",
+                                    "acs_control_gpu3state": "acs_control_gpu3state",
+                                    "acs_control_gpu4state": "acs_control_gpu4state",
+                                    "acs_control_gpu5state": "acs_control_gpu5state",
+                                    "acs_control_gpu6state": "acs_control_gpu6state",
+                                    "acs_control_gpu7state": "acs_control_gpu7state",
+                                    "acs_control_gpu8state": "acs_control_gpu8state",
+                                    "acs_control_slot11state": "acs_control_slot11state",
+                                    "acs_control_slot12state": "acs_control_slot12state",
+                                    "acs_control_slot13state": "acs_control_slot13state",
+                                    "acs_control_slot14state": "acs_control_slot14state",
+                                    "adjacent_cache_line_prefetch": "adjacent_cache_line_prefetch",
+                                    "advanced_mem_test": "advanced_mem_test",
+                                    "all_usb_devices": "all_usb_devices",
+                                    "altitude": "altitude",
+                                    "aspm_support": "aspm_support",
+                                    "assert_nmi_on_perr": "assert_nmi_on_perr",
+                                    "assert_nmi_on_serr": "assert_nmi_on_serr",
+                                    "auto_cc_state": "auto_cc_state",
+                                    "autonumous_cstate_enable": "autonumous_cstate_enable",
+                                    "baud_rate": "baud_rate",
+                                    "bme_dma_mitigation": "bme_dma_mitigation",
+                                    "boot_option_num_retry": "boot_option_num_retry",
+                                    "boot_option_re_cool_down": "boot_option_re_cool_down",
+                                    "boot_option_retry": "boot_option_retry",
+                                    "boot_performance_mode": "boot_performance_mode",
+                                    "burst_and_postponed_refresh": "burst_and_postponed_refresh",
+                                    "c1auto_demotion": "c1auto_demotion",
+                                    "c1auto_un_demotion": "c1auto_un_demotion",
+                                    "cbs_cmn_apbdis": "cbs_cmn_apbdis",
+                                    "cbs_cmn_cpu_cpb": "cbs_cmn_cpu_cpb",
+                                    "cbs_cmn_cpu_gen_downcore_ctrl": "cbs_cmn_cpu_gen_downcore_ctrl",
+                                    "cbs_cmn_cpu_global_cstate_ctrl": "cbs_cmn_cpu_global_cstate_ctrl",
+                                    "cbs_cmn_cpu_l1stream_hw_prefetcher": "cbs_cmn_cpu_l1stream_hw_prefetcher",
+                                    "cbs_cmn_cpu_l2stream_hw_prefetcher": "cbs_cmn_cpu_l2stream_hw_prefetcher",
+                                    "cbs_cmn_cpu_smee": "cbs_cmn_cpu_smee",
+                                    "cbs_cmn_cpu_streaming_stores_ctrl": "cbs_cmn_cpu_streaming_stores_ctrl",
+                                    "cbs_cmn_determinism_slider": "cbs_cmn_determinism_slider",
+                                    "cbs_cmn_efficiency_mode_en": "cbs_cmn_efficiency_mode_en",
+                                    "cbs_cmn_fixed_soc_pstate": "cbs_cmn_fixed_soc_pstate",
+                                    "cbs_cmn_gnb_nb_iommu": "cbs_cmn_gnb_nb_iommu",
+                                    "cbs_cmn_gnb_smu_df_cstates": "cbs_cmn_gnb_smu_df_cstates",
+                                    "cbs_cmn_gnb_smucppc": "cbs_cmn_gnb_smucppc",
+                                    "cbs_cmn_mem_ctrl_bank_group_swap_ddr4": "cbs_cmn_mem_ctrl_bank_group_swap_ddr4",
+                                    "cbs_cmn_mem_map_bank_interleave_ddr4": "cbs_cmn_mem_map_bank_interleave_ddr4",
+                                    "cbs_cmnc_tdp_ctl": "cbs_cmnc_tdp_ctl",
+                                    "cbs_cpu_ccd_ctrl_ssp": "cbs_cpu_ccd_ctrl_ssp",
+                                    "cbs_cpu_core_ctrl": "cbs_cpu_core_ctrl",
+                                    "cbs_cpu_smt_ctrl": "cbs_cpu_smt_ctrl",
+                                    "cbs_dbg_cpu_snp_mem_cover": "cbs_dbg_cpu_snp_mem_cover",
+                                    "cbs_dbg_cpu_snp_mem_size_cover": "cbs_dbg_cpu_snp_mem_size_cover",
+                                    "cbs_df_cmn_acpi_srat_l3numa": "cbs_df_cmn_acpi_srat_l3numa",
+                                    "cbs_df_cmn_dram_nps": "cbs_df_cmn_dram_nps",
+                                    "cbs_df_cmn_mem_intlv": "cbs_df_cmn_mem_intlv",
+                                    "cbs_df_cmn_mem_intlv_size": "cbs_df_cmn_mem_intlv_size",
+                                    "cbs_sev_snp_support": "cbs_sev_snp_support",
+                                    "cdn_enable": "cdn_enable",
+                                    "cdn_support": "cdn_support",
+                                    "channel_inter_leave": "channel_inter_leave",
+                                    "cisco_adaptive_mem_training": "cisco_adaptive_mem_training",
+                                    "cisco_debug_level": "cisco_debug_level",
+                                    "cisco_oprom_launch_optimization": "cisco_oprom_launch_optimization",
+                                    "cisco_xgmi_max_speed": "cisco_xgmi_max_speed",
+                                    "cke_low_policy": "cke_low_policy",
+                                    "closed_loop_therm_throtl": "closed_loop_therm_throtl",
+                                    "cmci_enable": "cmci_enable",
+                                    "config_tdp": "config_tdp",
+                                    "config_tdp_level": "config_tdp_level",
+                                    "console_redirection": "console_redirection",
+                                    "core_multi_processing": "core_multi_processing",
+                                    "cpu_energy_performance": "cpu_energy_performance",
+                                    "cpu_frequency_floor": "cpu_frequency_floor",
+                                    "cpu_pa_limit": "cpu_pa_limit",
+                                    "cpu_perf_enhancement": "cpu_perf_enhancement",
+                                    "cpu_performance": "cpu_performance",
+                                    "cpu_power_management": "cpu_power_management",
+                                    "cr_qos": "cr_qos",
+                                    "crfastgo_config": "crfastgo_config",
+                                    "dcpmm_firmware_downgrade": "dcpmm_firmware_downgrade",
+                                    "demand_scrub": "demand_scrub",
+                                    "direct_cache_access": "direct_cache_access",
+                                    "dram_clock_throttling": "dram_clock_throttling",
+                                    "dram_refresh_rate": "dram_refresh_rate",
+                                    "dram_sw_thermal_throttling": "dram_sw_thermal_throttling",
+                                    "eadr_support": "eadr_support",
+                                    "edpc_en": "edpc_en",
+                                    "enable_clock_spread_spec": "enable_clock_spread_spec",
+                                    "enable_mktme": "enable_mktme",
+                                    "enable_sgx": "enable_sgx",
+                                    "enable_tme": "enable_tme",
+                                    "energy_efficient_turbo": "energy_efficient_turbo",
+                                    "eng_perf_tuning": "eng_perf_tuning",
+                                    "enhanced_intel_speed_step_tech": "enhanced_intel_speed_step_tech",
+                                    "epoch_update": "epoch_update",
+                                    "epp_enable": "epp_enable",
+                                    "epp_profile": "epp_profile",
+                                    "execute_disable_bit": "execute_disable_bit",
+                                    "extended_apic": "extended_apic",
+                                    "flow_control": "flow_control",
+                                    "frb2enable": "frb2enable",
+                                    "hardware_prefetch": "hardware_prefetch",
+                                    "hwpm_enable": "hwpm_enable",
+                                    "imc_interleave": "imc_interleave",
+                                    "intel_dynamic_speed_select": "intel_dynamic_speed_select",
+                                    "intel_hyper_threading_tech": "intel_hyper_threading_tech",
+                                    "intel_speed_select": "intel_speed_select",
+                                    "intel_turbo_boost_tech": "intel_turbo_boost_tech",
+                                    "intel_virtualization_technology": "intel_virtualization_technology",
+                                    "intel_vt_for_directed_io": "intel_vt_for_directed_io",
+                                    "intel_vtd_coherency_support": "intel_vtd_coherency_support",
+                                    "intel_vtd_interrupt_remapping": "intel_vtd_interrupt_remapping",
+                                    "intel_vtd_pass_through_dma_support": "intel_vtd_pass_through_dma_support",
+                                    "intel_vtdats_support": "intel_vtdats_support",
+                                    "ioh_error_enable": "ioh_error_enable",
+                                    "ioh_resource": "ioh_resource",
+                                    "ip_prefetch": "ip_prefetch",
+                                    "ipv4http": "ipv4http",
+                                    "ipv4pxe": "ipv4pxe",
+                                    "ipv6http": "ipv6http",
+                                    "ipv6pxe": "ipv6pxe",
+                                    "kti_prefetch": "kti_prefetch",
+                                    "legacy_os_redirection": "legacy_os_redirection",
+                                    "legacy_usb_support": "legacy_usb_support",
+                                    "llc_alloc": "llc_alloc",
+                                    "llc_prefetch": "llc_prefetch",
+                                    "lom_port0state": "lom_port0state",
+                                    "lom_port1state": "lom_port1state",
+                                    "lom_port2state": "lom_port2state",
+                                    "lom_port3state": "lom_port3state",
+                                    "lom_ports_all_state": "lom_ports_all_state",
+                                    "lv_ddr_mode": "lv_ddr_mode",
+                                    "make_device_non_bootable": "make_device_non_bootable",
+                                    "memory_bandwidth_boost": "memory_bandwidth_boost",
+                                    "memory_inter_leave": "memory_inter_leave",
+                                    "memory_mapped_io_above4gb": "memory_mapped_io_above4gb",
+                                    "memory_refresh_rate": "memory_refresh_rate",
+                                    "memory_size_limit": "memory_size_limit",
+                                    "memory_thermal_throttling": "memory_thermal_throttling",
+                                    "mirroring_mode": "mirroring_mode",
+                                    "mmcfg_base": "mmcfg_base",
+                                    "network_stack": "network_stack",
+                                    "numa_optimized": "numa_optimized",
+                                    "nvmdimm_perform_config": "nvmdimm_perform_config",
+                                    "onboard10gbit_lom": "onboard10gbit_lom",
+                                    "onboard_gbit_lom": "onboard_gbit_lom",
+                                    "onboard_scu_storage_support": "onboard_scu_storage_support",
+                                    "onboard_scu_storage_sw_stack": "onboard_scu_storage_sw_stack",
+                                    "operation_mode": "operation_mode",
+                                    "os_boot_watchdog_timer": "os_boot_watchdog_timer",
+                                    "os_boot_watchdog_timer_policy": "os_boot_watchdog_timer_policy",
+                                    "os_boot_watchdog_timer_timeout": "os_boot_watchdog_timer_timeout",
+                                    "out_of_band_mgmt_port": "out_of_band_mgmt_port",
+                                    "package_cstate_limit": "package_cstate_limit",
+                                    "panic_high_watermark": "panic_high_watermark",
+                                    "partial_cache_line_sparing": "partial_cache_line_sparing",
+                                    "partial_mirror_mode_config": "partial_mirror_mode_config",
+                                    "partial_mirror_percent": "partial_mirror_percent",
+                                    "partial_mirror_value1": "partial_mirror_value1",
+                                    "partial_mirror_value2": "partial_mirror_value2",
+                                    "partial_mirror_value3": "partial_mirror_value3",
+                                    "partial_mirror_value4": "partial_mirror_value4",
+                                    "patrol_scrub": "patrol_scrub",
+                                    "patrol_scrub_duration": "patrol_scrub_duration",
+                                    "pc_ie_ras_support": "pc_ie_ras_support",
+                                    "pc_ie_ssd_hot_plug_support": "pc_ie_ssd_hot_plug_support",
+                                    "pch_usb30mode": "pch_usb30mode",
+                                    "pci_option_ro_ms": "pci_option_ro_ms",
+                                    "pci_rom_clp": "pci_rom_clp",
+                                    "pcie_ari_support": "pcie_ari_support",
+                                    "pcie_pll_ssc": "pcie_pll_ssc",
+                                    "pcie_slot_mraid1link_speed": "pcie_slot_mraid1link_speed",
+                                    "pcie_slot_mraid1option_rom": "pcie_slot_mraid1option_rom",
+                                    "pcie_slot_mraid2link_speed": "pcie_slot_mraid2link_speed",
+                                    "pcie_slot_mraid2option_rom": "pcie_slot_mraid2option_rom",
+                                    "pcie_slot_mstorraid_link_speed": "pcie_slot_mstorraid_link_speed",
+                                    "pcie_slot_mstorraid_option_rom": "pcie_slot_mstorraid_option_rom",
+                                    "pcie_slot_nvme1link_speed": "pcie_slot_nvme1link_speed",
+                                    "pcie_slot_nvme1option_rom": "pcie_slot_nvme1option_rom",
+                                    "pcie_slot_nvme2link_speed": "pcie_slot_nvme2link_speed",
+                                    "pcie_slot_nvme2option_rom": "pcie_slot_nvme2option_rom",
+                                    "pcie_slot_nvme3link_speed": "pcie_slot_nvme3link_speed",
+                                    "pcie_slot_nvme3option_rom": "pcie_slot_nvme3option_rom",
+                                    "pcie_slot_nvme4link_speed": "pcie_slot_nvme4link_speed",
+                                    "pcie_slot_nvme4option_rom": "pcie_slot_nvme4option_rom",
+                                    "pcie_slot_nvme5link_speed": "pcie_slot_nvme5link_speed",
+                                    "pcie_slot_nvme5option_rom": "pcie_slot_nvme5option_rom",
+                                    "pcie_slot_nvme6link_speed": "pcie_slot_nvme6link_speed",
+                                    "pcie_slot_nvme6option_rom": "pcie_slot_nvme6option_rom",
+                                    "pcie_slots_cdn_enable": "pcie_slots_cdn_enable",
+                                    "pop_support": "pop_support",
+                                    "post_error_pause": "post_error_pause",
+                                    "post_package_repair": "post_package_repair",
+                                    "processor_c1e": "processor_c1e",
+                                    "processor_c3report": "processor_c3report",
+                                    "processor_c6report": "processor_c6report",
+                                    "processor_cstate": "processor_cstate",
+                                    "psata": "psata",
+                                    "pstate_coord_type": "pstate_coord_type",
+                                    "putty_key_pad": "putty_key_pad",
+                                    "pwr_perf_tuning": "pwr_perf_tuning",
+                                    "qpi_link_frequency": "qpi_link_frequency",
+                                    "qpi_link_speed": "qpi_link_speed",
+                                    "qpi_snoop_mode": "qpi_snoop_mode",
+                                    "rank_inter_leave": "rank_inter_leave",
+                                    "redirection_after_post": "redirection_after_post",
+                                    "sata_mode_select": "sata_mode_select",
+                                    "select_memory_ras_configuration": "select_memory_ras_configuration",
+                                    "select_ppr_type": "select_ppr_type",
+                                    "serial_port_aenable": "serial_port_aenable",
+                                    "sev": "sev",
+                                    "sgx_auto_registration_agent": "sgx_auto_registration_agent",
+                                    "sgx_epoch0": "sgx_epoch0",
+                                    "sgx_epoch1": "sgx_epoch1",
+                                    "sgx_factory_reset": "sgx_factory_reset",
+                                    "sgx_le_pub_key_hash0": "sgx_le_pub_key_hash0",
+                                    "sgx_le_pub_key_hash1": "sgx_le_pub_key_hash1",
+                                    "sgx_le_pub_key_hash2": "sgx_le_pub_key_hash2",
+                                    "sgx_le_pub_key_hash3": "sgx_le_pub_key_hash3",
+                                    "sgx_le_wr": "sgx_le_wr",
+                                    "sgx_package_info_in_band_access": "sgx_package_info_in_band_access",
+                                    "sgx_qos": "sgx_qos",
+                                    "sha1pcr_bank": "sha1pcr_bank",
+                                    "sha256pcr_bank": "sha256pcr_bank",
+                                    "single_pctl_enable": "single_pctl_enable",
+                                    "slot10link_speed": "slot10link_speed",
+                                    "slot10state": "slot10state",
+                                    "slot11link_speed": "slot11link_speed",
+                                    "slot11state": "slot11state",
+                                    "slot12link_speed": "slot12link_speed",
+                                    "slot12state": "slot12state",
+                                    "slot13state": "slot13state",
+                                    "slot14state": "slot14state",
+                                    "slot1link_speed": "slot1link_speed",
+                                    "slot1state": "slot1state",
+                                    "slot2link_speed": "slot2link_speed",
+                                    "slot2state": "slot2state",
+                                    "slot3link_speed": "slot3link_speed",
+                                    "slot3state": "slot3state",
+                                    "slot4link_speed": "slot4link_speed",
+                                    "slot4state": "slot4state",
+                                    "slot5link_speed": "slot5link_speed",
+                                    "slot5state": "slot5state",
+                                    "slot6link_speed": "slot6link_speed",
+                                    "slot6state": "slot6state",
+                                    "slot7link_speed": "slot7link_speed",
+                                    "slot7state": "slot7state",
+                                    "slot8link_speed": "slot8link_speed",
+                                    "slot8state": "slot8state",
+                                    "slot9link_speed": "slot9link_speed",
+                                    "slot9state": "slot9state",
+                                    "slot_flom_link_speed": "slot_flom_link_speed",
+                                    "slot_front_nvme10link_speed": "slot_front_nvme10link_speed",
+                                    "slot_front_nvme10option_rom": "slot_front_nvme10option_rom",
+                                    "slot_front_nvme11link_speed": "slot_front_nvme11link_speed",
+                                    "slot_front_nvme11option_rom": "slot_front_nvme11option_rom",
+                                    "slot_front_nvme12link_speed": "slot_front_nvme12link_speed",
+                                    "slot_front_nvme12option_rom": "slot_front_nvme12option_rom",
+                                    "slot_front_nvme13option_rom": "slot_front_nvme13option_rom",
+                                    "slot_front_nvme14option_rom": "slot_front_nvme14option_rom",
+                                    "slot_front_nvme15option_rom": "slot_front_nvme15option_rom",
+                                    "slot_front_nvme16option_rom": "slot_front_nvme16option_rom",
+                                    "slot_front_nvme17option_rom": "slot_front_nvme17option_rom",
+                                    "slot_front_nvme18option_rom": "slot_front_nvme18option_rom",
+                                    "slot_front_nvme19option_rom": "slot_front_nvme19option_rom",
+                                    "slot_front_nvme1link_speed": "slot_front_nvme1link_speed",
+                                    "slot_front_nvme1option_rom": "slot_front_nvme1option_rom",
+                                    "slot_front_nvme20option_rom": "slot_front_nvme20option_rom",
+                                    "slot_front_nvme21option_rom": "slot_front_nvme21option_rom",
+                                    "slot_front_nvme22option_rom": "slot_front_nvme22option_rom",
+                                    "slot_front_nvme23option_rom": "slot_front_nvme23option_rom",
+                                    "slot_front_nvme24option_rom": "slot_front_nvme24option_rom",
+                                    "slot_front_nvme2link_speed": "slot_front_nvme2link_speed",
+                                    "slot_front_nvme2option_rom": "slot_front_nvme2option_rom",
+                                    "slot_front_nvme3link_speed": "slot_front_nvme3link_speed",
+                                    "slot_front_nvme3option_rom": "slot_front_nvme3option_rom",
+                                    "slot_front_nvme4link_speed": "slot_front_nvme4link_speed",
+                                    "slot_front_nvme4option_rom": "slot_front_nvme4option_rom",
+                                    "slot_front_nvme5link_speed": "slot_front_nvme5link_speed",
+                                    "slot_front_nvme5option_rom": "slot_front_nvme5option_rom",
+                                    "slot_front_nvme6link_speed": "slot_front_nvme6link_speed",
+                                    "slot_front_nvme6option_rom": "slot_front_nvme6option_rom",
+                                    "slot_front_nvme7link_speed": "slot_front_nvme7link_speed",
+                                    "slot_front_nvme7option_rom": "slot_front_nvme7option_rom",
+                                    "slot_front_nvme8link_speed": "slot_front_nvme8link_speed",
+                                    "slot_front_nvme8option_rom": "slot_front_nvme8option_rom",
+                                    "slot_front_nvme9link_speed": "slot_front_nvme9link_speed",
+                                    "slot_front_nvme9option_rom": "slot_front_nvme9option_rom",
+                                    "slot_front_slot5link_speed": "slot_front_slot5link_speed",
+                                    "slot_front_slot6link_speed": "slot_front_slot6link_speed",
+                                    "slot_gpu1state": "slot_gpu1state",
+                                    "slot_gpu2state": "slot_gpu2state",
+                                    "slot_gpu3state": "slot_gpu3state",
+                                    "slot_gpu4state": "slot_gpu4state",
+                                    "slot_gpu5state": "slot_gpu5state",
+                                    "slot_gpu6state": "slot_gpu6state",
+                                    "slot_gpu7state": "slot_gpu7state",
+                                    "slot_gpu8state": "slot_gpu8state",
+                                    "slot_hba_link_speed": "slot_hba_link_speed",
+                                    "slot_hba_state": "slot_hba_state",
+                                    "slot_lom1link": "slot_lom1link",
+                                    "slot_lom2link": "slot_lom2link",
+                                    "slot_mezz_state": "slot_mezz_state",
+                                    "slot_mlom_link_speed": "slot_mlom_link_speed",
+                                    "slot_mlom_state": "slot_mlom_state",
+                                    "slot_mraid_link_speed": "slot_mraid_link_speed",
+                                    "slot_mraid_state": "slot_mraid_state",
+                                    "slot_n10state": "slot_n10state",
+                                    "slot_n11state": "slot_n11state",
+                                    "slot_n12state": "slot_n12state",
+                                    "slot_n13state": "slot_n13state",
+                                    "slot_n14state": "slot_n14state",
+                                    "slot_n15state": "slot_n15state",
+                                    "slot_n16state": "slot_n16state",
+                                    "slot_n17state": "slot_n17state",
+                                    "slot_n18state": "slot_n18state",
+                                    "slot_n19state": "slot_n19state",
+                                    "slot_n1state": "slot_n1state",
+                                    "slot_n20state": "slot_n20state",
+                                    "slot_n21state": "slot_n21state",
+                                    "slot_n22state": "slot_n22state",
+                                    "slot_n23state": "slot_n23state",
+                                    "slot_n24state": "slot_n24state",
+                                    "slot_n2state": "slot_n2state",
+                                    "slot_n3state": "slot_n3state",
+                                    "slot_n4state": "slot_n4state",
+                                    "slot_n5state": "slot_n5state",
+                                    "slot_n6state": "slot_n6state",
+                                    "slot_n7state": "slot_n7state",
+                                    "slot_n8state": "slot_n8state",
+                                    "slot_n9state": "slot_n9state",
+                                    "slot_raid_link_speed": "slot_raid_link_speed",
+                                    "slot_raid_state": "slot_raid_state",
+                                    "slot_rear_nvme1link_speed": "slot_rear_nvme1link_speed",
+                                    "slot_rear_nvme1state": "slot_rear_nvme1state",
+                                    "slot_rear_nvme2link_speed": "slot_rear_nvme2link_speed",
+                                    "slot_rear_nvme2state": "slot_rear_nvme2state",
+                                    "slot_rear_nvme3link_speed": "slot_rear_nvme3link_speed",
+                                    "slot_rear_nvme3state": "slot_rear_nvme3state",
+                                    "slot_rear_nvme4link_speed": "slot_rear_nvme4link_speed",
+                                    "slot_rear_nvme4state": "slot_rear_nvme4state",
+                                    "slot_rear_nvme5state": "slot_rear_nvme5state",
+                                    "slot_rear_nvme6state": "slot_rear_nvme6state",
+                                    "slot_rear_nvme7state": "slot_rear_nvme7state",
+                                    "slot_rear_nvme8state": "slot_rear_nvme8state",
+                                    "slot_riser1link_speed": "slot_riser1link_speed",
+                                    "slot_riser1slot1link_speed": "slot_riser1slot1link_speed",
+                                    "slot_riser1slot2link_speed": "slot_riser1slot2link_speed",
+                                    "slot_riser1slot3link_speed": "slot_riser1slot3link_speed",
+                                    "slot_riser2link_speed": "slot_riser2link_speed",
+                                    "slot_riser2slot4link_speed": "slot_riser2slot4link_speed",
+                                    "slot_riser2slot5link_speed": "slot_riser2slot5link_speed",
+                                    "slot_riser2slot6link_speed": "slot_riser2slot6link_speed",
+                                    "slot_sas_state": "slot_sas_state",
+                                    "slot_ssd_slot1link_speed": "slot_ssd_slot1link_speed",
+                                    "slot_ssd_slot2link_speed": "slot_ssd_slot2link_speed",
+                                    "smee": "smee",
+                                    "smt_mode": "smt_mode",
+                                    "snc": "snc",
+                                    "snoopy_mode_for2lm": "snoopy_mode_for2lm",
+                                    "snoopy_mode_for_ad": "snoopy_mode_for_ad",
+                                    "sparing_mode": "sparing_mode",
+                                    "sr_iov": "sr_iov",
+                                    "streamer_prefetch": "streamer_prefetch",
+                                    "svm_mode": "svm_mode",
+                                    "terminal_type": "terminal_type",
+                                    "tpm_control": "tpm_control",
+                                    "tpm_pending_operation": "tpm_pending_operation",
+                                    "tpm_ppi_required": "tpm_ppi_required",
+                                    "tpm_support": "tpm_support",
+                                    "tsme": "tsme",
+                                    "txt_support": "txt_support",
+                                    "ucsm_boot_order_rule": "ucsm_boot_order_rule",
+                                    "ufs_disable": "ufs_disable",
+                                    "uma_based_clustering": "uma_based_clustering",
+                                    "upi_link_enablement": "upi_link_enablement",
+                                    "upi_power_management": "upi_power_management",
+                                    "usb_emul6064": "usb_emul6064",
+                                    "usb_port_front": "usb_port_front",
+                                    "usb_port_internal": "usb_port_internal",
+                                    "usb_port_kvm": "usb_port_kvm",
+                                    "usb_port_rear": "usb_port_rear",
+                                    "usb_port_sd_card": "usb_port_sd_card",
+                                    "usb_port_vmedia": "usb_port_vmedia",
+                                    "usb_xhci_support": "usb_xhci_support",
+                                    "vga_priority": "vga_priority",
+                                    "virtual_numa": "virtual_numa",
+                                    "vmd_enable": "vmd_enable",
+                                    "vol_memory_mode": "vol_memory_mode",
+                                    "work_load_config": "work_load_config",
+                                    "xpt_prefetch": "xpt_prefetch",
+                                    "xpt_remote_prefetch": "xpt_remote_prefetch"
+                                },
                                 "template_tuning":{
                                     "M6_analytical_DB":{
                                         "cpu_perf_enhancement":"Auto",
@@ -1211,28 +1608,12 @@
                                     "wwpn":"wwpn"
                                 }
                             },
-                            "chassis_profile": {
-                                "policy_list": [
-                                    "imc_access_policy",
-                                    "power_policy",
-                                    "snmp_policy",
-                                    "thermal_policy"
-                                ]
-                            },
-                            "domain_profile": {
-                                "policy_list": [
-                                    "network_connectivity_policy",
-                                    "ntp_policy",
-                                    "port_policies",
-                                    "snmp_policy",
-                                    "switch_control_policy",
-                                    "syslog_policy",
-                                    "system_qos_policy",
-                                    "vlan_policies",
-                                    "vsan_policies"
-                                ]
-                            },
                             "ethernet_adapter": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
                                 "template_tuning":{
                                     "VMware":{
                                         "description":"Recommended adapter settings for VMware.",
@@ -1257,15 +1638,42 @@
                                 "key_map": {
                                     "action_on_uplink_fail":"uplink_fail_action",
                                     "cdp_enable":"cdp_enabled",
+                                    "description":"description",
+                                    "name":"name",
                                     "lldp_receive_enable":"receive_enabled",
                                     "lldp_transmit_enable":"transmit_enabled",
                                     "mac_register_mode":"mac_registration_mode",
-                                    "mac_security_forge":"forge_mac"
+                                    "mac_security_forge":"forge_mac",
+                                    "tags":"tags"
+                                }
+                            },
+                            "ethernet_network_group": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
                                 }
                             },
                             "ethernet_qos": {
                                 "key_map": {
-                                    "enable_trust_host_cos":"trust_host_cos"
+                                    "burst":"burst",
+                                    "cos":"cos",
+                                    "description":"description",
+                                    "enable_trust_host_cos":"trust_host_cos",
+                                    "mtu":"mtu",
+                                    "name":"name",
+                                    "priority":"priority",
+                                    "rate_limit":"rate_limit",
+                                    "tags":"tags"
+                                }
+                            },
+                            "fc_zone": {
+                                "key_map": {
+                                    "description":"description",
+                                    "targets":"fc_target_members",
+                                    "fc_target_zoning_type":"fc_target_zoning_type",
+                                    "name":"name",
+                                    "tags":"tags"
                                 }
                             },
                             "FIAttached": {
@@ -1294,6 +1702,11 @@
                                 "x-omitempty": true
                             },
                             "fibre_channel_adapter": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
                                 "template_tuning":{
                                     "VMware":{
                                         "description":"Recommended adapter settings for VMware.",
@@ -1306,26 +1719,104 @@
                             "fibre_channel_network": {
                                 "key_map": {
                                     "default_vlan":"default_vlan_id",
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags",
                                     "vsan_id":"id"
+                                }
+                            },
+                            "fibre_channel_qos": {
+                                "key_map": {
+                                    "burst":"burst",
+                                    "cos":"cos",
+                                    "description":"description",
+                                    "max_data_field_size":"max_data_field_size",
+                                    "name":"name",
+                                    "tags":"tags"
+                                }
+                            },
+                            "flow_control": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "priority":"priority_flow_control_mode",
+                                    "receive":"receive_direction",
+                                    "send":"send_direction",
+                                    "tags":"tags"
                                 }
                             },
                             "imc_access": {
                                 "key_map": {
+                                    "description":"description",
                                     "inband_vlan_id":"inband_vlan",
-                                    "lldp_transmit_enable":"transmit_enabled",
-                                    "mac_register_mode":"mac_registration_mode",
-                                    "mac_security_forge":"forge_mac"
+                                    "name":"name",
+                                    "tags":"tags"
+                                }
+                            },
+                            "lan_connectivity": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "enable_azure_stack_host_qos":"azure_qos_enabled",
+                                    "iqn_allocation_type":"iqn_allocation_type",
+                                    "iqn_pool":"iqn_pool",
+                                    "iqn_static_identifier":"static_iqn_name",
+                                    "vnic_placement_mode":"placement_mode",
+                                    "tags":"tags"
+                                }
+                            },
+                            "link_aggregation": {
+                                "key_map": {
+                                    "description":"description",
+                                    "lacp_rate":"lacp_rate",
+                                    "name":"name",
+                                    "suspend_individual":"suspend_individual",
+                                    "tags":"tags"
+                                }
+                            },
+                            "link_control": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                }
+                            },
+                            "local_user": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
+                                "key_map_password": {
+                                    "always_send_user_password":"force_send_password",
+                                    "enable_password_expiry":"enable_password_expiry",
+                                    "enforce_strong_password":"enforce_strong_password",
+                                    "grace_period":"grace_period",
+                                    "notification_period":"notification_period",
+                                    "password_expiry_duration":"password_expiry_duration",
+                                    "password_history":"password_history"
                                 }
                             },
                             "multicast": {
                                 "key_map": {
-                                    "source_ip_proxy_state":"src_ip_proxy"
+                                    "description":"description",
+                                    "name":"name",
+                                    "querier_ip_address":"querier_ip_address",
+                                    "querier_ip_address_peer":"querier_ip_address_peer",
+                                    "querier_state":"querier_state",
+                                    "snooping_state":"snooping_state",
+                                    "source_ip_proxy_state":"src_ip_proxy",
+                                    "tags":"tags"
                                 }
                             },
                             "network_connectivity": {
                                 "key_map": {
+                                    "description":"description",
+                                    "enable_ipv6":"enable_ipv6",
+                                    "name":"name",
                                     "obtain_ipv4_dns_from_dhcp":"enable_ipv4dns_from_dhcp",
                                     "obtain_ipv6_dns_from_dhcp":"enable_ipv6dns_from_dhcp",
+                                    "tags":"tags",
                                     "update_domain":"dynamic_dns_domain"
                                 }
                             },
@@ -1408,40 +1899,17 @@
                             },
                             "power": {
                                 "key_map": {
-                                    "dynamic_power_rebalancing":"dynamic_rebalancing",
-                                    "power_allocation":"allocated_budget",
-                                    "power_redundancy":"redundancy_mode",
-                                    "power_restore":"power_restore_state"
-                                }
-                            },
-                            "lan_connectivity": {
-                                "key_map": {
-                                    "enable_azure_stack_host_qos":"azure_qos_enabled",
-                                    "iqn_static_identifier":"static_iqn_name",
-                                    "vnic_placement_mode":"placement_mode"
-                                }
-                            },
-                            "local_user": {
-                                "key_map": {
                                     "description":"description",
+                                    "dynamic_power_rebalancing":"dynamic_rebalancing",
+                                    "extended_power_capacity":"extended_power_capacity",
                                     "name":"name",
-                                    "tags":"tags",
-                                    "users":"users"
-                                },
-                                "key_map_password": {
-                                    "always_send_user_password":"force_send_password",
-                                    "enable_password_expiry":"enable_password_expiry",
-                                    "enforce_strong_password":"enforce_strong_password",
-                                    "grace_period":"grace_period",
-                                    "notification_period":"notification_period",
-                                    "password_expiry_duration":"password_expiry_duration",
-                                    "password_history":"password_history"
-                                }
-                            },
-                            "remote_logging": {
-                                "key_map": {
-                                    "enabled":"enable",
-                                    "minimum_severity":"min_severity"
+                                    "power_allocation":"allocated_budget",
+                                    "power_priority":"power_priority",
+                                    "power_profiling":"power_profiling",
+                                    "power_redundancy":"redundancy_mode",
+                                    "power_restore":"power_restore_state",
+                                    "power_save_mode":"power_save_mode",
+                                    "tags":"tags"
                                 }
                             },
                             "san_connectivity": {
@@ -1456,49 +1924,46 @@
                                     "wwnn_static_address":"static_wwnn_address"
                                 }
                             },
-                            "server_profile": {
-                                "policy_list": [
-                                    "bios_policy",
-                                    "boot_order_policy",
-                                    "imc_access_policy",
-                                    "ipmi_over_lan_policy",
-                                    "lan_connectivity_policy",
-                                    "local_user_policy",
-                                    "power_policy",
-                                    "san_connectivity_policy",
-                                    "serial_over_lan_policy",
-                                    "snmp_policy",
-                                    "storage_policy",
-                                    "syslog_policy",
-                                    "uuid_policy",
-                                    "virtual_kvm_policy",
-                                    "virtual_media_policy"
-                                ]
-                            },
-                            "server_profile_temp": {
-                                "policy_list": [
-                                    "adapter_configuration_policy",
-                                    "certificate_management_policy",
-                                    "device_connector_policy",
-                                    "ldap_policy",
-                                    "network_connectivity_policy",
-                                    "ntp_policy",
-                                    "persistent_memory_policy",
-                                    "resource_policy",
-                                    "smtp_policy",
-                                    "ssh_policy"
-                                ]
+                            "serial_over_lan": {
+                                "key_map": {
+                                    "baud_rate":"baud_rate",
+                                    "com_port":"com_port",
+                                    "description":"description",
+                                    "enabled":"enabled",
+                                    "name":"name",
+                                    "ssh_port":"ssh_port",
+                                    "tags":"tags"
+                                }
                             },
                             "snmp": {
                                 "key_map": {
                                     "access_community_string":"access_community_string",
+                                    "description":"description",
                                     "enable_snmp":"enabled",
+                                    "name":"name",
                                     "snmp_community_access":"community_access",
                                     "snmp_engine_input_id":"engine_id",
                                     "snmp_port":"snmp_port",
                                     "system_contact":"sys_contact",
                                     "system_location":"sys_location",
-                                    "trap_community_string":"trap_community"
+                                    "trap_community_string":"trap_community",
+                                    "tags":"tags"
+                                },
+                                "trap_map": {
+                                    "community_string":"community",
+                                    "destination_address":"destination_address",
+                                    "enable":"enabled",
+                                    "port":"port",
+                                    "trap_type":"type",
+                                    "user":"user"
+                                },
+                                "user_map": {
+                                    "auth_password":"auth_password",
+                                    "auth_type":"auth_type",
+                                    "name":"name",
+                                    "privacy_password":"privacy_password",
+                                    "privacy_type":"privacy_type",
+                                    "security_level":"security_level"
                                 }
                             },
                             "snmp_trap_destinations": {
@@ -1562,22 +2027,55 @@
                                 "raid0_map": {
                                     "drive_slots":"drive_slots",
                                     "enable":"enable"
+                                },
+                                "virtual_drive_map": {
+                                    "boot_drive":"boot_drive",
+                                    "expand_to_available":"expand_to_available",
+                                    "name":"name",
+                                    "size":"size",
+                                    "virtual_drive_policy":"virtual_drive_policy"
                                 }
                             },
                             "switch_control": {
                                 "key_map": {
+                                    "ethernet_switching_mode":"ethernet_switching_mode",
+                                    "fc_switching_mode":"fc_switching_mode",
+                                    "vlan_port_count_optimization":"vlan_port_optimization_enabled"
+                                },
+                                "mac_and_udld": {
                                     "mac_address_table_aging":"mac_aging_option",
                                     "mac_aging_time":"mac_aging_time",
                                     "udld_message_interval":"message_interval",
-                                    "udld_recovery_action":"recovery_action",
-                                    "vlan_port_count_optimization":"vlan_port_optimization_enabled",
-                                    "vsan_id":"id"
+                                    "udld_recovery_action":"recovery_action"
                                 }
                             },
-                            "tags": {
-                                    "key": "easy-imm",
-                                    "value": "2.5.1"
+                            "syslog": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
                                 },
+                                "remote_logging": {
+                                    "enabled":"enable",
+                                    "minimum_severity":"min_severity"
+                                }
+                            },
+                            "system_qos": {
+                                "key_map": {
+                                    "classes":"classes",
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                }
+                            },
+                            "thermal": {
+                                "key_map": {
+                                    "description":"description",
+                                    "fan_control_mode":"fan_control_mode",
+                                    "name":"name",
+                                    "tags":"tags"
+                                }
+                            },
                             "vhbas": {
                                 "key_map": {
                                     "persistent_lun_bindings":"persistent_bindings",
@@ -1587,7 +2085,14 @@
                             "virtual_kvm": {
                                 "key_map": {
                                     "allow_tunneled_vkvm":"tunneled_kvm_enabled",
-                                    "enable_virtual_kvm":"enabled"
+                                    "description":"description",
+                                    "enable_local_server_video":"enable_local_server_video",
+                                    "enable_video_encryption":"enable_video_encryption",
+                                    "enable_virtual_kvm":"enabled",
+                                    "maximum_sessions":"maximum_sessions",
+                                    "name":"name",
+                                    "remote_port":"remote_port",
+                                    "tags":"tags"
                                 }
                             },
                             "virtual_media": {
@@ -1596,6 +2101,7 @@
                                     "device_type":"device_type",
                                     "file_location":"file_location",
                                     "mount_options":"mount_options",
+                                    "name":"name",
                                     "password":"password",
                                     "protocol":"mount_protocol",
                                     "username":"username"
@@ -1607,6 +2113,22 @@
                                     "enable_virtual_media_encryption":"encryption",
                                     "name":"name",
                                     "tags":"tags"
+                                }
+                            },
+                            "vlan": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "ntp_servers":"ntp_servers",
+                                    "timezone":"timezone",
+                                    "tags":"tags"
+                                }
+                            },
+                            "vsans": {
+                                "key_map": {
+                                    "fcoe_vlan_id":"fcoe_vlan",
+                                    "name":"name",
+                                    "vsan_id":"vsan_id"
                                 }
                             },
                             "vnics": {
@@ -1643,6 +2165,116 @@
                         }
                     }
                 ]
+            },
+            "pools": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "fc": {
+                                "key_map": {
+                                    "assignment_order":"assignment_order",
+                                    "description":"description",
+                                    "name":"name",
+                                    "pool_purpose":"pool_purpose",
+                                    "tags":"tags"
+                                }
+                            },
+                            "ip": {
+                                "key_map": {
+                                    "assignment_order":"assignment_order",
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                }
+                            },
+                            "mac": {
+                                "key_map": {
+                                    "assignment_order":"assignment_order",
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                }
+                            },
+                            "uuid": {
+                                "key_map": {
+                                    "assignment_order":"assignment_order",
+                                    "description":"description",
+                                    "name":"name",
+                                    "prefix":"prefix",
+                                    "tags":"tags"
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "profiles": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "chassis_profile": {
+                                "policy_list": [
+                                    "imc_access_policy",
+                                    "power_policy",
+                                    "snmp_policy",
+                                    "thermal_policy"
+                                ]
+                            },
+                            "domain_profile": {
+                                "policy_list": [
+                                    "network_connectivity_policy",
+                                    "ntp_policy",
+                                    "port_policies",
+                                    "snmp_policy",
+                                    "switch_control_policy",
+                                    "syslog_policy",
+                                    "system_qos_policy",
+                                    "vlan_policies",
+                                    "vsan_policies"
+                                ]
+                            },
+                            "server_profile": {
+                                "policy_list": [
+                                    "bios_policy",
+                                    "boot_order_policy",
+                                    "imc_access_policy",
+                                    "ipmi_over_lan_policy",
+                                    "lan_connectivity_policy",
+                                    "local_user_policy",
+                                    "power_policy",
+                                    "san_connectivity_policy",
+                                    "serial_over_lan_policy",
+                                    "snmp_policy",
+                                    "storage_policy",
+                                    "syslog_policy",
+                                    "uuid_policy",
+                                    "virtual_kvm_policy",
+                                    "virtual_media_policy"
+                                ]
+                            },
+                            "server_profile_template": {
+                                "policy_list": [
+                                    "adapter_configuration_policy",
+                                    "certificate_management_policy",
+                                    "device_connector_policy",
+                                    "ldap_policy",
+                                    "network_connectivity_policy",
+                                    "ntp_policy",
+                                    "persistent_memory_policy",
+                                    "resource_policy",
+                                    "smtp_policy",
+                                    "ssh_policy"
+                                ]
+                            }
+                        }
+                    }
+                ]
+            },
+            "tags": {
+                "key": "easy-imm",
+                "value": "2.5.1"
             },
             "version":"2.5.1"
         }
