@@ -441,7 +441,7 @@ class isdk_profiles(object):
                 if serial_true == True:
                     serial_true += 1
                     server_moid,server_object = get_server_moid(i['name'], i['serial_number'])
-                    api_body.update({'assigned_chassis':{
+                    api_body.update({'assigned_server':{
                         'class_id':'mo.MoRef','moid':server_moid,'object_type':server_object
                     }})
                 create_from_template = False

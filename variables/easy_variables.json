@@ -1122,6 +1122,14 @@
                     {},
                     {
                         "properties": {
+                            "adapter_configuration": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
+                                "object_type":"adapter.ConfigPolicy"
+                            },
                             "bios": {
                                 "key_map": {
                                     "description":"description",
@@ -1520,6 +1528,7 @@
                                     "xpt_prefetch": "xpt_prefetch",
                                     "xpt_remote_prefetch": "xpt_remote_prefetch"
                                 },
+                                "object_type":"bios.Policy",
                                 "template_tuning":{
                                     "M6_analytical_DB":{
                                         "cpu_perf_enhancement":"Auto",
@@ -1606,7 +1615,24 @@
                                     "slot":"slot",
                                     "sub_type":"subtype",
                                     "wwpn":"wwpn"
-                                }
+                                },
+                                "object_type":"boot.PrecisionPolicy"
+                            },
+                            "certificate_management": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
+                                "object_type":"certificatemanagement.Policy"
+                            },
+                            "device_connector": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
+                                "object_type":"deviceconnector.Policy"
                             },
                             "ethernet_adapter": {
                                 "key_map": {
@@ -1751,7 +1777,19 @@
                                     "inband_vlan_id":"inband_vlan",
                                     "name":"name",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"access.Policy"
+                            },
+                            "ipmi_over_lan": {
+                                "key_map": {
+                                    "description":"description",
+                                    "enabled":"enabled",
+                                    "ipmi_key":"encryption_key",
+                                    "name":"name",
+                                    "privilege":"privilege",
+                                    "tags":"tags"
+                                },
+                                "object_type":"ipmioverlan.Policy"
                             },
                             "lan_connectivity": {
                                 "key_map": {
@@ -1763,7 +1801,8 @@
                                     "iqn_static_identifier":"static_iqn_name",
                                     "vnic_placement_mode":"placement_mode",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"vnic.LanConnectivityPolicy"
                             },
                             "link_aggregation": {
                                 "key_map": {
@@ -1781,6 +1820,14 @@
                                     "tags":"tags"
                                 }
                             },
+                            "ldap": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
+                                "object_type":"iam.LdapPolicy"
+                            },
                             "local_user": {
                                 "key_map": {
                                     "description":"description",
@@ -1795,7 +1842,8 @@
                                     "notification_period":"notification_period",
                                     "password_expiry_duration":"password_expiry_duration",
                                     "password_history":"password_history"
-                                }
+                                },
+                                "object_type":"iam.EndPointUserPolicy"
                             },
                             "multicast": {
                                 "key_map": {
@@ -1818,7 +1866,8 @@
                                     "obtain_ipv6_dns_from_dhcp":"enable_ipv6dns_from_dhcp",
                                     "tags":"tags",
                                     "update_domain":"dynamic_dns_domain"
-                                }
+                                },
+                                "object_type":"networkconfig.Policy"
                             },
                             "ntp": {
                                 "key_map": {
@@ -1828,7 +1877,8 @@
                                     "ntp_servers":"ntp_servers",
                                     "timezone":"timezone",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"ntp.Policy"
                             },
                             "port": {
                                 "classes": {
@@ -1873,6 +1923,13 @@
                                         "object_type": "fabric.ServerRole"
                                     }
                                 },
+                                "key_map": {
+                                    "description":"description",
+                                    "device_model":"device_model",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
+                                "object_type":"ipmioverlan.Policy",
                                 "port_type_list": [
                                     "port_channel_appliances",
                                     "port_channel_ethernet_uplinks",
@@ -1889,12 +1946,6 @@
                                     "admin_speed":"drive_type",
                                     "mode":"minimum_drive_size",
                                     "priority":"num_dedicated_hot_spares"
-                                },
-                                "key_map": {
-                                    "description":"description",
-                                    "device_model":"device_model",
-                                    "name":"name",
-                                    "tags":"tags"
                                 }
                             },
                             "power": {
@@ -1910,7 +1961,8 @@
                                     "power_restore":"power_restore_state",
                                     "power_save_mode":"power_save_mode",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"power.Policy"
                             },
                             "san_connectivity": {
                                 "key_map": {
@@ -1922,7 +1974,8 @@
                                     "wwnn_allocation_type":"wwnn_address_type",
                                     "wwnn_pool":"wwnn_pool",
                                     "wwnn_static_address":"static_wwnn_address"
-                                }
+                                },
+                                "object_type":"vnic.SanConnectivityPolicy"
                             },
                             "serial_over_lan": {
                                 "key_map": {
@@ -1933,7 +1986,22 @@
                                     "name":"name",
                                     "ssh_port":"ssh_port",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"sol.Policy"
+                            },
+                            "smtp": {
+                                "key_map": {
+                                    "description":"description",
+                                    "enable_smtp":"enabled",
+                                    "mail_alert_recipients":"smtp_recipients",
+                                    "minimum_severity":"min_severity",
+                                    "name":"name",
+                                    "smtp_alert_sender_address":"sender_email",
+                                    "smtp_port":"smtp_port",
+                                    "smtp_server_address":"smtp_server",
+                                    "tags":"tags"
+                                },
+                                "object_type":"smtp.Policy"
                             },
                             "snmp": {
                                 "key_map": {
@@ -1949,6 +2017,7 @@
                                     "trap_community_string":"trap_community",
                                     "tags":"tags"
                                 },
+                                "object_type":"snmp.Policy",
                                 "trap_map": {
                                     "community_string":"community",
                                     "destination_address":"destination_address",
@@ -2000,6 +2069,17 @@
                                     "Virtual Media"
                                 ]
                             },
+                            "ssh": {
+                                "key_map": {
+                                    "description":"description",
+                                    "enable_ssh":"enabled",
+                                    "name":"name",
+                                    "ssh_port":"port",
+                                    "ssh_timeout":"timeout",
+                                    "tags":"tags"
+                                },
+                                "object_type":"ssh.Policy"
+                            },
                             "storage": {
                                 "auto_map": {
                                     "drive_type":"drive_type",
@@ -2024,6 +2104,7 @@
                                     "unused_disks_state":"unused_disks_state",
                                     "use_jbod_for_vd_creation":"use_jbod_for_vd_creation"
                                 },
+                                "object_type":"storage.StoragePolicy",
                                 "raid0_map": {
                                     "drive_slots":"drive_slots",
                                     "enable":"enable"
@@ -2047,7 +2128,8 @@
                                     "mac_aging_time":"mac_aging_time",
                                     "udld_message_interval":"message_interval",
                                     "udld_recovery_action":"recovery_action"
-                                }
+                                },
+                                "object_type":"ipmioverlan.Policy"
                             },
                             "syslog": {
                                 "key_map": {
@@ -2055,6 +2137,7 @@
                                     "name":"name",
                                     "tags":"tags"
                                 },
+                                "object_type":"syslog.Policy",
                                 "remote_logging": {
                                     "enabled":"enable",
                                     "minimum_severity":"min_severity"
@@ -2066,7 +2149,8 @@
                                     "description":"description",
                                     "name":"name",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"ipmioverlan.Policy"
                             },
                             "thermal": {
                                 "key_map": {
@@ -2074,7 +2158,8 @@
                                     "fan_control_mode":"fan_control_mode",
                                     "name":"name",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"thermal.Policy"
                             },
                             "vhbas": {
                                 "key_map": {
@@ -2093,7 +2178,8 @@
                                     "name":"name",
                                     "remote_port":"remote_port",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"kvm.Policy"
                             },
                             "virtual_media": {
                                 "add_key_map": {
@@ -2113,7 +2199,8 @@
                                     "enable_virtual_media_encryption":"encryption",
                                     "name":"name",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"vmedia.Policy"
                             },
                             "vlan": {
                                 "key_map": {
@@ -2122,7 +2209,17 @@
                                     "ntp_servers":"ntp_servers",
                                     "timezone":"timezone",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"ipmioverlan.Policy"
+                            },
+                            "vsan": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags",
+                                    "uplink_trunking":"enable_trunking"
+                                },
+                                "object_type":"ipmioverlan.Policy"
                             },
                             "vsans": {
                                 "key_map": {
@@ -2196,6 +2293,14 @@
                                     "tags":"tags"
                                 }
                             },
+                            "resource": {
+                                "key_map": {
+                                    "description":"description",
+                                    "name":"name",
+                                    "tags":"tags"
+                                },
+                                "object_type":"resourcepool.Pool"
+                            },
                             "uuid": {
                                 "key_map": {
                                     "assignment_order":"assignment_order",
@@ -2203,7 +2308,8 @@
                                     "name":"name",
                                     "prefix":"prefix",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_type":"uuidpool.Pool"
                             }
                         }
                     }
@@ -2214,7 +2320,7 @@
                     {},
                     {
                         "properties": {
-                            "chassis_profile": {
+                            "chassis": {
                                 "policy_list": [
                                     "imc_access_policy",
                                     "power_policy",
@@ -2222,7 +2328,7 @@
                                     "thermal_policy"
                                 ]
                             },
-                            "domain_profile": {
+                            "domain": {
                                 "policy_list": [
                                     "network_connectivity_policy",
                                     "ntp_policy",
@@ -2235,7 +2341,7 @@
                                     "vsan_policies"
                                 ]
                             },
-                            "server_profile": {
+                            "server": {
                                 "policy_list": [
                                     "bios_policy",
                                     "boot_order_policy",
@@ -2254,7 +2360,7 @@
                                     "virtual_media_policy"
                                 ]
                             },
-                            "server_profile_template": {
+                            "server_template": {
                                 "policy_list": [
                                     "adapter_configuration_policy",
                                     "certificate_management_policy",

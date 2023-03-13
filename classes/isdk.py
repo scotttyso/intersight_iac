@@ -5,6 +5,7 @@ from intersight.api import boot_api
 from intersight.api import bulk_api
 from intersight.api import certificatemanagement_api
 from intersight.api import chassis_api
+from intersight.api import compute_api
 from intersight.api import deviceconnector_api
 from intersight.api import equipment_api
 from intersight.api import fabric_api
@@ -46,7 +47,9 @@ print_payload = False
 print_response_always = False
 print_response_on_fail = True
 
-fabric_regex = re.compile('(domain|fc_z|flow|link_(ag|co)|multicast|network_(control|group)|port|switch_c|system_q|v(l|s)an[s]?)')
+fabric_regex = re.compile(
+    '(domain|fc_z|flow|link_(ag|co)|multicast|network_(control|group)|port|switch_c|system_q|v(l|s)an[s]?)'
+)
 vnic_regex = re.compile('^((ethernet|fibre_channel)_(adapter|network|_qos)|(l|s)an_connectivity|vhba|vnic)')
 
 class api(object):
@@ -260,11 +263,15 @@ class api(object):
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_chassis_profile
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_chassis_profile
             elif 'serial_number' == pargs.policy:
-                apiHandle = equipment_api.EquipmentApi(api_client)
-                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_chassis_profile_by_moid
-                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_chassis_profile_list
-                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_chassis_profile
-                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_chassis_profile
+                if 'server' == pargs.purpose:
+                    apiHandle = compute_api.ComputeApi(apiClient)
+                    apiCall   = apiHandle.get_compute_physical_summary_list
+                elif 'chassis' == pargs.purpose:
+                    apiHandle = equipment_api.EquipmentApi(apiClient)
+                    apiCall   = apiHandle.get_equipment_chassis_list
+                elif 'switch' == pargs.purpose:
+                    apiHandle = fabric_api.FabricApi(apiClient)
+                    apiCall   = apiHandle.get_fabric_element_identity_list
         elif re.search(vnic_regex, pargs.policy):
             apiHandle = vnic_api.VnicApi(apiClient)
             if 'vnic' in pargs.policy:
