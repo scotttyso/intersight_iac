@@ -1,4 +1,5 @@
 import ipaddress
+import json
 import re
 import string
 import sys
@@ -10,15 +11,18 @@ def begin_section(ptype1, ptype2):
     print(f"   Beginning {' '.join(ptype1.split('_')).title()} {ptype2.capitalize()} Deployments.\n")
 
 def completed_item(ptype, pargs, pmoid):
-    ptype1 = ptype
     method = pargs.apiMethod
-    if 'vlans' == ptype1: name = f"VLAN {pargs.apiBody['vlan_id']}"
-    elif 'vsans' == ptype1: name = f"VSAN {pargs.apiBody['vlan_id']}"
-    elif 'port_channel' in ptype1: name = f"PC {pargs.apiBody['pc_id']}"
-    elif 'port_role' in ptype1: name = f"Port {pargs.apiBody['port_id']}"
+    if 'vlans' == ptype: name = f"VLAN {pargs.apiBody['vlan_id']}"
+    elif 'vsans' == ptype: name = f"VSAN {pargs.apiBody['vsan_id']}"
+    elif 'port_channel' in ptype: name = f"PC {pargs.apiBody['pc_id']}"
+    elif 'port_mode' in ptype: name = f"PortIdStart {pargs.apiBody['port_id_start']}"
+    elif 'port_role' in ptype: name = f"Port {pargs.apiBody['port_id']}"
+    elif 'user_role' in ptype: name = f"Role for {pargs.purpose}"
     else: name = pargs.apiBody['name']
-    if re.search('(vlans|vsans|port_(channel|role))', ptype1):
-        print(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
+    if re.search('(storage_drive|user_role|v(l|s)ans|vhbas|vnics|port_(channel|mode|role))', ptype):
+        if 'port' in ptype:
+            print(f'      * Completed {method} for port_policy {pargs.port_policy_name}: {name} - Moid: {pmoid}')
+        else: print(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
     else:
         print(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
 

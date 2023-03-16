@@ -1,0 +1,31 @@
+---
+#=======================================
+#   Policies -> storage - Variables
+#=======================================
+Core:
+  policies:
+    sd_card:
+      - name: FlexFlash
+        partitions:
+          - type: OS
+            virtual_drives:
+              - enable: true
+                name: Hypervisor
+                object_type: Operating_System
+      - name: flexOnly
+        partitions:
+          - type: OS
+            virtual_drives:
+              - enable: true
+                name: Hypervisor
+                object_type: Operating_System
+      - name: global-default
+        partitions:
+          - type: OS
+            virtual_drives:
+              - enable: true
+                name: Hypervisor
+                object_type: Operating_System
+    storage:
+      - name: AHCI
+        unused_disks_state: No Change

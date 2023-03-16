@@ -1,0 +1,51 @@
+---
+#=======================================
+#   Policies -> compute - Variables
+#=======================================
+Core:
+  policies:
+    bios:
+      - name: ADDDC_PPR
+      - name: Boot-Optimized
+      - baud_rate: '115200'
+        console_redirection: serial-port-a
+        cpu_power_management: custom
+        flow_control: none
+        legacy_os_redirection: disabled
+        name: M5_M2_AHCI
+        processor_c1e: disabled
+        processor_c3report: disabled
+        processor_c6report: enabled
+        processor_cstate: disabled
+        psata: AHCI
+        serial_port_aenable: enabled
+        terminal_type: vt100
+      - cbs_cmn_gnb_nb_iommu: enabled
+        description: Recommended bios settings for SRIOV vNICs
+        direct_cache_access: enabled
+        intel_virtualization_technology: enabled
+        intel_vt_for_directed_io: enabled
+        intel_vtd_coherency_support: enabled
+        intel_vtd_interrupt_remapping: enabled
+        intel_vtd_pass_through_dma_support: enabled
+        intel_vtdats_support: enabled
+        name: SRIOV
+        svm_mode: enabled
+      - core_multi_processing: all
+        description: Recommended bios settings for usNIC vNICs
+        direct_cache_access: enabled
+        enhanced_intel_speed_step_tech: enabled
+        execute_disable_bit: disabled
+        intel_hyper_threading_tech: disabled
+        intel_turbo_boost_tech: enabled
+        intel_virtualization_technology: enabled
+        intel_vt_for_directed_io: enabled
+        intel_vtd_coherency_support: enabled
+        intel_vtdats_support: enabled
+        lv_ddr_mode: performance-mode
+        memory_mapped_io_above4gb: disabled
+        name: usNIC
+        numa_optimized: enabled
+        processor_c1e: disabled
+        processor_c6report: disabled
+        select_memory_ras_configuration: maximum-performance

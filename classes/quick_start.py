@@ -475,7 +475,7 @@ class quick_start(object):
                             # Configure Sytem QoS Settings
                             #==============================================
                             polVars = {}
-                            polVars['name'] = 'system-qos'
+                            polVars['name'] = 'qos'
                             kwargs['Platinum'] = {
                                 'bandwidth_percent':20, 'cos':5, 'mtu':mtu, 'multicast_optimize':False,
                             'packet_drop':False, 'priority':'Platinum', 'state':'Enabled', 'weight':10}
@@ -525,7 +525,7 @@ class quick_start(object):
                             # Configure Switch Control Policy
                             #==============================================
                             polVars = {}
-                            polVars['name'] = f'sw_ctrl'
+                            polVars['name'] = f'sw-ctrl'
                             polVars['vlan_port_count_optimization'] = False
                             kwargs['class_path'] = 'policies,switch_control'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -857,7 +857,7 @@ class quick_start(object):
                             # Configure LAN Connectivity Policy
                             #==============================================
                             polVars = {}
-                            polVars['name'] = 'vmware-lcp'
+                            polVars['name'] = 'lcp'
                             polVars['target_platform'] = 'FIAttached'
                             polVars['vnics'] = []
                             names = ['mgmt_Silver', 'migration_Bronze', 'storage_Platinum', 'dvs_Gold']
@@ -1367,9 +1367,9 @@ class quick_start(object):
                             polVars = {}
                             names = ['syslog', 'syslog-domain']
                             for name in names:
-                                polVars['name']               = name
-                                polVars['local_min_severity'] = min_severity
-                                polVars['remote_logging']     = kwargs['remote_logging']
+                                polVars['name']           = name
+                                polVars['local_logging']  = {'minimum_severity':min_severity}
+                                polVars['remote_logging'] = kwargs['remote_logging']
 
                                 # Add Policy Variables to immDict
                                 kwargs['class_path'] = 'policies,syslog'
@@ -1554,7 +1554,7 @@ class quick_start(object):
                     if boot_type == 'm2': polVars['storage_policy'] = 'M2-Raid'
                     elif boot_type == 'raid1': polVars['storage_policy'] = 'Raid1'
                     else: polVars['storage_policy'] = ''
-                    polVars['lan_connectivity_policy'] = 'vmware-lcp'
+                    polVars['lan_connectivity_policy'] = 'lcp'
                     if len(fc_ports_in_use) > 0:
                         polVars['san_connectivity_policy'] = f'scp'
                     if kwargs['server_type'] == 'FIAttached':

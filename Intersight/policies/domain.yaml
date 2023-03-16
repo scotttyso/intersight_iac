@@ -1,0 +1,75 @@
+---
+#======================================
+#   Policies -> domain - Variables
+#======================================
+Core:
+  policies:
+    link_aggregation:
+      - lacp_rate: normal
+        name: default
+        suspend_individual: false
+      - lacp_rate: normal
+        name: global-default
+        suspend_individual: false
+    link_control:
+      - admin_state: Disabled
+        mode: normal
+        name: default
+      - admin_state: Disabled
+        mode: normal
+        name: global-default
+    switch_control:
+      - link_control_global_settings:
+          message_interval: 15
+          recovery_action: none
+        mac_address_table_aging: Default
+        name: r143b-ucs
+        switching_mode:
+          ethernet: end-host
+          fc: end-host
+        vlan_port_count_optimization: false
+    system_qos:
+      - classes:
+          - cos: 1
+            mtu: 9216
+            multicast_optimized: false
+            packet_drop: true
+            priority: Bronze
+            state: Disabled
+            weight: 7
+          - cos: 4
+            mtu: 9216
+            multicast_optimized: false
+            packet_drop: true
+            priority: Gold
+            state: Disabled
+            weight: 9
+          - cos: 5
+            mtu: 9216
+            multicast_optimized: false
+            packet_drop: false
+            priority: Platinum
+            state: Disabled
+            weight: 10
+          - cos: 2
+            mtu: 9216
+            multicast_optimized: false
+            packet_drop: true
+            priority: Silver
+            state: Disabled
+            weight: 8
+          - cos: 3
+            mtu: 2240
+            multicast_optimized: false
+            packet_drop: false
+            priority: FC
+            state: Enabled
+            weight: 5
+          - cos: 255
+            mtu: 9216
+            multicast_optimized: false
+            packet_drop: true
+            priority: Best Effort
+            state: Enabled
+            weight: 5
+        name: r143b-ucs

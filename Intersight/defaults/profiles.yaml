@@ -1,0 +1,143 @@
+---
+intersight:
+  defaults:
+    profiles:
+      chassis:
+        name_suffix: ''
+        action: No-op
+        domain_type: instance
+        imc_access_policy: ''
+        power_policy: ''
+        snmp_policy: ''
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        targets: # List of Chassis Targets
+          description: ''
+          name: '**REQUIRED**'
+          serial_number: '**REQUIRED**' # If deploying without physical chassis assign "unknown"
+        thermal_policy: ''
+        target_platform: FIAttached
+      domain:
+        name_suffix: ''
+        action: No-op
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        #===========================
+        # VLAN & VSAN Configuration
+        #===========================
+        vlan_policies: [] # It can be a list of 1 to share the same vlan policy or list of 2 for different per FI
+        vsan_policies: [] # List of two VSAN Policies.  One for each Fabric
+        #===========================
+        # Ports Configuration
+        #===========================
+        port_policies: [] # List of two Port Policies.  One for each Fabric
+        #===========================
+        # UCS Domain Configuration
+        #===========================
+        network_connectivity_policy: ''
+        ntp_policy: ''
+        snmp_policy: ''
+        syslog_policy: ''
+      name_prefix: ''
+      server:
+        name_suffix: ''
+        action: No-op
+        create_from_template: false # If True ucs_server_profile_template must be assigned
+        resource_pool: '' # If used don't assign serial number to targets
+        targets: # List of Server Targets
+          description: ''
+          name: '**REQUIRED**'
+          serial_number: '' # Required if not assigned from Resource Pool.
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        target_platform: FIAttached
+        ucs_server_profile_template: ''
+        #===========================
+        # Compute Configuration
+        #===========================
+        bios_policy_policy: ''
+        boot_order_policy: ''
+        persistent_memory_policy: '' # Standalone Only
+        power_policy: ''             # FIAttached Only
+        uuid_pool: ''                # FIAttached Only
+        virtual_media_policy: ''
+        #===========================
+        # Management Configuration
+        #===========================
+        certificate_management_policy: '' # FIAttached Only
+        device_connector_policy: ''       # Standalone Only
+        imc_access_policy: ''             # FIAttached Only
+        ipmi_over_lan_policy: ''
+        ldap_policy: ''                   # Standalone Only
+        local_user_policy: ''
+        network_connectivity_policy: ''   # Standalone Only
+        ntp_policy: ''                    # Standalone Only
+        serial_over_lan_policy: ''
+        smtp_policy: ''                   # Standalone Only
+        snmp_policy: ''
+        ssh_policy: ''                    # Standalone Only
+        syslog_policy: ''
+        virtual_kvm_policy: ''
+        #===========================
+        # Storage Configuration
+        #===========================
+        sd_card_policy: ''
+        storage_policy: ''
+        #===========================
+        # Network Configuration
+        #===========================
+        adapter_configuration_policy: '' # Standalone Only
+        lan_connectivity_policy: ''
+        san_connectivity_policy: ''
+    templates:
+      server:
+        name_suffix: ''
+        create_template: false
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        target_platform: FIAttached
+        #===========================
+        # Compute Configuration
+        #===========================
+        bios_policy: ''
+        boot_order_policy: ''
+        persistent_memory_policy: '' # Standalone Only
+        power_policy: ''             # FIAttached Only
+        uuid_pool: ''                # FIAttached Only
+        virtual_media_policy: ''
+        #===========================
+        # Management Configuration
+        #===========================
+        certificate_management_policy: '' # FIAttached Only
+        device_connector_policy: ''       # Standalone Only
+        imc_access_policy: ''             # FIAttached Only
+        ipmi_over_lan_policy: ''
+        ldap_policy: ''                   # Standalone Only
+        local_user_policy: ''
+        network_connectivity_policy: ''   # Standalone Only
+        ntp_policy: ''                    # Standalone Only
+        serial_over_lan_policy: ''
+        smtp_policy: ''                   # Standalone Only
+        snmp_policy: ''
+        ssh_policy: ''                    # Standalone Only
+        syslog_policy: ''
+        virtual_kvm_policy: ''
+        #===========================
+        # Storage Configuration
+        #===========================
+        sd_card_policy: ''
+        storage_policy: ''
+        #===========================
+        # Network Configuration
+        #===========================
+        adapter_configuration_policy: '' # Standalone Only
+        lan_connectivity_policy: ''
+        san_connectivity_policy: ''

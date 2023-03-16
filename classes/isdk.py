@@ -50,7 +50,7 @@ print_response_on_fail = True
 fabric_regex = re.compile(
     '(domain|fc_z|flow|link_(ag|co)|multicast|network_(control|group)|port|switch_c|system_q|v(l|s)an[s]?)'
 )
-vnic_regex = re.compile('^((ethernet|fibre_channel)_(adapter|network|_qos)|(l|s)an_connectivity|vhba|vnic)')
+vnic_regex = re.compile('^((ethernet|fibre_channel)_(adapter|network|qos)|(l|s)an_connectivity|vhba|vnic)')
 
 class api(object):
     def __init__(self, type):
@@ -59,22 +59,27 @@ class api(object):
     #=====================================================
     # Process API Results
     #=====================================================
-    def api_results(self, apiQuery):
-        api_dict = {}
+    def api_results(self, pargs, apiQuery):
+        apiDict = {}
         if apiQuery.get('Results'):
             for i in apiQuery['Results']:
                 iMoid = i['Moid']
-                if i.get('Name'): iName = i['Name']
+                if i.get('VlanId'): iName = i['VlanId']
                 elif i.get('PcId'): iName = i['PcId']
-                elif i.get('PortIdStart'): iName = i['PortIdStart']
                 elif i.get('PortId'): iName = i['PortId']
-                api_dict.update({iName:{'Moid':iMoid}})
+                elif i.get('VsanId'): iName = i['VsanId']
+                elif i.get('Name'): iName = i['Name']
+                elif i.get('EndPointUser'): iName = i['EndPointUser']['Moid']
+                elif i.get('PortIdStart'): iName = i['PortIdStart']
+                if i.get('PcId') or i.get('PortId') or i.get('PortIdStart'):
+                    apiDict.update({i['PortPolicy']['Moid']:{iName:{'Moid':iMoid}}})
+                else: apiDict.update({iName:{'Moid':iMoid}})
                 if i.get('Profiles'):
-                    api_dict[iName]['profiles'] = []
+                    apiDict[iName]['profiles'] = []
                     for x in i['Profiles']:
                         xdict = {'class_id':'mo.MoRef','moid':x['Moid'],'object_type':x['ObjectType']}
-                        api_dict[iName]['profiles'].append(xdict)
-        return api_dict
+                        apiDict[iName]['profiles'].append(xdict)
+        return apiDict
 
     #=====================================================
     # Perform API Calls to Intersight
@@ -83,7 +88,6 @@ class api(object):
         #=====================================================
         # Authenticate to the API
         #=====================================================
-        pargs.policy = self.type
         if not 'organization' == pargs.policy:
             org_moid = kwargs['org_moids'][kwargs['org']]['Moid']
         #=====================================================
@@ -194,16 +198,16 @@ class api(object):
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_link_control_policy_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_link_control_policy
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_link_control_policy
-            if 'vlan' == pargs.policy:
-                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_vlan_by_moid
-                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_vlan_list
-                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_vlan
-                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_vlan
+            elif 'vlan' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_eth_network_policy_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_eth_network_policy_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_eth_network_policy
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_eth_network_policy
             elif 'vsan' == pargs.policy:
-                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_vsan_by_moid
-                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_vsan_list
-                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_vsan
-                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_vsan
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_fc_network_policy_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_fc_network_policy_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_fc_network_policy
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_fc_network_policy
             elif 'port_role_ethernet_uplink' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_uplink_role_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_uplink_pc_role_list
@@ -224,27 +228,27 @@ class api(object):
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_port_mode_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_port_mode
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_port_mode
-            elif 'port_channel_appliance' == pargs.policy:
+            elif 'port_channel_appliance' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_appliance_pc_role_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_appliance_pc_role_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_appliance_pc_role
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_appliance_pc_role
-            elif 'port_role_appliance' == pargs.policy:
+            elif 'port_role_appliance' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_appliance_role_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_appliance_role_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_appliance_role
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_appliance_role
-            elif 'port_channel_fcoe_uplink' == pargs.policy:
+            elif 'port_channel_fcoe_uplink' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_fcoe_uplink_pc_role_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_fcoe_uplink_pc_role_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_fcoe_uplink_pc_role
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_fcoe_uplink_pc_role
-            elif 'port_role_fcoe_uplink' == pargs.policy:
+            elif 'port_role_fcoe_uplink' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_fcoe_uplink_role_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_fcoe_uplink_role_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_fcoe_uplink_role
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_fcoe_uplink_role
-        elif re.search('^(chassis|domain|server|server_template)$') in pargs.purpose:
+        elif re.search('^(chassis|domain|server|server_template)$', pargs.purpose):
             apiHandle = server_api.ServerApi(apiClient)
             if 'server' == pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_server_profile_by_moid
@@ -375,9 +379,12 @@ class api(object):
             elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_ipmioverlan_policy_list
             elif pargs.apiMethod == 'create': apiCall = apiHandle.create_ipmioverlan_policy
             elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_ipmioverlan_policy
-        elif re.search('(ldap(_group)?|local(_user)?|user_role)', pargs.policy):
-            apiHandle = iam_api.IamApi
-            if 'ldap' == pargs.policy:
+        elif re.search('(iamrole|ldap(_group)?|local(_user)?|user_role)', pargs.policy):
+            apiHandle = iam_api.IamApi(apiClient)
+            if 'iamrole' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_iam_end_point_role_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_iam_end_point_role_list
+            elif 'ldap' == pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_iam_ldap_provider_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_iam_ldap_policy_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_iam_ldap_policy
@@ -388,25 +395,27 @@ class api(object):
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_iam_ldap_group
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_iam_ldap_group
             elif 'local_user' == pargs.policy:
-                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_iam_end_point_user_by_moid
-                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_iam_end_point_user_list
-                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_iam_end_point_user
-                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_iam_end_point_user
-            elif 'local_users' == pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_iam_end_point_user_policy_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_iam_end_point_user_policy_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_iam_end_point_user_policy
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_iam_end_point_user_policy
+            elif 'local_users' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_iam_end_point_user_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_iam_end_point_user_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_iam_end_point_user
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_iam_end_point_user
             elif 'user_role' == pargs.policy:
-                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_iam_end_point_role_by_moid
-                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_iam_end_point_role_list
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_iam_end_point_user_role_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_iam_end_point_user_role_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_iam_end_point_user_role
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_iam_end_point_user_role
         elif 'mac' == pargs.policy:
             apiHandle = macpool_api.MacpoolApi(apiClient)
             if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_macpool_pool_by_moid
             elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_macpool_pool_list
             elif pargs.apiMethod == 'create': apiCall = apiHandle.create_macpool_pool
             elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_macpool_pool
-        elif 'network_configuration' in pargs.policy:
+        elif 'network_connectivity' in pargs.policy:
             apiHandle = networkconfig_api.NetworkconfigApi(apiClient)
             if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_networkconfig_policy_by_moid
             elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_networkconfig_policy_list
@@ -473,7 +482,7 @@ class api(object):
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_storage_drive_group_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_storage_drive_group
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_storage_drive_group
-            if 'storage' in pargs.policy:
+            elif 'storage' == pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_storage_storage_policy_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_storage_storage_policy_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_storage_storage_policy
@@ -521,14 +530,27 @@ class api(object):
         if 'get' in pargs.apiMethod:
             if 'organization' in pargs.policy: apiArgs = dict(_preload_content = False)
             elif not pargs.get('apiQuery'):
-                names = "', '".join(pargs.names).strip("', '")
+                if re.search('(vlans|vsans)', pargs.policy):
+                    names = ", ".join(map(str, pargs.names))
+                else: names = "', '".join(pargs.names).strip("', '")
                 apiQuery = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
                 if 'user_role' == pargs.policy:
                     apiQuery = f"Name in ('{names}') and Type eq 'IMC'"
+                elif 'storage_drive_group' == pargs.policy:
+                    apiQuery = f"Name in ('{names}') and StoragePolicy.Moid eq '{pargs.pmoid}'"
+                elif 'vhbas' == pargs.policy:
+                    apiQuery = f"Name in ('{names}') and SanConnectivityPolicy.Moid eq '{pargs.pmoid}'"
+                elif 'vlans' == pargs.policy:
+                    apiQuery = f"VlanId in ({names}) and EthNetworkPolicy.Moid eq '{pargs.pmoid}'"
+                elif 'vnics' == pargs.policy:
+                    apiQuery = f"Name in ('{names}') and LanConnectivityPolicy.Moid eq '{pargs.pmoid}'"
+                elif 'vsans' == pargs.policy:
+                    apiQuery = f"VsanId in ({names}) and FcNetworkPolicy.Moid eq '{pargs.pmoid}'"
                 elif re.search('ww(n|p)n', pargs.policy):
                     apiQuery = apiQuery + f" and PoolPurpose eq '{pargs.policy.upper()}'"
                 apiArgs = dict(filter = apiQuery, _preload_content = False)
-            else: apiArgs = dict(filter = pargs.apiQuery, _preload_content = False)
+            else:
+                apiArgs = dict(filter = pargs.apiQuery, _preload_content = False)
         else: apiArgs = dict(_preload_content = False)
         apiMessage = re.search('method ([a-zA-Z\.\_]+) of', str(apiCall)).group(1)
         #=====================================================
@@ -540,7 +562,7 @@ class api(object):
             elif 'patch' in pargs.apiMethod:
                 apiResults = json.loads(apiCall(pargs.pmoid, pargs.apiBody, **apiArgs).data)
             elif 'create' in pargs.apiMethod:
-                apiResults = json.loads(apiCall(pargs.pmoid, pargs.apiBody, **apiArgs).data)
+                apiResults = json.loads(apiCall(pargs.apiBody, **apiArgs).data)
         except ApiException as e:
             print(f"Exception when calling {apiMessage}: {e}\n")
             sys.exit(1)
@@ -549,7 +571,7 @@ class api(object):
         #=====================================================
         if re.search('(get_by_moid|patch)', pargs.apiMethod): kwargs['pmoid'] = pargs.pmoid
         elif 'create' in pargs.apiMethod: kwargs['pmoid'] = apiResults['Moid']
-        else: kwargs['pmoids'] = api('results').api_results(apiResults)
+        else: kwargs['pmoids'] = api('results').api_results(pargs, apiResults)
         if re.search('(create|patch)', pargs.apiMethod):
             if pargs.apiBody.get('name'):
                 kwargs['pmoids'].update({pargs.apiBody.get('name'):kwargs['pmoid']})
@@ -572,9 +594,11 @@ class api(object):
     #=====================================================
     def organizations(self, pargs, **kwargs):
         pargs.apiMethod = 'get'
+        pargs.policy    = self.type
+        pargs.purpose   = self.type
         #=====================================================
         # Get Organization List from the API
         #=====================================================
-        kwargs = api('organization').calls(pargs, **kwargs)
+        kwargs = api(self.type).calls(pargs, **kwargs)
         kwargs['org_moids'] = kwargs['pmoids']
         return kwargs

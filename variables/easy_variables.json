@@ -2119,9 +2119,12 @@
                             },
                             "switch_control": {
                                 "key_map": {
+                                    "description":"description",
                                     "ethernet_switching_mode":"ethernet_switching_mode",
                                     "fc_switching_mode":"fc_switching_mode",
-                                    "vlan_port_count_optimization":"vlan_port_optimization_enabled"
+                                    "name":"name",
+                                    "vlan_port_count_optimization":"vlan_port_optimization_enabled",
+                                    "tags":"tags"
                                 },
                                 "mac_and_udld": {
                                     "mac_address_table_aging":"mac_aging_option",
@@ -2139,8 +2142,11 @@
                                 },
                                 "object_type":"syslog.Policy",
                                 "remote_logging": {
-                                    "enabled":"enable",
-                                    "minimum_severity":"min_severity"
+                                    "enable":"enabled",
+                                    "hostname":"hostname",
+                                    "minimum_severity":"min_severity",
+                                    "port":"port",
+                                    "protocol":"protocol"
                                 }
                             },
                             "system_qos": {
@@ -2164,7 +2170,7 @@
                             "vhbas": {
                                 "key_map": {
                                     "persistent_lun_bindings":"persistent_bindings",
-                                    "wwpn_allocation_type":"wwpn_allocation_type"
+                                    "wwpn_allocation_type":"wwpn_address_type"
                                 }
                             },
                             "virtual_kvm": {
@@ -2206,11 +2212,21 @@
                                 "key_map": {
                                     "description":"description",
                                     "name":"name",
-                                    "ntp_servers":"ntp_servers",
-                                    "timezone":"timezone",
                                     "tags":"tags"
                                 },
-                                "object_type":"ipmioverlan.Policy"
+                                "object_type":"fabric.EthNetworkPolicy"
+                            },
+                            "vlans": {
+                                "key_map": {
+                                    "auto_allow_on_uplinks":"auto_allow_on_uplinks",
+                                    "native_vlan":"is_native"
+                                }
+                            },
+                            "vnics": {
+                                "key_map": {
+                                    "enable_failover":"failover_enabled",
+                                    "mac_address_allocation_type":"mac_address_type"
+                                }
                             },
                             "vsan": {
                                 "key_map": {
@@ -2219,7 +2235,7 @@
                                     "tags":"tags",
                                     "uplink_trunking":"enable_trunking"
                                 },
-                                "object_type":"ipmioverlan.Policy"
+                                "object_type":"fabric.FcNetworkPolicy"
                             },
                             "vsans": {
                                 "key_map": {
@@ -2227,37 +2243,6 @@
                                     "name":"name",
                                     "vsan_id":"vsan_id"
                                 }
-                            },
-                            "vnics": {
-                                "pop_list": [
-                                    "cdn_source",
-                                    "cdn_values",
-                                    "enable_failover",
-                                    "ethernet_adapter_policy",
-                                    "ethernet_network_control_policy",
-                                    "ethernet_network_group_policy",
-                                    "ethernet_network_policy",
-                                    "ethernet_qos_policy",
-                                    "iscsi_boot_policy",
-                                    "mac_address_allocation_type",
-                                    "mac_address_pools",
-                                    "mac_addresses_static",
-                                    "names",
-                                    "placement_pci_links",
-                                    "placement_pci_order",
-                                    "placement_slot_ids",
-                                    "placement_switch_id",
-                                    "placement_uplink_ports",
-                                    "usnic_adapter_policy",
-                                    "usnic_class_of_service",
-                                    "usnic_number_of_usnics",
-                                    "vmq_enable_virtual_machine_multi_queue",
-                                    "vmq_enabled",
-                                    "vmq_number_of_interrupts",
-                                    "vmq_number_of_sub_vnics",
-                                    "vmq_number_of_virtual_machine_queues",
-                                    "vmq_vmmq_adapter_policy"                                    
-                                ]
                             }
                         }
                     }

@@ -1,0 +1,250 @@
+---
+#=============================================
+#   Policies -> fibre_channel - Variables
+#=============================================
+Core:
+  policies:
+    fibre_channel_adapter:
+      - description: default adapter policy
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 30000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: default
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 64
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: Recommended adapter settings for FC-NVMe Initiator Mode
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 30000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: FCNVMeInitiator
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 64
+        scsi_io_queue_count: 16
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: Recommended adapter settings for FC-NVMe Target Mode
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 30000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: FCNVMeTarget
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 2048
+        scsi_io_queue_count: 16
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: default adapter policy
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 30000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 256
+        name: global-default
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 64
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: Recommended adapter settings for FC Initiator Mode
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 10000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: Initiator
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 64
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: Recommended adapter settings for Linux
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 30000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: Linux
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 64
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: Recommended adapter settings for Solaris
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 30000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: Solaris
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 64
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: Recommended adapter settings for FC Target Mode
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 30000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: Target
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 2048
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: Recommended adapter settings for VMWare
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 10000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: VMWare
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 64
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: Recommended adapter settings for Windows
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 30000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: Windows
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 64
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+      - description: Recommended adapter settings for Windows SAN Boot
+        error_recovery_settings:
+          enable_fcp_error_recovery: false
+          io_retry_timeout: 5
+          link_down_timeout: 30000
+          port_down_io_retry: 30
+          port_down_timeout: 5000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_settings:
+          interrupt_mode: MSIx
+        io_throttle_count: 256
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: WindowsBoot
+        plogi_retries: 8
+        plogi_timeout: 4000
+        receive_ring_size: 64
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        transmit_ring_size: 64
+    fibre_channel_network:
+      - name: VSAN100_A
+        vsan_id: 100
+      - name: VSAN200_B
+        vsan_id: 200
+    fibre_channel_qos:
+      - burst: 10240
+        name: FibreChannel
+        rate_limit: 0
+      - burst: 10240
+        name: default
+        rate_limit: 0

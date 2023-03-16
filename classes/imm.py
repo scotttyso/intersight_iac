@@ -43,7 +43,7 @@ class transition(object):
                         elif p2 == 'uuid':       polVars = modify_uuid(polVars)
                         elif p2 == 'wwnn':       polVars = modify_wwnn(polVars)
                         elif p2 == 'wwpn':       polVars = modify_wwpn(polVars)
-                        kwargs['class_path'] = f'intersight,{p1},{p2}'
+                        kwargs['class_path'] = f'{p1},{p2}'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
         return kwargs
 

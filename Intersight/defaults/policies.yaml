@@ -1,0 +1,1147 @@
+---
+intersight:
+  defaults:
+    policies:
+      adapter_configuration:
+        name_suffix: ''
+        add_vic_adapter_configuration:
+          dce_interface_settings: # If you put just one it will do the same for all 4 Interfaces or list all 4
+            dce_interface_fec_modes: [cl91] # Options are cl74, cl91, Off
+          enable_fip: true
+          enable_lldp: true
+          enable_port_channel: true
+          pci_slot: MLOM # Supported values are 1-15 or MLOM
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      bios:
+        name_suffix: ''
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        #+++++++++++++++++++++++++++++++
+        # Boot Options Section
+        #+++++++++++++++++++++++++++++++
+        boot_option_num_retry: platform-default
+        boot_option_re_cool_down: platform-default
+        boot_option_retry: platform-default
+        ipv4http: platform-default
+        ipv4pxe: platform-default
+        ipv6http: platform-default
+        ipv6pxe: platform-default
+        network_stack: platform-default
+        onboard_scu_storage_support: platform-default
+        onboard_scu_storage_sw_stack: platform-default
+        pop_support: platform-default
+        psata: platform-default
+        sata_mode_select: platform-default
+        vmd_enable: platform-default
+        #+++++++++++++++++++++++++++++++
+        # Intel Directed IO Section
+        #+++++++++++++++++++++++++++++++
+        intel_vt_for_directed_io: platform-default
+        intel_vtd_coherency_support: platform-default
+        intel_vtd_interrupt_remapping: platform-default
+        intel_vtd_pass_through_dma_support: platform-default
+        intel_vtdats_support: platform-default
+        #+++++++++++++++++++++++++++++++
+        # LOM and PCIe Slots Section
+        #+++++++++++++++++++++++++++++++
+        acs_control_gpu1state: platform-default
+        acs_control_gpu2state: platform-default
+        acs_control_gpu3state: platform-default
+        acs_control_gpu4state: platform-default
+        acs_control_gpu5state: platform-default
+        acs_control_gpu6state: platform-default
+        acs_control_gpu7state: platform-default
+        acs_control_gpu8state: platform-default
+        acs_control_slot11state: platform-default
+        acs_control_slot12state: platform-default
+        acs_control_slot13state: platform-default
+        acs_control_slot14state: platform-default
+        cdn_support: platform-default
+        edpc_en: platform-default
+        enable_clock_spread_spec: platform-default
+        lom_port0state: platform-default
+        lom_port1state: platform-default
+        lom_port2state: platform-default
+        lom_port3state: platform-default
+        lom_ports_all_state: platform-default
+        pci_option_ro_ms: platform-default
+        pci_rom_clp: platform-default
+        pcie_ari_support: platform-default
+        pcie_pll_ssc: platform-default
+        pcie_slot_mraid1link_speed: platform-default
+        pcie_slot_mraid1option_rom: platform-default
+        pcie_slot_mraid2link_speed: platform-default
+        pcie_slot_mraid2option_rom: platform-default
+        pcie_slot_mstorraid_link_speed: platform-default
+        pcie_slot_mstorraid_option_rom: platform-default
+        pcie_slot_nvme1link_speed: platform-default
+        pcie_slot_nvme1option_rom: platform-default
+        pcie_slot_nvme2link_speed: platform-default
+        pcie_slot_nvme2option_rom: platform-default
+        pcie_slot_nvme3link_speed: platform-default
+        pcie_slot_nvme3option_rom: platform-default
+        pcie_slot_nvme4link_speed: platform-default
+        pcie_slot_nvme4option_rom: platform-default
+        pcie_slot_nvme5link_speed: platform-default
+        pcie_slot_nvme5option_rom: platform-default
+        pcie_slot_nvme6link_speed: platform-default
+        pcie_slot_nvme6option_rom: platform-default
+        slot10link_speed: platform-default
+        slot10state: platform-default
+        slot11link_speed: platform-default
+        slot11state: platform-default
+        slot12link_speed: platform-default
+        slot12state: platform-default
+        slot13state: platform-default
+        slot14state: platform-default
+        slot1link_speed: platform-default
+        slot1state: platform-default
+        slot2link_speed: platform-default
+        slot2state: platform-default
+        slot3link_speed: platform-default
+        slot3state: platform-default
+        slot4link_speed: platform-default
+        slot4state: platform-default
+        slot5link_speed: platform-default
+        slot5state: platform-default
+        slot6link_speed: platform-default
+        slot6state: platform-default
+        slot7link_speed: platform-default
+        slot7state: platform-default
+        slot8link_speed: platform-default
+        slot8state: platform-default
+        slot9link_speed: platform-default
+        slot9state: platform-default
+        slot_flom_link_speed: platform-default
+        slot_front_nvme10link_speed: platform-default
+        slot_front_nvme10option_rom: platform-default
+        slot_front_nvme11link_speed: platform-default
+        slot_front_nvme11option_rom: platform-default
+        slot_front_nvme12link_speed: platform-default
+        slot_front_nvme12option_rom: platform-default
+        slot_front_nvme13option_rom: platform-default
+        slot_front_nvme14option_rom: platform-default
+        slot_front_nvme15option_rom: platform-default
+        slot_front_nvme16option_rom: platform-default
+        slot_front_nvme17option_rom: platform-default
+        slot_front_nvme18option_rom: platform-default
+        slot_front_nvme19option_rom: platform-default
+        slot_front_nvme1link_speed: platform-default
+        slot_front_nvme1option_rom: platform-default
+        slot_front_nvme20option_rom: platform-default
+        slot_front_nvme21option_rom: platform-default
+        slot_front_nvme22option_rom: platform-default
+        slot_front_nvme23option_rom: platform-default
+        slot_front_nvme24option_rom: platform-default
+        slot_front_nvme2link_speed: platform-default
+        slot_front_nvme2option_rom: platform-default
+        slot_front_nvme3link_speed: platform-default
+        slot_front_nvme3option_rom: platform-default
+        slot_front_nvme4link_speed: platform-default
+        slot_front_nvme4option_rom: platform-default
+        slot_front_nvme5link_speed: platform-default
+        slot_front_nvme5option_rom: platform-default
+        slot_front_nvme6link_speed: platform-default
+        slot_front_nvme6option_rom: platform-default
+        slot_front_nvme7link_speed: platform-default
+        slot_front_nvme7option_rom: platform-default
+        slot_front_nvme8link_speed: platform-default
+        slot_front_nvme8option_rom: platform-default
+        slot_front_nvme9link_speed: platform-default
+        slot_front_nvme9option_rom: platform-default
+        slot_front_slot5link_speed: platform-default
+        slot_front_slot6link_speed: platform-default
+        slot_gpu1state: platform-default
+        slot_gpu2state: platform-default
+        slot_gpu3state: platform-default
+        slot_gpu4state: platform-default
+        slot_gpu5state: platform-default
+        slot_gpu6state: platform-default
+        slot_gpu7state: platform-default
+        slot_gpu8state: platform-default
+        slot_hba_link_speed: platform-default
+        slot_hba_state: platform-default
+        slot_lom1link: platform-default
+        slot_lom2link: platform-default
+        slot_mezz_state: platform-default
+        slot_mlom_link_speed: platform-default
+        slot_mlom_state: platform-default
+        slot_mraid_link_speed: platform-default
+        slot_mraid_state: platform-default
+        slot_n10state: platform-default
+        slot_n11state: platform-default
+        slot_n12state: platform-default
+        slot_n13state: platform-default
+        slot_n14state: platform-default
+        slot_n15state: platform-default
+        slot_n16state: platform-default
+        slot_n17state: platform-default
+        slot_n18state: platform-default
+        slot_n19state: platform-default
+        slot_n1state: platform-default
+        slot_n20state: platform-default
+        slot_n21state: platform-default
+        slot_n22state: platform-default
+        slot_n23state: platform-default
+        slot_n24state: platform-default
+        slot_n2state: platform-default
+        slot_n3state: platform-default
+        slot_n4state: platform-default
+        slot_n5state: platform-default
+        slot_n6state: platform-default
+        slot_n7state: platform-default
+        slot_n8state: platform-default
+        slot_n9state: platform-default
+        slot_raid_link_speed: platform-default
+        slot_raid_state: platform-default
+        slot_rear_nvme1link_speed: platform-default
+        slot_rear_nvme1state: platform-default
+        slot_rear_nvme2link_speed: platform-default
+        slot_rear_nvme2state: platform-default
+        slot_rear_nvme3link_speed: platform-default
+        slot_rear_nvme3state: platform-default
+        slot_rear_nvme4link_speed: platform-default
+        slot_rear_nvme4state: platform-default
+        slot_rear_nvme5state: platform-default
+        slot_rear_nvme6state: platform-default
+        slot_rear_nvme7state: platform-default
+        slot_rear_nvme8state: platform-default
+        slot_riser1link_speed: platform-default
+        slot_riser1slot1link_speed: platform-default
+        slot_riser1slot2link_speed: platform-default
+        slot_riser1slot3link_speed: platform-default
+        slot_riser2link_speed: platform-default
+        slot_riser2slot4link_speed: platform-default
+        slot_riser2slot5link_speed: platform-default
+        slot_riser2slot6link_speed: platform-default
+        slot_sas_state: platform-default
+        slot_ssd_slot1link_speed: platform-default
+        slot_ssd_slot2link_speed: platform-default
+        #+++++++++++++++++++++++++++++++
+        # Main Section
+        #+++++++++++++++++++++++++++++++
+        pcie_slots_cdn_enable: platform-default
+        post_error_pause: platform-default
+        tpm_support: platform-default
+        #+++++++++++++++++++++++++++++++
+        # Memory Section
+        #+++++++++++++++++++++++++++++++
+        advanced_mem_test: platform-default
+        bme_dma_mitigation: platform-default
+        burst_and_postponed_refresh: platform-default
+        cbs_cmn_cpu_smee: platform-default
+        cbs_cmn_gnb_nb_iommu: platform-default
+        cbs_cmn_mem_ctrl_bank_group_swap_ddr4: platform-default
+        cbs_cmn_mem_map_bank_interleave_ddr4: platform-default
+        cbs_dbg_cpu_snp_mem_cover: platform-default
+        cbs_dbg_cpu_snp_mem_size_cover: platform-default
+        cbs_df_cmn_dram_nps: platform-default
+        cbs_df_cmn_mem_intlv: platform-default
+        cbs_df_cmn_mem_intlv_size: platform-default
+        cbs_sev_snp_support: platform-default
+        cke_low_policy: platform-default
+        cr_qos: platform-default
+        crfastgo_config: platform-default
+        dcpmm_firmware_downgrade: platform-default
+        dram_refresh_rate: platform-default
+        dram_sw_thermal_throttling: platform-default
+        eadr_support: platform-default
+        lv_ddr_mode: platform-default
+        memory_bandwidth_boost: platform-default
+        memory_refresh_rate: platform-default
+        memory_size_limit: platform-default
+        memory_thermal_throttling: platform-default
+        mirroring_mode: platform-default
+        numa_optimized: platform-default
+        nvmdimm_perform_config: platform-default
+        operation_mode: platform-default
+        panic_high_watermark: platform-default
+        partial_cache_line_sparing: platform-default
+        partial_mirror_mode_config: platform-default
+        partial_mirror_percent: platform-default
+        partial_mirror_value1: platform-default
+        partial_mirror_value2: platform-default
+        partial_mirror_value3: platform-default
+        partial_mirror_value4: platform-default
+        pc_ie_ras_support: platform-default
+        post_package_repair: platform-default
+        select_memory_ras_configuration: platform-default
+        select_ppr_type: platform-default
+        sev: platform-default
+        smee: platform-default
+        snoopy_mode_for2lm: platform-default
+        snoopy_mode_for_ad: platform-default
+        sparing_mode: platform-default
+        tsme: platform-default
+        uma_based_clustering: platform-default
+        vol_memory_mode: platform-default
+        #+++++++++++++++++++++++++++++++
+        # PCI Section
+        #+++++++++++++++++++++++++++++++
+        aspm_support: platform-default
+        ioh_resource: platform-default
+        memory_mapped_io_above4gb: platform-default
+        mmcfg_base: platform-default
+        onboard10gbit_lom: platform-default
+        onboard_gbit_lom: platform-default
+        pc_ie_ssd_hot_plug_support: platform-default
+        sr_iov: platform-default
+        vga_priority: platform-default
+        #+++++++++++++++++++++++++++++++
+        # Power and Performance Section
+        #+++++++++++++++++++++++++++++++
+        c1auto_demotion: platform-default
+        c1auto_un_demotion: platform-default
+        cbs_cmn_cpu_cpb: platform-default
+        cbs_cmn_cpu_global_cstate_ctrl: platform-default
+        cbs_cmn_cpu_l1stream_hw_prefetcher: platform-default
+        cbs_cmn_cpu_l2stream_hw_prefetcher: platform-default
+        cbs_cmn_determinism_slider: platform-default
+        cbs_cmn_efficiency_mode_en: platform-default
+        cbs_cmn_gnb_smucppc: platform-default
+        cbs_cmnc_tdp_ctl: platform-default
+        cpu_perf_enhancement: platform-default
+        llc_alloc: platform-default
+        upi_link_enablement: platform-default
+        upi_power_management: platform-default
+        virtual_numa: platform-default
+        xpt_remote_prefetch: platform-default
+        #+++++++++++++++++++++++++++++++
+        # Processor Section
+        #+++++++++++++++++++++++++++++++
+        adjacent_cache_line_prefetch: platform-default
+        altitude: platform-default
+        auto_cc_state: platform-default
+        autonumous_cstate_enable: platform-default
+        boot_performance_mode: platform-default
+        cbs_cmn_apbdis: platform-default
+        cbs_cmn_cpu_gen_downcore_ctrl: platform-default
+        cbs_cmn_cpu_streaming_stores_ctrl: platform-default
+        cbs_cmn_fixed_soc_pstate: platform-default
+        cbs_cmn_gnb_smu_df_cstates: platform-default
+        cbs_cpu_ccd_ctrl_ssp: platform-default
+        cbs_cpu_core_ctrl: platform-default
+        cbs_cpu_smt_ctrl: platform-default
+        cbs_df_cmn_acpi_srat_l3numa: platform-default
+        channel_inter_leave: platform-default
+        cisco_xgmi_max_speed: platform-default
+        closed_loop_therm_throtl: platform-default
+        cmci_enable: platform-default
+        config_tdp: platform-default
+        config_tdp_level: platform-default
+        core_multi_processing: platform-default
+        cpu_energy_performance: platform-default
+        cpu_frequency_floor: platform-default
+        cpu_performance: platform-default
+        cpu_power_management: platform-default
+        demand_scrub: platform-default
+        direct_cache_access: platform-default
+        dram_clock_throttling: platform-default
+        energy_efficient_turbo: platform-default
+        eng_perf_tuning: platform-default
+        enhanced_intel_speed_step_tech: platform-default
+        epp_enable: platform-default
+        epp_profile: platform-default
+        execute_disable_bit: platform-default
+        extended_apic: platform-default
+        hardware_prefetch: platform-default
+        hwpm_enable: platform-default
+        imc_interleave: platform-default
+        intel_dynamic_speed_select: platform-default
+        intel_hyper_threading_tech: platform-default
+        intel_speed_select: platform-default
+        intel_turbo_boost_tech: platform-default
+        intel_virtualization_technology: platform-default
+        ioh_error_enable: platform-default
+        ip_prefetch: platform-default
+        kti_prefetch: platform-default
+        llc_prefetch: platform-default
+        memory_inter_leave: platform-default
+        package_cstate_limit: platform-default
+        patrol_scrub: platform-default
+        patrol_scrub_duration: platform-default
+        processor_c1e: platform-default
+        processor_c3report: platform-default
+        processor_c6report: platform-default
+        processor_cstate: platform-default
+        pstate_coord_type: platform-default
+        pwr_perf_tuning: platform-default
+        qpi_link_speed: platform-default
+        rank_inter_leave: platform-default
+        single_pctl_enable: platform-default
+        smt_mode: platform-default
+        snc: platform-default
+        streamer_prefetch: platform-default
+        svm_mode: platform-default
+        ufs_disable: platform-default
+        work_load_config: platform-default
+        xpt_prefetch: platform-default
+        #+++++++++++++++++++++++++++++++
+        # QPI Section
+        #+++++++++++++++++++++++++++++++
+        qpi_link_frequency: platform-default
+        qpi_snoop_mode: platform-default
+        #+++++++++++++++++++++++++++++++
+        # Serial Port Section
+        #+++++++++++++++++++++++++++++++
+        serial_port_aenable: platform-default
+        #+++++++++++++++++++++++++++++++
+        # Server Management Section
+        #+++++++++++++++++++++++++++++++
+        assert_nmi_on_perr: platform-default
+        assert_nmi_on_serr: platform-default
+        baud_rate: platform-default
+        cdn_enable: platform-default
+        cisco_adaptive_mem_training: platform-default
+        cisco_debug_level: platform-default
+        cisco_oprom_launch_optimization: platform-default
+        console_redirection: platform-default
+        flow_control: platform-default
+        frb2enable: platform-default
+        legacy_os_redirection: platform-default
+        os_boot_watchdog_timer: platform-default
+        os_boot_watchdog_timer_policy: platform-default
+        os_boot_watchdog_timer_timeout: platform-default
+        out_of_band_mgmt_port: platform-default
+        putty_key_pad: platform-default
+        redirection_after_post: platform-default
+        terminal_type: platform-default
+        ucsm_boot_order_rule: platform-default
+        #+++++++++++++++++++++++++++++++
+        # Trusted Platform Section
+        #+++++++++++++++++++++++++++++++
+        cpu_pa_limit: platform-default
+        enable_mktme: platform-default
+        enable_sgx: platform-default
+        enable_tme: platform-default
+        epoch_update: platform-default
+        sgx_auto_registration_agent: platform-default
+        sgx_epoch0: platform-default
+        sgx_epoch1: platform-default
+        sgx_factory_reset: platform-default
+        sgx_le_pub_key_hash0: platform-default
+        sgx_le_pub_key_hash1: platform-default
+        sgx_le_pub_key_hash2: platform-default
+        sgx_le_pub_key_hash3: platform-default
+        sgx_le_wr: platform-default
+        sgx_package_info_in_band_access: platform-default
+        sgx_qos: platform-default
+        sha1pcr_bank: platform-default
+        sha256pcr_bank: platform-default
+        tpm_control: platform-default
+        tpm_pending_operation: platform-default
+        tpm_ppi_required: platform-default
+        txt_support: platform-default
+        #+++++++++++++++++++++++++++++++
+        # USB Section
+        #+++++++++++++++++++++++++++++++
+        all_usb_devices: platform-default
+        legacy_usb_support: platform-default
+        make_device_non_bootable: platform-default
+        pch_usb30mode: platform-default
+        usb_emul6064: platform-default
+        usb_port_front: platform-default
+        usb_port_internal: platform-default
+        usb_port_kvm: platform-default
+        usb_port_rear: platform-default
+        usb_port_sd_card: platform-default
+        usb_port_vmedia: platform-default
+        usb_xhci_support: platform-default
+      boot_order:
+        name_suffix: ''
+        boot_devices: # Optional List of Map
+          bootloader_description: '' # Optional for Uefi
+          bootloader_name: 'BOOTx64.EFI' # Optional for Uefi
+          bootloader_path: '\\EFI\\BOOT\\' # Optional for Uefi, used by boot.Iscsi, boot.LocalDisk, boot.Nvme, boot.PchStorage, boot.San, boot.SdCard
+          enabled: true #Optional
+          interface_name: '' # Used by boot.Iscsi, boot.Pxe, boot.San
+          interface_source: name # Used only by boot.Pxe. Options are name, mac, port
+          ip_type: None # Used only by boot.Pxe.  Options are None, IPv4, IPv6
+          lun: 0 # Used by the following: boot.PchStorage, boot.San, boot.SdCard
+          mac_ddress: '' # Used by boot.Pxe if Interface_Source is mac
+          name: '**REQUIRED**'
+          object_type: '**REQUIRED**' # Options are boot.Iscsi, boot.LocalCdd, boot.LocalDisk, boot.Nvme, boot.PchStorage, boot.Pxe, boot.San, boot.SdCard, boot.UefiShell, boot.Usb, boot.VirtualMedia
+          port: -1 # boot.Iscsi can be 0-255.  boot.Pxe is the Port ID of the adapter and values can be between -1 (not defined) and 255.
+          slot: MLOM # Options for boot.Iscsi, boot.Pxe and boot.San are 1-255, MLOM, L1, L2.  boot.Iscsi and boot.Pxe also support L and OCP.  For boot.LocalDisk values can be 1-205, FMEZZ1-SAS, HBA, M, MRAID, MRAID1, MRAID2, MSTOR-RAID, SAS, RAID.
+          sub_type: None # Options for boot.VirtualMedia: None, cimc-mapped-dvd, cimc-mapped-hdd, kvm-mapped-dvd, kvm-mapped-hdd, kvm-mapped-fdd. Options are boot.SdCard: None, flex-util, flex-flash, SDCARD.  Options for boot.Usb: None, usb-cd, usb-fdd, usb-hdd
+          wwpn: '' # Used only by boot.San
+        boot_mode: Uefi
+        description: ''
+        enable_secure_boot: false
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      certificate_management:
+        name_suffix: ''
+        certificate: 0 # Value between 1 and 5 to define the TF_VAR_base64_certificate_[1-5]
+        description: ''
+        name: '**REQUIRED**'
+        private_key: 0 # Value between 1 and 5 to define the TF_VAR_base64_private_key_[1-5]
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      device_connector:
+        name_suffix: ''
+        configuration_lockout: false
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      ethernet_adapter:
+        name_suffix: ''
+        completion_queue_count: 5
+        completion_ring_size: 1
+        description: ''
+        enable_accelerated_receive_flow_steering: false
+        enable_advanced_filter: false
+        enable_geneve_offload: false
+        enable_interrupt_scaling: false
+        enable_nvgre_offload: false
+        enable_vxlan_offload: false
+        interrupt_coalescing_type: MIN
+        interrupt_mode: MSIx
+        interrupt_timer: 125
+        interrupts: 8
+        name: '**REQUIRED**'
+        receive_side_scaling_enable: true
+        roce_cos: 6
+        roce_enable: false
+        roce_memory_regions: 0
+        roce_queue_pairs: 0
+        roce_resource_groups: 0
+        roce_version: 1
+        rss_enable_ipv4_hash: true
+        rss_enable_ipv6_extensions_hash: false
+        rss_enable_ipv6_hash: true
+        rss_enable_tcp_and_ipv4_hash: true
+        rss_enable_tcp_and_ipv6_extensions_hash: false
+        rss_enable_tcp_and_ipv6_hash: true
+        rss_enable_udp_and_ipv4_hash: false
+        rss_enable_udp_and_ipv6_hash: false
+        receive_queue_count: 4
+        receive_ring_size: 512
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        tcp_offload_large_recieve: true
+        tcp_offload_large_send: true
+        tcp_offload_rx_checksum: true
+        tcp_offload_tx_checksum: true
+        transmit_queue_count: 1
+        transmit_ring_size: 256
+        uplink_failback_timeout: 5
+      ethernet_network:
+        name_suffix: ''
+        default_vlan: 0
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        vlan_mode: ACCESS
+      ethernet_network_control:
+        name_suffix: ''
+        action_on_uplink_fail: linkDown
+        cdp_enable: false
+        description: ''
+        lldp_enable_receive: false
+        lldp_enable_transmit: false
+        mac_register_mode: nativeVlanOnly
+        mac_security_forge: allow
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      ethernet_network_group:
+        name_suffix: ''
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      ethernet_qos:
+        name_suffix: ''
+        burst: 10240
+        cos: 0
+        description: ''
+        enable_trust_host_cos: false
+        mtu: 1500
+        name: '**REQUIRED**'
+        priority: Best Effort
+        rate_limit: 0
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      fc_zone:
+        name_suffix: ''
+        description: ''
+        fc_target_members: # This is a list of target_members
+          name: '**REQUIRED**'
+          switch_id: A # A or B
+          vsan_id: '**REQUIRED**'
+          wwpn: '**REQUIRED**'
+        fc_target_zoning_type: SIMT # None, SIST (Single Initiator, Single Target), SIMT (Single Initiator, Multiple Target)
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      fibre_channel_adapter:
+        name_suffix: ''
+        description: ''
+        error_detection_timeout: 2000
+        enable_fcp_error_recovery: false
+        error_recovery_io_retry_timeout: 5
+        error_recovery_link_down_timeout: 30000
+        error_recovery_port_down_io_retry: 8
+        error_recovery_port_down_timeout: 10000
+        flogi_retries: 8
+        flogi_timeout: 4000
+        interrupt_mode: MSIx
+        io_throttle_count: 512
+        lun_queue_depth: 20
+        max_luns_per_target: 1024
+        name: '**REQUIRED**'
+        plogi_retries: 8
+        plogi_timeout: 20000
+        receive_ring_size: 64
+        resource_allocation_timeout: 10000
+        scsi_io_queue_count: 1
+        scsi_io_ring_size: 512
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        transmit_ring_size: 64
+      fibre_channel_network:
+        name_suffix: ''
+        default_vlan_id: 0
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      fibre_channel_qos:
+        name_suffix: ''
+        burst: 10240
+        cos: 3
+        description: ''
+        max_data_field_size: 2112
+        name: '**REQUIRED**'
+        rate_limit: 0
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      flow_control:
+        name_suffix: ''
+        description: ''
+        name: '**REQUIRED**'
+        priority: auto
+        receive: Disabled
+        send: Disabled
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      imc_access:
+        name_suffix: ''
+        description: ''
+        inband_vlan_id: 4
+        ipv4_address_configuration: true
+        ipv6_address_configuration: false
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      ipmi_over_lan:
+        name_suffix: ''
+        description: ''
+        enabled: true
+        name: '**REQUIRED**'
+        privilege: admin
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      iscsi_adapter:
+        name_suffix: ''
+        description: ''
+        dhcp_timeout: 60
+        lun_busy_retry_count: 15
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        tcp_connection_timeout: 15
+      iscsi_boot:
+        name_suffix: ''
+        authentication: ''
+        description: ''
+        dhcp_vendor_id_iqn: ''
+        initiator_ip_source: Pool
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        target_source_type: Auto
+      iscsi_static_target:
+        name_suffix: ''
+        description: ''
+        luns:
+          bootable: false
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      lan_connectivity:
+        name_suffix: ''
+        description: ''
+        enable_azure_stack_host_qos: false
+        iqn_allocation_type: None
+        iqn_pool: ''
+        name: '**REQUIRED**'
+        iqn_static_identifier: ''
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        target_platform: FIAttached
+        vnic_placement_mode: custom
+        vnics:
+          cdn_source: vnic
+          cdn_values: []
+          enable_failover: false
+          ethernet_adapter_policy: ''
+          ethernet_network_control_policy: ''
+          ethernet_network_group_policy: ''
+          ethernet_network_policy: ''
+          ethernet_qos_policy: ''
+          iscsi_boot_policy: ''
+          mac_address_allocation_type: POOL
+          mac_address_pools: []
+          mac_addresses_static: []
+          placement_pci_links: [0]
+          placement_pci_order: [2, 3]
+          placement_slot_ids: [MLOM]
+          placement_switch_id: ''
+          placement_uplink_ports: [0]
+          usnic_adapter_policy: ''
+          usnic_class_of_service: 5
+          usnic_number_of_usnics: 0
+          vmq_enable_virtual_machine_multi_queue: false
+          vmq_enabled: false
+          vmq_number_of_interrupts: 16
+          vmq_number_of_sub_vnics: 64
+          vmq_number_of_virtual_machine_queues: 4
+          vmq_vmmq_adapter_policy: ''
+      ldap:
+        name_suffix: ''
+        base_settings:
+          timeout: 0
+        binding_parameters:
+          bind_dn: ''
+          bind_method: LoginCredentials
+        description: ''
+        enable_encryption: false
+        enable_group_authorization: false
+        enable_ldap: true
+        ldap_from_dns:
+          enable: false
+          search_domain: ''
+          search_forest: ''
+          source: Extracted
+        name: '**REQUIRED**'
+        nested_group_search_depth: 128
+        search_parameters:
+          attribute: CiscoAvPair
+          filter: samAccountName
+          group_attribute: memberOf
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        timeout: 0
+        user_search_precedence: LocalUserDb
+      link_aggregation:
+        name_suffix: ''
+        description: ''
+        lacp_rate: normal
+        name: '**REQUIRED**'
+        suspend_individual: false
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      link_control: 
+        name_suffix: ''
+        admin_state: Enabled
+        description: ''
+        mode: normal
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      local_user:
+        name_suffix: ''
+        always_send_user_password: false
+        description: ''
+        enable_password_expiry: false
+        enforce_strong_password: true
+        grace_period: 0
+        name: '**REQUIRED**'
+        notification_period: 15
+        password_expiry_duration: 90
+        password_history: 5
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      multicast:
+        name_suffix: ''
+        description: ''
+        name: '**REQUIRED**'
+        querier_ip_address: ''
+        querier_ip_address_peer: ''
+        querier_state: Disabled
+        snooping_state: Enabled
+        source_ip_proxy_state: Enabled
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      name_prefix: ''
+      network_connectivity:
+        name_suffix: ''
+        description: ''
+        dns_servers_v4: [208.67.220.220, 208.67.222.222]
+        dns_servers_v6: []
+        enable_dynamic_dns: false
+        enable_ipv6: false
+        name: '**REQUIRED**'
+        obtain_ipv4_dns_from_dhcp: false
+        obtain_ipv6_dns_from_dhcp: false
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        update_domain: ''
+      ntp:
+        name_suffix: ''
+        description: ''
+        enabled: true
+        name: '**REQUIRED**'
+        ntp_servers: [time-a-g.nist.gov, time-b-g.nist.gov]
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        timezone: Etc/GMT
+      persistent_memory:
+        name_suffix: ''
+        description: ''
+        management_mode: configured-from-intersight
+        memory_mode_percentage: 0
+        name: '**REQUIRED**'
+        namespaces:
+          mode: raw
+          socket_id: 1
+          socket_memory_id: 'Not Applicable'
+        persistent_memory_type: app-direct
+        retain_namespaces: true
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      port:
+        name_suffix: ''
+        description: ''
+        device_model: UCS-FI-6454
+        name: '**REQUIRED**'
+        port_channel_appliances:
+          admin_speed: Auto
+          ethernet_network_control_policy: ''
+          ethernet_network_group_policy: ''
+          mode: trunk
+          priority: Best Effort
+        port_channel_ethernet_uplinks:
+          admin_speed: Auto
+          ethernet_network_group_policy: ''
+          flow_control_policy: ''
+          link_aggregation_policy: ''
+          link_control_policy: ''
+        port_channel_fc_uplinks:
+          admin_speed: 32Gbps
+          fill_pattern: Idle
+          vsan_id: 1
+        port_channel_fcoe_uplinks:
+          admin_speed: Auto
+          link_aggregation_policy: ''
+          link_control_policy: ''
+        port_modes:
+          custom_mode: FibreChannel
+        port_role_appliances:
+          admin_speed: Auto
+          ethernet_network_control_policy: ''
+          ethernet_network_group_policy: ''
+          fec: Auto
+          mode: trunk
+          priority: Best Effort
+        port_role_ethernet_uplinks:
+          admin_speed: Auto
+          ethernet_network_group_policy: ''
+          fec: Auto
+          flow_control_policy: ''
+          link_control_policy: ''
+        port_role_fc_storage:
+          admin_speed: 16Gbps
+          vsan_id: 1
+        port_role_fc_uplinks:
+          admin_speed: 32Gbps
+          fill_pattern: Idle
+          vsan_id: 1
+        port_role_fcoe_uplinks:
+          admin_speed: Auto
+          fec: Auto
+          link_control_policy: ''
+        port_role_servers:
+          auto_negotiation: false
+          breakout_port_id: 0
+          connected_device_type: Auto
+          device_number: 0
+          fec: Auto
+          slot_id: 1
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      power:
+        name_suffix: ''
+        description: ''
+        dynamic_power_rebalancing: Enabled
+        extended_power_capacity: Enabled
+        name: '**REQUIRED**'
+        power_allocation: 0
+        power_priority: Low
+        power_profiling: Enabled
+        power_redundancy: Grid
+        power_restore: LastState
+        power_save_mode: Enabled
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      san_connectivity:
+        name_suffix: ''
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        target_platform: FIAttached
+        vhba_placement_mode: custom
+        vhbas:
+          fc_zone_policies: []
+          fibre_channel_adapter_policy: ''
+          fibre_channel_network_policies: []
+          fibre_channel_qos_policy: ''
+          persistent_lun_bindings: false
+          placement_pci_link: [0]
+          placement_pci_order: [0, 1]
+          placement_slot_id: [MLOM]
+          placement_switch_id: ''
+          placement_uplink_port: [0]
+          vhba_type: fc-initiator
+          wwpn_allocation_type: POOL
+          wwpn_pools: []
+          wwpn_static_addresses: []
+        wwnn_allocation_type: POOL
+        wwnn_pool: ''
+      sd_card:
+        name_suffix: ''
+        description: ''
+        enable_diagnostics: false
+        enable_drivers: false
+        enable_huu: false
+        enable_os: false
+        enable_scu: false
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      serial_over_lan:
+        name_suffix: ''
+        baud_rate: 115200
+        com_port: com0
+        description: ''
+        enabled: true
+        name: '**REQUIRED**'
+        ssh_port: 2400
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      smtp:
+        name_suffix: ''
+        description: ''
+        enable_smtp: true
+        mail_alert_recipients: []
+        minimum_severity: critical
+        name: '**REQUIRED**'
+        smtp_alert_sender_address: ''
+        smtp_port: 25
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      snmp:
+        name_suffix: ''
+        access_community_string: 0 # value between 1 and 5 to specify the TF_VAR_snmp_access_community_string_[1-5]
+        enable_snmp: true
+        description: ''
+        name: '**REQUIRED**'
+        snmp_community_access: Disabled # Disabled, Full, Limited
+        snmp_engine_input_id: ''
+        snmp_port: 161
+        snmp_trap_destinations: # Optional List of Maps
+          community_string: 0 # value between 1 and 5 to specify the TF_VAR_snmp_trap_community_string_[1-5] for snmpv2c
+          destination_address: '**REQUIRED**'
+          enable: true
+          port: 162
+          trap_type: Trap # Inform or Trap
+          user: '**REQUIRED for snmpv3**'
+        snmp_users: # Optional List of Maps
+          auth_password: 0 # value between 1 and 5 to specify the TF_VAR_snmp_auth_password_[1-5]
+          auth_type: SHA # MD5 or SHA
+          name: '**REQUIRED**' # Name of snmp user.
+          privacy_password: 0 # Required for AuthPriv.  value between 1 and 5 to specify the TF_VAR_snmp_privacy_password_[1-5]
+          privacy_type: AES # Optional. AES or DES if privacy password is defined
+          security_level: AuthPriv # AuthNoPriv, AuthPriv, NoAuthPriv
+        system_contact: ''
+        system_location: ''
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        trap_community_string: 0 # value between 1 and 5 to specify the TF_VAR_snmp_auth_password_[1-5]
+      ssh:
+        name_suffix: ''
+        description: ''
+        enable_ssh: true
+        name: '**REQUIRED**'
+        ssh_port: 22
+        ssh_timeout: 1800
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      storage:
+        name_suffix: ''
+        description: ''
+        drive_groups:
+          automatic_drive_groups:
+            drives_per_span: 2
+            drive_type: Any
+            minimum_drive_size: 50
+            num_dedicated_hot_spares: ''
+            number_of_spans: 1
+            use_remaining_drives: false
+          manual_drive_groups:
+            dedicated_hot_spares: ''
+          virtual_drives:
+            boot_drive: false
+            expand_to_available: true
+            size: 50
+            virtual_drive_policy:
+              access_policy: Default
+              drive_cache: Default
+              read_policy: Default
+              strip_size: 64
+              write_policy: Default
+        global_hot_spares: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        unused_disks_state: NoChange
+        use_jbod_for_vd_creation: false
+      switch_control:
+        name_suffix: ''
+        description: ''
+        ethernet_switching_mode: end-host
+        fc_switching_mode: end-host
+        mac_address_table_aging: Default
+        mac_aging_time: 14500
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        udld_message_interval: 15
+        udld_recovery_action: reset
+        vlan_port_count_optimization: false
+      syslog:
+        name_suffix: ''
+        description: ''
+        local_logging:
+          minimum_severity: warning
+        name: '**REQUIRED**'
+        remote_logging: # Defined as server1: and server2:
+          enable: false
+          hostname: 0.0.0.0
+          minimum_severity: warning
+          port: 514
+          protocol: udp
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      system_qos:
+        name_suffix: ''
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      thermal:
+        name_suffix: ''
+        description: ''
+        fan_control_mode: Balanced
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      virtual_kvm:
+        name_suffix: ''
+        allow_tunneled_vkvm: false
+        description: ''
+        enable_local_server_video: true
+        enable_video_encryption: true
+        enable_virtual_kvm: true
+        maximum_sessions: 4
+        name: '**REQUIRED**'
+        remote_port: 2068
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      virtual_media:
+        name_suffix: ''
+        description: ''
+        enable_low_power_usb: true
+        enable_virtual_media: true
+        enable_virtual_media_encryption: true
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+      vlan:
+        name_suffix: ''
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        vlans:
+          auto_allow_on_uplinks: false
+          multicast_policy: ''
+          native_vlan: false
+      vsan:
+        name_suffix: ''
+        description: ''
+        name: '**REQUIRED**'
+        tags: # Optional List of Map of String
+          key: ''
+          value: ''
+        uplink_trunking: false
+        vsans:
+          default_zoning: Disabled
+          fc_zone_sharing_mode: ''
+          vsan_scope: Uplink

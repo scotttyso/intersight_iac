@@ -484,23 +484,20 @@ def merge_easy_imm_repository(orgs, **kwargs):
     if not os.path.isfile(os.path.join(tfe_dir, 'README.md')): Repo.clone_from(git_url, tfe_dir)
     else: g = cmd.Git(tfe_dir); g.pull()
     if not os.path.isdir(baseRepo): os.mkdir(baseRepo)
-    for org in orgs:
-        org_dir = os.path.join(baseRepo, org)
-        if not os.path.isdir(org_dir): os.mkdir(org_dir)
-        
-        # Now Loop over the folders and merge the module files
-        for folder in [org, 'defaults']:
-            if folder == 'defaults':
-                dest_dir = os.path.join(baseRepo, org, folder)
-                src_dir = os.path.join(tfe_dir, 'defaults')
-                if not os.path.isdir(dest_dir): os.mkdir(dest_dir)
-            else:
-                dest_dir = os.path.join(baseRepo, org)
-                src_dir = os.path.join(tfe_dir)
-            copy_files = os.listdir(src_dir)
-            for fname in copy_files:
-                if not os.path.isdir(os.path.join(src_dir, fname)):
-                    shutil.copy2(os.path.join(src_dir, fname), dest_dir)
+    # Now Loop over the folders and merge the module files
+    for folder in ['defaults', '']:
+        if folder == 'defaults':
+            dest_dir = os.path.join(baseRepo, folder)
+            src_dir = os.path.join(tfe_dir, 'defaults')
+            if not os.path.isdir(dest_dir): os.mkdir(dest_dir)
+        else:
+            dest_dir = os.path.join(baseRepo)
+            src_dir = os.path.join(tfe_dir)
+        copy_files = os.listdir(src_dir)
+        for fname in copy_files:
+            print(fname)
+            if not os.path.isdir(os.path.join(src_dir, fname)):
+                shutil.copy2(os.path.join(src_dir, fname), dest_dir)
 
 #======================================================
 # Function - Message for Invalid List Selection
@@ -1685,21 +1682,20 @@ def vlan_pool(name):
 #========================================================
 # Function to Determine which sites to write files to.
 #========================================================
-def write_to_org_folder(polVars, **kwargs):
+def write_to_repo_folder(polVars, **kwargs):
     baseRepo   = kwargs['args'].dir
     dest_file  = kwargs['dest_file']
-    org        = kwargs['org']
     # Setup jinja2 Environment
     template_path = pkg_resources.resource_filename(f'policies', 'templates/')
-    templateLoader = jinja2.FileSystemLoader(searchpath=(template_path + 'org/'))
+    templateLoader = jinja2.FileSystemLoader(searchpath=(template_path + 'provider/'))
     templateEnv = jinja2.Environment(loader=templateLoader)
     # Define the Template Source
     template = templateEnv.get_template(kwargs['template_file'])
     # Make sure the Destination Path and Folder Exist
-    if not os.path.isdir(os.path.join(baseRepo, org)):
-        dest_path = f'{os.path.join(baseRepo, org)}'
+    if not os.path.isdir(os.path.join(baseRepo)):
+        dest_path = f'{os.path.join(baseRepo)}'
         os.makedirs(dest_path)
-    dest_dir = os.path.join(baseRepo, org)
+    dest_dir = os.path.join(baseRepo)
     if not os.path.exists(os.path.join(dest_dir, dest_file)):
         create_file = f'type nul >> {os.path.join(dest_dir, dest_file)}'
         os.system(create_file)

@@ -1,0 +1,47 @@
+---
+#==========================================
+#   Policies -> management - Variables
+#==========================================
+Core:
+  policies:
+    imc_access:
+      - inband_configuration: false
+        name: ext-mgmt
+        out_of_band_configuration: true
+        out_of_band_ip_pool: ext-mgmt
+    ipmi_over_lan:
+      - enabled: true
+        name: IPMI
+    network_connectivity:
+      - alternate_ipv4_dns_server: 10.101.128.16
+        enable_dynamic_dns: false
+        name: r143b-ucs
+        obtain_ipv4_dns_from_dhcp: false
+        preferred_ipv4_dns_server: 10.101.128.15
+    ntp:
+      - enabled: true
+        name: r143b-ucs
+        ntp_servers:
+          - ntp.esl.cisco.com
+        timezone: America/New_York
+    serial_over_lan:
+      - baud_rate: 115200
+        enabled: true
+        name: default
+    snmp:
+      - enabled: true
+        name: r143b-ucs
+        system_contact: req-lab@cisco.com
+        system_location: Richfield DMZ Lab
+    syslog:
+      - local_logging:
+          file:
+            min_severity: critical
+        name: r143b-ucs
+    virtual_kvm:
+      - enable_video_encryption: true
+        enable_virtual_kvm: true
+        name: default
+      - enable_video_encryption: true
+        enable_virtual_kvm: true
+        name: RICH

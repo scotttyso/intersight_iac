@@ -3240,12 +3240,9 @@ class policies(object):
     def variables(self, **kwargs):
         baseRepo      = kwargs['args'].dir
         ezData        = kwargs['ezData']
-        org           = self.org
-        kwargs['org'] = self.org
         policy_type   = 'variables'
         polVars = {}
         polVars['endpoint'] = kwargs['args'].endpoint
-        polVars['organization'] = org
         polVars['tags'] = [
             {'key': "Module", 'value': "terraform-intersight-easy-imm"},
             {'key': "Version", 'value': f"{ezData['version']}"}
@@ -3253,7 +3250,7 @@ class policies(object):
         # Write Policies to Template File
         kwargs['template_file'] = '%s.j2' % (policy_type)
         kwargs['dest_file'] = f'{policy_type}.auto.tfvars'
-        ezfunctions.write_to_org_folder(polVars, **kwargs)
+        ezfunctions.write_to_repo_folder(polVars, **kwargs)
 
         policy_type    = 'provider'
         polVars = {
@@ -3264,8 +3261,8 @@ class policies(object):
         # Write Policies to Template File
         kwargs['template_file'] = '%s.j2' % (policy_type)
         kwargs['dest_file'] = f'{policy_type}.tf'
-        ezfunctions.write_to_org_folder(polVars, **kwargs)
-        ezfunctions.terraform_fmt(os.path.join(baseRepo, org))
+        ezfunctions.write_to_repo_folder(polVars, **kwargs)
+        ezfunctions.terraform_fmt(os.path.join(baseRepo))
 
     #==============================================
     # Virtual KVM Policy Module

@@ -1,0 +1,62 @@
+---
+#====================================
+#   Policies -> vlan - Variables
+#====================================
+Core:
+  policies:
+    multicast:
+      - igmp_snooping_querier_state: Disabled
+        igmp_snooping_state: Enabled
+        name: default
+    vlan:
+      - name: r143b-ucs
+        vlans:
+          - id: 1
+            multicast_policy: default
+            name: default
+            native_vlan: true
+          - auto_allow_on_uplinks: false
+            id: 998
+            multicast_policy: default
+            name: FW_Inside_10.100.1.0
+            native_vlan: false
+          - auto_allow_on_uplinks: false
+            id: 999
+            multicast_policy: default
+            name: FW_Outside_64.100.14.0
+            native_vlan: false
+          - auto_allow_on_uplinks: false
+            id: 3001
+            multicast_policy: default
+            name: LabServers_10.101.128.0
+            native_vlan: false
+          - auto_allow_on_uplinks: false
+            id: 125
+            multicast_policy: default
+            name: MGMT_10.100.125.0
+            native_vlan: false
+          - auto_allow_on_uplinks: false
+            id: 126
+            multicast_policy: default
+            name: Migration_10.100.126.0
+            native_vlan: false
+          - auto_allow_on_uplinks: false
+            id: 3004
+            multicast_policy: default
+            name: ND_DATA_10.101.131.0
+            native_vlan: false
+          - auto_allow_on_uplinks: false
+            id: 3003
+            multicast_policy: default
+            name: ND_MGMT_10.101.130.0
+            native_vlan: false
+          - auto_allow_on_uplinks: false
+            id: 64
+            multicast_policy: default
+            name: OOB_192.168.64.0
+            native_vlan: false
+          - auto_allow_on_uplinks: false
+            id: 127
+            multicast_policy: default
+            name: Storage_10.100.127.0
+            native_vlan: false

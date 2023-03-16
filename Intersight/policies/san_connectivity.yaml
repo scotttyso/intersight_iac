@@ -1,0 +1,30 @@
+---
+#================================================
+#   Policies -> san_connectivity - Variables
+#================================================
+Core:
+  policies:
+    san_connectivity:
+      - name: RICH
+        target_platform: FI-Attached
+        vhbas:
+          - fibre_channel_adapter_policy: VMWare
+            fibre_channel_network_policy: VSAN100_A
+            fibre_channel_qos_policy: FibreChannel
+            name: HBA-A
+            pci_order: 0
+            slot_id: MLOM
+            switch_id: A
+            wwpn_allocation_type: pool
+            wwpn_pool: HBA-A
+          - fibre_channel_adapter_policy: VMWare
+            fibre_channel_network_policy: VSAN200_B
+            fibre_channel_qos_policy: FibreChannel
+            name: HBA-B
+            pci_order: 1
+            slot_id: MLOM
+            switch_id: B
+            wwpn_allocation_type: pool
+            wwpn_pool: HBA-B
+        wwnn_allocation_type: pool
+        wwnn_pool: RICH
