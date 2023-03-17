@@ -495,7 +495,6 @@ def merge_easy_imm_repository(orgs, **kwargs):
             src_dir = os.path.join(tfe_dir)
         copy_files = os.listdir(src_dir)
         for fname in copy_files:
-            print(fname)
             if not os.path.isdir(os.path.join(src_dir, fname)):
                 shutil.copy2(os.path.join(src_dir, fname), dest_dir)
 

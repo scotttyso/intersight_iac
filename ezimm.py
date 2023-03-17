@@ -826,9 +826,9 @@ def main():
             # Pools
             #==============================================
             cisdk = 'classes.isdkp.api_pools'
-            #if kwargs['immDict']['orgs'][org].get('pools'):
-            #    for pool_type in kwargs['immDict']['orgs'][org]['pools']:
-            #        kwargs = eval(f"{cisdk}(pool_type).pools(pargs, **kwargs)")
+            if kwargs['immDict']['orgs'][org].get('pools'):
+                for pool_type in kwargs['immDict']['orgs'][org]['pools']:
+                    kwargs = eval(f"{cisdk}(pool_type).pools(pargs, **kwargs)")
             #==============================================
             # Policies
             #==============================================
@@ -836,27 +836,24 @@ def main():
             cisdk = 'classes.isdkp.api_policies'
             if kwargs['immDict']['orgs'][org].get('policies'):
                 for ptype in policies_in_order:
-                    #if re.search('(san_con)', ptype):
-                    #    dpolicies = eval(f"{cisdk}(ptype).policies(pargs, **kwargs)")
-                    #    kwargs['isdk_deployed'].update({ptype:dpolicies})
                     dpolicies = eval(f"{cisdk}(ptype).policies(pargs, **kwargs)")
                     kwargs['isdk_deployed'].update({ptype:dpolicies})
             #==============================================
             # Profiles
             #==============================================
-            #cisdk = 'isdk_profiles'
-            #ptype = 'templates'
-            #if kwargs['immDict']['orgs'][org].get(ptype):
-            #    if kwargs['immDict']['orgs'][org][ptype].get('server'):
-            #        kwargs = eval(f"{cisdk}(ptype).profiles(**kwargs)")
-            #ptype = 'profiles'
-            #if kwargs['immDict']['orgs'][org].get(ptype):
-            #    if kwargs['immDict']['orgs'][org][ptype].get('domain'):
-            #        kwargs = eval(f"{cisdk}(ptype).domain_profiles(pargs, **kwargs)")
-            #    if kwargs['immDict']['orgs'][org][ptype].get('chassis'):
-            #        kwargs = eval(f"{cisdk}(ptype).profiles(pargs, **kwargs)")
-            #    if kwargs['immDict']['orgs'][org][ptype].get('server'):
-            #        kwargs = eval(f"{cisdk}(ptype).profiles(pargs, **kwargs)")
+            cisdk = 'classes.isdkp.api_profiles'
+            ptype = 'templates'
+            if kwargs['immDict']['orgs'][org].get(ptype):
+                if kwargs['immDict']['orgs'][org][ptype].get('server'):
+                    kwargs = eval(f"{cisdk}(ptype).profiles(pargs, **kwargs)")
+            ptype = 'profiles'
+            if kwargs['immDict']['orgs'][org].get(ptype):
+                if kwargs['immDict']['orgs'][org][ptype].get('domain'):
+                    kwargs = eval(f"{cisdk}('domain').profiles(pargs, **kwargs)")
+                if kwargs['immDict']['orgs'][org][ptype].get('chassis'):
+                    kwargs = eval(f"{cisdk}('chassis').profiles(pargs, **kwargs)")
+                if kwargs['immDict']['orgs'][org][ptype].get('server'):
+                    kwargs = eval(f"{cisdk}('server').profiles(pargs, **kwargs)")
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
     print(f'\n-------------------------------------------------------------------------------------------\n')

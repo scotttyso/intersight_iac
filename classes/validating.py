@@ -5,6 +5,8 @@ import string
 import sys
 import validators
 
+policy_regex = re.compile('(network_connectivity|ntp|port|snmp|switch_control|syslog|system_qos|vlan|vsan)')
+
 # Errors & Notifications
 def begin_section(ptype1, ptype2):
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -23,6 +25,9 @@ def completed_item(ptype, pargs, pmoid):
         if 'port' in ptype:
             print(f'      * Completed {method} for port_policy {pargs.port_policy_name}: {name} - Moid: {pmoid}')
         else: print(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
+    elif re.search(policy_regex, pargs.policy) and pargs.purpose == 'switch':
+        name = pargs.apiBody['name']
+        print(f'      * Completed {method} for {pargs.policy} name: {name} - Moid: {pmoid}. Updated Profiles.')
     else:
         print(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
 
@@ -40,7 +45,7 @@ def error_file_location(varName, varValue):
 def end_section(ptype1, ptype2):
     print(f"\n   Completed {' '.join(ptype1.split('_')).title()} {ptype2.capitalize()} Deployments.")
 
-def error_policy_exist(policy_type, policy_name, profile, profile_type, ptype):
+def error_policy_doesnt_exist(policy_type, policy_name, profile, profile_type, ptype):
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'   !!!Error!!! The Following policy was attached to {profile_type} {ptype} {profile}')
     print(f'   But it has not been created:')

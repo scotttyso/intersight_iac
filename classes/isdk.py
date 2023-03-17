@@ -248,24 +248,36 @@ class api(object):
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_fcoe_uplink_role_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_fcoe_uplink_role
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_fcoe_uplink_role
-        elif re.search('^(chassis|domain|server|server_template)$', pargs.purpose):
+        elif re.search('^(chassis|domain|server|templates)$', pargs.purpose):
             apiHandle = server_api.ServerApi(apiClient)
             if 'server' == pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_server_profile_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_server_profile_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_server_profile
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_server_profile
-            elif 'server_template' in pargs.policy:
+            elif 'templates' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_server_profile_template_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_server_profile_template_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_server_profile_template
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_server_profile_template
+            elif 'cluster' == pargs.policy:
+                apiHandle = fabric_api.FabricApi(apiClient)
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_switch_cluster_profile_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_switch_cluster_profile_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_switch_cluster_profile
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_switch_cluster_profile
             elif 'chassis' == pargs.policy:
                 apiHandle = chassis_api.ChassisApi(apiClient)
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_chassis_profile_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_chassis_profile_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_chassis_profile
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_chassis_profile
+            elif 'switch' == pargs.policy:
+                apiHandle = fabric_api.FabricApi(apiClient)
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_fabric_switch_profile_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_switch_profile_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_switch_profile
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_switch_profile
             elif 'serial_number' == pargs.policy:
                 if 'server' == pargs.purpose:
                     apiHandle = compute_api.ComputeApi(apiClient)
@@ -273,7 +285,7 @@ class api(object):
                 elif 'chassis' == pargs.purpose:
                     apiHandle = equipment_api.EquipmentApi(apiClient)
                     apiCall   = apiHandle.get_equipment_chassis_list
-                elif 'switch' == pargs.purpose:
+                elif 'domain' == pargs.purpose:
                     apiHandle = fabric_api.FabricApi(apiClient)
                     apiCall   = apiHandle.get_fabric_element_identity_list
         elif re.search(vnic_regex, pargs.policy):
@@ -538,6 +550,8 @@ class api(object):
                     apiQuery = f"Name in ('{names}') and Type eq 'IMC'"
                 elif 'storage_drive_group' == pargs.policy:
                     apiQuery = f"Name in ('{names}') and StoragePolicy.Moid eq '{pargs.pmoid}'"
+                elif 'switch' == pargs.policy:
+                    apiQuery = f"Name in ('{names}') and SwitchClusterProfile.Moid eq '{pargs.pmoid}'"
                 elif 'vhbas' == pargs.policy:
                     apiQuery = f"Name in ('{names}') and SanConnectivityPolicy.Moid eq '{pargs.pmoid}'"
                 elif 'vlans' == pargs.policy:
@@ -575,6 +589,8 @@ class api(object):
         if re.search('(create|patch)', pargs.apiMethod):
             if pargs.apiBody.get('name'):
                 kwargs['pmoids'].update({pargs.apiBody.get('name'):kwargs['pmoid']})
+        if 'get_by_moid' in pargs.apiMethod:
+            kwargs['results'] = apiResults
         #=====================================================
         # Use for Viewing apiCall Results
         #=====================================================

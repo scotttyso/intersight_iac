@@ -3252,7 +3252,7 @@ class policies(object):
         kwargs['dest_file'] = f'{policy_type}.auto.tfvars'
         ezfunctions.write_to_repo_folder(polVars, **kwargs)
 
-        policy_type    = 'provider'
+        policy_type = 'provider'
         polVars = {
             'intersight_provider_version': kwargs['latest_versions']['intersight_provider_version'],
             'terraform_version': kwargs['latest_versions']['terraform_version'],

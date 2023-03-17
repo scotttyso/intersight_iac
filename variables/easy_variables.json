@@ -1640,6 +1640,8 @@
                                     "name":"name",
                                     "tags":"tags"
                                 },
+                                "object_name":"eth_adapter_policy",
+                                "object_type":"vnic.EthAdapterPolicy",
                                 "template_tuning":{
                                     "VMware":{
                                         "description":"Recommended adapter settings for VMware.",
@@ -1671,14 +1673,18 @@
                                     "mac_register_mode":"mac_registration_mode",
                                     "mac_security_forge":"forge_mac",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_name":"eth_network_control_policy",
+                                "object_type":"fabric.EthNetworkControlPolicy"
                             },
                             "ethernet_network_group": {
                                 "key_map": {
                                     "description":"description",
                                     "name":"name",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_name":"eth_network_group_policy",
+                                "object_type":"fabric.EthNetworkGroupPolicy"
                             },
                             "ethernet_qos": {
                                 "key_map": {
@@ -1691,7 +1697,9 @@
                                     "priority":"priority",
                                     "rate_limit":"rate_limit",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_name":"eth_qos_policy",
+                                "object_type":"vnic.EthQosPolicy"
                             },
                             "fc_zone": {
                                 "key_map": {
@@ -1733,6 +1741,8 @@
                                     "name":"name",
                                     "tags":"tags"
                                 },
+                                "object_name":"fc_adapter_policy",
+                                "object_type":"vnic.FcAdapterPolicy",
                                 "template_tuning":{
                                     "VMware":{
                                         "description":"Recommended adapter settings for VMware.",
@@ -1749,7 +1759,9 @@
                                     "name":"name",
                                     "tags":"tags",
                                     "vsan_id":"id"
-                                }
+                                },
+                                "object_name":"fc_network_policy",
+                                "object_type":"vnic.FcNetworkPolicy"
                             },
                             "fibre_channel_qos": {
                                 "key_map": {
@@ -1759,7 +1771,9 @@
                                     "max_data_field_size":"max_data_field_size",
                                     "name":"name",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_name":"fc_qos_policy",
+                                "object_type":"vnic.FcQosPolicy"
                             },
                             "flow_control": {
                                 "key_map": {
@@ -1769,7 +1783,9 @@
                                     "receive":"receive_direction",
                                     "send":"send_direction",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_name":"flow_control_policy",
+                                "object_type":"fabric.FlowControlPolicy"
                             },
                             "imc_access": {
                                 "key_map": {
@@ -1811,14 +1827,18 @@
                                     "name":"name",
                                     "suspend_individual":"suspend_individual",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_name":"link_aggregation_policy",
+                                "object_type":"fabric.LinkAggregationPolicy"
                             },
                             "link_control": {
                                 "key_map": {
                                     "description":"description",
                                     "name":"name",
                                     "tags":"tags"
-                                }
+                                },
+                                "object_name":"link_control_policy",
+                                "object_type":"fabric.LinkControlPolicy"
                             },
                             "ldap": {
                                 "key_map": {
@@ -1929,7 +1949,7 @@
                                     "name":"name",
                                     "tags":"tags"
                                 },
-                                "object_type":"ipmioverlan.Policy",
+                                "object_type":"fabric.PortPolicy",
                                 "port_type_list": [
                                     "port_channel_appliances",
                                     "port_channel_ethernet_uplinks",
@@ -1941,6 +1961,13 @@
                                     "port_role_fc_uplinks",
                                     "port_role_fcoe_uplinks",
                                     "port_role_servers"
+                                ],
+                                "policy_list": [
+                                    "ethernet_network_control_policy",
+                                    "ethernet_network_group_policy",
+                                    "flow_control_policy",
+                                    "link_aggregation_policy",
+                                    "link_control_policy"
                                 ],
                                 "port_map": {
                                     "admin_speed":"drive_type",
@@ -2132,7 +2159,7 @@
                                     "udld_message_interval":"message_interval",
                                     "udld_recovery_action":"recovery_action"
                                 },
-                                "object_type":"ipmioverlan.Policy"
+                                "object_type":"fabric.SwitchControlPolicy"
                             },
                             "syslog": {
                                 "key_map": {
@@ -2156,7 +2183,7 @@
                                     "name":"name",
                                     "tags":"tags"
                                 },
-                                "object_type":"ipmioverlan.Policy"
+                                "object_type":"fabric.SystemQosPolicy"
                             },
                             "thermal": {
                                 "key_map": {
@@ -2171,7 +2198,15 @@
                                 "key_map": {
                                     "persistent_lun_bindings":"persistent_bindings",
                                     "wwpn_allocation_type":"wwpn_address_type"
-                                }
+                                },
+                                "policy_list": [
+                                    "fc_zone_policies",
+                                    "fibre_channel_adapter_policy",
+                                    "fibre_channel_network_policies",
+                                    "fibre_channel_qos_policy",
+                                    "vhbas",
+                                    "wwpn_pools"
+                                ]
                             },
                             "virtual_kvm": {
                                 "key_map": {
@@ -2226,7 +2261,15 @@
                                 "key_map": {
                                     "enable_failover":"failover_enabled",
                                     "mac_address_allocation_type":"mac_address_type"
-                                }
+                                },
+                                "policy_list": [
+                                    "ethernet_adapter_policy",
+                                    "ethernet_network_control_policy",
+                                    "ethernet_network_group_policy",
+                                    "ethernet_qos_policy",
+                                    "mac",
+                                    "vnics"
+                                ]
                             },
                             "vsan": {
                                 "key_map": {
@@ -2340,23 +2383,28 @@
                                     "snmp_policy",
                                     "storage_policy",
                                     "syslog_policy",
-                                    "uuid_policy",
+                                    "uuid_pool",
                                     "virtual_kvm_policy",
                                     "virtual_media_policy"
                                 ]
                             },
-                            "server_template": {
+                            "templates": {
                                 "policy_list": [
-                                    "adapter_configuration_policy",
-                                    "certificate_management_policy",
-                                    "device_connector_policy",
-                                    "ldap_policy",
-                                    "network_connectivity_policy",
-                                    "ntp_policy",
-                                    "persistent_memory_policy",
-                                    "resource_policy",
-                                    "smtp_policy",
-                                    "ssh_policy"
+                                    "bios_policy",
+                                    "boot_order_policy",
+                                    "imc_access_policy",
+                                    "ipmi_over_lan_policy",
+                                    "lan_connectivity_policy",
+                                    "local_user_policy",
+                                    "power_policy",
+                                    "san_connectivity_policy",
+                                    "serial_over_lan_policy",
+                                    "snmp_policy",
+                                    "storage_policy",
+                                    "syslog_policy",
+                                    "uuid_pool",
+                                    "virtual_kvm_policy",
+                                    "virtual_media_policy"
                                 ]
                             }
                         }

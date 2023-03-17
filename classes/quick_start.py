@@ -598,7 +598,9 @@ class quick_start(object):
                                 'vlan_policies': ['vlans']
                             }
                             if len(kwargs['fc_converted_ports']) > 0:
-                                polVars['vsan_policies'] = [f"vsan-{kwargs['vsan_id_a']}', f'vsan-{kwargs['vsan_id_b']}"]
+                                polVars['vsan_policies'] = []
+                                polVars['vsan_policies'].append(f"vsan-{kwargs['vsan_id_a']}")
+                                polVars['vsan_policies'].append(f"vsan-{kwargs['vsan_id_b']}")
                             #==============================================
                             # Add Policy Variables to immDict
                             #==============================================
@@ -1551,7 +1553,7 @@ class quick_start(object):
                     polVars['syslog_policy'] = 'syslog'
                     polVars['virtual_kvm_policy'] = 'vkvm'
                     polVars['sd_card_policy'] = ''
-                    if boot_type == 'm2': polVars['storage_policy'] = 'M2-Raid'
+                    if boot_type == 'm2': polVars['storage_policy'] = 'M2'
                     elif boot_type == 'raid1': polVars['storage_policy'] = 'Raid1'
                     else: polVars['storage_policy'] = ''
                     polVars['lan_connectivity_policy'] = 'lcp'
