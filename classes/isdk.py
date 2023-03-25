@@ -67,6 +67,7 @@ class api(object):
                 if i.get('VlanId'): iName = i['VlanId']
                 elif i.get('PcId'): iName = i['PcId']
                 elif i.get('PortId'): iName = i['PortId']
+                elif i.get('Serial'): iName = i['Serial']
                 elif i.get('VsanId'): iName = i['VsanId']
                 elif i.get('Name'): iName = i['Name']
                 elif i.get('EndPointUser'): iName = i['EndPointUser']['Moid']
@@ -74,6 +75,9 @@ class api(object):
                 if i.get('PcId') or i.get('PortId') or i.get('PortIdStart'):
                     apiDict.update({i['PortPolicy']['Moid']:{iName:{'Moid':iMoid}}})
                 else: apiDict.update({iName:{'Moid':iMoid}})
+                if i.get('Model'):
+                    apiDict[iName]['Model'] = i['Model']
+                    apiDict[iName]['RegisteredDevice'] = i['RegisteredDevice']['Moid']
                 if i.get('Profiles'):
                     apiDict[iName]['profiles'] = []
                     for x in i['Profiles']:
@@ -548,8 +552,8 @@ class api(object):
                 apiQuery = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
                 if 'user_role' == pargs.policy:
                     apiQuery = f"Name in ('{names}') and Type eq 'IMC'"
-                elif 'storage_drive_group' == pargs.policy:
-                    apiQuery = f"Name in ('{names}') and StoragePolicy.Moid eq '{pargs.pmoid}'"
+                elif 'serial_number' == pargs.policy:
+                    apiQuery = f"Serial in ('{names}')"
                 elif 'switch' == pargs.policy:
                     apiQuery = f"Name in ('{names}') and SwitchClusterProfile.Moid eq '{pargs.pmoid}'"
                 elif 'vhbas' == pargs.policy:
@@ -563,8 +567,7 @@ class api(object):
                 elif re.search('ww(n|p)n', pargs.policy):
                     apiQuery = apiQuery + f" and PoolPurpose eq '{pargs.policy.upper()}'"
                 apiArgs = dict(filter = apiQuery, _preload_content = False)
-            else:
-                apiArgs = dict(filter = pargs.apiQuery, _preload_content = False)
+            else: apiArgs = dict(filter = pargs.apiQuery, _preload_content = False)
         else: apiArgs = dict(_preload_content = False)
         apiMessage = re.search('method ([a-zA-Z\.\_]+) of', str(apiCall)).group(1)
         #=====================================================

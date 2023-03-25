@@ -503,16 +503,6 @@ class quick_start(object):
                             kwargs['class_path'] = 'policies,system_qos'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
-                            # Configure Network Connectivity Policy
-                            #==============================================
-                            polVars = {}
-                            polVars['name'] = f'dns'
-                            polVars['dns_servers_v4'] = [kwargs['primary_dns']]
-                            if not kwargs['secondary_dns'] == '':
-                                polVars['dns_servers_v4'].append(kwargs['secondary_dns'])
-                            kwargs['class_path'] = 'policies,network_connectivity'
-                            kwargs = ezfunctions.ez_append(polVars, **kwargs)
-                            #==============================================
                             # Configure NTP Policy
                             #==============================================
                             polVars = {}
@@ -548,10 +538,9 @@ class quick_start(object):
                             chassis_count = ezfunctions.varNumberLoop(**kwargs)
                             chassis_models = ['5108', '9508']
                             chassis_dict = {}
-                            imc_policy = kwargs['immDict']['orgs'][org]['pools']['ip'][0]['name']
                             for i in chassis_models:
                                 chassis_dict.update({ i: {
-                                    'imc_access_policy':imc_policy, 'names':[], 'power_policy':i,
+                                    'imc_access_policy':'kvm', 'names':[], 'power_policy':i,
                                     'snmp_policy':'snmp', 'targets':[], 'thermal_policy':i,
                                 }})
                             #==============================================
@@ -1029,65 +1018,70 @@ class quick_start(object):
         server_type    = kwargs['server_type']
         vlan_list      = kwargs['vlan_list']
 
-        def ip_pool_loop(kvmband, primary_dns, secondary_dns, jsonData, **kwargs):
-            if kvmband == 'inband': network = '198.18.0'
-            else: network = '198.18.1'
-            kwargs['multi_select'] = False
-            jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
-            kwargs['jData'] = deepcopy(jsonVars['Gateway'])
-            kwargs['jData']['default']  = f'{network}.1'
-            kwargs['jData']['varInput'] = f'What is the Gateway for the KVM {kvmband} IP Pool?:'
-            kwargs['jData']['varName']  = 'Gateway'
-            gateway = ezfunctions.varStringLoop(**kwargs)
+        def ip_pool_loop(kvmband, **kwargs):
+            ip_pool_cfg = False
+            while ip_pool_cfg == False:
+                jsonData = kwargs['jsonData']
+                if kvmband == 'inband': network = '198.18.0'
+                else: network = '198.18.1'
+                kwargs['multi_select'] = False
+                jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
+                kwargs['jData'] = deepcopy(jsonVars['Gateway'])
+                kwargs['jData']['default']  = f'{network}.1'
+                kwargs['jData']['varInput'] = f'What is the Gateway for the KVM {kvmband} IP Pool?:'
+                kwargs['jData']['varName']  = 'Gateway'
+                gateway = ezfunctions.varStringLoop(**kwargs)
 
-            kwargs['jData'] = deepcopy(jsonVars['Netmask'])
-            kwargs['jData']['default']  = '255.255.255.0'
-            kwargs['jData']['varInput'] = f'What is the Netmask for the KVM {kvmband} IP Pool?:'
-            kwargs['jData']['varName']  = 'Netmask'
-            netmask = ezfunctions.varStringLoop(**kwargs)
+                kwargs['jData'] = deepcopy(jsonVars['Netmask'])
+                kwargs['jData']['default']  = '255.255.255.0'
+                kwargs['jData']['varInput'] = f'What is the Netmask for the KVM {kvmband} IP Pool?:'
+                kwargs['jData']['varName']  = 'Netmask'
+                netmask = ezfunctions.varStringLoop(**kwargs)
 
-            jsonVars = jsonData['ippool.IpV4Block']['allOf'][1]['properties']
-            kwargs['jData'] = deepcopy(jsonVars['From'])
-            kwargs['jData']['default']  = f'{network}.10'
-            kwargs['jData']['varInput'] = f'What is the First IP Address for the KVM {kvmband} IP Pool?'
-            kwargs['jData']['varName']  = 'Beginning IP Address'
-            pool_from = ezfunctions.varStringLoop(**kwargs)
+                jsonVars = jsonData['ippool.IpV4Block']['allOf'][1]['properties']
+                kwargs['jData'] = deepcopy(jsonVars['From'])
+                kwargs['jData']['default']  = f'{network}.10'
+                kwargs['jData']['varInput'] = f'What is the First IP Address for the KVM {kvmband} IP Pool?'
+                kwargs['jData']['varName']  = 'Beginning IP Address'
+                pool_from = ezfunctions.varStringLoop(**kwargs)
 
-            kwargs['jData'] = deepcopy(jsonVars['To'])
-            kwargs['jData']['default']  = f'{network}.254'
-            kwargs['jData']['varInput'] = f'What is the Last IP Address for the KVM {kvmband} IP Pool?'
-            kwargs['jData']['varName']  = 'Ending IP Address'
-            pool_to = ezfunctions.varStringLoop(**kwargs)
-
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  KVM {kvmband} IP Pool Variables:"')
-            print(f'    Gateway       = "{gateway}"')
-            print(f'    Netmask       = "{netmask}"')
-            print(f'    Primary DNS   = "{primary_dns}"')
-            print(f'    Secondary DNS = "{secondary_dns}"')
-            print(f'    Starting IP   = "{pool_from}"')
-            print(f'    Ending IP     = "{pool_to}"')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            valid_confirm = False
-            while valid_confirm == False:
-                confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
-                if confirm_policy == 'Y' or confirm_policy == '':
-                    #==============================================
-                    # Configure IP Pool
-                    #==============================================
-                    polVars = {}
-                    if kvmband == 'inband': polVars['name'] = f'kvm-{kvmband}'
-                    else: polVars['name'] = f'kvm-oob'
-                    pool_size = int(ipaddress.IPv4Address(pool_to)) - int(ipaddress.IPv4Address(pool_from)) + 1
-                    polVars['ipv4_blocks'] = [{'from':pool_from, 'size':pool_size}]
-                    polVars['ipv4_configuration'] = [{
-                        'gateway':gateway, 'netmask':netmask, 'primary_dns':primary_dns, 'secondary_dns':secondary_dns
-                    }]
-                    kwargs['primary_dns'] = primary_dns
-                    kwargs['secondary_dns'] = secondary_dns
-                    kwargs['class_path'] = 'pools,ip'
-                    kwargs = ezfunctions.ez_append(polVars, **kwargs)
-            return kwargs
+                kwargs['jData'] = deepcopy(jsonVars['To'])
+                kwargs['jData']['default']  = f'{network}.254'
+                kwargs['jData']['varInput'] = f'What is the Last IP Address for the KVM {kvmband} IP Pool?'
+                kwargs['jData']['varName']  = 'Ending IP Address'
+                pool_to = ezfunctions.varStringLoop(**kwargs)
+                primary_dns = kwargs['primary_dns']
+                secondary_dns = kwargs['secondary_dns']
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                print(f'  KVM {kvmband} IP Pool Variables:"')
+                print(f'    Gateway       = "{gateway}"')
+                print(f'    Netmask       = "{netmask}"')
+                print(f'    Primary DNS   = "{primary_dns}"')
+                print(f'    Secondary DNS = "{secondary_dns}"')
+                print(f'    Starting IP   = "{pool_from}"')
+                print(f'    Ending IP     = "{pool_to}"')
+                print(f'\n-------------------------------------------------------------------------------------------\n')
+                valid_confirm = False
+                while valid_confirm == False:
+                    confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
+                    if confirm_policy == 'Y' or confirm_policy == '':
+                        #==============================================
+                        # Configure IP Pool
+                        #==============================================
+                        polVars = {}
+                        if kvmband == 'inband': polVars['name'] = f'kvm-{kvmband}'
+                        else: polVars['name'] = f'kvm-oob'
+                        pool_size = int(ipaddress.IPv4Address(pool_to)) - int(ipaddress.IPv4Address(pool_from)) + 1
+                        polVars['ipv4_blocks'] = [{'from':pool_from, 'size':pool_size}]
+                        polVars['ipv4_configuration'] = [{
+                            'gateway':gateway, 'netmask':netmask, 'primary_dns':primary_dns, 'secondary_dns':secondary_dns
+                        }]
+                        kwargs['class_path'] = 'pools,ip'
+                        kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                        valid_confirm = True
+                        ip_pool_cfg = True
+                        return kwargs
+                    elif confirm_policy == 'N': valid_confirm = True
 
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -1133,16 +1127,17 @@ class quick_start(object):
                         #==============================================
                         # Prompt User for IP Pool DNS Servers
                         #==============================================
+                        jsonVars = jsonData['ippool.IpV4Config']['allOf'][1]['properties']
                         kwargs['jData'] = deepcopy(jsonVars['PrimaryDns'])
                         kwargs['jData']['default']  = '208.67.220.220'
                         kwargs['jData']['varInput'] = 'What is the Primary DNS for the KVM IP Pool(s)?:'
                         kwargs['jData']['varName']  = 'Primary Dns'
-                        primary_dns = ezfunctions.varStringLoop(**kwargs)
+                        kwargs['primary_dns'] = ezfunctions.varStringLoop(**kwargs)
 
                         kwargs['jData'] = deepcopy(jsonVars['SecondaryDns'])
                         kwargs['jData']['varInput'] = 'What is the Secondary DNS for the KVM IP Pool(s)? [press enter to skip]:'
                         kwargs['jData']['varName']  = 'Secondary Dns'
-                        secondary_dns = ezfunctions.varStringLoop(**kwargs)
+                        kwargs['secondary_dns'] = ezfunctions.varStringLoop(**kwargs)
 
                         jsonVars = jsonData['access.Policy']['allOf'][1]['properties']
                         kwargs['jData'] = deepcopy(jsonVars['ConfigurationType'])
@@ -1151,7 +1146,7 @@ class quick_start(object):
                         kwargs['jData']['varName']     = 'Inband IP Pool'
                         inband_pool = ezfunctions.varBoolLoop(**kwargs)
                         if inband_pool == True:
-                            kwargs = ip_pool_loop('inband', primary_dns, secondary_dns, jsonData, **kwargs)
+                            kwargs = ip_pool_loop('inband', **kwargs)
                             valid = False
                             while valid == False:
                                 kwargs['jData'] = deepcopy({})
@@ -1167,11 +1162,20 @@ class quick_start(object):
                                 else: valid = True
                         kwargs['jData'] = deepcopy(jsonVars['ConfigurationType'])
                         kwargs['jData']['default']     = True
-                        kwargs['jData']['varInput']    = f'Would you like to configure an Out-of-Band IP Pool for the KVM Policy?'
+                        kwargs['jData']['varInput']    = f'Would you like to configure an Out-of-Band IP Pool for the'\
+                            ' KVM Policy?'
                         kwargs['jData']['varName']     = 'Out-of-Band IP Pool'
                         oob_pool = ezfunctions.varBoolLoop(**kwargs)
                         if oob_pool == True:
-                            ip_pool_loop('out_of_band', primary_dns, secondary_dns, jsonData, **kwargs)
+                            kwargs = ip_pool_loop('out_of_band', **kwargs)
+                    #==============================================
+                    # Configure Network Connectivity Policy
+                    #==============================================
+                    polVars = {}
+                    polVars['name'] = f'dns'
+                    polVars['dns_servers_v4'] = [kwargs['primary_dns'], kwargs['secondary_dns']]
+                    kwargs['class_path'] = 'policies,network_connectivity'
+                    kwargs = ezfunctions.ez_append(polVars, **kwargs)
                     #==============================================
                     # Prompt User for IPMI Encryption Key
                     #==============================================

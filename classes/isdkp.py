@@ -5,7 +5,6 @@ import json
 import numpy
 import os
 import re
-import sys
 import time
 import validating
 
@@ -13,7 +12,6 @@ serial_regex = re.compile('^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\d
 part1 = '(ethernet|fibre_channel)_qos|fc_zone|flow_control|link_aggregation'
 part2 = 'multicast|ntp|port|power|serial_over_lan|thermal|virtual_kvm'
 skip_regex = re.compile(f'^({part1}|{part2})$')
-
 #=======================================================
 # Policies Class
 #=======================================================
@@ -541,6 +539,9 @@ class api_policies(object):
                                 {'preferred_device_type':i['connected_device_type']})
                         if i.get('slot_id'): intfBody.update({'slot_id':intf['slot_id']})
                         else: intfBody.update({'slot_id':1})
+                        if i.get('vsan_ids'):
+                            if len(i['vsan_ids']) > 1: intfBody.update({'vsan_id':i['vsan_ids'][x]})
+                            else: intfBody.update({'vsan_id':i['vsan_ids'][0]})
                         kwargs = api_calls(intfBody, pargs, **kwargs)
             return kwargs
 
@@ -572,7 +573,6 @@ class api_policies(object):
         for x in range(0,len(item['names'])):
             for z in jsonVars['port_type_list']:
                 if item.get(z):
-                    #print(item)
                     pargs.port_policy_name = item['names'][x]
                     pargs.pmoid = pargs.moids['port'][item['names'][x]]['Moid']
                     pargs.type = z
@@ -917,14 +917,17 @@ class api_policies(object):
             vlan_list = ezfunctions.vlan_list_full(i['vlan_list'])
             for x in vlan_list:
                 if type(x) == str: x = int(x)
-                if re.search('^[\d]$', str(x)): zeros = '000'
-                elif re.search('^[\d]{2}$', str(x)): zeros = '00'
-                elif re.search('^[\d]{3}$', str(x)): zeros = '0'
-                elif re.search('^[\d]{4}$', str(x)): zeros = ''
-                if i['name'] == 'vlan': apiBody = {'name':f"{i['name']}{zeros}{x}"}
-                else: apiBody = {'name':f"{i['name']}-vl{zeros}{x}"}
-                for k, v in item.items():
+                if len(vlan_list) == 1: apiBody = {'name':i['name']}
+                else:
+                    if re.search('^[\d]$', str(x)): zeros = '000'
+                    elif re.search('^[\d]{2}$', str(x)): zeros = '00'
+                    elif re.search('^[\d]{3}$', str(x)): zeros = '0'
+                    elif re.search('^[\d]{4}$', str(x)): zeros = ''
+                    if i['name'] == 'vlan': apiBody = {'name':f"{i['name']}{zeros}{x}"}
+                    else: apiBody = {'name':f"{i['name']}-vl{zeros}{x}"}
+                for k, v in i.items():
                     if k in jsonVars: apiBody.update({jsonVars[k]:v})
+                if not apiBody.get('auto_allow_on_uplinks'): apiBody.update({'auto_allow_on_uplinks':False})
                 apiBody.update({'vlan_id':x})
                 apiBody.update({'eth_network_policy':{
                     'class_id':'mo.MoRef','moid':vlan_moid, 'object_type':'fabric.EthNetworkPolicy'
@@ -1173,8 +1176,7 @@ class api_pools(object):
         #=====================================================
         if re.search('ww(n|p)n', self.type):
             jsonVars = kwargs['ezData']['pools']['allOf'][1]['properties']['fc']['key_map']
-        else:
-            jsonVars = kwargs['ezData']['pools']['allOf'][1]['properties'][self.type]['key_map']
+        else: jsonVars = kwargs['ezData']['pools']['allOf'][1]['properties'][self.type]['key_map']
         pools = kwargs['immDict']['orgs'][kwargs['org']]['pools'][self.type]
         org_moid = kwargs['org_moids'][kwargs['org']]['Moid']
         validating.begin_section(self.type, 'pool')
@@ -1317,7 +1319,8 @@ class api_profiles(object):
             pargs.names = []
             for item in profiles:
                 if item.get(p):
-                    if 'policies' in p: pargs.names.extend(item[p])
+                    if 'policies' in item[p]:
+                        for i in item[p]: pargs.names.append(i)
                     else: pargs.names.append(item[p])
                 if item.get('ucs_server_profile_template'):
                     spt = item['ucs_server_profile_template']
@@ -1336,6 +1339,7 @@ class api_profiles(object):
         pargs.purpose = self.type
         if len(pargs.serials) > 0:
             pargs.policy = 'serial_number'
+            pargs.names = pargs.serials
             kwargs = isdk.api('serial_number').calls(pargs, **kwargs)
             pargs.serial_moids = kwargs['pmoids']
         #=====================================================
@@ -1366,7 +1370,7 @@ class api_profiles(object):
                 if pargs.description: pargs.pop('description')
                 if pargs.serial_number: pargs.pop('serial_number')
                 pargs.name = item['name']
-                if item.get('description'): pargs.description = i['description']
+                if item.get('description'): pargs.description = item['description']
                 if item.get('serial_numbers'): pargs.serial_numbers = item['serial_numbers']
                 profile_domain(item, pargs, **kwargs)
             elif 'templates' == self.type:
@@ -1521,10 +1525,10 @@ def profile_domain(item, pargs, **kwargs):
             serial_true += 1
             if pargs.serial_moids.get(item['serial_numbers'][x]):
                 serial_moid = pargs.serial_moids[item['serial_numbers'][x]]['Moid']
-            else: validating.error_serial_number(sw_name, serial_moid)
-            apiBody.update({'AssignedSwitch':{
-                'class_id':'mo.MoRef','moid':serial_moid,'object_type':'network.Element'
-            }})
+            else: validating.error_serial_number(sw_name, item['serial_numbers'][x])
+            #apiBody.update({'AssignedSwitch':{
+            #    'class_id':'mo.MoRef','moid':serial_moid,'object_type':'network.Element'
+            #}})
         pargs.apiBody = apiBody
         pargs.policy  = 'switch'
         pargs.purpose = pargs.type
@@ -1546,6 +1550,8 @@ def profile_domain(item, pargs, **kwargs):
     #=====================================================
     def get_pdict(item, p, policy_name):
         if not pargs.moids[p].get(policy_name):
+            print(pargs.moids)
+            exit()
             validating.error_policy_doesnt_exist(p, policy_name, item['name'], 'Domain', 'Profile')
         pdict = pargs.moids[p][policy_name]
         return pdict

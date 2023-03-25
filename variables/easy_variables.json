@@ -418,6 +418,33 @@
                                     "vsan"
                                 ]
                             },
+                            "converged.fc_pop_list": {
+                                "enum": [
+                                    "fc_zone",
+                                    "fibre_channel_adapter",
+                                    "fibre_channel_network",
+                                    "fibre_channel_qos",
+                                    "san_connectivity",
+                                    "vsan"
+                                ]
+                            },
+                            "converged.pop_list": {
+                                "enum": [
+                                    "adapter_configuration",
+                                    "certificate_management",
+                                    "device_connector",
+                                    "FIAttached",
+                                    "ldap",
+                                    "smtp",
+                                    "snmp_trap_destinations",
+                                    "Standalone",
+                                    "ssh",
+                                    "vhbas",
+                                    "vlans",
+                                    "vnics",
+                                    "vsans"
+                                ]
+                            },
                             "intersightEndpoint": {
                                 "description": "List of Intersight Endpoint Options.",
                                 "type": "list_of_values",
@@ -923,6 +950,7 @@
                                     "cos":255,
                                     "multicast_optimize":false,
                                     "packet_drop":true,
+                                    "state":"Enabled",
                                     "weight":5
                                 },
                                 "Bronze" : {
@@ -930,6 +958,7 @@
                                     "cos":1,
                                     "multicast_optimize":false,
                                     "packet_drop":true,
+                                    "state":"Enabled",
                                     "weight":7
                                 },
                                 "FC" : {
@@ -937,6 +966,7 @@
                                     "cos":3,
                                     "multicast_optimize":false,
                                     "packet_drop":false,
+                                    "state":"Enabled",
                                     "weight":10
                                 },
                                 "Gold" : {
@@ -944,6 +974,7 @@
                                     "cos":4,
                                     "multicast_optimize":false,
                                     "packet_drop":true,
+                                    "state":"Enabled",
                                     "weight":9
                                 },
                                 "Platinum" : {
@@ -951,6 +982,7 @@
                                     "cos":5,
                                     "multicast_optimize":false,
                                     "packet_drop":false,
+                                    "state":"Enabled",
                                     "weight":10
                                 },
                                 "Silver" : {
@@ -958,6 +990,7 @@
                                     "cos":2,
                                     "multicast_optimize":false,
                                     "packet_drop":true,
+                                    "state":"Enabled",
                                     "weight":8
                                 }
                             },
@@ -1643,6 +1676,48 @@
                                 "object_name":"eth_adapter_policy",
                                 "object_type":"vnic.EthAdapterPolicy",
                                 "template_tuning":{
+                                    "16RxQs-4G":{
+                                        "description":"Recommended adapter settings for 16RxQs 4th Gen VIC.",
+                                        "rss_settings":true,
+                                        "completion_queue_settings":{
+                                            "count":9
+                                        },
+                                        "interrupt_settings":{
+                                            "coalescing_time":125,
+                                            "coalescing_type":"MIN",
+                                            "count":19,
+                                            "mode":"MSIx"
+                                        },
+                                        "rx_queue_settings":{
+                                            "count":8,
+                                            "ring_size":4096
+                                        },
+                                        "tx_queue_settings":{
+                                            "count":1,
+                                            "ring_size":4096
+                                        }
+                                    },
+                                    "16RxQs-5G":{
+                                        "description":"Recommended adapter settings for 16RxQs 5th Gen VIC.",
+                                        "rss_settings":true,
+                                        "completion_queue_settings":{
+                                            "count":9
+                                        },
+                                        "interrupt_settings":{
+                                            "coalescing_time":125,
+                                            "coalescing_type":"MIN",
+                                            "count":19,
+                                            "mode":"MSIx"
+                                        },
+                                        "rx_queue_settings":{
+                                            "count":16,
+                                            "ring_size":16384
+                                        },
+                                        "tx_queue_settings":{
+                                            "count":1,
+                                            "ring_size":16384
+                                        }
+                                    },
                                     "VMware":{
                                         "description":"Recommended adapter settings for VMware.",
                                         "rss_settings":false,
@@ -1658,6 +1733,27 @@
                                         "rx_queue_settings":{
                                             "count":1,
                                             "ring_size":512
+                                        }
+                                    },
+                                    "VMware-High-Trf":{
+                                        "description":"Recommended adapter settings for VMware High Traffic.",
+                                        "rss_settings":true,
+                                        "completion_queue_settings":{
+                                            "count":9
+                                        },
+                                        "interrupt_settings":{
+                                            "coalescing_time":125,
+                                            "coalescing_type":"MIN",
+                                            "count":11,
+                                            "mode":"MSIx"
+                                        },
+                                        "rx_queue_settings":{
+                                            "count":8,
+                                            "ring_size":4096
+                                        },
+                                        "tx_queue_settings":{
+                                            "count":1,
+                                            "ring_size":4096
                                         }
                                     }
                                 }
@@ -1744,11 +1840,23 @@
                                 "object_name":"fc_adapter_policy",
                                 "object_type":"vnic.FcAdapterPolicy",
                                 "template_tuning":{
+                                    "FCNVMeInitiator":{
+                                        "description":"Recommended adapter settings for FC NVMe Initiator.",
+                                        "error_recovery_settings":{
+                                            "io_retry_count":30,
+                                            "port_down_timeout":30000
+                                        },
+                                        "io_throttle_count":256,
+                                        "scsi_queue_settings":{
+                                            "count":16
+                                        }
+                                    },
                                     "VMware":{
                                         "description":"Recommended adapter settings for VMware.",
                                         "error_recovery_settings":{
-                                            "port_down_timeout":30000
-                                        }
+                                            "io_retry_count":30
+                                        },
+                                        "io_throttle_count":256
                                     }
                                 }
                             },
@@ -2406,6 +2514,1445 @@
                                     "virtual_kvm_policy",
                                     "virtual_media_policy"
                                 ]
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.credentials": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "netapp_username": {
+                                "description": "Username for NetApp Login.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 128,
+                                "pattern": "^[\\S]{1,128}$",
+                                "x-omitempty": true
+                            },
+                            "nxos_username": {
+                                "description": "Username for NX-OS Login.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 128,
+                                "pattern": "^[\\S]{1,128}$",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                            },
+                            "required_args": {
+                                "netapp_username": "",
+                                "nxos_username": "",
+                                "vcenter_username": ""
+                            },
+                            "vcenter_username": {
+                                "description": "Username for vCenter Login.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 128,
+                                "pattern": "^[\\S]{1,128}$",
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.dhcp_dns_ntp": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "dns_domains": {
+                                "description": "List of DNS Domain Suffix's.",
+                                "type": "list_of_domains",
+                                "x-omitempty": true
+                            },
+                            "dhcp_server1": {
+                                "description": "Primary DHCP Server.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "dhcp_server2": {
+                                "description": "Secondary DHCP Server.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "dns_server1": {
+                                "description": "Primary DNS Server.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "dns_server2": {
+                                "description": "Secondary DNS Server.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "ntp_server1": {
+                                "description": "Primary NTP Server.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "ntp_server2": {
+                                "description": "Secondary NTP Server.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                                "dhcp_server1": "",
+                                "dhcp_server2": "",
+                                "dns_server2": "",
+                                "ntp_server2": ""
+                            },
+                            "required_args": {
+                                "dns_domains": "",
+                                "dns_server1": "",
+                                "ntp_server1": "",
+                                "timezone": ""
+                            },
+                            "timezone": {
+                                "description": "Timezone.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 254,
+                                "pattern": "^[\\S+]{0,254}$",
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.imm_domain": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "breakout_speed": {
+                                "description": "Ethernet Breakout Speed.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "10G",
+                                    "25G"
+                                ],
+                                "default": "25G",
+                                "x-omitempty": true
+                            },
+                            "deployment_type": {
+                                "description": "Available Deployment Types.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "fc",
+                                    "fc-nvme",
+                                    "iscsi",
+                                    "nvme-tcp"
+                                ],
+                                "default": "fc",
+                                "x-omitempty": true
+                            },
+                            "fabric_a_serial": {
+                                "description": "Serial Number for Fabric Interconnect A.",
+                                "type": "string",
+                                "minimum": 11,
+                                "maximum": 11,
+                                "pattern": "^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\dA-Z]{4}$",
+                                "x-omitempty": true
+                            },
+                            "fabric_b_serial": {
+                                "description": "Serial Number for Fabric Interconnect A.",
+                                "type": "string",
+                                "minimum": 11,
+                                "maximum": 11,
+                                "pattern": "^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\dA-Z]{4}$",
+                                "x-omitempty": true
+                            },
+                            "name": {
+                                "description": "The Name of the Domain Profile.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                                "breakout_speed": ""
+                            },
+                            "organization": {
+                                "description": "The name of the organization. There can be multiple organizations under an account.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_.:-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "required_args": {
+                                "deployment_type": "",
+                                "fabric_a_serial": "",
+                                "fabric_b_serial": "",
+                                "name": "",
+                                "organization": "",
+                                "uplink_ports": ""
+                            },
+                            "uplink_ports": {
+                                "description": "List of ports for the Ethernet Uplink Port-Channel.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 16,
+                                "pattern": "^eth1/[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.imm_fc": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "breakout_speed": {
+                                "description": "Fibre-Channel Breakout Speed.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "16G",
+                                    "32G"
+                                ],
+                                "default": "32G",
+                                "x-omitempty": true
+                            },
+                            "fc_ports": {
+                                "description": "List of ports for the Ethernet Uplink Port-Channel.",
+                                "type": "string",
+                                "minimum": 5,
+                                "maximum": 16,
+                                "pattern": "^fc1/([\\d]{1,3}/)?[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                                "breakout_speed": ""
+                            },
+                            "required_args": {
+                                "fc_ports": "",
+                                "switch_mode": "",
+                                "vsan_a": "",
+                                "vsan_b": ""
+                            },
+                            "switch_mode": {
+                                "description": "Fibre-Channel Switch Mode.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "end-host",
+                                    "switch"
+                                ],
+                                "default": "end-host",
+                                "x-omitempty": true
+                            },
+                            "vsan_a": {
+                                "description": "VSAN for Fabric A.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 4094,
+                                "default": 100,
+                                "x-omitempty": true
+                            },
+                            "vsan_b": {
+                                "description": "VSAN for Fabric B.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 4094,
+                                "default": 100,
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.imm_policy": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "local_user": {
+                                "description": "Username for Local Server IMC Administration.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 16,
+                                "pattern": "^[a-zA-Z0-9\\._\\-]+$",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                                "policy_prefix": ""
+                            },
+                            "policy_prefix": {
+                                "description": "Name to Add to the Beginning of Each Pool and Policy Name.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 48,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,48}$",
+                                "x-omitempty": true
+                            },
+                            "pool_id_prefix": {
+                                "description": "Prefix for Pool Identifiers.",
+                                "type": "string",
+                                "minimum": 2,
+                                "maximum": 2,
+                                "pattern": "^[a-zA-Z\\d]{2}$",
+                                "x-omitempty": true
+                            },
+                            "required_args": {
+                                "local_user": "",
+                                "pool_id_prefix": ""
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.imm_profiles": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "cpu_vendor": {
+                                "description": "Server CPU Vendor.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "amd",
+                                    "intel"
+                                ],
+                                "default": "intel",
+                                "x-omitempty": true
+                            },
+                            "domain_ports": {
+                                "description": "List of ports for the Chassis.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 16,
+                                "pattern": "^eth1/[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "x-omitempty": true
+                            },
+                            "equipment_type": {
+                                "description": "Type of Equipment.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "Chassis",
+                                    "RackServer"
+                                ],
+                                "default": "Chassis",
+                                "x-omitempty": true
+                            },
+                            "generation": {
+                                "description": "Server Generation.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "M5",
+                                    "M6",
+                                    "M7"
+                                ],
+                                "default": "M6",
+                                "x-omitempty": true
+                            },
+                            "identifier": {
+                                "description": "Chassis/RackServer Identifier.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 10,
+                                "default": 1,
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                            },
+                            "required_args": {
+                                "cpu_vendor": "",
+                                "domain_ports": "",
+                                "equipment_type": "",
+                                "generation": "",
+                                "identifier": "",
+                                "profile_count": "",
+                                "profile_start": "",
+                                "tpm": "",
+                                "vic_generation": ""
+                            },
+                            "profile_count": {
+                                "description": "Number of Profiles in the Chassis.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 8,
+                                "default": 3,
+                                "x-omitempty": true
+                            },
+                            "profile_start": {
+                                "description": "Name of the First Profile for the Chassis.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "tpm": {
+                                "description": "Boolean to determine if TPM is Installed.",
+                                "type": "boolean",
+                                "default": true,
+                                "x-omitempty": true
+                            },
+                            "vic_generation": {
+                                "description": "Generation of VIC.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "gen4",
+                                    "gen5"
+                                ],
+                                "default": "gen5",
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.interfaces": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "device": {
+                                "description": "UCS Domain or Storage Controller Types.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "domain",
+                                    "controller-a",
+                                    "controller-b"
+                                ],
+                                "default": "domain",
+                                "x-omitempty": true
+                            },
+                            "fabric_a_ports": {
+                                "description": "List of Ports for Fabric A.",
+                                "type": "string",
+                                "minimum": 5,
+                                "maximum": 16,
+                                "pattern": "^eth1/([\\d]{1,3}/)?[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "x-omitempty": true
+                            },
+                            "fabric_b_ports": {
+                                "description": "List of Ports for Fabric B.",
+                                "type": "string",
+                                "minimum": 5,
+                                "maximum": 16,
+                                "pattern": "^eth1/([\\d]{1,3}/)?[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "x-omitempty": true
+                            },
+                            "mgmt": {
+                                "description": "Mgmt Port.",
+                                "type": "string",
+                                "minimum": 5,
+                                "maximum": 16,
+                                "pattern": "^eth1/[\\d]{1,3}$",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                            },
+                            "required_args": {
+                                "device": "",
+                                "fabric_a_ports": "",
+                                "fabric_b_ports": "",
+                                "mgmt": "",
+                                "switch_type": ""
+                            },
+                            "switch_type": {
+                                "description": "Uplink Switch Type.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "domain",
+                                    "network"
+                                ],
+                                "default": "domain",
+                                "x-omitempty": true
+                            },
+                            "vsan_a": {
+                                "description": "VSAN for Fabric A.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 4094,
+                                "default": 100,
+                                "x-omitempty": true
+                            },
+                            "vsan_b": {
+                                "description": "VSAN for Fabric B.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 4094,
+                                "default": 100,
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.mgmt": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "optional_args": {
+                                "snmp_server2": "",
+                                "syslog_server2": ""
+                            },
+                            "required_args": {
+                                "snmp_contact": "",
+                                "snmp_location": "",
+                                "snmp_server1": "",
+                                "syslog_server1": "",
+                                "username": ""
+                            },
+                            "snmp_contact": {
+                                "description": "SNMP Contact.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[\\S+]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "snmp_location": {
+                                "description": "SNMP Location.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[\\S+]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "snmp_server1": {
+                                "description": "SNMP Trap Server 1.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "snmp_server2": {
+                                "description": "SNMP Trap Server 2.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "syslog_server1": {
+                                "description": "Syslog Server 1.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "syslog_server2": {
+                                "description": "Syslog Server 2.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "username": {
+                                "description": "SNMP Username.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 31,
+                                "pattern": "^[\\S+]{1,31}$",
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.nxos": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "configure_l3": {
+                                "description": "Boolean to configure or not configure the Nexus Switches Layer3 SVIs.",
+                                "type": "boolean",
+                                "default": true,
+                                "x-omitempty": true
+                            },
+                            "configure_vpc": {
+                                "description": "Boolean to configure or not configure VPC.",
+                                "type": "boolean",
+                                "default": true,
+                                "x-omitempty": true
+                            },
+                            "hostname": {
+                                "description": "Name for the Switch.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "keepalive_ip": {
+                                "description": "Keepalive IP Address.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "keepalive_ports": {
+                                "description": "List of ports for the VPC Peer Keepalive.",
+                                "type": "string",
+                                "minimum": 5,
+                                "maximum": 16,
+                                "pattern": "^(eth1/[\\d]{1,3}(-[\\d]{1,3})?|mgmt0)$",
+                                "x-omitempty": true
+                            },
+                            "NorthAmerica": {
+                                "description": "List of North American Countries.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "CA",
+                                    "GL",
+                                    "US"
+                                ],
+                                "default": "US",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                                "keepalive_ip": "",
+                                "keepalive_ports": "",
+                                "vpc_domain_id": "",
+                                "vpc_peer_ports": ""
+                            },
+                            "required_args": {
+                                "configure_l3": "",
+                                "configure_vpc": "",
+                                "hostname": "",
+                                "switch_type": ""
+                            },
+                            "SouthAmerica": {
+                                "description": "List of South American Countries.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "AR",
+                                    "BO",
+                                    "BR",
+                                    "CL",
+                                    "CO",
+                                    "EC",
+                                    "GF",
+                                    "GY",
+                                    "PE",
+                                    "PY",
+                                    "UY",
+                                    "VE"
+                                ],
+                                "default": "BR",
+                                "x-omitempty": true
+                            },
+                            "switch_type": {
+                                "description": "Type of Switch.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "network",
+                                    "ooband"
+                                ],
+                                "default": "network",
+                                "x-omitempty": true
+                            },
+                            "timezone_map": {
+                                "Africa": {
+                                    "+0000":{
+                                        "daylight":"",
+                                        "standard":"clock timezone GMT"
+                                    },
+                                    "+0100":{
+                                        "daylight":"",
+                                        "standard":"clock timezone CET +1"
+                                    },
+                                    "+0200":{
+                                        "daylight":"",
+                                        "standard":"clock timezone SAST +2"
+                                    },
+                                    "+0300":{
+                                        "daylight":"",
+                                        "standard":"clock timezone EAT +3"
+                                    }
+                                },
+                                "Antarctica": {
+                                    "-0300":{
+                                        "daylight":"",
+                                        "standard":"clock timezone ART -3"
+                                    },
+                                    "+0300":{
+                                        "daylight":"",
+                                        "standard":"clock timezone AQT +3"
+                                    },
+                                    "+0500":{
+                                        "daylight":"",
+                                        "standard":"clock timezone MAWT +5"
+                                    },
+                                    "+0600":{
+                                        "daylight":"",
+                                        "standard":"clock timezone VOST +6"
+                                    },
+                                    "+0700":{
+                                        "daylight":"",
+                                        "standard":"clock timezone DAVT +7"
+                                    },
+                                    "+0900":{
+                                        "daylight":"",
+                                        "standard":"clock timezone AQT +9"
+                                    },
+                                    "+1000":{
+                                        "daylight":"",
+                                        "standard":"clock timezone DDUT +10"
+                                    },
+                                    "+1100":{
+                                        "daylight":"",
+                                        "standard":"clock timezone AQT +11"
+                                    }
+                                },
+                                "Asia": {
+                                    "-0400":{
+                                        "daylight":"clock summer-time ADT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone AST -4"
+                                    },
+                                    "-0300":{
+                                        "daylight":"",
+                                        "standard":"clock timezone FKST -3"
+                                    },
+                                    "-0200":{
+                                        "daylight":"",
+                                        "standard":"clock timezone GST -2"
+                                    },
+                                    "-0100":{
+                                        "daylight":"",
+                                        "standard":"clock timezone CVT -1"
+                                    },
+                                    "+0000":{
+                                        "daylight":"clock summer-time IDT recurring last Sun Mar 2:00 last Sun Oct 2:00",
+                                        "standard":"clock timezone IST +2"
+                                    },
+                                    "+0200":{
+                                        "daylight":"clock summer-time IDT recurring last Sun Mar 2:00 last Sun Oct 2:00",
+                                        "standard":"clock timezone IST +2"
+                                    },
+                                    "+0300":{
+                                        "daylight":"",
+                                        "standard":"clock timezone AST +3"
+                                    },
+                                    "+0330":{
+                                        "daylight":"clock summer-time IRDT 3 Wed Mar 00:00 4 Fri Sep 00:00",
+                                        "standard":"clock timezone IRST +3 30"
+                                    },
+                                    "+0400":{
+                                        "daylight":"",
+                                        "standard":"clock timezone GST +4"
+                                    },
+                                    "+0430":{
+                                        "daylight":"",
+                                        "standard":"clock timezone AFT +4 30"
+                                    },
+                                    "+0500":{
+                                        "daylight":"",
+                                        "standard":"clock timezone PKT +5"
+                                    },
+                                    "+0530":{
+                                        "daylight":"",
+                                        "standard":"clock timezone IST +5 30"
+                                    },
+                                    "+0545":{
+                                        "daylight":"",
+                                        "standard":"clock timezone NPT +5 45"
+                                    },
+                                    "+0600":{
+                                        "daylight":"",
+                                        "standard":"clock timezone BST +6"
+                                    },
+                                    "+0630":{
+                                        "daylight":"",
+                                        "standard":"clock timezone MMT +6 30"
+                                    },
+                                    "+0700":{
+                                        "daylight":"",
+                                        "standard":"clock timezone ICT +7"
+                                    },
+                                    "+0800":{
+                                        "daylight":"",
+                                        "standard":"clock timezone HKT +8"
+                                    },
+                                    "+0900":{
+                                        "daylight":"",
+                                        "standard":"clock timezone KST +9"
+                                    },
+                                    "+1000":{
+                                        "daylight":"",
+                                        "standard":"clock timezone VLAT +10"
+                                    },
+                                    "+1100":{
+                                        "daylight":"",
+                                        "standard":"clock timezone SRET +11"
+                                    },
+                                    "+1200":{
+                                        "daylight":"",
+                                        "standard":"clock timezone ANAT +12"
+                                    }
+                                },
+                                "Atlantic": {
+                                    "-0000":{
+                                        "daylight":"clock summer-time BST recurring last Sun Mar 1:00 last Sun Oct 2:00",
+                                        "standard":"clock timezone GMT"
+                                    },
+                                    "-0400":{
+                                        "daylight":"clock summer-time CEST recurring last Sun Mar 2:00 last Sun Oct 3:00",
+                                        "standard":"clock timezone CET +1"
+                                    },
+                                    "-0300":{
+                                        "daylight":"clock summer-time EEST recurring last Sun Mar 3:00 last Sun Oct 4:00",
+                                        "standard":"clock timezone EET +2"
+                                    },
+                                    "-0200":{
+                                        "daylight":"",
+                                        "standard":"clock timezone MSK +3"
+                                    },
+                                    "-0100":{
+                                        "daylight":"clock summer-time AZOT recurring last Sun Mar 0:00 last Sun Oct 0:00",
+                                        "standard":"clock timezone AZOST 0"
+                                    },
+                                    "+0000":{
+                                        "daylight":"clock summer-time WEST recurring last Sun Mar 0:00 last Sun Oct 0:00",
+                                        "standard":"clock timezone WET 0"
+                                    }
+                                },
+                                "Australia": {
+                                    "+0800":{
+                                        "daylight":"",
+                                        "standard":"clock timezone AWST +8"
+                                    },
+                                    "+0930":{
+                                        "daylight":"clock summer-time LHDT recurring 1 Sun Oct 2:00 1 Sun Apr 3:00",
+                                        "standard":"clock timezone LHST +9 30"
+                                    },
+                                    "+1000":{
+                                        "daylight":"clock summer-time AEDT recurring 1 Sun Oct 2:00 1 Sun Apr 3:00",
+                                        "standard":"clock timezone AEST +10"
+                                    },
+                                    "+1030":{
+                                        "daylight":"clock summer-time ACDT recurring 1 Sun Oct 2:00 1 Sun Apr 3:00",
+                                        "standard":"clock timezone ACST +10 30"
+                                    },
+                                    "+1100":{
+                                        "daylight":"",
+                                        "standard":"clock timezone VUT +11"
+                                    }
+                                },
+                                "CentralAmerica": {
+                                    "-0800":{
+                                        "daylight":"clock summer-time PDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone PST -8"
+                                    },
+                                    "-0700":{
+                                        "daylight":"clock summer-time MDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone MST -7"
+                                    },
+                                    "-0600":{
+                                        "daylight":"clock summer-time CDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone CST -6"
+                                    },
+                                    "-0500":{
+                                        "daylight":"clock summer-time EDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone EST -5"
+                                    },
+                                    "-0400":{
+                                        "daylight":"",
+                                        "standard":"clock timezone AST -4"
+                                    },
+                                    "-0300":{
+                                        "daylight":"clock summer-time PMDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone PMST -3"
+                                    }
+                                },
+                                "Europe": {
+                                    "+0000":{
+                                        "daylight":"clock summer-time BST recurring last Sun Mar 1:00 last Sun Oct 2:00",
+                                        "standard":"clock timezone GMT"
+                                    },
+                                    "+0100":{
+                                        "daylight":"clock summer-time CEST recurring last Sun Mar 2:00 last Sun Oct 3:00",
+                                        "standard":"clock timezone CET +1"
+                                    },
+                                    "+0200":{
+                                        "daylight":"clock summer-time EEST recurring last Sun Mar 3:00 last Sun Oct 4:00",
+                                        "standard":"clock timezone EET +2"
+                                    },
+                                    "+0300":{
+                                        "daylight":"",
+                                        "standard":"clock timezone MSK +3"
+                                    },
+                                    "+0400":{
+                                        "daylight":"",
+                                        "standard":"clock timezone SAMT +4"
+                                    }
+                                },
+                                "Indian": {
+                                    "+0400":{
+                                        "daylight":"",
+                                        "standard":"clock timezone MUS +4"
+                                    },
+                                    "+0500":{
+                                        "daylight":"",
+                                        "standard":"clock timezone TFT +5"
+                                    },
+                                    "+0600":{
+                                        "daylight":"",
+                                        "standard":"clock timezone IOT +6"
+                                    },
+                                    "+0630":{
+                                        "daylight":"",
+                                        "standard":"clock timezone CCT +6 30"
+                                    },
+                                    "+0700":{
+                                        "daylight":"",
+                                        "standard":"clock timezone CXT +7"
+                                    }
+                                },
+                                "NorthAmerica": {
+                                    "-0900":{
+                                        "daylight":"clock summer-time AKDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone AKST -9"
+                                    },
+                                    "-0800":{
+                                        "daylight":"clock summer-time PDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone PST -8"
+                                    },
+                                    "-0700":{
+                                        "daylight":"clock summer-time MDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone MST -7"
+                                    },
+                                    "-0600":{
+                                        "daylight":"clock summer-time CDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone CST -6"
+                                    },
+                                    "-0500":{
+                                        "daylight":"clock summer-time EDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone EST -5"
+                                    },
+                                    "-0400":{
+                                        "daylight":"clock summer-time ADT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone AST -4"
+                                    },
+                                    "-0330":{
+                                        "daylight":"clock summer-time NDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "standard":"clock timezone NFT -3 30"
+                                    },
+                                    "-0100":{
+                                        "daylight":"",
+                                        "standard":"clock timezone EGT -1"
+                                    },
+                                    "+0000":{
+                                        "daylight":"",
+                                        "standard":"clock timezone GMT 0"
+                                    }
+                                },
+                                "Pacific": {
+                                    "-1100":{
+                                        "daylight":"",
+                                        "standard":"clock timezone BST -11"
+                                    },
+                                    "-1000":{
+                                        "daylight":"",
+                                        "standard":"clock timezone HST -10"
+                                    },
+                                    "-0930":{
+                                        "daylight":"",
+                                        "standard":"clock timezone MART -9 30"
+                                    },
+                                    "-0900":{
+                                        "daylight":"",
+                                        "standard":"clock timezone GAMT -9"
+                                    },
+                                    "-0800":{
+                                        "daylight":"",
+                                        "standard":"clock timezone PST -8"
+                                    },
+                                    "-0600":{
+                                        "daylight":"",
+                                        "standard":"clock timezone GALT -6"
+                                    },
+                                    "-0500":{
+                                        "daylight":"clock summer-time EADT recurring 1 Sun Oct 2:00 1 Sun Apr 3:00",
+                                        "standard":"clock timezone EAST -6"
+                                    },
+                                    "+0900":{
+                                        "daylight":"",
+                                        "standard":"clock timezone PWT +9"
+                                    },
+                                    "+1000":{
+                                        "daylight":"",
+                                        "standard":"clock timezone GUT +10"
+                                    },
+                                    "+1100":{
+                                        "daylight":"",
+                                        "standard":"clock timezone PONT +11"
+                                    },
+                                    "+1200":{
+                                        "daylight":"",
+                                        "standard":"clock timezone FJI +12"
+                                    },
+                                    "+1300":{
+                                        "daylight":"",
+                                        "standard":"clock timezone WST +13"
+                                    },
+                                    "+1400":{
+                                        "daylight":"",
+                                        "standard":"clock timezone LINT +14"
+                                    }
+                                },
+                                "SouthAmerica": {
+                                    "-0500":{
+                                        "daylight":"",
+                                        "standard":"clock timezone PET -5"
+                                    },
+                                    "-0400":{
+                                        "daylight":"",
+                                        "standard":"clock timezone BOT -4"
+                                    },
+                                    "-0300":{
+                                        "daylight":"",
+                                        "standard":"clock timezone BRT -3"
+                                    },
+                                    "-0200":{
+                                        "daylight":"",
+                                        "standard":"clock timezone FNT -3"
+                                    }
+                                }
+                            },
+                            "vpc_domain_id": {
+                                "description": "VPC Domain ID.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 4094,
+                                "default": 100,
+                                "x-omitempty": true
+                            },
+                            "vpc_peer_ports": {
+                                "description": "List of ports for the VPC Peer Link.",
+                                "type": "string",
+                                "minimum": 5,
+                                "maximum": 16,
+                                "pattern": "^eth1/[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.ontap": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "cluster_name": {
+                                "description": "Cluster Name.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "data_ports": {
+                                "description": "List of Data Ports.",
+                                "type": "list_of_string",
+                                "minimum": 3,
+                                "maximum": 3,
+                                "pattern": "^e[0-8][a-g]$",
+                                "x-omitempty": true
+                            },
+                            "data_speed": {
+                                "description": "Ethernet Speed.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    10,
+                                    25,
+                                    40,
+                                    50,
+                                    100
+                                ],
+                                "default": 100,
+                                "x-omitempty": true
+                            },
+                            "data_svm": {
+                                "description": "Infra SVM Name.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "fcp_ports": {
+                                "description": "List of Fibre-Channel Ports.",
+                                "type": "list_of_string",
+                                "minimum": 2,
+                                "maximum": 2,
+                                "pattern": "^[0-5][a-g]$",
+                                "x-omitempty": true
+                            },
+                            "fcp_speed": {
+                                "description": "Fibre-Channel Speed.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    16,
+                                    32
+                                ],
+                                "default": 32,
+                                "x-omitempty": true
+                            },
+                            "login_banner": {
+                                "description": "Login Banner.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 2048,
+                                "pattern": ".*",
+                                "x-omitempty": true
+                            },
+                            "node01": {
+                                "description": "Node01 Name.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "node02": {
+                                "description": "Node02 Name.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                            },
+                            "required_args": {
+                                "cluster_name": "",
+                                "data_ports": "",
+                                "data_speed": "",
+                                "data_svm": "",
+                                "fcp_ports": "",
+                                "fcp_speed": "",
+                                "login_banner": "",
+                                "node01": "",
+                                "node02": ""
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.ontap_lic": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "license_value": {
+                                "description": "License to Assign to Cluster.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "data_ports": {
+                                "description": "List of Data Ports.",
+                                "type": "list_of_string",
+                                "minimum": 3,
+                                "maximum": 3,
+                                "pattern": "^e[0-8][a-g]$",
+                                "x-omitempty": true
+                            },
+                            "data_speed": {
+                                "description": "Ethernet Speed.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    10,
+                                    25,
+                                    40,
+                                    50,
+                                    100
+                                ],
+                                "default": 100,
+                                "x-omitempty": true
+                            },
+                            "data_svm": {
+                                "description": "Infra SVM Name.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "fcp_ports": {
+                                "description": "List of Fibre-Channel Ports.",
+                                "type": "list_of_string",
+                                "minimum": 2,
+                                "maximum": 2,
+                                "pattern": "^[0-5][a-g]$",
+                                "x-omitempty": true
+                            },
+                            "fcp_speed": {
+                                "description": "Fibre-Channel Speed.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    16,
+                                    32
+                                ],
+                                "default": 32,
+                                "x-omitempty": true
+                            },
+                            "login_banner": {
+                                "description": "Login Banner.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 256,
+                                "pattern": "[\\S]{1,256}",
+                                "x-omitempty": true
+                            },
+                            "node01": {
+                                "description": "Node01 Name.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "node02": {
+                                "description": "Node02 Name.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                            },
+                            "required_args": {
+                                "cluster_name": "",
+                                "data_ports": "",
+                                "data_speed": "",
+                                "data_svm": "",
+                                "fcp_ports": "",
+                                "fcp_speed": "",
+                                "login_banner": "",
+                                "node01": "",
+                                "node02": ""
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.ontap_mgmt": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "from_address": {
+                                "description": "From Email Address.",
+                                "type": "email",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": ".*",
+                                "x-omitempty": true
+                            },
+                            "mail_hosts": {
+                                "description": "Mail Relay Server List.",
+                                "type": "list_of_hosts",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                                "proxy_url": ""
+                            },
+                            "proxy_url": {
+                                "description": "Proxy URL in the format user:pass@host:port.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 256,
+                                "pattern": "^([\\S]+:[\\S]+\\@)?[\\S]:[\\d]+",
+                                "x-omitempty": true
+                            },
+                            "required_args": {
+                                "from_address": "",
+                                "mail_hosts": "",
+                                "snmp_contact": "",
+                                "snmp_location": "",
+                                "to_addresses": "",
+                                "transport": "",
+                                "trap_server": "",
+                                "username": ""
+                            },
+                            "snmp_contact": {
+                                "description": "SNMP Contact.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[\\S]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "snmp_location": {
+                                "description": "SNMP Location.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": ".*",
+                                "x-omitempty": true
+                            },
+                            "to_addresses": {
+                                "description": "List of to Email Addresses.",
+                                "type": "list_of_email",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": ".*",
+                                "x-omitempty": true
+                            },
+                            "transport": {
+                                "description": "AutoSupport Transport protocol.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "http",
+                                    "https",
+                                    "smtp"
+                                ],
+                                "default": "https",
+                                "x-omitempty": true
+                            },
+                            "trap_server": {
+                                "description": "SNMP Trap Server 1.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "username": {
+                                "description": "SNMP Username.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 31,
+                                "pattern": "^[\\S+]{1,31}$",
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.ranges": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "configure_network": {
+                                "description": "Boolean to configure or not configure the Nexus Switches.",
+                                "type": "boolean",
+                                "default": true,
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                            },
+                            "required_args": {
+                                "configure_network": "",
+                                "name_prefix": "",
+                                "vlan_range": ""
+                            },
+                            "name_prefix": {
+                                "description": "Name Prefix for the VLAN Range.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "vlan_range": {
+                                "description": "List of VLANs to assign.",
+                                "type": "list_of_vlans",
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.vlans": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "configure_network": {
+                                "description": "Boolean to configure or not configure the Nexus Switches.",
+                                "type": "boolean",
+                                "default": true,
+                                "x-omitempty": true
+                            },
+                            "controller_range": {
+                                "description": "Controller IP Range.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)-(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+                                "x-omitempty": true
+                            },
+                            "name": {
+                                "description": "Name for the VLAN.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "network": {
+                                "description": "Network and Gateway for the VLAN.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                                "controller_range": "",
+                                "pool_range": "",
+                                "server_range": ""
+                            },
+                            "pool_range": {
+                                "description": "Pool Range for the Given Mgmt Network.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)-(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+                                "x-omitempty": true
+                            },
+                            "required_args": {
+                                "configure_network": "",
+                                "name": "",
+                                "network": "",
+                                "switch_type": "",
+                                "vlan_id": "",
+                                "vlan_type": ""
+                            },
+                            "server_range": {
+                                "description": "Server IP Range.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)-(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+                                "x-omitempty": true
+                            },
+                            "switch_type": {
+                                "description": "Which Switch Group to Apply to when set to Configure.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "network",
+                                    "oob-mgmt"
+                                ],
+                                "default": "network",
+                                "x-omitempty": true
+                            },
+                            "vlan_id": {
+                                "description": "VLAN Identifier.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 4094,
+                                "default": 1,
+                                "x-omitempty": true
+                            },
+                            "vlan_type": {
+                                "description": "VLAN Type.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "inband",
+                                    "iscsi",
+                                    "migration",
+                                    "nfs",
+                                    "nvme",
+                                    "ooband",
+                                    "vm"
+                                ],
+                                "default": "vm",
+                                "x-omitempty": true
                             }
                         }
                     }

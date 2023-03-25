@@ -15,6 +15,7 @@ def begin_section(ptype1, ptype2):
 def completed_item(ptype, pargs, pmoid):
     method = pargs.apiMethod
     if 'vlans' == ptype: name = f"VLAN {pargs.apiBody['vlan_id']}"
+    elif 'autosupport' == ptype: name = "AutoSupport"
     elif 'vsans' == ptype: name = f"VSAN {pargs.apiBody['vsan_id']}"
     elif 'port_channel' in ptype: name = f"PC {pargs.apiBody['pc_id']}"
     elif 'port_mode' in ptype: name = f"PortIdStart {pargs.apiBody['port_id_start']}"
@@ -62,11 +63,20 @@ def error_request(status, text):
     print(f'\n-------------------------------------------------------------------------------------------\n')
     sys.exit(1)
 
+def error_request_netapp(method, status, text, uri):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'   !!!Error!!! when attempting {method} to {uri}')
+    print(f'   Exiting on Error {status} with the following output:')
+    print(f'   {text}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    sys.exit(1)
+
 def error_serial_number(name, serial):
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  !!!Error!!! The Serial Number "{serial}" for "{name}" was not found in inventory.')
-    print(f'  Please the serial number for "{name}".')
+    print(f'  Please check the serial number for "{name}".')
     print(f'\n-------------------------------------------------------------------------------------------\n')
+    sys.exit(1)
 
 def error_subnet_check(**kwargs):
     ip_version = kwargs['ip_version']
@@ -89,6 +99,18 @@ def error_subnet_check(**kwargs):
         sys.exit(1)
 
 
+def error_subnet_not_found(**kwargs):
+    poolFrom = kwargs['pool_from']
+    print(f'\n{"-"*91}\n')
+    print(f'   !!!Error!!!  Did not Find a Correlating Network for {poolFrom}.')
+    print(f'   Defined Network List:')
+    for i in kwargs['networks']:
+        print(f'    * {i}')
+        print(f'   Exiting....')
+    print(f'\n{"-"*91}\n')
+    sys.exit(1)
+
+
 def unmapped_keys(policy_type, name, key):
     print(f'\n{"-"*91}\n')
     print(f'   !!!Error!!!! For {policy_type}, {name}, unknown key {key}')
@@ -96,6 +118,20 @@ def unmapped_keys(policy_type, name, key):
     sys.exit(1)
  
 # Validations
+def boolean(var, **kwargs):
+    row_num = kwargs['row_num']
+    ws = kwargs['ws']
+    varValue = kwargs['var_dict'][var]
+    valid_count = 1
+    if varValue == 'True' or varValue == 'False':
+        valid_count = 0
+    if not valid_count == 0:
+        print(f'\n--------------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet "{ws.title}", Row {row_num}, Variable {var};')
+        print(f'   must be True or False.  Exiting....')
+        print(f'\n--------------------------------------------------------------------------------\n')
+        exit()
+
 def description(varName, varValue, minLength, maxLength):
     if not (re.search(r'^[a-zA-Z0-9\\!#$%()*,-./:;@ _{|}~?&+]+$',  varValue) and \
     validators.length(str(varValue), min=int(minLength), max=int(maxLength))):
@@ -118,20 +154,58 @@ def domain(varName, varValue):
         return False
     else: return True
 
+def domain_ws(var, **kwargs):
+    row_num  = kwargs['row_num']
+    ws       = kwargs['ws']
+    varValue = kwargs['var_dict'][var]
+    if not validators.domain(varValue):
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {varValue} ')
+        print(f'   Error with {var}. Invalid Domain "{varValue}"')
+        print(f'   Please Validate the domain and retry.')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        sys.exit()
+    else: return True
+
 def dns_name(varName, varValue):
     hostname = varValue
     valid_count = 0
     if len(hostname) > 255: valid_count =+ 1
+    if not validators.domain(hostname): valid_count =+ 1
     if hostname[-1] == ".": hostname = hostname[:-1] # strip exactly one dot from the right, if present
     allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
     if not all(allowed.match(x) for x in hostname.split(".")): valid_count =+ 1
     if not valid_count == 0:
         print(f'\n--------------------------------------------------------------------------------\n')
-        print(f'   Error with {varName}.  "{varValue}" is not a valid Hostname.')
+        print(f'   Error with {varName}.  "{varValue}" is not a valid Hostname/Domain.')
         print(f'   Confirm that you have entered the DNS Name Correctly.')
         print(f'\n--------------------------------------------------------------------------------\n')
         return False
     else: return True
+
+def dns_name_ws(var, **kwargs):
+    row_num  = kwargs['row_num']
+    ws       = kwargs['ws']
+    varValue = kwargs['var_dict'][var]
+    hostname = varValue
+    valid_count = 0
+    if len(hostname) > 255:
+        valid_count =+ 1
+    if re.search('^\\..*', varValue):
+        domain = varValue.strip('.')
+        if not validators.domain(domain): valid_count =+ 1
+    if not re.search('^\\..*', hostname):
+        if hostname[-1] == ".": hostname = hostname[:-1] # strip exactly one dot from the right, if present
+        allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+        if not all(allowed.match(x) for x in hostname.split(".")):
+            valid_count =+ 1
+    if not valid_count == 0:
+        print(f'\n--------------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {varValue} ')
+        print(f'   is not a valid Hostname.  Confirm that you have entered the DNS Name Correctly.')
+        print(f'   Exiting....')
+        print(f'\n--------------------------------------------------------------------------------\n')
+        exit()
 
 def email(varName, varValue):
     if not validators.email(varValue, whitelist=None):
@@ -140,6 +214,19 @@ def email(varName, varValue):
         print(f'   is invalid.  Please Validate the email and retry.')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
+    else: return True
+
+def email_ws(var, **kwargs):
+    row_num  = kwargs['row_num']
+    ws       = kwargs['ws']
+    varValue = kwargs['var_dict'][var]
+    if not validators.email(varValue, whitelist=None):
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {varValue} ')
+        print(f'   Error with {var}. Email address "{varValue}"')
+        print(f'   is invalid.  Please Validate the email and retry.')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        sys.exit()
     else: return True
 
 def ip_address(varName, varValue):
@@ -160,6 +247,31 @@ def ip_address(varName, varValue):
     elif not valid_count == 0:
         print(f'\n-----------------------------------------------------------------------------\n')
         print(f'   Error with {varName}. "{varValue}" is not a valid IPv6 Address.')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        return False
+    else: return True
+
+def ip_address_ws(var, **kwargs):
+    row_num  = kwargs['row_num']
+    ws       = kwargs['ws']
+    varValue = kwargs['var_dict'][var]
+    if re.search('/', varValue):
+        x = varValue.split('/')
+        address = x[0]
+    else: address = varValue
+    valid_count = 0
+    if re.search(r'\.', address):
+        if not validators.ip_address.ipv4(address): valid_count =+ 1
+    else:
+        if not validators.ip_address.ipv6(address): valid_count =+ 1
+    if not valid_count == 0 and re.search(r'\.', address):
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on row {row_num} with {var}. "{varValue}" is not a valid IPv4 Address.')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        return False
+    elif not valid_count == 0:
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on row {row_num} with {var}. "{varValue}" is not a valid IPv6 Address.')
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
     else: return True
@@ -249,6 +361,46 @@ def length_and_regex_sensitive(regex_pattern, varName, varValue, minLength, maxL
         return True
     else: return False
 
+def list_values(var, jsonData, **kwargs):
+    jsonData = kwargs['validateData']
+    row_num = kwargs['row_num']
+    ws = kwargs['ws']
+    varList = jsonData[var]['enum']
+    varValue = kwargs['var_dict'][var]
+    match_count = 0
+    for x in varList:
+        if str(x) == str(varValue):
+            match_count =+ 1
+    if not match_count > 0:
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {varValue}. ')
+        print(f'   {var} should be one of the following:')
+        for x in varList:
+            print(f'    - {x}')
+        print(f'    Exiting....')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        exit()
+
+def list_values_key(dictkey, var, **kwargs):
+    jsonData = kwargs['validateData']
+    row_num = kwargs['row_num']
+    ws = kwargs['ws']
+    varList = jsonData[dictkey]['enum']
+    varValue = kwargs['var_dict'][var]
+    match_count = 0
+    for x in varList:
+        if x == varValue:
+            match_count =+ 1
+    if not match_count > 0:
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {varValue}. ')
+        print(f'   {var} should be one of the following:')
+        for x in varList:
+            print(f'    - {x}')
+        print(f'    Exiting....')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        exit()
+
 def mac_address(varName, varValue):
     if not validators.mac_address(varValue):
         print(f'\n-----------------------------------------------------------------------------\n')
@@ -256,6 +408,85 @@ def mac_address(varName, varValue):
         print(f'\n-----------------------------------------------------------------------------\n')
         return False
     else: return True
+
+def number_check(var, jsonData, **kwargs):
+    minimum = jsonData[var]['minimum']
+    maximum = jsonData[var]['maximum']
+    row_num = kwargs['row_num']
+    ws = kwargs['ws']
+    varValue = kwargs['var_dict'][var]
+    if not (validators.between(int(varValue), min=int(minimum), max=int(maximum))):
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {varValue}. Valid Values ')
+        print(f'   are between {minimum} and {maximum}.  Exiting....')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        exit()
+
+def number_list(var, **kwargs):
+    jsonData = kwargs['validateData']
+    minimum = jsonData[var]['minimum']
+    maximum = jsonData[var]['maximum']
+    row_num = kwargs['row_num']
+    ws = kwargs['ws']
+    varValue = kwargs['var_dict'][var]
+    if '-' in str(varValue):
+        varValue = varValue.split('-')
+        if ',' in str(varValue):
+            varValue = varValue.split(',')
+    elif ',' in str(varValue):
+        varValue = varValue.split(',')
+    else:
+        varValue = [varValue]
+    for x in varValue:
+        if not (validators.between(int(x), min=int(minimum), max=int(maximum))):
+            print(f'\n-----------------------------------------------------------------------------\n')
+            print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {x}. Valid Values ')
+            print(f'   are between {minimum} and {maximum}.  Exiting....')
+            print(f'\n-----------------------------------------------------------------------------\n')
+            exit()
+
+def string_list(var, jsonData, **kwargs):
+    # Get Variables from Library
+    minimum = jsonData[var]['minimum']
+    maximum = jsonData[var]['maximum']
+    pattern = jsonData[var]['pattern']
+    row_num = kwargs['row_num']
+    varValues = kwargs['var_dict'][var]
+    ws = kwargs['ws']
+    for varValue in varValues.split(','):
+        if not (re.fullmatch(pattern,  varValue) and validators.length(
+            str(varValue), min=int(minimum), max=int(maximum))):
+            print(f'\n-----------------------------------------------------------------------------\n')
+            print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. ')
+            print(f'   "{varValue}" is an invalid Value...')
+            print(f'   It failed one of the complexity tests:')
+            print(f'    - Min Length {maximum}')
+            print(f'    - Max Length {maximum}')
+            print(f'    - Regex {pattern}')
+            print(f'    Exiting....')
+            print(f'\n-----------------------------------------------------------------------------\n')
+            exit()
+
+def string_pattern(var, jsonData, **kwargs):
+    # Get Variables from Library
+    minimum = jsonData[var]['minimum']
+    maximum = jsonData[var]['maximum']
+    pattern = jsonData[var]['pattern']
+    row_num = kwargs['row_num']
+    varValue = kwargs['var_dict'][var]
+    ws = kwargs['ws']
+    if not (re.fullmatch(pattern,  varValue) and validators.length(
+        str(varValue), min=int(minimum), max=int(maximum))):
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. ')
+        print(f'   "{varValue}" is an invalid Value...')
+        print(f'   It failed one of the complexity tests:')
+        print(f'    - Min Length {minimum}')
+        print(f'    - Max Length {maximum}')
+        print(f'    - Regex {pattern}')
+        print(f'    Exiting....')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        exit()
 
 def wwxn_address(varName, varValue):
     if not re.search(r'([0-9A-F]{2}[:-]){7}([0-9A-F]{2})', varValue):
@@ -405,6 +636,44 @@ def uuid_suffix(varName, varValue):
         print(f'\n---------------------------------------------------------------------------------------\n')
         return False
     else: return True
+
+def vlans(var, **kwargs):
+    row_num = kwargs['row_num']
+    ws = kwargs['ws']
+    varValue = kwargs['var_dict'][var]
+    if re.search(',', str(varValue)):
+        vlan_split = varValue.split(',')
+        for x in vlan_split:
+            if re.search('\\-', x):
+                dash_split = x.split('-')
+                for z in dash_split:
+                    if not validators.between(int(z), min=1, max=4095):
+                        print(f'\n-----------------------------------------------------------------------------\n')
+                        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. Valid VLAN Values are:')
+                        print(f'   between 1 and 4095.  "{z}" is not valid.  Exiting....')
+                        print(f'\n-----------------------------------------------------------------------------\n')
+                        exit()
+            elif not validators.between(int(x), min=1, max=4095):
+                print(f'\n-----------------------------------------------------------------------------\n')
+                print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. Valid VLAN Values are:')
+                print(f'   between 1 and 4095.  "{x}" is not valid.  Exiting....')
+                print(f'\n-----------------------------------------------------------------------------\n')
+                exit()
+    elif re.search('\\-', str(varValue)):
+        dash_split = varValue.split('-')
+        for x in dash_split:
+            if not validators.between(int(x), min=1, max=4095):
+                print(f'\n-----------------------------------------------------------------------------\n')
+                print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. Valid VLAN Values are:')
+                print(f'   between 1 and 4095.  "{x}" is not valid.  Exiting....')
+                print(f'\n-----------------------------------------------------------------------------\n')
+                exit()
+    elif not validators.between(int(varValue), min=1, max=4095):
+        print(f'\n-----------------------------------------------------------------------------\n')
+        print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. Valid VLAN Values are:')
+        print(f'   between 1 and 4095.  "{varValue}" is not valid.  Exiting....')
+        print(f'\n-----------------------------------------------------------------------------\n')
+        exit()
 
 def vname(varName, varValue):
     if not re.fullmatch(r'^[a-zA-Z0-9\-\.\_:]{1,31}$', varValue):

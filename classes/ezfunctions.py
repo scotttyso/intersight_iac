@@ -17,6 +17,7 @@ import stdiomask
 import textwrap
 import classes.validating
 import yaml
+import validating
 
 # Log levels 0 = None, 1 = Class only, 2 = Line
 log_level = 2
@@ -123,12 +124,13 @@ def create_yaml(orgs, **kwargs):
                 for org in orgs:
                     idict = deepcopy({org:{item:{}}})
                     for x in ezData[f'class.{i}']['enum']:
-                        if kwargs['immDict']['orgs'][org][item].get(x):
-                            idict[org][item].update(deepcopy({x:kwargs['immDict']['orgs'][org][item][x]}))
-                    if len(idict[org][item]) == 0: idict.pop(org)
-                dest_file = f"{i}.yaml"
-                title1 = f"{str.title(item)} -> {i}"
-                write_file(dest_dir, dest_file, idict, title1)
+                        if kwargs['immDict']['orgs'][org].get(item):
+                            if kwargs['immDict']['orgs'][org][item].get(x):
+                                idict[org][item].update(deepcopy({x:kwargs['immDict']['orgs'][org][item][x]}))
+                            if len(idict[org][item]) == 0: idict.pop(org)
+                            dest_file = f"{i}.yaml"
+                            title1 = f"{str.title(item)} -> {i}"
+                            write_file(dest_dir, dest_file, idict, title1)
         else:
             if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
             for i in ezData[f'class.{item}']['enum']:
@@ -256,6 +258,36 @@ def ez_append(polVars, **kwargs):
     elif len(cS) == 4: kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]][cS[3]].append(deepcopy(polVars))
     elif len(cS) == 5: kwargs['immDict']['orgs'][org][cS[0]][cS[1]][cS[2]][cS[3]][cS[4]].append(deepcopy(polVars))
 
+    return kwargs
+
+#========================================================
+# Function to Append the immDict Dictionary
+#========================================================
+def ez_append_wizard(polVars, **kwargs):
+    class_path = kwargs['class_path']
+    cS = class_path.split(',')
+    polVars = ez_remove_empty(polVars)
+    # Confirm the Key Exists
+    if not kwargs['immDict'].get('wizard'): kwargs['immDict']['wizard'] = {}
+    if len(cS) >= 2:
+        if not kwargs['immDict']['wizard'].get(cS[0]):
+            kwargs['immDict']['wizard'].update(deepcopy({cS[0]:{}}))
+    if len(cS) >= 3:
+        if not kwargs['immDict']['wizard'][cS[0]].get(cS[1]):
+            kwargs['immDict']['wizard'][cS[0]].update(deepcopy({cS[1]:{}}))
+    if len(cS) == 1:
+        if not kwargs['immDict']['wizard'].get(cS[0]):
+            kwargs['immDict']['wizard'].update(deepcopy({cS[0]:[]}))
+    elif len(cS) == 2:
+        if not kwargs['immDict']['wizard'][cS[0]].get(cS[1]):
+            kwargs['immDict']['wizard'][cS[0]].update(deepcopy({cS[1]:[]}))
+    elif len(cS) == 3:
+        if not kwargs['immDict']['wizard'][cS[0]][cS[1]].get(cS[2]):
+            kwargs['immDict']['wizard'][cS[0]][cS[1]].update(deepcopy({cS[2]:[]}))
+    # append the Dictionary
+    if len(cS) == 1: kwargs['immDict']['wizard'][cS[0]].append(deepcopy(polVars))
+    if len(cS) == 2: kwargs['immDict']['wizard'][cS[0]][cS[1]].append(deepcopy(polVars))
+    elif len(cS) == 3: kwargs['immDict']['wizard'][cS[0]][cS[1]][cS[2]].append(deepcopy(polVars))
     return kwargs
 
 #========================================================
@@ -684,15 +716,17 @@ def policy_name(namex, policy_type):
 #======================================================
 # Function - Validate input for each method
 #======================================================
-def process_kwargs(required_args, optional_args, **kwargs):
-    # Validate all required kwargs passed
-    # if all(item in kwargs for item in required_args.keys()) is not True:
-    #    error_ = '\n***ERROR***\nREQUIRED Argument Not Found in Input:\n "%s"\nInsufficient required arguments.' % (item)
-    #    raise InsufficientArgs(error_)
+def process_kwargs(**kwargs):
+    # Validate User Input
+    jsonData = kwargs['validateData']
+    validate_args(**kwargs)
+
     error_count = 0
     error_list = []
+    optional_args = jsonData['optional_args']
+    required_args = jsonData['required_args']
     for item in required_args:
-        if item not in kwargs.keys():
+        if item not in kwargs['var_dict'].keys():
             error_count =+ 1
             error_list += [item]
     if error_count > 0:
@@ -702,7 +736,7 @@ def process_kwargs(required_args, optional_args, **kwargs):
     error_count = 0
     error_list = []
     for item in optional_args:
-        if item not in kwargs.keys():
+        if item not in kwargs['var_dict'].keys():
             error_count =+ 1
             error_list += [item]
     if error_count > 0:
@@ -712,9 +746,9 @@ def process_kwargs(required_args, optional_args, **kwargs):
     # Load all required args values from kwargs
     error_count = 0
     error_list = []
-    for item in kwargs:
+    for item in kwargs['var_dict']:
         if item in required_args.keys():
-            required_args[item] = kwargs[item]
+            required_args[item] = kwargs['var_dict'][item]
             if required_args[item] == None:
                 error_count =+ 1
                 error_list += [item]
@@ -723,9 +757,9 @@ def process_kwargs(required_args, optional_args, **kwargs):
         error_ = '\n\n***Begin ERROR***\n\n - The Following REQUIRED Key(s) Argument(s) are Blank:\nPlease Validate "%s"\n\n****End ERROR****\n' % (error_list)
         raise InsufficientArgs(error_)
 
-    for item in kwargs:
+    for item in kwargs['var_dict']:
         if item in optional_args.keys():
-            optional_args[item] = kwargs[item]
+            optional_args[item] = kwargs['var_dict'][item]
     # Combine option and required dicts for Jinja template render
     polVars = {**required_args, **optional_args}
     return(polVars)
@@ -733,24 +767,23 @@ def process_kwargs(required_args, optional_args, **kwargs):
 #======================================================
 # Function - Read Excel Workbook Data
 #======================================================
-def read_in(excel_workbook):
+def read_in(excel_workbook, **kwargs):
     try:
-        wb = load_workbook(excel_workbook)
+        kwargs['wb'] = load_workbook(excel_workbook)
         print("Workbook Loaded.")
     except Exception as e:
         print(f"Something went wrong while opening the workbook - {excel_workbook}... ABORT!")
         sys.exit(e)
-    return wb
+    return kwargs
 
 #======================================================
 # Function - Prompt User for Sensitive Values
 #======================================================
 def sensitive_var_value(**kwargs):
     jsonData = kwargs['jsonData']
-    if kwargs['Variable'] == 'intersight_apikey':
+    if re.search('(intersight_apikey|(netapp|nxos)_password)', kwargs['Variable']):
         sensitive_var = kwargs['Variable']
-    else:
-        sensitive_var = 'TF_VAR_%s' % (kwargs['Variable'])
+    else: sensitive_var = 'TF_VAR_%s' % (kwargs['Variable'])
     # -------------------------------------------------------------------------------------------------------------------------
     # Check to see if the Variable is already set in the Environment, and if not prompt the user for Input.
     #--------------------------------------------------------------------------------------------------------------------------
@@ -862,7 +895,7 @@ def sensitive_var_value(**kwargs):
                 valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
 
         # Add Policy Variables to immDict
-        if not kwargs['Variable'] == 'intersight_apikey':
+        if not re.search('(intersight_apikey|(netapp|nxos)_password)', kwargs['Variable']):
             org = kwargs['org']
             if not kwargs['immDict']['orgs'][org].get('sensitive_vars'):
                 kwargs['immDict']['orgs'][org]['sensitive_vars'] = []
@@ -1054,17 +1087,24 @@ def snmp_users(**kwargs):
 #======================================================
 # Function - Define stdout_log output
 #======================================================
-def stdout_log(sheet, line):
+def stdout_log(ws, row_num):
     if log_level == 0: return
     elif ((log_level == (1) or log_level == (2)) and
-            (sheet) and (line is None)):
-        #print('*' * 80)
+            (ws) and (row_num is None)) and row_num == 'begin':
+        print(f'-----------------------------------------------------------------------------\n')
+        print(f'   Begin Worksheet "{ws.title}" evaluation...')
         print(f'\n-----------------------------------------------------------------------------\n')
-        print(f'   Starting work on {sheet.title} Worksheet')
+    elif (log_level == (1) or log_level == (2)) and row_num == 'end':
         print(f'\n-----------------------------------------------------------------------------\n')
-        #print('*' * 80)
-    elif log_level == (2) and (sheet) and (line is not None):
-        print('Evaluating line %s from %s Worksheet...' % (line, sheet.title))
+        print(f'   Completed Worksheet "{ws.title}" evaluation...')
+        print(f'\n-----------------------------------------------------------------------------')
+    elif log_level == (2) and (ws) and (row_num is not None):
+        if re.fullmatch('[0-9]', str(row_num)):
+            print(f'    - Evaluating Row   {row_num}...')
+        elif re.fullmatch('[0-9][0-9]',  str(row_num)):
+            print(f'    - Evaluating Row  {row_num}...')
+        elif re.fullmatch('[0-9][0-9][0-9]',  str(row_num)):
+            print(f'    - Evaluating Row {row_num}...')
     else: return
 
 #======================================================
@@ -1273,6 +1313,140 @@ def ucs_domain_serials(**kwargs):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
     serials = [polVars['serial_A'], polVars['serial_B']]
     return serials
+
+#========================================================
+# Function to Validate Worksheet User Input
+#========================================================
+def validate_args(jsonData, **kwargs):
+    jsonData = kwargs['validateData']
+    for i in jsonData['required_args']:
+        if jsonData[i]['type'] == 'boolean':
+            if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+                validating.boolean(i, **kwargs)
+        elif jsonData[i]['type'] == 'hostname':
+            if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+                if ':' in kwargs['var_dict'][i]:
+                    validating.ip_address_ws(i, **kwargs)
+                elif re.search('[a-z]', kwargs['var_dict'][i], re.IGNORECASE):
+                    validating.dns_name_ws(i, **kwargs)
+                else:
+                    validating.ip_address_ws(i, **kwargs)
+        elif jsonData[i]['type'] == 'list_of_email':
+            if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+                count = 1
+                for email in kwargs['var_dict'][i].split(','):
+                    kwargs['var_dict'][f'{i}_{count}'] = email
+                    validating.email_ws(f'{i}_{count}', **kwargs)
+        elif jsonData[i]['type'] == 'email':
+            if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+                validating.email_ws(i, **kwargs)
+        elif jsonData[i]['type'] == 'integer':
+            if kwargs['var_dict'][i] == None:
+                kwargs['var_dict'][i] = jsonData[i]['default']
+            else:
+                validating.number_check(i, jsonData, **kwargs)
+        elif jsonData[i]['type'] == 'list_of_domains':
+            if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+                count = 1
+                for domain in kwargs['var_dict'][i].split(','):
+                    kwargs['var_dict'][f'domain_{count}'] = domain
+                    validating.domain_ws(f'domain_{count}', **kwargs)
+                    kwargs['var_dict'].pop(f'domain_{count}')
+                    count += 1
+        elif jsonData[i]['type'] == 'list_of_hosts':
+            if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+                count = 1
+                for hostname in kwargs['var_dict'][i].split(','):
+                    kwargs['var_dict'][f'{i}_{count}'] = hostname
+                    if ':' in hostname:
+                        validating.ip_address_ws(f'{i}_{count}', **kwargs)
+                    elif re.search('[a-z]', hostname, re.IGNORECASE):
+                        validating.dns_name_ws(f'{i}_{count}', **kwargs)
+                    else:
+                        validating.ip_address_ws(f'{i}_{count}', **kwargs)
+                    kwargs['var_dict'].pop(f'{i}_{count}')
+                    count += 1
+        elif jsonData[i]['type'] == 'list_of_integer':
+            if kwargs['var_dict'][i] == None:
+                kwargs['var_dict'][i] = jsonData[i]['default']
+            else:
+                validating.number_list(i, jsonData, **kwargs)
+        elif jsonData[i]['type'] == 'list_of_string':
+            if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+                validating.string_list(i, jsonData, **kwargs)
+        elif jsonData[i]['type'] == 'list_of_values':
+            if kwargs['var_dict'][i] == None:
+                kwargs['var_dict'][i] = jsonData[i]['default']
+            else:
+                validating.list_values(i, jsonData, **kwargs)
+        elif jsonData[i]['type'] == 'list_of_vlans':
+            if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+                validating.vlans(i, **kwargs)
+        elif jsonData[i]['type'] == 'string':
+            if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+                validating.string_pattern(i, jsonData, **kwargs)
+        else:
+            print(f"error validating.  Type not found {jsonData[i]['type']}. 2.")
+            exit()
+    for i in jsonData['optional_args']:
+        if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
+            if re.search(r'^module_[\d]+$', i):
+                validating.list_values_key('modules', i, jsonData, **kwargs)
+            elif jsonData[i]['type'] == 'boolean':
+                validating.boolean(i, jsonData, **kwargs)
+            elif jsonData[i]['type'] == 'domain':
+                validating.domain_ws(i, **kwargs)
+            elif jsonData[i]['type'] == 'list_of_email':
+                count = 1
+                for email in kwargs['var_dict'][i].split(','):
+                    kwargs['var_dict'][f'{i}_{count}'] = email
+                    validating.email_ws(f'{i}_{count}', jsonData, **kwargs)
+            elif jsonData[i]['type'] == 'email':
+                validating.email_ws(i, jsonData, **kwargs)
+            elif jsonData[i]['type'] == 'hostname':
+                if ':' in kwargs['var_dict'][i]:
+                    validating.ip_address_ws(i, **kwargs)
+                elif re.search('[a-z]', kwargs['var_dict'][i], re.IGNORECASE):
+                    validating.dns_name_ws(i, **kwargs)
+                else:
+                    validating.ip_address_ws(i, **kwargs)
+            elif jsonData[i]['type'] == 'integer':
+                validating.number_check(i, jsonData, **kwargs)
+            elif jsonData[i]['type'] == 'list_of_integer':
+                validating.number_list(i, jsonData, **kwargs)
+            elif jsonData[i]['type'] == 'list_of_hosts':
+                count = 1
+                for hostname in kwargs['var_dict'][i].split(','):
+                    kwargs[f'{i}_{count}'] = hostname
+                    if ':' in hostname:
+                        validating.ip_address_ws(f'{i}_{count}', **kwargs)
+                    elif re.search('[a-z]', hostname, re.IGNORECASE):
+                        validating.dns_name_ws(f'{i}_{count}', **kwargs)
+                    else:
+                        validating.ip_address_ws(f'{i}_{count}', **kwargs)
+                    kwargs['var_dict'].pop(f'{i}_{count}')
+                    count += 1
+            elif jsonData[i]['type'] == 'list_of_macs':
+                count = 1
+                for mac in kwargs['var_dict'][i].split(','):
+                    kwargs[f'{i}_{count}'] = mac
+                    validating.mac_address(f'{i}_{count}', **kwargs)
+                    kwargs.pop(f'{i}_{count}')
+                    count += 1
+            elif jsonData[i]['type'] == 'list_of_string':
+                validating.string_list(i, jsonData, **kwargs)
+            elif jsonData[i]['type'] == 'list_of_values':
+                validating.list_values(i, jsonData, **kwargs)
+            elif jsonData[i]['type'] == 'list_of_vlans':
+                validating.vlans(i, **kwargs)
+            elif jsonData[i]['type'] == 'mac_address':
+                validating.mac_address(i, **kwargs)
+            elif jsonData[i]['type'] == 'string':
+                validating.string_pattern(i, jsonData, **kwargs)
+            else:
+                print(f"error validating.  Type not found {jsonData[i]['type']}. 3.")
+                exit()
+    return kwargs
 
 #======================================================
 # Function - Check VLAN exists in VLAN Policy

@@ -1,0 +1,37 @@
+AR - Argentina
+BB - Barbados*
+BO - Bolivia
+BR - Brazil
+BS - Bahamas
+BZ - Belize
+CA - Canada
+CL - Chile
+CO - Columbia
+CR - Costa Rica
+CU - Cuba
+CW - Curacao*
+DO - Dominican Republic
+EC - Ecuador
+GF - French Guyana
+GL - Greenland
+GT - Guatemala
+GY - Guyana
+HN - Honduras
+HT - Haiti
+JM - Jamaica
+KY - Cayman Islands
+MQ - Martinique
+MX - Mexico
+NI - Nicaragua
+PA - Panama
+PE - Peru
+PM - Saint Pierre and Miquelon
+PR - Puerto Rico
+PY - Paraguay
+SR - Suriname
+SV - El Salvador
+TC - Turks and Caicos Islands
+TT - Trinidad and Tobago
+US - United States
+UY - Urugway
+VE - Venezuala

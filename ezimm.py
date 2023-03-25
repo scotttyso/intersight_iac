@@ -491,12 +491,11 @@ def prompt_previous_configurations(**kwargs):
     if os.path.isdir(baseRepo):
         dir_list = os.listdir(baseRepo)
         for i in dir_list:
-            #if i == 'main.tf': dir_check += 1
             if i == 'policies': dir_check += 1
             elif i == 'pools': dir_check += 1
             elif i == 'profiles': dir_check += 1
             elif i == 'templates': dir_check += 1
-    if dir_check == 4:
+    if dir_check > 1:
         kwargs['jData'] = {}
         kwargs['jData']['default']     = True
         kwargs['jData']['description'] = 'Load Previous Configurations'
