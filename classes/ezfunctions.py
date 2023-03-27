@@ -1762,10 +1762,11 @@ def vars_from_list(var_options, **kwargs):
 # Function - Collapse VLAN List
 #======================================================
 def vlan_list_format(vlan_list_expanded):
-    vlanGroups = itertools.groupby(vlan_list_expanded, key=lambda item, c=itertools.count():item-next(c))
-    tempvlans = [list(g) for k, g in vlanGroups]
-    vlanList = [str(x[0]) if len(x) == 1 else "{}-{}".format(x[0],x[-1]) for x in tempvlans]
-    vlan_list = ",".join(vlanList)
+    vlan_list  = sorted(vlan_list_expanded)
+    vlanGroups = itertools.groupby(vlan_list, key=lambda item, c=itertools.count():item-next(c))
+    tempvlans  = [list(g) for k, g in vlanGroups]
+    vlanList   = [str(x[0]) if len(x) == 1 else "{}-{}".format(x[0],x[-1]) for x in tempvlans]
+    vlan_list  = ",".join(vlanList)
     return vlan_list
 
 #======================================================

@@ -2698,7 +2698,7 @@
                                 "type": "string",
                                 "minimum": 1,
                                 "maximum": 16,
-                                "pattern": "^eth1/[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "pattern": "^eth1/([\\d]{1,3}/)?[\\d]{1,3}([(,|\\-)\\d{1,3}]+)?$",
                                 "x-omitempty": true
                             }
                         }
@@ -2725,7 +2725,7 @@
                                 "type": "string",
                                 "minimum": 5,
                                 "maximum": 16,
-                                "pattern": "^fc1/([\\d]{1,3}/)?[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "pattern": "^fc1/([\\d]{1,3}/)?[\\d]{1,3}([(,|\\-)\\d{1,3}]+)?$",
                                 "x-omitempty": true
                             },
                             "optional_args": {
@@ -2919,8 +2919,7 @@
                                 "type": "list_of_values",
                                 "enum": [
                                     "domain",
-                                    "controller-a",
-                                    "controller-b"
+                                    "controller"
                                 ],
                                 "default": "domain",
                                 "x-omitempty": true
@@ -2930,7 +2929,7 @@
                                 "type": "string",
                                 "minimum": 5,
                                 "maximum": 16,
-                                "pattern": "^eth1/([\\d]{1,3}/)?[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "pattern": "^eth1/([\\d]{1,3}/)?[\\d]{1,3}([(,|\\-)\\d{1,3}]+)?$",
                                 "x-omitempty": true
                             },
                             "fabric_b_ports": {
@@ -2938,7 +2937,7 @@
                                 "type": "string",
                                 "minimum": 5,
                                 "maximum": 16,
-                                "pattern": "^eth1/([\\d]{1,3}/)?[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "pattern": "^eth1/([\\d]{1,3}/)?[\\d]{1,3}([(,|\\-)\\d{1,3}]+)?$",
                                 "x-omitempty": true
                             },
                             "mgmt": {
@@ -2955,18 +2954,7 @@
                                 "device": "",
                                 "fabric_a_ports": "",
                                 "fabric_b_ports": "",
-                                "mgmt": "",
-                                "switch_type": ""
-                            },
-                            "switch_type": {
-                                "description": "Uplink Switch Type.",
-                                "type": "list_of_values",
-                                "enum": [
-                                    "domain",
-                                    "network"
-                                ],
-                                "default": "domain",
-                                "x-omitempty": true
+                                "mgmt": ""
                             },
                             "vsan_a": {
                                 "description": "VSAN for Fabric A.",
@@ -3086,7 +3074,7 @@
                                 "type": "string",
                                 "minimum": 5,
                                 "maximum": 16,
-                                "pattern": "^(eth1/[\\d]{1,3}(-[\\d]{1,3})?|mgmt0)$",
+                                "pattern": "^(eth1/([\\d]{1,3}/)?[\\d]{1,3}(-[\\d]{1,3})?|mgmt0)$",
                                 "x-omitempty": true
                             },
                             "NorthAmerica": {
@@ -3146,305 +3134,305 @@
                                 "Africa": {
                                     "+0000":{
                                         "daylight":"",
-                                        "standard":"clock timezone GMT"
+                                        "standard":"clock timezone GMT 0 0"
                                     },
                                     "+0100":{
                                         "daylight":"",
-                                        "standard":"clock timezone CET +1"
+                                        "standard":"clock timezone CET 1 0"
                                     },
                                     "+0200":{
                                         "daylight":"",
-                                        "standard":"clock timezone SAST +2"
+                                        "standard":"clock timezone SAST 2 0"
                                     },
                                     "+0300":{
                                         "daylight":"",
-                                        "standard":"clock timezone EAT +3"
+                                        "standard":"clock timezone EAT 3 0"
                                     }
                                 },
                                 "Antarctica": {
                                     "-0300":{
                                         "daylight":"",
-                                        "standard":"clock timezone ART -3"
+                                        "standard":"clock timezone ART -3 0"
                                     },
                                     "+0300":{
                                         "daylight":"",
-                                        "standard":"clock timezone AQT +3"
+                                        "standard":"clock timezone AQT 3 0"
                                     },
                                     "+0500":{
                                         "daylight":"",
-                                        "standard":"clock timezone MAWT +5"
+                                        "standard":"clock timezone MAWT 5 0"
                                     },
                                     "+0600":{
                                         "daylight":"",
-                                        "standard":"clock timezone VOST +6"
+                                        "standard":"clock timezone VOST 6 0"
                                     },
                                     "+0700":{
                                         "daylight":"",
-                                        "standard":"clock timezone DAVT +7"
+                                        "standard":"clock timezone DAVT 7 0"
                                     },
                                     "+0900":{
                                         "daylight":"",
-                                        "standard":"clock timezone AQT +9"
+                                        "standard":"clock timezone AQT 9 0"
                                     },
                                     "+1000":{
                                         "daylight":"",
-                                        "standard":"clock timezone DDUT +10"
+                                        "standard":"clock timezone DDUT 10 0"
                                     },
                                     "+1100":{
                                         "daylight":"",
-                                        "standard":"clock timezone AQT +11"
+                                        "standard":"clock timezone AQT 11 0"
                                     }
                                 },
                                 "Asia": {
                                     "-0400":{
-                                        "daylight":"clock summer-time ADT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone AST -4"
+                                        "daylight":"clock summer-time ADT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone AST -4 0"
                                     },
                                     "-0300":{
                                         "daylight":"",
-                                        "standard":"clock timezone FKST -3"
+                                        "standard":"clock timezone FKST -3 0"
                                     },
                                     "-0200":{
                                         "daylight":"",
-                                        "standard":"clock timezone GST -2"
+                                        "standard":"clock timezone GST -2 0"
                                     },
                                     "-0100":{
                                         "daylight":"",
-                                        "standard":"clock timezone CVT -1"
+                                        "standard":"clock timezone CVT -1 0"
                                     },
                                     "+0000":{
-                                        "daylight":"clock summer-time IDT recurring last Sun Mar 2:00 last Sun Oct 2:00",
-                                        "standard":"clock timezone IST +2"
+                                        "daylight":"clock summer-time IDT last Sunday March 2:00 last Sunday October 2:00 60",
+                                        "standard":"clock timezone IST 2 0"
                                     },
                                     "+0200":{
-                                        "daylight":"clock summer-time IDT recurring last Sun Mar 2:00 last Sun Oct 2:00",
-                                        "standard":"clock timezone IST +2"
+                                        "daylight":"clock summer-time IDT last Sunday March 2:00 last Sunday October 2:00 60",
+                                        "standard":"clock timezone IST 2 0"
                                     },
                                     "+0300":{
                                         "daylight":"",
-                                        "standard":"clock timezone AST +3"
+                                        "standard":"clock timezone AST 3 0"
                                     },
                                     "+0330":{
-                                        "daylight":"clock summer-time IRDT 3 Wed Mar 00:00 4 Fri Sep 00:00",
-                                        "standard":"clock timezone IRST +3 30"
+                                        "daylight":"clock summer-time IRDT 3 Wednesday Mar 00:00 4 Friday Sep 00:00 60",
+                                        "standard":"clock timezone IRST 3 30"
                                     },
                                     "+0400":{
                                         "daylight":"",
-                                        "standard":"clock timezone GST +4"
+                                        "standard":"clock timezone GST 4 0"
                                     },
                                     "+0430":{
                                         "daylight":"",
-                                        "standard":"clock timezone AFT +4 30"
+                                        "standard":"clock timezone AFT 4 30"
                                     },
                                     "+0500":{
                                         "daylight":"",
-                                        "standard":"clock timezone PKT +5"
+                                        "standard":"clock timezone PKT 5 0"
                                     },
                                     "+0530":{
                                         "daylight":"",
-                                        "standard":"clock timezone IST +5 30"
+                                        "standard":"clock timezone IST 5 30"
                                     },
                                     "+0545":{
                                         "daylight":"",
-                                        "standard":"clock timezone NPT +5 45"
+                                        "standard":"clock timezone NPT 5 45"
                                     },
                                     "+0600":{
                                         "daylight":"",
-                                        "standard":"clock timezone BST +6"
+                                        "standard":"clock timezone BST 6 0"
                                     },
                                     "+0630":{
                                         "daylight":"",
-                                        "standard":"clock timezone MMT +6 30"
+                                        "standard":"clock timezone MMT 6 30"
                                     },
                                     "+0700":{
                                         "daylight":"",
-                                        "standard":"clock timezone ICT +7"
+                                        "standard":"clock timezone ICT 7 0"
                                     },
                                     "+0800":{
                                         "daylight":"",
-                                        "standard":"clock timezone HKT +8"
+                                        "standard":"clock timezone HKT 8 0"
                                     },
                                     "+0900":{
                                         "daylight":"",
-                                        "standard":"clock timezone KST +9"
+                                        "standard":"clock timezone KST 9 0"
                                     },
                                     "+1000":{
                                         "daylight":"",
-                                        "standard":"clock timezone VLAT +10"
+                                        "standard":"clock timezone VLAT 10 0"
                                     },
                                     "+1100":{
                                         "daylight":"",
-                                        "standard":"clock timezone SRET +11"
+                                        "standard":"clock timezone SRET 11 0"
                                     },
                                     "+1200":{
                                         "daylight":"",
-                                        "standard":"clock timezone ANAT +12"
+                                        "standard":"clock timezone ANAT 12 0"
                                     }
                                 },
                                 "Atlantic": {
                                     "-0000":{
-                                        "daylight":"clock summer-time BST recurring last Sun Mar 1:00 last Sun Oct 2:00",
-                                        "standard":"clock timezone GMT"
+                                        "daylight":"clock summer-time BST last Sunday March 1:00 last Sunday October 2:00 60",
+                                        "standard":"clock timezone GMT 0 0"
                                     },
                                     "-0400":{
-                                        "daylight":"clock summer-time CEST recurring last Sun Mar 2:00 last Sun Oct 3:00",
-                                        "standard":"clock timezone CET +1"
+                                        "daylight":"clock summer-time CEST last Sunday March 2:00 last Sunday October 3:00 60",
+                                        "standard":"clock timezone CET 1 0"
                                     },
                                     "-0300":{
-                                        "daylight":"clock summer-time EEST recurring last Sun Mar 3:00 last Sun Oct 4:00",
-                                        "standard":"clock timezone EET +2"
+                                        "daylight":"clock summer-time EEST last Sunday March 3:00 last Sunday October 4:00 60",
+                                        "standard":"clock timezone EET 2 0"
                                     },
                                     "-0200":{
                                         "daylight":"",
-                                        "standard":"clock timezone MSK +3"
+                                        "standard":"clock timezone MSK 3 0"
                                     },
                                     "-0100":{
-                                        "daylight":"clock summer-time AZOT recurring last Sun Mar 0:00 last Sun Oct 0:00",
-                                        "standard":"clock timezone AZOST 0"
+                                        "daylight":"clock summer-time AZOT last Sunday March 0:00 last Sunday October 0:00 60",
+                                        "standard":"clock timezone AZOST 0 0"
                                     },
                                     "+0000":{
-                                        "daylight":"clock summer-time WEST recurring last Sun Mar 0:00 last Sun Oct 0:00",
-                                        "standard":"clock timezone WET 0"
+                                        "daylight":"clock summer-time WEST last Sunday March 0:00 last Sunday October 0:00 60",
+                                        "standard":"clock timezone WET 0 0"
                                     }
                                 },
                                 "Australia": {
                                     "+0800":{
                                         "daylight":"",
-                                        "standard":"clock timezone AWST +8"
+                                        "standard":"clock timezone AWST 8 0"
                                     },
                                     "+0930":{
-                                        "daylight":"clock summer-time LHDT recurring 1 Sun Oct 2:00 1 Sun Apr 3:00",
-                                        "standard":"clock timezone LHST +9 30"
+                                        "daylight":"clock summer-time LHDT 1 Sunday October 2:00 1 Sunday April 3:00 60",
+                                        "standard":"clock timezone LHST 9 30"
                                     },
                                     "+1000":{
-                                        "daylight":"clock summer-time AEDT recurring 1 Sun Oct 2:00 1 Sun Apr 3:00",
-                                        "standard":"clock timezone AEST +10"
+                                        "daylight":"clock summer-time AEDT 1 Sunday October 2:00 1 Sunday April 3:00 60",
+                                        "standard":"clock timezone AEST 10 0"
                                     },
                                     "+1030":{
-                                        "daylight":"clock summer-time ACDT recurring 1 Sun Oct 2:00 1 Sun Apr 3:00",
-                                        "standard":"clock timezone ACST +10 30"
+                                        "daylight":"clock summer-time ACDT 1 Sunday October 2:00 1 Sunday April 3:00 60",
+                                        "standard":"clock timezone ACST 10 30"
                                     },
                                     "+1100":{
                                         "daylight":"",
-                                        "standard":"clock timezone VUT +11"
+                                        "standard":"clock timezone VUT 11"
                                     }
                                 },
                                 "CentralAmerica": {
                                     "-0800":{
-                                        "daylight":"clock summer-time PDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone PST -8"
+                                        "daylight":"clock summer-time PDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone PST -8 0"
                                     },
                                     "-0700":{
-                                        "daylight":"clock summer-time MDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone MST -7"
+                                        "daylight":"clock summer-time MDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone MST -7 0"
                                     },
                                     "-0600":{
-                                        "daylight":"clock summer-time CDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone CST -6"
+                                        "daylight":"clock summer-time CDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone CST -6 0"
                                     },
                                     "-0500":{
-                                        "daylight":"clock summer-time EDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone EST -5"
+                                        "daylight":"clock summer-time EDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone EST -5 0"
                                     },
                                     "-0400":{
                                         "daylight":"",
-                                        "standard":"clock timezone AST -4"
+                                        "standard":"clock timezone AST -4 0"
                                     },
                                     "-0300":{
-                                        "daylight":"clock summer-time PMDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone PMST -3"
+                                        "daylight":"clock summer-time PMDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone PMST -3 0"
                                     }
                                 },
                                 "Europe": {
                                     "+0000":{
-                                        "daylight":"clock summer-time BST recurring last Sun Mar 1:00 last Sun Oct 2:00",
+                                        "daylight":"clock summer-time BST last Sunday March 1:00 last Sunday October 2:00 60",
                                         "standard":"clock timezone GMT"
                                     },
                                     "+0100":{
-                                        "daylight":"clock summer-time CEST recurring last Sun Mar 2:00 last Sun Oct 3:00",
-                                        "standard":"clock timezone CET +1"
+                                        "daylight":"clock summer-time CEST last Sunday March 2:00 last Sunday October 3:00 60",
+                                        "standard":"clock timezone CET 1 0"
                                     },
                                     "+0200":{
-                                        "daylight":"clock summer-time EEST recurring last Sun Mar 3:00 last Sun Oct 4:00",
-                                        "standard":"clock timezone EET +2"
+                                        "daylight":"clock summer-time EEST last Sunday March 3:00 last Sunday October 4:00 60",
+                                        "standard":"clock timezone EET 2 0"
                                     },
                                     "+0300":{
                                         "daylight":"",
-                                        "standard":"clock timezone MSK +3"
+                                        "standard":"clock timezone MSK 3 0"
                                     },
                                     "+0400":{
                                         "daylight":"",
-                                        "standard":"clock timezone SAMT +4"
+                                        "standard":"clock timezone SAMT 4 0"
                                     }
                                 },
                                 "Indian": {
                                     "+0400":{
                                         "daylight":"",
-                                        "standard":"clock timezone MUS +4"
+                                        "standard":"clock timezone MUS 4 0"
                                     },
                                     "+0500":{
                                         "daylight":"",
-                                        "standard":"clock timezone TFT +5"
+                                        "standard":"clock timezone TFT 5 0"
                                     },
                                     "+0600":{
                                         "daylight":"",
-                                        "standard":"clock timezone IOT +6"
+                                        "standard":"clock timezone IOT 6 0"
                                     },
                                     "+0630":{
                                         "daylight":"",
-                                        "standard":"clock timezone CCT +6 30"
+                                        "standard":"clock timezone CCT 6 30"
                                     },
                                     "+0700":{
                                         "daylight":"",
-                                        "standard":"clock timezone CXT +7"
+                                        "standard":"clock timezone CXT 7 0"
                                     }
                                 },
                                 "NorthAmerica": {
                                     "-0900":{
-                                        "daylight":"clock summer-time AKDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone AKST -9"
+                                        "daylight":"clock summer-time AKDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone AKST -9 0"
                                     },
                                     "-0800":{
-                                        "daylight":"clock summer-time PDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone PST -8"
+                                        "daylight":"clock summer-time PDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone PST -8 0"
                                     },
                                     "-0700":{
-                                        "daylight":"clock summer-time MDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone MST -7"
+                                        "daylight":"clock summer-time MDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone MST -7 0"
                                     },
                                     "-0600":{
-                                        "daylight":"clock summer-time CDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone CST -6"
+                                        "daylight":"clock summer-time CDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone CST -6 0"
                                     },
                                     "-0500":{
-                                        "daylight":"clock summer-time EDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone EST -5"
+                                        "daylight":"clock summer-time EDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone EST -5 0"
                                     },
                                     "-0400":{
-                                        "daylight":"clock summer-time ADT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
-                                        "standard":"clock timezone AST -4"
+                                        "daylight":"clock summer-time ADT 2 Sunday March 2:00 1 Sunday November 2:00 60",
+                                        "standard":"clock timezone AST -4 0"
                                     },
                                     "-0330":{
-                                        "daylight":"clock summer-time NDT recurring 2 Sun Mar 2:00 1 Sun Nov 2:00",
+                                        "daylight":"clock summer-time NDT 2 Sunday March 2:00 1 Sunday November 2:00 60",
                                         "standard":"clock timezone NFT -3 30"
                                     },
                                     "-0100":{
                                         "daylight":"",
-                                        "standard":"clock timezone EGT -1"
+                                        "standard":"clock timezone EGT -1 0"
                                     },
                                     "+0000":{
                                         "daylight":"",
-                                        "standard":"clock timezone GMT 0"
+                                        "standard":"clock timezone GMT 0 0"
                                     }
                                 },
                                 "Pacific": {
                                     "-1100":{
                                         "daylight":"",
-                                        "standard":"clock timezone BST -11"
+                                        "standard":"clock timezone BST -11 0"
                                     },
                                     "-1000":{
                                         "daylight":"",
-                                        "standard":"clock timezone HST -10"
+                                        "standard":"clock timezone HST -10 0"
                                     },
                                     "-0930":{
                                         "daylight":"",
@@ -3452,43 +3440,43 @@
                                     },
                                     "-0900":{
                                         "daylight":"",
-                                        "standard":"clock timezone GAMT -9"
+                                        "standard":"clock timezone GAMT -9 0"
                                     },
                                     "-0800":{
                                         "daylight":"",
-                                        "standard":"clock timezone PST -8"
+                                        "standard":"clock timezone PST -8 0"
                                     },
                                     "-0600":{
                                         "daylight":"",
-                                        "standard":"clock timezone GALT -6"
+                                        "standard":"clock timezone GALT -6 0"
                                     },
                                     "-0500":{
-                                        "daylight":"clock summer-time EADT recurring 1 Sun Oct 2:00 1 Sun Apr 3:00",
-                                        "standard":"clock timezone EAST -6"
+                                        "daylight":"clock summer-time EADT 1 Sunday October 2:00 1 Sunday April 3:00 60",
+                                        "standard":"clock timezone EAST -6 0"
                                     },
                                     "+0900":{
                                         "daylight":"",
-                                        "standard":"clock timezone PWT +9"
+                                        "standard":"clock timezone PWT 9 0"
                                     },
                                     "+1000":{
                                         "daylight":"",
-                                        "standard":"clock timezone GUT +10"
+                                        "standard":"clock timezone GUT 10 0"
                                     },
                                     "+1100":{
                                         "daylight":"",
-                                        "standard":"clock timezone PONT +11"
+                                        "standard":"clock timezone PONT 11 0"
                                     },
                                     "+1200":{
                                         "daylight":"",
-                                        "standard":"clock timezone FJI +12"
+                                        "standard":"clock timezone FJI 12 0"
                                     },
                                     "+1300":{
                                         "daylight":"",
-                                        "standard":"clock timezone WST +13"
+                                        "standard":"clock timezone WST 13 0"
                                     },
                                     "+1400":{
                                         "daylight":"",
-                                        "standard":"clock timezone LINT +14"
+                                        "standard":"clock timezone LINT 14 0"
                                     }
                                 },
                                 "SouthAmerica": {
@@ -3524,7 +3512,7 @@
                                 "type": "string",
                                 "minimum": 5,
                                 "maximum": 16,
-                                "pattern": "^eth1/[\\d]{1,3}(-[\\d]{1,3})?$",
+                                "pattern": "^eth1/([\\d]{1,3}/)?[\\d]{1,3}([(,|\\-)\\d{1,3}]+)?$",
                                 "x-omitempty": true
                             }
                         }

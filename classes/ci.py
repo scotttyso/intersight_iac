@@ -1310,7 +1310,7 @@ class storage(object):
         #=====================================================
         #print(kwargs['immDict']['orgs']['terratest'])
         #pargs.item = kwargs['immDict']['orgs']['terratest']['netapp']['cluster'][0]
-        #kwargs, pargs = eval(f"netapp.api(self.type).cluster_init(pargs, **kwargs)")
+        kwargs, pargs = eval(f"netapp.api(self.type).cluster_init(pargs, **kwargs)")
         #kwargs, pargs = eval(f"netapp.api(self.type).{self.type}(pargs, **kwargs)")
         return kwargs, pargs
 
@@ -1423,28 +1423,24 @@ class storage(object):
         #=====================================================
         # Configure Aggregates
         #=====================================================
-        data_svm = '{}'.format(pargs.netapp.data_svm)
-        rootv    = '{}_root'.format(data_svm.replace('-', '_'))
-        ra       = '{}'.format(pargs.netapp.node01)
-        rootagg  = 'aggr0_{}_0'.format(ra.replace('-', '_'))
-        n1       = '{}'.format(pargs.netapp.node01)
-        n2       = '{}'.format(pargs.netapp.node02)
-        agg1     = '{}_1'.format(n1.replace('-', '_'))
-        agg2     = '{}_1'.format(n2.replace('-', '_'))
+        agg1 = deepcopy(pargs.netapp.node01).replace('-', '_') + '_1'
+        agg2 = deepcopy(pargs.netapp.node02).replace('-', '_') + '_1'
         #=====================================================
         # Create Infra SVM
         #=====================================================
-        network = pargs.netapp.inband['network']
-        if ':' in network: ifamily = 'ipv6'
+        if ':' in pargs.inband.network: ifamily = 'ipv6'
         else: ifamily = 'ipv4'
-        prefix = pargs.netapp.inband['prefix']
         polVars = {
-            "aggregates": [ {"name": rootagg}, {"name": agg1}, {"name": agg2} ],
-            "dns":{"domains": pargs.dns_domains, "servers": pargs.dns_servers},
+            "aggregates": [ {"name": agg1}, {"name": agg2} ],
             "name": pargs.netapp.data_svm,
+            "dns":{"domains": pargs.dns_domains, "servers": pargs.dns_servers},
             "routes": [{
-                "destination": {"address":network, "family": ifamily, "netmask": prefix},
-                "gateway": pargs.netapp.inband['gateway'],
+                "destination": {
+                    "address":'0.0.0.0',
+                    "family": ifamily,
+                    "netmask": 0
+                },
+                "gateway": pargs.inband.gateway,
             }]
         }
         for p in pargs.netapp.protocols: polVars.update({p:{"allowed": True, "enabled": True}})
@@ -1460,15 +1456,17 @@ class storage(object):
             elif 'iscsi' == pargs.vconfig['type']: servicePolicy = 'default-data-iscsi'
             elif 'nfs'   == pargs.vconfig['type']: servicePolicy = 'default-data-files'
             elif 'nvme'  == pargs.vconfig['type']: servicePolicy = 'default-data-nvme-tcp'
-            home_port = [f"a0a-{pargs.vconfig['vlan_id']}"]
+            home_port = f"a0a-{pargs.vconfig['vlan_id']}"
             services = 'data_nfs'
+            # data-iscsi,data-nfs,data-cifs,data-flexcache,data-nvme-tcp
+            #"ip": { "address": ip_address, "family": ifamily, "netmask": pargs.vconfig['prefix'] },
             if 'inband' == pargs.vconfig['type'] and x == 1: proceed = False
             else: proceed = True
             if proceed == True:
                 pargs.polVars = {
                     "enabled": True,
                     "dns_zone": pargs.dns_domains[0],
-                    "ip": { "address": ip_address, "family": ifamily, "netmask": pargs.vconfig['prefix'] },
+                    "ip": { "address": ip_address, "netmask": pargs.vconfig['prefix'] },
                     "location": {
                         "auto_revert": True,
                         "failover": "home_port_only",
@@ -1479,20 +1477,23 @@ class storage(object):
                     "scope": "svm",
                     "service_policy": servicePolicy,
                 }
-            else: pargs.polVars = {}
+            if re.search('(iscsi|nvme)', pargs.vconfig['type']):
+                pargs.polVars['location'].pop('auto_revert')
+                pargs.polVars['location'].pop('failover')
             return kwargs, pargs
 
         # Next Section
         polVars['data_interfaces'] = []
-        pargs.letter = {'iscsi':1,'nvme':1}
+        #pargs.letter = {'iscsi':1,'nvme':1}
         for v in pargs.vlans:
             node_count = 1
             for x in range(0,len(pargs.netapp.node_list)):
                 if re.search('(inband|iscsi|nfs|nvme)', v['type']):
                     if re.search('(inband|nfs)', v['type']):
-                        pargs.netapp.intf_name = f"{v['type']}-lif-0{x+1}"
+                        pargs.netapp.intf_name = f"{v['type']}-lif-0{x+1}-a0a-{v['vlan_id']}"
                     elif re.search('(iscsi|nvme)', v['type']):
-                        pargs.netapp.intf_name = f"{v['type']}-lif-0{x+1}{(chr(ord('@')+pargs.letter[v['type']])).lower()}"
+                        #{(chr(ord('@')+pargs.letter[v['type']])).lower()}
+                        pargs.netapp.intf_name = f"{v['type']}-lif-0{x+1}-a0a-{v['vlan_id']}"
                         if node_count == 2: pargs.letter[v['type']] += 1
                         node_count += 1
                     pargs.vconfig = deepcopy(v)
@@ -1510,15 +1511,10 @@ class storage(object):
                         pVars = {
                             "data_protocol": pargs.netapp.data_protocol,
                             "enabled": True,
-                            "dns_zone": pargs.dns_domains[0],
                             "location": {
-                                "home_node": {"name":pargs.netapp.node_list[x]},
                                 "home_port": {"name":i, "node":{"name":pargs.netapp.node_list[x]}},
                             },
                             "name": name,
-                            "node": {"name":pargs.netapp.node_list[x]},
-                            "port": {"name":i, "node":{"name":pargs.netapp.node_list[x]}},
-                            "scope": "svm"
                         }
                         pargs.polVars.append(pVars)
                 return kwargs, pargs
@@ -1544,6 +1540,8 @@ class storage(object):
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
+        pargs.item = kwargs['immDict']['orgs']['terratest']['netapp']['svm']
+        kwargs, pargs = eval(f"netapp.api(self.type).{self.type}(pargs, **kwargs)")
         return kwargs, pargs
 
 
@@ -1605,24 +1603,82 @@ class wizard(object):
         if jDict.get('dhcp_server2'): pargs.dhcp_servers.append(jDict['dhcp_server2'])
         if jDict.get('dns_server2'): pargs.dns_servers.append(jDict['dns_server2'])
         if jDict.get('ntp_server2'): pargs.ntp_servers.append(jDict['ntp_server2'])
+        #==================================
+        # VLANs
+        #==================================
+        pargs.vlans = []
+        for i in kwargs['immDict']['wizard']['vlans']:
+            i = DotMap(deepcopy(i))
+            netwk = '%s' % ipaddress.IPv4Network(i.network, strict=False)
+            vDict = dict(
+                configure = i.configure_network,
+                gateway   = i.network.split('/')[0],
+                name      = i.name,
+                netmask   = ((ipaddress.IPv4Network(netwk)).with_netmask).split('/')[1],
+                network   = netwk,
+                prefix    = i.network.split('/')[1],
+                switch    = i.switch_type,
+                type      = i.vlan_type,
+                vlan_id   = i.vlan_id,
+            )
+            def iprange(xrange):
+                ipsplit = xrange.split('-')
+                ip1 = ipsplit[0]
+                ips = []
+                a = ip1.split('.')
+                for x in range(int(ip1.split('.')[-1]), int(ipsplit[1])+1):
+                    ipaddress = f'{a[0]}.{a[1]}.{a[2]}.{x}'
+                    ips.append(ipaddress)
+                return ips
+            if i.get('controller_range'): vDict.update({'controller':iprange(i.controller_range)})
+            if i.get('pool_range') and re.search('(inband|ooband)', i.vlan_type):
+                vDict.update({'pool':iprange(i.pool_range)})
+            if i.get('server_range'): vDict.update({'server':iprange(i.server_range)})
+            pargs.vlans.append(vDict)
+        pargs.inband = DotMap()
+        pargs.ooband = DotMap()
+        for i in pargs.vlans:
+            i = DotMap(deepcopy(i))
+            if re.search('(inband|ooband)', i.type):
+                pargs[i.type].update(i)
+        pargs.ranges = []
+        for i in kwargs['immDict']['wizard']['ranges']:
+            i = DotMap(deepcopy(i))
+            pargs.ranges.append(dict(
+                configure = i.configure_network,
+                name      = i.name_prefix,
+                vlan_list = i.vlan_range
+            ))
         #=====================================================
         # NetApp Cluster
         #=====================================================
-        jDict      = kwargs['immDict']['wizard']['ontap'][0]
-        pargs.host              = pargs['ooband']['controller'][1]
-        pargs.host              = '64.100.14.23'
-        pargs.hostPrompt        = r'[\w]+::>'
+        jDict      = DotMap(deepcopy(kwargs['immDict']['wizard']['ontap'][0]))
         pargs.netapp            = DotMap()
-        pargs.netapp.banner     = jDict['login_banner']
-        pargs.netapp.cluster    = jDict['cluster_name']
-        pargs.netapp.data_ports = jDict['data_ports'].split(',')
-        pargs.netapp.data_speed = jDict['data_speed']
-        pargs.netapp.fcp_ports  = jDict['fcp_ports'].split(',')
-        pargs.netapp.fcp_speed  = jDict['fcp_speed']
-        pargs.netapp.node01     = jDict['node01']
-        pargs.netapp.node02     = jDict['node02']
-        pargs.netapp.node_list  = [jDict['node01'], jDict['node02']]
+        pargs.netapp.hostPrompt = r'[\w]+::>'
+        pargs.netapp.banner     = jDict.login_banner
+        pargs.netapp.cluster    = jDict.cluster_name
+        pargs.netapp.data_ports = deepcopy(jDict.data_ports).split(',')
+        pargs.netapp.data_speed = jDict.data_speed
+        pargs.netapp.data_svm   = deepcopy(jDict.data_svm)
+        pargs.netapp.fcp_ports  = deepcopy(jDict.fcp_ports).split(',')
+        pargs.netapp.fcp_speed  = jDict.fcp_speed
+        pargs.netapp.node01     = jDict.node01
+        pargs.netapp.node02     = jDict.node02
+        pargs.netapp.node_list  = [deepcopy(jDict.node01), deepcopy(jDict.node02)]
         pargs.netapp.user       = pargs.stguser
+        pargs.host = deepcopy(pargs.netapp.node01)
+        #==================================
+        # Get Disk Information
+        #==================================
+        uri = 'storage/disks'
+        json_data = netapp.get(uri, pargs, **kwargs)
+        pargs.netapp.disk_count = json_data['num_records'] - 1
+        disk_name = json_data['records'][0]['name']
+        uri = f'storage/disks/{disk_name}'
+        json_data = netapp.get(uri, pargs, **kwargs)
+        pargs.netapp.disk_type = json_data['type'].upper()
+        print(f'disk count is {pargs.netapp.disk_count}')
+        print(f'disk type is {pargs.netapp.disk_type}')
         #=====================================================
         # IMM Domain
         #=====================================================
@@ -1632,6 +1688,15 @@ class wizard(object):
         pargs.org     = jDict['organization']
         pargs.serials = [jDict['fabric_a_serial'], jDict['fabric_b_serial']]
         pargs.uplinks = jDict['uplink_ports']
+        ports = jDict['uplink_ports'].split('/')[-1]
+        if '-' in jDict['uplink_ports']:
+            pstart = ports.split('-')[0]
+            plast = ports.split('-')[1]
+            plist = []
+            for x in range(int(pstart),int(plast)+1):
+                plist.append(x)
+            pargs.uplink_list = plist
+        else: pargs.uplink_list = ports.split(',')
         pargs.tags    = kwargs['ezData']['tags']
         kwargs['org'] = pargs.org
         if jDict.get('breakout_speed'): pargs.breakout_speed = jDict['breakout_speed']
@@ -1681,59 +1746,7 @@ class wizard(object):
                 tpm        = i['tpm'],
                 vic_gen    = i['vic_generation']
             ))
-        #==================================
-        # VLANs
-        #==================================
-        pargs.vlans = []
-        for i in kwargs['immDict']['wizard']['vlans']:
-            netwk = '%s' % ipaddress.IPv4Network(i['network'], strict=False)
-            vDict = dict(
-                configure = i['configure_network'],
-                config_l3 = i['configure_l3'],
-                gateway   = i['network'].split('/')[0],
-                name      = i['name'],
-                netmask   = ((ipaddress.IPv4Network(netwk)).with_netmask).split('/')[1],
-                network   = netwk,
-                prefix    = i['network'].split('/')[1],
-                switch    = i['switch_type'],
-                type      = i['vlan_type'],
-                vlan_id   = i['vlan_id'],
-            )
-            def iprange(xrange):
-                ipsplit = xrange.split('-')
-                ip1 = ipsplit[0]
-                ips = []
-                a = ip1.split('.')
-                for x in range(int(ip1.split('.')[-1]), int(ipsplit[1])+1):
-                    ipaddress = f'{a[0]}.{a[1]}.{a[2]}.{x}'
-                    ips.append(ipaddress)
-                return ips
-            if i.get('controller_range'): vDict.update({'controller':iprange(i['controller_range'])})
-            if i.get('pool_range') and re.search('(inband|ooband)', i['vlan_type']):
-                vDict.update({'pool':iprange(i['pool_range'])})
-            if i.get('server_range'): vDict.update({'server':iprange(i['server_range'])})
-            pargs.vlans.append(vDict)
-        pargs.inband = DotMap()
-        pargs.ooband = DotMap()
-        for i in pargs.vlans:
-            if re.search('(inband|ooband)', i['type']):
-                pargs[i['type']]['gateway']    = deepcopy(i['gateway'])
-                pargs[i['type']]['name']       = deepcopy(i['name'])
-                pargs[i['type']]['netmask']    = deepcopy(i['netmask'])
-                pargs[i['type']]['network']    = deepcopy(i['network'])
-                pargs[i['type']]['vlan_id']    = deepcopy(i['vlan_id'])
-                pargs[i['type']]['controller'] = deepcopy(i['controller'])
-                pargs[i['type']]['pool']       = deepcopy(i['pool'])
-            if re.search('(inband)', i['type']):
-                pargs[i['type']]['server'] = deepcopy(i['server'])
-        pargs.ranges = []
-        for i in kwargs['immDict']['wizard']['ranges']:
-            pargs.ranges.append(dict(
-                configure = i['configure_network'],
-                name      = i['name_prefix'],
-                vlan_list = i['vlan_range']
-            ))
-        kwargs, pargs = nxos.nxos.config(self, pargs, **kwargs)
+        #kwargs, pargs = nxos.nxos.config(self, pargs, **kwargs)
         #=====================================================
         # Confirm if Fibre-Channel is in Use
         #=====================================================
@@ -1744,18 +1757,6 @@ class wizard(object):
             pargs.vsans    = [jDict['vsan_a'], jDict['vsan_b']]
             if jDict.get('breakout_speed'): pargs.breakout_speed = jDict['breakout_speed']
             else: pargs.breakout_speed = '32G'
-        #==================================
-        # Get Disk Information
-        #==================================
-        uri = 'storage/disks'
-        json_data = netapp.get(uri, pargs, **kwargs)
-        pargs.netapp.disk_count = json_data['num_records'] - 1
-        disk_name = json_data['records'][0]['name']
-        uri = f'storage/disks/{disk_name}'
-        json_data = netapp.get(uri, pargs, **kwargs)
-        pargs.netapp.disk_type = json_data['type'].upper()
-        print(f'disk count is {pargs.netapp.disk_count}')
-        print(f'disk type is {pargs.netapp.disk_type}')
         #==================================
         # Begin Configuration Creation
         #==================================
@@ -1771,7 +1772,7 @@ class wizard(object):
             for i in pop_list: plist.remove(i)
         pargs.pci_order = 0
         plist = ['autosupport', 'broadcast_domain', 'cluster', 'nodes', 'schedule', 'snmp', 'svm']
-        plist = ['broadcast_domain', 'nodes', 'schedule', 'snmp', 'svm']
+        plist = ['svm']
         for i in plist:
             kwargs, pargs = eval(f"storage(i).{i}(pargs, **kwargs)")
         #plist = ['port']
