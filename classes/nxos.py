@@ -13,10 +13,6 @@ import sys
 import time
 import validating
 
-timezone_countries = {timezone: country 
-    for country, timezones in pytz.country_timezones.items()
-    for timezone in timezones
-}
 class nxos(object):
     def __init__(self, type):
         self.type = type
@@ -29,7 +25,7 @@ class nxos(object):
         # Send Start Notification
         #=====================================================
         validating.begin_section(self.type, 'nxos')
-        nDict = deepcopy(kwargs['immDict']['wizard']['nxos'])
+        time.sleep(2)
         #=====================================================
         # Global Commands
         #=====================================================
@@ -49,32 +45,38 @@ class nxos(object):
             f"ip domain-name {pargs.dns_domains[0]}",
             f"ip domain-lookup",
             f"ntp master 3",
-            f"ntp server {pargs.ntp_servers[0]} use-vrf management",
         ]
-        if len(pargs.ntp_servers) > 1:
-            cmds.append(f"ntp server {pargs.ntp_servers[1]} use-vrf management")
+        for ntp in  pargs.ntp_servers:
+            cmds.append(f"ntp server {ntp} use-vrf management")
         #=====================================================
         # Convert Timezone to NX-OS Commands
         #=====================================================
-        tzDict = kwargs['ezData']['wizard.nxos']['allOf'][1]['properties']
+        tzDict = DotMap(deepcopy(kwargs['ezData']['wizard.nxos']['allOf'][1]['properties']))
         tz = deepcopy(pargs.timezone)
         time_offset = pytz.timezone(tz).localize(datetime.datetime(2023,1,25)).strftime('%z')
         tzr = tz.split('/')[0]
-        if tzr == 'America':
-            country = timezone_countries[tz]
-            if country in tzDict['NorthAmerica']['enum']:
-                cmds.append(tzDict['timezone_map']['NorthAmerica'][time_offset]['standard'])
-                cmds.append(tzDict['timezone_map']['NorthAmerica'][time_offset]['daylight'])
-            elif country in tzDict['SouthAmerica']['enum']:
-                cmds.append(tzDict['timezone_map']['SouthAmerica'][time_offset]['standard'])
-                cmds.append(tzDict['timezone_map']['SouthAmerica'][time_offset]['daylight'])
+        timezone_countries = {timezone: country 
+            for country, timezones in pytz.country_timezones.items()
+            for timezone in timezones
+        }
+        country = timezone_countries[tz]
+        if tzr == 'Etc': cmds.append('clock timezone GMT 0 0')
+        elif tzr == 'America':
+            if country in tzDict.NorthAmerica.enum:
+                cmds.append(tzDict.timezone_map.NorthAmerica[time_offset].standard)
+                cmds.append(tzDict.timezone_map.NorthAmerica[time_offset].daylight)
+            elif country in tzDict.SouthAmerica.enum:
+                cmds.append(tzDict.timezone_map.SouthAmerica[time_offset].standard)
+                cmds.append(tzDict.timezone_map.SouthAmerica[time_offset].daylight)
             else:
-                cmds.append(tzDict['timezone_map']['CentralAmerica'][time_offset]['standard'])
-                cmds.append(tzDict['timezone_map']['CentralAmerica'][time_offset]['daylight'])
-        elif tzr == 'Etc': cmds.append('clock timezone GMT 0')
+                cmds.append(tzDict.timezone_map.CentralAmerica[time_offset].standard)
+                cmds.append(tzDict.timezone_map.CentralAmerica[time_offset].daylight)
+        elif tzDict[tzr].get(country):
+            cmds.append(tzDict.timezone_map[tzr][country].standard)
+            cmds.append(tzDict.timezone_map[tzr][country].daylight)
         else:
-            cmds.append(tzDict['timezone_map'][tzr][time_offset]['standard'])
-            cmds.append(tzDict['timezone_map'][tzr][time_offset]['daylight'])
+            cmds.append(tzDict.timezone_map[tzr][time_offset].standard)
+            cmds.append(tzDict.timezone_map[tzr][time_offset].daylight)
         cmds.extend([
             f"vrf context management",
             f"  ip route 0.0.0.0/0 {pargs.ooband.gateway}",
@@ -370,6 +372,7 @@ class nxos(object):
         # Create Dictionaries
         #=====================================================
         nxdict = DotMap({'ooband': [], 'network': []})
+        nDict  = deepcopy(kwargs['immDict']['wizard']['nxos'])
         for nx in nDict:
             nx = DotMap(nx)
             i  = {
@@ -413,20 +416,18 @@ class nxos(object):
                 pargs.netapp.allowed_vlans = []
                 pargs.ucs.allowed_vlans = []
                 smap = DotMap(nxdict[net][x])
+                cmds = []
                 if smap.type == 'network':
                     cmds = deepcopy(base_commands)
-                cmds = []
-                print(f'\n!!! Starting Configuration on {smap.hostname} !!!\n')
                 #================================
                 # Append VPC Configuration
                 #================================
-                #if smap.configure_vpc == 'True':
-                #    cmds.extend(vpc_config(x, nxdict, smap, pargs))
+                if smap.configure_vpc == 'True':
+                    cmds.extend(vpc_config(x, nxdict, smap, pargs))
                 #================================
                 # Append VLAN Configuration
                 #================================
-                #cmds.extend(vlan_config(x, smap, pargs))
-                vcmds = vlan_config(x, smap, pargs)
+                cmds.extend(vlan_config(x, smap, pargs))
                 #================================
                 # Configure Port-Channels as VPC
                 #================================
@@ -434,7 +435,6 @@ class nxos(object):
                     cmds.extend(add_interfaces(x, smap, pargs, **kwargs))
                 for cmd in cmds:
                     print(cmd)
-                #exit()
                 #================================
                 # Open SSH Session
                 #================================
@@ -461,17 +461,12 @@ class nxos(object):
                 # Send Configuration to Device
                 #=====================================================
                 print(f'\n\n!!! Starting Configuration on {smap.hostname} !!!\n\n')
-                time.sleep(1)
-                count = 0
+                time.sleep(2)
                 child.sendline('config t')
                 child.expect(hostPrompt)
                 for cmd in cmds:
                     child.sendline(cmd)
                     child.expect(hostPrompt)
-                    if count == 20:
-                        time.sleep(1)
-                        count = 0
-                    else: count += 1
                 child.sendline('end')
                 child.expect(hostPrompt)
                 child.sendline('copy run start')
@@ -482,11 +477,8 @@ class nxos(object):
                 host_file.close()
                 os.remove(f'{smap.hostname}.txt')
         child.close()
-        #exit()
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
         validating.end_section(self.type, 'nxos')
         return kwargs, pargs
-
-

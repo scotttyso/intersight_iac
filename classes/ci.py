@@ -1309,9 +1309,10 @@ class storage(object):
         # Return pargs and kwargs
         #=====================================================
         #print(kwargs['immDict']['orgs']['terratest'])
-        #pargs.item = kwargs['immDict']['orgs']['terratest']['netapp']['cluster'][0]
-        kwargs, pargs = eval(f"netapp.api(self.type).cluster_init(pargs, **kwargs)")
-        #kwargs, pargs = eval(f"netapp.api(self.type).{self.type}(pargs, **kwargs)")
+        pargs.item = kwargs['immDict']['orgs']['terratest']['netapp']['cluster'][0]
+        # Comment out for Testing
+        #kwargs, pargs = eval(f"netapp.api(self.type).cluster_init(pargs, **kwargs)")
+        kwargs, pargs = eval(f"netapp.api(self.type).{self.type}(pargs, **kwargs)")
         return kwargs, pargs
 
 
@@ -1650,36 +1651,6 @@ class wizard(object):
                 vlan_list = i.vlan_range
             ))
         #=====================================================
-        # NetApp Cluster
-        #=====================================================
-        jDict      = DotMap(deepcopy(kwargs['immDict']['wizard']['ontap'][0]))
-        pargs.netapp            = DotMap()
-        pargs.netapp.hostPrompt = r'[\w]+::>'
-        pargs.netapp.banner     = jDict.login_banner
-        pargs.netapp.cluster    = jDict.cluster_name
-        pargs.netapp.data_ports = deepcopy(jDict.data_ports).split(',')
-        pargs.netapp.data_speed = jDict.data_speed
-        pargs.netapp.data_svm   = deepcopy(jDict.data_svm)
-        pargs.netapp.fcp_ports  = deepcopy(jDict.fcp_ports).split(',')
-        pargs.netapp.fcp_speed  = jDict.fcp_speed
-        pargs.netapp.node01     = jDict.node01
-        pargs.netapp.node02     = jDict.node02
-        pargs.netapp.node_list  = [deepcopy(jDict.node01), deepcopy(jDict.node02)]
-        pargs.netapp.user       = pargs.stguser
-        pargs.host = deepcopy(pargs.netapp.node01)
-        #==================================
-        # Get Disk Information
-        #==================================
-        uri = 'storage/disks'
-        json_data = netapp.get(uri, pargs, **kwargs)
-        pargs.netapp.disk_count = json_data['num_records'] - 1
-        disk_name = json_data['records'][0]['name']
-        uri = f'storage/disks/{disk_name}'
-        json_data = netapp.get(uri, pargs, **kwargs)
-        pargs.netapp.disk_type = json_data['type'].upper()
-        print(f'disk count is {pargs.netapp.disk_count}')
-        print(f'disk type is {pargs.netapp.disk_type}')
-        #=====================================================
         # IMM Domain
         #=====================================================
         jDict   = kwargs['immDict']['wizard']['imm_domain'][0]
@@ -1701,6 +1672,44 @@ class wizard(object):
         kwargs['org'] = pargs.org
         if jDict.get('breakout_speed'): pargs.breakout_speed = jDict['breakout_speed']
         else: pargs.breakout_speed = '25G'
+        #=====================================================
+        # NetApp Cluster
+        #=====================================================
+        jDict      = DotMap(deepcopy(kwargs['immDict']['wizard']['ontap'][0]))
+        pargs.netapp            = DotMap()
+        pargs.netapp.hostPrompt = r'[\w]+::>'
+        pargs.netapp.banner     = jDict.login_banner
+        pargs.netapp.cluster    = jDict.cluster_name
+        pargs.netapp.data_ports = deepcopy(jDict.data_ports).split(',')
+        pargs.netapp.data_speed = jDict.data_speed
+        pargs.netapp.data_svm   = deepcopy(jDict.data_svm)
+        pargs.netapp.fcp_ports  = deepcopy(jDict.fcp_ports).split(',')
+        pargs.netapp.fcp_speed  = jDict.fcp_speed
+        pargs.netapp.node01     = jDict.node01
+        pargs.netapp.node02     = jDict.node02
+        pargs.netapp.node_list  = [deepcopy(jDict.node01), deepcopy(jDict.node02)]
+        pargs.netapp.user       = pargs.stguser
+        pargs.netapp.protocols  = []
+        for i in pargs.vlans:
+            i = DotMap(deepcopy(i))
+            if re.search('(iscsi|nfs|nvme)', i.type):
+                if 'nvme' in i.type: pargs.netapp.protocols.append('nvme_of')
+                else: pargs.netapp.protocols.append(i.type)
+        if 'fc' in pargs.dtype: pargs.netapp.protocols.append('fcp')
+        pargs.netapp.protocols = numpy.unique(numpy.array(pargs.netapp.protocols))
+        pargs.host = deepcopy(pargs.netapp.node01)
+        #==================================
+        # Get Disk Information
+        #==================================
+        uri = 'storage/disks'
+        json_data = netapp.get(uri, pargs, **kwargs)
+        pargs.netapp.disk_count = json_data['num_records'] - 1
+        disk_name = json_data['records'][0]['name']
+        uri = f'storage/disks/{disk_name}'
+        json_data = netapp.get(uri, pargs, **kwargs)
+        pargs.netapp.disk_type = json_data['type'].upper()
+        print(f'disk count is {pargs.netapp.disk_count}')
+        print(f'disk type is {pargs.netapp.disk_type}')
         #==================================
         # Get Moids for Fabric Switches
         #==================================
@@ -1735,17 +1744,19 @@ class wizard(object):
         #==================================
         pargs.server_profiles = []
         for i in kwargs['immDict']['wizard']['imm_profiles']:
+            i = DotMap(deepcopy(i))
             pargs.server_profiles.append(dict(
-                count      = i['profile_count'],
-                cpu        = i['cpu_vendor'],
-                identifier = i['identifier'],
-                equipment  = i['equipment_type'],
-                gen        = i['generation'],
-                ports      = i['domain_ports'],
-                profile    = i['profile_start'],
-                tpm        = i['tpm'],
-                vic_gen    = i['vic_generation']
+                count      = i.profile_count,
+                cpu        = i.cpu_vendor,
+                identifier = i.identifier,
+                equipment  = i.equipment_type,
+                gen        = i.generation,
+                ports      = i.domain_ports,
+                profile    = i.profile_start,
+                tpm        = i.tpm,
+                vic_gen    = i.vic_generation,
             ))
+        # Comment out for Testing
         #kwargs, pargs = nxos.nxos.config(self, pargs, **kwargs)
         #=====================================================
         # Confirm if Fibre-Channel is in Use

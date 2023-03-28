@@ -1,0 +1,34 @@
+
+Last login time: 3/28/2023 01:28:11
+Unsuccessful login attempts since last login: 1
+r142b-netapp01::> vserver show
+                               Admin      Operational Root
+Vserver     Type    Subtype    State      State       Volume     Aggregate
+----------- ------- ---------- ---------- ----------- ---------- ----------
+RICH        data    default    running    running     RICH_root  r142b_
+                                                                 netapp01_
+                                                                 ct1_1
+r142b-netapp01 
+            admin   -          -          -           -          -
+r142b-netapp01-ct0 
+            node    -          -          -           -          -
+r142b-netapp01-ct1 
+            node    -          -          -           -          -
+4 entries were displayed.
+
+r142b-netapp01::> vserver modify RICH -aggr-list r142b_netapp01_ct0_1,r142b_netapp01_ct1_1
+
+r142b-netapp01::> security login banner modify -vserver r142b-netapp01 -message "Access restricted to authorized users"
+
+r142b-netapp01::> vserver show -vserver RICH -protocols
+
+Vserver        Allowed Protocols           Disallowed Protocols
+-----------    -----------------------     -----------------------
+RICH           nfs, fcp, iscsi, nvme       cifs, ndmp, s3
+
+r142b-netapp01::> vserver add-protocols -protocols fcp,iscsi,nfs,nvme -vserver RICH
+
+r142b-netapp01::> exit
+Goodbye
+
+
