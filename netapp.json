@@ -1,0 +1,378 @@
+[
+    {
+        "aggregates": [
+            {
+                "name": "r142b_netapp01_ct0_1"
+            },
+            {
+                "name": "r142b_netapp01_ct1_1"
+            }
+        ],
+        "name": "RICH",
+        "dns": {
+            "domains": [
+                "rich.ciscolabs.com"
+            ],
+            "servers": [
+                "10.101.128.15",
+                "10.101.128.16"
+            ]
+        },
+        "routes": [
+            {
+                "destination": {
+                    "address": "0.0.0.0",
+                    "netmask": 0
+                },
+                "gateway": "198.18.1.1",
+                "svm": {
+                    "name": "RICH"
+                }
+            }
+        ],
+        "fcp": {
+            "allowed": true,
+            "enabled": true
+        },
+        "iscsi": {
+            "allowed": true,
+            "enabled": true
+        },
+        "nfs": {
+            "allowed": true,
+            "enabled": true
+        },
+        "nvme_of": {
+            "allowed": true,
+            "enabled": true
+        },
+        "data_interfaces": [
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.1.11",
+                    "netmask": "24"
+                },
+                "location": {
+                    "auto_revert": true,
+                    "failover": "home_port_only",
+                    "home_node": {
+                        "name": "r142b-netapp01-ct0"
+                    },
+                    "home_port": {
+                        "name": "a0a-1001",
+                        "node": {
+                            "name": "r142b-netapp01-ct0"
+                        }
+                    }
+                },
+                "name": "inband-lif-01-a0a-1001",
+                "scope": "svm",
+                "service_policy": "default-management"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.1.11",
+                    "netmask": "24"
+                },
+                "location": {
+                    "auto_revert": true,
+                    "failover": "home_port_only",
+                    "home_node": {
+                        "name": "r142b-netapp01-ct0"
+                    },
+                    "home_port": {
+                        "name": "a0a-1001",
+                        "node": {
+                            "name": "r142b-netapp01-ct0"
+                        }
+                    }
+                },
+                "name": "inband-lif-01-a0a-1001",
+                "scope": "svm",
+                "service_policy": "default-management"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.11.11",
+                    "netmask": "24"
+                },
+                "location": {
+                    "home_node": {
+                        "name": "r142b-netapp01-ct0"
+                    },
+                    "home_port": {
+                        "name": "a0a-1011",
+                        "node": {
+                            "name": "r142b-netapp01-ct0"
+                        }
+                    }
+                },
+                "name": "iscsi-lif-01-a0a-1011",
+                "scope": "svm",
+                "service_policy": "default-data-iscsi"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.11.12",
+                    "netmask": "24"
+                },
+                "location": {
+                    "home_node": {
+                        "name": "r142b-netapp01-ct1"
+                    },
+                    "home_port": {
+                        "name": "a0a-1011",
+                        "node": {
+                            "name": "r142b-netapp01-ct1"
+                        }
+                    }
+                },
+                "name": "iscsi-lif-02-a0a-1011",
+                "scope": "svm",
+                "service_policy": "default-data-iscsi"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.12.11",
+                    "netmask": "24"
+                },
+                "location": {
+                    "home_node": {
+                        "name": "r142b-netapp01-ct0"
+                    },
+                    "home_port": {
+                        "name": "a0a-1012",
+                        "node": {
+                            "name": "r142b-netapp01-ct0"
+                        }
+                    }
+                },
+                "name": "iscsi-lif-01-a0a-1012",
+                "scope": "svm",
+                "service_policy": "default-data-iscsi"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.12.12",
+                    "netmask": "24"
+                },
+                "location": {
+                    "home_node": {
+                        "name": "r142b-netapp01-ct1"
+                    },
+                    "home_port": {
+                        "name": "a0a-1012",
+                        "node": {
+                            "name": "r142b-netapp01-ct1"
+                        }
+                    }
+                },
+                "name": "iscsi-lif-02-a0a-1012",
+                "scope": "svm",
+                "service_policy": "default-data-iscsi"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.13.11",
+                    "netmask": "24"
+                },
+                "location": {
+                    "home_node": {
+                        "name": "r142b-netapp01-ct0"
+                    },
+                    "home_port": {
+                        "name": "a0a-1013",
+                        "node": {
+                            "name": "r142b-netapp01-ct0"
+                        }
+                    }
+                },
+                "name": "nvme-lif-01-a0a-1013",
+                "scope": "svm",
+                "service_policy": "default-data-nvme-tcp"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.13.12",
+                    "netmask": "24"
+                },
+                "location": {
+                    "home_node": {
+                        "name": "r142b-netapp01-ct1"
+                    },
+                    "home_port": {
+                        "name": "a0a-1013",
+                        "node": {
+                            "name": "r142b-netapp01-ct1"
+                        }
+                    }
+                },
+                "name": "nvme-lif-02-a0a-1013",
+                "scope": "svm",
+                "service_policy": "default-data-nvme-tcp"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.14.11",
+                    "netmask": "24"
+                },
+                "location": {
+                    "home_node": {
+                        "name": "r142b-netapp01-ct0"
+                    },
+                    "home_port": {
+                        "name": "a0a-1014",
+                        "node": {
+                            "name": "r142b-netapp01-ct0"
+                        }
+                    }
+                },
+                "name": "nvme-lif-01-a0a-1014",
+                "scope": "svm",
+                "service_policy": "default-data-nvme-tcp"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.14.12",
+                    "netmask": "24"
+                },
+                "location": {
+                    "home_node": {
+                        "name": "r142b-netapp01-ct1"
+                    },
+                    "home_port": {
+                        "name": "a0a-1014",
+                        "node": {
+                            "name": "r142b-netapp01-ct1"
+                        }
+                    }
+                },
+                "name": "nvme-lif-02-a0a-1014",
+                "scope": "svm",
+                "service_policy": "default-data-nvme-tcp"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.15.11",
+                    "netmask": "24"
+                },
+                "location": {
+                    "auto_revert": true,
+                    "failover": "home_port_only",
+                    "home_node": {
+                        "name": "r142b-netapp01-ct0"
+                    },
+                    "home_port": {
+                        "name": "a0a-1015",
+                        "node": {
+                            "name": "r142b-netapp01-ct0"
+                        }
+                    }
+                },
+                "name": "nfs-lif-01-a0a-1015",
+                "scope": "svm",
+                "service_policy": "default-data-files"
+            },
+            {
+                "enabled": true,
+                "dns_zone": "rich.ciscolabs.com",
+                "ip": {
+                    "address": "198.18.15.12",
+                    "netmask": "24"
+                },
+                "location": {
+                    "auto_revert": true,
+                    "failover": "home_port_only",
+                    "home_node": {
+                        "name": "r142b-netapp01-ct1"
+                    },
+                    "home_port": {
+                        "name": "a0a-1015",
+                        "node": {
+                            "name": "r142b-netapp01-ct1"
+                        }
+                    }
+                },
+                "name": "nfs-lif-02-a0a-1015",
+                "scope": "svm",
+                "service_policy": "default-data-files"
+            }
+        ],
+        "fcp_interfaces": [
+            {
+                "data_protocol": "fcp",
+                "enabled": true,
+                "location": {
+                    "home_port": {
+                        "name": "1a",
+                        "node": {
+                            "name": "r142b-netapp01-ct0"
+                        }
+                    }
+                },
+                "name": "fcp-lif-01-1a"
+            },
+            {
+                "data_protocol": "fcp",
+                "enabled": true,
+                "location": {
+                    "home_port": {
+                        "name": "1a",
+                        "node": {
+                            "name": "r142b-netapp01-ct1"
+                        }
+                    }
+                },
+                "name": "fcp-lif-02-1a"
+            },
+            {
+                "data_protocol": "fcp",
+                "enabled": true,
+                "location": {
+                    "home_port": {
+                        "name": "1c",
+                        "node": {
+                            "name": "r142b-netapp01-ct0"
+                        }
+                    }
+                },
+                "name": "fcp-lif-01-1c"
+            },
+            {
+                "data_protocol": "fcp",
+                "enabled": true,
+                "location": {
+                    "home_port": {
+                        "name": "1c",
+                        "node": {
+                            "name": "r142b-netapp01-ct1"
+                        }
+                    }
+                },
+                "name": "fcp-lif-02-1c"
+            }
+        ]
+    }
+]

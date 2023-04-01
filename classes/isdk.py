@@ -1,3 +1,4 @@
+from copy import deepcopy
 from intersight.api import access_api
 from intersight.api import adapter_api
 from intersight.api import bios_api
@@ -13,9 +14,11 @@ from intersight.api import fcpool_api
 from intersight.api import iam_api
 from intersight.api import ipmioverlan_api
 from intersight.api import ippool_api
+from intersight.api import iqnpool_api
 from intersight.api import kvm_api
 from intersight.api import macpool_api
 from intersight.api import memory_api
+from intersight.api import network_api
 from intersight.api import networkconfig_api
 from intersight.api import ntp_api
 from intersight.api import organization_api
@@ -50,7 +53,9 @@ print_response_on_fail = True
 fabric_regex = re.compile(
     '(domain|fc_z|flow|link_(ag|co)|multicast|network_(control|group)|port|switch_c|system_q|v(l|s)an[s]?)'
 )
-vnic_regex = re.compile('^((ethernet|fibre_channel)_(adapter|network|qos)|(l|s)an_connectivity|vhba|vnic)')
+vnic_regex = re.compile(
+    '^((ethernet|fibre_channel)_(adapter|network|qos)|iscsi_(adapter|boot|static_target)|(l|s)an_connectivity|vhbas|vnics)'
+)
 
 class api(object):
     def __init__(self, type):
@@ -59,10 +64,10 @@ class api(object):
     #=====================================================
     # Process API Results
     #=====================================================
-    def api_results(self, pargs, apiQuery):
+    def apiResults(self, pargs, apiResults):
         apiDict = {}
-        if apiQuery.get('Results'):
-            for i in apiQuery['Results']:
+        if apiResults.get('Results'):
+            for i in apiResults['Results']:
                 iMoid = i['Moid']
                 if i.get('VlanId'): iName = i['VlanId']
                 elif i.get('PcId'): iName = i['PcId']
@@ -76,8 +81,15 @@ class api(object):
                     apiDict.update({i['PortPolicy']['Moid']:{iName:{'Moid':iMoid}}})
                 else: apiDict.update({iName:{'Moid':iMoid}})
                 if i.get('Model'):
-                    apiDict[iName]['Model'] = i['Model']
-                    apiDict[iName]['RegisteredDevice'] = i['RegisteredDevice']['Moid']
+                    apiDict[iName]['model'] = i['Model']
+                    apiDict[iName]['registered_device'] = i['RegisteredDevice']['Moid']
+                    if i.get('ChassisId'):
+                        apiDict[iName]['id'] = i['ChassisId']
+                        if i.get('Blades'):
+                            apiDict[iName]['blades'] = []
+                            for b in i['Blades']:
+                                apiDict[iName]['blades'].append({'moid': b['Moid'],'object_type': b['ObjectType']})
+                    if i.get('SourceObjectType'): apiDict[iName]['object_type'] = i['SourceObjectType']
                 if i.get('Profiles'):
                     apiDict[iName]['profiles'] = []
                     for x in i['Profiles']:
@@ -285,21 +297,24 @@ class api(object):
             elif 'serial_number' == pargs.policy:
                 if 'server' == pargs.purpose:
                     apiHandle = compute_api.ComputeApi(apiClient)
-                    apiCall   = apiHandle.get_compute_physical_summary_list
+                    if pargs.apiMethod == 'by_moid': apiCall = apiHandle.get_compute_physical_summary_by_moid
+                    elif pargs.apiMethod == 'get':   apiCall = apiHandle.get_compute_physical_summary_list
                 elif 'chassis' == pargs.purpose:
                     apiHandle = equipment_api.EquipmentApi(apiClient)
-                    apiCall   = apiHandle.get_equipment_chassis_list
+                    if pargs.apiMethod == 'by_moid': apiCall = apiHandle.get_equipment_chassis_by_moid
+                    elif pargs.apiMethod == 'get':   apiCall = apiHandle.get_equipment_chassis_list
                 elif 'domain' == pargs.purpose:
-                    apiHandle = fabric_api.FabricApi(apiClient)
-                    apiCall   = apiHandle.get_fabric_element_identity_list
+                    apiHandle = network_api.NetworkApi(apiClient)
+                    if pargs.apiMethod == 'by_moid': apiCall = apiHandle.get_network_element_by_moid
+                    elif pargs.apiMethod == 'get':   apiCall = apiHandle.get_network_element_list
         elif re.search(vnic_regex, pargs.policy):
             apiHandle = vnic_api.VnicApi(apiClient)
-            if 'vnic' in pargs.policy:
+            if 'vnics' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_vnic_eth_if_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_vnic_eth_if_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_vnic_eth_if
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_vnic_eth_if
-            elif 'vhba' in pargs.policy:
+            elif 'vhbas' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_vnic_fc_if_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_vnic_fc_if_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_vnic_fc_if
@@ -334,6 +349,21 @@ class api(object):
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_vnic_fc_qos_policy_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_vnic_fc_qos_policy
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_vnic_fc_qos_policy
+            elif 'iscsi_adapter' in pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_vnic_iscsi_adapter_policy_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_vnic_iscsi_adapter_policy_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_vnic_iscsi_adapter_policy
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_vnic_iscsi_adapter_policy
+            elif 'iscsi_boot' in pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_vnic_iscsi_boot_policy_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_vnic_iscsi_boot_policy_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_vnic_iscsi_boot_policy
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_vnic_iscsi_boot_policy
+            elif 'iscsi_static_target' in pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_vnic_iscsi_static_target_policy_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_vnic_iscsi_static_target_policy_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_vnic_iscsi_static_target_policy
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_vnic_iscsi_static_target_policy
             elif 'lan_connectivity' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_vnic_lan_connectivity_policy_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_vnic_lan_connectivity_policy_list
@@ -395,6 +425,12 @@ class api(object):
             elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_ipmioverlan_policy_list
             elif pargs.apiMethod == 'create': apiCall = apiHandle.create_ipmioverlan_policy
             elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_ipmioverlan_policy
+        elif 'iqn' == pargs.policy:
+            apiHandle = iqnpool_api.IqnpoolApi(apiClient)
+            if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_iqnpool_pool_by_moid
+            elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_iqnpool_pool_list
+            elif pargs.apiMethod == 'create': apiCall = apiHandle.create_iqnpool_pool
+            elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_iqnpool_pool
         elif re.search('(iamrole|ldap(_group)?|local(_user)?|user_role)', pargs.policy):
             apiHandle = iam_api.IamApi(apiClient)
             if 'iamrole' == pargs.policy:
@@ -543,17 +579,15 @@ class api(object):
         # Setup API Parameters
         #=====================================================
         if pargs.apiMethod == 'by_moid': pargs.apiMethod = 'get_by_moid'
-        if 'get' in pargs.apiMethod:
+        if 'get' == pargs.apiMethod:
             if 'organization' in pargs.policy: apiArgs = dict(_preload_content = False)
             elif not pargs.get('apiQuery'):
                 if re.search('(vlans|vsans)', pargs.policy):
                     names = ", ".join(map(str, pargs.names))
                 else: names = "', '".join(pargs.names).strip("', '")
                 apiQuery = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
-                if 'user_role' == pargs.policy:
-                    apiQuery = f"Name in ('{names}') and Type eq 'IMC'"
-                elif 'serial_number' == pargs.policy:
-                    apiQuery = f"Serial in ('{names}')"
+                if 'user_role' == pargs.policy: apiQuery = f"Name in ('{names}') and Type eq 'IMC'"
+                elif 'serial_number' == pargs.policy: apiQuery = f"Serial in ('{names}')"
                 elif 'switch' == pargs.policy:
                     apiQuery = f"Name in ('{names}') and SwitchClusterProfile.Moid eq '{pargs.pmoid}'"
                 elif 'vhbas' == pargs.policy:
@@ -573,6 +607,7 @@ class api(object):
         #=====================================================
         # Perform the apiCall
         #=====================================================
+        #print(json.dumps(pargs.apiBody, indent=4))
         try:
             if 'get_by_moid' in pargs.apiMethod: apiResults = json.loads(apiCall(pargs.pmoid, **apiArgs).data)
             elif 'get' in pargs.apiMethod: apiResults = json.loads(apiCall(**apiArgs).data)
@@ -588,12 +623,12 @@ class api(object):
         #=====================================================
         if re.search('(get_by_moid|patch)', pargs.apiMethod): kwargs['pmoid'] = pargs.pmoid
         elif 'create' in pargs.apiMethod: kwargs['pmoid'] = apiResults['Moid']
-        else: kwargs['pmoids'] = api('results').api_results(pargs, apiResults)
+        else: kwargs['pmoids'] = api('results').apiResults(pargs, apiResults)
         if re.search('(create|patch)', pargs.apiMethod):
             if pargs.apiBody.get('name'):
                 kwargs['pmoids'].update({pargs.apiBody.get('name'):kwargs['pmoid']})
-        if 'get_by_moid' in pargs.apiMethod:
-            kwargs['results'] = apiResults
+        if 'get_by_moid' in pargs.apiMethod: kwargs['results'] = deepcopy(apiResults)
+        elif 'get' in pargs.apiMethod: kwargs['results'] = deepcopy(apiResults['Results'])
         #=====================================================
         # Use for Viewing apiCall Results
         #=====================================================
@@ -620,4 +655,4 @@ class api(object):
         #=====================================================
         kwargs = api(self.type).calls(pargs, **kwargs)
         kwargs['org_moids'] = kwargs['pmoids']
-        return kwargs
+        return kwargs, pargs

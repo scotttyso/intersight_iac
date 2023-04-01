@@ -8,10 +8,11 @@ intersight
 ipaddress
 jinja2
 requests
-simplejson
-stdiomask
+numpy
 openpyxl
 ordered_set
 phonenumbers
 pytz
+simplejson
+stdiomask
 validators

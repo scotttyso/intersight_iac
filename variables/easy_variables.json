@@ -652,24 +652,24 @@
                                         "description": "Pre-Defined BIOS Templates with recommended policy parameters.",
                                         "enum":[
                                             "DSS",
-                                            "DSS_tpm",
+                                            "DSS-tpm",
                                             "HPC",
-                                            "HPC_tpm",
+                                            "HPC-tpm",
                                             "Java",
-                                            "Java_tpm",
-                                            "M6_analytical_DB_tpm",
-                                            "M6_Data_tpm",
-                                            "M6_HPC_tpm",
-                                            "M6_relational_DB_tpm",
-                                            "M6_Virtualization_tpm",
+                                            "Java-tpm",
+                                            "M6-analytical_DB-tpm",
+                                            "M6-Data-tpm",
+                                            "M6-HPC-tpm",
+                                            "M6-relational-DB-tpm",
+                                            "M6-virtualization-tpm",
                                             "OLTP",
-                                            "OLTP_tpm",
-                                            "Virtualization",
-                                            "Virtualization_tpm",
-                                            "Windows",
-                                            "Windows_tpm"
+                                            "OLTP-tpm",
+                                            "M5-virtualization",
+                                            "M5-virtualization-tpm",
+                                            "windows",
+                                            "windows-tpm"
                                         ],
-                                        "default": "M6_Virtualization_tpm"
+                                        "default": "M6-virtualization-tpm"
                                     }
                                 },
                                 "boot.PrecisionPolicy":{
@@ -1563,7 +1563,14 @@
                                 },
                                 "object_type":"bios.Policy",
                                 "template_tuning":{
-                                    "M6_analytical_DB":{
+                                    "M5-virtualization":{
+                                        "cpu_power_management":"custom",
+                                        "processor_c1e":"disabled",
+                                        "processor_c3report":"disabled",
+                                        "processor_c6report":"disabled",
+                                        "processor_cstate":"disabled"
+                                    },
+                                    "M6-analytical-DB":{
                                         "cpu_perf_enhancement":"Auto",
                                         "energy_efficient_turbo":"enabled",
                                         "intel_virtualization_technology":"disabled",
@@ -1573,7 +1580,7 @@
                                         "processor_c6report":"enabled",
                                         "work_load_config":"Balanced"
                                     },
-                                    "M6_HPC":{
+                                    "M6-HPC":{
                                         "cpu_perf_enhancement":"Auto",
                                         "intel_virtualization_technology":"disabled",
                                         "intel_vt_for_directed_io":"disabled",
@@ -1587,7 +1594,7 @@
                                         "upi_power_management":"enabled",
                                         "work_load_config":"Balanced"
                                     },
-                                    "M6_relational_DB":{
+                                    "M6-relational-DB":{
                                         "cpu_perf_enhancement":"Auto",
                                         "llc_alloc":"disabled",
                                         "llc_prefetch":"disabled",
@@ -1599,7 +1606,7 @@
                                         "xpt_prefetch":"enabled",
                                         "upi_power_management":"enabled"
                                     },
-                                    "M6_Virtualization":{
+                                    "M6-virtualization":{
                                         "cpu_perf_enhancement":"Auto",
                                         "energy_efficient_turbo":"enabled",
                                         "processor_c1e":"enabled",
@@ -1612,13 +1619,6 @@
                                     "tpm_disabled":{
                                         "tpm_control":"disabled",
                                         "tpm_support":"disabled"
-                                    },
-                                    "Virtualization":{
-                                        "cpu_power_management":"custom",
-                                        "processor_c1e":"disabled",
-                                        "processor_c3report":"disabled",
-                                        "processor_c6report":"disabled",
-                                        "processor_cstate":"disabled"
                                     }
                                 }
                             },
@@ -1800,11 +1800,13 @@
                             "fc_zone": {
                                 "key_map": {
                                     "description":"description",
-                                    "targets":"fc_target_members",
                                     "fc_target_zoning_type":"fc_target_zoning_type",
                                     "name":"name",
-                                    "tags":"tags"
-                                }
+                                    "tags":"tags",
+                                    "targets":"fc_target_members"
+                                },
+                                "object_name":"fc_zone_policies",
+                                "object_type":"fabric.FcZonePolicy"
                             },
                             "FIAttached": {
                                 "description": "List of Policies for an FIAttached Profile.",
@@ -1914,6 +1916,42 @@
                                     "tags":"tags"
                                 },
                                 "object_type":"ipmioverlan.Policy"
+                            },
+                            "iscsi_adapter": {
+                                "key_map": {
+                                    "description":"description",
+                                    "dhcp_timeout":"dhcp_timeout",
+                                    "lun_busy_retry_count":"lun_busy_retry_count",
+                                    "name":"name",
+                                    "tags":"tags",
+                                    "tcp_connection_timeout":"connection_time_out"
+                                }
+                            },
+                            "iscsi_boot": {
+                                "key_map": {
+                                    "description":"description",
+                                    "dhcp_vendor_id_iqn":"auto_targetvendor_name",
+                                    "initiator_ip_source":"initiator_ip_source",
+                                    "name":"name",
+                                    "tags":"tags",
+                                    "target_source_type":"target_source_type"
+                                },
+                                "object_type":"vnic.IscsiBootPolicy"
+                            },
+                            "iscsi_static_target": {
+                                "key_map": {
+                                    "description":"description",
+                                    "ip_address":"ip_address",
+                                    "luns":"lun",
+                                    "port":"port",
+                                    "name":"name",
+                                    "tags":"tags",
+                                    "target_name":"target_name"
+                                },
+                                "lun_map": {
+                                    "bootable":"bootable",
+                                    "lun_id":"lun_id"
+                                }
                             },
                             "lan_connectivity": {
                                 "key_map": {
@@ -2375,6 +2413,7 @@
                                     "ethernet_network_control_policy",
                                     "ethernet_network_group_policy",
                                     "ethernet_qos_policy",
+                                    "iscsi_boot_policies",
                                     "mac",
                                     "vnics"
                                 ]
@@ -2392,7 +2431,8 @@
                                 "key_map": {
                                     "fcoe_vlan_id":"fcoe_vlan",
                                     "name":"name",
-                                    "vsan_id":"vsan_id"
+                                    "vsan_id":"vsan_id",
+                                    "vsan_scope":"vsan_scope"
                                 }
                             }
                         }
@@ -2418,6 +2458,15 @@
                                     "assignment_order":"assignment_order",
                                     "description":"description",
                                     "name":"name",
+                                    "tags":"tags"
+                                }
+                            },
+                            "iqn": {
+                                "key_map": {
+                                    "assignment_order":"assignment_order",
+                                    "description":"description",
+                                    "name":"name",
+                                    "prefix":"prefix",
                                     "tags":"tags"
                                 }
                             },
@@ -2720,7 +2769,7 @@
                                 "default": "32G",
                                 "x-omitempty": true
                             },
-                            "fc_ports": {
+                            "fcp_ports": {
                                 "description": "List of ports for the Ethernet Uplink Port-Channel.",
                                 "type": "string",
                                 "minimum": 5,
@@ -2728,11 +2777,22 @@
                                 "pattern": "^fc1/([\\d]{1,3}/)?[\\d]{1,3}([(,|\\-)\\d{1,3}]+)?$",
                                 "x-omitempty": true
                             },
+                            "fcp_speed": {
+                                "description": "Fibre-Channel Speed.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "16Gbps",
+                                    "32Gbps"
+                                ],
+                                "default": "32Gbps",
+                                "x-omitempty": true
+                            },
                             "optional_args": {
                                 "breakout_speed": ""
                             },
                             "required_args": {
-                                "fc_ports": "",
+                                "fcp_ports": "",
+                                "fcp_speed": "",
                                 "switch_mode": "",
                                 "vsan_a": "",
                                 "vsan_b": ""
@@ -2870,23 +2930,23 @@
                                 "equipment_type": "",
                                 "generation": "",
                                 "identifier": "",
-                                "profile_count": "",
                                 "profile_start": "",
+                                "suffix_digits": "",
                                 "tpm": "",
                                 "vic_generation": ""
-                            },
-                            "profile_count": {
-                                "description": "Number of Profiles in the Chassis.",
-                                "type": "integer",
-                                "format": "int64",
-                                "minimum": 1,
-                                "maximum": 8,
-                                "default": 3,
-                                "x-omitempty": true
                             },
                             "profile_start": {
                                 "description": "Name of the First Profile for the Chassis.",
                                 "type": "hostname",
+                                "x-omitempty": true
+                            },
+                            "suffix_digits": {
+                                "description": "Number of digits in the suffix.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 3,
+                                "default": 2,
                                 "x-omitempty": true
                             },
                             "tpm": {

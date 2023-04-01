@@ -132,7 +132,7 @@ class nxos(object):
                                 if 'breakout module 1' in y:
                                     if f'port {p1[1]}' in y: btrue = True
                             if btrue == False:
-                                speed = deepcopy(pargs.breakout_speed).lower()
+                                speed = deepcopy(pargs.breakout_speed.eth).lower()
                                 cmds.append(f"interface breakout module 1 port {p1[1]} map {speed}-4x")
                                 cmds.append('!')
                         else: pprefix = p1[0]

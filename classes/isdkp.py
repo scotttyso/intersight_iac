@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dotmap import DotMap
 import ezfunctions
 import isdk
 import json
@@ -9,7 +10,7 @@ import time
 import validating
 
 serial_regex = re.compile('^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\dA-Z]{4}$')
-part1 = '(ethernet|fibre_channel)_qos|fc_zone|flow_control|link_aggregation'
+part1 = '(ethernet|fibre_channel)_qos|fc_zone|flow_control|iscsi_adapter|link_aggregation'
 part2 = 'multicast|ntp|port|power|serial_over_lan|thermal|virtual_kvm'
 skip_regex = re.compile(f'^({part1}|{part2})$')
 #=======================================================
@@ -23,6 +24,7 @@ class api_policies(object):
     # BIOS Policy Modification
     #=======================================================
     def bios(self, apiBody, item, pargs, **kwargs):
+        pargs    = pargs
         jsonVars = kwargs['ezData']['policies']['allOf'][1]['properties']['bios']['template_tuning']
         for k, v in apiBody.items():
             if type(v) == int or type(v) == float: apiBody[k] = str(v)
@@ -41,6 +43,7 @@ class api_policies(object):
     # Boot Order Policy Modification
     #=======================================================
     def boot_order(self, apiBody, item, pargs, **kwargs):
+        pargs    = pargs
         jsonVars = kwargs['ezData']['policies']['allOf'][1]['properties']['boot_order']
         if item.get('boot_devices'):
             apiBody['boot_devices'] = []
@@ -65,6 +68,7 @@ class api_policies(object):
     # Ethernet Adapter Policy Modification
     #=======================================================
     def ethernet_adapter(self, apiBody, item, pargs, **kwargs):
+        pargs    = pargs
         jsonVars = kwargs['ezData']['policies']['allOf'][1]['properties']['ethernet_adapter']['template_tuning']
         if item.get('adapter_template'):
             template = item['adapter_template']
@@ -75,6 +79,7 @@ class api_policies(object):
     # Ethernet Network Control Policies Policy Modification
     #=======================================================
     def ethernet_network_control(self, apiBody, item, pargs, **kwargs):
+        pargs    = pargs
         jsonVars = kwargs['ezData']['policies']['allOf'][1]['properties']['ethernet_network_control']['key_map']
         for k, v in item.items():
             if 'lldp' in k:
@@ -87,7 +92,8 @@ class api_policies(object):
     # Ethernet Network Group Policies Policy Modification
     #=======================================================
     def ethernet_network_group(self, apiBody, item, pargs, **kwargs):
-        jsonVars = kwargs['ezData']['policies']['allOf'][1]['properties']['bios']['template_tuning']
+        pargs  = pargs
+        kwargs = kwargs
         apiBody.update({'vlan_settings':{'object_type':'fabric.VlanSettings'}})
         klist = ['allowed_vlans','native_vlan']
         for i in klist:
@@ -97,10 +103,12 @@ class api_policies(object):
                 else: apiBody['vlan_settings'].update({i:item[i]})
         return apiBody
 
+
     #=======================================================
     # Fibre-Channel Adapter Policy Modification
     #=======================================================
     def fibre_channel_adapter(self, apiBody, item, pargs, **kwargs):
+        pargs    = pargs
         jsonVars = kwargs['ezData']['policies']['allOf'][1]['properties']['fibre_channel_adapter']['template_tuning']
         if item.get('adapter_template'):
             template = item['adapter_template']
@@ -111,6 +119,7 @@ class api_policies(object):
     # Fibre-Channel Network Policies Policy Modification
     #=======================================================
     def fibre_channel_network(self, apiBody, item, pargs, **kwargs):
+        pargs    = pargs
         jsonVars = kwargs['ezData']['policies']['allOf'][1]['properties']['fibre_channel_network']['key_map']
         apiBody.update({'vsan_settings':{'object_type':'vnic.VsanSettings'}})
         for k, v in item.items():
@@ -130,6 +139,10 @@ class api_policies(object):
             add_config = f'ip{i}_address_configuration'
             if add_config in item:
                 apiBody['address_type'].update({f'enable_ip_{i}':item[add_config]})
+        apiBody.update({'configuration_type':{
+            'configure_inband': True,
+            'configure_out_of_band': True,
+        }})
         #=====================================================
         # Attach Pools to the API Body
         #=====================================================
@@ -164,6 +177,76 @@ class api_policies(object):
         return apiBody
 
     #=======================================================
+    # iSCSI Adapter Policy Modification
+    #=======================================================
+    def iscsi_boot(self, apiBody, item, pargs, **kwargs):
+        kwargs = kwargs
+        for k, v in item.items():
+            if 'ip_address' in k:
+                apiBody.update({
+                    'initiator_static_ip_v4_address':v,
+                    'initiator_static_ip_v4_config':[{
+                        'class_id': 'ippool.IpV4Config',
+                        'gateway': item['gateway'],
+                        'netmask': item['netmask'],
+                        'object_type': 'ippool.IpV4Config',
+                        'primary_dns': item['primary_dns'],
+                        'secondary_dns': item['secondary_dns'],
+                    }]
+                })
+            elif 'authentication' in k:
+                if re.search('(mutual_)?chap', v):
+                    kwargs['Variable'] = 'iscsi_boot_password'
+                    kwargs = ezfunctions.sensitive_var_value(**kwargs)
+                    apiBody.update({v:{
+                        'class_id': "vnic.IscsiAuthProfile",
+                        'object_type': "vnic.IscsiAuthProfile",
+                        'password': kwargs['var_value'],
+                        'user_id': item['username']
+                    }})
+        #=====================================================
+        # Attach Pools to the API Body
+        #=====================================================
+        if item.get('initiator_ip_pool'):
+            ip_pool = item['initiator_ip_pool']
+            pargs.apiMethod = 'get'
+            pargs.policy = 'ip'
+            pargs.names = []
+            pargs.names.append(ip_pool)
+            kwargs = isdk.api('ip').calls(pargs, **kwargs)
+            if not kwargs['pmoids'].get(ip_pool):
+                validating.error_policy_doesnt_exist('initiator_ip_pool', ip_pool, self.type, 'policy', apiBody['name'])
+            apiBody.update({'initiator_ip_pool':{
+                'class_id':'mo.MoRef','moid':kwargs['pmoids'][ip_pool]['Moid'],'object_type':'ippool.Pool'
+            }})
+        plist = ['primary', 'secondary']
+        for p in plist:
+            if item.get(f'{p}_target_policy'):
+                target = f'{p}_target_policy'
+                pargs.apiMethod = 'get'
+                pargs.policy = 'iscsi_static_target'
+                pargs.names = [item[target]]
+                kwargs = isdk.api('iscsi_static_target').calls(pargs, **kwargs)
+                if not kwargs['pmoids'].get(item[target]):
+                    validating.error_policy_doesnt_exist(f'{p}_target', item[target], self.type, 'policy', apiBody['name'])
+                apiBody.update({target:{
+                    'class_id':'mo.MoRef',
+                    'moid':kwargs['pmoids'][item[target]]['Moid'],
+                    'object_type':'vnic.IscsiStaticTargetPolicy'
+                }})
+        return apiBody
+
+    #=======================================================
+    # iSCSI Adapter Policy Modification
+    #=======================================================
+    def iscsi_static_target(self, apiBody, item, pargs, **kwargs):
+        item   = item
+        kwargs = kwargs
+        pargs  = pargs
+        for i in apiBody['lun']: i.update({'object_type':'vnic.Lun'})
+        return apiBody
+
+    #=======================================================
     # LAN Connectivity Policy Modification
     #=======================================================
     def lan_connectivity(self, apiBody, item, pargs, **kwargs):
@@ -171,6 +254,25 @@ class api_policies(object):
         kwargs = kwargs
         if not apiBody.get('vnic_placement_mode'): apiBody.update({'placement_mode':'custom'})
         else: apiBody.pop('vnic_placement_mode')
+        if not apiBody.get('target_platform'): apiBody.update({'target_platform': 'FIAttached'})
+        if item.get('iqn_pool'):
+            pargs.apiMethod = 'get'
+            pargs.names     = [item['iqn_pool']]
+            pargs.policy    = 'iqn'
+            pargs.purpose   = 'iqn'
+            ptype           = 'iqn_pool'
+            kwargs = isdk.api(ptype).calls(pargs, **kwargs)
+            pargs.moids['iqn_pool'] = kwargs['pmoids']
+            pname = item['iqn_pool']
+            if not pargs.moids['iqn_pool'].get(pname):
+                validating.error_policy_doesnt_exist(ptype, pname, apiBody['name'], self.type, 'Policy')
+            iqnpool = pargs.moids['iqn_pool'][pname]['Moid']
+            apiBody.update({
+                'iqn_allocation_type':'Pool',
+                'iqn_pool':{
+                    'class_id':'mo.MoRef','moid':iqnpool,'object_type':'iqnpool.Pool'
+                }
+            })
         return apiBody
 
     #=======================================================
@@ -193,6 +295,8 @@ class api_policies(object):
             if k in jsonVars:
                 if not apiBody.get('password_properties'): apiBody['password_properties'] = {}
                 apiBody['password_properties'].update({jsonVars[k]:v})
+                if apiBody['password_properties'].get("password_history"):
+                    apiBody['password_properties'].update({'password_history': 0})
         return apiBody
 
     #=====================================================
@@ -231,14 +335,16 @@ class api_policies(object):
         for i in pargs.item:
             apiBody = {'name':i['username']}
             apiBody = org_map(apiBody, pargs.org_moid)
+            kwargs['Variable'] = f"local_user_password_{i['password']}"
+            kwargs = ezfunctions.sensitive_var_value(**kwargs)
+            pargs.policy = 'local_users'
+            pargs.purpose = i['username']
             if not user_moids.get(i['username']):
                 pargs.apiMethod = 'create'
                 pargs.apiBody = apiBody
                 kwargs = isdk.api(self.type).calls(pargs, **kwargs)
                 user_moid = kwargs['pmoid']
             else: user_moid = user_moids[i['username']]['Moid']
-            kwargs['Variable'] = f"local_user_password_{i['password']}"
-            kwargs = ezfunctions.sensitive_var_value(**kwargs)
             #=====================================================
             # Create API Body for User Role
             #=====================================================
@@ -778,6 +884,7 @@ class api_policies(object):
         remove_list = ['fc_zone_policies', 'vhbas', 'wwpn_pools']
         for x in remove_list: policy_list.remove(x)
         for i in pargs.item:
+            if not i.get('fc_zone_policies'): policy_list.pop('fc_zone_policies')
             for x in range(0,len(i['names'])):
                 apiBody = {'name':i['names'][x],'order':i['placement_pci_order'][x]}
                 for k, v in i.items():
@@ -803,15 +910,16 @@ class api_policies(object):
                     'id':'MLOM','object_type':'vnic.PlacementSettings','pci_link':0,'uplink':0
                 }})
                 if i.get('fc_zone_policies'):
-                    apiBody.update({'fc_zone_policies':[]})
-                    for z in range(0,len(i['fc_zone_policies'])):
-                        pname = i['fc_zone_policies'][z]
-                        if not pargs.moids['fc_zone'].get(pname):
-                            validating.error_policy_doesnt_exist(
-                                'fc_zone_policy', pname, self.type, 'policy', apiBody['name'])
-                        apiBody['fc_zone_policies'].append({
+                    zone_policies = numpy.array_split(i['fc_zone_policies'], 2)
+                    jVars = kwargs['ezData']['policies']['allOf'][1]['properties']['fc_zone']
+                    apiBody.update({jVars['object_name']:[]})
+                    for z in zone_policies[x]:
+                        pname = z
+                        if not pargs.moids['fc_zone_policies'].get(pname):
+                            validating.error_policy_doesnt_exist('fc_zone_policy', pname, self.type, 'policy', apiBody['name'])
+                        apiBody[jVars['object_name']].append({
                             'class_id':'mo.MoRef',
-                            'moid':pargs.moids['fc_zone'][pname]['Moid'],
+                            'moid':pargs.moids['fc_zone_policies'][pname]['Moid'],
                             'object_type':'fabric.FcZonePolicy'}
                         )
                 if i.get('placement_switch_id'):
@@ -942,14 +1050,32 @@ class api_policies(object):
                 #=====================================================
                 # Create or Patch the VLANs via the Intersight API
                 #=====================================================
-                if not vlans_moids.get(x): pargs.apiMethod = 'create'
+                if not vlans_moids.get(x):
+                    pargs.apiMethod = 'create'
+                    pargs.policy    = 'vlans'
+                    pargs.purpose   = 'vlans'
+                    pargs.apiBody   = apiBody
+                    kwargs = isdk.api('vlans').calls(pargs, **kwargs)
                 else:
-                    pargs.apiMethod = 'patch'
-                    pargs.pmoid = vlans_moids[x]['Moid']
-                pargs.policy = 'vlans'
-                pargs.purpose = 'vlans'
-                pargs.apiBody = apiBody
-                kwargs = isdk.api('vlans').calls(pargs, **kwargs)
+                    pargs.apiMethod = 'by_moid'
+                    pargs.policy    = 'vlans'
+                    pargs.purpose   = 'vlans'
+                    pargs.pmoid     = vlans_moids[x]['Moid']
+                    kwargs = isdk.api('vlans').calls(pargs, **kwargs)
+                    r = DotMap(deepcopy(kwargs['results']))
+                    patchVlan = False
+                    if not apiBody.get('is_native'): native = False
+                    else: native = apiBody['is_native']
+                    if not r.AutoAllowOnUplinks == apiBody['auto_allow_on_uplinks']: patchVlan = True
+                    elif not r.IsNative == native: patchVlan = True
+                    elif not r.MulticastPolicy.Moid == apiBody['multicast_policy']['moid']: patchVlan = True
+                    if patchVlan == True:
+                        pargs.apiMethod = 'patch'
+                        pargs.policy = 'vlans'
+                        pargs.purpose = 'vlans'
+                        pargs.apiBody = apiBody
+                        kwargs = isdk.api('vlans').calls(pargs, **kwargs)
+                    else: print(f"      * Skipping VLAN {x}.  Intersight Matches Configuration.")
         return kwargs
 
     #=====================================================
@@ -963,12 +1089,13 @@ class api_policies(object):
         lcp_moid = pargs.pmoid
         pargs.apiMethod = 'get'
         for item in jsonVars['policy_list']:
-            ptype = item.replace('policy', '')
+            ptype = (item.replace('_policy', '')).replace('_policies', '')
             pargs.names  = []
             pargs.policy = ptype
             pargs.purpose = ptype
             for i in pargs.item:
-                if i.get(item): pargs.names.append(i[item])
+                if i.get('iscsi_boot_policies') and ptype == 'iscsi_boot': pargs.names.extend(i[item])
+                elif i.get(item): pargs.names.append(i[item])
                 elif i.get('names') and item == 'vnics': pargs.names.extend(i['names'])
                 elif i.get('mac_address_pools') and item == 'mac': pargs.names.extend(i['mac_address_pools'])
             pargs.names = numpy.unique(numpy.array(pargs.names))
@@ -994,22 +1121,27 @@ class api_policies(object):
                 policy_list = deepcopy(jsonVars['policy_list'])
                 policy_list.remove('mac')
                 policy_list.remove('vnics')
+                if not i.get('iscsi_boot_policies'): policy_list.remove('iscsi_boot_policies')
                 for p in policy_list:
-                    pshort = p.replace('_policy', '')
+                    pshort = (p.replace('_policy', '')).replace('_policies', '')
                     jVars = kwargs['ezData']['policies']['allOf'][1]['properties'][pshort]
-                    if not pargs.moids[p].get(i[p]):
+                    if p == 'iscsi_boot_policies':
+                        if not pargs.moids[p].get(i[p][x]):
+                            validating.error_policy_doesnt_exist(p, i[p][x], self.type, 'policy', apiBody['name'])
+                    elif not pargs.moids[p].get(i[p]):
                         validating.error_policy_doesnt_exist(p, i[p], self.type, 'policy', apiBody['name'])
-                    else:
-                        if re.search('network_(control|group)', p):
-                            oname = 'fabric_' + jVars['object_name']
-                        else: oname = jVars['object_name']
-                        pmoid = pargs.moids[p][i[p]]['Moid']
-                        if 'network_group' in p: apiBody.update({oname:[{
-                                'class_id':'mo.MoRef','moid':pmoid,'object_type':jVars['object_type']
-                            }]})
-                        else: apiBody.update({oname:{
-                                'class_id':'mo.MoRef','moid':pmoid,'object_type':jVars['object_type']
-                            }})
+                    if re.search('network_(control|group)', p):
+                        oname = 'fabric_' + jVars['object_name']
+                    elif 'iscsi' in p: oname = 'iscsi_boot_policy'
+                    else: oname = jVars['object_name']
+                    if 'iscsi' in p: pmoid = pargs.moids[p][i[p][x]]['Moid']
+                    else: pmoid = pargs.moids[p][i[p]]['Moid']
+                    if 'network_group' in p: apiBody.update({oname:[{
+                            'class_id':'mo.MoRef','moid':pmoid,'object_type':jVars['object_type']
+                        }]})
+                    else: apiBody.update({oname:{
+                            'class_id':'mo.MoRef','moid':pmoid,'object_type':jVars['object_type']
+                        }})
                 apiBody.update({'lan_connectivity_policy':{
                     'class_id':'mo.MoRef','moid':lcp_moid,'object_type':'vnic.LanConnectivityPolicy'
                 }})
@@ -1063,6 +1195,7 @@ class api_policies(object):
     # VSAN Policy Modification
     #=======================================================
     def vsan(self, apiBody, item, pargs, **kwargs):
+        pargs    = pargs
         jsonVars = kwargs['ezData']['policies']['allOf'][1]['properties']['bios']['template_tuning']
         for k, v in apiBody.items():
             if type(v) == int or type(v) == float: apiBody[k] = str(v)
@@ -1153,6 +1286,18 @@ class api_pools(object):
                 }})
                 if '4' in xlower: apiBody[f'{x}Config'].update({'Netmask':ipcfg['netmask']})
                 else: apiBody[f'{x}Config'].update({'Prefix':ipcfg['prefix']})
+        return apiBody
+
+    #=======================================================
+    # IQN Block(s)/Configuration Modification
+    #=======================================================
+    def iqn(item, apiBody):
+        if item.get('iqn_blocks'):
+            apiBody.update({'IqnSuffixBlocks':[]})
+            for i in item['iqn_blocks']:
+                apiBody['IqnSuffixBlocks'].append({
+                    'From':i['from'], 'ObjectType':'iqnpool.Block', 'Size':i['size'], 'Suffix':i['suffix']
+                })
         return apiBody
 
     #=======================================================
@@ -1291,6 +1436,7 @@ class api_profiles(object):
         # Get Moids for Profiles/Templates
         #==================================
         pargs.moids = {}
+        pargs.apiMethod = 'get'
         if 'domain' in self.type: pargs.policy = 'cluster'
         else: pargs.policy = self.type
         kwargs = isdk.api(self.type).calls(pargs, **kwargs)
@@ -1388,38 +1534,41 @@ class api_profiles(object):
         if re.search('^domain$', self.type):
             for item in profiles:
                 if item.get('action'):
-                    for i in range(0,len(pargs.fabrics)):
-                        if item['action'] == 'Deploy' and re.search(serial_regex, item['serial_numbers'][i]):
+                    for x in range(0,len(pargs.fabrics)):
+                        if item['action'] == 'Deploy' and re.search(serial_regex, item['serial_numbers'][x]):
                             if deploy_profiles == False:
                                 deploy_profiles = True
                                 print(f'\n{"-"*81}\n')
-                            pname = f"{item['name']}-{pargs.fabrics[i]}"
+                            pname = f"{item['name']}-{pargs.fabrics[x]}"
                             print(f'    - Beginning Profile Deployment for {pname}')
                             pargs.apiBody   = {'action':'Deploy'}
                             pargs.apiMethod = 'patch'
-                            pargs.policy    = self.type
                             pargs.pmoid     = pargs.moids['switch'][pname]['Moid']
-                            kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+                            pargs.policy    = 'switch'
+                            pargs.purpose   = self.type
+                            kwargs = isdk.api('switch').calls(pargs, **kwargs)
             if deploy_profiles == True:
                 print(f'\n{"-"*81}\n')
                 time.sleep(60)
             for item in profiles:
                 if item.get('action'):
-                    for i in range(0,len(pargs.fabrics)):
-                        if item['action'] == 'Deploy' and re.search(serial_regex, i['serial_numbers'][i]):
-                            pname = f"{item['name']}-{pargs.fabrics[i]}"
+                    for x in range(0,len(pargs.fabrics)):
+                        if item['action'] == 'Deploy' and re.search(serial_regex, item['serial_numbers'][x]):
+                            pname = f"{item['name']}-{pargs.fabrics[x]}"
                             pargs.apiMethod = 'by_moid'
+                            pargs.pmoid     = pargs.moids['switch'][pname]['Moid']
+                            pargs.policy    = 'switch'
+                            pargs.purpose   = self.type
                             deploy_complete = False
                             while deploy_complete == False:
-                                pargs.pmoid     = pargs.moids['switch'][pname]['Moid']
-                                kwargs = isdk.api(self.type).calls(pargs, **kwargs)
-                                if kwargs['Results']['ConfigContext']['ControlAction'] == 'No-op':
+                                kwargs = isdk.api('switch').calls(pargs, **kwargs)
+                                if kwargs['results']['ConfigContext']['ControlAction'] == 'No-op':
                                     deploy_complete = True
-                                    pname = i['name']
+                                    pname = item['name']
                                     print(f'    - Completed Profile Deployment for {pname}')
                                 else: 
-                                    print(f'      * Deploy Still Occuring Waiting 120 seconds on {pname}')
-                                    validating.deploy_notification(self.type, pname)
+                                    print(f'      * Deploy Still Occuring on {pname}.  Waiting 120 seconds.')
+                                    #validating.deploy_notification(self.type, pname)
                                     time.sleep(120)
             if deploy_profiles == True:
                 print(f'\n{"-"*81}\n')
@@ -1448,18 +1597,20 @@ class api_profiles(object):
                 for i in item['targets']:
                     if item.get('action'):
                         if item['action'] == 'Deploy' and re.search(serial_regex, i['serial_number']):
+                            pname           = i['name']
                             deploy_profiles = True
-                            pargs.pmoid = pargs.moids[self.type][i['name']]
-                            pname = i['name']
                             deploy_complete = False
                             while deploy_complete == False:
                                 pargs.apiMethod = 'by_moid'
+                                pargs.pmoid     = pargs.moids[self.type][pname]['Moid']
+                                pargs.policy    = self.type
+                                pargs.purpose   = self.type
                                 kwargs = isdk.api(self.type).calls(pargs, **kwargs)
-                                if kwargs['Results']['ConfigContext']['ControlAction'] == 'No-op':
+                                if kwargs['results']['ConfigContext']['ControlAction'] == 'No-op':
                                     deploy_complete = True
                                     print(f'    - Completed Profile Deployment for {pname}')
                                 else: 
-                                    print(f'      * Deploy Still Occuring Waiting 120 seconds on {pname}')
+                                    print(f'      * Deploy Still Occuring on {pname}.  Waiting 120 seconds.')
                                     validating.deploy_notification(self.type, pname)
                                     time.sleep(120)
             if deploy_profiles == True:
@@ -1526,9 +1677,9 @@ def profile_domain(item, pargs, **kwargs):
             if pargs.serial_moids.get(item['serial_numbers'][x]):
                 serial_moid = pargs.serial_moids[item['serial_numbers'][x]]['Moid']
             else: validating.error_serial_number(sw_name, item['serial_numbers'][x])
-            #apiBody.update({'AssignedSwitch':{
-            #    'class_id':'mo.MoRef','moid':serial_moid,'object_type':'network.Element'
-            #}})
+            apiBody.update({'AssignedSwitch':{
+                'class_id':'mo.MoRef','moid':serial_moid,'object_type':'network.Element'
+            }})
         pargs.apiBody = apiBody
         pargs.policy  = 'switch'
         pargs.purpose = pargs.type
@@ -1550,8 +1701,6 @@ def profile_domain(item, pargs, **kwargs):
     #=====================================================
     def get_pdict(item, p, policy_name):
         if not pargs.moids[p].get(policy_name):
-            print(pargs.moids)
-            exit()
             validating.error_policy_doesnt_exist(p, policy_name, item['name'], 'Domain', 'Profile')
         pdict = pargs.moids[p][policy_name]
         return pdict
@@ -1626,7 +1775,7 @@ def profile_function(item, pargs, **kwargs):
     if serial_true == True:
         if pargs.serial_moids.get(pargs.serial_number):
             serial_moid = pargs.serial_moids[pargs.serial_number]['Moid']
-            sobject = pargs.serial_moids[pargs.serial_number]['object_type']
+            sobject     = pargs.serial_moids[pargs.serial_number]['object_type']
         else: validating.error_serial_number(pargs.name, serial_moid)
         apiBody.update({f'assigned_{pargs.type}':{
             'class_id': 'mo.MoRef', 'moid':serial_moid, 'object_type':sobject
@@ -1653,21 +1802,21 @@ def profile_function(item, pargs, **kwargs):
     if len(server_template) > 0 and create_from_template == True:
         tmoid = pargs.moids['templates'][server_template]['Moid']
         bulkBody = {
-            'sources':{'class_id':'server.ProfileTemplate','moid':tmoid,'object_type':'server.ProfileTemplate'},
-            'targets':{'class_id':'server.Profile','name':apiBody['name'],'object_type':'server.Profile'}
+            'class_id': 'bulk.MoCloner', 'object_type': 'bulk.MoCloner',
+            'sources':[{'class_id': 'server.ProfileTemplate', 'moid':tmoid,'object_type':'server.ProfileTemplate'}],
+            'targets':[{'class_id': 'server.Profile', 'moid': '', 'name':apiBody['name'],'object_type':'server.Profile'}]
         }
         #=====================================================
         # Create the Profile from the Template
         #=====================================================
         print(json.dumps(bulkBody, indent=4))
         if not pargs.moids[pargs.type].get(apiBody['name']):
-            pargs.apiBody = bulkBody
-            pargs.policy  = 'bulk'
-            pargs.purpose = 'bulk'
+            pargs.apiBody   = bulkBody
             pargs.apiMethod = 'create'
+            pargs.policy    = 'bulk'
+            pargs.purpose   = 'bulk'
             kwargs = isdk.api('bulk').calls(pargs, **kwargs)
             pargs.moids['server'].update({apiBody['name']:{'Moid':kwargs['pmoid']}})
-        exit()
     #=================================================================
     # Add Policies to the Policy Bucket if not deployed from Template
     #=================================================================
@@ -1700,12 +1849,27 @@ def profile_function(item, pargs, **kwargs):
     #=====================================================
     # Attach UUID Pool if it Exists
     #=====================================================
+    add_policy = False
+    p = 'uuid_pool'
     if item.get('uuid_pool') and create_from_template == False:
-        p = 'uuid_pool'
+        if len(item[p]) > 0:
+            add_policy = True
+            pname = item[p]
+    elif create_from_template == False:
+        if pargs.get('template_policies'):
+            if pargs.template_policies.get(p):
+                if len(pargs.template_policies[p]) > 0:
+                    add_policy = True
+                    pname = pargs.template_policies[p]
+        elif item.get(p):
+            if len(item[p]) > 0:
+                add_policy = True
+                pname = item[p]
+    if add_policy == True:
         pshort = p.replace('_pool', '')
-        if not pargs.moids[p].get(item[p]):
-            validating.error_policy_doesnt_exist(p, item[p], pargs.name, pargs.type, 'Profile')
-        pmoid = pargs.moids[p][item[p]]['Moid']
+        if not pargs.moids[p].get(pname):
+            validating.error_policy_doesnt_exist(p, pname, pargs.name, pargs.type, 'Profile')
+        pmoid = pargs.moids[p][pname]['Moid']
         pObject = kwargs['ezData']['pools']['allOf'][1]['properties'][pshort]['object_type']
         apiBody.update({'uuid_address_type':'POOL'})
         apiBody.update({p:{'class_id': 'mo.MoRef', 'moid':pmoid, 'object_type':pObject}})

@@ -10,6 +10,7 @@ It uses argparse to take in the following CLI arguments:
 # Source Modules
 #======================================================
 from collections import OrderedDict
+from copy import deepcopy
 from dotmap import DotMap
 from pathlib import Path
 import argparse
@@ -193,10 +194,12 @@ def main():
     #==============================================
     pargs = DotMap()
     #orgs   = list(kwargs['immDict']['orgs'].keys())
-    kwargs = isdk.api('organization').organizations(pargs, **kwargs)
-    #kwargs['org_moids'] = kwargs['pmoids']
-    kwargs, pargs = ci.wizard('wizard').build_environment(**kwargs)
-    exit()
+    kwargs, pargs = isdk.api('organization').organizations(pargs, **kwargs)
+    kwargs, pargs = ci.wizard('dns_ntp').dns_ntp(pargs, **kwargs)
+    kwargs, pargs = ci.wizard('vlans').vlans(pargs, **kwargs)
+    kwargs, pargs = ci.wizard('netapp').netapp(pargs, **kwargs)
+    kwargs, pargs = ci.wizard('imm').imm(pargs, **kwargs)
+    kwargs, pargs = ci.wizard('build').build(pargs, **kwargs)
     #==============================================
     # Create YAML Files
     #==============================================
@@ -214,37 +217,51 @@ def main():
         #==============================================
         # Pools
         #==============================================
-        #cisdk = 'isdkp.api_pools'
-        #if kwargs['immDict']['orgs'][org].get('pools'):
-        #    for pool_type in kwargs['immDict']['orgs'][org]['pools']:
-        #        kwargs = eval(f"{cisdk}(pool_type).pools(pargs, **kwargs)")
+        nope = False
+        if nope == True:
+            cisdk = 'isdkp.api_pools'
+            if kwargs['immDict']['orgs'][org].get('pools'):
+                for pool_type in kwargs['immDict']['orgs'][org]['pools']:
+                    if kwargs['immDict']['orgs'][org]['pools'].get(pool_type):
+                        kwargs = eval(f"{cisdk}(pool_type).pools(pargs, **kwargs)")
         #==============================================
         # Policies
         #==============================================
-        policies_in_order = OrderedDict(sorted(kwargs['immDict']['orgs'][org]['policies'].items()))
-        cisdk = 'isdkp.api_policies'
-        if kwargs['immDict']['orgs'][org].get('policies'):
-            for ptype in policies_in_order:
-                if re.search('^[z]', ptype):
-                    dpolicies = eval(f"{cisdk}(ptype).policies(pargs, **kwargs)")
-                    kwargs['isdk_deployed'].update({ptype:dpolicies})
+        if nope == True:
+            policies = {}
+            policies_in_order = OrderedDict(sorted(kwargs['immDict']['orgs'][org]['policies'].items()))
+            for k, v in policies_in_order.items(): policies.update({k:v})
+            istatic = {'iscsi_static_target':policies['iscsi_static_target']}
+            policies = dict(istatic, **policies)
+            cisdk = 'isdkp.api_policies'
+            if kwargs['immDict']['orgs'][org].get('policies'):
+                for ptype in policies:
+                    if kwargs['immDict']['orgs'][org]['policies'].get(ptype):
+                        if re.search('^vlan', ptype):
+                            dpolicies = eval(f"{cisdk}(ptype).policies(pargs, **kwargs)")
+                            kwargs['isdk_deployed'].update({ptype:dpolicies})
         #==============================================
         # Profiles
         #==============================================
-        cisdk = 'isdkp.api_profiles'
-        ptype = 'templates'
-        if kwargs['immDict']['orgs'][org].get(ptype):
-            if kwargs['immDict']['orgs'][org][ptype].get('server'):
-                kwargs = eval(f"{cisdk}(ptype).profiles(pargs, **kwargs)")
-        ptype = 'profiles'
-        if kwargs['immDict']['orgs'][org].get(ptype):
-            if kwargs['immDict']['orgs'][org][ptype].get('domain'):
-                kwargs = eval(f"{cisdk}('domain').profiles(pargs, **kwargs)")
-            if kwargs['immDict']['orgs'][org][ptype].get('chassis'):
-                kwargs = eval(f"{cisdk}('chassis').profiles(pargs, **kwargs)")
-            if kwargs['immDict']['orgs'][org][ptype].get('server'):
-                kwargs = eval(f"{cisdk}('server').profiles(pargs, **kwargs)")
+        if nope == True:
+            cisdk = 'isdkp.api_profiles'
+            ptype = 'templates'
+            if kwargs['immDict']['orgs'][org].get(ptype):
+                if kwargs['immDict']['orgs'][org][ptype].get('server'):
+                    kwargs = eval(f"{cisdk}(ptype).profiles(pargs, **kwargs)")
+            ptype = 'profiles'
+            if kwargs['immDict']['orgs'][org].get(ptype):
+                if kwargs['immDict']['orgs'][org][ptype].get('domain'):
+                    kwargs = eval(f"{cisdk}('domain').profiles(pargs, **kwargs)")
+                if kwargs['immDict']['orgs'][org][ptype].get('chassis'):
+                    kwargs = eval(f"{cisdk}('chassis').profiles(pargs, **kwargs)")
+                if kwargs['immDict']['orgs'][org][ptype].get('server'):
+                    kwargs = eval(f"{cisdk}('server').profiles(pargs, **kwargs)")
 
+        #==============================================
+        # Profiles
+        #==============================================
+        kwargs, pargs = ci.wizard('wizard').server_identities(pargs, **kwargs)
 
     print(f'\n-----------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')

@@ -127,10 +127,11 @@ def create_yaml(orgs, **kwargs):
                         if kwargs['immDict']['orgs'][org].get(item):
                             if kwargs['immDict']['orgs'][org][item].get(x):
                                 idict[org][item].update(deepcopy({x:kwargs['immDict']['orgs'][org][item][x]}))
-                            if len(idict[org][item]) == 0: idict.pop(org)
-                            dest_file = f"{i}.yaml"
-                            title1 = f"{str.title(item)} -> {i}"
-                            write_file(dest_dir, dest_file, idict, title1)
+                                if len(idict[org][item]) == 0: idict.pop(org)
+                                else:
+                                    dest_file = f"{i}.yaml"
+                                    title1 = f"{str.title(item)} -> {i}"
+                                    write_file(dest_dir, dest_file, idict, title1)
         else:
             if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
             for i in ezData[f'class.{item}']['enum']:
@@ -781,24 +782,27 @@ def read_in(excel_workbook, **kwargs):
 #======================================================
 def sensitive_var_value(**kwargs):
     jsonData = kwargs['jsonData']
-    if re.search('(intersight_apikey|(netapp|nxos)_password)', kwargs['Variable']):
+    if kwargs.get('deployment_type'):
+        sensitive_var = kwargs['Variable']
+    elif re.search('(intersight_apikey)', kwargs['Variable']):
         sensitive_var = kwargs['Variable']
     else: sensitive_var = 'TF_VAR_%s' % (kwargs['Variable'])
     # -------------------------------------------------------------------------------------------------------------------------
     # Check to see if the Variable is already set in the Environment, and if not prompt the user for Input.
     #--------------------------------------------------------------------------------------------------------------------------
     if os.environ.get(sensitive_var) is None:
-        print(f"\n----------------------------------------------------------------------------------\n")
+        print(f"\n---------------------------------------------------------------------------------\n")
         print(f"  The Script did not find {sensitive_var} as an 'environment' variable.")
         print(f"  To not be prompted for the value of {kwargs['Variable']} each time")
         print(f"  add the following to your local environemnt:\n")
         print(f"    - Linux: export {sensitive_var}='{kwargs['Variable']}_value'")
         print(f"    - Windows: $env:{sensitive_var}='{kwargs['Variable']}_value'")
-        print(f"\n----------------------------------------------------------------------------------\n")
-    if kwargs['Variable'] == 'ipmi_key':
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'  The ipmi_key Must be in Hexidecimal Format [a-fA-F0-9] and no longer than 40 characters.')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
+        print(f"\n---------------------------------------------------------------------------------\n")
+    if os.environ.get(sensitive_var) is None and kwargs['Variable'] == 'ipmi_key':
+        print(f'\n---------------------------------------------------------------------------------\n')
+        print(f'  The ipmi_key Must be in Hexidecimal Format [a-fA-F0-9]')
+        print(f'  and no longer than 40 characters.')
+        print(f'\n---------------------------------------------------------------------------------\n')
     if os.environ.get(sensitive_var) is None:
         valid = False
         while valid == False:
@@ -895,11 +899,12 @@ def sensitive_var_value(**kwargs):
                 valid = classes.validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
 
         # Add Policy Variables to immDict
-        if not re.search('(intersight_apikey|(netapp|nxos)_password)', kwargs['Variable']):
-            org = kwargs['org']
+        org = kwargs['org']
+        if not kwargs['immDict']['orgs'].get(org):
+            kwargs['immDict']['orgs'][org] = {}
             if not kwargs['immDict']['orgs'][org].get('sensitive_vars'):
                 kwargs['immDict']['orgs'][org]['sensitive_vars'] = []
-            kwargs['immDict']['orgs'][org]['sensitive_vars'].append(sensitive_var)
+                kwargs['immDict']['orgs'][org]['sensitive_vars'].append(sensitive_var)
 
         # Add the Variable to the Environment
         os.environ[sensitive_var] = '%s' % (secure_value)
