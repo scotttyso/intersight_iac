@@ -10,7 +10,6 @@ It uses argparse to take in the following CLI arguments:
 # Source Modules
 #======================================================
 from collections import OrderedDict
-from copy import deepcopy
 from dotmap import DotMap
 from pathlib import Path
 import argparse
@@ -31,7 +30,7 @@ from classes import netapp
 # Worksheet should be processed.
 #======================================================
 reg1 = 'credentials|dhcp_dns_ntp|imm_(domain|fc|policy|profiles)|interfaces'
-reg2 = 'mgmt|nxos|ontap(_(lic|mgmt))?|ranges|vlans'
+reg2 = 'lun|mgmt|nxos|ontap(_(lic|mgmt))?|ranges|vlans|volume'
 wb_regex = re.compile(f'^({reg1}|{reg2})$')
 
 #=================================================================
@@ -120,7 +119,7 @@ def main():
     #================================================
     # Import Stored Parameters
     #================================================
-    jsonFile = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
+    jsonFile = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-11360.json'
     jsonOpen = open(jsonFile, 'r')
     jsonData = json.load(jsonOpen)
     jsonOpen.close()
@@ -237,7 +236,7 @@ def main():
             if kwargs['immDict']['orgs'][org].get('policies'):
                 for ptype in policies:
                     if kwargs['immDict']['orgs'][org]['policies'].get(ptype):
-                        if re.search('^vlan', ptype):
+                        if re.search('^[s]yst', ptype):
                             dpolicies = eval(f"{cisdk}(ptype).policies(pargs, **kwargs)")
                             kwargs['isdk_deployed'].update({ptype:dpolicies})
         #==============================================
@@ -262,6 +261,10 @@ def main():
         # Profiles
         #==============================================
         kwargs, pargs = ci.wizard('wizard').server_identities(pargs, **kwargs)
+        #==============================================
+        # Upgrade Firmware
+        #==============================================
+        kwargs, pargs = ci.fw_os('wizard').fw(pargs, **kwargs)
 
     print(f'\n-----------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')

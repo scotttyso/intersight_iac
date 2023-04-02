@@ -652,24 +652,24 @@
                                         "description": "Pre-Defined BIOS Templates with recommended policy parameters.",
                                         "enum":[
                                             "DSS",
-                                            "DSS-tpm",
+                                            "DSS_tpm",
                                             "HPC",
-                                            "HPC-tpm",
+                                            "HPC_tpm",
                                             "Java",
-                                            "Java-tpm",
-                                            "M6-analytical_DB-tpm",
-                                            "M6-Data-tpm",
-                                            "M6-HPC-tpm",
-                                            "M6-relational-DB-tpm",
-                                            "M6-virtualization-tpm",
+                                            "Java_tpm",
+                                            "M6_analytical_DB_tpm",
+                                            "M6_Data_tpm",
+                                            "M6_HPC_tpm",
+                                            "M6_relational_DB_tpm",
+                                            "M6_Virtualization_tpm",
                                             "OLTP",
-                                            "OLTP-tpm",
-                                            "M5-virtualization",
-                                            "M5-virtualization-tpm",
-                                            "windows",
-                                            "windows-tpm"
+                                            "OLTP_tpm",
+                                            "M5_Virtualization",
+                                            "M5_Virtualization_tpm",
+                                            "Windows",
+                                            "Windows_tpm"
                                         ],
-                                        "default": "M6-virtualization-tpm"
+                                        "default": "M6_Virtualization_tpm"
                                     }
                                 },
                                 "boot.PrecisionPolicy":{
@@ -946,52 +946,58 @@
                             },
                             "systemQos": {
                                 "Best Effort" : {
-                                    "bandwidth_percent":10,
-                                    "cos":255,
-                                    "multicast_optimize":false,
-                                    "packet_drop":true,
-                                    "state":"Enabled",
-                                    "weight":5
+                                    "bandwidth_percent": 10,
+                                    "cos": 255,
+                                    "multicast_optimize": false,
+                                    "mtu": 9216,
+                                    "packet_drop": true,
+                                    "state": "Enabled",
+                                    "weight": 5
                                 },
                                 "Bronze" : {
-                                    "bandwidth_percent":14,
-                                    "cos":1,
-                                    "multicast_optimize":false,
-                                    "packet_drop":true,
-                                    "state":"Enabled",
-                                    "weight":7
+                                    "bandwidth_percent": 14,
+                                    "cos": 1,
+                                    "multicast_optimize": false,
+                                    "mtu": 9216,
+                                    "packet_drop": true,
+                                    "state": "Enabled",
+                                    "weight": 7
                                 },
                                 "FC" : {
-                                    "bandwidth_percent":20,
-                                    "cos":3,
+                                    "bandwidth_percent": 20,
+                                    "cos": 3,
                                     "multicast_optimize":false,
-                                    "packet_drop":false,
-                                    "state":"Enabled",
-                                    "weight":10
+                                    "mtu": 2240,
+                                    "packet_drop": false,
+                                    "state": "Enabled",
+                                    "weight": 10
                                 },
                                 "Gold" : {
-                                    "bandwidth_percent":18,
-                                    "cos":4,
-                                    "multicast_optimize":false,
-                                    "packet_drop":true,
-                                    "state":"Enabled",
-                                    "weight":9
+                                    "bandwidth_percent": 18,
+                                    "cos": 4,
+                                    "multicast_optimize": false,
+                                    "mtu": 9216,
+                                    "packet_drop": true,
+                                    "state": "Enabled",
+                                    "weight": 9
                                 },
                                 "Platinum" : {
-                                    "bandwidth_percent":20,
-                                    "cos":5,
-                                    "multicast_optimize":false,
-                                    "packet_drop":false,
-                                    "state":"Enabled",
-                                    "weight":10
+                                    "bandwidth_percent": 20,
+                                    "cos": 5,
+                                    "multicast_optimize": false,
+                                    "mtu": 9216,
+                                    "packet_drop": false,
+                                    "state": "Enabled",
+                                    "weight": 10
                                 },
                                 "Silver" : {
-                                    "bandwidth_percent":18,
+                                    "bandwidth_percent": 18,
                                     "cos":2,
-                                    "multicast_optimize":false,
-                                    "packet_drop":true,
-                                    "state":"Enabled",
-                                    "weight":8
+                                    "multicast_optimize": false,
+                                    "mtu": 9216,
+                                    "packet_drop": true,
+                                    "state": "Enabled",
+                                    "weight": 8
                                 }
                             },
                             "wizard":{
@@ -1563,24 +1569,38 @@
                                 },
                                 "object_type":"bios.Policy",
                                 "template_tuning":{
-                                    "M5-virtualization":{
+                                    "M5-amd-virtual":{
+                                        "cdn_enable":"enabled",
                                         "cpu_power_management":"custom",
+                                        "nvmdimm_perform_config":"Balanced Profile",
                                         "processor_c1e":"disabled",
                                         "processor_c3report":"disabled",
                                         "processor_c6report":"disabled",
                                         "processor_cstate":"disabled"
                                     },
-                                    "M6-analytical-DB":{
+                                    "M5-intel-virtual":{
+                                        "cdn_enable":"enabled",
+                                        "cpu_power_management":"custom",
+                                        "nvmdimm_perform_config":"Balanced Profile",
+                                        "processor_c1e":"disabled",
+                                        "processor_c3report":"disabled",
+                                        "processor_c6report":"disabled",
+                                        "processor_cstate":"disabled"
+                                    },
+                                    "M6-intel-analytical-DB":{
+                                        "cdn_enable":"enabled",
                                         "cpu_perf_enhancement":"Auto",
                                         "energy_efficient_turbo":"enabled",
                                         "intel_virtualization_technology":"disabled",
                                         "intel_vt_for_directed_io":"disabled",
                                         "memory_refresh_rate":"1x",
+                                        "nvmdimm_perform_config":"Balanced Profile",
                                         "patrol_scrub":"enabled",
                                         "processor_c6report":"enabled",
                                         "work_load_config":"Balanced"
                                     },
-                                    "M6-HPC":{
+                                    "M6-intel-HPC":{
+                                        "cdn_enable":"enabled",
                                         "cpu_perf_enhancement":"Auto",
                                         "intel_virtualization_technology":"disabled",
                                         "intel_vt_for_directed_io":"disabled",
@@ -1588,27 +1608,38 @@
                                         "llc_prefetch":"disabled",
                                         "memory_inter_leave":"1 Way Node Interleave",
                                         "memory_refresh_rate":"1x",
+                                        "nvmdimm_perform_config":"Balanced Profile",
                                         "patrol_scrub":"enabled",
                                         "snc":"enabled",
                                         "xpt_prefetch":"enabled",
                                         "upi_power_management":"enabled",
                                         "work_load_config":"Balanced"
                                     },
-                                    "M6-relational-DB":{
+                                    "M6-intel-relational-DB":{
+                                        "cdn_enable":"enabled",
                                         "cpu_perf_enhancement":"Auto",
                                         "llc_alloc":"disabled",
                                         "llc_prefetch":"disabled",
                                         "memory_inter_leave":"1 Way Node Interleave",
                                         "memory_refresh_rate":"1x",
+                                        "nvmdimm_perform_config":"Balanced Profile",
                                         "patrol_scrub":"enabled",
                                         "processor_c6report":"enabled",
                                         "snc":"enabled",
                                         "xpt_prefetch":"enabled",
                                         "upi_power_management":"enabled"
                                     },
-                                    "M6-virtualization":{
+                                    "M6-amd-virtual":{
+                                        "cbs_cmn_fixed_soc_pstate":"P0",
+                                        "cbs_df_cmn_acpi_srat_l3numa":"enabled",
+                                        "cbs_df_cmn_dram_nps":"NPS4",
+                                        "cdn_enable":"enabled"
+                                    },
+                                    "M6-intel-virtual":{
+                                        "cdn_enable":"enabled",
                                         "cpu_perf_enhancement":"Auto",
                                         "energy_efficient_turbo":"enabled",
+                                        "nvmdimm_perform_config":"Balanced Profile",
                                         "processor_c1e":"enabled",
                                         "processor_c6report":"enabled"
                                     },
@@ -2924,12 +2955,28 @@
                             },
                             "optional_args": {
                             },
+                            "os_type": {
+                                "description": "Operating System.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "linux",
+                                    "netapp",
+                                    "vmware",
+                                    "windows",
+                                    "windows_2008",
+                                    "windows_gtp",
+                                    "xen"
+                                ],
+                                "default": "vmware",
+                                "x-omitempty": true
+                            },
                             "required_args": {
                                 "cpu_vendor": "",
                                 "domain_ports": "",
                                 "equipment_type": "",
                                 "generation": "",
                                 "identifier": "",
+                                "os_type": "",
                                 "profile_start": "",
                                 "suffix_digits": "",
                                 "tpm": "",
@@ -4000,6 +4047,67 @@
                                     "vm"
                                 ],
                                 "default": "vm",
+                                "x-omitempty": true
+                            }
+                        }
+                    }
+                ]
+            },
+            "wizard.volume": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "name": {
+                                "description": "Name for the Volume.",
+                                "type": "string",
+                                "minimum": 1,
+                                "maximum": 64,
+                                "pattern": "^[a-zA-Z0-9_\\.-]{1,64}$",
+                                "x-omitempty": true
+                            },
+                            "optional_args": {
+                            },
+                            "os_type": {
+                                "description": "Operating System.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "linux",
+                                    "netapp",
+                                    "vmware",
+                                    "windows",
+                                    "windows_2008",
+                                    "windows_gtp",
+                                    "xen"
+                                ],
+                                "default": "vmware",
+                                "x-omitempty": true
+                            },
+                            "required_args": {
+                                "name": "",
+                                "os_type": "",
+                                "size": "",
+                                "volume_type": ""
+                            },
+                            "size": {
+                                "description": "Size of the Volume.",
+                                "type": "integer",
+                                "format": "int64",
+                                "minimum": 1,
+                                "maximum": 16192,
+                                "default": 128,
+                                "x-omitempty": true
+                            },
+                            "volume_type": {
+                                "description": "Type of Volume.",
+                                "type": "list_of_values",
+                                "enum": [
+                                    "audit",
+                                    "boot",
+                                    "data",
+                                    "swap"
+                                ],
+                                "default": "data",
                                 "x-omitempty": true
                             }
                         }

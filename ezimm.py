@@ -689,7 +689,7 @@ def main():
     #================================================
     # Check if User has Stored Intersight Parameters
     #================================================
-    jsonFile    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
+    jsonFile    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-11360.json'
     jsonOpen    = open(jsonFile, 'r')
     jsonData    = json.load(jsonOpen)
     jsonOpen.close()

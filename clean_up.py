@@ -193,7 +193,7 @@ def main():
     if opSystem == 'Windows': path_sep = '\\'
     else: path_sep = '/'
     script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
-    jsonFile    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-9235.json'
+    jsonFile    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-11360.json'
     jsonOpen    = open(jsonFile, 'r')
     jsonData    = json.load(jsonOpen)
     jsonOpen.close()

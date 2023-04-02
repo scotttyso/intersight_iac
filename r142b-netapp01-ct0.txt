@@ -1,0 +1,153 @@
+
+Last login time: 4/1/2023 10:46:04
+Unsuccessful login attempts since last login: 1
+r142b-netapp01::> snapmirror show -vserver RICH -destination-path RICH:rich_root_m01 -source-path RICH:rich_root
+
+                            Source Path: r142b-netapp01://RICH/rich_root
+                       Destination Path: r142b-netapp01://RICH/rich_root_m01
+                      Relationship Type: LS
+                Relationship Group Type: -
+                    SnapMirror Schedule: 15min
+                 SnapMirror Policy Type: -
+                      SnapMirror Policy: -
+                            Tries Limit: 8
+                      Throttle (KB/sec): unlimited
+                           Mirror State: Snapmirrored
+                    Relationship Status: Idle
+                File Restore File Count: -
+                 File Restore File List: -
+                      Transfer Snapshot: -
+                      Snapshot Progress: -
+                         Total Progress: -
+    Percent Complete for Current Status: -
+              Network Compression Ratio: -
+                    Snapshot Checkpoint: -
+                        Newest Snapshot: snapmirror.3d06d7fd-e3be-11e6-af7f-00a098aa1c7d_6_2150986120.2023-03-29_191432
+              Newest Snapshot Timestamp: 03/29 19:14:32
+Press <space> to page down, <return> for next line, or 'q' to quit...                                                                                                      Exported Snapshot: snapmirror.3d06d7fd-e3be-11e6-af7f-00a098aa1c7d_6_2150986120.2023-03-29_191432
+            Exported Snapshot Timestamp: 03/29 19:14:32
+                                Healthy: true
+                       Unhealthy Reason: -
+                Destination Volume Node: -
+                        Relationship ID: -
+                   Current Operation ID: -
+                          Transfer Type: -
+                         Transfer Error: -
+                       Current Throttle: -
+              Current Transfer Priority: -
+                     Last Transfer Type: -
+                    Last Transfer Error: -
+                     Last Transfer Size: -
+Last Transfer Network Compression Ratio: -
+                 Last Transfer Duration: -
+                     Last Transfer From: -
+            Last Transfer End Timestamp: -
+                  Progress Last Updated: -
+                Relationship Capability: Pre 8.2
+                               Lag Time: -
+           Identity Preserve Vserver DR: -
+Press <space> to page down, <return> for next line, or 'q' to quit...                                                                                                 Volume MSIDs Preserved: -
+                 Is Auto Expand Enabled: -
+           Number of Successful Updates: -
+               Number of Failed Updates: -
+           Number of Successful Resyncs: -
+               Number of Failed Resyncs: -
+            Number of Successful Breaks: -
+                Number of Failed Breaks: -
+                   Total Transfer Bytes: -
+         Total Transfer Time in Seconds: -
+                 FabricLink Source Role: -
+               FabricLink Source Bucket: -
+                   FabricLink Peer Role: -
+                 FabricLink Peer Bucket: -
+                    FabricLink Topology: -
+             FabricLink Pull Byte Count: -
+             FabricLink Push Byte Count: -
+          FabricLink Pending Work Count: -
+                      FabricLink Status: -
+
+
+r142b-netapp01::> snapmirror show -vserver RICH -destination-path RICH:rich_root_m02 -source-path RICH:rich_root
+
+                            Source Path: r142b-netapp01://RICH/rich_root
+                       Destination Path: r142b-netapp01://RICH/rich_root_m02
+                      Relationship Type: LS
+                Relationship Group Type: -
+                    SnapMirror Schedule: 15min
+                 SnapMirror Policy Type: -
+                      SnapMirror Policy: -
+                            Tries Limit: 8
+                      Throttle (KB/sec): unlimited
+                           Mirror State: Snapmirrored
+                    Relationship Status: Idle
+                File Restore File Count: -
+                 File Restore File List: -
+                      Transfer Snapshot: -
+                      Snapshot Progress: -
+                         Total Progress: -
+    Percent Complete for Current Status: -
+              Network Compression Ratio: -
+                    Snapshot Checkpoint: -
+                        Newest Snapshot: snapmirror.3d06d7fd-e3be-11e6-af7f-00a098aa1c7d_6_2150986120.2023-03-29_191432
+              Newest Snapshot Timestamp: 03/29 19:14:32
+Press <space> to page down, <return> for next line, or 'q' to quit...                                                                                                      Exported Snapshot: snapmirror.3d06d7fd-e3be-11e6-af7f-00a098aa1c7d_6_2150986120.2023-03-29_191432
+            Exported Snapshot Timestamp: 03/29 19:14:32
+                                Healthy: true
+                       Unhealthy Reason: -
+                Destination Volume Node: -
+                        Relationship ID: -
+                   Current Operation ID: -
+                          Transfer Type: -
+                         Transfer Error: -
+                       Current Throttle: -
+              Current Transfer Priority: -
+                     Last Transfer Type: -
+                    Last Transfer Error: -
+                     Last Transfer Size: -
+Last Transfer Network Compression Ratio: -
+                 Last Transfer Duration: -
+                     Last Transfer From: -
+            Last Transfer End Timestamp: -
+                  Progress Last Updated: -
+                Relationship Capability: Pre 8.2
+                               Lag Time: -
+           Identity Preserve Vserver DR: -
+Press <space> to page down, <return> for next line, or 'q' to quit...                                                                                                 Volume MSIDs Preserved: -
+                 Is Auto Expand Enabled: -
+           Number of Successful Updates: -
+               Number of Failed Updates: -
+           Number of Successful Resyncs: -
+               Number of Failed Resyncs: -
+            Number of Successful Breaks: -
+                Number of Failed Breaks: -
+                   Total Transfer Bytes: -
+         Total Transfer Time in Seconds: -
+                 FabricLink Source Role: -
+               FabricLink Source Bucket: -
+                   FabricLink Peer Role: -
+                 FabricLink Peer Bucket: -
+                    FabricLink Topology: -
+             FabricLink Pull Byte Count: -
+             FabricLink Push Byte Count: -
+          FabricLink Pending Work Count: -
+                      FabricLink Status: -
+
+
+r142b-netapp01::> snapmirror show -vserver RICH -source-path RICH:rich_root
+                                                                       Progress
+Source            Destination Mirror  Relationship   Total             Last
+Path        Type  Path        State   Status         Progress  Healthy Updated
+----------- ---- ------------ ------- -------------- --------- ------- --------
+r142b-netapp01://RICH/rich_root 
+            LS   r142b-netapp01://RICH/rich_root_m01 
+                              Snapmirrored 
+                                      Idle           -         true    -
+                 r142b-netapp01://RICH/rich_root_m02 
+                              Snapmirrored 
+                                      Idle           -         true    -
+2 entries were displayed.
+
+r142b-netapp01::> exit
+Goodbye
+
+

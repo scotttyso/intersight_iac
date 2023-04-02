@@ -30,8 +30,8 @@ class api_policies(object):
             if type(v) == int or type(v) == float: apiBody[k] = str(v)
         if item.get('bios_template'):
             template = item['bios_template']
-            if '_tpm' in template:
-                btemplate = template.replace('_tpm', '')
+            if '-tpm' in template:
+                btemplate = template.replace('-tpm', '')
                 apiBody = dict(apiBody, **jsonVars[btemplate])
                 apiBody = dict(apiBody, **jsonVars['tpm'])
             else:
