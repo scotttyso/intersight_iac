@@ -31,7 +31,7 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).upper()
         btemplates = []
-        for i in pargs.server_profiles:
+        for i in pargs.server_settings:
             if re.search('M[5-9]', i.gen) and i.tpm == 'True': btemplates.append(f'{i.gen}-{i.cpu}-virtual-tpm')
             elif re.search('M[5-9]', i.gen): btemplates.append(f'{i.gen}-{i.cpu}-virtual')
         btemplates = numpy.unique(numpy.array(btemplates))
@@ -126,13 +126,13 @@ class imm(object):
     # Function - Build Profiles - Chassis
     #=============================================================================
     def chassis(self, pargs, **kwargs):
-        models              = []
-        pargs.apiMethod     = 'get'
-        pargs.apiQuery      = f"RegisteredDevice.Moid eq '{pargs.registered_device}'"
-        pargs.policy        = 'serial_number'
-        pargs.purpose       = 'chassis'
-        kwargs              = isdk.api('serial_number').calls(pargs, **kwargs)
-        pargs.chassis       = DotMap(deepcopy(kwargs['pmoids']))
+        models          = []
+        pargs.apiMethod = 'get'
+        pargs.apiQuery  = f"RegisteredDevice.Moid eq '{pargs.registered_device}'"
+        pargs.policy    = 'serial_number'
+        pargs.purpose   = 'chassis'
+        kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
+        pargs.chassis   = DotMap(deepcopy(kwargs['pmoids']))
         pargs.pop('apiQuery')
         for k ,v in pargs.chassis.items():
             models.append(v.model.split('-')[1])
@@ -700,7 +700,7 @@ class imm(object):
     def lan_connectivity(self, pargs, **kwargs):
         # Build Dictionary
         vic_gen = []
-        for i in pargs.server_profiles: vic_gen.append(f'{i.vic_gen}')
+        for i in pargs.server_settings: vic_gen.append(f'{i.vic_gen}')
         vic_gen = numpy.unique(numpy.array(vic_gen))
         lan_policies = ['lcp']
         for i in pargs.vlans:
@@ -995,7 +995,7 @@ class imm(object):
                     )]
                 ))
         polVars.update({'port_role_servers':[]})
-        for i in pargs.server_profiles:
+        for i in pargs.server_settings:
             if len(i.ports.split('/')) == 3:
                 bp = int(i.ports.split('/'))[2]
                 polVars['port_modes'].append(dict(
@@ -1120,9 +1120,79 @@ class imm(object):
     # Function - Build Profiles - Server
     #=============================================================================
     def server(self, pargs, **kwargs):
+        #=====================================================
+        # Server Profile IP settings Function
+        #=====================================================
+        pargs.ipcount = 0
+        def server_profiles_dict(name, p, pargs, smap):
+            pargs.server_profiles[name] = {
+                'firmware': smap.Firmware,
+                'model':  smap.Model,
+                'moid': smap.Moid,
+                'serial': smap.Serial,
+                'slot': smap.SlotId,
+                'object_type':smap.SourceObjectType
+            }
+            if smap.SourceObjectType == 'compute.Blade':
+                pargs.server_profiles[name].update({
+                    'chassis_id': p.identifier,
+                    'chassis_moid': smap.Parent.Moid,
+                })
+            else:
+                pargs.server_profiles[name].update({
+                    'id': p.identifier
+                })
+            # Send Error Message if IP Range isn't long enough
+            def error_ip_range(i):
+                print(f'!!!ERROR!!!\nNot Enough IPs in Range {i.server} for {name}')
+                sys.exit(1)
+            # Send Error Message if Server Range is missing from VLAN
+            def error_server_range(i):
+                print(f'!!!ERROR!!!\nDid Not Find Server IP Range defined for {i.type}:{i.name}:{i.vlan_id}')
+                sys.exit(1)
+            # Dictionary of IP Settings for Server
+            def ipdict(i, ipindex):
+                idict = {
+                    'gateway':i.gateway,
+                    'ip':i.server[ipindex],
+                    'netmask':i.netmask,
+                    'prefix':i.prefix,
+                    'vlan':i.vlan_id,
+                    'vlan_name':i.name,
+                }
+                return idict
+            if 'compupte.Blade' in smap.objectType:
+                ipindex = (int(p.identifier) - 1) * 8 + int(smap.SlotId) - 1
+            else: ipindex = int(p.identifier) + pargs.ipcount
+            pargs.ipcount += 1
+            print(pargs.ipcount)
+            for i in pargs.vlans:
+                i = DotMap(deepcopy(i))
+                if re.search('(inband|iscsi|migration|nfs|nvme)', i.type):
+                    if not i.server: error_server_range(i)
+                    if not len(i.server) >= ipindex: error_ip_range(i)
+                if re.search('(iscsi|nvme)', i.type):
+                    if not pargs.server_profiles[name].get(i.type):
+                        pargs.server_profiles[name].update({i.type:[]})
+                    idict = ipdict(i, ipindex)
+                    pargs.server_profiles[name][i.type].append(idict)
+                if re.search('(inband|migration|nfs)', i.type):
+                    idict = ipdict(i, ipindex)
+                    pargs.server_profiles[name][i.type] = idict
+            return pargs
+        
+        #=====================================================
+        # Build Server Profiles
+        #=====================================================
         if 'fc' in pargs.dtype: t = 'fcp'
         else: t = 'iscsi'
-        for p in pargs.server_profiles:
+        rackServers = []
+        for p in pargs.server_settings:
+            if p.equipment == 'RackServer': rackServers.append(p.id)
+        if len(rackServers) > 0:
+            kwargs  = isdk.api('serial_number').calls(pargs, **kwargs)
+            rackmap = DotMap(deepcopy(kwargs['results']))
+        for p in pargs.server_settings:
             if 'True' in p.tpm:
                 template = f'{p.gen}-{p.cpu}-tpm-vic-{p.vic_gen}-{t}'
             else: template = f'{p.gen}-{p.cpu}-vic-{p.vic_gen}-{t}'
@@ -1133,37 +1203,48 @@ class imm(object):
                 targets                     = [],
                 ucs_server_profile_template = template,
             )
-            for k, v in pargs.chassis.items():
-                if v.id == p.identifier:
-                    suffix = int(p.suffix)
-                    pprefix = p.profile[:-(suffix)]
-                    pstart  = int(p.profile[-(suffix):])
-                    for x in range(0,len(v.blades)):
-                        pargs.apiMethod = 'by_moid'
-                        pargs.pmoid     = v.blades[x].moid
-                        pargs.policy    = 'serial_number'
-                        pargs.purpose   = 'server'
-                        kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
-                        smap = DotMap(deepcopy(kwargs['results']))
-                        n    = smap.SlotId
-                        name = f'{pprefix}{str(pstart+n-1).zfill(suffix)}'
-                        polVars['targets'].append(dict(
-                            description   = f"{name} Server Profile",
-                            name          = f'{name}',
-                            serial_number = smap.Serial
-                        ))
-                        pargs.physical.servers = DotMap({
-                            'chassis': smap.Parent.Moid,
-                            'firmware': smap.Firmware,
-                            'model':  smap.Model,
-                            'moid': smap.Moid,
-                            'serial': smap.Serial,
-                            'slot': smap.SlotId,
-                            'object_type':smap.SourceObjectType
-                        })
-                        print(smap)
-                        exit()
+            #=====================================================
+            # Add Targets
+            #=====================================================
+            def profile_targets(name, smap):
+                polVars['targets'].append(dict(
+                    description   = f"{name} Server Profile",
+                    name          = f'{name}',
+                    serial_number = smap.Serial
+                ))
+                return polVars
 
+            #=====================================================
+            # If Chassis, Loop Through Blades/Nodes
+            #=====================================================
+            if p.equipment == 'Chassis':
+                for k, v in pargs.chassis.items():
+                    if v.id == p.identifier:
+                        suffix = int(p.suffix)
+                        pprefix = p.profile[:-(suffix)]
+                        pstart  = int(p.profile[-(suffix):])
+                        for x in range(0,len(v.blades)):
+                            pargs.apiMethod = 'by_moid'
+                            pargs.pmoid     = v.blades[x].moid
+                            pargs.policy    = 'serial_number'
+                            pargs.purpose   = 'server'
+                            kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
+                            smap = DotMap(deepcopy(kwargs['results']))
+                            name = f'{pprefix}{str(pstart+smap.SlotId-1).zfill(suffix)}'
+                            polVars = profile_targets(name, polVars, smap)
+                            pargs   = server_profiles_dict(name, p, pargs, smap)
+            elif p.equipment == 'RackServer':
+                pargs.apiMethod = 'get'
+                pargs.apiQuery  = f"RegisteredDevice.Moid eq '{pargs.registered_device}'"
+                pargs.policy    = 'serial_number'
+                pargs.purpose   = 'server'
+                kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
+                smap = DotMap(deepcopy(kwargs['results']))
+                name = p.profile
+                polVars = profile_targets(name, polVars, smap)
+
+            ezfunctions.jprint(pargs.server_profiles)
+            exit()
             # Add Policy Variables to immDict
             kwargs['class_path'] = f'profiles,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1331,7 +1412,7 @@ class imm(object):
         # Build Dictionary
         template_types = []
         server_profiles = []
-        for p in pargs.server_profiles:
+        for p in pargs.server_settings:
             if len(server_profiles) == 0:
                 server_profiles.append(p)
             else:
@@ -1698,10 +1779,10 @@ class wizard(object):
         #==================================
         # Server Profiles
         #==================================
-        pargs.server_profiles = []
+        pargs.server_settings = []
         for i in kwargs['immDict']['wizard']['imm_profiles']:
             i = DotMap(deepcopy(i))
-            pargs.server_profiles.append(DotMap(
+            pargs.server_settings.append(DotMap(
                 cpu        = i.cpu_vendor,
                 identifier = i.identifier,
                 equipment  = i.equipment_type,
@@ -1926,6 +2007,8 @@ class fw_os(object):
         # Build Dictionary
         #print(pargs.sDict)
         print(pargs.physical.servers)
+        print('finished')
+        exit()
         models = []
         for i in  pargs.physical.server:
             models.append('model')
@@ -1941,7 +2024,7 @@ class fw_os(object):
             swMoid = kwargs['pmoids']
         descr = (self.type.replace('_', ' ')).upper()
         btemplates = []
-        for i in pargs.server_profiles:
+        for i in pargs.server_settings:
             if re.search('M[5-9]', i.gen) and i.tpm == 'True': btemplates.append(f'{i.gen}-{i.cpu}-virtual-tpm')
             elif re.search('M[5-9]', i.gen): btemplates.append(f'{i.gen}-{i.cpu}-virtual')
         btemplates = numpy.unique(numpy.array(btemplates))

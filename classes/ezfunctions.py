@@ -427,6 +427,11 @@ def intersight_config(**kwargs):
     return kwargs
 
 #======================================================
+# Function - Print with json dumps
+#======================================================
+def jprint(jDict): print(json.dumps(jDict, indent=4))
+
+#======================================================
 # Function - Local User Policy - Users
 #======================================================
 def local_users_function(**kwargs):
