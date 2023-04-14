@@ -21,6 +21,9 @@ def completed_item(ptype, pargs, pmoid):
     elif 'port_mode' in ptype: name = f"PortIdStart {pargs.apiBody['port_id_start']}"
     elif 'port_role' in ptype: name = f"Port {pargs.apiBody['port_id']}"
     elif 'user_role' in ptype: name = f"Role for {pargs.purpose}"
+    elif 'upgrade' in pargs.policy: name = f".  Performing Firmware Upgrade on {pargs.serial} - {pargs.server} Server Profile"
+    elif 'auth' in pargs.policy: name = f"{pargs.apiBody['user_id']} CCO User Authentication"
+    elif 'eula' in pargs.policy: name = f"Account EULA Acceptance"
     elif pargs.apiBody.get('action'):
         if pargs.apiBody['action'] == 'Deploy': name = f"Deploy Profile {pargs.pmoid}"
         else: pargs.apiBody['name']
@@ -29,13 +32,13 @@ def completed_item(ptype, pargs, pmoid):
         if 'port' in ptype:
             print(f'      * Completed {method} for port_policy {pargs.port_policy_name}: {name} - Moid: {pmoid}')
         else: print(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
-    elif 'Deploy' in name:
-        print(f'      * Deploying Profile.')
+    elif 'Deploy' in name: print(f'      * Deploying Profile.')
     elif re.search(policy_regex, pargs.policy) and pargs.purpose == 'switch':
         name = pargs.apiBody['name']
         print(f'      * Completed {method} for {pargs.policy} name: {name} - Moid: {pmoid}. Updated Profiles.')
-    else:
-        print(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
+    elif re.search('(eula|upgrade)', pargs.policy) and pargs.purpose == 'firmware':
+        print(f'      * Completed {method} for {pargs.policy} {name}.')
+    else: print(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
 
 def deploy_notification(profile, profile_type):
     print(f'\n-------------------------------------------------------------------------------------------\n')

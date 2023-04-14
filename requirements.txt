@@ -13,6 +13,7 @@ openpyxl
 ordered_set
 phonenumbers
 pytz
+pyvmomi
 simplejson
 stdiomask
 validators

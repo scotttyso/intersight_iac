@@ -5,12 +5,42 @@
 #=============================================================================
 from copy import deepcopy
 from dotmap import DotMap
+from tqdm import tqdm
 import ipaddress
 import json
 import numpy
+import os
 import re
+import requests
 import sys
+import time
 import validating
+import urllib
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+from intersight.model.server_profile import ServerProfile
+from intersight.api import server_api
+from intersight.model.policy_abstract_policy_relationship import PolicyAbstractPolicyRelationship
+from intersight.model.mo_tag import MoTag
+from intersight.model.storage_storage_policy import StorageStoragePolicy
+from intersight.api import storage_api
+from intersight.model.firmware_server_configuration_utility_distributable import \
+    FirmwareServerConfigurationUtilityDistributable
+from intersight.model.firmware_server_configuration_utility_distributable_relationship import \
+    FirmwareServerConfigurationUtilityDistributableRelationship
+from intersight.model.softwarerepository_file_server import SoftwarerepositoryFileServer
+from intersight.model.softwarerepository_operating_system_file import SoftwarerepositoryOperatingSystemFile
+from intersight.model.softwarerepository_catalog_relationship import SoftwarerepositoryCatalogRelationship
+from intersight.model.softwarerepository_operating_system_file_relationship import \
+    SoftwarerepositoryOperatingSystemFileRelationship
+from intersight.api import softwarerepository_api
+from intersight.api import firmware_api
+from intersight.model.os_answers import OsAnswers
+from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
+from intersight.model.compute_physical_relationship import ComputePhysicalRelationship
+from intersight.api import compute_api
+from intersight.model.os_install import OsInstall
 
 sys.path.insert(0, './classes')
 from classes import ezfunctions
@@ -67,16 +97,16 @@ class imm(object):
             if not i.type in ptypes and re.search('iscsi', i.type): ptypes.append(i.type)
         for i in ptypes:
             polVars = {
-                "boot_devices": [{
-                    "enabled": True,
-                    "name": "kvm",
-                    "object_type": "boot.VirtualMedia",
-                    "sub_type": "kvm-mapped-dvd"
+                'boot_devices': [{
+                    'enabled': True,
+                    'name': 'kvm',
+                    'object_type': 'boot.VirtualMedia',
+                    'sub_type': 'kvm-mapped-dvd'
                 }],
-                "boot_mode": "Uefi",
-                "description": f"{i} Boot Policy",
-                "enable_secure_boot": True,
-                "name": f"{i}-boot",
+                'boot_mode': 'Uefi',
+                'description': f'{i} Boot Policy',
+                'enable_secure_boot': True,
+                'name': f'{i}-boot',
             }
             if 'fcp' in i:
                 fabrics = ['a', 'b']
@@ -84,33 +114,33 @@ class imm(object):
                     for c in pargs.netapp.wwpns[fabrics[x]]:
                         for k,v in c.items():
                             polVars['boot_devices'].append({
-                                "enabled": True,
-                                "interface_name": f"vhba{x+1}",
-                                "name": (pargs.netapp.data_svm) + '-' + k,
-                                "object_type": "boot.San",
-                                "slot":"MLOM",
-                                "wwpn":v
+                                'enabled': True,
+                                'interface_name': f'vhba{x+1}',
+                                'name': (pargs.netapp.data_svm) + '-' + k,
+                                'object_type': 'boot.San',
+                                'slot':'MLOM',
+                                'wwpn':v
                             })
             elif 'iscsi' in i:
                 fabrics = ['a', 'b']
                 for fab in fabrics:
                         polVars['boot_devices'].append({
-                            "enabled": True,
-                            "interface_name": f"storage-{fab}",
-                            "name": f"storage-{fab}",
-                            "object_type": "boot.Iscsi",
-                            "slot":"MLOM"
+                            'enabled': True,
+                            'interface_name': f'storage-{fab}',
+                            'name': f'storage-{fab}',
+                            'object_type': 'boot.Iscsi',
+                            'slot':'MLOM'
                         })
             polVars['boot_devices'].append({
-                "enabled": True,
-                "name": "cimc",
-                "object_type": "boot.VirtualMedia",
-                "sub_type": "cimc-mapped-dvd"
+                'enabled': True,
+                'name': 'cimc',
+                'object_type': 'boot.VirtualMedia',
+                'sub_type': 'cimc-mapped-dvd'
             })
             polVars['boot_devices'].append({
-                "enabled": True,
-                "name": "uefishell",
-                "object_type": "boot.UefiShell"
+                'enabled': True,
+                'name': 'uefishell',
+                'object_type': 'boot.UefiShell'
             })
 
             # Add Policy Variables to immDict
@@ -128,12 +158,12 @@ class imm(object):
     def chassis(self, pargs, **kwargs):
         models          = []
         pargs.apiMethod = 'get'
-        pargs.apiQuery  = f"RegisteredDevice.Moid eq '{pargs.registered_device}'"
+        pargs.apiFilter  = f"RegisteredDevice.Moid eq '{pargs.registered_device}'"
         pargs.policy    = 'serial_number'
         pargs.purpose   = 'chassis'
         kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
         pargs.chassis   = DotMap(deepcopy(kwargs['pmoids']))
-        pargs.pop('apiQuery')
+        pargs.pop('apiFilter')
         for k ,v in pargs.chassis.items():
             models.append(v.model.split('-')[1])
         models = numpy.unique(numpy.array(models))
@@ -150,7 +180,7 @@ class imm(object):
             for k, v in pargs.chassis.items():
                 if m in v.model:
                     polVars['targets'].append(dict(
-                        description   = f"{pargs.name}-{v.id} Chassis Profile",
+                        description   = f'{pargs.name}-{v.id} Chassis Profile',
                         name          = f'{pargs.name}-{v.id}',
                         serial_number = k
                     ))
@@ -170,7 +200,7 @@ class imm(object):
         # Build Dictionary
         polVars = dict(
             action                      = 'Deploy',
-            description                 = f"{pargs.name} Domain Profile",
+            description                 = f'{pargs.name} Domain Profile',
             name                        = pargs.name,
             network_connectivity_policy = f'{pargs.ppfx}dns',
             ntp_policy                  = f'{pargs.ppfx}ntp',
@@ -258,32 +288,44 @@ class imm(object):
         for i in pargs.ranges:
             vrange = ezfunctions.vlan_list_full(i['vlan_list'])
             vlans.extend(vrange)
-        pargs.vlan = {}
+        pargs.vlan = DotMap()
+        pargs.vlan.iscsi     = []
+        pargs.vlan.mgmt      = ''
+        pargs.vlan.migration = ''
+        pargs.vlan.nfs       = ''
+        pargs.vlan.nvme      = []
         pargs.vlan['all_vlans'] = ezfunctions.vlan_list_format(numpy.unique(numpy.array(vlans)))
         for i in pargs.vlans:
-            if   i['type'] == 'inband': pargs.vlan.update({'mgmt':i['vlan_id']})
-            elif i['type'] == 'iscsi': pargs.vlan.update({'iscsi':i['vlan_id']})
-            elif i['type'] == 'migration': pargs.vlan.update({'migration':i['vlan_id']})
-            elif i['type'] == 'nfs': pargs.vlan.update({'nfs':i['vlan_id']})
-            elif i['type'] == 'nvme': pargs.vlan.update({'nvme':i['vlan_id']})
-        storage = []
-        if pargs.vlan.get('iscsi'): storage.append(pargs.vlan['iscsi'])
-        if pargs.vlan.get('nfs'): storage.append(pargs.vlan['nfs'])
-        if pargs.vlan.get('nvme'): storage.append(pargs.vlan['nvme'])
-        pargs.vlan['storage'] = ezfunctions.vlan_list_format(storage)
-        plist = ['mgmt', 'migration', 'storage', 'all_vlans']
+            i = DotMap(deepcopy(i))
+            if   i.type == 'inband': pargs.vlan.mgmt = i.vlan_id
+            elif i.type == 'iscsi': pargs.vlan.iscsi.append(i.vlan_id)
+            elif i.type == 'migration': pargs.vlan.migration = i.vlan_id
+            elif i.type == 'nfs': pargs.vlan.nfs = i.vlan_id
+            elif i.type == 'nvme': pargs.vlan.nvme.append(i.vlan_id)
+        if len(pargs.vlan.iscsi) == 2 and len(pargs.vlan.nvme) == 2:
+            pargs.vlan.storage_a = ezfunctions.vlan_list_format(sorted(
+                [pargs.vlan.nfs, pargs.vlan.iscsi[0], pargs.vlan.nvme[0]]))
+            pargs.vlan.storage_b = ezfunctions.vlan_list_format(sorted(
+                [pargs.vlan.nfs, pargs.vlan.iscsi[1], pargs.vlan.nvme[1]]))
+        else:
+            pargs.vlan.storage_a = pargs.vlan.nfs
+            pargs.vlan.storage_b = pargs.vlan.nfs
+        plist = ['mgmt', 'migration', 'storage-a', 'storage-b', 'all_vlans']
         for i in plist:
-            if re.search('(mgmt|migration)', i): nvlan = pargs.vlan[i]
-            elif 'storage' == i:
-                if pargs.vlan.get('iscsi'): nvlan = pargs.vlan['iscsi']
+            if re.search('(mgmt|migration)', i) and len(str(pargs.vlan[i])) > 0: nvlan = pargs.vlan[i]
+            elif 'storage-a' == i and len(pargs.vlan.iscsi) == 2:
+                nvlan = pargs.vlan.iscsi[0]
+            elif 'storage-b' == i and len(pargs.vlan.iscsi) == 2:
+                nvlan = pargs.vlan.iscsi[1]
             else: nvlan = 1
+            vlan_name = i.replace('-', '_')
             polVars = dict(
-                allowed_vlans = f'{pargs.vlan[i]}',
+                allowed_vlans = f'{pargs.vlan[vlan_name]}',
                 description   = f'{pargs.ppfx}{i} {descr} Policy',
                 name          = f'{pargs.ppfx}{i}',
                 native_vlan   = nvlan,
             )
-
+            
             # Add Policy Variables to immDict
             kwargs['class_path'] = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -725,10 +767,11 @@ class imm(object):
                 plist = ['mgmt-Silver', 'migration-Bronze', 'storage-Platinum', 'dvs-Gold']
                 vnic_count = 0
                 for i in plist:
-                    pname = i.split('-')[0]
+                    vname = i.split('-')[0]
                     pqos  = i.split('-')[1]
-                    if 'dvs' in pname: pgroup = 'all_vlans'
-                    else: pgroup = pname
+                    if 'dvs' in vname: pgroups = ['all_vlans']
+                    elif 'storage' in vname: pgroups = [f'{vname}-a', f'{vname}-b']
+                    else: pgroups = [vname]
                     if re.search('(dvs|migration)', i): adapter_policy = 'VMware-High-Trf'
                     elif 'storage' in i and g == 'gen4': adapter_policy = '16RxQs-4G'
                     elif 'storage' in i and g == 'gen5': adapter_policy = '16RxQs-5G'
@@ -736,19 +779,19 @@ class imm(object):
                     polVars['vnics'].append(dict(
                         ethernet_adapter_policy         = adapter_policy,
                         ethernet_network_control_policy = 'cdp',
-                        ethernet_network_group_policy   = pgroup,
+                        ethernet_network_group_policies = pgroups,
                         ethernet_qos_policy             = pqos,
                         iscsi_boot_policies             = [],
-                        names                           = [f'{pname}-a', f'{pname}-b'],
-                        mac_address_pools               = [f'{pname}-a', f'{pname}-b'],
+                        names                           = [f'{vname}-a', f'{vname}-b'],
+                        mac_address_pools               = [f'{vname}-a', f'{vname}-b'],
                         placement_pci_order             = [pci_order, pci_order + 1],
                     ))
-                    if 'storage' in pname and 'iscsi' in lcp:
+                    if 'storage' in vname and 'iscsi' in lcp:
                         polVars['vnics'][vnic_count].update({'iscsi_boot_policies': pargs.iscsi.boot})
                     else: polVars['vnics'][vnic_count].pop('iscsi_boot_policies')
                     pci_order += 2
                     vnic_count += 1
-
+                
                 # Add Policy Variables to immDict
                 kwargs['class_path'] = f'policies,{self.type}'
                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1123,7 +1166,6 @@ class imm(object):
         #=====================================================
         # Server Profile IP settings Function
         #=====================================================
-        pargs.ipcount = 0
         def server_profiles_dict(name, p, pargs, smap):
             pargs.server_profiles[name] = {
                 'firmware': smap.Firmware,
@@ -1139,9 +1181,7 @@ class imm(object):
                     'chassis_moid': smap.Parent.Moid,
                 })
             else:
-                pargs.server_profiles[name].update({
-                    'id': p.identifier
-                })
+                pargs.server_profiles[name].update({'id': p.identifier})
             # Send Error Message if IP Range isn't long enough
             def error_ip_range(i):
                 print(f'!!!ERROR!!!\nNot Enough IPs in Range {i.server} for {name}')
@@ -1161,11 +1201,12 @@ class imm(object):
                     'vlan_name':i.name,
                 }
                 return idict
-            if 'compupte.Blade' in smap.objectType:
-                ipindex = (int(p.identifier) - 1) * 8 + int(smap.SlotId) - 1
-            else: ipindex = int(p.identifier) + pargs.ipcount
-            pargs.ipcount += 1
-            print(pargs.ipcount)
+            for i in pargs.vlans:
+                if 'inband' in i['type']:
+                    ipindex = i['server'].index(p.inband)
+                    break
+            if 'compute.Blade' in smap.SourceObjectType:
+                ipindex = ipindex + int(smap.SlotId) - 1
             for i in pargs.vlans:
                 i = DotMap(deepcopy(i))
                 if re.search('(inband|iscsi|migration|nfs|nvme)', i.type):
@@ -1192,27 +1233,32 @@ class imm(object):
         if len(rackServers) > 0:
             kwargs  = isdk.api('serial_number').calls(pargs, **kwargs)
             rackmap = DotMap(deepcopy(kwargs['results']))
+        sDict = {}
         for p in pargs.server_settings:
             if 'True' in p.tpm:
                 template = f'{p.gen}-{p.cpu}-tpm-vic-{p.vic_gen}-{t}'
             else: template = f'{p.gen}-{p.cpu}-vic-{p.vic_gen}-{t}'
-            # Build Dictionary
-            polVars = dict(
-                action                      = 'Deploy',
-                create_from_template        = False,
-                targets                     = [],
-                ucs_server_profile_template = template,
-            )
-            #=====================================================
-            # Add Targets
-            #=====================================================
-            def profile_targets(name, smap):
-                polVars['targets'].append(dict(
-                    description   = f"{name} Server Profile",
-                    name          = f'{name}',
-                    serial_number = smap.Serial
-                ))
-                return polVars
+            if not sDict.get(template):
+                sDict.update({template:dict(
+                    action                      = 'Deploy',
+                    create_from_template        = False,
+                    targets                     = [],
+                    ucs_server_profile_template = template,
+                )})            
+        def profile_targets(name, sDict, template, smap):
+            sDict[template]['targets'].append(dict(
+                description   = f'{name} Server Profile',
+                name          = f'{name}',
+                serial_number = smap.Serial
+            ))
+            return sDict
+        #=====================================================
+        # Add Targets
+        #=====================================================
+        for p in pargs.server_settings:
+            if 'True' in p.tpm:
+                template = f'{p.gen}-{p.cpu}-tpm-vic-{p.vic_gen}-{t}'
+            else: template = f'{p.gen}-{p.cpu}-vic-{p.vic_gen}-{t}'
 
             #=====================================================
             # If Chassis, Loop Through Blades/Nodes
@@ -1229,25 +1275,27 @@ class imm(object):
                             pargs.policy    = 'serial_number'
                             pargs.purpose   = 'server'
                             kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
-                            smap = DotMap(deepcopy(kwargs['results']))
-                            name = f'{pprefix}{str(pstart+smap.SlotId-1).zfill(suffix)}'
-                            polVars = profile_targets(name, polVars, smap)
-                            pargs   = server_profiles_dict(name, p, pargs, smap)
+                            smap  = DotMap(deepcopy(kwargs['results']))
+                            name  = f'{pprefix}{str(pstart+smap.SlotId-1).zfill(suffix)}'
+                            sDict = profile_targets(name, sDict, template, smap)
+                            pargs = server_profiles_dict(name, p, pargs, smap)
             elif p.equipment == 'RackServer':
                 pargs.apiMethod = 'get'
-                pargs.apiQuery  = f"RegisteredDevice.Moid eq '{pargs.registered_device}'"
+                pargs.apiFilter  = f"RegisteredDevice.Moid eq '{pargs.registered_device}'"
                 pargs.policy    = 'serial_number'
                 pargs.purpose   = 'server'
                 kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
-                smap = DotMap(deepcopy(kwargs['results']))
-                name = p.profile
-                polVars = profile_targets(name, polVars, smap)
-
-            ezfunctions.jprint(pargs.server_profiles)
-            exit()
+                smap  = DotMap(deepcopy(kwargs['results']))
+                name  = p.profile
+                sDict = profile_targets(name, sDict, template, smap)
+                pargs = server_profiles_dict(name, p, pargs, smap)
+        
+        pargs.server_profiles = dict(sorted(pargs.server_profiles.items()))
+        for k, v in sDict.items():
             # Add Policy Variables to immDict
+            v['targets'] = sorted(v['targets'], key=lambda item: item['name'])
             kwargs['class_path'] = f'profiles,{self.type}'
-            kwargs = ezfunctions.ez_append(polVars, **kwargs)
+            kwargs = ezfunctions.ez_append(v, **kwargs)
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1441,7 +1489,7 @@ class imm(object):
                 polVars = dict(
                     bios_policy             = bios_policy,
                     boot_order_policy       = f'{t}-boot',
-                    description             = f"{name} Server Template",
+                    description             = f'{name} Server Template',
                     imc_access_policy       = f'{pargs.ppfx}kvm',
                     lan_connectivity_policy = f'{pargs.ppfx}{lcp}',
                     local_user_policy       = f'{pargs.ppfx}users',
@@ -1640,23 +1688,27 @@ class wizard(object):
         #==================================
         # Configure Nexus Devices
         #==================================
-        #kwargs, pargs = nxos.nxos.config(self, pargs, **kwargs)
+        if pargs.nope == True:
+            kwargs, pargs = nxos.nxos.config(self, pargs, **kwargs)
+        #=====================================================
+        # Build NetApp Dictionaries
+        #=====================================================
+        plist = ['autosupport', 'broadcast_domain', 'cluster', 'nodes', 'schedule', 'snmp', 'svm', 'volume']
+        for i in plist:
+            kwargs, pargs = eval(f'netapp.build(i).{i}(pargs, **kwargs)')
         #==================================
         # Configure NetApp
         #==================================
-        pargs.configure_netapp = False
-        pargs.configure_netapp_svm = False
-        plist = ['autosupport', 'broadcast_domain', 'cluster', 'nodes', 'schedule', 'snmp', 'svm', 'volume']
-        #plist = ['volume']
-        for i in plist:
-            kwargs, pargs = eval(f"netapp.build(i).{i}(pargs, **kwargs)")
-        if pargs.configure_netapp_svm == False:
+        if pargs.nope == True:
+            plist.insert(2, 'cluster_init')
+            for i in plist:
+                pargs.items = kwargs['immDict']['orgs'][kwargs['org']]['netapp'][i]
+                kwargs, pargs = eval(f'netapp.api(i).{i}(pargs, **kwargs)')
+        else:
             pargs.netapp.wwpns.a    = [{'fcp-lif-01-1a':'20:0e:00:a0:98:aa:1c:8d'}, {'fcp-lif-02-1a':'20:0f:00:a0:98:aa:1c:8d'}]
             pargs.netapp.wwpns.b    = [{'fcp-lif-01-1c':'20:10:00:a0:98:aa:1c:8d'}, {'fcp-lif-02-1c':'20:11:00:a0:98:aa:1c:8d'}]
             pargs.netapp.iscsi.iqn  = 'iqn.1992-08.com.netapp:sn.57c603ffcc2811ed9ce100a098aa1c8d:vs.6'
             pargs.netapp.nvme.nqn   = 'nqn.1992-08.com.netapp:sn.57c603ffcc2811ed9ce100a098aa1c8d:discovery'
-        #print(json.dumps(kwargs['immDict']['orgs'][kwargs['org']]['netapp'], indent=4))
-        #exit()
         #==================================
         # Configure IMM Pools and Policies
         #==================================
@@ -1674,7 +1726,7 @@ class wizard(object):
         if 'iscsi_boot' in plist:
             plist.remove('iscsi_static_target')
             plist.insert((plist.index('iscsi_boot') - 1), 'iscsi_static_target')
-        for i in plist: kwargs, pargs = eval(f"imm(i).{i}(pargs, **kwargs)")
+        for i in plist: kwargs, pargs = eval(f'imm(i).{i}(pargs, **kwargs)')
         #==================================
         # Configure Domain Profiles
         #==================================
@@ -1699,6 +1751,7 @@ class wizard(object):
         # Credentials
         #=====================================================
         jDict = kwargs['immDict']['wizard']['credentials'][0]
+        pargs.cco_user = jDict['cco_username']
         pargs.nxosuser = jDict['nxos_username']
         pargs.stguser  = jDict['netapp_username']
         pargs.vctruser = jDict['vcenter_username']
@@ -1785,6 +1838,7 @@ class wizard(object):
             pargs.server_settings.append(DotMap(
                 cpu        = i.cpu_vendor,
                 identifier = i.identifier,
+                inband     = i.inband_start,
                 equipment  = i.equipment_type,
                 gen        = i.generation,
                 os_type    = i.os_type,
@@ -1852,16 +1906,6 @@ class wizard(object):
         pargs.netapp.protocols = numpy.unique(numpy.array(pargs.netapp.protocols))
         pargs.protocols = pargs.netapp.protocols
         pargs.host = deepcopy(pargs.netapp.node01)
-        #==================================
-        # Get Disk Information
-        #==================================
-        uri   = 'storage/disks'
-        jData = netapp.get(uri, pargs, **kwargs)
-        pargs.netapp.disk_count = jData['num_records'] - 1
-        disk_name = jData['records'][0]['name']
-        uri   = f'storage/disks/{disk_name}'
-        jData = netapp.get(uri, pargs, **kwargs)
-        pargs.netapp.disk_type = jData['type'].upper()
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1874,7 +1918,6 @@ class wizard(object):
     def server_identities(self, pargs, **kwargs):
         # Get Variables from Library
         smap = deepcopy(kwargs['immDict']['orgs'][kwargs['org']]['profiles']['server'])
-        pargs.profiles.server = DotMap()
         #=====================================================
         # Get Server Profile Names and Moids
         #=====================================================
@@ -1884,6 +1927,7 @@ class wizard(object):
         pargs.names.sort()
         pargs.apiMethod = 'get'
         pargs.policy    = 'server'
+        pargs.purpose   = 'server'
         kwargs = isdk.api('server').calls(pargs, **kwargs)
         pargs.sDict = kwargs['results']
         if 'fc' in pargs.dtype:
@@ -1892,26 +1936,32 @@ class wizard(object):
             #=====================================================
             for k, v in kwargs['pmoids'].items():
                 pargs.apiMethod = 'get'
-                pargs.apiQuery  = f"Profile.Moid eq '{v['Moid']}'"
+                pargs.apiFilter  = f"Profile.Moid eq '{v['Moid']}'"
                 pargs.policy    = 'vhbas'
                 pargs.purpose   = 'vhbas'
                 kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
                 r = kwargs['results']
-                pargs.profiles.server[k].wwpns = []
-                for s in r: pargs.profiles.server[k].wwpns.append(s['Wwpn'])
+                pargs.server_profiles[k]['wwpns'] = {}
+                for s in r: pargs.server_profiles[k]['wwpns'].update({s['Name']:s['Wwpn']})
+                pargs.policy    = 'vnics'
+                pargs.purpose   = 'vnics'
+                kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
+                r = kwargs['results']
+                pargs.server_profiles[k]['macs'] = {}
+                for s in r: pargs.server_profiles[k]['macs'].update({s['Name']:s['MacAddress']})
         elif re.search('(iscsi|nvme-tcp)', pargs.dtype):
             #=====================================================
             # Get WWPN's for vHBAs and Add to Profile Map
             #=====================================================
             for k, v in kwargs['pmoids'].items():
                 pargs.apiMethod = 'get'
-                pargs.apiQuery  = f"AssignedToEntity.Moid eq '{v['Moid']}'"
+                pargs.apiFilter  = f"AssignedToEntity.Moid eq '{v['Moid']}'"
                 pargs.policy    = 'iqn'
                 pargs.purpose   = 'iqn'
                 kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
                 r = kwargs['results']
-                pargs.profiles.server[k].iqn = r['IqnId']
-        pargs.pop('apiQuery')
+                pargs.server_profiles[k].iqn = r['IqnId']
+        pargs.pop('apiFilter')
         #=====================================================
         # Run Lun Creation Class
         #=====================================================
@@ -2003,48 +2053,408 @@ class fw_os(object):
     #=============================================================================
     # Function - Build Policies - BIOS
     #=============================================================================
-    def fw(self, pargs, **kwargs):
-        # Build Dictionary
-        #print(pargs.sDict)
-        print(pargs.physical.servers)
-        print('finished')
-        exit()
-        models = []
-        for i in  pargs.physical.server:
-            models.append('model')
-        models = numpy.unique(numpy.array(models))
-        swMoids = []
+    def firmware(self, pargs, **kwargs):
+        #=====================================================
+        # Load Variables and Send Begin Notification
+        #=====================================================
+        validating.begin_section(self.type, 'Install')
+        pargs.models = []
+        for k,v in  pargs.server_profiles.items():
+            pargs.models.append(v['model'])
+        pargs.models = numpy.unique(numpy.array(pargs.models))
+        #==================================
+        # Get CCO Password and Root
+        #==================================
+        kwargs['Variable'] = 'cco_password'
+        kwargs = ezfunctions.sensitive_var_value(**kwargs)
+        pargs.cco_password = kwargs['var_value']
+        #==================================
+        # Get Firmware Moids
+        #==================================
         pargs.apiMethod = 'get'
-        pargs.policy = 'distributable'
-        pargs.purpose = 'firmware'
-        pargs.version = '4.2(3b)'
-        for m in models:
-            pargs.apiQuery = f"Version eq {pargs.fw_version} and contains(SupportedModels, '{m}')"
-            kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
-            swMoid = kwargs['pmoids']
-        descr = (self.type.replace('_', ' ')).upper()
-        btemplates = []
-        for i in pargs.server_settings:
-            if re.search('M[5-9]', i.gen) and i.tpm == 'True': btemplates.append(f'{i.gen}-{i.cpu}-virtual-tpm')
-            elif re.search('M[5-9]', i.gen): btemplates.append(f'{i.gen}-{i.cpu}-virtual')
-        btemplates = numpy.unique(numpy.array(btemplates))
-        for i in btemplates:
-            polVars = dict(
-                baud_rate           = 115200,
-                bios_template       = i,
-                console_redirection = f'serial-port-a',
-                description         = f'{pargs.ppfx}{i} {descr} Policy',
-                name                = f'{pargs.ppfx}{i}',
-                serial_port_aenable = f'enabled',
-                terminal_type       = f'vt100',
-            )
+        pargs.policy = 'distributables'
+        pargs.purpose = self.type
+        pargs.fw_version = '5.1(0.230054)'
+        sw_moids = {}
+        for m in pargs.models:
+            pargs.apiFilter = f"Version eq '{pargs.fw_version}' and contains(SupportedModels, '{m}')"
+            kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+            sw_moids.update({m:{'Moid':kwargs['results'][0]['Moid']}})
+        pargs.pop('apiFilter')
+        print(sw_moids)
+        #==================================
+        # Software Repository Auth
+        #==================================
+        pargs.apiBody = {
+            'object_type': 'softwarerepository.Authorization',
+            'password': pargs.cco_password,
+            'repository_type': 'Cisco',
+            'user_id': pargs.cco_user
+        }
+        pargs.apiMethod = 'create'
+        pargs.policy    = 'auth'
+        pargs.purpose   = 'firmware'
+        kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+        #==================================
+        # Software Eula
+        #==================================
+        pargs.apiMethod = 'by_moid'
+        pargs.pmoid     = kwargs['results'][0]['AccountMoid']
+        pargs.policy    = 'eula'
+        pargs.purpose   = 'firmware'
+        kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+        if not kwargs['results']:
+            pargs.apiBody   = {'class_id': 'firmware.Eula', 'object_type': 'firmware.Eula'}
+            pargs.apiMethod = 'create'
+            kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+        #==================================
+        # Upgrade Firmware
+        #==================================
+        for k,v in  pargs.server_profiles.items():
+            v = DotMap(deepcopy(v))
+            #==================================
+            # Check Firmware Version
+            #==================================
+            if v.firmware == pargs.fw_version:
+                print(f'Server Profile {k} - Server {v.serial} running Target Firmware {v.firmware}.')
+            else:
+                pargs.apiBody = {
+                    'class_id': 'firmware.Upgrade',
+                    'direct_download': {
+                        'class_id': 'firmware.DirectDownload',
+                        'object_type': 'firmware.DirectDownload',
+                        'upgradeoption': 'upgrade_full'
+                    },
+                    'distributable': {
+                        'class_id': 'mo.MoRef',
+                        'moid': sw_moids[v.model]['Moid'],
+                        'object_type': 'firmware.Distributable'
+                    },
+                    'network_share': {'object_type': 'firmware.NetworkShare'},
+                    'object_type': 'firmware.Upgrade',
+                    'server': {
+                        'class_id': 'mo.MoRef',
+                        'moid': v.moid,
+                        'object_type': v.object_type
+                    },
+                    'upgrade_type': 'direct_upgrade',
+                }
+                #==================================
+                # Upgrade Firmware
+                #==================================
+                pargs.apiMethod = 'create'
+                pargs.policy = 'upgrade'
+                pargs.server = k
+                pargs.serial = v.serial
+                pargs.purpose = self.type
+                kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+                if kwargs['running']:
+                    pargs.apiMethod = 'get'
+                    pargs.apiFilter = f"Server.Moid eq '{v.moid}'"
+                    pargs.srv_moid  = v.moid
+                    kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+                    pargs.pop('apiFilter')
+                    pargs.upgrade[k].moid   = kwargs['pmoids'][v.moid]['Moid']
+                    pargs.upgrade[k].status = kwargs['pmoids'][v.moid]['UpgradeStatus']['Moid']
+                else:
+                    pargs.upgrade[k].moid   = kwargs['results']['Moid']
+                    pargs.upgrade[k].status = kwargs['results']['UpgradeStatus']['Moid']
+        #==================================
+        # Power Cycle the Server
+        #==================================
+        #def power_cycle(v, pargs, **kwargs):
+        #    pargs.apiMethod = 'get'
+        #    pargs.apiFilter = f"Server.Moid eq '{v.moid}'"
+        #    pargs.policy    = 'server_settings'
+        #    pargs.purpose   = 'server'
+        #    kwargs = isdk.api('server').calls(pargs, **kwargs)
+        #    pmoid = kwargs['pmoid']
+        #    pargs.pop('apiFilter')
+        #    pargs.apiBody   = {'AdminPowerState': 'PowerCycle'}
+        #    pargs.apiMethod = 'patch'
+        #    kwargs = isdk.api('server').calls(pargs, **kwargs)
+        #    return kwargs, pargs
+        #=================================================
+        # Monitor Firmware Upgrade until Complete
+        #=================================================
+        for k, v in  pargs.server_profiles.items():
+            v = DotMap(deepcopy(v))
+            if not v.firmware == pargs.fw_version:
+                upgrade_complete = False
+                while upgrade_complete == False:
+                    pargs.apiMethod = 'by_moid'
+                    pargs.pmoid     = pargs.upgrade[k].status
+                    pargs.policy    = 'status'
+                    pargs.purpose   = self.type
+                    kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+                    if kwargs['results']['Overallstatus'] == 'success':
+                        upgrade_complete = True
+                        print(f'    - Completed Firmware Upgrade for {k}.')
+                    elif kwargs['results']['Overallstatus'] == 'failed':
+                        pargs.upgrade.failed.update({k:v.moid})
+                        print(f'!!!FAILED!!! Firmware Upgrade for Server Profile {k}: Server {v.serial} failed.')
+                        upgrade_complete = True
+                    else: 
+                        print(f'      * Firmware Upgrade still ongoing for {k}.  Waiting 120 seconds.')
+                        time.sleep(120)
 
-            # Add Policy Variables to immDict
-            kwargs['class_path'] = f'policies,{self.type}'
-            kwargs = ezfunctions.ez_append(polVars, **kwargs)
         #=====================================================
-        # Return pargs and kwargs
+        # Send End Notification and return kwargs
         #=====================================================
+        validating.end_section(self.type, 'Install')
         return kwargs, pargs
 
+    #=============================================================================
+    # Function - Build Policies - BIOS
+    #=============================================================================
+    def os_install(self, pargs, **kwargs):
+        #=====================================================
+        # Load Variables and Send Begin Notification
+        #=====================================================
+        validating.begin_section(self.type, 'Install')
+        org_moid = kwargs['org_moids'][kwargs['org']]['Moid']
+        pargs.models = []
+        for k,v in  pargs.server_profiles.items():
+            pargs.models.append(v['model'])
+        pargs.models = numpy.unique(numpy.array(pargs.models))
+        pargs.repository_server = 'rdp1.rich.ciscolabs.com'
+        pargs.repository_path = '/'
+        pargs.scu_iso = 'ucs-scu-6.2.3b.iso'
+        pargs.scu_version = (pargs.scu_iso.split('.iso')[0]).split('-')[2]
+        pargs.os_iso = 'VMware-ESXi-7.0.3d-19482537-Custom-Cisco-4.2.2-a.iso'
+        pargs.os_version = 'ESXi 7.0 U3'
+        pargs.os_vendor  = 'VMware'
+        #==================================
+        # Get ESXi Root Password
+        #==================================
+        kwargs['Variable'] = 'esxi_password'
+        kwargs = ezfunctions.sensitive_var_value(**kwargs)
+        pargs.esxi_password = kwargs['var_value']
+        #==================================
+        # Get Org Software Repo
+        #==================================
+        pargs.apiMethod  = 'get'
+        pargs.names      = ['user-catalog']
+        pargs.policy     = 'org_repository'
+        pargs.purpose    = 'software_repository'
+        kwargs           = isdk.api(pargs.policy).calls(pargs, **kwargs)
+        pargs.repository = kwargs['pmoids']['user-catalog']['Moid']
+        #==================================
+        # Get Existing SCU Repositories
+        #==================================
+        pargs.apiFilter   = f"Catalog.Moid eq '{pargs.repository}'"
+        pargs.names       = [f'scu-{pargs.scu_version}']
+        pargs.policy      = 'server_configuration_utility'
+        kwargs            = isdk.api(pargs.policy).calls(pargs, **kwargs)
+        #==================================
+        # Create/Patch SCU Repo apiBody
+        #==================================
+        models = pargs.models.tolist()
+        pargs.apiBody = {
+            'catalog': {
+                'class_id': 'mo.MoRef',
+                'moid': pargs.repository,
+                'object_type': 'softwarerepository.Catalog'
+            },
+            'class_id': 'firmware.ServerConfigurationUtilityDistributable',
+            'description': f'scu-{pargs.scu_version} Server Configuration Utility',
+            'name': f'scu-{pargs.scu_version}',
+            'object_type': 'firmware.ServerConfigurationUtilityDistributable',
+            'source': {
+                'class_id': 'softwarerepository.HttpServer',
+                'LocationLink': f'https://{pargs.repository_server}{pargs.repository_path}{pargs.scu_iso}',
+                'object_type': 'softwarerepository.HttpServer',
+            },
+            'supported_models': models,
+            'Vendor': 'Cisco',
+            'Version': pargs.scu_version
+        }
+        if kwargs['pmoids'].get(pargs.apiBody['name']):
+            pargs.apiMethod = 'patch'
+            pargs.pmoid     = kwargs['pmoids'][pargs.apiBody['name']]['Moid']
+        else: pargs.apiMethod = 'create'
+        kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+        pargs.scu_moid = kwargs['pmoid']
+        repo_url = f'https://{pargs.repository_server}{pargs.repository_path}{pargs.scu_iso}'
+        try:
+            r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
+        except requests.RequestException as e:
+            print(f"!!!ERROR!!!\n  Exception when calling {repo_url}:\n {e}\n")
+            sys.exit(1)
+        #size = r.headers.get('content-length', -1)
+        #==================================
+        # Confirm if OS Repo Exists
+        #==================================
+        pargs.apiMethod = 'get'
+        pargs.names     = ['ESXi7.0U3']
+        pargs.policy    = 'operating_system'
+        kwargs          = isdk.api(pargs.policy).calls(pargs, **kwargs)
+        pargs.pop('apiFilter')
+        #==================================
+        # Create/Patch OS Repo apiBody
+        #==================================
+        pargs.apiBody = {
+            'catalog': {
+                'class_id': 'mo.MoRef',
+                'moid': pargs.repository,
+                'object_type': 'softwarerepository.Catalog'
+            },
+            'class_id': 'softwarerepository.OperatingSystemFile',
+            'description': f'{pargs.os_version} Server Configuration Utility',
+            'name': pargs.os_version,
+            'object_type': 'softwarerepository.OperatingSystemFile',
+            'source': {
+                'class_id': 'softwarerepository.HttpServer',
+                'LocationLink': f'https://{pargs.repository_server}{pargs.repository_path}{pargs.os_iso}',
+                'object_type': 'softwarerepository.HttpServer',
+            },
+            'Vendor': pargs.os_vendor,
+            'Version': pargs.os_version
+        }
+        if kwargs['pmoids'].get(pargs.apiBody['name']):
+            pargs.apiMethod = 'patch'
+            pargs.pmoid     = kwargs['pmoids'][pargs.apiBody['name']]['Moid']
+        else: pargs.apiMethod = 'create'
+        kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+        pargs.os_moid = kwargs['pmoid']
+        repo_url = f'https://{pargs.repository_server}{pargs.repository_path}{pargs.os_iso}'
+        try:
+            r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
+        except requests.RequestException as e:
+            print(f"!!!ERROR!!!\n  Exception when calling {repo_url}:\n {e}\n")
+            sys.exit(1)
+        #size = r.headers.get('content-length', -1)
+        #==================================
+        # Get OS Catalog
+        #==================================
+        pargs.apiFilter   = f"Name eq 'shared'"
+        pargs.apiMethod   = 'get'
+        pargs.policy      = 'os_catalog'
+        pargs.purpose     = self.type
+        kwargs            = isdk.api(pargs.policy).calls(pargs, **kwargs)
+        pargs.os_catalog  = kwargs['pmoids']['shared']['Moid']
+        #==================================
+        # Get OS Configuration File
+        #==================================
+        pargs.apiFilter   = f"Catalog.Moid eq '{pargs.os_catalog}'"
+        pargs.names       = ['ESXi7.0ConfigFile']
+        pargs.policy      = 'os_configuration'
+        kwargs            = isdk.api(pargs.policy).calls(pargs, **kwargs)
+        pargs.os_config   = kwargs['pmoids']['ESXi7.0ConfigFile']['Moid']
+        #==========================================
+        # Deploy Operating System for each Profile
+        #==========================================
+        for k,v in pargs.netapp.wwpns.a[1].items(): san_target = v
+        for k,v in pargs.server_profiles.items():
+            v = DotMap(deepcopy(v))
+            if re.search('(esx08)', k):
+                pargs.apiBody = {
+                    'answers': {
+                        'ClassId': 'os.Answers',
+                        'Hostname': k,
+                        'IpConfigType': 'static',
+                        'IpConfiguration': {
+                            'ClassId': 'os.Ipv4Configuration',
+                            'IpV4Config': {
+                                'ClassId': 'comm.IpV4Interface',
+                                'Gateway': v.inband.gateway,
+                                'IpAddress': v.inband.ip,
+                                'Netmask': v.inband.netmask,
+                                'ObjectType': 'comm.IpV4Interface'
+                            },
+                            'ObjectType': 'os.Ipv4Configuration',
+                        },
+                        "IsRootPasswordCrypted": False,
+                        'Nameserver': pargs.dns_servers[0],
+                        'NetworkDevice': v.macs['mgmt-a'],
+                        'ObjectType': 'os.Answers',
+                        'RootPassword': pargs.esxi_password,
+                        'Source': 'Template'
+                    },
+                    'configuration_file': {
+                        'class_id': 'mo.MoRef',
+                        'Moid': pargs.os_config,
+                        'object_type': 'os.ConfigurationFile',
+                    },
+                    'image': {
+                        'class_id': 'mo.MoRef',
+                        'Moid': pargs.os_moid,
+                        'object_type': 'softwarerepository.OperatingSystemFile',
+                    },
+                    'install_method': 'vMedia',
+                    'install_target': {
+                        'class_id': 'os.FibreChannelTarget',
+                        'initiator_wwpn': v.wwpns['vhba1'],
+                        'lun_id': 0,
+                        'object_type': 'os.FibreChannelTarget',
+                        'target_wwpn': san_target
+                    },
+                    'name': f'{k}-osinstall',
+                    'object_type': 'os.Install',
+                    'organization': {
+                        'class_id': 'mo.MoRef',
+                        'Moid': org_moid,
+                        'object_type': 'organization.Organization',
+                    },
+                    'osdu_image': {
+                        'class_id': 'mo.MoRef',
+                        'Moid': pargs.scu_moid,
+                        'object_type': 'firmware.ServerConfigurationUtilityDistributable',
+                    },
+                    'override_secure_boot': True,
+                    'server': {
+                        'class_id': 'mo.MoRef',
+                        'moid': v.moid,
+                        'object_type': v.object_type
+                    },
+                }
+                pargs.apiMethod = 'create'
+                pargs.policy  = self.type
+                pargs.purpose = self.type
+                print(f"      * host {k}: initiator: {v.wwpns['vhba1']}\n        target: {san_target}"\
+                      f"\n        mac: {v.macs['mgmt-a']}")
+                kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+                pargs.server_profiles[k]['os_install'] = {
+                    'moid': kwargs['pmoid'],
+                    'workflow': ''
+                }
+        time.sleep(60)
+        #=================================================
+        # Monitor OS Installation until Complete
+        #=================================================
+        for k, v in  pargs.server_profiles.items():
+            if re.search('(esx03|esx08)', k):
+                v = DotMap(deepcopy(v))
+                pargs.apiFilter = f"Name eq '{k}-osinstall'"
+                pargs.apiMethod = 'get'
+                pargs.policy    = self.type
+                pargs.purpose   = self.type
+                kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+                pargs.pop('apiFilter')
+                v.os_install.workflow = kwargs['results'][len(kwargs['results'])-1]['WorkflowInfo']['Moid']
+                install_complete = False
+                while install_complete == False:
+                    pargs.apiMethod = 'by_moid'
+                    pargs.pmoid     = v.os_install.workflow
+                    pargs.policy    = 'workflow_info'
+                    pargs.purpose   = self.type
+                    kwargs = isdk.api(self.type).calls(pargs, **kwargs)
+                    if kwargs['results']['Status'] == 'COMPLETED':
+                        install_complete = True
+                        print(f'    - Completed Operating System Installation for {k}.')
+                    elif re.search('(FAILED|TERMINATED|TIME_OUT)', kwargs['results']['Status']):
+                        pargs.upgrade.failed.update({k:v.moid})
+                        print(f'!!!FAILED!!! Operating System Installation for Server Profile {k} failed.')
+                        install_complete = True
+                    else:
+                        progress = kwargs['results']['Progress']
+                        status = kwargs['results']['Status']
+                        print(f'      * Operating System Installation for {k}.')
+                        print(f'        Status is {status} Progress is {progress}, Waiting 120 seconds.')
+                        time.sleep(120)
+        #=====================================================
+        # Send End Notification and return kwargs
+        #=====================================================
+        validating.end_section(self.type, 'Install')
+        return kwargs, pargs
 

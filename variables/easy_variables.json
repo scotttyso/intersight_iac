@@ -1644,6 +1644,7 @@
                                         "processor_c6report":"enabled"
                                     },
                                     "tpm":{
+                                        "sha1pcr_bank":"disabled",
                                         "tpm_control":"enabled",
                                         "tpm_support":"enabled"
                                     },
@@ -2442,7 +2443,7 @@
                                 "policy_list": [
                                     "ethernet_adapter_policy",
                                     "ethernet_network_control_policy",
-                                    "ethernet_network_group_policy",
+                                    "ethernet_network_group_policies",
                                     "ethernet_qos_policy",
                                     "iscsi_boot_policies",
                                     "mac",
@@ -2604,6 +2605,14 @@
                     {},
                     {
                         "properties": {
+                            "cco_username": {
+                                "description": "Username for Cisco Software Download.",
+                                "type": "email",
+                                "minimum": 1,
+                                "maximum": 256,
+                                "pattern": ".*",
+                                "x-omitempty": true
+                            },
                             "netapp_username": {
                                 "description": "Username for NetApp Login.",
                                 "type": "string",
@@ -2623,6 +2632,7 @@
                             "optional_args": {
                             },
                             "required_args": {
+                                "cco_username": "",
                                 "netapp_username": "",
                                 "nxos_username": "",
                                 "vcenter_username": ""
@@ -2953,6 +2963,11 @@
                                 "default": 1,
                                 "x-omitempty": true
                             },
+                            "inband_start": {
+                                "description": "First Management IP Address for servers.",
+                                "type": "hostname",
+                                "x-omitempty": true
+                            },
                             "optional_args": {
                             },
                             "os_type": {
@@ -2976,6 +2991,7 @@
                                 "equipment_type": "",
                                 "generation": "",
                                 "identifier": "",
+                                "inband_start": "",
                                 "os_type": "",
                                 "profile_start": "",
                                 "suffix_digits": "",
@@ -3837,7 +3853,7 @@
                                 "description": "From Email Address.",
                                 "type": "email",
                                 "minimum": 1,
-                                "maximum": 64,
+                                "maximum": 256,
                                 "pattern": ".*",
                                 "x-omitempty": true
                             },
@@ -3887,7 +3903,7 @@
                                 "description": "List of to Email Addresses.",
                                 "type": "list_of_email",
                                 "minimum": 1,
-                                "maximum": 64,
+                                "maximum": 256,
                                 "pattern": ".*",
                                 "x-omitempty": true
                             },

@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
 from copy import deepcopy
+from pathlib import Path
 import argparse
 import codecs
-import classes.day2tools
-import classes.ezfunctions
 import json
 import io
 import os
 import platform
 import sys
 
+sys.path.insert(0, './classes')
+from classes import day2tools
+from classes import ezfunctions
 # Global Variables
 excel_workbook = None
 Parser = argparse.ArgumentParser(description='Intersight Day 2 Tools')
@@ -20,18 +22,12 @@ def main():
     if description is not None:
         Parser.description = description
     Parser.add_argument(
-        '-a', '--api-key-id',
-        default=os.getenv('apikey'),
+        '-a', '--api-key-id', default=os.getenv('intersight_apikey'),
         help='The Intersight API client key id for HTTP signature scheme'
     )
     Parser.add_argument(
-        '-s', '--api-key-file',
-        default=os.getenv('secretkeyfile'),
-        help='Name of file containing The Intersight secret key for the HTTP signature scheme'
-    )
-    Parser.add_argument(
-        '--api-key-v3', action='store_true',
-        help='Use New API client (v3) key'
+        '-e', '--endpoint', default=os.getenv('intersight_endpoint'),
+        help='The Intersight hostname for the API endpoint. The default is intersight.com'
     )
     Parser.add_argument(
         '-f', '--full-inventory', action='store_true',
@@ -48,6 +44,10 @@ def main():
         help='Source JSON File for VLAN Additional Process.'
     )
     Parser.add_argument(
+        '-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
+        help='Name of file containing The Intersight secret key for the HTTP signature scheme'
+    )
+    Parser.add_argument(
         '-p', '--process',
         default='server_inventory',
         help='Which Process to run with the Script.  Options are:'\
@@ -58,23 +58,46 @@ def main():
             '5. hcl_status.'
     )
     Parser.add_argument(
-        '-u', '--url', default='https://intersight.com',
-        help='The Intersight root URL for the API endpoint. The default is https://intersight.com'
+        '-v', '--api-key-v3', action='store_true',
+        help='Flag for API Key Version 3.'
     )
     Parser.add_argument(
-        '-w', '--worksheet', default='Settings.xlsx',
-        help='The Worksheet Containing the Server Configuration Data.'
+        '-wb', '--workbook', default='Settings.xlsx',
+        help = 'The source Workbook.'
     )
     args = Parser.parse_args()
-    args.api_key_id = classes.ezfunctions.api_key(args)
-
     # Determine the Operating System
     opSystem = platform.system()
+    script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+    if opSystem == 'Windows': path_sep = '\\'
+    else: path_sep = '/'
+    script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+    #================================================
+    # Import Stored Parameters
+    #================================================
+    jsonFile = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-11360.json'
+    jsonOpen = open(jsonFile, 'r')
+    jsonData = json.load(jsonOpen)
+    jsonOpen.close()
+    jsonFile = f'{script_path}{path_sep}variables{path_sep}easy_variables.json'
+    jsonOpen = open(jsonFile, 'r')
+    ezData   = json.load(jsonOpen)
+    jsonOpen.close()
+    #==============================================
+    # Build kwargs
+    #==============================================
     kwargs = {}
     kwargs['args'] = args
-    kwargs['script_path'] = os.path.dirname(os.path.realpath(sys.argv[0]))
-    if opSystem == 'Windows': kwargs['path_sep'] = '\\'
-    else: kwargs['path_sep'] = '/'
+    kwargs['ezData']      = ezData['components']['schemas']
+    kwargs['home']        = Path.home()
+    kwargs['jsonData']    = jsonData['components']['schemas']
+    kwargs['opSystem']    = platform.system()
+    kwargs['path_sep']    = path_sep
+    kwargs['script_path'] = script_path
+    kwargs = ezfunctions.intersight_config(**kwargs)
+    kwargs['args'].url = 'https://%s' % (kwargs['args'].endpoint)
+    args   = kwargs['args']
+
     if not args.json_file == None:
         if not os.path.isfile(args.json_file):
             print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -109,29 +132,21 @@ def main():
                     json_data.append(item)
             kwargs['json_data'] = deepcopy(json_data)
 
-    # Verify the SecretKey
-    if not args.api_key_file == None:
-        args.api_key_file = classes.ezfunctions.api_secret(args)
-    else:
-        if opSystem == 'Windows': args.api_key_file = '$HOME\Downloads\SecretKey.txt'
-        else: args.api_key_file = '~/Downloads/SecretKey.txt'
-        args.api_key_file = classes.ezfunctions.api_secret(args)
-
     if args.process == 'server_inventory':
         type = 'server_inventory'
-        classes.day2tools.intersight_api(type).server_inventory(**kwargs)
+        day2tools.intersight_api(type).server_inventory(**kwargs)
     elif args.process == 'add_policies':
         type = 'add_policies'
-        classes.day2tools.intersight_api(type).add_policies(**kwargs)
+        day2tools.intersight_api(type).add_policies(**kwargs)
     elif args.process == 'add_vlan':
         type = 'add_vlan'
-        classes.day2tools.intersight_api(type).add_vlan(**kwargs)
+        day2tools.intersight_api(type).add_vlan(**kwargs)
     elif args.process == 'hcl_inventory':
         type = 'hcl_inventory'
-        classes.day2tools.intersight_api('hcl_inventory').hcl_inventory(**kwargs)
+        day2tools.intersight_api('hcl_inventory').hcl_inventory(**kwargs)
     elif args.process == 'hcl_status':
         type = 'hcl_status'
-        classes.day2tools.intersight_api(type).hcl_status(**kwargs)
+        day2tools.intersight_api(type).hcl_status(**kwargs)
 
 if __name__ == '__main__':
     main()

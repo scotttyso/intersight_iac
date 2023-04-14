@@ -14,78 +14,78 @@ protocols: # Shared DHCP/DNS/NTP Etc
       - 0.pool.ntp.org
       - 1.pool.ntp.org
 netapp:
-    cluster:
-      - username: admin # login name for the array
-        cluster_name: r142b-netapp01 # string
-        login_banner: BLAH # string
-        nodes:
-          node01: r142b-netapp01-ct0 # string
-          node02: r142b-netapp01-ct1 # string
-          data_ports: # List of String
-            - e0e
-            - e0g
-          data_speed: 10 # 10, 25, 40, 50, 100 drop down
-          fcp_ports: # list of string - Would be good if this was only displayed if deployment was fc or fc-nvme
-            - 1b
-            - 1d
-          fcp_speed: 32 # 16 or 32 drop down - Would be good if this was only displayed if deployment was fc or fc-nvme
-        svm:
-          data_svm: RICH # string
-        autosupport:
-          transport: https # https or smtp drop down
-          mail_hosts: # list of hostnames
-            - smtp.example.com
-          proxy_url: # Optional format is https://<user>:<password>@proxy.example.com:83
-          from_address: admin@example.com # Email
-          to_addresses: # List of Emails
-            - admin@example.com
-        snmp:
-          snmp_contact: r142b-netapp01 # string
-          snmp_location: r142b-netapp01-ct0 # string
-          snmp_username: r142b-netapp01-ct1 # string
-          trap_server: RICH # string
+  cluster:
+    - autosupport:
+        transport: https # https or smtp drop down
+        mail_hosts: # list of hostnames
+          - smtp.example.com
+        proxy_url: # Optional format is https://<user>:<password>@proxy.example.com:83
+        from_address: admin@example.com # Email
+        to_addresses: # List of Emails
+          - admin@example.com
+      username: admin # login name for the array
+      cluster_name: r142b-netapp01 # string
+      login_banner: BLAH # string
+      nodes:
+        node01: r142b-netapp01-ct0 # string
+        node02: r142b-netapp01-ct1 # string
+        data_ports: # List of String
+          - e0e
+          - e0g
+        data_speed: 10 # 10, 25, 40, 50, 100 drop down
+        fcp_ports: # list of string - Would be good if this was only displayed if deployment was fc or fc-nvme
+          - 1b
+          - 1d
+        fcp_speed: 32 # 16 or 32 drop down - Would be good if this was only displayed if deployment was fc or fc-nvme
+      snmp:
+        contact: r142b-netapp01 # string
+        location: r142b-netapp01-ct0 # string
+        username: r142b-netapp01-ct1 # string
+        trap_server: snmp.example.com # string
+      svm:
+        data_svm: RICH # string
 intersight:
   - organization: default
     ## Domain Profile
     domain:
-      domain_name: ucs.example.com
-      serial_numbers: # If this can be selected that would be great
-        - FDO12345
-        - FDO12345
-      eth_uplink_ports: # expandable list with port id's.  Need eth1/ if they are doing breakout it would show eth1/97/1 for example
-        - eth1/53
-        - eth1/54
-      eth_breakout_speed: 10 # 10 or 25 - Optional only if doing breakout
-      # if it showed these next 4 only if fc or fc-nvme for deployment type that would be cool
-      fcp_ports:  # expandable list with port id's.  need fc1/ if for example they have the 6536 that would have fc1/35/1 for example
-        - fc1/1
-        - fc1/2
-      fcp_breakout_speed: 32 # 16, 32
-      vsan_a: 100
-      vsan_b: 200
-      # SNMP Configuration
-      pools:
-        prefix: 00 # Pool Identifier Prefix
-      policies:
-        prefix: # Optional String to pre-pend to policy names
+      - domain_name: ucs.example.com
+        serial_numbers: # If this can be selected that would be great
+          - FDO12345
+          - FDO12345
+        eth_uplink_ports: # expandable list with port id's.  Need eth1/ if they are doing breakout it would show eth1/97/1 for example
+          - eth1/53
+          - eth1/54
+        eth_breakout_speed: 10 # 10 or 25 - Optional only if doing breakout
+        # if it showed these next 4 only if fc or fc-nvme for deployment type that would be cool
+        fcp_ports:  # expandable list with port id's.  need fc1/ if for example they have the 6536 that would have fc1/35/1 for example
+          - fc1/1
+          - fc1/2
+        fcp_breakout_speed: 32 # 16, 32
+        vsan_a: 100
+        vsan_b: 200
+        # SNMP Configuration
+    pools:
+      - prefix: 00 # Pool Identifier Prefix
+    policies:
+      - prefix: # Optional String to pre-pend to policy names
         local_user: admin
         snmp:
-          snmp_contact: admin@example.com
-          snmp_location: Example DC
-          snmp_username: snmpadmin
-          snmp_servers:
+          contact: admin@example.com
+          location: Example DC
+          username: snmpadmin
+          servers:
             - 198.18.1.162
             - 198.18.2.162
         syslog:
-          syslog_servers:
+          servers:
             - 198.18.5.14
             - 198.18.6.14
-      profiles:
-        - equipment_type: Chassis # Chassis or RackServer
-          identifier: 1 # When deploying port-policy the ID to give to the Chassis or Server
-          domain_ports: eth1/5-6 # Ports connected to the Chassis or RackServer
-          profile_start: r142c-esx01 # name of the first profile
-          profile_count: 7 # this would increment from the first profile name.  i.e. r142c-esx02, r142c-esx03
+        profiles:
+          - equipment_type: Chassis # Chassis or RackServer
+            identifier: 1 # When deploying port-policy the ID to give to the Chassis or Server
+            domain_ports: eth1/5-6 # Ports connected to the Chassis or RackServer
+            profile_start: r142c-esx01 # name of the first profile
+            profile_count: 7 # this would increment from the first profile name.  i.e. r142c-esx02, r142c-esx03
 nxos:
   - username: admin
     switches: # List of Switch Parameters
@@ -123,3 +123,9 @@ vlan_ranges:
   - vlan_range: 1003-1009
     name_prefix: vm-data
     configure_network: treu # Boolean
+vcenter:
+  - datacenter: NETAPP
+    esxi_password: sensitive
+    license_type: enterprise # standard or enterprise
+    vcenter_password: sensitive
+    vcenter_username: administrator@vsphere.local

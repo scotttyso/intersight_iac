@@ -25,6 +25,7 @@ from classes import ezfunctions
 from classes import isdk
 from classes import isdkp
 from classes import netapp
+from classes import vsphere
 #======================================================
 # Regular Expressions to Control wich rows in the
 # Worksheet should be processed.
@@ -210,14 +211,12 @@ def main():
     #==============================================
     kwargs['isdk_deployed'] = {}
     for org in orgs:
-        #==============================================
-        # NetApp Part 1
-        #==============================================
+        print(json.dumps(kwargs['immDict']['orgs'][org]['netapp']['volume'], indent=4))
         #==============================================
         # Pools
         #==============================================
-        nope = False
-        if nope == True:
+        pargs.nope = False
+        if pargs.nope == True:
             cisdk = 'isdkp.api_pools'
             if kwargs['immDict']['orgs'][org].get('pools'):
                 for pool_type in kwargs['immDict']['orgs'][org]['pools']:
@@ -226,7 +225,7 @@ def main():
         #==============================================
         # Policies
         #==============================================
-        if nope == True:
+        if pargs.nope == True:
             policies = {}
             policies_in_order = OrderedDict(sorted(kwargs['immDict']['orgs'][org]['policies'].items()))
             for k, v in policies_in_order.items(): policies.update({k:v})
@@ -236,13 +235,13 @@ def main():
             if kwargs['immDict']['orgs'][org].get('policies'):
                 for ptype in policies:
                     if kwargs['immDict']['orgs'][org]['policies'].get(ptype):
-                        if re.search('^[s]yst', ptype):
+                        if re.search('^[a-z]', ptype):
                             dpolicies = eval(f"{cisdk}(ptype).policies(pargs, **kwargs)")
                             kwargs['isdk_deployed'].update({ptype:dpolicies})
         #==============================================
         # Profiles
         #==============================================
-        if nope == True:
+        if pargs.nope == True:
             cisdk = 'isdkp.api_profiles'
             ptype = 'templates'
             if kwargs['immDict']['orgs'][org].get(ptype):
@@ -258,13 +257,26 @@ def main():
                     kwargs = eval(f"{cisdk}('server').profiles(pargs, **kwargs)")
 
         #==============================================
-        # Profiles
+        # Server Identities
         #==============================================
         kwargs, pargs = ci.wizard('wizard').server_identities(pargs, **kwargs)
         #==============================================
         # Upgrade Firmware
         #==============================================
-        kwargs, pargs = ci.fw_os('wizard').fw(pargs, **kwargs)
+        if pargs.nope == True:
+            kwargs, pargs = ci.fw_os('firmware').firmware(pargs, **kwargs)
+        #==============================================
+        # Install OS
+        #==============================================
+        if pargs.nope == True:
+            kwargs, pargs = ci.fw_os('os_install').os_install(pargs, **kwargs)
+        #==============================================
+        # Configure ESX Hosts and vCenter
+        #==============================================
+        if pargs.nope == True:
+            kwargs, pargs = vsphere.api('esx').esx(pargs, **kwargs)
+        kwargs, pargs = vsphere.api('vcenter').vcenter(pargs, **kwargs)
+        #kwargs, pargs = vsphere.api('datastore').datastore(pargs, **kwargs)
 
     print(f'\n-----------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')

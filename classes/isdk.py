@@ -1,5 +1,6 @@
 from copy import deepcopy
 from intersight.api import access_api
+from intersight.api import asset_api
 from intersight.api import adapter_api
 from intersight.api import bios_api
 from intersight.api import boot_api
@@ -7,10 +8,12 @@ from intersight.api import bulk_api
 from intersight.api import certificatemanagement_api
 from intersight.api import chassis_api
 from intersight.api import compute_api
+from intersight.api import cond_api
 from intersight.api import deviceconnector_api
 from intersight.api import equipment_api
 from intersight.api import fabric_api
 from intersight.api import fcpool_api
+from intersight.api import firmware_api
 from intersight.api import iam_api
 from intersight.api import ipmioverlan_api
 from intersight.api import ippool_api
@@ -22,11 +25,13 @@ from intersight.api import network_api
 from intersight.api import networkconfig_api
 from intersight.api import ntp_api
 from intersight.api import organization_api
+from intersight.api import os_api
 from intersight.api import power_api
 from intersight.api import resourcepool_api
 from intersight.api import server_api
 from intersight.api import smtp_api
 from intersight.api import snmp_api
+from intersight.api import softwarerepository_api
 from intersight.api import sol_api
 from intersight.api import ssh_api
 from intersight.api import storage_api
@@ -35,6 +40,7 @@ from intersight.api import thermal_api
 from intersight.api import uuidpool_api
 from intersight.api import vmedia_api
 from intersight.api import vnic_api
+from intersight.api import workflow_api
 from intersight.exceptions import ApiException
 import credentials
 import json
@@ -51,7 +57,7 @@ print_response_always = False
 print_response_on_fail = True
 
 fabric_regex = re.compile(
-    '(domain|fc_z|flow|link_(ag|co)|multicast|network_(control|group)|port|switch_c|system_q|v(l|s)an[s]?)'
+    '(domain|fc_zone|flow_control|link_(ag|co)|multicast|network_(control|group)|port|switch_c|system_q|v(l|s)an[s]?)'
 )
 vnic_regex = re.compile(
     '^((ethernet|fibre_channel)_(adapter|network|qos)|iscsi_(adapter|boot|static_target)|(l|s)an_connectivity|vhbas|vnics)'
@@ -74,7 +80,10 @@ class api(object):
                 elif i.get('PortId'): iName = i['PortId']
                 elif i.get('Serial'): iName = i['Serial']
                 elif i.get('VsanId'): iName = i['VsanId']
+                elif i.get('Answers'): iName = i['Answers']['Hostname']
                 elif i.get('Name'): iName = i['Name']
+                elif pargs.policy == 'upgrade':
+                    if i['Status'] == 'IN_PROGRESS': iName = pargs.srv_moid
                 elif i.get('EndPointUser'): iName = i['EndPointUser']['Moid']
                 elif i.get('PortIdStart'): iName = i['PortIdStart']
                 if i.get('PcId') or i.get('PortId') or i.get('PortIdStart'):
@@ -90,6 +99,8 @@ class api(object):
                             for b in i['Blades']:
                                 apiDict[iName]['blades'].append({'moid': b['Moid'],'object_type': b['ObjectType']})
                     if i.get('SourceObjectType'): apiDict[iName]['object_type'] = i['SourceObjectType']
+                if i.get('UpgradeStatus'):
+                    apiDict[iName]['UpgradeStatus'] = i['UpgradeStatus']
                 if i.get('Profiles'):
                     apiDict[iName]['profiles'] = []
                     for x in i['Profiles']:
@@ -271,6 +282,11 @@ class api(object):
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_server_profile_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_server_profile
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_server_profile
+            elif 'settings' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_server_profile_template_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_server_profile_template_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_server_profile_template
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_server_profile_template
             elif 'templates' in pargs.policy:
                 if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_server_profile_template_by_moid
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_server_profile_template_list
@@ -294,9 +310,13 @@ class api(object):
                 elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fabric_switch_profile_list
                 elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fabric_switch_profile
                 elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fabric_switch_profile
-            elif 'serial_number' == pargs.policy:
-                if 'server' == pargs.purpose:
-                    apiHandle = compute_api.ComputeApi(apiClient)
+            elif re.search('(serial_number|server_settings)', pargs.policy):
+                apiHandle = compute_api.ComputeApi(apiClient)
+                if 'server_settings' == pargs.policy:
+                    if pargs.apiMethod == 'by_moid': apiCall = apiHandle.get_compute_server_setting_by_moid
+                    elif pargs.apiMethod == 'get':   apiCall = apiHandle.get_compute_server_setting_list
+                    elif pargs.apiMethod == 'patch': apiCall = apiHandle.patch_compute_server_setting
+                elif 'server' == pargs.purpose:
                     if pargs.apiMethod == 'by_moid': apiCall = apiHandle.get_compute_physical_summary_by_moid
                     elif pargs.apiMethod == 'get':   apiCall = apiHandle.get_compute_physical_summary_list
                 elif 'chassis' == pargs.purpose:
@@ -407,6 +427,29 @@ class api(object):
             elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_deviceconnector_policy_list
             elif pargs.apiMethod == 'create': apiCall = apiHandle.create_deviceconnector_policy
             elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_deviceconnector_policy
+        elif 'firmware' in pargs.purpose:
+            apiHandle = firmware_api.FirmwareApi(apiClient)
+            if 'distributables' == pargs.policy:
+                if pargs.apiMethod == 'by_moid': apiCall = apiHandle.get_firmware_distributable_by_moid
+                elif pargs.apiMethod == 'get':   apiCall = apiHandle.get_firmware_distributable_list
+            elif 'eula' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_firmware_eula_by_moid
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_firmware_eula
+            elif 'running' == pargs.policy:
+                if  pargs.apiMethod == 'get':  apiCall = apiHandle.get_firmware_running_firmware_list
+            elif 'status' == pargs.policy:
+                if  pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_firmware_upgrade_status_by_moid
+            elif 'upgrade' == pargs.policy:
+                if  pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_firmware_upgrade_by_moid
+                elif pargs.apiMethod == 'get':     apiCall = apiHandle.get_firmware_upgrade_list
+                elif pargs.apiMethod == 'create':  apiCall = apiHandle.create_firmware_upgrade
+            elif 'auth' == pargs.policy:
+                apiHandle = softwarerepository_api.SoftwarerepositoryApi(apiClient)
+                if pargs.apiMethod == 'get':       apiCall = apiHandle.get_softwarerepository_authorization_list
+                elif pargs.apiMethod == 'create':  apiCall = apiHandle.create_softwarerepository_authorization
+        elif 'hcl_status' in pargs.policy:
+            apiHandle = cond_api.CondApi(apiClient)
+            if pargs.apiMethod == 'get':    apiCall = apiHandle.get_cond_hcl_status_list
         elif 'imc_access' in pargs.policy:
             apiHandle = access_api.AccessApi(apiClient)
             if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_access_policy_by_moid
@@ -485,6 +528,22 @@ class api(object):
             elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_organization_organization_list
             elif pargs.apiMethod == 'create': apiCall = apiHandle.create_organization_organization
             elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_organization_organization
+        elif 'os_install' == pargs.purpose:
+            apiHandle = os_api.OsApi(apiClient)
+            if 'os_catalog' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_os_catalog_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_os_catalog_list
+            elif 'os_configuration' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_os_configuration_file_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_os_configuration_file_list
+            elif 'os_install' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_os_install_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_os_install_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_os_install
+            elif 'workflow_info' == pargs.policy:
+                apiHandle = workflow_api.WorkflowApi(apiClient)
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_workflow_workflow_info_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_workflow_workflow_info_list
         elif 'persistent_memory' in pargs.policy:
             apiHandle = memory_api.MemoryApi(apiClient)
             if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_memory_persistent_memory_policy_by_moid
@@ -497,6 +556,12 @@ class api(object):
             elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_power_policy_list
             elif pargs.apiMethod == 'create': apiCall = apiHandle.create_power_policy
             elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_power_policy
+        elif 'registration' == pargs.policy:
+            apiHandle = asset_api.AssetApi(apiClient)
+            if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_asset_device_registration_by_moid
+            elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_asset_device_registration_list
+            elif pargs.apiMethod == 'create': apiCall = apiHandle.create_asset_device_claim
+            elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_asset_device_registration
         elif 'resource' == pargs.policy:
             apiHandle = resourcepool_api.ResourcepoolApi(apiClient)
             if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_resourcepool_pool_by_moid
@@ -509,6 +574,22 @@ class api(object):
             elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_sol_policy_list
             elif pargs.apiMethod == 'create': apiCall = apiHandle.create_sol_policy
             elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_sol_policy
+        elif 'software_repository' == pargs.purpose:
+            apiHandle = softwarerepository_api.SoftwarerepositoryApi(apiClient)
+            if 'org_repository' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_softwarerepository_catalog_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_softwarerepository_catalog_list
+            elif 'operating_system' == pargs.policy:
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_softwarerepository_operating_system_file_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_softwarerepository_operating_system_file_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_softwarerepository_operating_system_file
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_softwarerepository_operating_system_file
+            elif 'server_configuration_utility' == pargs.policy:
+                apiHandle = firmware_api.FirmwareApi(apiClient)
+                if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_firmware_server_configuration_utility_distributable_by_moid
+                elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_firmware_server_configuration_utility_distributable_list
+                elif pargs.apiMethod == 'create': apiCall = apiHandle.create_firmware_server_configuration_utility_distributable
+                elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_firmware_server_configuration_utility_distributable
         elif 'smtp' in pargs.policy:
             apiHandle = smtp_api.SmtpApi(apiClient)
             if pargs.apiMethod == 'by_moid':  apiCall = apiHandle.get_smtp_policy_by_moid
@@ -581,33 +662,35 @@ class api(object):
         if pargs.apiMethod == 'by_moid': pargs.apiMethod = 'get_by_moid'
         if 'get' == pargs.apiMethod:
             if 'organization' in pargs.policy: apiArgs = dict(_preload_content = False)
-            elif not pargs.get('apiQuery'):
+            elif not pargs.get('apiFilter'):
                 if re.search('(vlans|vsans)', pargs.policy):
                     names = ", ".join(map(str, pargs.names))
                 else: names = "', '".join(pargs.names).strip("', '")
-                apiQuery = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
-                if 'user_role' == pargs.policy: apiQuery = f"Name in ('{names}') and Type eq 'IMC'"
-                elif 'serial_number' == pargs.policy: apiQuery = f"Serial in ('{names}')"
+                apiFilter = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
+                if 'user_role' == pargs.policy: apiFilter = f"Name in ('{names}') and Type eq 'IMC'"
+                elif 'serial_number' == pargs.policy: apiFilter = f"Serial in ('{names}')"
                 elif 'switch' == pargs.policy:
-                    apiQuery = f"Name in ('{names}') and SwitchClusterProfile.Moid eq '{pargs.pmoid}'"
+                    apiFilter = f"Name in ('{names}') and SwitchClusterProfile.Moid eq '{pargs.pmoid}'"
                 elif 'vhbas' == pargs.policy:
-                    apiQuery = f"Name in ('{names}') and SanConnectivityPolicy.Moid eq '{pargs.pmoid}'"
+                    apiFilter = f"Name in ('{names}') and SanConnectivityPolicy.Moid eq '{pargs.pmoid}'"
                 elif 'vlans' == pargs.policy:
-                    apiQuery = f"VlanId in ({names}) and EthNetworkPolicy.Moid eq '{pargs.pmoid}'"
+                    apiFilter = f"VlanId in ({names}) and EthNetworkPolicy.Moid eq '{pargs.pmoid}'"
                 elif 'vnics' == pargs.policy:
-                    apiQuery = f"Name in ('{names}') and LanConnectivityPolicy.Moid eq '{pargs.pmoid}'"
+                    apiFilter = f"Name in ('{names}') and LanConnectivityPolicy.Moid eq '{pargs.pmoid}'"
                 elif 'vsans' == pargs.policy:
-                    apiQuery = f"VsanId in ({names}) and FcNetworkPolicy.Moid eq '{pargs.pmoid}'"
+                    apiFilter = f"VsanId in ({names}) and FcNetworkPolicy.Moid eq '{pargs.pmoid}'"
                 elif re.search('ww(n|p)n', pargs.policy):
-                    apiQuery = apiQuery + f" and PoolPurpose eq '{pargs.policy.upper()}'"
-                apiArgs = dict(filter = apiQuery, _preload_content = False)
-            else: apiArgs = dict(filter = pargs.apiQuery, _preload_content = False)
+                    apiFilter = apiFilter + f" and PoolPurpose eq '{pargs.policy.upper()}'"
+                if pargs.top1000 == True:
+                    apiArgs = dict(top = 1000, _preload_content = False)
+                else: apiArgs = dict(filter = apiFilter, _preload_content = False)
+            else: apiArgs = dict(filter = pargs.apiFilter, _preload_content = False)
         else: apiArgs = dict(_preload_content = False)
         apiMessage = re.search('method ([a-zA-Z\.\_]+) of', str(apiCall)).group(1)
+
         #=====================================================
         # Perform the apiCall
         #=====================================================
-        #print(json.dumps(pargs.apiBody, indent=4))
         try:
             if 'get_by_moid' in pargs.apiMethod: apiResults = json.loads(apiCall(pargs.pmoid, **apiArgs).data)
             elif 'get' in pargs.apiMethod: apiResults = json.loads(apiCall(**apiArgs).data)
@@ -616,6 +699,12 @@ class api(object):
             elif 'create' in pargs.apiMethod:
                 apiResults = json.loads(apiCall(pargs.apiBody, **apiArgs).data)
         except ApiException as e:
+            #if re.search('Your token has expired', str(e)) or re.search('Not Found', str(e)):
+            #    kwargs['results'] = False
+            #    return kwargs
+            if re.search('There is an upgrade already running', str(e)):
+                kwargs['running'] = True
+                return kwargs
             print(f"Exception when calling {apiMessage}: {e}\n")
             sys.exit(1)
         #=====================================================
@@ -629,6 +718,7 @@ class api(object):
                 kwargs['pmoids'].update({pargs.apiBody.get('name'):kwargs['pmoid']})
         if 'get_by_moid' in pargs.apiMethod: kwargs['results'] = deepcopy(apiResults)
         elif 'get' in pargs.apiMethod: kwargs['results'] = deepcopy(apiResults['Results'])
+        elif re.search('(os_install|upgrade)', pargs.policy): kwargs['results'] = deepcopy(apiResults)
         #=====================================================
         # Use for Viewing apiCall Results
         #=====================================================

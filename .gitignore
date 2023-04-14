@@ -10,6 +10,7 @@
 # Local Python Directories
 **/Testing*/*
 **/QA/*
+**/Logs/*
 **/PROD/*
 __pycache__/
 **/.DS_Store/*

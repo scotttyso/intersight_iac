@@ -1,3 +1,4 @@
+from classes import validating
 from copy import deepcopy
 from git import cmd, Repo
 from openpyxl import load_workbook
@@ -7,6 +8,7 @@ import itertools
 import jinja2
 import json
 import os
+import pexpect
 import pkg_resources
 import re
 import requests
@@ -17,7 +19,6 @@ import stdiomask
 import textwrap
 import classes.validating
 import yaml
-import validating
 
 # Log levels 0 = None, 1 = Class only, 2 = Line
 log_level = 2
@@ -38,6 +39,41 @@ class LoginFailed(Exception):
 class MyDumper(yaml.Dumper):
     def increase_indent(self, flow=False, indentless=False):
         return super(MyDumper, self).increase_indent(flow, False)
+
+#=====================================================
+# pexpect - Login Function
+#=====================================================
+def child_login(pargs, **kwargs):
+    hostname    = pargs.hostname
+    systemShell = os.environ['SHELL']
+    kwargs['Variable'] = pargs.hostPassword
+    kwargs   = sensitive_var_value(**kwargs)
+    password = kwargs['var_value']
+    #=====================================================
+    # Use 
+    #=====================================================
+    child = pexpect.spawn(systemShell, encoding='utf-8')
+    child.logfile_read = sys.stdout
+    child.sendline(f'ping -c 2 {hostname}')
+    child.expect(f'ping -c 2 {hostname}')
+    child.expect_exact("$ ")
+    child.sendline(f'ssh {pargs.username}@{hostname} | tee {hostname}.txt')
+    child.expect(f'tee {hostname}.txt')
+    logged_in = False
+    while logged_in == False:
+        i = child.expect(['Are you sure you want to continue', 'closed', 'Password:', pargs.hostPrompt, pexpect.TIMEOUT])
+        if i == 0: child.sendline('yes')
+        elif i == 1:
+            print(f'\n**failed to connect.  '\
+                f'Please Validate {hostname} is correct and username {pargs.username} is correct.')
+        elif i == 2: child.sendline(password)
+        elif i == 3: logged_in = True
+        elif i == 4:
+            print(f"\n{'-'*91}\n")
+            print(f'!!!FAILED!!!\n Could not open SSH Connection to {hostname}')
+            print(f"\n{'-'*91}\n")
+            sys.exit(1)
+    return child, kwargs
 
 #======================================================
 # Function - Format Policy Description
@@ -429,7 +465,8 @@ def intersight_config(**kwargs):
 #======================================================
 # Function - Print with json dumps
 #======================================================
-def jprint(jDict): print(json.dumps(jDict, indent=4))
+def jprint(jDict):
+    print(json.dumps(jDict, indent=4))
 
 #======================================================
 # Function - Local User Policy - Users
@@ -781,6 +818,18 @@ def read_in(excel_workbook, **kwargs):
         print(f"Something went wrong while opening the workbook - {excel_workbook}... ABORT!")
         sys.exit(e)
     return kwargs
+
+#======================================================
+# Validate File is in Repo URL
+#======================================================
+def repo_url_test(file, pargs):
+    repo_url = f'https://{pargs.repository_server}{pargs.repository_path}{file}'
+    try:
+        r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
+    except requests.RequestException as e:
+        print(f"!!!ERROR!!!\n  Exception when calling {repo_url}:\n {e}\n")
+        sys.exit(1)
+    return repo_url
 
 #======================================================
 # Function - Prompt User for Sensitive Values

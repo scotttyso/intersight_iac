@@ -316,7 +316,7 @@ class api_policies(object):
         pargs.policy = 'iamrole'
         for i in pargs.item: pargs.names.append(i['role'])
         rnames = "', '".join(pargs.names).strip("', '")
-        pargs.apiQuery = f"Name in ('{rnames}') and Type eq 'IMC'"
+        pargs.apiFilter = f"Name in ('{rnames}') and Type eq 'IMC'"
         kwargs = isdk.api('iamrole').calls(pargs, **kwargs)
         role_moids = kwargs['pmoids']
         pargs.names  = []
@@ -324,10 +324,10 @@ class api_policies(object):
         umoids = []
         for k, v in user_moids.items(): umoids.append(v['Moid'])
         umoids = "', '".join(umoids).strip("', '")
-        pargs.apiQuery = f"EndPointUser.Moid in ('{umoids}')"
+        pargs.apiFilter = f"EndPointUser.Moid in ('{umoids}')"
         kwargs = isdk.api('user_role').calls(pargs, **kwargs)
         urole_moids = kwargs['pmoids']
-        pargs.pop('apiQuery')
+        pargs.pop('apiFilter')
         local_user_moid = pargs.pmoid
         #=====================================================
         # Construct API Body Users
@@ -522,9 +522,9 @@ class api_policies(object):
             for i in pargs.item['port_modes']:
                 pargs.apiMethod = 'get'
                 pargs.policy = 'port_mode'
-                pargs.apiQuery = f"PortIdStart eq {i['port_list'][0]} and PortPolicy.Moid eq '{port_moid}'"
+                pargs.apiFilter = f"PortIdStart eq {i['port_list'][0]} and PortPolicy.Moid eq '{port_moid}'"
                 kwargs = isdk.api('port_mode').calls(pargs, **kwargs)
-                pargs.pop('apiQuery')
+                pargs.pop('apiFilter')
                 pm_moids = kwargs['pmoids']
                 apiBody = {'object_type':'fabric.PortMode'}
                 plist = i['port_list']
@@ -567,12 +567,12 @@ class api_policies(object):
             pargs.policy = pargs.type
             if re.search('port_channel', pargs.type):
                 policy_name = int(apiBody['pc_id'])
-                pargs.apiQuery = f"PcId eq {int(apiBody['pc_id'])} and PortPolicy.Moid eq '{pargs.port_policy}'"
+                pargs.apiFilter = f"PcId eq {int(apiBody['pc_id'])} and PortPolicy.Moid eq '{pargs.port_policy}'"
             else:
                 policy_name = int(apiBody['port_id'])
-                pargs.apiQuery = f"PortId eq {int(apiBody['port_id'])} and PortPolicy.Moid eq '{pargs.port_policy}'"
+                pargs.apiFilter = f"PortId eq {int(apiBody['port_id'])} and PortPolicy.Moid eq '{pargs.port_policy}'"
             kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
-            pargs.pop('apiQuery')
+            pargs.pop('apiFilter')
             pargs.moids[pargs.type] = kwargs['pmoids']
             #=====================================================
             # Create or Patch the Policy via the Intersight API
@@ -1095,6 +1095,8 @@ class api_policies(object):
             pargs.purpose = ptype
             for i in pargs.item:
                 if i.get('iscsi_boot_policies') and ptype == 'iscsi_boot': pargs.names.extend(i[item])
+                elif i.get('ethernet_network_group_policies') and ptype == 'ethernet_network_group':
+                    pargs.names.extend(i[item])
                 elif i.get(item): pargs.names.append(i[item])
                 elif i.get('names') and item == 'vnics': pargs.names.extend(i['names'])
                 elif i.get('mac_address_pools') and item == 'mac': pargs.names.extend(i['mac_address_pools'])
@@ -1125,17 +1127,19 @@ class api_policies(object):
                 for p in policy_list:
                     pshort = (p.replace('_policy', '')).replace('_policies', '')
                     jVars = kwargs['ezData']['policies']['allOf'][1]['properties'][pshort]
-                    if p == 'iscsi_boot_policies':
-                        if not pargs.moids[p].get(i[p][x]):
-                            validating.error_policy_doesnt_exist(p, i[p][x], self.type, 'policy', apiBody['name'])
-                    elif not pargs.moids[p].get(i[p]):
-                        validating.error_policy_doesnt_exist(p, i[p], self.type, 'policy', apiBody['name'])
+                    if 'iscsi_boot' in p:
+                        pname = i[p][x]
+                    elif 'network_group' in p:
+                        if len(i[p]) == 2: pname = i[p][x]
+                        else: pname = i[p][0]
+                    else: pname = i[p]
+                    if not pargs.moids[p].get(pname):
+                        validating.error_policy_doesnt_exist(p, pname, self.type, 'policy', apiBody['name'])
                     if re.search('network_(control|group)', p):
                         oname = 'fabric_' + jVars['object_name']
                     elif 'iscsi' in p: oname = 'iscsi_boot_policy'
                     else: oname = jVars['object_name']
-                    if 'iscsi' in p: pmoid = pargs.moids[p][i[p][x]]['Moid']
-                    else: pmoid = pargs.moids[p][i[p]]['Moid']
+                    pmoid = pargs.moids[p][pname]['Moid']
                     if 'network_group' in p: apiBody.update({oname:[{
                             'class_id':'mo.MoRef','moid':pmoid,'object_type':jVars['object_type']
                         }]})
