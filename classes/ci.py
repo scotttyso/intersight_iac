@@ -5,7 +5,6 @@
 #=============================================================================
 from copy import deepcopy
 from dotmap import DotMap
-from tqdm import tqdm
 import ipaddress
 import json
 import numpy
@@ -15,37 +14,12 @@ import requests
 import sys
 import time
 import validating
-import urllib
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-from intersight.model.server_profile import ServerProfile
-from intersight.api import server_api
-from intersight.model.policy_abstract_policy_relationship import PolicyAbstractPolicyRelationship
-from intersight.model.mo_tag import MoTag
-from intersight.model.storage_storage_policy import StorageStoragePolicy
-from intersight.api import storage_api
-from intersight.model.firmware_server_configuration_utility_distributable import \
-    FirmwareServerConfigurationUtilityDistributable
-from intersight.model.firmware_server_configuration_utility_distributable_relationship import \
-    FirmwareServerConfigurationUtilityDistributableRelationship
-from intersight.model.softwarerepository_file_server import SoftwarerepositoryFileServer
-from intersight.model.softwarerepository_operating_system_file import SoftwarerepositoryOperatingSystemFile
-from intersight.model.softwarerepository_catalog_relationship import SoftwarerepositoryCatalogRelationship
-from intersight.model.softwarerepository_operating_system_file_relationship import \
-    SoftwarerepositoryOperatingSystemFileRelationship
-from intersight.api import softwarerepository_api
-from intersight.api import firmware_api
-from intersight.model.os_answers import OsAnswers
-from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
-from intersight.model.compute_physical_relationship import ComputePhysicalRelationship
-from intersight.api import compute_api
-from intersight.model.os_install import OsInstall
 
 sys.path.insert(0, './classes')
 from classes import ezfunctions
 from classes import netapp
-from classes import nxos
 import isdk
 #=======================================================
 # IMM Class
@@ -1682,33 +1656,33 @@ class wizard(object):
         self.type = type
 
     #=============================================================================
-    # Function - Converged Stack - Build Dictionaries, Deploy Nexus, and Storage
+    # Function - Converged Stack - Build IMM Domain Dictionaries
     #=============================================================================
-    def build(self, pargs, **kwargs):
+    def build_imm_domain(self, pargs, **kwargs):
         #==================================
-        # Configure Nexus Devices
+        # Configure Domain Policies
         #==================================
-        if pargs.nope == True:
-            kwargs, pargs = nxos.nxos.config(self, pargs, **kwargs)
+        policy_list = kwargs['ezData']['ezimm']['allOf'][1]['properties']['list_domains']['enum']
+        policy_list.pop('domain')
+        policy_list.sort()
+        if not re.search('fc(-nvme)?', pargs.dtype): policy_list.pop('vsan')
+        for i in policy_list: kwargs, pargs = eval(f'imm(i).{i}(pargs, **kwargs)')
+
+        #==================================
+        # Configure Domain Profiles
+        #==================================
+        kwargs, pargs = imm('domain').domain(pargs, **kwargs)
+
         #=====================================================
-        # Build NetApp Dictionaries
+        # Return kwargs and pargs
         #=====================================================
-        plist = ['autosupport', 'broadcast_domain', 'cluster', 'nodes', 'schedule', 'snmp', 'svm', 'volume']
-        for i in plist:
-            kwargs, pargs = eval(f'netapp.build(i).{i}(pargs, **kwargs)')
-        #==================================
-        # Configure NetApp
-        #==================================
-        if pargs.nope == True:
-            plist.insert(2, 'cluster_init')
-            for i in plist:
-                pargs.items = kwargs['immDict']['orgs'][kwargs['org']]['netapp'][i]
-                kwargs, pargs = eval(f'netapp.api(i).{i}(pargs, **kwargs)')
-        else:
-            pargs.netapp.wwpns.a    = [{'fcp-lif-01-1a':'20:0e:00:a0:98:aa:1c:8d'}, {'fcp-lif-02-1a':'20:0f:00:a0:98:aa:1c:8d'}]
-            pargs.netapp.wwpns.b    = [{'fcp-lif-01-1c':'20:10:00:a0:98:aa:1c:8d'}, {'fcp-lif-02-1c':'20:11:00:a0:98:aa:1c:8d'}]
-            pargs.netapp.iscsi.iqn  = 'iqn.1992-08.com.netapp:sn.57c603ffcc2811ed9ce100a098aa1c8d:vs.6'
-            pargs.netapp.nvme.nqn   = 'nqn.1992-08.com.netapp:sn.57c603ffcc2811ed9ce100a098aa1c8d:discovery'
+        return kwargs, pargs
+
+
+    #=============================================================================
+    # Function - Converged Stack - Build IMM Dictionaries
+    #=============================================================================
+    def build_imm_servers(self, pargs, **kwargs):
         #==================================
         # Configure IMM Pools and Policies
         #==================================
@@ -1743,30 +1717,44 @@ class wizard(object):
 
 
     #=============================================================================
+    # Function - Converged Stack - Build Storage Dictionaries
+    #=============================================================================
+    def build_netapp(self, pargs, **kwargs):
+        #=====================================================
+        # Build NetApp Dictionaries
+        #=====================================================
+        plist = ['cluster', 'nodes', 'schedule', 'snmp', 'svm', 'volume']
+        plist = ['cluster']
+        for i in plist:
+            for k,v in pargs.netapp.cluster.items():
+                kwargs, pargs = eval(f'netapp.build(i).{i}(pargs, k, v, **kwargs)')
+        #==================================
+        # Configure NetApp
+        #==================================
+        plist= ['cluster', 'cluster_init']
+        for i in plist:
+            pargs.items = kwargs['immDict']['orgs'][kwargs['org']]['netapp'][i]
+            kwargs, pargs = eval(f'netapp.api(i).{i}(pargs, **kwargs)')
+
+        #=====================================================
+        # Return kwargs and pargs
+        #=====================================================
+        return kwargs, pargs
+
+
+    #=============================================================================
     # Function - Converged Stack - Credentials - DHCP - DNS - NTP Attributes
     #=============================================================================
     def dns_ntp(self, pargs, **kwargs):
-        kwargs['deployment_type'] = 'converged'
-        #=====================================================
-        # Credentials
-        #=====================================================
-        jDict = kwargs['immDict']['wizard']['credentials'][0]
-        pargs.cco_user = jDict['cco_username']
-        pargs.nxosuser = jDict['nxos_username']
-        pargs.stguser  = jDict['netapp_username']
-        pargs.vctruser = jDict['vcenter_username']
         #=====================================================
         # DHCP, DNS, NTP, Organization
         #=====================================================
-        jDict = kwargs['immDict']['wizard']['dhcp_dns_ntp'][0]
-        pargs.dns_servers = [jDict['dns_server1']]
-        pargs.dns_domains = jDict['dns_domains'].split(',')
-        pargs.ntp_servers = [jDict['ntp_server1']]
-        pargs.timezone    = jDict['timezone']
-        if jDict.get('dhcp_server1'): pargs.dhcp_servers = [jDict['dhcp_server1']]
-        if jDict.get('dhcp_server2'): pargs.dhcp_servers.append(jDict['dhcp_server2'])
-        if jDict.get('dns_server2'): pargs.dns_servers.append(jDict['dns_server2'])
-        if jDict.get('ntp_server2'): pargs.ntp_servers.append(jDict['ntp_server2'])
+        i = DotMap(kwargs['immDict']['wizard']['protocols'][0])
+        pargs.dns_servers = i.dns_servers
+        pargs.dns_domains = i.dns_domains
+        pargs.ntp_servers = i.ntp_servers
+        pargs.timezone    = i.timezone
+        
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1780,85 +1768,58 @@ class wizard(object):
         #=====================================================
         # Intersight Attributes
         #=====================================================
-        jDict         = kwargs['immDict']['wizard']['imm_domain'][0]
-        pargs.dtype   = jDict['deployment_type']
-        pargs.name    = jDict['name']
-        pargs.org     = jDict['organization']
-        pargs.serials = [jDict['fabric_a_serial'], jDict['fabric_b_serial']]
-        pargs.uplinks = jDict['uplink_ports']
-        ports = jDict['uplink_ports'].split('/')[-1]
-        if '-' in jDict['uplink_ports']:
-            pstart = ports.split('-')[0]
-            plast = ports.split('-')[1]
-            plist = []
-            for x in range(int(pstart),int(plast)+1):
-                plist.append(x)
-            pargs.uplink_list = plist
-        else: pargs.uplink_list = ports.split(',')
-        pargs.tags    = kwargs['ezData']['tags']
-        kwargs['org'] = pargs.org
-        if jDict.get('breakout_speed'): pargs.breakout_speed.eth = jDict['breakout_speed']
-        else: pargs.breakout_speed.eth = '25G'
-        #==================================
-        # Get Moids for Fabric Switches
-        #==================================
-        pargs.apiMethod         = 'get'
-        pargs.policy            = 'serial_number'
-        pargs.purpose           = 'domain'
-        pargs.names             = pargs.serials
-        kwargs                  = isdk.api('serial_number').calls(pargs, **kwargs)
-        pargs.serial_moids      = kwargs['pmoids']
-        pargs.device_model      = pargs.serial_moids[pargs.serials[0]]['model']
-        pargs.registered_device = pargs.serial_moids[pargs.serials[0]]['registered_device']
-        #==================================
-        # Management Protocols
-        #==================================
-        jDict = kwargs['immDict']['wizard']['mgmt'][0]
-        pargs.log_servers   = [jDict['syslog_server1']]
-        pargs.snmp_contact  = jDict['snmp_contact']
-        pargs.snmp_location = jDict['snmp_location']
-        pargs.snmp_servers  = [jDict['snmp_server1']]
-        pargs.snmp_user     = jDict['username']
-        if jDict.get('syslog_server2'): pargs.log_servers.append(jDict['syslog_server2'])
-        if jDict.get('snmp_server2'): pargs.snmp_servers.append(jDict['snmp_server2'])
-        #==================================
-        # Pools and Policies
-        #==================================
-        jDict = kwargs['immDict']['wizard']['imm_policy'][0]
-        pargs.local_user   = jDict['local_user']
-        pargs.pool_prefix  = jDict['pool_id_prefix']
-        if jDict.get('policy_prefix'): pargs.ppfx = jDict['policy_prefix']
-        else: pargs.ppfx = ''
-        #==================================
-        # Server Profiles
-        #==================================
-        pargs.server_settings = []
-        for i in kwargs['immDict']['wizard']['imm_profiles']:
-            i = DotMap(deepcopy(i))
-            pargs.server_settings.append(DotMap(
-                cpu        = i.cpu_vendor,
-                identifier = i.identifier,
-                inband     = i.inband_start,
-                equipment  = i.equipment_type,
-                gen        = i.generation,
-                os_type    = i.os_type,
-                ports      = i.domain_ports,
-                profile    = i.profile_start,
-                suffix     = i.suffix_digits,
-                tpm        = i.tpm,
-                vic_gen    = i.vic_generation,
-            ))
-        #=====================================================
-        # Confirm if Fibre-Channel is in Use
-        #=====================================================
-        if re.search('(fc|fc-nvme)', pargs.dtype):
-            jDict           = kwargs['immDict']['wizard']['imm_fc'][0]
-            pargs.fcp_ports = jDict['fcp_ports']
-            pargs.fcp_speed = jDict['fcp_speed']
-            pargs.swmode    = jDict['switch_mode']
-            pargs.vsans     = [jDict['vsan_a'], jDict['vsan_b']]
-            if jDict.get('breakout_speed'): pargs.breakout_speed.fc = jDict['breakout_speed']
-            else: pargs.breakout_speed.fc = '32G'
+        for item in kwargs['immDict']['wizard']['intersight']:
+            item = DotMap(item)
+            pargs.dtype  = item.deployment_type
+            pargs.org    = item.organization
+            for i in item.domains:
+                i = DotMap(i)
+                pargs.imm.pool.prefix    = item.pools.prefix
+                pargs.imm.policies       = item.policies
+                pargs.imm.domain[i.name] = DotMap(
+                    breakout_speed = i.eth_breakout_speed,
+                    eth_uplinks    = i.eth_uplink_ports,
+                    organization   = item.organization,
+                    profiles       = i.profiles,
+                    serial_numbers = i.serial_numbers,
+                    tags           = kwargs['ezData']['tags']
+                )
+                #==================================
+                # Build Domain Network Dictionary
+                #==================================
+                fabrics = ['A', 'B']
+                for x in range(0,2):
+                    pargs.network.imm[f'{i.name}-{fabrics[x]}'] = DotMap(
+                        data_ports  = i.eth_uplink_ports,
+                        data_speed  = i.eth_uplink_speed,
+                        mgmt_port   = i.network.management,
+                        network_port= i.network.data[x],
+                        port_channel=True
+                    )
+
+                #==================================
+                # Get Moids for Fabric Switches
+                #==================================
+                kwargs['org']      = pargs.org
+                pargs.apiMethod    = 'get'
+                pargs.policy       = 'serial_number'
+                pargs.purpose      = 'domain'
+                pargs.names        = pargs.imm.domain[i.name].serial_numbers
+                kwargs      = isdk.api('serial_number').calls(pargs, **kwargs)
+                serial_moids= kwargs['pmoids']
+                serial      = pargs.imm.domain[i.name].serial_numbers[0]
+                pargs.imm.domain[i.name].device_model     = serial_moids[serial]['model']
+                pargs.imm.domain[i.name].registered_device= serial_moids[serial]['registered_device']
+
+                #=====================================================
+                # Confirm if Fibre-Channel is in Use
+                #=====================================================
+                if re.search('(fc|fc-nvme)', pargs.dtype):
+                    pargs.imm.domain[i.name].fcp_ports  = i.fcp_uplink_ports
+                    pargs.imm.domain[i.name].fcp_speed  = i.fcp_uplink_speed
+                    pargs.imm.domain[i.name].switch_mode= i.switch_mode
+                    pargs.imm.domain[i.name].vsans      = i.vsans
+        
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1869,43 +1830,49 @@ class wizard(object):
     # Function - Converged Stack - NetApp Attributes
     #=============================================================================
     def netapp(self, pargs, **kwargs):
-        #=====================================================
-        # NetApp Cluster
-        #=====================================================
-        jDict      = DotMap(deepcopy(kwargs['immDict']['wizard']['ontap'][0]))
-        pargs.netapp            = DotMap()
-        pargs.netapp.user       = pargs.stguser
-        pargs.netapp.hostPrompt = r'[\w]+::>'
-        pargs.netapp.banner     = jDict.login_banner
-        pargs.netapp.cluster    = jDict.cluster_name
-        pargs.netapp.data_ports = deepcopy(jDict.data_ports).split(',')
-        pargs.netapp.data_speed = jDict.data_speed
-        pargs.netapp.data_svm   = deepcopy(jDict.data_svm)
-        pargs.netapp.fcp_ports  = deepcopy(jDict.fcp_ports).split(',')
-        pargs.netapp.fcp_speed  = jDict.fcp_speed
-        pargs.netapp.node01     = jDict.node01
-        pargs.netapp.node02     = jDict.node02
-        pargs.netapp.node_list  = [deepcopy(jDict.node01), deepcopy(jDict.node02)]
-        #=====================================================
-        # Configure Aggregates, root volume and Mirrors
-        #=====================================================
-        pargs.netapp.agg1       = (deepcopy(jDict.node01).replace('-', '_')).lower() + '_1'
-        pargs.netapp.agg2       = (deepcopy(jDict.node02).replace('-', '_')).lower() + '_1'
-        pargs.netapp.rootv      = (deepcopy(jDict.data_svm).replace('-', '_')).lower() + '_root'
-        pargs.netapp.m01        = deepcopy(pargs.netapp.rootv) + '_m01'
-        pargs.netapp.m02        = deepcopy(pargs.netapp.rootv) + '_m02'
-        pargs.netapp.protocols  = []
-        for i in pargs.vlans:
-            i = DotMap(deepcopy(i))
-            if re.search('(iscsi|nfs|nvme)', i.type):
-                if 'nvme' in i.type: pargs.netapp.protocols.append('nvme_of')
-                else: pargs.netapp.protocols.append(i.type)
-            if 'nfs' in i.type:
-                pargs.netapp.nfs.network = i.network
-        if 'fc' in pargs.dtype: pargs.netapp.protocols.append('fcp')
-        pargs.netapp.protocols = numpy.unique(numpy.array(pargs.netapp.protocols))
-        pargs.protocols = pargs.netapp.protocols
-        pargs.host = deepcopy(pargs.netapp.node01)
+        #==================================
+        # Build Cluster Dictionary
+        #==================================
+        pargs.netapp = DotMap(cluster = DotMap())
+        pargs.storage = DotMap()
+        for item in kwargs['immDict']['wizard']['netapp']:
+            item = deepcopy(DotMap(item))
+            for i in item.clusters:
+                cname = i.name
+                rootv = (i.svm.name).replace('-', '_').lower() + '_root'
+                pargs.netapp.cluster[cname] = DotMap(
+                    autosupport= item.autosupport,
+                    banner     = item.login_banner,
+                    hostPrompt = r'[\w]+::>',
+                    nodes      = i.nodes,
+                    protocols  = pargs.protocols,
+                    snmp       = item.snmp,
+                    svm        = DotMap(
+                        agg1     = i.nodes.node01.replace('-', '_').lower() + '_1',
+                        agg2     = i.nodes.node02.replace('-', '_').lower() + '_1',
+                        name     = i.svm.name,
+                        m01      = rootv + '_m01',
+                        m02      = rootv + '_m02',
+                        protocols= pargs.protocols,
+                        rootv    = rootv,
+                        volumes  = i.svm.volumes
+                    ),
+                    username = item.username
+                )
+                pargs.netapp.cluster[cname].nodes.node_list = [i.nodes.node01, i.nodes.node02]
+                #==================================
+                # Build Cluster Network Dictionary
+                #==================================
+                nodes = pargs.netapp.cluster[cname].nodes.node_list
+                for x in range(0,len(nodes)):
+                    pargs.network.storage[nodes[x]] = DotMap(
+                        data_ports  = i.nodes.data_ports,
+                        data_speed  = i.nodes.data_speed,
+                        mgmt_port   = i.nodes.network.management,
+                        network_port= i.nodes.network.data[x],
+                        port_channel=True
+                    )
+        
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1965,7 +1932,7 @@ class wizard(object):
         #=====================================================
         # Run Lun Creation Class
         #=====================================================
-        #netapp.build('lun').lun(pargs, **kwargs)
+        netapp.build('lun').lun(pargs, **kwargs)
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1991,23 +1958,32 @@ class wizard(object):
     # Function - Converged Stack - VLAN Attributes
     #=============================================================================
     def vlans(self, pargs, **kwargs):
-        #==================================
-        # Build VLAN Dictionary
-        #==================================
+        protocols   = []
         pargs.vlans = []
         for i in kwargs['immDict']['wizard']['vlans']:
+            #==================================
+            # Add i.type to protocols
+            #==================================
             i = DotMap(deepcopy(i))
+            if re.search('(iscsi|nfs|nvme)', i.vlan_type):
+                if 'nvme' in i.vlan_type: protocols.append('nvme_of')
+                else: protocols.append(i.vlan_type)
+
+            #==================================
+            # Build VLAN Dictionary
+            #==================================
             netwk = '%s' % ipaddress.IPv4Network(i.network, strict=False)
-            vDict = dict(
-                configure = i.configure_network,
-                gateway   = i.network.split('/')[0],
-                name      = i.name,
-                netmask   = ((ipaddress.IPv4Network(netwk)).with_netmask).split('/')[1],
-                network   = netwk,
-                prefix    = i.network.split('/')[1],
-                switch    = i.switch_type,
-                type      = i.vlan_type,
-                vlan_id   = i.vlan_id,
+            vDict = DotMap(
+                configure_l2= i.configure_l2,
+                configure_l3= i.configure_l3,
+                gateway     = i.network.split('/')[0],
+                name        = i.name,
+                netmask     = ((ipaddress.IPv4Network(netwk)).with_netmask).split('/')[1],
+                network     = netwk,
+                prefix      = i.network.split('/')[1],
+                switch_type = i.switch_type,
+                vlan_id     = i.vlan_id,
+                vlan_type   = i.vlan_type,
             )
             def iprange(xrange):
                 ipsplit = xrange.split('-')
@@ -2018,25 +1994,39 @@ class wizard(object):
                     ipaddress = f'{a[0]}.{a[1]}.{a[2]}.{x}'
                     ips.append(ipaddress)
                 return ips
-            if i.get('controller_range'): vDict.update({'controller':iprange(i.controller_range)})
-            if i.get('pool_range') and re.search('(inband|ooband)', i.vlan_type):
-                vDict.update({'pool':iprange(i.pool_range)})
-            if i.get('server_range'): vDict.update({'server':iprange(i.server_range)})
+            if i.ranges.get('controller'): vDict.controller = iprange(i.ranges.controller)
+            if i.ranges.get('pool') and re.search('(inband|ooband)', i.vlan_type):
+                vDict.pool = iprange(i.ranges.pool)
+            if i.ranges.get('server'): vDict.server = iprange(i.ranges.server)
             pargs.vlans.append(vDict)
-        pargs.inband = DotMap()
-        pargs.ooband = DotMap()
-        for i in pargs.vlans:
-            i = DotMap(deepcopy(i))
-            if re.search('(inband|ooband)', i.type):
-                pargs[i.type].update(i)
+
+        #==================================
+        # Build VLAN Ranges Dictionary
+        #==================================
         pargs.ranges = []
-        for i in kwargs['immDict']['wizard']['ranges']:
+        for i in kwargs['immDict']['wizard']['vlan_ranges']:
             i = DotMap(deepcopy(i))
-            pargs.ranges.append(dict(
-                configure = i.configure_network,
-                name      = i.name_prefix,
-                vlan_list = i.vlan_range
+            pargs.ranges.append(DotMap(
+                configure_l2= i.configure_l2,
+                name        = i.name_prefix,
+                vlan_list   = i.vlan_range
             ))
+
+        #==================================
+        # Build inband|nfs|ooband Dict
+        #==================================
+        for i in pargs.vlans:
+            if re.search('(inband|nfs|ooband)', i.vlan_type):
+                pargs[i.vlan_type] = i
+
+        #==================================
+        # Build Protocols Dictionary
+        #==================================
+        if 'fc' in pargs.dtype: protocols.append('fcp')
+        protocols = numpy.unique(numpy.array(protocols))
+        pargs.protocols = []
+        for i in protocols: pargs.protocols.append(i)
+
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -2348,10 +2338,11 @@ class fw_os(object):
         for k,v in pargs.server_profiles.items():
             v = DotMap(deepcopy(v))
             if re.search('(esx08)', k):
+                fqdn = k + '.' + pargs.dns_domains[0]
                 pargs.apiBody = {
                     'answers': {
                         'ClassId': 'os.Answers',
-                        'Hostname': k,
+                        'Hostname': fqdn,
                         'IpConfigType': 'static',
                         'IpConfiguration': {
                             'ClassId': 'os.Ipv4Configuration',

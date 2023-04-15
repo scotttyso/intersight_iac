@@ -862,8 +862,8 @@ class api(object):
                 pargs.p = p
                 value = config_protocols(child, pargs)
                 print(f"\n\n{value}\n\n")
-                if 'iscsi' in p: pargs.netapp.iscsi.iqn = value
-                elif 'nvme' in p: pargs.netapp.nvme.nqn = value
+                if 'iscsi' in p: pargs.storage['iscsi'].iqn = value
+                elif 'nvme' in p: pargs.storage['nvme'].nqn = value
         #=====================================================
         # Configure NFS Export Policy
         #=====================================================
@@ -1065,16 +1065,16 @@ class api(object):
             intfData = get(uri, pargs, **kwargs)
             fcp_temp = pargs.netapp.fcp_ports
             half = len(fcp_temp)//2
-            pargs.netapp.wwpns.a = []
-            pargs.netapp.wwpns.b = []
+            pargs.storage.wwpns.a = []
+            pargs.storage.wwpns.b = []
             for r in intfData['records']:
                 r = DotMap(deepcopy(r))
                 for f in fcp_temp[:half]:
                     if f in r.name:
-                        pargs.netapp.wwpns.a.append({r.name:r.wwpn})
+                        pargs.storage.wwpns.a.append({r.name:r.wwpn})
                 for f in fcp_temp[half:]:
                     if f in r.name:
-                        pargs.netapp.wwpns.b.append({r.name:r.wwpn})
+                        pargs.storage.wwpns.b.append({r.name:r.wwpn})
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
@@ -1182,103 +1182,97 @@ class build(object):
     #=============================================================================
     # Function - NetApp - AutoSupport
     #=============================================================================
-    def autosupport(self, pargs, **kwargs):
+    def autosupport(self, pargs, items, **kwargs):
         #=====================================================
         # Build AutoSupport Dictionary
         #=====================================================
-        jDict = kwargs['immDict']['wizard']['ontap_mgmt'][0]
         polVars = {
             'contact_support':True,
             'enabled':True,
-            'from':jDict['from_address'],
+            'from':items.autosupport.from_address,
             'is_minimal':False,
-            'mail_hosts':jDict['mail_hosts'].split(','),
-            'transport':jDict['transport'],
-            'to':jDict['to_addresses'].split(','),
+            'mail_hosts':items.autosupport.mail_hosts,
+            'transport':items.autosupport.transport,
+            'to':items.autosupport.to_addresses,
         }
-        if jDict.get('proxy_url'):
-            polVars.update({'proxy_url':jDict['proxy_url']})
+        if items.get('proxy_url'):
+            polVars.update({'proxy_url':items.autosupport.proxy_url})
 
         #=====================================================
-        # Add Policy Variables to immDict
+        # Return polVars
         #=====================================================
-        kwargs['class_path'] = f'netapp,{self.type}'
-        kwargs = ezfunctions.ez_append(polVars, **kwargs)
-        #=====================================================
-        # Return pargs and kwargs
-        #=====================================================
-        return kwargs, pargs
+        return [polVars]
 
 
     #=============================================================================
     # Function - NetApp - Broadcast Domains
     #=============================================================================
-    def broadcast_domain(self, pargs, **kwargs):
+    def broadcast_domain(self, pargs, items, **kwargs):
         #=====================================================
         # Build Broadcast Domain Dictionary
         #=====================================================
+        bdomains = []
         for i in pargs.vlans:
-            if re.search('(inband|iscsi|nvme|nfs)', i['type']):
-                if i['type'] == 'inband': mtu = 1500
+            if re.search('(inband|iscsi|nvme|nfs)', i.vlan_type):
+                if i.vlan_type == 'inband': mtu = 1500
                 else: mtu = 9000
-                polVars = { "name": i['name'], "mtu": mtu }
-
-                #=====================================================
-                # Add Policy Variables to immDict
-                #=====================================================
-                kwargs['class_path'] = f'netapp,{self.type}'
-                kwargs = ezfunctions.ez_append(polVars, **kwargs)
+                polVars = { "name": i.name, "mtu": mtu }
+                bdomains.append(polVars)
         
         #=====================================================
         # Add Default Policy Variables to immDict
         #=====================================================
         polVars = { "name": "Default", "mtu": 9000}
-        kwargs['class_path'] = f'netapp,{self.type}'
-        kwargs = ezfunctions.ez_append(polVars, **kwargs)
+        bdomains.append(polVars)
+        polVars = bdomains
+
         #=====================================================
-        # Return pargs and kwargs
+        # Return polVars
         #=====================================================
-        return kwargs, pargs
+        return polVars
 
 
     #=============================================================================
     # Function - NetApp - Cluster
     #=============================================================================
-    def cluster(self, pargs, **kwargs):
+    def cluster(self, pargs, name, items, **kwargs):
+        items.name = name
         #=====================================================
         # Build Cluster Dictionary
         #=====================================================
-        jDict1 = kwargs['immDict']['wizard']['ontap'][0]
-        jDict2 = kwargs['immDict']['wizard']['ontap_mgmt'][0]
-        pargs.netapp.snmp_contact  = jDict2['snmp_contact']
-        pargs.netapp.snmp_location = jDict2['snmp_location']
         polVars = dict(
-            contact     = pargs.netapp.snmp_contact,
+            contact     = items.snmp.contact,
             dns_domains = pargs.dns_domains,
             license     = dict(keys = []),
-            location    = pargs.netapp.snmp_location,
+            location    = items.snmp.location,
             management_interfaces = [
                 dict(
                     name = "cluster-mgmt",
                     ip = dict(
-                        address = pargs.ooband['controller'][0]
+                        address = pargs.ooband.controller[0]
                 ))
             ],
-            name = jDict1['cluster_name'],
+            name = name,
             name_servers = pargs.dns_servers,
             ntp_servers  = pargs.ntp_servers,
             timezone     = pargs.timezone
         )
-        if kwargs['immDict']['wizard'].get('license'):
-            licenses = []
-            for i in kwargs['immDict']['wizard']['license']: licenses.append(i['license_value'])
-            polVars.update({'license':{'keys':[licenses]}})
+        if items.get('licenses'):
+            polVars.update({'license':{'keys':[items.licenses]}})
+
+        pargs.netapp.host    = items.nodes.node01 + '.' + pargs.dns_domains[0]
+        pargs.netapp.username= items.username
+        ilist = ['autosupport', 'broadcast_domain', 'nodes', 'snmp', 'svm']
+        for i in ilist:
+            idict = eval(f"build(i).{i}(pargs, items, **kwargs)")
+            polVars.update(deepcopy({i:idict}))
 
         #=====================================================
         # Add Policy Variables to immDict
         #=====================================================
         kwargs['class_path'] = f'netapp,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, **kwargs)
+
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1288,16 +1282,16 @@ class build(object):
     #=============================================================================
     # Function - NetApp - Storage Volumes
     #=============================================================================
-    def lun(self, pargs, **kwargs):
+    def lun(self, pargs, items, **kwargs):
         #=====================================================
         # Build Lun Dictionary
         #=====================================================
         boot_volume = ''
-        for k,v in pargs.netapp.volumes.items():
+        for k,v in items.svm.volumes:
             if v.type == 'boot': boot_volume = k
         if boot_volume == '':
             print('\n\n!!!ERROR!!!\nCould not determine the boot volume.  No Boot Volume found in:\n')
-            for k, v in pargs.netapp.volume: print(f'{k}:{v}')
+            for k, v in items.svm.volumes: print(f'{k}:{v}')
             sys.exit(1)
         #=====================================================
         # Boot Luns
@@ -1305,8 +1299,6 @@ class build(object):
         for k,v in pargs.netapp.volumes.items():
             if v.type == 'boot':
                 for i in pargs.server_profiles:
-                    print(i)
-                    exit()
                     polVars = {
                         "name": f"/vol/{k}/{i}",
                         "os_type": f"{v.os_type}",
@@ -1348,106 +1340,103 @@ class build(object):
     #=============================================================================
     # Function - NetApp - Nodes
     #=============================================================================
-    def nodes(self, pargs, **kwargs):
+    def nodes(self, pargs, items, **kwargs):
         #==================================
         # Get Disk Information
         #==================================
-        uri   = 'storage/disks'
-        jData = get(uri, pargs, **kwargs)
-        pargs.netapp.disk_count = jData['num_records'] - 1
-        disk_name = jData['records'][0]['name']
-        uri   = f'storage/disks/{disk_name}'
-        jData = get(uri, pargs, **kwargs)
-        pargs.netapp.disk_type = jData['type'].upper()
+        uri       = 'storage/disks'
+        jData     = get(uri, pargs, **kwargs)
+        disk_count= jData['num_records'] - 1
+        #disk_name = jData['records'][0]['name']
+        #uri   = f'storage/disks/{disk_name}'
+        #jData = get(uri, pargs, **kwargs)
+        #pargs.netapp.disk_type = jData['type'].upper()
+
         #=====================================================
         # Build Node Dictionary
         #=====================================================
-        for x in range(0,len(pargs.netapp.node_list)):
-            polVars = {'interfaces': {'lacp':[], 'vlan':[]}, 'name': pargs.netapp.node_list[x], 'storage_aggregates': []}
-            aggregate = { "block_storage": {"primary": {"disk_count": pargs.netapp.disk_count}}, "name": pargs.netapp[f'agg{x+1}'] }
+        node_list = items.nodes.node_list
+        nodes = []
+        for x in range(0,len(node_list)):
+            aggr = items.svm[f'agg{x+1}']
+            polVars = {'interfaces': {'lacp':[], 'vlan':[]}, 'name': node_list[x], 'storage_aggregates': []}
+            aggregate = { "block_storage": {"primary": {"disk_count": disk_count}}, "name": aggr }
             polVars['storage_aggregates'].append(aggregate)
+
+            #=====================================================
+            # Add Data Port-Channel
+            #=====================================================
             aggPort = {
                 "broadcast_domain": {"name": "Default"},
                 "enabled": True,
                 "lag": { "mode": "multimode_lacp", "distribution_policy": "mac", "member_ports": []},
                 "type": "lag"
             }
-            #=====================================================
-            # Add Data and Fibre-Channel Ports
-            #=====================================================
-            for i in pargs.netapp.data_ports:
+            for i in items.nodes.data_ports:
                 aggPort['lag']['member_ports'].append({"name": i})
             polVars['interfaces']['lacp'].append(aggPort)
-            if re.search('(fc|fc-nvme)', pargs.dtype):
-                polVars['interfaces'].update({'fcp':[]})
-                for i in pargs.netapp.fcp_ports:
-                    fcpPort = { "enabled": True, "name": i, "speed": {"configured":pargs.netapp.fcp_speed} }
-                    polVars['interfaces']['fcp'].append(fcpPort)
-            for i in pargs.vlans:
-                if re.search('(inband|nfs|iscsi|nvme)', i['type']):
-                    vlanPort = {
-                        "broadcast_domain": {"name": i['name']},
-                        "type": "vlan",
-                        "vlan": { "base_port": {"name": 'a0a'}, "tag": i['vlan_id'] }
-                    }
-                    polVars['interfaces']['vlan'].append(vlanPort)
 
             #=====================================================
-            # Add Policy Variables to immDict
+            # Add FCP Ports if used
             #=====================================================
-            kwargs['class_path'] = f'netapp,{self.type}'
-            kwargs = ezfunctions.ez_append(polVars, **kwargs)
+            if re.search('(fc|fc-nvme)', pargs.dtype):
+                polVars['interfaces'].update({'fcp':[]})
+                for i in items.nodes.fcp_ports:
+                    fcpPort = { "enabled": True, "name": i, "speed": {"configured": items.nodes.fcp_speed} }
+                    polVars['interfaces']['fcp'].append(fcpPort)
+            for i in pargs.vlans:
+                if re.search('(inband|nfs|iscsi|nvme)', i.vlan_type):
+                    vlanPort = {
+                        "broadcast_domain": {"name": i.name},
+                        "type": "vlan",
+                        "vlan": { "base_port": {"name": 'a0a'}, "tag": i.vlan_id }
+                    }
+                    polVars['interfaces']['vlan'].append(vlanPort)
+            nodes.append(polVars)
+            polVars = nodes
+
         #=====================================================
-        # Return pargs and kwargs
+        # Return polVars
         #=====================================================
-        return kwargs, pargs
+        return polVars
 
 
     #=============================================================================
     # Function - NetApp - Schedulers
     #=============================================================================
-    def schedule(self, pargs, **kwargs):
+    def schedule(self, items):
         #=====================================================
         # Build Schedule Dictionary
         #=====================================================
-        polVars = {
-            "cluster": pargs.netapp.cluster,
+        polVars = [{
+            "cluster": items.name,
             "cron": {"minutes":[15]},
             "name": "15min",
-            "svm":{"name":pargs.netapp.data_svm}
-        }
-        #=====================================================
-        # Add Policy Variables to immDict
-        #=====================================================
-        kwargs['class_path'] = f'netapp,{self.type}'
-        kwargs = ezfunctions.ez_append(polVars, **kwargs)
-        #=====================================================
-        # Return pargs and kwargs
-        #=====================================================
-        return kwargs, pargs
+            "svm":{"name":items.svm.name}
+        }]
+        return polVars
 
 
     #=============================================================================
     # Function - NetApp - SNMP
     #=============================================================================
-    def snmp(self, pargs, **kwargs):
+    def snmp(self, pargs, items, **kwargs):
         #=====================================================
         # Build SNMP Dictionary
         #=====================================================
-        jDict = kwargs['immDict']['wizard']['ontap_mgmt'][0]
         polVars = {
             "auth_traps_enabled": True,
             "enabled": True,
             "traps_enabled": True,
             "trigger_test_trap": True,
             "traps": [{
-                "host": jDict['trap_server'],
-                "user": { "name": jDict['username'] }
+                "host": items.snmp.trap_server,
+                "user": { "name": items.snmp.username }
             }],
             "users": [{
                 "authentication_method": "usm",
-                "name": jDict['username'],
-                "owner": {"name": pargs.netapp.cluster},
+                "name": items.snmp.username,
+                "owner": {"name": items.name},
                 "snmpv3": {
                     "authentication_protocol": "sha",
                     "privacy_protocol": "aes128"
@@ -1456,26 +1445,21 @@ class build(object):
         }
 
         #=====================================================
-        # Add Policy Variables to immDict
+        # Return polVars
         #=====================================================
-        kwargs['class_path'] = f'netapp,{self.type}'
-        kwargs = ezfunctions.ez_append(polVars, **kwargs)
-        #=====================================================
-        # Return pargs and kwargs
-        #=====================================================
-        return kwargs, pargs
+        return [polVars]
 
 
     #=============================================================================
     # Function - NetApp - SVM
     #=============================================================================
-    def svm(self, pargs, **kwargs):
+    def svm(self, pargs, items, **kwargs):
         #=====================================================
         # Create Infra SVM
         #=====================================================
         polVars = {
-            "aggregates": [ {"name": pargs.netapp.agg1}, {"name": pargs.netapp.agg2} ],
-            "name": pargs.netapp.data_svm,
+            "aggregates": [ {"name": items.svm.agg1}, {"name": items.svm.agg2} ],
+            "name": items.svm.name,
             "dns":{"domains": pargs.dns_domains, "servers": pargs.dns_servers},
             "routes": [{
                 "destination": {
@@ -1483,126 +1467,74 @@ class build(object):
                     "netmask": 0
                 },
                 "gateway": pargs.inband.gateway,
-                "svm": {"name": pargs.netapp.data_svm}
+                "svm": {"name": items.svm.name}
             }]
         }
-        for p in pargs.netapp.protocols: polVars.update({p:{"allowed": True, "enabled": True}})
-
-        #=====================================================
-        # Function - Configure Infra SVM Interfaces
-        #=====================================================
-        def configure_interfaces(x, pargs, **kwargs):
-            ip_address = pargs.vconfig['controller'][x]
-            if ':' in ip_address: ifamily = 'ipv6'
-            else: ifamily = 'ipv4'
-            if 'inband'  == pargs.vconfig['type']: servicePolicy = 'default-management'
-            elif 'iscsi' == pargs.vconfig['type']: servicePolicy = 'default-data-iscsi'
-            elif 'nfs'   == pargs.vconfig['type']: servicePolicy = 'default-data-files'
-            elif 'nvme'  == pargs.vconfig['type']: servicePolicy = 'default-data-nvme-tcp'
-            home_port = f"a0a-{pargs.vconfig['vlan_id']}"
-            services = 'data_nfs'
-            if 'inband' == pargs.vconfig['type'] and x == 1: proceed = False
-            else: proceed = True
-            if proceed == True:
-                pargs.polVars = {
-                    "enabled": True,
-                    "dns_zone": pargs.dns_domains[0],
-                    "ip": { "address": ip_address, "netmask": pargs.vconfig['prefix'] },
-                    "location": {
-                        "auto_revert": True,
-                        "failover": "home_port_only",
-                        "home_node": {"name":pargs.netapp.node_list[x]},
-                        "home_port": {"name":home_port, "node":{"name":pargs.netapp.node_list[x]}},
-                    },
-                    "name": pargs.netapp.intf_name,
-                    "scope": "svm",
-                    "service_policy": servicePolicy,
-                }
-            if re.search('(iscsi|nvme)', pargs.vconfig['type']):
-                pargs.polVars['location'].pop('auto_revert')
-                pargs.polVars['location'].pop('failover')
-            return kwargs, pargs
+        for p in items.protocols: polVars.update({p:{"allowed": True, "enabled": True}})
 
         #=====================================================
         # Configure Ethernet Interfaces
         #=====================================================
         polVars['data_interfaces'] = []
         for v in pargs.vlans:
-            node_count = 1
-            for x in range(0,len(pargs.netapp.node_list)):
-                if re.search('(inband|iscsi|nfs|nvme)', v['type']):
-                    if re.search('(inband|nfs)', v['type']):
-                        pargs.netapp.intf_name = f"{v['type']}-lif-0{x+1}-a0a-{v['vlan_id']}"
-                    elif re.search('(iscsi|nvme)', v['type']):
-                        #{(chr(ord('@')+pargs.letter[v['type']])).lower()}
-                        pargs.netapp.intf_name = f"{v['type']}-lif-0{x+1}-a0a-{v['vlan_id']}"
-                        if node_count == 2: pargs.letter[v['type']] += 1
-                        node_count += 1
-                    pargs.vconfig = deepcopy(v)
-                    kwargs, pargs = configure_interfaces(x, pargs, **kwargs)
+            for x in range(0,len(items.nodes.node_list)):
+                if re.search('(inband|iscsi|nfs|nvme)', v.vlan_type):
+                    if re.search('(inband|nfs)', v.vlan_type):
+                        pargs.netapp.intf_name = f"{v.vlan_type}-lif-0{x+1}-a0a-{v.vlan_id}"
+                    elif re.search('(iscsi|nvme)', v.vlan_type):
+                        pargs.netapp.intf_name = f"{v.vlan_type}-lif-0{x+1}-a0a-{v.vlan_id}"
+                    pargs.vlan_settings = deepcopy(v)
+                    pargs = configure_interfaces(x, items, pargs)
                     if len(pargs.polVars) > 0:
                         polVars['data_interfaces'].append(pargs.polVars)
+
         #=====================================================
         # Configure Fibre-Channel if in Use
         #=====================================================
         if re.search('fc(-nvme)?', pargs.dtype):
             polVars['fcp_interfaces'] = []
-            def configure_fcports(x, pargs, **kwargs):
-                pargs.polVars = []
-                for i in pargs.netapp.fcp_ports:
-                    for x in range(0,len(pargs.netapp.node_list)):
-                        if pargs.netapp.data_protocol == 'fc-nvme': name = f'fcp-nvme-lif-0{x+1}-{i}'
-                        else: name = f'fcp-lif-0{x+1}-{i}'
-                        pVars = {
-                            "data_protocol": pargs.netapp.data_protocol,
-                            "enabled": True,
-                            "location": {
-                                "home_port": {"name":i, "node":{"name":pargs.netapp.node_list[x]}},
-                            },
-                            "name": name,
-                        }
-                        pargs.polVars.append(pVars)
-                return kwargs, pargs
             if pargs.dtype == 'fc':
                 pargs.netapp.data_protocol = 'fcp'
-                kwargs, pargs = configure_fcports(x, pargs, **kwargs)
+                pargs = configure_fcports(x, items, pargs)
                 polVars['fcp_interfaces'].extend(pargs.polVars)
             else:
                 fcp_temp = pargs.netapp.fcp_ports
                 half = len(fcp_temp)//2
                 pargs.netapp.fcp_ports = fcp_temp[:half]
                 pargs.netapp.data_protocol = 'fcp'
-                kwargs, pargs = configure_fcports(x, pargs, **kwargs)
+                pargs = configure_fcports(x, items, pargs)
                 polVars['fcp_interfaces'].extend(pargs.polVars)
                 pargs.netapp.fcp_ports = fcp_temp[half:]
                 pargs.netapp.data_protocol = pargs.dtype
-                kwargs, pargs = configure_fcports(x, pargs, **kwargs)
+                pargs = configure_fcports(x, items, pargs)
                 polVars['fcp_interfaces'].extend(pargs.polVars)
 
         #=====================================================
-        # Add Policy Variables to immDict
+        # Add Schedule and Volumes to SVM
         #=====================================================
-        kwargs['class_path'] = f'netapp,{self.type}'
-        kwargs = ezfunctions.ez_append(polVars, **kwargs)
+        ilist = ['schedule', 'volumes']
+        for i in ilist:
+            idict = eval(f"build(i).{i}(items)")
+            polVars.update({i:idict})
+
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
-        return kwargs, pargs
+        return [polVars]
 
 
     #=============================================================================
     # Function - NetApp - Storage Volumes
     #=============================================================================
-    def volume(self, pargs, **kwargs):
-        pargs.netapp.volumes = DotMap()
+    def volumes(self, items):
         #=====================================================
         # Add Mirror Volumes
         #=====================================================
         volList = []
-        for x in range(0,len(pargs.netapp.node_list)):
-            name = pargs.netapp[f'm0{x+1}']
+        for x in range(0,len(items.nodes.node_list)):
+            name =items.svm[f'm0{x+1}']
             volList.append({
-                "aggregate": pargs.netapp[f'agg{x+1}'],
+                "aggregate": items.svm[f'agg{x+1}'],
                 "name": name,
                 "size": 1,
                 "type": "DP",
@@ -1611,26 +1543,23 @@ class build(object):
         #=====================================================
         # Volume Input Dictionary
         #=====================================================
-        jDict = sorted(kwargs['immDict']['wizard']['volume'], key=lambda ele: ele['size'], reverse=True)
+        jDict = sorted(items.svm.volumes, key=lambda ele: ele.size, reverse=True)
         for x in range(0,len(jDict)):
-            if x % 2 == 0: agg = pargs.netapp.agg1
-            else: agg = pargs.netapp.agg2
+            volDict = DotMap(jDict[x])
+            if x % 2 == 0: agg = items.svm.agg1
+            else: agg = items.svm.agg2
             volList.append({
                 "aggregate": agg,
-                "name": jDict[x]['name'],
-                "size": jDict[x]['size'],
+                "name": volDict.name,
+                "size": volDict.size,
                 "type": "rw",
-                "volume_type": jDict[x]['volume_type']
+                "volume_type": volDict.volume_type
             })
-            pargs.netapp.volumes[jDict[x]['name']] = DotMap({
-                'name': jDict[x]['name'],
-                'os_type': jDict[x]['os_type'],
-                'size': jDict[x]['size'],
-                'type': jDict[x]['volume_type']
-            })
+
         #=====================================================
         # Build Volume Dictionary
         #=====================================================
+        volumeList = []
         for i in volList:
             i = DotMap(deepcopy(i))
             polVars = {
@@ -1646,32 +1575,30 @@ class build(object):
                 "snapshot_policy": "none",
                 "state": "online",
                 "style": "flexvol",
-                "svm":{"name":pargs.netapp.data_svm},
+                "svm":{"name":items.svm.name},
                 "type":i.type,
                 "volume_type":i.volume_type
             }
-            #=====================================================
-            # Add Policy Variables to immDict
-            #=====================================================
-            kwargs['class_path'] = f'netapp,{self.type}'
-            kwargs = ezfunctions.ez_append(polVars, **kwargs)
+            volumeList.append(polVars)
+        polVars = volumeList
+
         #=====================================================
-        # Return pargs and kwargs
+        # Return polVars
         #=====================================================
-        return kwargs, pargs
+        return polVars
 
 
 #=====================================================
 # Function - API Authentication
 #=====================================================
 def auth(pargs, section='', **kwargs):
-    url = f"https://{pargs.host}"
-    user = pargs.netapp.user
+    url      = f"https://{pargs.netapp.host}"
+    username = pargs.netapp.username
     kwargs['Variable'] = 'netapp_password'
     kwargs = ezfunctions.sensitive_var_value(**kwargs)
     password = kwargs['var_value']
     s = requests.Session()
-    s.auth = (user, password)
+    s.auth = (username, password)
     auth = ''
     while auth == '':
         try:
@@ -1719,6 +1646,69 @@ def config_function(child, pargs):
         if not count == pargs.count:
             print(pargs.message)
             sys.exit(1)
+
+#=====================================================
+# Configure FCP Ports
+#=====================================================
+def configure_fcports(x, items, pargs):
+    pargs.polVars = []
+    for i in items.nodes.fcp_ports:
+        for x in range(0,len(items.nodes.node_list)):
+            if pargs.netapp.data_protocol == 'fc-nvme': name = f'fcp-nvme-lif-0{x+1}-{i}'
+            else: name = f'fcp-lif-0{x+1}-{i}'
+            pVars = {
+                "data_protocol": pargs.netapp.data_protocol,
+                "enabled": True,
+                "location": {
+                    "home_port": {"name":i, "node":{"name": items.nodes.node_list[x]}},
+                },
+                "name": name,
+            }
+            pargs.polVars.append(pVars)
+
+    return pargs
+
+#=====================================================
+# Function - Configure Infra SVM Interfaces
+#=====================================================
+def configure_interfaces(x, items, pargs):
+    ip_address = pargs.vlan_settings['controller'][x]
+    if 'inband'  == pargs.vlan_settings.vlan_type: servicePolicy = 'default-management'
+    elif 'iscsi' == pargs.vlan_settings.vlan_type: servicePolicy = 'default-data-iscsi'
+    elif 'nfs'   == pargs.vlan_settings.vlan_type: servicePolicy = 'default-data-files'
+    elif 'nvme'  == pargs.vlan_settings.vlan_type: servicePolicy = 'default-data-nvme-tcp'
+    home_port = f"a0a-{pargs.vlan_settings.vlan_id}"
+    services = 'data_nfs'
+    if 'inband' == pargs.vlan_settings.vlan_type and x == 1: proceed = False
+    else: proceed = True
+    if proceed == True:
+        pargs.polVars = {
+            "enabled": True,
+            "dns_zone": pargs.dns_domains[0],
+            "ip": { "address": ip_address, "netmask": pargs.vlan_settings.prefix },
+            "location": {
+                "auto_revert": True,
+                "failover": "home_port_only",
+                "home_node": {"name": items.nodes.node_list[x]},
+                "home_port": {"name": home_port, "node":{"name": items.nodes.node_list[x]}},
+            },
+            "name": pargs.netapp.intf_name,
+            "scope": "svm",
+            "service_policy": servicePolicy,
+        }
+        if re.search('iscsi|nfs|nvme', pargs.vlan_settings.vlan_type):
+            if not pargs.storage.get(pargs.vlan_settings.vlan_type):
+                pargs.storage[pargs.vlan_settings.vlan_type] = DotMap()
+            if not pargs.storage[pargs.vlan_settings.vlan_type].get(items.nodes.node_list[x]):
+                pargs.storage[pargs.vlan_settings.vlan_type][items.nodes.node_list[x]] = []
+            pargs.storage[pargs.vlan_settings.vlan_type][items.nodes.node_list[x]].append(DotMap(
+                interface = pargs.netapp.intf_name,
+                ip_address= ip_address,
+            ))
+    if re.search('(iscsi|nvme)', pargs.vlan_settings.vlan_type):
+        pargs.polVars['location'].pop('auto_revert')
+        pargs.polVars['location'].pop('failover')
+    return pargs
 
 #=====================================================
 # Function - API - delete

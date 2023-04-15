@@ -10,6 +10,7 @@ It uses argparse to take in the following CLI arguments:
 # Source Modules
 #======================================================
 from collections import OrderedDict
+from copy import deepcopy
 from dotmap import DotMap
 from pathlib import Path
 import argparse
@@ -18,6 +19,7 @@ import os
 import platform
 import re
 import sys
+import yaml
 
 sys.path.insert(0, './classes')
 from classes import ci
@@ -25,60 +27,14 @@ from classes import ezfunctions
 from classes import isdk
 from classes import isdkp
 from classes import netapp
+from classes import network
 from classes import vsphere
-#======================================================
-# Regular Expressions to Control wich rows in the
-# Worksheet should be processed.
-#======================================================
-reg1 = 'credentials|dhcp_dns_ntp|imm_(domain|fc|policy|profiles)|interfaces'
-reg2 = 'lun|mgmt|nxos|ontap(_(lic|mgmt))?|ranges|vlans|volume'
-wb_regex = re.compile(f'^({reg1}|{reg2})$')
 
-#=================================================================
-# Function to Read the Wizard Worksheet
-#=================================================================
-def process_wizard(**kwargs):
-    kwargs['class_init'] = 'wizard'
-    kwargs['class_folder'] = 'wizard'
-    kwargs['func_regex'] = wb_regex
-    kwargs['ws'] = 'wizard'
-    kwargs = read_worksheet(**kwargs)
-    return kwargs
+class MyDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyDumper, self).increase_indent(flow, False)
 
-
-#=================================================================
-# Function to process the Worksheets and Create Terraform Files
-#=================================================================
-def read_worksheet(**kwargs):
-    wb = kwargs['wb']
-    ws = wb[kwargs['ws']]
-    rows = ws.max_row
-    func_list = ezfunctions.findKeys(ws, kwargs['func_regex'])
-    ezfunctions.stdout_log(ws, 'begin')
-    for func in func_list:
-        count = ezfunctions.countKeys(ws, func)
-        var_dict = ezfunctions.findVars(ws, func, rows, count)
-        for pos in var_dict:
-            row_num = var_dict[pos]['row']
-            del var_dict[pos]['row']
-            for x in list(var_dict[pos].keys()):
-                if var_dict[pos][x] == '':
-                    del var_dict[pos][x]
-            ezfunctions.stdout_log(ws, row_num)
-            kwargs['var_dict'] = var_dict[pos]
-            kwargs['row_num'] = row_num
-            kwargs['ws'] = ws
-            class_id = f"ci.{kwargs['class_init']}"
-            easyDict = eval(f"{class_id}(func).settings(**kwargs)")
-    
-    ezfunctions.stdout_log(ws, 'end')
-    # Return the easyDict
-    return easyDict
-
-#=================================================================
-# The Main Module
-#=================================================================
-def main():
+def cli_arguments():
     Parser = argparse.ArgumentParser(description='Intersight Converged Infrastructure Deployment Module')
     Parser.add_argument(
         '-a', '--api-key-id', default=os.getenv('intersight_apikey'),
@@ -102,6 +58,26 @@ def main():
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
     )
     Parser.add_argument(
+        '-s', '--deployment_step',
+        default ='flexpod',
+        required=True,
+        help    ='The steps in the proceedure to run. Options Are:'\
+            '1. initial'
+            '2. server'\
+            '3. operating_system'\
+            '4. management'
+    )
+    Parser.add_argument(
+        '-t', '--deployment_type',
+        default ='flexpod',
+        required=True,
+        help    ='Infrastructure Deployment Type. Options Are:'\
+            '1. azure_hci'
+            '2. netapp'\
+            '3. pure'\
+            '4. imm_domain'
+    )
+    Parser.add_argument(
         '-v', '--api-key-v3', action='store_true',
         help='Flag for API Key Version 3.'
     )
@@ -109,8 +85,17 @@ def main():
         '-wb', '--workbook',
         help = 'The source Workbook.'
     )
+    Parser.add_argument(
+        '-y', '--yaml',
+        help = 'The source YAML File.'
+    )
     args = Parser.parse_args()
+    return args
 
+#=================================================================
+# The Main Module
+#=================================================================
+def main():
     # Determine the Operating System
     opSystem = platform.system()
     script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -120,34 +105,35 @@ def main():
     #================================================
     # Import Stored Parameters
     #================================================
-    jsonFile = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-11360.json'
-    jsonOpen = open(jsonFile, 'r')
-    jsonData = json.load(jsonOpen)
-    jsonOpen.close()
-    jsonFile = f'{script_path}{path_sep}variables{path_sep}easy_variables.json'
-    jsonOpen = open(jsonFile, 'r')
-    ezData   = json.load(jsonOpen)
-    jsonOpen.close()
+    file    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-11360.json'
+    jsonData= json.load(open(file, 'r'))
+    file    = f'{script_path}{path_sep}variables{path_sep}easy_variables.json'
+    ezData  = json.load(open(file, 'r'))
+
     #==============================================
     # Build kwargs
     #==============================================
+    args   = cli_arguments()
     kwargs = {}
-    kwargs['args']        = args
-    kwargs['ezData']      = ezData['components']['schemas']
-    kwargs['home']        = Path.home()
-    kwargs['immDict']     = {'orgs':{}}
-    kwargs['jsonData']    = jsonData['components']['schemas']
-    kwargs['opSystem']    = platform.system()
-    kwargs['path_sep']    = path_sep
-    kwargs['script_path'] = script_path
+    kwargs['args']           = args
+    kwargs['deployment_type']= 'converged'
+    kwargs['ezData']         = ezData['components']['schemas']
+    kwargs['home']           = Path.home()
+    kwargs['immDict']        = {'orgs':{}}
+    kwargs['jsonData']       = jsonData['components']['schemas']
+    kwargs['opSystem']       = platform.system()
+    kwargs['path_sep']       = path_sep
+    kwargs['script_path']    = script_path
+
     #==============================================
     # Get Intersight Configuration
     # - apikey
     # - endpoint
     # - keyfile
     #==============================================
-    kwargs = ezfunctions.intersight_config(**kwargs)
-    kwargs['args'].url = 'https://%s' % (kwargs['args'].endpoint)
+    kwargs  = ezfunctions.intersight_config(**kwargs)
+    args.url= 'https://%s' % (args.endpoint)
+    kwargs['args']= args
     #==============================================
     # Check Folder Naming for Illegal Characters
     #==============================================
@@ -166,40 +152,66 @@ def main():
                 print(f'\n-------------------------------------------------------------------------------------------\n')
                 sys.exit(1)
         destdirCheck = True
+
     #==============================================
-    # Import the Workbook
+    # Process the YAML input File
     #==============================================
-    if os.path.isfile(args.workbook): excel_workbook = args.workbook
-    else:
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'\nWorkbook not Found.  Please enter a valid {path_sep}path{path_sep}filename for the source workbook.')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        while True:
-            print(f'Please enter a valid {path_sep}path{path_sep}filename for the source you will be using.')
-            excel_workbook = input('/Path/Filename: ')
-            if os.path.isfile(excel_workbook):
-                print(f'\n-----------------------------------------------------------------------------\n')
-                print(f'   {excel_workbook} exists.  Will Now begin collecting variables...')
-                print(f'\n-----------------------------------------------------------------------------\n')
-                break
-            print(f'\n!!!Workbook not Found!!!\n'\
-                '.  Please enter a valid {path_sep}path{path_sep}filename for the source you will be using.')
-    kwargs = ezfunctions.read_in(excel_workbook, **kwargs)
+    if (args.yaml):
+        yfile = open(os.path.join(args.yaml), 'r')
+        kwargs['immDict']['wizard'] = yaml.safe_load(yfile)
+
     #==============================================
-    # Process the Wizard Worksheet
-    #==============================================
-    kwargs = process_wizard(**kwargs)
-    #==============================================
-    # Process the Wizard Worksheet
+    # Build Deployment Library
     #==============================================
     pargs = DotMap()
-    #orgs   = list(kwargs['immDict']['orgs'].keys())
+    pargs.nope = False
     kwargs, pargs = isdk.api('organization').organizations(pargs, **kwargs)
     kwargs, pargs = ci.wizard('dns_ntp').dns_ntp(pargs, **kwargs)
-    kwargs, pargs = ci.wizard('vlans').vlans(pargs, **kwargs)
-    kwargs, pargs = ci.wizard('netapp').netapp(pargs, **kwargs)
     kwargs, pargs = ci.wizard('imm').imm(pargs, **kwargs)
-    kwargs, pargs = ci.wizard('build').build(pargs, **kwargs)
+    kwargs, pargs = ci.wizard('vlans').vlans(pargs, **kwargs)
+    if re.search('(netapp|pure)', args.deployment_type):
+        kwargs, pargs = eval(f"ci.wizard(args.deployment_type).{args.deployment_type}(pargs, **kwargs)")
+
+    #=================================================================
+    # When Deployment Step is initial - Deploy NXOS|Storage|Domain
+    #=================================================================
+    if args.deployment_step == 'initial':
+        if pargs.nope == True:
+            #==============================================
+            # Configure Switches if configure Set to True
+            #==============================================
+            if kwargs['immDict']['wizard'].get('nxos'):
+                network_config = DotMap(deepcopy(kwargs['immDict']['wizard']['nxos'][0]))
+                network_types = ['network', 'ooband']
+                for network_type in network_types:
+                    config_count = 0
+                    for i in network_config.switches:
+                        if i.configure == True and i.switch_type == network_type: config_count += 1
+                    if config_count == 2:
+                        kwargs, pargs = network.nxos('nxos').config(network_config, network_type, pargs, **kwargs)
+
+        #==============================================
+        # Configure Storage Appliances
+        #==============================================
+        if args.deployment_type == 'netapp':
+            if pargs.nope == False:
+                kwargs, pargs = ci.wizard('build').build_netapp(pargs, **kwargs)
+            else:
+                pargs.netapp.wwpns.a    = [{'fcp-lif-01-1a':'20:0e:00:a0:98:aa:1c:8d'}, {'fcp-lif-02-1a':'20:0f:00:a0:98:aa:1c:8d'}]
+                pargs.netapp.wwpns.b    = [{'fcp-lif-01-1c':'20:10:00:a0:98:aa:1c:8d'}, {'fcp-lif-02-1c':'20:11:00:a0:98:aa:1c:8d'}]
+                pargs.netapp.iscsi.iqn  = 'iqn.1992-08.com.netapp:sn.57c603ffcc2811ed9ce100a098aa1c8d:vs.6'
+                pargs.netapp.nvme.nqn   = 'nqn.1992-08.com.netapp:sn.57c603ffcc2811ed9ce100a098aa1c8d:discovery'
+
+        #==============================================
+        # Configure and Deploy Domain
+        #==============================================
+        if re.search('(imm_domain|netapp|pure)', args.deployment_type):
+            kwargs, pargs = ci.wizard('build').build_imm_domain(pargs, **kwargs)
+            kwargs = eval(f"isdkp.api_profiles('domain').profiles(pargs, **kwargs)")
+
+    print(json.dumps(kwargs['immDict']['orgs'], indent=4))
+    exit()
+
     #==============================================
     # Create YAML Files
     #==============================================
@@ -211,11 +223,10 @@ def main():
     #==============================================
     kwargs['isdk_deployed'] = {}
     for org in orgs:
-        print(json.dumps(kwargs['immDict']['orgs'][org]['netapp']['volume'], indent=4))
+        #print(json.dumps(kwargs['immDict']['orgs'][org]['netapp']['volume'], indent=4))
         #==============================================
         # Pools
         #==============================================
-        pargs.nope = False
         if pargs.nope == True:
             cisdk = 'isdkp.api_pools'
             if kwargs['immDict']['orgs'][org].get('pools'):
