@@ -7,10 +7,22 @@ import validators
 
 policy_regex = re.compile('(network_connectivity|ntp|port|snmp|switch_control|syslog|system_qos|vlan|vsan)')
 
+def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
+def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
+
 # Errors & Notifications
+def begin_loop(ptype1, ptype2):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    prLightPurple(f"   Beginning {' '.join(ptype1.split('_')).title()} {ptype2} Deployment.\n")
+
 def begin_section(ptype1, ptype2):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f"   Beginning {' '.join(ptype1.split('_')).title()} {ptype2.capitalize()} Deployments.\n")
+    prLightPurple(f"   Beginning {' '.join(ptype1.split('_')).title()} {' '.join(ptype2.split('_')).title()} Deployments.\n")
 
 def completed_item(ptype, pargs, pmoid):
     method = pargs.apiMethod
@@ -27,22 +39,26 @@ def completed_item(ptype, pargs, pmoid):
     elif pargs.apiBody.get('action'):
         if pargs.apiBody['action'] == 'Deploy': name = f"Deploy Profile {pargs.pmoid}"
         else: pargs.apiBody['name']
+    elif pargs.apiBody.get('Targets'):
+        name = pargs.apiBody['Targets'][0]['Name']
     else: name = pargs.apiBody['name']
     if re.search('(storage_drive|user_role|v(l|s)ans|vhbas|vnics|port_(channel|mode|role))', ptype):
         if 'port' in ptype:
-            print(f'      * Completed {method} for port_policy {pargs.port_policy_name}: {name} - Moid: {pmoid}')
-        else: print(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
-    elif 'Deploy' in name: print(f'      * Deploying Profile.')
+            prLightPurple(f'      * Completed {method} for port_policy {pargs.port_policy_name}: {name} - Moid: {pmoid}')
+        else: prLightPurple(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
+    elif 'Deploy' in name: prLightPurple(f'      * Deploying Profile.')
     elif re.search(policy_regex, pargs.policy) and pargs.purpose == 'switch':
         name = pargs.apiBody['name']
-        print(f'      * Completed {method} for {pargs.policy} name: {name} - Moid: {pmoid}. Updated Profiles.')
+        prLightPurple(f'      * Completed {method} for {pargs.policy} name: {name} - Moid: {pmoid}. Updated Profiles.')
     elif re.search('(eula|upgrade)', pargs.policy) and pargs.purpose == 'firmware':
-        print(f'      * Completed {method} for {pargs.policy} {name}.')
-    else: print(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
+        prLightPurple(f'      * Completed {method} for {pargs.policy} {name}.')
+    elif pargs.apiBody.get('Targets'):
+        prLightPurple(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
+    else: prLightPurple(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
 
 def deploy_notification(profile, profile_type):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'   Deploy Action Still ongoing for {profile_type} Profile {profile}')
+    prLightPurple(f'   Deploy Action Still ongoing for {profile_type} Profile {profile}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def error_file_location(varName, varValue):
@@ -51,8 +67,11 @@ def error_file_location(varName, varValue):
     print(f'  is invalid.  Please valid the Entry for "{varName}".')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
+def end_loop(ptype1, ptype2):
+    prLightPurple(f"\n   Completed {' '.join(ptype1.split('_')).title()} {ptype2} Deployment.")
+
 def end_section(ptype1, ptype2):
-    print(f"\n   Completed {' '.join(ptype1.split('_')).title()} {ptype2.capitalize()} Deployments.")
+    prLightPurple(f"\n   Completed {' '.join(ptype1.split('_')).title()} {' '.join(ptype2.split('_')).title()} Deployments.")
 
 def error_policy_doesnt_exist(policy_type, policy_name, profile, profile_type, ptype):
     print(f'\n-------------------------------------------------------------------------------------------\n')

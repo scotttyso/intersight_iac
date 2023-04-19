@@ -1,5 +1,7 @@
 from copy import deepcopy
 from dotmap import DotMap
+from intersight_auth import IntersightAuth
+from requests import Session
 import ezfunctions
 import isdk
 import json
@@ -8,6 +10,7 @@ import os
 import re
 import time
 import validating
+import urllib.parse
 
 serial_regex = re.compile('^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\dA-Z]{4}$')
 part1 = '(ethernet|fibre_channel)_qos|fc_zone|flow_control|iscsi_adapter|link_aggregation'
@@ -396,6 +399,9 @@ class api_policies(object):
         #=====================================================
         jsonVars = kwargs['ezData']['policies']['allOf'][1]['properties'][self.type]['key_map']
         policies = kwargs['immDict']['orgs'][kwargs['org']]['policies'][self.type]
+        if re.search('^port$', self.type):
+            policies = list({v['names'][0]:v for v in policies}.values())
+        else: policies = dict((v['name'],v) for v in policies).values()
         validating.begin_section(self.type, 'policies')
         #=====================================================
         # Get Existing Policies
@@ -1327,6 +1333,7 @@ class api_pools(object):
             jsonVars = kwargs['ezData']['pools']['allOf'][1]['properties']['fc']['key_map']
         else: jsonVars = kwargs['ezData']['pools']['allOf'][1]['properties'][self.type]['key_map']
         pools = kwargs['immDict']['orgs'][kwargs['org']]['pools'][self.type]
+        pools = list({v['name']:v for v in pools}.values())
         org_moid = kwargs['org_moids'][kwargs['org']]['Moid']
         validating.begin_section(self.type, 'pool')
         #=====================================================
@@ -1403,7 +1410,12 @@ class api_profiles(object):
         jsonVars = kwargs['ezData']['profiles']['allOf'][1]['properties'][self.type]['policy_list']
         if 'templates' == self.type:
             profiles = kwargs['immDict']['orgs'][kwargs['org']][self.type]['server']
-        else: profiles = kwargs['immDict']['orgs'][kwargs['org']]['profiles'][self.type]
+            profiles = list({v['name']:v for v in profiles}.values())
+        else:
+            profiles = kwargs['immDict']['orgs'][kwargs['org']]['profiles'][self.type]
+            if self.type == 'domain':
+                profiles = list({v['name']:v for v in profiles}.values())
+            else: profiles=list({v['targets'][0]['name']:v for v in profiles}.values())
         if 'server' == self.type:
             templates = {}
             if kwargs['immDict']['orgs'][kwargs['org']].get('templates'):
@@ -1496,6 +1508,7 @@ class api_profiles(object):
         # Create the Profiles with the Functions
         #=====================================================
         pargs.type = self.type
+        print(pargs.moids[self.type])
         for item in profiles:
             if re.search('^(chassis|server)$', self.type):
                 for i in item['targets']:
@@ -1531,8 +1544,9 @@ class api_profiles(object):
                 if item.get('serial_number'): pargs.serial_number = item['serial_number']
                 kwargs, pargs = profile_function(item, pargs, **kwargs)
                 pargs.moids[self.type].update({pargs.name:{'Moid':pargs.pmoid}})
+
         #========================================================
-        # If chassis or Server Watch Results if action is Deploy
+        # Deploy Profiles
         #========================================================
         deploy_profiles = False
         if re.search('^domain$', self.type):
@@ -1569,9 +1583,9 @@ class api_profiles(object):
                                 if kwargs['results']['ConfigContext']['ControlAction'] == 'No-op':
                                     deploy_complete = True
                                     pname = item['name']
-                                    print(f'    - Completed Profile Deployment for {pname}')
+                                    prGreen(f'    - Completed Profile Deployment for {pname}')
                                 else: 
-                                    print(f'      * Deploy Still Occuring on {pname}.  Waiting 120 seconds.')
+                                    prCyan(f'      * Deploy Still Occuring on {pname}.  Waiting 120 seconds.')
                                     #validating.deploy_notification(self.type, pname)
                                     time.sleep(120)
             if deploy_profiles == True:
@@ -1588,7 +1602,7 @@ class api_profiles(object):
                                 deploy_profiles = True
                                 print(f'\n{"-"*81}\n')
                             pname = i['name']
-                            print(f'    - Beginning Profile Deployment for {pname}')
+                            prGreen(f'    - Beginning Profile Deployment for {pname}')
                             pargs.apiMethod = 'patch'
                             pargs.policy = self.type
                             pargs.pmoid = pargs.moids[self.type][pname]['Moid']
@@ -1612,10 +1626,10 @@ class api_profiles(object):
                                 kwargs = isdk.api(self.type).calls(pargs, **kwargs)
                                 if kwargs['results']['ConfigContext']['ControlAction'] == 'No-op':
                                     deploy_complete = True
-                                    print(f'    - Completed Profile Deployment for {pname}')
+                                    prGreen(f'    - Completed Profile Deployment for {pname}')
                                 else: 
-                                    print(f'      * Deploy Still Occuring on {pname}.  Waiting 120 seconds.')
-                                    validating.deploy_notification(self.type, pname)
+                                    prCyan(f'      * Deploy Still Occuring on {pname}.  Waiting 120 seconds.')
+                                    #validating.deploy_notification(self.type, pname)
                                     time.sleep(120)
             if deploy_profiles == True:
                 print(f'\n{"-"*81}\n')
@@ -1806,21 +1820,46 @@ def profile_function(item, pargs, **kwargs):
     if len(server_template) > 0 and create_from_template == True:
         tmoid = pargs.moids['templates'][server_template]['Moid']
         bulkBody = {
-            'class_id': 'bulk.MoCloner', 'object_type': 'bulk.MoCloner',
-            'sources':[{'class_id': 'server.ProfileTemplate', 'moid':tmoid,'object_type':'server.ProfileTemplate'}],
-            'targets':[{'class_id': 'server.Profile', 'moid': '', 'name':apiBody['name'],'object_type':'server.Profile'}]
+            'object_type': 'bulk.MoCloner',
+            'Sources':[{
+                'ClassId': 'server.ProfileTemplate', 'Moid':tmoid, 'ObjectType':'server.ProfileTemplate'
+            }],
+            'Targets':[{
+                'AssignedServer':apiBody[f'assigned_{pargs.type}'],
+                'ClassId': 'server.Profile',
+                'Description': apiBody['description'],
+                'Name':apiBody['name'],
+                'Organization': apiBody['organization'],
+                'ObjectType':'server.Profile',
+                'ServerAssignmentMode': 'Static'
+            }]
         }
+        bulkBody = json.dumps(bulkBody)
+        bulkBody = bulkBody.replace('class_id', 'ClassId')
+        bulkBody = bulkBody.replace('object_type', 'ObjectType')
+        bulkBody = bulkBody.replace('moid', 'Moid')
+        bulkBody = json.loads(bulkBody)
         #=====================================================
         # Create the Profile from the Template
         #=====================================================
-        print(json.dumps(bulkBody, indent=4))
         if not pargs.moids[pargs.type].get(apiBody['name']):
+            #args         = kwargs['args']
+            #session      = Session()
+            #api_key_id   = args.api_key_id
+            #api_key_file = args.api_key_file
+            #session.auth = IntersightAuth(api_key_id=api_key_id, secret_key_filename=api_key_file)
+            #bulk_response= session.post(f'https://{args.endpoint}/api/v1/bulk/MoCloners', json=bulkBody)
+            #print(bulk_response)
+            #print(json.dumps(bulk_response.json()))
+            #exit()
             pargs.apiBody   = bulkBody
             pargs.apiMethod = 'create'
             pargs.policy    = 'bulk'
             pargs.purpose   = 'bulk'
             kwargs = isdk.api('bulk').calls(pargs, **kwargs)
             pargs.moids['server'].update({apiBody['name']:{'Moid':kwargs['pmoid']}})
+            pargs.pmoid = kwargs['pmoid']
+        else: pargs.pmoid = pargs.moids[pargs.type][apiBody['name']]['Moid']
     #=================================================================
     # Add Policies to the Policy Bucket if not deployed from Template
     #=================================================================
@@ -1883,10 +1922,22 @@ def profile_function(item, pargs, **kwargs):
     pargs.apiBody = apiBody
     pargs.policy  = pargs.type
     pargs.purpose = pargs.type
-    if pargs.moids[pargs.type].get(apiBody['name']):
-        pargs.apiMethod = 'patch'
-        pargs.pmoid = pargs.moids[pargs.type][apiBody['name']]['Moid']
-    else: pargs.apiMethod = 'create'
-    kwargs = isdk.api(pargs.type).calls(pargs, **kwargs)
-    pargs.pmoid = kwargs['pmoid']
+    if create_from_template == False:
+        if pargs.moids[pargs.type].get(apiBody['name']):
+            pargs.apiMethod = 'patch'
+            pargs.pmoid = pargs.moids[pargs.type][apiBody['name']]['Moid']
+        else: pargs.apiMethod = 'create'
+        kwargs = isdk.api(pargs.type).calls(pargs, **kwargs)
+        pargs.pmoid = kwargs['pmoid']
     return kwargs, pargs
+
+#=====================================================
+# Print Color Functions
+#=====================================================
+def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
+def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))

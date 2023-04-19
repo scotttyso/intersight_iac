@@ -27,6 +27,7 @@ from intersight.api import ntp_api
 from intersight.api import organization_api
 from intersight.api import os_api
 from intersight.api import power_api
+from intersight.api import processor_api
 from intersight.api import resourcepool_api
 from intersight.api import server_api
 from intersight.api import smtp_api
@@ -91,6 +92,7 @@ class api(object):
                 else: apiDict.update({iName:{'Moid':iMoid}})
                 if i.get('Model'):
                     apiDict[iName]['model'] = i['Model']
+                    apiDict[iName]['object_type'] = i['ObjectType']
                     apiDict[iName]['registered_device'] = i['RegisteredDevice']['Moid']
                     if i.get('ChassisId'):
                         apiDict[iName]['id'] = i['ChassisId']
@@ -656,6 +658,16 @@ class api(object):
             elif pargs.apiMethod == 'get':    apiCall = apiHandle.get_fcpool_pool_list
             elif pargs.apiMethod == 'create': apiCall = apiHandle.create_fcpool_pool
             elif pargs.apiMethod == 'patch':  apiCall = apiHandle.patch_fcpool_pool
+        elif 'inventory' == pargs.purpose:
+            if pargs.policy == 'adapter':
+                apiHandle = adapter_api.AdapterApi(apiClient)
+                apiCall = apiHandle.get_adapter_unit_list
+            elif pargs.policy == 'processor':
+                apiHandle = processor_api.ProcessorApi(apiClient)
+                apiCall = apiHandle.get_processor_unit_list
+            elif pargs.policy == 'tpm':
+                apiHandle = equipment_api.EquipmentApi(apiClient)
+                apiCall = apiHandle.get_equipment_tpm_list
         #=====================================================
         # Setup API Parameters
         #=====================================================
@@ -691,27 +703,40 @@ class api(object):
         #=====================================================
         # Perform the apiCall
         #=====================================================
-        try:
-            if 'get_by_moid' in pargs.apiMethod: apiResults = json.loads(apiCall(pargs.pmoid, **apiArgs).data)
-            elif 'get' in pargs.apiMethod: apiResults = json.loads(apiCall(**apiArgs).data)
-            elif 'patch' in pargs.apiMethod:
-                apiResults = json.loads(apiCall(pargs.pmoid, pargs.apiBody, **apiArgs).data)
-            elif 'create' in pargs.apiMethod:
-                apiResults = json.loads(apiCall(pargs.apiBody, **apiArgs).data)
-        except ApiException as e:
-            #if re.search('Your token has expired', str(e)) or re.search('Not Found', str(e)):
-            #    kwargs['results'] = False
-            #    return kwargs
-            if re.search('There is an upgrade already running', str(e)):
-                kwargs['running'] = True
-                return kwargs
-            print(f"Exception when calling {apiMessage}: {e}\n")
-            sys.exit(1)
+        tries = 3
+        for i in range(tries):
+            try:
+                if 'get_by_moid' in pargs.apiMethod: apiResults = json.loads(apiCall(pargs.pmoid, **apiArgs).data)
+                elif 'get' in pargs.apiMethod: apiResults = json.loads(apiCall(**apiArgs).data)
+                elif 'patch' in pargs.apiMethod:
+                    apiResults = json.loads(apiCall(pargs.pmoid, pargs.apiBody, **apiArgs).data)
+                elif 'create' in pargs.apiMethod:
+                    apiResults = json.loads(apiCall(pargs.apiBody, **apiArgs).data)
+            except ApiException as e:
+                if re.search('Your token has expired', str(e)) or re.search('Not Found', str(e)):
+                    kwargs['results'] = False
+                    return kwargs
+                elif re.search('user_action_is_not_allowed', str(e)):
+                    if i < tries -1:
+                        time.sleep(45)
+                        continue
+                    else: raise
+                elif re.search('There is an upgrade already running', str(e)):
+                    kwargs['running'] = True
+                    return kwargs
+                else:
+                    print(f"Exception when calling {apiMessage}: {e}\n")
+                    sys.exit(1)
+            break
         #=====================================================
         # Gather Results from the apiCall
         #=====================================================
         if re.search('(get_by_moid|patch)', pargs.apiMethod): kwargs['pmoid'] = pargs.pmoid
-        elif 'create' in pargs.apiMethod: kwargs['pmoid'] = apiResults['Moid']
+        elif 'create' in pargs.apiMethod:
+            if pargs.policy == 'bulk':
+                kwargs['pmoid'] = apiResults['Responses'][0]['Body']['Moid']
+            else: kwargs['pmoid'] = apiResults['Moid']
+        elif 'inventory' in pargs.purpose: print()
         else: kwargs['pmoids'] = api('results').apiResults(pargs, apiResults)
         if re.search('(create|patch)', pargs.apiMethod):
             if pargs.apiBody.get('name'):

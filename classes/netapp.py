@@ -37,20 +37,21 @@ class api(object):
     #=====================================================
     # NetApp AutoSupport Creation
     #=====================================================
-    def autosupport(self, pargs, **kwargs):
+    def autosupport(self, i, pargs, **kwargs):
         #=====================================================
         # Load Variables and Send Begin Notification
         #=====================================================
-        validating.begin_section(self.type, 'netapp')
-        for apiBody in pargs.items:
+        validating.begin_section('netapp', self.type)
+        for item in i.autosupport:
+            apiBody = item.toDict()
             apiBody = json.dumps(apiBody)
-            if print_payload: print(json.dumps(apiBody, indent=4))
+            if print_payload: prCyan(json.dumps(apiBody, indent=4))
             uri = 'support/autosupport'
         patch(uri, pargs, apiBody, **kwargs)
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
-        validating.end_section(self.type, 'netapp')
+        validating.end_section('netapp', self.type)
         return kwargs, pargs
 
 
@@ -67,7 +68,7 @@ class api(object):
         #=====================================================
         pargs.hostname     = pargs.netapp.node01
         pargs.hostPassword = 'netapp_password'
-        pargs.hostPrompt   = deepcopy(pargs.netapp.hostPrompt)
+        pargs.host_prompt   = deepcopy(pargs.netapp.host_prompt)
         pargs.username     = pargs.netapp.user
         child, kwargs      = ezfunctions.child_login(pargs, **kwargs)
         print('\n\n')
@@ -93,44 +94,52 @@ class api(object):
     #=====================================================
     # NetApp Broadcast Domain Creation
     #=====================================================
-    def broadcast_domain(self, pargs, **kwargs):
+    def broadcast_domain(self, i, pargs, **kwargs):
         #=====================================================
         # Load Variables and Send Begin Notification
         #=====================================================
-        validating.begin_section(self.type, 'netapp')
+        validating.begin_section('netapp', self.type)
         #=====================================================
         # Create/Patch the Broadcast Domains
         #=====================================================
-        uri = '/network/ethernet/broadcast-domains'
-        bDomains = get(uri, pargs, **kwargs)
+        uri  = '/network/ethernet/broadcast-domains?fields=mtu,name'
+        bdRes= get(uri, pargs, **kwargs)
         pargs.netapp.broadcast_domains = {}
-        for i in pargs.items:
-            polVars = deepcopy(i)
-            i = DotMap(deepcopy(i))
+        print('')
+        for bd in i.broadcast_domain:
+            prLightPurple(f"  Beginning Configuration for Broadcast Domain {bd.name}")
+            polVars = deepcopy(bd)
             method = 'post'
-            for r in bDomains['records']:
+            for r in bdRes['records']:
                 r = DotMap(deepcopy(r))
-                if i.name == r.name:
-                    method = 'patch'
-                    uri = f'network/ethernet/broadcast-domains/{r["uuid"]}'
-                    polVars.pop('name')
+                if bd.name == r.name:
+                    if r.mtu == bd.mtu: method = 'skip'
+                    else:
+                        method = 'patch'
+                        uri = f'network/ethernet/broadcast-domains/{r["uuid"]}'
+                        polVars.pop('name')
+            if method == 'skip':
+                prCyan(f"    - Skipping Broadcast Domain {bd.name}.  API Matches Defined Config.")
             if method == 'post': uri = 'network/ethernet/broadcast-domains'
-            payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
-            print(f"\n    Configuring Broadcast Domain {i.name}")
-            eval(f"{method}(uri, pargs, payload, **kwargs)")
+            if re.search('(patch|post)', method):
+                payload = json.dumps(polVars)
+                if print_payload: prCyan(json.dumps(polVars, indent=4))
+                prGreen(f"    * Configuring Broadcast Domain {bd.name}")
+                eval(f"{method}(uri, pargs, payload, **kwargs)")
+            prLightPurple(f"  Completed Configuration for Broadcast Domain {bd.name}")
+        print('')
         uri = '/network/ethernet/broadcast-domains'
-        bDomains = get(uri, pargs, **kwargs)
-        for i in pargs.item:
-            i = DotMap(deepcopy(i))
-            for r in bDomains['records']:
+        bdRes = get(uri, pargs, **kwargs)
+        for bd in i.broadcast_domain:
+            bd = DotMap(deepcopy(bd))
+            for r in bdRes['records']:
                 r = DotMap(deepcopy(r))
-                if i.name == r.name or 'Default' in r.name:
+                if bd.name == r.name or 'Default' in r.name:
                     pargs.netapp.broadcast_domains.update({r.name:r.uuid})
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
-        validating.end_section(self.type, 'netapp')
+        validating.end_section('netapp', self.type)
         return kwargs, pargs
 
 
@@ -138,133 +147,135 @@ class api(object):
     # NetApp Cluster Initialization
     #=====================================================
     def cluster_init(self, pargs, **kwargs):
-        #=====================================================
-        # Send Begin Notification
-        #=====================================================
-        validating.begin_section(self.type, 'netapp')
-        time.sleep(2)
-        #=====================================================
-        # Load Variables and Login to Storage Array
-        #=====================================================
-        pargs.hostname     = pargs.netapp.node01
-        pargs.hostPassword = 'netapp_password'
-        pargs.hostPrompt   = deepcopy(pargs.netapp.hostPrompt)
-        pargs.username     = pargs.netapp.user
-        child, kwargs      = ezfunctions.child_login(pargs, **kwargs)
-        #=====================================================
-        # Enable CDP, LLDP, and SNMP
-        #=====================================================
-        cmds = [
-            'node run -node * options cdpd.enable on',
-            'node run -node * options lldp.enable on',
-            'snmp init 1'
-        ]
-        for cmd in cmds:
-            child.sendline(cmd)
-            child.expect(pargs.hostPrompt)
-        #=====================================================
-        # Storage Failover Check
-        #=====================================================
-        pargs.count = 2
-        pargs.show  = "storage failover show"
-        pargs.regex = "true[ ]+Connected to"
-        pargs.cmds  = ["storage failover modify -node * -enabled true"]
-        config_function(child, pargs)
-        #=====================================================
-        # Validate Cluster High Availability
-        #=====================================================
-        pargs.count = 1
-        pargs.show  = "cluster ha show"
-        pargs.regex = "High-Availability Configured: true"
-        pargs.cmds  = ['cluster ha modify -configured true']
-        config_function(child, pargs)
-        #=====================================================
-        # Validate Storage Failover Hardware Assist
-        #=====================================================
-        controller_ips = pargs.ooband['controller']
-        pargs.count = 2
-        pargs.show  = "storage failover hwassist show"
-        pargs.regex = "Monitor Status: active"
-        pargs.cmds = [
-            f"storage failover modify -hwassist-partner-ip {controller_ips[2]} -node {pargs.netapp.node01}",
-            f"storage failover modify -hwassist-partner-ip {controller_ips[1]} -node {pargs.netapp.node02}",
-        ]
-        config_function(child, pargs)
-        #=====================================================
-        # Configure Service Processors
-        #=====================================================
-        ipcount = 3
-        gw   = pargs.ooband.gateway
-        mask = pargs.ooband.netmask
-        for node in pargs.netapp.node_list:
-            spip = pargs.ooband.controller[ipcount]
-            pargs.count = 1
-            pargs.show  = "system service-processor show"
-            pargs.regex = f"online[ ]+true[ ]+[\\d\\.]+[ ]+{spip}"
-            pargs.cmds = [f"system service-processor network modify -node {node} -address-family IPv4 -enable true "\
-                f"-dhcp none -ip-address {spip} -netmask {mask} -gateway {gw}"]
-            config_function(child, pargs)
-            ipcount += 1
-            #===========================================================
-            # Disable Flow Control on Data Ports
-            #===========================================================
-            for dp in pargs.netapp.data_ports:
-                pargs.count = 1
-                pargs.show  = f"network port show -node {node} -port {dp}"
-                pargs.regex = f"Flow Control Administrative: none"
-                pargs.cmds = [f"network port modify -node {node} -port {dp} -flowcontrol-admin none"]
-                config_function(child, pargs)
-        #=====================================================
-        # Change Fibre-Channel Port Speeds
-        #=====================================================
-        for fca in pargs.netapp.fcp_ports:
-            for node in pargs.netapp.node_list:
-                cmdp1 = f'fcp adapter modify -node {node} -adapter {fca}'
-                cmds = [
-                    f'{cmdp1} -status-admin down',
-                    'sleep',
-                    f'{cmdp1} -speed {pargs.netapp.fcp_speed} -status-admin up'
-                ]
-            child.sendline(f'network interface show -curr-port {fca}')
-            check = False
-            cmd_check = False
-            while cmd_check == False:
-                i = child.expect(['There are no entries', 'were displayed', pargs.hostPrompt])
-                if i == 0: check = False
-                elif i == 1: check = True
-                elif i == 2: cmd_check = True
-            if check == False:
-                for cmd in cmds:
-                    if 'sleep' in cmd: time.sleep(3)
-                    else: 
-                        child.sendline(cmd)
-                        child.expect(pargs.hostPrompt)
-        #=====================================================
-        # Disk Zero Spares
-        #=====================================================
-        cmd = 'disk zerospares'
-        child.sendline(cmd)
-        child.expect(pargs.hostPrompt)
-        cmd = 'disk show -fields zeroing-percent'
-        child.sendline(cmd)
-        dcount = 0
-        zerospares = False
-        while zerospares == False:
-            i = child.expect([r'\d.\d.[\d]+ [\d]', 'to page down', pargs.hostPrompt])
-            if i == 0:
-                if dcount == 10: print(f'\n**failed on "{cmd}".  Please Check for any issues and restart the wizard.')
-                time.sleep(60)
-                dcount =+ 1
+        for i in kwargs['immDict']['orgs'][kwargs['org']]['netapp']['cluster']:
+            i = DotMap(deepcopy(i))
+            #=====================================================
+            # Send Begin Notification
+            #=====================================================
+            validating.begin_section('netapp', self.type)
+            time.sleep(2)
+            #=====================================================
+            # Load Variables and Login to Storage Array
+            #=====================================================
+            pargs.hostname   = i.nodes[0].name + '.' + pargs.dns_domains[0]
+            pargs.host_prompt= pargs.netapp.cluster[i.name].host_prompt
+            pargs.password   = 'netapp_password'
+            pargs.username   = pargs.netapp.cluster[i.name].username
+            child, kwargs    = ezfunctions.child_login(pargs, **kwargs)
+            #=====================================================
+            # Enable CDP, LLDP, and SNMP
+            #=====================================================
+            cmds = [
+                'node run -node * options cdpd.enable on',
+                'node run -node * options lldp.enable on',
+                'snmp init 1'
+            ]
+            for cmd in cmds:
                 child.sendline(cmd)
-            elif i == 1: child.send(' ')
-            elif i == 2: zerospares = True
-        child.sendline('exit')
-        child.expect('closed')
-        child.close()
+                child.expect(pargs.host_prompt)
+            #=====================================================
+            # Storage Failover Check
+            #=====================================================
+            pargs.count = 2
+            pargs.show  = "storage failover show"
+            pargs.regex = "true[ ]+Connected to"
+            pargs.cmds  = ["storage failover modify -node * -enabled true"]
+            config_function(child, pargs)
+            #=====================================================
+            # Validate Cluster High Availability
+            #=====================================================
+            pargs.count = 1
+            pargs.show  = "cluster ha show"
+            pargs.regex = "High-Availability Configured: true"
+            pargs.cmds  = ['cluster ha modify -configured true']
+            config_function(child, pargs)
+            #=====================================================
+            # Validate Storage Failover Hardware Assist
+            #=====================================================
+            ctrl_ips = pargs.ooband['controller']
+            pargs.count = 2
+            pargs.show  = "storage failover hwassist show"
+            pargs.regex = "Monitor Status: active"
+            pargs.cmds = [
+                f"storage failover modify -hwassist-partner-ip {ctrl_ips[2]} -node {i.nodes[0].name}",
+                f"storage failover modify -hwassist-partner-ip {ctrl_ips[1]} -node {i.nodes[1].name}",
+            ]
+            config_function(child, pargs)
+            #=====================================================
+            # Configure Service Processors
+            #=====================================================
+            ipcount = 3
+            gw   = pargs.ooband.gateway
+            mask = pargs.ooband.netmask
+            for node in i.nodes:
+                spip = pargs.ooband.controller[ipcount]
+                pargs.count = 1
+                pargs.show  = "system service-processor show"
+                pargs.regex = f"online[ ]+true[ ]+[\\d\\.]+[ ]+{spip}"
+                pargs.cmds = [f"system service-processor network modify -node {node.name} -address-family IPv4 "\
+                    f"-enable true -dhcp none -ip-address {spip} -netmask {mask} -gateway {gw}"]
+                config_function(child, pargs)
+                ipcount += 1
+                #===========================================================
+                # Disable Flow Control on Data Ports
+                #===========================================================
+                for dp in node.data_ports:
+                    pargs.count = 1
+                    pargs.show  = f"network port show -node {node} -port {dp}"
+                    pargs.regex = f"Flow Control Administrative: none"
+                    pargs.cmds = [f"network port modify -node {node} -port {dp} -flowcontrol-admin none"]
+                    config_function(child, pargs)
+                #=====================================================
+                # Change Fibre-Channel Port Speeds
+                #=====================================================
+                for fca in node.fcp_ports:
+                    cmdp1 = f'fcp adapter modify -node {node} -adapter {fca}'
+                    cmds = [
+                        f'{cmdp1} -status-admin down',
+                        'sleep',
+                        f'{cmdp1} -speed {node.fcp_speed} -status-admin up'
+                    ]
+                    child.sendline(f'network interface show -curr-port {fca}')
+                    check = False
+                    cmd_check = False
+                    while cmd_check == False:
+                        i = child.expect(['There are no entries', 'were displayed', pargs.host_prompt])
+                        if i == 0: check = False
+                        elif i == 1: check = True
+                        elif i == 2: cmd_check = True
+                    if check == False:
+                        for cmd in cmds:
+                            if 'sleep' in cmd: time.sleep(3)
+                            else: 
+                                child.sendline(cmd)
+                                child.expect(pargs.host_prompt)
+            #=====================================================
+            # Disk Zero Spares
+            #=====================================================
+            cmd = 'disk zerospares'
+            child.sendline(cmd)
+            child.expect(pargs.host_prompt)
+            cmd = 'disk show -fields zeroing-percent'
+            child.sendline(cmd)
+            dcount = 0
+            zerospares = False
+            while zerospares == False:
+                i = child.expect([r'\d.\d.[\d]+ [\d]', 'to page down', pargs.host_prompt])
+                if i == 0:
+                    if dcount == 10: prRed(f'\n**failed on "{cmd}".  Please Check for any issues and restart the wizard.')
+                    time.sleep(60)
+                    dcount =+ 1
+                    child.sendline(cmd)
+                elif i == 1: child.send(' ')
+                elif i == 2: zerospares = True
+            child.sendline('exit')
+            child.expect('closed')
+            child.close()
+
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
-        validating.end_section(self.type, 'netapp')
+        validating.end_section('netapp', self.type)
         return kwargs, pargs
 
 
@@ -273,11 +284,20 @@ class api(object):
     #=====================================================
     def cluster(self, pargs, **kwargs):
         #=====================================================
-        # Load Variables and Send Begin Notification
+        # First Initialize the Clusters
         #=====================================================
-        for i in pargs.items:
-            validating.begin_section(self.type, 'netapp')
+        #kwargs, pargs = api('cluster_init').cluster_init(pargs, **kwargs)
+        validating.begin_section('netapp', self.type)
+        #=====================================================
+        # Load Variables and Send Notification
+        #=====================================================
+        for i in kwargs['immDict']['orgs'][kwargs['org']]['netapp']['cluster']:
             i = DotMap(deepcopy(i))
+            validating.begin_loop('cluster', i.name)
+
+            #=====================================================
+            # Add NTP Servers
+            #=====================================================
             uri = 'cluster/ntp/servers'
             jData = get(uri, pargs, **kwargs)
             for ntp in i.ntp_servers:
@@ -290,9 +310,13 @@ class api(object):
                         uri = uri + '/' + ntp
                 polVars = {"server": ntp}
                 payload = json.dumps(polVars)
-                if print_payload: print(json.dumps(polVars, indent=4))
+                if print_payload: prCyan(json.dumps(polVars, indent=4))
                 if method == 'post':
                     eval(f"{method}(uri, pargs, payload, **kwargs)")
+
+            #=====================================================
+            # Add Cluster Interface
+            #=====================================================
             uri = 'network/ip/interfaces'
             jData = get(uri, pargs, **kwargs)
             method = 'post'
@@ -312,29 +336,37 @@ class api(object):
             }
             if method == 'post': polVars.update({"ipspace": "Default"})
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
-            print(f"  Configuring Cluster {polVars['name']}")
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
+            print(f"\n  Configuring Cluster {i.name}")
             eval(f"{method}(uri, pargs, payload, **kwargs)")
-            #=====================================================
-            # Perform License Validation
-            #=====================================================
-            uri = 'cluster/licensing/licenses'
-            licenseData = get(uri, pargs, **kwargs)
+
             #=====================================================
             # Validate Licenses Exist for Each Protocol
             #=====================================================
-            for p in pargs.netapp.protocols:
+            print(f"\n  Validating Licensing for {i.name}")
+            uri = 'cluster/licensing/licenses'
+            licenseData = get(uri, pargs, **kwargs)
+            for p in pargs.netapp.cluster[i.name].protocols:
                 license_installed = False
                 for r in licenseData['records']:
                     r = DotMap(deepcopy(r))
                     if r.name == p: license_installed = True
                 if license_installed == False:
-                    print(f'\n!!! ERROR !!!\nNo License was found for protocol {p}\n')
+                    prRed(f'\n!!!ERROR!!!\nNo License was found for protocol {p}\n')
                     sys.exit()
+
+            #=====================================================
+            # Configure Sub-Sections
+            #=====================================================
+            item_list = ['autosupport', 'snmp', 'broadcast_domain', 'nodes', 'svm']
+            for item in item_list:
+                kwargs, pargs = eval(f"api(item).{item}(i, pargs, **kwargs)")
+
+            validating.end_loop('cluster', i.name)
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
-        validating.end_section(self.type, 'netapp')
+        validating.end_section('netapp', self.type)
         return kwargs, pargs
 
 
@@ -366,7 +398,7 @@ class api(object):
                         #for p in pop_list:
                         #    if polVars.get(p): polVars.pop(p)
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
             print(f'   {method} SVM {svm} iGroup {polVars["name"]}')
             eval(f"{method}(uri, pargs, payload, **kwargs)")
         #=====================================================
@@ -385,7 +417,7 @@ class api(object):
                     exists = True
             if exists == False:
                 payload = json.dumps(polVars)
-                if print_payload: print(json.dumps(polVars, indent=4))
+                if print_payload: prCyan(json.dumps(polVars, indent=4))
                 print(f'   {method} SVM {svm} Lun Map {polVars["lun"]["name"]}')
                 eval(f"{method}(uri, pargs, payload, **kwargs)")
         #=====================================================
@@ -414,7 +446,7 @@ class api(object):
                     for p in pop_list:
                         if polVars.get(p): polVars.pop(p)
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
             print(f'   {method} SVM {i.svm.name} Lun {i.name}')
             eval(f"{method}(uri, pargs, payload, **kwargs)")
             #=====================================================
@@ -485,25 +517,26 @@ class api(object):
     #=====================================================
     # NetApp Node Creation
     #=====================================================
-    def nodes(self, pargs, **kwargs):
+    def nodes(self, i, pargs, **kwargs):
         #=====================================================
         # Load Variables and Send Begin Notification
         #=====================================================
-        validating.begin_section(self.type, 'netapp')
+        validating.begin_section('netapp', self.type)
         #=====================================================
         # Get Existing Storage Aggregates
         #=====================================================
-        for i in pargs.items:
-            i = DotMap(deepcopy(i))
-            pargs.netapp[i.name].interfaces = {}
-            pargs.netapp[i.name]['aggregates'] = {}
+        for node in i.nodes:
+            validating.begin_section('node', node.name)
+            node = DotMap(deepcopy(node))
+            pargs.netapp[node.name].interfaces = {}
+            pargs.netapp[node.name]['aggregates'] = {}
             #=====================================================
             # Create/Patch Storage Aggregates
             #=====================================================
-            aggregate   = i['storage_aggregates'][0]['name']
-            method = 'post'
-            print(f"\n    Get Existing Storage Aggregates")
-            uri = 'storage/aggregates'
+            prLightPurple(f"\n    Get Existing Storage Aggregates")
+            aggregate= node.storage_aggregates[0].name
+            method   = 'post'
+            uri      = 'storage/aggregates'
             storageAggs = get(uri, pargs, **kwargs)
             if storageAggs.get('records'):
                 for r in storageAggs['records']:
@@ -511,113 +544,126 @@ class api(object):
                     if r.name == aggregate:
                         method = 'patch'
                         uri = f'storage/aggregates/{r.uuid}'
-            polVars = deepcopy(i.storage_aggregates[0])
-            polVars.update({"node": {"name": i.name}})
+            polVars = deepcopy(node.storage_aggregates[0])
+            polVars.update({"node": {"name": node.name}})
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
-            print(f"\n    Configuring Storage Aggregate {aggregate}")
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
+            prLightPurple(f"\n    Configuring Storage Aggregate {aggregate}")
             eval(f"{method}(uri, pargs, payload, **kwargs)")
-            print(f"\n    Add Storage Aggregate to Dictionaries")
+            prLightPurple(f"\n    Add Storage Aggregate to Dictionaries")
             uri = 'storage/aggregates'
             storageAggs = get(uri, pargs, **kwargs)
             for r in storageAggs['records']:
                 r = DotMap(deepcopy(r))
                 if r.name == aggregate:
-                    pargs.netapp[i.name]['aggregates'].update({"name":aggregate,"uuid":r.uuid})
+                    pargs.netapp[node.name]['aggregates'].update({"name":aggregate,"uuid":r.uuid})
             #=====================================================
             # Update Interfaces on the Nodes
             #=====================================================
-            print(f"\n    Get Existing Ethernet Port Records.")
-            uri = f'network/ethernet/ports?node.name={i.name}'
-            ethernetPorts = get(uri, pargs, **kwargs)
-            method = 'post'
-            #=====================================================
-            # See if LAG and Data Ports already exists
-            #=====================================================
-            for r in ethernetPorts['records']:
-                r = DotMap(deepcopy(r))
-                if r.name == 'a0a':
-                    method = 'patch'
-                    pargs.netapp[i.name].interfaces.update({r.name:r.uuid})
-                for dp in pargs.netapp.data_ports:
-                    if r.name == dp: pargs.netapp[i.name].interfaces.update({dp:r.uuid})
-            #=====================================================
-            # Create/Patch the LAG - a0a
-            #=====================================================
-            uri = 'network/ethernet/ports'
-            if method == 'patch': uri = f'network/ethernet/ports/{pargs.netapp[i.name].interfaces["a0a"]}'
-            else: 'network/ethernet/ports'
-            polVars = deepcopy(i['interfaces']['lacp'][0])
-            polVars.update({"node": {"name":i.name}})
-            polVars['broadcast_domain'].update({"uuid": pargs.netapp.broadcast_domains[polVars['broadcast_domain']['name']]})
-            for dp in polVars['lag']['member_ports']:
-                dp.update({
-                    "uuid": pargs.netapp[i.name].interfaces[dp['name']],
-                    "node": {"name": i.name}
-                })
-            if method == 'patch':
-                pop_list = ['distribution_policy', 'mode']
-                for p in pop_list: polVars['lag'].pop(p)
-                pop_list = ['node', 'type']
-                for p in pop_list: polVars.pop(p)
-            payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
-            eval(f"{method}(uri, pargs, payload, **kwargs)")
-            uri = f'network/ethernet/ports?node.name={i.name}'
-            #=====================================================
-            # Get UUID For the LAG
-            #=====================================================
-            ethernetPorts = get(uri, pargs, **kwargs)
-            method = 'post'
-            for r in ethernetPorts['records']:
-                r = DotMap(deepcopy(r))
-                if r.name == 'a0a': pargs.netapp[i.name].interfaces.update({'a0a': r.uuid})
+            prLightPurple(f"\n    Get Existing Ethernet Port Records.")
+            uri       = f'network/ethernet/ports?node.name={node.name}'
+            ethResults= get(uri, pargs, **kwargs)
+            method    = 'post'
+            for lacp in node.interfaces.lacp:
+                #=====================================================
+                # See if LAG and Data Ports already exists
+                #=====================================================
+                polVars = deepcopy(lacp.toDict())
+                for r in ethResults['records']:
+                    r = DotMap(deepcopy(r))
+                    if r.name == 'a0a':
+                        method = 'patch'
+                        pargs.netapp[node.name].interfaces.update({r.name:r.uuid})
+                    for dp in lacp.lag.member_ports:
+                        if r.name == dp.name: pargs.netapp[node.name].interfaces.update({r.name:r.uuid})
+                #=====================================================
+                # Create/Patch the LAG - a0a
+                #=====================================================
+                uri = 'network/ethernet/ports'
+                if method == 'patch': uri = f'network/ethernet/ports/{pargs.netapp[node.name].interfaces["a0a"]}'
+                polVars.update({"node": {"name":node.name}})
+                polVars['broadcast_domain'].update(
+                    {"uuid": pargs.netapp.broadcast_domains[lacp.broadcast_domain.name]}
+                )
+                for dp in polVars['lag']['member_ports']:
+                    dp.update({
+                        "uuid": pargs.netapp[node.name].interfaces[dp['name']],
+                        "node": {"name": node['name']}
+                    })
+                if method == 'patch':
+                    pop_list = ['distribution_policy', 'mode']
+                    for p in pop_list: polVars['lag'].pop(p)
+                    pop_list = ['node', 'type']
+                    for p in pop_list: polVars.pop(p)
+                payload = json.dumps(polVars)
+                if print_payload: prCyan(json.dumps(polVars, indent=4))
+                eval(f"{method}(uri, pargs, payload, **kwargs)")
+                uri = f'network/ethernet/ports?node.name={node.name}'
+                #=====================================================
+                # Get UUID For the LAG
+                #=====================================================
+                ethResults = get(uri, pargs, **kwargs)
+                method = 'post'
+                for r in ethResults['records']:
+                    r = DotMap(deepcopy(r))
+                    if r.name == 'a0a': pargs.netapp[node.name].interfaces.update({'a0a': r.uuid})
             #=====================================================
             # Create/Patch the VLAN Interfaces for the LAG
             #=====================================================
-            uri = f'network/ethernet/ports?fields=node,type,vlan&node.name={i.name}'
-            ethernetPorts = get(uri, pargs, **kwargs)
-            for x in i['interfaces']['vlan']:
-                polVars = deepcopy(x)
-                x = DotMap(deepcopy(x))
+            uri = f'network/ethernet/ports?fields=broadcast_domain,node,type,vlan&node.name={node.name}'
+            ethResults = get(uri, pargs, **kwargs)
+            for v in node.interfaces.vlan:
+                intf_name = f'a0a-{v.vlan.tag}'
+                prLightPurple(f"\n    Beginning Configuration for VLAN Interface {intf_name}.")
+                polVars = deepcopy(v.toDict())
                 uri = 'network/ethernet/ports'
                 method = 'post'
                 polVars['broadcast_domain'].update({
-                    "uuid": pargs.netapp.broadcast_domains[x.broadcast_domain.name]
+                    "uuid": pargs.netapp.broadcast_domains[v.broadcast_domain.name]
                 })
-                polVars.update({"node": i.name})
+                polVars.update({"node": node.name})
                 polVars['vlan']['base_port'].update({
-                    "node": {"name": i.name},
-                    "uuid": pargs.netapp[i.name].interfaces['a0a']
+                    "node": {"name": node.name},
+                    "uuid": pargs.netapp[node.name].interfaces['a0a']
                 })
-                for r in ethernetPorts['records']:
+                for r in ethResults['records']:
                     r = DotMap(deepcopy(r))
                     if r.type == 'vlan':
-                        if r.vlan.base_port.name == 'a0a' and r.vlan.tag == x.vlan.tag:
+                        if r.vlan.base_port.name == 'a0a' and r.vlan.tag == v.vlan.tag:
                             method = 'patch'
                             uri = f'network/ethernet/ports/{r.uuid}'
                             polVars.pop('node')
                             polVars.pop('type')
                             polVars.pop('vlan')
-                payload = json.dumps(polVars)
-                if print_payload: print(json.dumps(polVars, indent=4))
-                eval(f"{method}(uri, pargs, payload, **kwargs)")
-            uri = f'network/ethernet/ports?fields=node,type,vlan&node.name={i.name}'
+                        if r.broadcast_domain.name == v.broadcast_domain.name:
+                            if r.vlan.base_port.name == v.vlan.base_port.name:
+                                if r.vlan.tag == v.vlan.tag:
+                                    method = 'skip'
+                if method == 'skip':
+                    prCyan(f"      * Skipping VLAN Interface {intf_name}.  API Matches Defined Config.")
+                elif re.search('patch|post', method):
+                    payload = json.dumps(polVars)
+                    if print_payload: prCyan(json.dumps(polVars, indent=4))
+                    prGreen(f"    * Configuring VLAN Interface {intf_name}.")
+                    eval(f"{method}(uri, pargs, payload, **kwargs)")
+                prLightPurple(f"    Completed Configuration for VLAN Interface {intf_name}.")
+            print('')
+            uri = f'network/ethernet/ports?fields=node,type,vlan&node.name={node.name}'
             intfData = get(uri, pargs, **kwargs)
-            for x in i['interfaces']['vlan']:
-                intf_name = f'a0a-{x.vlan.tag}'
-                x = DotMap(deepcopy(x))
+            for v in node.interfaces.vlan:
+                intf_name = f'a0a-{v.vlan.tag}'
                 for r in intfData['records']:
                     r = DotMap(deepcopy(r))
                     if r.type == 'vlan':
-                        if r.vlan.tag == x.vlan.tag:
-                            pargs.netapp[i.name].interfaces.update({intf_name:r.uuid})
+                        if r.vlan.tag == v.vlan.tag:
+                            pargs.netapp[node.name].interfaces.update({intf_name:r.uuid})
+            validating.end_section('node', node.name)
         #=====================================================
         # Delete Default-* Broadcast Domains
         #=====================================================
         uri = '/network/ethernet/broadcast-domains'
-        bDomains = get(uri, pargs, **kwargs)
-        for r in bDomains['records']:
+        bdResults = get(uri, pargs, **kwargs)
+        for r in bdResults['records']:
             r = DotMap(deepcopy(r))
             if 'Default-' in r.name:
                 uri = f'network/ethernet/broadcast-domains/{r.uuid}'
@@ -625,285 +671,193 @@ class api(object):
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
-        validating.end_section(self.type, 'netapp')
+        validating.end_section('netapp', self.type)
         return kwargs, pargs
 
 
     #=====================================================
     # NetApp Schedule Creation
     #=====================================================
-    def schedule(self, pargs, **kwargs):
-        for i in pargs.items:
-            polVars = i
-            i = DotMap(deepcopy(i))
+    def schedule(self, pargs, svm, **kwargs):
+        #=====================================================
+        # Load Variables and Send Notification
+        #=====================================================
+        validating.begin_section('netapp', self.type)
+        for e in svm.schedule:
+            polVars = deepcopy(e.toDict())
             #=====================================================
             # Create/Patch Schedule
             #=====================================================
-            uri    = f'cluster/schedules?svm.name={i.svm.name}'
+            uri    = f'cluster/schedules?svm.name={svm.name}&fields=cluster,cron,svm'
             jData  = get(uri, pargs, **kwargs)
             method = 'post'
             uri    = f'cluster/schedules'
+            match_count = 0
             for r in jData['records']:
                 r = DotMap(deepcopy(r))
-                if r.name == i.name:
+                if r.name == e.name:
                     method = 'patch'
                     uri = uri + '/' + r.uuid
                     polVars.pop('cluster')
                     polVars.pop('name')
                     polVars.pop('svm')
-            payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
-            eval(f"{method}(uri, pargs, payload, **kwargs)")
+                    if r.cron.minutes[0] == e.cron.minutes[0]: match_count += 1
+                    if r.cluster.name == e.cluster: match_count += 1
+                    if r.svm.name == e.svm.name: match_count += 1
+                    if match_count == 3: method = 'skip'
+            if method == 'skip':
+                prCyan(f"  - Skipping {svm.name}'s Schedule.")
+            else:
+                payload = json.dumps(polVars)
+                if print_payload: prCyan(json.dumps(polVars, indent=4))
+                prGreen(f"  * Configuring {svm.name}'s Schedule.")
+                eval(f"{method}(uri, pargs, payload, **kwargs)")
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
-        validating.end_section(self.type, 'netapp')
+        validating.end_section('netapp', self.type)
         return kwargs, pargs
 
 
     #=====================================================
     # NetApp SNMP Creation
     #=====================================================
-    def snmp(self, pargs, **kwargs):
+    def snmp(self, i, pargs, **kwargs):
         #=====================================================
         # Load Variables and Send Begin Notification
         #=====================================================
-        validating.begin_section(self.type, 'netapp')
+        validating.begin_section('netapp', self.type)
         #=====================================================
         # Get Auth and Privilege Passwords
         #=====================================================
-        kwargs['Variable'] = 'snmp_auth'
+        kwargs['Variable'] = 'snmp_auth_password'
         kwargs = ezfunctions.sensitive_var_value(**kwargs)
-        pargs.netapp.snmp_auth = kwargs['var_value']
-        kwargs['Variable'] = 'snmp_priv'
+        snmp_auth_password = kwargs['var_value']
+        kwargs['Variable'] = 'snmp_priv_password'
         kwargs = ezfunctions.sensitive_var_value(**kwargs)
-        pargs.netapp.snmp_priv = kwargs['var_value']
-        for i in pargs.items:
+        snmp_priv_password = kwargs['var_value']
+        for snmp in i.snmp:
             #=====================================================
             # Configure SNMP Global Settings
             #=====================================================
-            polVars = deepcopy(i)
+            polVars = deepcopy(snmp.toDict())
             polVars.pop('users')
             polVars.pop('traps')
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
             uri = 'support/snmp'
             patch(uri, pargs, payload, **kwargs)
             #=====================================================
             # Configure SNMP Users
             #=====================================================
             jData = get(uri, pargs, **kwargs)
-            for polVars in i['users']:
+            for user in snmp.users:
+                userVars = deepcopy(user.toDict())
                 method = 'post'
                 uri = 'support/snmp/users'
                 jData = get(uri, pargs, **kwargs)
                 if jData.get('records'):
                     for r in jData['records']:
                         r = DotMap(deepcopy(r))
-                        if polVars['name'] == r.name:
+                        if userVars['name'] == r.name:
                             engine_id = r.engine_id
                             #url = uri + f"/{engine_id}/{r.name}"
                             #delete(url, pargs, **kwargs)
                             method = 'patch'
                 if method == 'post':
-                    polVars['owner'].update({"uuid": pargs.netapp.svms[pargs.netapp.data_svm]})
-                    if method == 'post':
-                        polVars['snmpv3'].update({
-                            "authentication_password": pargs.netapp.snmp_auth,
-                            "privacy_password": pargs.netapp.snmp_priv,
-                        })
-                    payload = json.dumps(polVars)
-                    if print_payload: print(json.dumps(polVars, indent=4))
+                    userVars['snmpv3'].update({
+                        "authentication_password": snmp_auth_password,
+                        "privacy_password": snmp_priv_password,
+                    })
+                    payload = json.dumps(userVars)
+                    if print_payload: print(json.dumps(userVars, indent=4))
                     eval(f"{method}(uri, pargs, payload, **kwargs)")
             #=====================================================
             # Configure SNMP Trap Servers
             #=====================================================
             uri = 'support/snmp/traphosts'
             jData = get(uri, pargs, **kwargs)
-            for polVars in i['traps']:
+            for trap in snmp.traps:
+                trapVars = deepcopy(trap.toDict())
                 method = 'post'
                 uri = 'support/snmp/traphosts'
                 jData = get(uri, pargs, **kwargs)
                 for r in jData['records']:
                     r = DotMap(deepcopy(r))
                     traphost = ''
-                    if r.host == polVars['host']:
+                    if r.host == trapVars['host']:
                         method = 'patch'
                         #uri = uri + '/' + r.uuid
-                    elif re.search('^[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}$', polVars['host']):
-                        traphost, alias, addresslist = socket.gethostbyaddr(polVars['host'])
+                    elif re.search('^[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}$', trapVars['host']):
+                        traphost, alias, addresslist = socket.gethostbyaddr(trapVars['host'])
                         if r.host == traphost:
                             method = 'patch'
                             #uri = uri + '/' + r.uuid
                 if method == 'post':
-                    payload = json.dumps(polVars)
-                    if print_payload: print(json.dumps(polVars, indent=4))
+                    payload = json.dumps(trapVars)
+                    if print_payload: print(json.dumps(trapVars, indent=4))
                     eval(f"{method}(uri, pargs, payload, **kwargs)")
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
-        validating.end_section(self.type, 'netapp')
+        validating.end_section('netapp', self.type)
         return kwargs, pargs
 
 
     #=====================================================
     # NetApp Storage Virtual Machine Creation (vserver)
     #=====================================================
-    def svm(self, pargs, **kwargs):
+    def svm(self, i, pargs, **kwargs):
         #=====================================================
         # Load Variables and Send Notification
         #=====================================================
-        validating.begin_section(self.type, 'netapp')
+        validating.begin_section('netapp', self.type)
         #=====================================================
         # Load Variables and Login to Storage Array
         #=====================================================
-        pargs.hostname     = pargs.netapp.node01
-        pargs.hostPassword = 'netapp_password'
-        pargs.hostPrompt   = deepcopy(pargs.netapp.hostPrompt)
-        pargs.username     = pargs.netapp.user
-        child, kwargs      = ezfunctions.child_login(pargs, **kwargs)
+        pargs.hostname   = i.nodes[0].name + '.' + pargs.dns_domains[0]
+        pargs.host_prompt= pargs.netapp.cluster[i.name].host_prompt
+        pargs.password   = 'netapp_password'
+        pargs.username   = pargs.netapp.cluster[i.name].username
+        child, kwargs    = ezfunctions.child_login(pargs, **kwargs)
         host_file = open(f'{pargs.hostname}.txt', 'r')
+        
         #=====================================================
-        # Create Storage Virtual Machine
+        # Using pexpect, configure SVM
         #=====================================================
-        svm      = deepcopy(pargs.netapp.data_svm)
-        svmcount = 0
-        child.sendline('vserver show')
-        child.expect(pargs.hostPrompt)
-        for line in host_file:
-            if re.search(f'{svm}[ ]+data', line): svmcount += 2
-            elif re.search(svm, line): svmcount += 1
-            elif re.search('data', line): svmcount += 1
-        if not svmcount >= 2:
-            cmd = f'vserver create -vserver {svm} -rootvolume {pargs.netapp.rootv} -rootvolume-security-style unix'
-            child.sendline(cmd)
-            child.expect(pargs.hostPrompt)
+        for svm in i.svm:
+            svm_pexpect(child, host_file, i, pargs, svm)
+        
         #=====================================================
-        # Configure Aggregates and add Login Banner
-        #=====================================================
-        cmds = [
-            f'vserver modify {svm} -aggr-list {pargs.netapp.agg1},{pargs.netapp.agg2}',
-            f'security login banner modify -vserver {pargs.netapp.cluster} -message "{pargs.netapp.banner}"'
-        ]
-        for cmd in cmds:
-            child.sendline(cmd)
-            child.expect(pargs.hostPrompt)
-        child.sendline(f'vserver show -vserver RICH -protocols')
-        child.expect(f'{svm}[ ]+([\\w].*[\\w])[  ]')
-        protocols = (((child.match).group(1)).strip()).split(',')
-        child.expect(pargs.hostPrompt)
-        protos = []
-        for p in pargs.netapp.protocols: protos.append(p)
-        if 'nvme_of' in protos:
-            protos.remove('nvme_of')
-            protos.append('nvme')
-        child.sendline(f'vserver add-protocols -protocols {",".join(protos)} -vserver {svm}')
-        child.expect(pargs.hostPrompt)
-        removep = []
-        for p in protocols:
-            p = p.strip()
-            if not p in protos: removep.append(p)
-        if len(removep) > 0:
-            child.sendline(f'vserver remove-protocols -vserver {svm} -protocols {",".join(removep)}')
-            child.expect(pargs.hostPrompt)
-        #=====================================================
-        # Function to Configure Protocols
-        #=====================================================
-        def config_protocols(child, pargs):
-            pargs.message = f'\n{"-"*81}\n\n  !!! ERROR !!!!\n  **failed on "{pargs.show}".\n'\
-                f'    Looking for regex "{pargs.regex1}".\n'\
-                f'    Looking for regex "{pargs.regex2}".\n'\
-                f'    Looking for regex "{pargs.regex3}".\n'\
-                f'\n  Please Validate {svm} and restart this wizard.\n\n{"-"*81}\n'
-            child.sendline(pargs.show)
-            change = 'none'
-            value  = ''
-            cmd_check = False
-            while cmd_check == False:
-                i = child.expect(["to page down", pargs.regex1, pargs.regex2, pargs.regex3, pargs.hostPrompt], timeout=20)
-                if i == 0: child.send(' ')
-                elif i == 1: change = 'create'
-                elif i == 2: change = 'modify'
-                elif i == 3: value = (child.match).group(1)
-                elif i == 4: cmd_check = True
-            if not change == 'none':
-                child.sendline(f"vserver {pargs.p} {change} -vserver {svm} -status-admin up",)
-                cmd_check = False
-                while cmd_check == False:
-                    i = child.expect(["Do you want to continue", pargs.hostPrompt])
-                    if i == 0: child.sendline('y')
-                    elif i == 1: cmd_check = True
-                time.sleep(10)
-                child.sendline(pargs.show)
-                change = 'none'
-                cmd_check = False
-                while cmd_check == False:
-                    i = child.expect(["to page down", pargs.regex1, pargs.regex2, pargs.regex3, pargs.hostPrompt])
-                    if i == 0: child.send(' ')
-                    elif i == 1: change = 'create'
-                    elif i == 2: change = 'modify'
-                    elif i == 3: value = (child.match).group(1)
-                    elif i == 4: cmd_check = True
-            if not change == 'none' and len(value) > 0:
-                print(pargs.message)
-                sys.exit(1)
-            return value
-        #=====================================================
-        # Configure Protocols
-        #=====================================================
-        for p in protos:
-            if not 'nfs' in p:
-                pargs.show   = f"vserver {p} show -vserver {svm}"
-                pargs.regex1 = "There are no entries matching your query"
-                pargs.regex2 = "Administrative Status: down"
-                if 'fcp' in p: pargs.regex3 = "Target Name: (([\\da-f]{2}:){7}[\\da-f]{2})"
-                elif 'iscsi' in p: pargs.regex3 = "(iqn\\.[\\da-z\\.:\\-]+vs\\.[\\d]+(?=[\r\n]))"
-                elif 'nvme' in p: pargs.regex3 = "NQN: (nqn\\..*discovery)"
-                pargs.p = p
-                value = config_protocols(child, pargs)
-                print(f"\n\n{value}\n\n")
-                if 'iscsi' in p: pargs.storage['iscsi'].iqn = value
-                elif 'nvme' in p: pargs.storage['nvme'].nqn = value
-        #=====================================================
-        # Configure NFS Export Policy
-        #=====================================================
-        cmdp = f'vserver export-policy rule METHOD -vserver {svm} -policyname default -protocol nfs -ruleindex 1'
-        rules = '-rorule sys -rwrule sys -superuser sys -allow-suid true'
-        pargs.count = 1
-        pargs.show  = cmdp.replace('METHOD', 'show')
-        pargs.regex = pargs.netapp.nfs.network
-        pargs.cmds  = [f"{cmdp.replace('METHOD', 'create')} -clientmatch {pargs.netapp.nfs.network} {rules}"]
-        config_function(child, pargs)
-        #=====================================================
-        # Close the Child Process
+        # Close the Child Process and Cleanup Environment
         #=====================================================
         child.sendline('exit')
         child.expect('closed')
         child.close()
         host_file.close()
         os.remove(f'{pargs.hostname}.txt')
-        pargs.netapp.svms = {}
-        for i in pargs.items:
-            i = DotMap(deepcopy(i))
+
+        #=====================================================
+        # Configure the SVM Through the API
+        #=====================================================
+        for svm in i.svm:
             #=====================================================
             # Get Existing SVMs
             #=====================================================
+            prLightPurple(f"  Obtaining UUID for {svm.name}")
             uri = 'svm/svms'
             jData = get(uri, pargs, **kwargs)
-            method = 'post'
             for r in jData['records']:
                 r = DotMap(deepcopy(r))
-                if r.name == i.name:
-                    method = 'patch'
-                    uri = uri + '/' + r.uuid
-                    pargs.netapp.svms.update({i.name:r.uuid})
-            uri = 'cluster'
-            r = get(uri, pargs, **kwargs)
-            pargs.netapp.svms.update({pargs.netapp.cluster:r['uuid']})
+                if r.name == svm.name:
+                    pargs.netapp.cluster[svm.cluster].svm.moid = r.uuid
+
             #=====================================================
             # Configure Default Route
             #=====================================================
-            uri    = f'network/ip/routes?fields=svm,destination&svm.name={i.name}'
+            print('')
+            prLightPurple(f"  Beginning {svm.name} Default Route Configuration.")
+            uri    = f'network/ip/routes?fields=svm,destination&svm.name={svm.name}'
             jData  = get(uri, pargs, **kwargs)
             method = 'post'
             uri    = f'network/ip/routes'
@@ -914,47 +868,67 @@ class api(object):
                         method = 'patch'
                         uri = uri + '/' + r.uuid
             if not method == 'patch':
-                polVars = i['routes'][0].toDict()
+                polVars = svm.routes[0].toDict()
                 payload = json.dumps(polVars)
-                if print_payload: print(json.dumps(polVars, indent=4))
+                if print_payload: prCyan(json.dumps(polVars, indent=4))
+                prGreen(f"  Configuring {svm.name}'s Default Route.")
                 eval(f"{method}(uri, pargs, payload, **kwargs)")
+            prLightPurple(f"  Completed {svm.name} Default Route Configuration.")
+            print('')
+
             #=====================================================
             # Configure the vsadmin password and Unlock It
             #=====================================================
-            uri = f'security/accounts/{pargs.netapp.svms[i.name]}/vsadmin'
+            print('')
+            prLightPurple(f"  Beginning {svm.name} vsadmin Configuration.")
+            kwargs['Variable'] = 'netapp_password'
+            kwargs = ezfunctions.sensitive_var_value(**kwargs)
+            password = kwargs['var_value']
+
+            uri = f'security/accounts/{pargs.netapp.cluster[svm.cluster].svm.moid}/vsadmin'
             jData = get(uri, pargs, **kwargs)
             r = DotMap(deepcopy(jData))
             if not r.locked == False:
-                uri = f'security/accounts/{pargs.netapp.svms[i.name]}/vsadmin'
-                polVars = { "locked": False, "password": pargs.netapp.password }
+                uri = f'security/accounts/{pargs.netapp.svms[svm.name]}/vsadmin'
+                polVars = { "locked": False, "password": password }
                 payload = json.dumps(polVars)
-                if print_payload: print(json.dumps(polVars, indent=4))
+                if print_payload: prCyan(json.dumps(polVars, indent=4))
                 eval(f"{method}(uri, pargs, payload, **kwargs)")
+            prLightPurple(f"  Completed {svm.name} vsadmin Configuration.")
+            print('')
+
             #=====================================================
             # Configure NFS Settings for the SVM
             #=====================================================
+            print('')
+            prLightPurple(f"  Beginning {svm.name} NFS Settings Configuration.")
             uri    = f'protocols/nfs/services/'
             jData  = get(uri, pargs, **kwargs)
             method = 'post'
             for r in jData['records']:
                 r = DotMap(deepcopy(r))
-                if r.svm.uuid == pargs.netapp.svms[i.name]:
+                if r.svm.uuid == pargs.netapp.cluster[svm.cluster].svm.moid:
                     method = 'patch'
-                    uri = f'protocols/nfs/services/{pargs.netapp.svms[i.name]}'
+                    uri = f'protocols/nfs/services/{pargs.netapp.cluster[svm.cluster].svm.moid}'
             polVars = {
                 "protocol": {"v3_enabled": True, "v41_enabled": True},
                 "transport": {"udp_enabled": False},
                 "vstorage_enabled": True,
-                "svm":{ "name": i.name, "uuid": pargs.netapp.svms[i.name] }
+                "svm":{ "name": svm.name, "uuid": pargs.netapp.cluster[svm.cluster].svm.moid }
             }
             if method == 'patch': polVars.pop('svm')
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
             eval(f"{method}(uri, pargs, payload, **kwargs)")
-             #=====================================================
+            prLightPurple(f"  Completed {svm.name} NFS Settings Configuration.")
+            print('')
+
+            #=====================================================
             # Disable Weak Security
             # SSH Ciphers and MAC Algorithms
             #=====================================================
+            print('')
+            prLightPurple(f"  Beginning {svm.name} Security Configuration.")
             uri = 'security/ssh'
             jData = get(uri, pargs, **kwargs)
             remove_ciphers = ['aes256-cbc','aes192-cbc','aes128-cbc','3des-cbc']
@@ -965,24 +939,39 @@ class api(object):
                 if not r in remove_ciphers: cipher_list.append(i)
             for r in jData['mac_algorithms']:
                 if not r in remove_macs: mac_algorithms.append(i)
+
             #=====================================================
-            # Disable Ciphers on Cluster
+            # Disable Ciphers on Cluster and SVM
             #=====================================================
             uri = 'security/ssh'
             method = 'patch'
             polVars = {"ciphers": cipher_list, "mac_algorithms": mac_algorithms}
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
             eval(f"{method}(uri, pargs, payload, **kwargs)")
-            #=====================================================
-            # Disable Ciphers and Configure Login Banner - SVM
-            #=====================================================
-            uri = f'security/ssh/svms/{pargs.netapp.svms[i.name]}'
+            uri = f'security/ssh/svms/{pargs.netapp.cluster[svm.cluster].svm.moid}'
             polVars = { "ciphers": cipher_list, "mac_algorithms": mac_algorithms }
             method = 'patch'
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
             eval(f"{method}(uri, pargs, payload, **kwargs)")
+
+            #=====================================================
+            # Enable FIPS Security
+            #=====================================================
+            polVars = {"fips": {"enabled": True}}
+            uri = 'security'
+            payload = json.dumps(polVars)
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
+            patch(uri, pargs, payload, **kwargs)
+            prLightPurple(f"  Completed {svm.name} Security Configuration.")
+            print('')
+            
+            #=====================================================
+            # Disable Ciphers and Configure Login Banner - SVM
+            #=====================================================
+            print('')
+            prLightPurple(f"  Beginning {svm.name} Login Banner Configuration.")
             method = 'post'
             uri = f'security/login/messages?fields=svm'
             loginData = get(uri, pargs, **kwargs)
@@ -990,128 +979,185 @@ class api(object):
             for r in loginData['records']:
                 r = DotMap(deepcopy(r))
                 if r.get('svm'):
-                    if r.svm.uuid == pargs.netapp.svms[i.name]:
+                    if r.svm.uuid == pargs.netapp.cluster[svm.cluster].svm.moid:
                         method = 'patch'
-                        uri = uri + '/' + pargs.netapp.svms[i.name]
+                        uri = uri + '/' + pargs.netapp.cluster[svm.cluster].svm.moid
             polVars = {
-                "banner": pargs.netapp.banner,
+                "banner": svm.banner,
                 "scope": "svm",
                 "show_cluster_message": True,
-                "svm": {"name": i.name, "uuid": pargs.netapp.svms[i.name]}
+                "svm": {"name": svm.name, "uuid": pargs.netapp.cluster[svm.cluster].svm.moid}
             }
             if method == 'patch':
                 polVars.pop('svm')
                 polVars.pop('scope')
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
             eval(f"{method}(uri, pargs, payload, **kwargs)")
+            prLightPurple(f"  Completed {svm.name} Login Banner Configuration.")
+            print('')
+
             #=====================================================
-            # Enable FIPS Security
+            # Configure SVM Data Interfaces
             #=====================================================
-            polVars = {"fips": {"enabled": True}}
-            uri = 'security'
-            payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
-            patch(uri, pargs, payload, **kwargs)
-            #=====================================================
-            # Configure Infra SVM Interfaces
-            #=====================================================
-            for intf in i['ddata_interfaces']:
+            uri      = 'network/ip/interfaces?fields=enabled,dns_zone,ip,location,service_policy,svm'
+            intfData = get(uri, pargs, **kwargs)
+            for intf in svm.data_interfaces:
                 intf = DotMap(deepcopy(intf))
+                print('')
+                prLightPurple(f"  Beginning SVM {svm.name} Interface - {intf.name} Configuration.")
                 polVars = deepcopy(intf.toDict())
-                polVars['svm'] = {'name':i.name}
-                uri = 'network/ip/interfaces'
-                intfData = get(uri, pargs, **kwargs)
-                method = 'post'
+                polVars['svm'] = {'name':svm.name}
+                method   = 'post'
+                uri      = 'network/ip/interfaces'
                 for r in intfData['records']:
                     r = DotMap(deepcopy(r))
                     if r.name == intf.name:
+                        match_count = 0
                         uri = uri + '/' + r.uuid
                         method = 'patch'
-                if method == 'patch':
-                    polVars.pop('scope')
-                    polVars.pop('svm')
-                    if re.search('(iscsi|nvme)', polVars.name):
-                        polVars['location'].pop('home_node')
-                        polVars['location'].pop('home_port')
-                payload = json.dumps(polVars)
-                if print_payload: print(json.dumps(polVars, indent=4))
-                print(f"  Configuring {svm} - {intf.name}")
-                eval(f"{method}(uri, pargs, payload, **kwargs)")
+                        polVars.pop('scope')
+                        polVars.pop('svm')
+                        if re.search('(iscsi|nvme)', polVars['name']):
+                            polVars['location'].pop('home_node')
+                            polVars['location'].pop('home_port')
+                        if r.dns_zone == intf.dns_zone: match_count += 1
+                        if r.enabled == intf.enabled: match_count += 1
+                        if r.ip.address == intf.ip.address: match_count += 1
+                        if r.ip.netmask == intf.ip.netmask: match_count += 1
+                        if r.location.auto_revert == intf.location.auto_revert: match_count += 1
+                        if r.location.failover == intf.location.failover: match_count += 1
+                        if r.location.home_node.name == intf.location.home_node.name: match_count += 1
+                        if r.location.home_port.name == intf.location.home_port.name: match_count += 1
+                        if r.name == intf.name: match_count += 1
+                        if r.service_policy.name == intf.service_policy: match_count += 1
+                        if r.svm.name == svm.name: match_count += 1
+                        if match_count == 11: method = 'skip'
+                        if re.search('iscsi|nvme', intf.name):
+                            if match_count == 9: method = 'skip'
+                if method == 'skip':
+                    prCyan(f"    - Skipping {svm.name} Interface - {intf.name}.  Configuration Matches the API.")
+                else:
+                    payload = json.dumps(polVars)
+                    if print_payload: prCyan(json.dumps(polVars, indent=4))
+                    prGreen(f"      - Configuring {svm.name} Interface - {intf.name}")
+                    eval(f"{method}(uri, pargs, payload, **kwargs)")
+                prLightPurple(f"  Completed SVM {svm.name} Interface - {intf.name} Configuration.")
+                print('')
+
             #=====================================================
-            # Configure Infra SVM Interfaces
+            # Configure SVM FCP Interfaces
             #=====================================================
             if 'fc' in pargs.dtype:
-                for intf in i['fcp_interfaces']:
+                uri = 'network/fc/interfaces?fields=enabled,data_protocol,location,svm'
+                intfData = get(uri, pargs, **kwargs)
+                for intf in svm.fcp_interfaces:
                     intf = DotMap(deepcopy(intf))
+                    print('')
+                    prLightPurple(f"  Beginning {svm.name} Interface - {intf.name} Configuration.")
                     polVars = deepcopy(intf.toDict())
-                    polVars['svm'] = {'name':i.name}
-                    uri = 'network/fc/interfaces'
-                    intfData = get(uri, pargs, **kwargs)
+                    polVars['svm'] = {'name':svm.name}
                     method = 'post'
+                    uri = 'network/fc/interfaces'
                     for r in intfData['records']:
                         r = DotMap(deepcopy(r))
                         if r.name == intf.name:
+                            match_count = 0
                             uri = uri + '/' + r.uuid
                             method = 'patch'
-                    if method == 'patch':
-                        polVars.pop('data_protocol')
-                        polVars.pop('svm')
-                    payload = json.dumps(polVars)
-                    if print_payload: print(json.dumps(polVars, indent=4))
-                    print(f"  Configuring {svm} - {intf.name}")
-                    eval(f"{method}(uri, pargs, payload, **kwargs)")
+                            polVars.pop('data_protocol')
+                            polVars.pop('svm')
+                            if r.data_protocol == intf.data_protocol: match_count += 1
+                            if r.enabled == intf.enabled: match_count += 1
+                            if r.location.home_port.name == intf.location.home_port.name: match_count += 1
+                            if r.location.home_node.name == intf.location.home_port.node.name: match_count += 1
+                            if r.name == intf.name: match_count += 1
+                            if r.svm.name == svm.name: match_count += 1
+                            if match_count == 6: method = 'skip'
+                    if method == 'skip':
+                        prCyan(f"    - Skipping {svm.name} Interface - {intf.name}.  Configuration Matches the API.")
+                    else:
+                        payload = json.dumps(polVars)
+                        if print_payload: prCyan(json.dumps(polVars, indent=4))
+                        prGreen(f"   - Configuring {svm.name} Interface - {intf.name}")
+                        eval(f"{method}(uri, pargs, payload, **kwargs)")
+                    prLightPurple(f"  Completed {svm.name} Interface - {intf.name} Configuration.")
+                    print('')
+
+            #=====================================================
+            # Obtain Target Identifier Information
+            #=====================================================
             uri = 'network/fc/interfaces?fields=name,wwnn,wwpn'
             intfData = get(uri, pargs, **kwargs)
-            fcp_temp = pargs.netapp.fcp_ports
+            fcp_temp = deepcopy(pargs.netapp.cluster[svm.cluster].nodes.fcp_ports)
             half = len(fcp_temp)//2
-            pargs.storage.wwpns.a = []
-            pargs.storage.wwpns.b = []
+            pargs.storage[svm.cluster][svm.name].wwpns.a = []
+            pargs.storage[svm.cluster][svm.name].wwpns.b = []
             for r in intfData['records']:
                 r = DotMap(deepcopy(r))
                 for f in fcp_temp[:half]:
                     if f in r.name:
-                        pargs.storage.wwpns.a.append({r.name:r.wwpn})
+                        pargs.storage[svm.cluster][svm.name].wwpns.a.append({
+                            'interface': r.name,
+                            'wwpn': r.wwpn
+                        })
                 for f in fcp_temp[half:]:
                     if f in r.name:
-                        pargs.storage.wwpns.b.append({r.name:r.wwpn})
+                        pargs.storage[svm.cluster][svm.name].wwpns.b.append({
+                            'interface': r.name,
+                            'wwpn': r.wwpn
+                        })
+
+            #=====================================================
+            # Send End Notification and return kwargs
+            #=====================================================
+            validating.end_loop('svm', svm.name)
+
+            #=====================================================
+            # Run Schedule and Volume Loops
+            #=====================================================
+            sub_list = ['schedule', 'volumes']
+            for sub in sub_list:
+                kwargs, pargs = eval(f"api(sub).{sub}(pargs, svm, **kwargs)")
+
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
-        validating.end_section(self.type, 'netapp')
+        validating.end_section('netapp', self.type)
         return kwargs, pargs
 
 
     #=====================================================
     # NetApp Volumes Creation
     #=====================================================
-    def volume(self, pargs, **kwargs):
+    def volumes(self, pargs, svm, **kwargs):
         #=====================================================
         # Send Notification
         #=====================================================
-        validating.begin_section(self.type, 'netapp')
+        validating.begin_section('netapp', self.type)
         #=====================================================
         # Load Variables and Login to Storage Array
         #=====================================================
-        pargs.hostname     = pargs.netapp.node01
-        pargs.hostPassword = 'netapp_password'
-        pargs.hostPrompt   = deepcopy(pargs.netapp.hostPrompt)
-        pargs.username     = pargs.netapp.user
-        child, kwargs      = ezfunctions.child_login(pargs, **kwargs)
+        child, kwargs    = ezfunctions.child_login(pargs, **kwargs)
         print('\n\n')
-        for i in pargs.items:
-            polVars = i
+        #=====================================================
+        # Loop Thru Volumes
+        #=====================================================
+        uri    = f'storage/volumes/?svm.name={svm.name}&fields=aggregates,encryption,guarantee,name,nas,size,snapshot_policy,state,style'
+        jData  = get(uri, pargs, **kwargs)
+        for i in svm.volumes:
+            print('')
+            prLightPurple(f"  Beginning SVM {svm.name} Volume - {i.name} Configuration.")
+            polVars = deepcopy(i.toDict())
+            polVars.pop('os_type')
             polVars.pop('volume_type')
-            i = DotMap(deepcopy(i))
             #=====================================================
             # Create/Patch Volumes
             #=====================================================
-            uri    = f'storage/volumes/?svm.name={i.svm.name}'
-            jData  = get(uri, pargs, **kwargs)
             method = 'post'
             uri    = f'storage/volumes'
             for r in jData['records']:
-                r = DotMap(deepcopy(r))
+                r = DotMap(r)
                 if r.name == i.name:
                     method = 'patch'
                     uri = uri + '/' + r.uuid
@@ -1119,44 +1165,24 @@ class api(object):
                     pop_list = ['aggregates', 'encryption', 'style', 'svm', 'type']
                     for p in pop_list:
                         if polVars.get(p): polVars.pop(p)
+            prGreen(f"    - Configuring Volume {i.name} on {svm.name}.")
             payload = json.dumps(polVars)
-            if print_payload: print(json.dumps(polVars, indent=4))
-            print(f'   {method} SVM {i.svm.name} Volume {i.name}')
+            if print_payload: prCyan(json.dumps(polVars, indent=4))
             eval(f"{method}(uri, pargs, payload, **kwargs)")
-            if re.search('_m0[1-2]$', i.name):
-                #=====================================================
-                # Attach the Mirrors to the Schedule and Initialize
-                #=====================================================
-                dest = f"{i.svm.name}:{i.name}"
-                src  = f"{i.svm.name}:{pargs.netapp.rootv}"
-                pargs.count = 1
-                pargs.show  = f"snapmirror show -vserver {i.svm.name} -destination-path {dest} -source-path {src}"
-                pargs.regex = f"Destination Path: {pargs.netapp.cluster}://{i.svm.name}/{i.name}"
-                pargs.cmds  = [
-                    f"snapmirror create -vserver {i.svm.name} -destination-path {dest} -source-path {src} -type LS -schedule 15min"
-                ]
-                config_function(child, pargs)
-            elif i.volume_type == 'swap':
-                child.sendline(f'volume efficiency off -vserver {i.svm.name} -volume {i.name}')
-                child.expect(pargs.hostPrompt)
-            elif i.volume_type == 'audit':
-                svm = pargs.netapp.data_svm
-                pargs.count = 1
-                pargs.show  = f"vserver audit show -vserver {svm}"
-                pargs.regex = f"Log Destination Path"
-                pargs.cmds = [f"vserver audit create -vserver {svm} -destination /{i.name}"]
-                config_function(child, pargs)
-                pargs.count = 1
-                pargs.show  = f"vserver audit show -vserver {svm}"
-                pargs.regex = f"Auditing State: true"
-                pargs.cmds = [f"vserver audit enable -vserver {svm}"]
-                config_function(child, pargs)
+
+            #=====================================================
+            # Configure Volume Properties from CLI if Needed
+            #=====================================================
+            volume_pexpect(child, i, pargs, svm)
+
+            prLightPurple(f"  Completed SVM {svm.name} Volume - {i.name} Configuration.")
+            print('')
         #=====================================================
         # Initialize the snapmirror
         #=====================================================
-        src  = f"{i.svm.name}:{pargs.netapp.rootv}"
+        src  = f"{svm.name}:{svm.root_volume.name}"
         pargs.count = 2
-        pargs.show  = f"snapmirror show -vserver {i.svm.name} -source-path {src}"
+        pargs.show  = f"snapmirror show -vserver {svm.name} -source-path {src}"
         pargs.regex = "true"
         pargs.cmds  = [ f"snapmirror initialize-ls-set -source-path {src}" ]
         config_function(child, pargs)
@@ -1166,6 +1192,8 @@ class api(object):
         child.sendline('exit')
         child.expect('closed')
         child.close()
+        os.remove(f'{pargs.hostname}.txt')
+
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
@@ -1195,8 +1223,9 @@ class build(object):
             'transport':items.autosupport.transport,
             'to':items.autosupport.to_addresses,
         }
-        if items.get('proxy_url'):
-            polVars.update({'proxy_url':items.autosupport.proxy_url})
+        if items.autosupport.get('proxy_url'):
+            if len(items.autosupport.proxy_url) > 5:
+                polVars.update({'proxy_url':items.autosupport.proxy_url})
 
         #=====================================================
         # Return polVars
@@ -1260,7 +1289,7 @@ class build(object):
         if items.get('licenses'):
             polVars.update({'license':{'keys':[items.licenses]}})
 
-        pargs.netapp.host    = items.nodes.node01 + '.' + pargs.dns_domains[0]
+        pargs.netapp.hostname= items.nodes.node01 + '.' + pargs.dns_domains[0]
         pargs.netapp.username= items.username
         ilist = ['autosupport', 'broadcast_domain', 'nodes', 'snmp', 'svm']
         for i in ilist:
@@ -1290,7 +1319,7 @@ class build(object):
         for k,v in items.svm.volumes:
             if v.type == 'boot': boot_volume = k
         if boot_volume == '':
-            print('\n\n!!!ERROR!!!\nCould not determine the boot volume.  No Boot Volume found in:\n')
+            prRed('\n\n!!!ERROR!!!\nCould not determine the boot volume.  No Boot Volume found in:\n')
             for k, v in items.svm.volumes: print(f'{k}:{v}')
             sys.exit(1)
         #=====================================================
@@ -1459,8 +1488,17 @@ class build(object):
         #=====================================================
         polVars = {
             "aggregates": [ {"name": items.svm.agg1}, {"name": items.svm.agg2} ],
+            "banner": items.banner,
+            "cluster": items.name,
             "name": items.svm.name,
             "dns":{"domains": pargs.dns_domains, "servers": pargs.dns_servers},
+            "root_volume": {
+                "name": items.svm.rootv,
+                'mirrors':[
+                    items.svm.m01,
+                    items.svm.m02
+                ]
+            },
             "routes": [{
                 "destination": {
                     "address":'0.0.0.0',
@@ -1470,7 +1508,8 @@ class build(object):
                 "svm": {"name": items.svm.name}
             }]
         }
-        for p in items.protocols: polVars.update({p:{"allowed": True, "enabled": True}})
+        polVars['protocols'] = {}
+        for p in items.protocols: polVars['protocols'].update({p:{"allowed": True, "enabled": True}})
 
         #=====================================================
         # Configure Ethernet Interfaces
@@ -1537,6 +1576,7 @@ class build(object):
                 "aggregate": items.svm[f'agg{x+1}'],
                 "name": name,
                 "size": 1,
+                "os_type": "netapp",
                 "type": "DP",
                 "volume_type": "mirror"
             })
@@ -1551,6 +1591,7 @@ class build(object):
             volList.append({
                 "aggregate": agg,
                 "name": volDict.name,
+                "os_type": volDict.os_type,
                 "size": volDict.size,
                 "type": "rw",
                 "volume_type": volDict.volume_type
@@ -1562,15 +1603,18 @@ class build(object):
         volumeList = []
         for i in volList:
             i = DotMap(deepcopy(i))
+            if 'm0' in i.name: path = ''
+            else: path = i.name
             polVars = {
                 "aggregates": [{"name": i.aggregate}],
                 "encryption": {"enabled": False},
                 "name": i.name,
                 "guarantee": {"type": "none"},
                 "nas": {
-                    "path": f"/{i.name}",
+                    "path": f"/{path}",
                     "security_style": "unix",
                 },
+                "os_type": i.os_type,
                 "size": f"{i.size}GB",
                 "snapshot_policy": "none",
                 "state": "online",
@@ -1592,7 +1636,7 @@ class build(object):
 # Function - API Authentication
 #=====================================================
 def auth(pargs, section='', **kwargs):
-    url      = f"https://{pargs.netapp.host}"
+    url      = f"https://{pargs.netapp.hostname}"
     username = pargs.netapp.username
     kwargs['Variable'] = 'netapp_password'
     kwargs = ezfunctions.sensitive_var_value(**kwargs)
@@ -1604,10 +1648,10 @@ def auth(pargs, section='', **kwargs):
         try:
             auth = s.post(url, verify=False)
         except requests.exceptions.ConnectionError as e:
-            print("Connection error, pausing before retrying. Error: %s" % (e))
+            prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
         except Exception as e:
-            print("Method %s Failed. Exception: %s" % (section[:-5], e))
+            prRed("!!!ERROR!!! Method %s Failed. Exception: %s" % (section[:-5], e))
             sys.exit(1)
     return s, url
 
@@ -1622,7 +1666,7 @@ def config_function(child, pargs):
     count = 0
     cmd_check = False
     while cmd_check == False:
-        i = child.expect(["to page down", pargs.regex, pargs.hostPrompt], timeout=20)
+        i = child.expect(["to page down", pargs.regex, pargs.host_prompt], timeout=20)
         if i == 0: child.send(' ')
         elif i == 1: count += 1
         elif i == 2: cmd_check = True
@@ -1631,7 +1675,7 @@ def config_function(child, pargs):
             child.sendline(cmd)
             cmd_check = False
             while cmd_check == False:
-                i = child.expect(["Do you want to continue", pargs.hostPrompt])
+                i = child.expect(["Do you want to continue", pargs.host_prompt])
                 if i == 0: child.sendline('y')
                 elif i == 1: cmd_check = True
         time.sleep(3)
@@ -1639,7 +1683,7 @@ def config_function(child, pargs):
         count = 0
         cmd_check = False
         while cmd_check == False:
-            i = child.expect(["to page down", pargs.regex, pargs.hostPrompt])
+            i = child.expect(["to page down", pargs.regex, pargs.host_prompt])
             if i == 0: child.send(' ')
             if i == 1: count += 1
             elif i == 2: cmd_check = True
@@ -1697,11 +1741,10 @@ def configure_interfaces(x, items, pargs):
             "service_policy": servicePolicy,
         }
         if re.search('iscsi|nfs|nvme', pargs.vlan_settings.vlan_type):
-            if not pargs.storage.get(pargs.vlan_settings.vlan_type):
-                pargs.storage[pargs.vlan_settings.vlan_type] = DotMap()
-            if not pargs.storage[pargs.vlan_settings.vlan_type].get(items.nodes.node_list[x]):
-                pargs.storage[pargs.vlan_settings.vlan_type][items.nodes.node_list[x]] = []
-            pargs.storage[pargs.vlan_settings.vlan_type][items.nodes.node_list[x]].append(DotMap(
+            vtype = pargs.vlan_settings.vlan_type
+            if not pargs.storage[items.name][items.svm.name].get(vtype):
+                pargs.storage[items.name][items.svm.name][vtype]['interfaces'] = []
+            pargs.storage[items.name][items.svm.name][vtype]['interfaces'].append(DotMap(
                 interface = pargs.netapp.intf_name,
                 ip_address= ip_address,
             ))
@@ -1720,16 +1763,16 @@ def delete(uri, pargs, section='', **kwargs):
         try:
             r = s.delete(f'{url}/api/{uri}', verify=False)
             if print_response_always:
-                print(f"delete: {r.status_code} success with {uri}")
+                prRed(f"delete: {r.status_code} success with {uri}")
                 #print(r.text)
             if r.status_code == 200 or r.status_code == 404:
                 return r.json()
             else: validating.error_request_netapp('delete', r.status_code, r.text, uri)
         except requests.exceptions.ConnectionError as e:
-            print("Connection error, pausing before retrying. Error: %s" % (e))
+            prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
         except Exception as e:
-            print("Method %s Failed. Exception: %s" % (section[:-5], e))
+            prRed("!!!ERROR!!! Method %s Failed. Exception: %s" % (section[:-5], e))
             sys.exit(1)
 
 #=====================================================
@@ -1742,16 +1785,16 @@ def get(uri, pargs, section='', **kwargs):
         try:
             r = s.get(f'{url}/api/{uri}', verify=False)
             if print_response_always:
-                print(f"     * get: {r.status_code} success with {uri}")
+                prPurple(f"     * get: {r.status_code} success with {uri}")
                 #print(r.text)
             if r.status_code == 200 or r.status_code == 404:
                 return r.json()
             else: validating.error_request_netapp('get', r.status_code, r.text, uri)
         except requests.exceptions.ConnectionError as e:
-            print("Connection error, pausing before retrying. Error: %s" % (e))
+            prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
         except Exception as e:
-            print("Method %s Failed. Exception: %s" % (section[:-5], e))
+            prRed("!!!ERROR!!! Method %s Failed. Exception: %s" % (section[:-5], e))
             sys.exit(1)
 
 #=====================================================
@@ -1766,13 +1809,13 @@ def patch(uri, pargs, payload, section='', **kwargs):
             # Use this for Troubleshooting
             if not re.search('20[0-2]', str(r.status_code)): validating.error_request_netapp('patch', r.status_code, r.text, uri)
             if print_response_always:
-                print(f"     * patch: {r.status_code} success with {uri}")
+                prPurple(f"     * patch: {r.status_code} success with {uri}")
             return r.json()
         except requests.exceptions.ConnectionError as e:
-            print("Connection error, pausing before retrying. Error: %s" % (e))
+            prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
         except Exception as e:
-            print("Method %s Failed. Exception: %s" % (section[:-5], e))
+            prRed("!!!ERROR!!! Method %s Failed. Exception: %s" % (section[:-5], e))
             sys.exit(1)
 
 #=====================================================
@@ -1787,11 +1830,195 @@ def post(uri, pargs, payload, section='', **kwargs):
             # Use this for Troubleshooting
             if not re.search('20[1-2]', str(r.status_code)): validating.error_request_netapp('post', r.status_code, r.text, uri)
             if print_response_always:
-                print(f"     * post: {r.status_code} success with {uri}")
+                prPurple(f"     * post: {r.status_code} success with {uri}")
             return r.json()
         except requests.exceptions.ConnectionError as e:
-            print("Connection error, pausing before retrying. Error: %s" % (e))
+            prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
         except Exception as e:
-            print("Method %s Failed. Exception: %s" % (section[:-5], e))
+            prRed("!!!ERROR!!! Method %s Failed. Exception: %s" % (section[:-5], e))
             sys.exit(1)
+
+#=====================================================
+# Function - SVM pexpect Process
+#=====================================================
+def svm_pexpect(child, host_file, i, pargs, svm):
+    svmcount = 0
+    child.sendline('vserver show')
+    child.expect(pargs.host_prompt)
+    for line in host_file:
+        if re.search(f'{svm.name}[ ]+data', line): svmcount += 2
+        elif re.search(svm.name, line): svmcount += 1
+        elif re.search('data', line): svmcount += 1
+    if not svmcount >= 2:
+        cmd = f'vserver create -vserver {svm.name} -rootvolume {svm.root_volume.name} -rootvolume-security-style unix'
+        child.sendline(cmd)
+        child.expect(pargs.host_prompt)
+
+    #=====================================================
+    # Configure Aggregates and add Login Banner
+    #=====================================================
+    cmds = [
+        f'vserver modify {svm.name} -aggr-list {svm.aggregates[0].name},{svm.aggregates[1].name}',
+        f'security login banner modify -vserver {svm.name} -message "{i.banner}"'
+    ]
+    for cmd in cmds:
+        child.sendline(cmd)
+        child.expect(pargs.host_prompt)
+
+    #=====================================================
+    # Limit the Protocols assigned to the SVM
+    #=====================================================
+    child.sendline(f'vserver show -vserver {svm.name} -protocols')
+    child.expect(f'{svm.name}[ ]+([\\w].*[\\w])[  ]')
+    protocols = (((child.match).group(1)).strip()).split(',')
+    child.expect(pargs.host_prompt)
+    protos = list(svm.protocols.keys())
+    if 'nvme_of' in protos:
+        protos.remove('nvme_of')
+        protos.append('nvme')
+    child.sendline(f'vserver add-protocols -protocols {",".join(protos)} -vserver {svm.name}')
+    child.expect(pargs.host_prompt)
+    removep = []
+    for p in protocols:
+        p = p.strip()
+        if not p in protos: removep.append(p)
+    if len(removep) > 0:
+        child.sendline(f'vserver remove-protocols -vserver {svm.name} -protocols {",".join(removep)}')
+        child.expect(pargs.host_prompt)
+
+    #=====================================================
+    # Function to Configure Protocols
+    #=====================================================
+    def config_protocols(child, pargs):
+        pargs.message = f'\n{"-"*81}\n\n  !!! ERROR !!!!\n  **failed on "{pargs.show}".\n'\
+            f'    Looking for regex "{pargs.regex1}".\n'\
+            f'    Looking for regex "{pargs.regex2}".\n'\
+            f'    Looking for regex "{pargs.regex3}".\n'\
+            f'\n  Please Validate {svm.name} and restart this wizard.\n\n{"-"*81}\n'
+        child.sendline(pargs.show)
+        change = 'none'
+        value  = ''
+        cmd_check = False
+        while cmd_check == False:
+            i = child.expect(["to page down", pargs.regex1, pargs.regex2, pargs.regex3, pargs.host_prompt], timeout=20)
+            if i == 0: child.send(' ')
+            elif i == 1: change = 'create'
+            elif i == 2: change = 'modify'
+            elif i == 3: value = (child.match).group(1)
+            elif i == 4: cmd_check = True
+        if not change == 'none':
+            child.sendline(f"vserver {pargs.p} {change} -vserver {svm.name} -status-admin up",)
+            cmd_check = False
+            while cmd_check == False:
+                i = child.expect(["Do you want to continue", pargs.host_prompt])
+                if i == 0: child.sendline('y')
+                elif i == 1: cmd_check = True
+            time.sleep(10)
+            child.sendline(pargs.show)
+            change = 'none'
+            cmd_check = False
+            while cmd_check == False:
+                i = child.expect(["to page down", pargs.regex1, pargs.regex2, pargs.regex3, pargs.host_prompt])
+                if i == 0: child.send(' ')
+                elif i == 1: change = 'create'
+                elif i == 2: change = 'modify'
+                elif i == 3: value = (child.match).group(1)
+                elif i == 4: cmd_check = True
+        if not change == 'none' and len(value) > 0:
+            print(pargs.message)
+            sys.exit(1)
+        return value
+    #=====================================================
+    # Configure Protocols
+    #=====================================================
+    for p in protos:
+        if not 'nfs' in p:
+            pargs.show   = f"vserver {p} show -vserver {svm.name}"
+            pargs.regex1 = "There are no entries matching your query"
+            pargs.regex2 = "Administrative Status: down"
+            if 'fcp' in p: pargs.regex3 = "Target Name: (([\\da-f]{2}:){7}[\\da-f]{2})"
+            elif 'iscsi' in p: pargs.regex3 = "(iqn\\.[\\da-z\\.:\\-]+vs\\.[\\d]+(?=[\r\n]))"
+            elif 'nvme' in p: pargs.regex3 = "NQN: (nqn\\..*discovery)"
+            pargs.p = p
+            value = config_protocols(child, pargs)
+            if 'iscsi' in p: pargs.storage[svm.cluster][svm.name]['iscsi'].iqn = value
+            elif 'nvme' in p: pargs.storage[svm.cluster][svm.name]['nvme'].nqn = value
+
+    #=====================================================
+    # Configure NFS Export Policy
+    #=====================================================
+    cmdp = f'vserver export-policy rule METHOD -vserver {svm.name} -policyname default -protocol nfs -ruleindex 1'
+    rules = '-rorule sys -rwrule sys -superuser sys -allow-suid true'
+    pargs.count = 1
+    pargs.show  = cmdp.replace('METHOD', 'show')
+    pargs.regex = pargs.nfs.network
+    pargs.cmds  = [f"{cmdp.replace('METHOD', 'create')} -clientmatch {pargs.nfs.network} {rules}"]
+    config_function(child, pargs)
+
+
+#=====================================================
+# Function - Volume pexpect Process
+#=====================================================
+def volume_pexpect(child, i, pargs, svm):
+    if i.volume_type == 'audit':
+        pargs.count = 1
+        pargs.show  = f"vserver audit show -vserver {i.svm.name}"
+        pargs.regex = f"Log Destination Path"
+        pargs.cmds = [f"vserver audit create -vserver {i.svm.name} -destination /{i.name}"]
+        config_function(child, pargs)
+        pargs.count = 1
+        pargs.show  = f"vserver audit show -vserver {i.svm.name}"
+        pargs.regex = f"Auditing State: true"
+        pargs.cmds = [f"vserver audit enable -vserver {i.svm.name}"]
+        config_function(child, pargs)
+    elif re.search('_m0[1-2]$', i.name):
+        #=====================================================
+        # Attach the Mirrors to the Schedule and Initialize
+        #=====================================================
+        dest = f"{i.svm.name}:{i.name}"
+        src  = f"{i.svm.name}:{svm.root_volume.name}"
+        pargs.count = 1
+        pargs.show  = f"snapmirror show -vserver {i.svm.name} -destination-path {dest} -source-path {src}"
+        pargs.regex = f"Destination Path: {svm.cluster}://{i.svm.name}/{i.name}"
+        pargs.cmds  = [
+            f"snapmirror create -vserver {i.svm.name} -destination-path {dest} -source-path {src} -type LS -schedule 15min"
+        ]
+        config_function(child, pargs)
+    elif i.volume_type == 'nvme':
+        pargs.count = 1
+        pargs.show  = f"vserver nvme namespace show -vserver {i.svm.name} -path /vol/{i.name}/{i.name}"
+        pargs.regex = f"online"
+        pargs.cmds = [f"vserver nvme namespace create -vserver {i.svm.name} -path /vol/{i.name}/{i.name}"]
+        config_function(child, pargs)
+        pargs.count = 1
+        pargs.show  = f"vserver nvme subsystem show -vserver {i.svm.name} -subsystem {i.os_type}-hosts"
+        pargs.regex = f"OS Type: {i.os_type}"
+        pargs.cmds = [
+            f"vserver nvme subsystem create -vserver {i.svm.name} -subsystem {i.os_type}-hosts -ostype {i.os_type}"
+        ]
+        config_function(child, pargs)
+        pargs.count = 1
+        pargs.show  = f"vserver nvme subsystem map show -vserver {i.svm.name} -path /vol/{i.name}/{i.name} -subsystem {i.os_type}-hosts"
+        pargs.regex = f"NSID"
+        pargs.cmds = [
+            f"vserver nvme subsystem map add -vserver {i.svm.name} -path /vol/{i.name}/{i.name} -subsystem {i.os_type}-hosts"
+        ]
+        config_function(child, pargs)
+    elif i.volume_type == 'swap':
+        pargs.count = 1
+        pargs.show  = f"volume efficiency show -vserver {i.svm.name} -volume {i.name}"
+        pargs.regex = f"Disabled"
+        pargs.cmds = [f"volume efficiency off -vserver {i.svm.name} -volume {i.name}"]
+        config_function(child, pargs)
+
+#=====================================================
+# Print Color Functions
+#=====================================================
+def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
+def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))

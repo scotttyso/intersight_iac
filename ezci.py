@@ -58,6 +58,10 @@ def cli_arguments():
         help='Name of file containing The Intersight secret key for the HTTP signature scheme'
     )
     Parser.add_argument(
+        '-l', '--load-config', action='store_false',
+        help='Skip Wizard and Just Load Configuration Files.'
+    )
+    Parser.add_argument(
         '-s', '--deployment_step',
         default ='flexpod',
         required=True,
@@ -114,6 +118,8 @@ def main():
     # Build kwargs
     #==============================================
     args   = cli_arguments()
+    if '~' in args.api_key_file:
+        args.api_key_file = os.path.expanduser(args.api_key_file)
     kwargs = {}
     kwargs['args']           = args
     kwargs['deployment_type']= 'converged'
@@ -153,6 +159,9 @@ def main():
                 sys.exit(1)
         destdirCheck = True
 
+    if args.load_config == False:
+        kwargs = ezfunctions.load_previous_configurations(**kwargs)
+
     #==============================================
     # Process the YAML input File
     #==============================================
@@ -165,7 +174,8 @@ def main():
     #==============================================
     pargs = DotMap()
     pargs.nope = False
-    kwargs, pargs = isdk.api('organization').organizations(pargs, **kwargs)
+    #kwargs, pargs = isdk.api('organization').organizations(pargs, **kwargs)
+    kwargs['org_moids'] = {'default': {'Moid': '5ddea1e16972652d32b6493a'}, 'Asgard': {'Moid': '5f6509326972652d32fa70a8'}, 'Wakanda': {'Moid': '60aeca786972652d32ee5e46'}, 'Production': {'Moid': '61b9e6516972652d32099398'}, 'terratest': {'Moid': '633ed7606972652d32ecc0a6'}, 'Panther': {'Moid': '636a5a086972652d32b1740e'}, 'RICH': {'Moid': '639ffbbe6972652d3243d65f'}}
     kwargs, pargs = ci.wizard('dns_ntp').dns_ntp(pargs, **kwargs)
     kwargs, pargs = ci.wizard('imm').imm(pargs, **kwargs)
     kwargs, pargs = ci.wizard('vlans').vlans(pargs, **kwargs)
@@ -176,31 +186,24 @@ def main():
     # When Deployment Step is initial - Deploy NXOS|Storage|Domain
     #=================================================================
     if args.deployment_step == 'initial':
-        if pargs.nope == True:
-            #==============================================
-            # Configure Switches if configure Set to True
-            #==============================================
-            if kwargs['immDict']['wizard'].get('nxos'):
-                network_config = DotMap(deepcopy(kwargs['immDict']['wizard']['nxos'][0]))
-                network_types = ['network', 'ooband']
-                for network_type in network_types:
-                    config_count = 0
-                    for i in network_config.switches:
-                        if i.configure == True and i.switch_type == network_type: config_count += 1
-                    if config_count == 2:
-                        kwargs, pargs = network.nxos('nxos').config(network_config, network_type, pargs, **kwargs)
+        #==============================================
+        # Configure Switches if configure Set to True
+        #==============================================
+        if kwargs['immDict']['wizard'].get('nxos'):
+            network_config = DotMap(deepcopy(kwargs['immDict']['wizard']['nxos'][0]))
+            network_types = ['network', 'ooband']
+            for network_type in network_types:
+                config_count = 0
+                for i in network_config.switches:
+                    if i.configure == True and i.switch_type == network_type: config_count += 1
+                if config_count == 2:
+                    kwargs, pargs = network.nxos('nxos').config(network_config, network_type, pargs, **kwargs)
 
         #==============================================
         # Configure Storage Appliances
         #==============================================
         if args.deployment_type == 'netapp':
-            if pargs.nope == False:
-                kwargs, pargs = ci.wizard('build').build_netapp(pargs, **kwargs)
-            else:
-                pargs.netapp.wwpns.a    = [{'fcp-lif-01-1a':'20:0e:00:a0:98:aa:1c:8d'}, {'fcp-lif-02-1a':'20:0f:00:a0:98:aa:1c:8d'}]
-                pargs.netapp.wwpns.b    = [{'fcp-lif-01-1c':'20:10:00:a0:98:aa:1c:8d'}, {'fcp-lif-02-1c':'20:11:00:a0:98:aa:1c:8d'}]
-                pargs.netapp.iscsi.iqn  = 'iqn.1992-08.com.netapp:sn.57c603ffcc2811ed9ce100a098aa1c8d:vs.6'
-                pargs.netapp.nvme.nqn   = 'nqn.1992-08.com.netapp:sn.57c603ffcc2811ed9ce100a098aa1c8d:discovery'
+            kwargs, pargs = ci.wizard('build').build_netapp(pargs, **kwargs)
 
         #==============================================
         # Configure and Deploy Domain
@@ -209,85 +212,95 @@ def main():
             kwargs, pargs = ci.wizard('build').build_imm_domain(pargs, **kwargs)
             kwargs = eval(f"isdkp.api_profiles('domain').profiles(pargs, **kwargs)")
 
-    print(json.dumps(kwargs['immDict']['orgs'], indent=4))
-    exit()
+        #==============================================
+        # Create YAML Files
+        #==============================================
+        orgs   = list(kwargs['immDict']['orgs'].keys())
+        ezfunctions.create_yaml(orgs, **kwargs)
+
+    if args.deployment_step == 'server':
+        kwargs['isdk_deployed'] = {}
+        #==============================================
+        # Configure and Deploy Server Profiles
+        #==============================================
+        kwargs, pargs = ci.wizard('build').build_imm_servers(pargs, **kwargs)
+
+        #==============================================
+        # Create YAML Files
+        #==============================================
+        orgs   = list(kwargs['immDict']['orgs'].keys())
+        ezfunctions.create_yaml(orgs, **kwargs)
+
+        for org in orgs:
+            #==============================================
+            # Pools
+            #==============================================
+            #cisdk = 'isdkp.api_pools'
+            #if kwargs['immDict']['orgs'][org].get('pools'):
+            #    for pool_type in kwargs['immDict']['orgs'][org]['pools']:
+            #        kwargs = eval(f"{cisdk}(pool_type).pools(pargs, **kwargs)")
+
+            #==============================================
+            # Policies
+            #==============================================
+            #cisdk = 'isdkp.api_policies'
+            #if kwargs['immDict']['orgs'][org].get('policies'):
+            #    for ptype in pargs.policy_list:
+            #        if kwargs['immDict']['orgs'][org]['policies'].get(ptype):
+            #            dpolicies = eval(f"{cisdk}(ptype).policies(pargs, **kwargs)")
+            #            kwargs['isdk_deployed'].update({ptype:dpolicies})
+
+            #==============================================
+            # Profiles
+            #==============================================
+            cisdk = 'isdkp.api_profiles'
+            #ptype = 'templates'
+            #if kwargs['immDict']['orgs'][org].get(ptype):
+            #    if kwargs['immDict']['orgs'][org][ptype].get('server'):
+            #        kwargs = eval(f"{cisdk}(ptype).profiles(pargs, **kwargs)")
+            ptype = 'profiles'
+            if kwargs['immDict']['orgs'][org].get(ptype):
+                profile_list = ['chassis', 'server']
+                profile_list = ['server']
+                for i in profile_list:
+                    if kwargs['immDict']['orgs'][org][ptype].get(i):
+                        kwargs = eval(f"{cisdk}(i).profiles(pargs, **kwargs)")
 
     #==============================================
     # Create YAML Files
     #==============================================
-    #print(json.dumps(kwargs['immDict']['wizard'], indent=4))
     orgs   = list(kwargs['immDict']['orgs'].keys())
     ezfunctions.create_yaml(orgs, **kwargs)
-    #==============================================
-    # Loop Through the Orgs
-    #==============================================
-    kwargs['isdk_deployed'] = {}
-    for org in orgs:
-        #print(json.dumps(kwargs['immDict']['orgs'][org]['netapp']['volume'], indent=4))
-        #==============================================
-        # Pools
-        #==============================================
-        if pargs.nope == True:
-            cisdk = 'isdkp.api_pools'
-            if kwargs['immDict']['orgs'][org].get('pools'):
-                for pool_type in kwargs['immDict']['orgs'][org]['pools']:
-                    if kwargs['immDict']['orgs'][org]['pools'].get(pool_type):
-                        kwargs = eval(f"{cisdk}(pool_type).pools(pargs, **kwargs)")
-        #==============================================
-        # Policies
-        #==============================================
-        if pargs.nope == True:
-            policies = {}
-            policies_in_order = OrderedDict(sorted(kwargs['immDict']['orgs'][org]['policies'].items()))
-            for k, v in policies_in_order.items(): policies.update({k:v})
-            istatic = {'iscsi_static_target':policies['iscsi_static_target']}
-            policies = dict(istatic, **policies)
-            cisdk = 'isdkp.api_policies'
-            if kwargs['immDict']['orgs'][org].get('policies'):
-                for ptype in policies:
-                    if kwargs['immDict']['orgs'][org]['policies'].get(ptype):
-                        if re.search('^[a-z]', ptype):
-                            dpolicies = eval(f"{cisdk}(ptype).policies(pargs, **kwargs)")
-                            kwargs['isdk_deployed'].update({ptype:dpolicies})
-        #==============================================
-        # Profiles
-        #==============================================
-        if pargs.nope == True:
-            cisdk = 'isdkp.api_profiles'
-            ptype = 'templates'
-            if kwargs['immDict']['orgs'][org].get(ptype):
-                if kwargs['immDict']['orgs'][org][ptype].get('server'):
-                    kwargs = eval(f"{cisdk}(ptype).profiles(pargs, **kwargs)")
-            ptype = 'profiles'
-            if kwargs['immDict']['orgs'][org].get(ptype):
-                if kwargs['immDict']['orgs'][org][ptype].get('domain'):
-                    kwargs = eval(f"{cisdk}('domain').profiles(pargs, **kwargs)")
-                if kwargs['immDict']['orgs'][org][ptype].get('chassis'):
-                    kwargs = eval(f"{cisdk}('chassis').profiles(pargs, **kwargs)")
-                if kwargs['immDict']['orgs'][org][ptype].get('server'):
-                    kwargs = eval(f"{cisdk}('server').profiles(pargs, **kwargs)")
 
+    if args.deployment_step == 'operating_system':
         #==============================================
-        # Server Identities
+        # Loop Through the Orgs
         #==============================================
-        kwargs, pargs = ci.wizard('wizard').server_identities(pargs, **kwargs)
-        #==============================================
-        # Upgrade Firmware
-        #==============================================
-        if pargs.nope == True:
-            kwargs, pargs = ci.fw_os('firmware').firmware(pargs, **kwargs)
-        #==============================================
-        # Install OS
-        #==============================================
-        if pargs.nope == True:
-            kwargs, pargs = ci.fw_os('os_install').os_install(pargs, **kwargs)
-        #==============================================
-        # Configure ESX Hosts and vCenter
-        #==============================================
-        if pargs.nope == True:
-            kwargs, pargs = vsphere.api('esx').esx(pargs, **kwargs)
-        kwargs, pargs = vsphere.api('vcenter').vcenter(pargs, **kwargs)
-        #kwargs, pargs = vsphere.api('datastore').datastore(pargs, **kwargs)
+        for org in orgs:
+            #==============================================
+            # Server Identities
+            #==============================================
+            kwargs, pargs = ci.wizard('wizard').server_identities(pargs, **kwargs)
+            #==============================================
+            # Upgrade Firmware
+            #==============================================
+            if pargs.nope == True:
+                kwargs, pargs = ci.fw_os('firmware').firmware(pargs, **kwargs)
+            #==============================================
+            # Install OS
+            #==============================================
+            if pargs.nope == True:
+                kwargs, pargs = ci.fw_os('os_install').os_install(pargs, **kwargs)
+
+    if args.deployment_step == 'management':
+        for org in orgs:
+            #==============================================
+            # Configure ESX Hosts and vCenter
+            #==============================================
+            if pargs.nope == True:
+                kwargs, pargs = vsphere.api('esx').esx(pargs, **kwargs)
+            kwargs, pargs = vsphere.api('vcenter').vcenter(pargs, **kwargs)
+            #kwargs, pargs = vsphere.api('datastore').datastore(pargs, **kwargs)
 
     print(f'\n-----------------------------------------------------------------------------\n')
     print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')

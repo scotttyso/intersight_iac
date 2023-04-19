@@ -44,33 +44,33 @@ class MyDumper(yaml.Dumper):
 # pexpect - Login Function
 #=====================================================
 def child_login(pargs, **kwargs):
-    hostname    = pargs.hostname
-    systemShell = os.environ['SHELL']
-    kwargs['Variable'] = pargs.hostPassword
+    system_shell = os.environ['SHELL']
+    kwargs['Variable'] = pargs.password
     kwargs   = sensitive_var_value(**kwargs)
     password = kwargs['var_value']
     #=====================================================
     # Use 
     #=====================================================
-    child = pexpect.spawn(systemShell, encoding='utf-8')
+    child = pexpect.spawn(system_shell, encoding='utf-8')
     child.logfile_read = sys.stdout
-    child.sendline(f'ping -c 2 {hostname}')
-    child.expect(f'ping -c 2 {hostname}')
+    child.sendline(f'ping -c 2 {pargs.hostname}')
+    child.expect(f'ping -c 2 {pargs.hostname}')
     child.expect_exact("$ ")
-    child.sendline(f'ssh {pargs.username}@{hostname} | tee {hostname}.txt')
-    child.expect(f'tee {hostname}.txt')
+    child.sendline(f'ssh {pargs.username}@{pargs.hostname} | tee {pargs.hostname}.txt')
+    child.expect(f'tee {pargs.hostname}.txt')
     logged_in = False
     while logged_in == False:
-        i = child.expect(['Are you sure you want to continue', 'closed', 'Password:', pargs.hostPrompt, pexpect.TIMEOUT])
+        i = child.expect(['Are you sure you want to continue', 'closed', 'Password:', pargs.host_prompt, pexpect.TIMEOUT])
         if i == 0: child.sendline('yes')
         elif i == 1:
-            print(f'\n**failed to connect.  '\
-                f'Please Validate {hostname} is correct and username {pargs.username} is correct.')
+            print(f'\n!!!FAILED!!! to connect.  '\
+                f'Please Validate {pargs.hostname} is correct and username {pargs.username} is correct.')
+            sys.exit(1)
         elif i == 2: child.sendline(password)
         elif i == 3: logged_in = True
         elif i == 4:
             print(f"\n{'-'*91}\n")
-            print(f'!!!FAILED!!!\n Could not open SSH Connection to {hostname}')
+            print(f'!!!FAILED!!!\n Could not open SSH Connection to {pargs.hostname}')
             print(f"\n{'-'*91}\n")
             sys.exit(1)
     return child, kwargs
@@ -163,30 +163,66 @@ def create_yaml(orgs, **kwargs):
                         if kwargs['immDict']['orgs'][org].get(item):
                             if kwargs['immDict']['orgs'][org][item].get(x):
                                 idict[org][item].update(deepcopy({x:kwargs['immDict']['orgs'][org][item][x]}))
-                                if len(idict[org][item]) == 0: idict.pop(org)
-                                else:
+                                if len(idict[org][item]) > 0:
+                                    idict = json.dumps(idict)
+                                    idict = json.loads(idict)
+                                    if type(idict[org][item][x]) == list:
+                                        if idict[org][item][x][0].get('name'):
+                                            idict[org][item][x] = list({v['name']:v for v in idict[org][item][x]}.values())
+                                        elif idict[org][item][x][0].get('names'):
+                                            idict[org][item][x] = list({v['names'][0]:v for v in idict[org][item][x]}.values())
                                     dest_file = f"{i}.yaml"
                                     title1 = f"{str.title(item)} -> {i}"
                                     write_file(dest_dir, dest_file, idict, title1)
         else:
             if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
             for i in ezData[f'class.{item}']['enum']:
-                dict = {}
+                idict = {}
                 if item == i:
                     for org in orgs:
                         if kwargs['immDict']['orgs'][org].get(item):
-                            dict.update(deepcopy({org:{item:kwargs['immDict']['orgs'][org][item]}}))
-                    dest_file = f'{i}.yaml'
-                    title1 = str.title(item.replace('_', ' '))
-                    write_file(dest_dir, dest_file, dict, title1)
+                            if len(kwargs['immDict']['orgs'][org][item]) > 0:
+                                idict.update(deepcopy({org:{item:kwargs['immDict']['orgs'][org][item]}}))
+                                idict = json.dumps(idict)
+                                idict = json.loads(idict)
+                                if type(idict[org][item]) == list:
+                                    idict[org][item] = list({v['name']:v for v in value}.values())
+                                else:
+                                    newdict = deepcopy(idict)
+                                    if re.search('(netapp|storage)', item):
+                                        for key, value in newdict[org][item].items():
+                                            idict[org][item][key] = list({v['name']:v for v in value}.values())
+                                    else:
+                                        for key, value in newdict[org][item].items():
+                                            idict[org][item][key] = list({v['name']:v for v in value}.values())
+                                        #print(json.dumps(idict[org][item], indent=4))
+                                        #print('ERROR UNKNOWN')
+                                        #exit()
+                                dest_file = f'{i}.yaml'
+                                title1 = str.title(item.replace('_', ' '))
+                                write_file(dest_dir, dest_file, idict, title1)
                 else:
                     for org in orgs:
                         if kwargs['immDict']['orgs'][org].get(item):
                             if kwargs['immDict']['orgs'][org][item].get(i):
-                                dict.update({org:{item:{i:kwargs['immDict']['orgs'][org][item][i]}}})
-                    dest_file = f'{i}.yaml'
-                    title1 = f"{str.title(item.replace('_', ' '))} -> {str.title(i.replace('_', ' '))}"
-                    write_file(dest_dir, dest_file, dict, title1)
+                                if len(kwargs['immDict']['orgs'][org][item]) > 0:
+                                    idict.update({org:{item:{i:kwargs['immDict']['orgs'][org][item][i]}}})
+                                    idict = json.dumps(idict)
+                                    idict = json.loads(idict)
+                                    if type(idict[org][item][i]) == list:
+                                        if re.search('(chassis|server)', i) and item == 'profiles':
+                                            idict[org][item][i] = list({
+                                                v['targets'][0]['name']:v for v in idict[org][item][i]
+                                            }.values())
+                                        else:
+                                            idict[org][item][i] = list({v['name']:v for v in idict[org][item][i]}.values())
+                                    else:
+                                        print(json.dumps(idict[org][item][i], indent=4))
+                                        for a, b in idict[org][item][i].items():
+                                            b = list({v['name']:v for v in b}.values())
+                                    dest_file = f'{i}.yaml'
+                                    title1 = f"{str.title(item.replace('_', ' '))} -> {str.title(i.replace('_', ' '))}"
+                                    write_file(dest_dir, dest_file, idict, title1)
                         
 #======================================================
 # Function - Ask User to Configure Additional Policy
@@ -755,6 +791,37 @@ def policy_name(namex, policy_type):
         if name == '': name = '%s' % (namex)
         valid = classes.validating.name_rule(f'{policy_type} Name', name, 1, 62)
         if valid == True: return name
+
+#======================================================
+# Function - Load Previous YAML Files
+#======================================================
+def load_previous_configurations(**kwargs):
+    baseRepo = kwargs['args'].dir
+    ezData   = kwargs['ezData']['ezimm']['allOf'][1]['properties']
+    vclasses = ezData['classes']['enum']
+    dir_check   = 0
+    if os.path.isdir(baseRepo):
+        dir_list = os.listdir(baseRepo)
+        for i in dir_list:
+            if i == 'policies': dir_check += 1
+            elif i == 'pools': dir_check += 1
+            elif i == 'profiles': dir_check += 1
+            elif i == 'templates': dir_check += 1
+    if dir_check > 1:
+        for item in vclasses:
+            dest_dir = ezData[f'class.{item}']['directory']
+            if os.path.isdir(os.path.join(baseRepo, dest_dir)):
+                dir_list = os.listdir(os.path.join(baseRepo, dest_dir))
+                for i in dir_list:
+                    yfile = open(os.path.join(baseRepo, dest_dir, i), 'r')
+                    data = yaml.safe_load(yfile)
+                    for key, value in data.items():
+                        if not kwargs['immDict']['orgs'].get(key): kwargs['immDict']['orgs'][key] = {}
+                        for k, v in value.items():
+                            if not kwargs['immDict']['orgs'][key].get(k): kwargs['immDict']['orgs'][key][k] = {}
+                            kwargs['immDict']['orgs'][key][k].update(deepcopy(v))
+    # Return kwargs
+    return kwargs
 
 #======================================================
 # Function - Validate input for each method

@@ -8,7 +8,6 @@ from dotmap import DotMap
 import ipaddress
 import json
 import numpy
-import os
 import re
 import requests
 import sys
@@ -35,17 +34,22 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).upper()
         btemplates = []
-        for i in pargs.server_settings:
-            if re.search('M[5-9]', i.gen) and i.tpm == 'True': btemplates.append(f'{i.gen}-{i.cpu}-virtual-tpm')
-            elif re.search('M[5-9]', i.gen): btemplates.append(f'{i.gen}-{i.cpu}-virtual')
-        btemplates = numpy.unique(numpy.array(btemplates))
+        dataset = []
+        for k, v in pargs.servers.items():
+            dataset.append(f"{v.gen}_{v.cpu}_{v.tpm}")
+        models = numpy.unique(numpy.array(dataset))
+        for i in models:
+            gen, cpu, tpm = i.split('_')
+            if tpm == True:btemplates.append(f'{gen}-{cpu}-virtual-tpm')
+            else: btemplates.append(f'{gen}-{cpu}-virtual')
+        btemplates = list(numpy.unique(numpy.array(btemplates)))
         for i in btemplates:
             polVars = dict(
                 baud_rate           = 115200,
                 bios_template       = i,
                 console_redirection = f'serial-port-a',
-                description         = f'{pargs.ppfx}{i} {descr} Policy',
-                name                = f'{pargs.ppfx}{i}',
+                description         = f'{pargs.domain.policies.prefix}{i} {descr} Policy',
+                name                = f'{pargs.domain.policies.prefix}{i}',
                 serial_port_aenable = f'enabled',
                 terminal_type       = f'vt100',
             )
@@ -68,7 +72,7 @@ class imm(object):
         if 'fc' in pargs.dtype: ptypes.append('fcp')
         for i in pargs.vlans:
             i = DotMap(deepcopy(i))
-            if not i.type in ptypes and re.search('iscsi', i.type): ptypes.append(i.type)
+            if not i.vlan_type in ptypes and re.search('iscsi', i.vlan_type): ptypes.append(i.vlan_type)
         for i in ptypes:
             polVars = {
                 'boot_devices': [{
@@ -80,21 +84,23 @@ class imm(object):
                 'boot_mode': 'Uefi',
                 'description': f'{i} Boot Policy',
                 'enable_secure_boot': True,
-                'name': f'{i}-boot',
+                'name': f'{pargs.domain.policies.prefix}{i}-boot',
             }
             if 'fcp' in i:
                 fabrics = ['a', 'b']
                 for x in range(0,len(fabrics)):
-                    for c in pargs.netapp.wwpns[fabrics[x]]:
-                        for k,v in c.items():
-                            polVars['boot_devices'].append({
-                                'enabled': True,
-                                'interface_name': f'vhba{x+1}',
-                                'name': (pargs.netapp.data_svm) + '-' + k,
-                                'object_type': 'boot.San',
-                                'slot':'MLOM',
-                                'wwpn':v
-                            })
+                    pargs.storage = DotMap(deepcopy(kwargs['immDict']['orgs'][kwargs['org']]['storage']))
+                    for k,v in pargs.storage.items():
+                        for e in v:
+                            for s in e['wwpns'][chr(ord('@')+x+1).lower()]:
+                                polVars['boot_devices'].append({
+                                    'enabled': True,
+                                    'interface_name': f'vhba{x+1}',
+                                    'name':  e.svm + '-' + s.interface,
+                                    'object_type': 'boot.San',
+                                    'slot':'MLOM',
+                                    'wwpn': s.wwpn
+                                })
             elif 'iscsi' in i:
                 fabrics = ['a', 'b']
                 for fab in fabrics:
@@ -116,10 +122,11 @@ class imm(object):
                 'name': 'uefishell',
                 'object_type': 'boot.UefiShell'
             })
-
+            
             # Add Policy Variables to immDict
             kwargs['class_path'] = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -130,37 +137,154 @@ class imm(object):
     # Function - Build Profiles - Chassis
     #=============================================================================
     def chassis(self, pargs, **kwargs):
-        models          = []
-        pargs.apiMethod = 'get'
-        pargs.apiFilter  = f"RegisteredDevice.Moid eq '{pargs.registered_device}'"
-        pargs.policy    = 'serial_number'
-        pargs.purpose   = 'chassis'
-        kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
-        pargs.chassis   = DotMap(deepcopy(kwargs['pmoids']))
-        pargs.pop('apiFilter')
-        for k ,v in pargs.chassis.items():
-            models.append(v.model.split('-')[1])
-        models = numpy.unique(numpy.array(models))
-        for m in models:
-            # Build Dictionary
+        # Build Dictionary
+        for k, v in pargs.chassis.items():
             polVars = dict(
                 action            = 'Deploy',
-                imc_access_policy = f'{pargs.ppfx}kvm',
-                power_policy      = f'{pargs.ppfx}{deepcopy(m)}',
-                snmp_policy       = f'{pargs.ppfx}snmp',
-                thermal_policy    = f'{pargs.ppfx}{deepcopy(m)}',
+                imc_access_policy = f'{pargs.domain.policies.prefix}kvm',
+                power_policy      = f'{pargs.domain.policies.prefix}{deepcopy(k)}',
+                snmp_policy       = f'{pargs.domain.policies.prefix}snmp',
+                thermal_policy    = f'{pargs.domain.policies.prefix}{deepcopy(k)}',
                 targets           = [],
             )
-            for k, v in pargs.chassis.items():
-                if m in v.model:
-                    polVars['targets'].append(dict(
-                        description   = f'{pargs.name}-{v.id} Chassis Profile',
-                        name          = f'{pargs.name}-{v.id}',
-                        serial_number = k
-                    ))
+            for i in v:
+                polVars['targets'].append(dict(
+                    description   = f'{i.domain}-{i.identity} Chassis Profile',
+                    name          = f'{i.domain}-{i.identity}',
+                    serial_number = i.serial
+                ))
+            
             # Add Policy Variables to immDict
             kwargs['class_path'] = f'profiles,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+        
+        #=====================================================
+        # Return pargs and kwargs
+        #=====================================================
+        return kwargs, pargs
+
+
+    #=============================================================================
+    # Function - Build Profiles - Chassis
+    #=============================================================================
+    def compute_environment(self, pargs, **kwargs):
+        pargs.servers  = DotMap([])
+        #=====================================================
+        # Server Dictionary Function
+        #=====================================================
+        def server_dictionary(i, pargs, **kwargs):
+            pargs.apiMethod='get'
+            pargs.apiFilter= f"Ancestors/any(t:t/Moid eq '{i.Moid}')"
+            pargs.policy   = 'processor'
+            pargs.purpose  = 'inventory'
+            kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
+            cpu = DotMap(deepcopy(kwargs['results'][0]))
+            pargs.policy   = 'tpm'
+            kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
+            tpmd = deepcopy(kwargs['results'])
+            pargs.policy   = 'adapter'
+            kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
+            vic = DotMap(deepcopy(kwargs['results'][0]))
+            pargs.pop('apiFilter')
+            if 'Intel' in cpu.Model: cpu_vendor = 'intel'
+            else: cpu_vendor = 'amd'
+            if re.search('(V5)', vic.Model): vic_generation = 'gen5'
+            else: vic_generation = 'gen4'
+            server_generation = re.search('-(M[\\d])', i.Model).group(1)
+            if len(tpmd) > 0:
+                template = f"{server_generation}-{cpu_vendor}-tpm-vic-{vic_generation}"
+                tpm = '-tpm'
+            else:
+                template = f"{server_generation}-{cpu_vendor}-vic-{vic_generation}"
+                tpm = ''
+            pargs.servers[i.Serial] = DotMap(
+                chassis_id  = i.ChassisId,
+                chassis_moid= i.Parent.Moid,
+                cpu         = cpu_vendor,
+                domain      = pargs.domain.name,
+                firmware    = i.Firmware,
+                gen         = server_generation,
+                moid        = i.Moid,
+                model       = i.Model,
+                object_type = i.SourceObjectType,
+                serial      = i.Serial,
+                server_id   = i.ServerId,
+                slot        = i.SlotId,
+                template    = template,
+                tpm         = tpm,
+                vic         = vic_generation
+            )
+            if i.SourceObjectType == 'compute.RackUnit':
+                pargs.servers[i.Serial].pop('chassis_moid')
+            return pargs
+
+        #=====================================================
+        # Build Domain Dictionaries
+        #=====================================================
+        if pargs.domain:
+            pargs.chassis  = DotMap([])
+            pargs.apiMethod= 'get'
+            pargs.names    = [pargs.domain.serial_numbers[0]]
+            pargs.policy   = 'serial_number'
+            pargs.purpose  = 'domain'
+            kwargs         = isdk.api('serial_number').calls(pargs, **kwargs)
+            pmoids         = DotMap(deepcopy(kwargs['pmoids']))
+
+            for k, v in pmoids.items():
+                reg_device = v.registered_device
+            pargs.apiFilter= f"RegisteredDevice.Moid eq '{reg_device}'"
+            pargs.purpose  = 'chassis'
+            kwargs         = isdk.api('serial_number').calls(pargs, **kwargs)
+            chassis_pmoids = DotMap(deepcopy(kwargs['pmoids']))
+            pargs.purpose  = 'server'
+            kwargs         = isdk.api('serial_number').calls(pargs, **kwargs)
+            server_pmoids  = DotMap(deepcopy(kwargs['pmoids']))
+            pargs.pop('apiFilter')
+            #=====================================================
+            # Build Chassis Dictionary
+            #=====================================================
+            for k, v in chassis_pmoids.items():
+                model = str(v.model).lower()
+                pargs.chassis[model].update(DotMap(
+                    domain  = pargs.domain.name,
+                    identity= v.id,
+                    serial  = k
+                ))
+
+            #=====================================================
+            # Build Server Dictionaries - Domain
+            #=====================================================
+            for k, v in chassis_pmoids.items():
+                for e in v.blades:
+                    pargs.apiMethod='by_moid'
+                    pargs.policy   = 'serial_number'
+                    pargs.purpose  = 'server'
+                    pargs.pmoid    = e.moid
+                    kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
+                    i = DotMap(deepcopy(kwargs['results']))
+                    pargs = server_dictionary(i, pargs, **kwargs)
+            for k, v in server_pmoids.items():
+                pargs.apiMethod='by_moid'
+                pargs.policy   = 'serial_number'
+                pargs.purpose  = 'server'
+                pargs.pmoid    = e.moid
+                kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
+                i = DotMap(deepcopy(kwargs['results']))
+                pargs = server_dictionary(i, pargs, **kwargs)
+        else:
+            #=====================================================
+            # Build Server Dictionaries - Standalone
+            #=====================================================
+            pargs.apiMethod='get'
+            pargs.names    = pargs.serial_numbers
+            pargs.policy   = 'serial_number'
+            pargs.purpose  = 'server'
+            kwargs = isdk.api(pargs.policy).calls(pargs, **kwargs)
+            for i in kwargs['results']:
+                i = DotMap(deepcopy(i))
+                pargs = server_dictionary(i, pargs, **kwargs)
+
+
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -174,20 +298,23 @@ class imm(object):
         # Build Dictionary
         polVars = dict(
             action                      = 'Deploy',
-            description                 = f'{pargs.name} Domain Profile',
-            name                        = pargs.name,
-            network_connectivity_policy = f'{pargs.ppfx}dns',
-            ntp_policy                  = f'{pargs.ppfx}ntp',
-            port_policies               = [f'{pargs.name}-A', f'{pargs.name}-B'],
-            serial_numbers              = pargs.serials,
-            snmp_policy                 = f'{pargs.ppfx}snmp-domain',
-            switch_control_policy       = f'{pargs.ppfx}sw-ctrl',
-            syslog_policy               = f'{pargs.ppfx}syslog-domain',
-            system_qos_policy           = f'{pargs.ppfx}qos',
-            vlan_policies               = f'{pargs.ppfx}vlans',
+            description                 = f'{pargs.domain.name} Domain Profile',
+            name                        = pargs.domain.name,
+            network_connectivity_policy = f'{pargs.domain.policies.prefix}dns',
+            ntp_policy                  = f'{pargs.domain.policies.prefix}ntp',
+            port_policies               = [f'{pargs.domain.name}-A', f'{pargs.domain.name}-B'],
+            serial_numbers              = pargs.domain.serial_numbers,
+            snmp_policy                 = f'{pargs.domain.policies.prefix}snmp-domain',
+            switch_control_policy       = f'{pargs.domain.policies.prefix}sw-ctrl',
+            syslog_policy               = f'{pargs.domain.policies.prefix}syslog-domain',
+            system_qos_policy           = f'{pargs.domain.policies.prefix}qos',
+            vlan_policies               = f'{pargs.domain.policies.prefix}vlans',
         )
         if re.search('(fc|fc-nvme)', pargs.dtype):
-            polVars.update({'vsan_policies': [f'{pargs.ppfx}vsan-{pargs.vsans[0]}', f'{pargs.ppfx}vsan-{pargs.vsans[1]}']})
+            for i in pargs.domain.vsans:
+                polVars.update({'vsan_policies': [
+                    f'{pargs.domain.policies.prefix}vsan-{i}'
+                ]})
         # Add Policy Variables to immDict
         kwargs['class_path'] = f'profiles,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -207,8 +334,8 @@ class imm(object):
         for i in plist:
             polVars = dict(
                 adapter_template = i,
-                description      = f'{pargs.ppfx}{i} {descr} Policy',
-                name             = f'{pargs.ppfx}{i}',
+                description      = f'{pargs.domain.policies.prefix}{i} {descr} Policy',
+                name             = f'{pargs.domain.policies.prefix}{i}',
             )
 
             # Add Policy Variables to immDict
@@ -234,8 +361,8 @@ class imm(object):
             else: lldpe = False
             polVars = dict(
                 cdp_enable           = cdpe,
-                description          = f'{pargs.ppfx}{i} {descr} Policy',
-                name                 = f'{pargs.ppfx}{i}',
+                description          = f'{pargs.domain.policies.prefix}{i} {descr} Policy',
+                name                 = f'{pargs.domain.policies.prefix}{i}',
                 lldp_receive_enable  = lldpe,
                 lldp_transmit_enable = lldpe,
                 mac_register_mode    = 'nativeVlanOnly',
@@ -268,14 +395,14 @@ class imm(object):
         pargs.vlan.migration = ''
         pargs.vlan.nfs       = ''
         pargs.vlan.nvme      = []
-        pargs.vlan['all_vlans'] = ezfunctions.vlan_list_format(numpy.unique(numpy.array(vlans)))
+        pargs.vlan['all_vlans'] = ezfunctions.vlan_list_format(list(numpy.unique(numpy.array(vlans))))
         for i in pargs.vlans:
             i = DotMap(deepcopy(i))
-            if   i.type == 'inband': pargs.vlan.mgmt = i.vlan_id
-            elif i.type == 'iscsi': pargs.vlan.iscsi.append(i.vlan_id)
-            elif i.type == 'migration': pargs.vlan.migration = i.vlan_id
-            elif i.type == 'nfs': pargs.vlan.nfs = i.vlan_id
-            elif i.type == 'nvme': pargs.vlan.nvme.append(i.vlan_id)
+            if   i.vlan_type == 'inband': pargs.vlan.mgmt = i.vlan_id
+            elif i.vlan_type == 'iscsi': pargs.vlan.iscsi.append(i.vlan_id)
+            elif i.vlan_type == 'migration': pargs.vlan.migration = i.vlan_id
+            elif i.vlan_type == 'nfs': pargs.vlan.nfs = i.vlan_id
+            elif i.vlan_type == 'nvme': pargs.vlan.nvme.append(i.vlan_id)
         if len(pargs.vlan.iscsi) == 2 and len(pargs.vlan.nvme) == 2:
             pargs.vlan.storage_a = ezfunctions.vlan_list_format(sorted(
                 [pargs.vlan.nfs, pargs.vlan.iscsi[0], pargs.vlan.nvme[0]]))
@@ -295,8 +422,8 @@ class imm(object):
             vlan_name = i.replace('-', '_')
             polVars = dict(
                 allowed_vlans = f'{pargs.vlan[vlan_name]}',
-                description   = f'{pargs.ppfx}{i} {descr} Policy',
-                name          = f'{pargs.ppfx}{i}',
+                description   = f'{pargs.domain.policies.prefix}{i} {descr} Policy',
+                name          = f'{pargs.domain.policies.prefix}{i}',
                 native_vlan   = nvlan,
             )
             
@@ -315,13 +442,14 @@ class imm(object):
     def ethernet_qos(self, pargs, **kwargs):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
-        plist = ['Bronze', 'Gold', 'Platinum', 'Silver']
+        plist = ['Best Effort', 'Bronze', 'Gold', 'Platinum', 'Silver']
         for i in plist:
+            name = i.replace(' ', '-')
             polVars = dict(
                 enable_trust_host_cos = False,
                 burst        = 10240,
-                description  = f'{pargs.ppfx}{i} {descr} Policy',
-                name         = f'{pargs.ppfx}{i}',
+                description  = f'{pargs.domain.policies.prefix}{name} {descr} Policy',
+                name         = f'{pargs.domain.policies.prefix}{name}',
                 mtu          = 9000,
                 priority     = i,
                 rate_limit   = 0,
@@ -330,6 +458,7 @@ class imm(object):
             # Add Policy Variables to immDict
             kwargs['class_path'] = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+        
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -343,10 +472,10 @@ class imm(object):
         # Build Dictionary
         polVars = dict(
             assignment_order = 'sequential',
-            description      = f'{pargs.ppfx}wwnn Pool',
-            name             = f'{pargs.ppfx}wwnn',
+            description      = f'{pargs.domain.policies.prefix}wwnn Pool',
+            name             = f'{pargs.domain.policies.prefix}wwnn',
             id_blocks        = [{
-                'from':f'20:00:00:25:B5:{pargs.pool_prefix}:00:00',
+                'from':f'20:00:00:25:B5:{pargs.domain.pools.prefix}:00:00',
                 'size':1024
             }],
         )
@@ -359,10 +488,10 @@ class imm(object):
         flist = ['A', 'B']
         for i in flist:
             polVars.update(dict(
-                description = f'{pargs.ppfx}wwpn-{i.lower()} Pool',
-                name        = f'{pargs.ppfx}wwpn-{i.lower()}',
+                description = f'{pargs.domain.policies.prefix}wwpn-{i.lower()} Pool',
+                name        = f'{pargs.domain.policies.prefix}wwpn-{i.lower()}',
             ))
-            polVars['id_blocks'][0].update({'from':f'20:00:00:25:B5:{pargs.pool_prefix}:{i}0:00'})
+            polVars['id_blocks'][0].update({'from':f'20:00:00:25:B5:{pargs.domain.pools.prefix}:{i}0:00'})
             kwargs['class_path'] = f'pools,wwpn'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
         #=====================================================
@@ -379,22 +508,27 @@ class imm(object):
         fabrics = ['a', 'b']
         pargs.fc_zone = []
         for x in range(0,len(fabrics)):
+            if len(pargs.domain.vsans) == 2: vsan = pargs.domain.vsans[x]
+            else: vsan = pargs.domain.vsans[0]
+            name = f'{pargs.domain.policies.prefix}fabric-{fabrics[x]}-vsan-{vsan}'
             # Build Dictionary
             polVars = dict(
-                description           = f'{pargs.ppfx}vsan-{pargs.vsans[x]} {descr} Policy',
+                description           = f'{name} {descr} Policy',
                 fc_target_zoning_type = 'SIMT',
-                name                  = f'{pargs.ppfx}vsan-{pargs.vsans[x]}',
+                name                  = name,
                 targets               = [],
             )
-            for i in pargs.netapp.wwpns[fabrics[x]]:
-                for k,v in i.items():
-                    polVars['targets'].append(dict(
-                        name      = pargs.netapp.data_svm + '-' + k,
-                        switch_id = (fabrics[x]).upper(),
-                        vsan_id   = pargs.vsans[x],
-                        wwpn      = v
-                    ))
-            pargs.fc_zone.append(polVars['name'])
+            pargs.storage = DotMap(deepcopy(kwargs['immDict']['orgs'][kwargs['org']]['storage']))
+            for k, v in pargs.storage.items():
+                for e in v:
+                    for i in e.wwpns[fabrics[x]]:
+                        polVars['targets'].append(dict(
+                            name      = e.svm + '-' + i.interface,
+                            switch_id = (fabrics[x]).upper(),
+                            vsan_id   = vsan,
+                            wwpn      = i.wwpn
+                        ))
+                    pargs.fc_zone.append(polVars['name'])
 
             # Add Policy Variables to immDict
             kwargs['class_path'] = f'policies,{self.type}'
@@ -415,8 +549,8 @@ class imm(object):
         for i in plist:
             polVars = dict(
                 adapter_template = i,
-                description      = f'{pargs.ppfx}{i} {descr} Policy',
-                name             = f'{pargs.ppfx}{i}',
+                description      = f'{pargs.domain.policies.prefix}{i} {descr} Policy',
+                name             = f'{pargs.domain.policies.prefix}{i}',
             )
 
             # Add Policy Variables to immDict
@@ -434,10 +568,10 @@ class imm(object):
     def fibre_channel_network(self, pargs, **kwargs):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
-        for i in pargs.vsans:
+        for i in pargs.domain.vsans:
             polVars = dict(
-                description = f'{pargs.ppfx}vsan-{i} {descr} Policy',
-                name        = f'{pargs.ppfx}vsan-{i}',
+                description = f'{pargs.domain.policies.prefix}vsan-{i} {descr} Policy',
+                name        = f'{pargs.domain.policies.prefix}vsan-{i}',
                 vsan_id     = i,
             )
 
@@ -461,8 +595,8 @@ class imm(object):
             polVars = dict(
                 max_data_field_size = 2112,
                 burst               = 10240,
-                description         = f'{pargs.ppfx}{i} {descr} Policy',
-                name                = f'{pargs.ppfx}{i}',
+                description         = f'{pargs.domain.policies.prefix}{i} {descr} Policy',
+                name                = f'{pargs.domain.policies.prefix}{i}',
                 rate_limit          = 0,
             )
 
@@ -482,8 +616,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description = f'{pargs.ppfx}flow-ctrl {descr} Policy',
-            name        = f'{pargs.ppfx}flow-ctrl',
+            description = f'{pargs.domain.policies.prefix}flow-ctrl {descr} Policy',
+            name        = f'{pargs.domain.policies.prefix}flow-ctrl',
         )
 
         # Add Policy Variables to immDict
@@ -502,11 +636,11 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description         = f'{pargs.ppfx}kvm {descr} Policy',
+            description         = f'{pargs.domain.policies.prefix}kvm {descr} Policy',
             inband_ip_pool      = f'kvm-inband',
-            inband_vlan_id      = pargs.vlan['mgmt'],
+            inband_vlan_id      = pargs.inband.vlan_id,
             out_of_band_ip_pool = 'kvm-ooband',
-            name                = f'{pargs.ppfx}kvm',
+            name                = f'{pargs.domain.policies.prefix}kvm',
         )
 
         # Add Policy Variables to immDict
@@ -527,16 +661,15 @@ class imm(object):
         if len(pargs.dns_servers) >= 2: sdns = pargs.dns_servers[1]
         # Build Dictionary
         for i in pargs.vlans:
-            i = DotMap(deepcopy(i))
-            if re.search('(inband|iscsi|ooband)', i.type):
-                if not pargs.pools.ip.get(i.type):
-                    pargs.pools.ip[i.type] = []
-                if re.search('inband|ooband', i.type):
-                    name = f'{pargs.ppfx}kvm-{i.type}'
+            if re.search('(inband|iscsi|ooband)', i.vlan_type):
+                if not pargs.pools.ip.get(i.vlan_type):
+                    pargs.pools.ip[i.vlan_type] = []
+                if re.search('inband|ooband', i.vlan_type):
+                    name = f'{pargs.domain.policies.prefix}kvm-{i.vlan_type}'
                     pool_from = deepcopy(i.pool[0])
                     pool_to   = deepcopy(i.pool[-1])
                 else:
-                    name = f'{pargs.ppfx}iscsi-vlan{i.vlan_id}'
+                    name = f'{pargs.domain.policies.prefix}iscsi-vlan{i.vlan_id}'
                     pool_from = deepcopy(i.server[0])
                     pool_to   = deepcopy(i.server[-1])
                 kwargs['defaultGateway'] = deepcopy(i.gateway)
@@ -561,7 +694,7 @@ class imm(object):
                         secondary_dns = sdns
                     )],
                 )
-                pargs.pools.ip[i.type].append(polVars['name'])
+                pargs.pools.ip[i.vlan_type].append(polVars['name'])
                 # Add Policy Variables to immDict
                 kwargs['class_path'] = f'pools,{self.type}'
                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -578,8 +711,8 @@ class imm(object):
         # Build Dictionary
         polVars = dict(
             assignment_order = 'sequential',
-            description      = f'{pargs.ppfx}iscsi IQN Pool',
-            name             = f'{pargs.ppfx}iscsi',
+            description      = f'{pargs.domain.policies.prefix}iscsi IQN Pool',
+            name             = f'{pargs.domain.policies.prefix}iscsi',
             prefix           = f'iqn.1984-12.com.cisco',
             iqn_blocks       = [{
                 'from': 0,
@@ -604,8 +737,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description = f'{pargs.ppfx}ipmi {descr} Policy',
-            name        = f'{pargs.ppfx}ipmi',
+            description = f'{pargs.domain.policies.prefix}ipmi {descr} Policy',
+            name        = f'{pargs.domain.policies.prefix}ipmi',
         )
 
         # Add Policy Variables to immDict
@@ -624,9 +757,9 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description            = f'{pargs.ppfx}iadapter {descr} Policy',
+            description            = f'{pargs.domain.policies.prefix}iadapter {descr} Policy',
             dhcp_timeout           = 60,
-            name                   = f'{pargs.ppfx}iadapter',
+            name                   = f'{pargs.domain.policies.prefix}iadapter',
             lun_busy_retry_count   = 15,
             tcp_connection_timeout = 15,
         )
@@ -656,11 +789,11 @@ class imm(object):
         for x in range(0,len(fabrics)):
             pool = deepcopy(pargs.pools.ip['iscsi'][x])
             polVars = dict(
-                description             = f'{pargs.ppfx}{pool} {descr} Policy',
+                description             = f'{pargs.domain.policies.prefix}{pool} {descr} Policy',
                 initiator_ip_source     = 'Pool',
                 initiator_ip_pool       = pargs.pools.ip['iscsi'][x], 
-                iscsi_adapter_policy    = f'{pargs.ppfx}iadapter',
-                name                    = f'{pargs.ppfx}{pool}',
+                iscsi_adapter_policy    = f'{pargs.domain.policies.prefix}iadapter',
+                name                    = f'{pargs.domain.policies.prefix}{pool}',
                 primary_target_policy   = pargs[fabrics[x]].targets[0],
                 secondary_target_policy = pargs[fabrics[x]].targets[1],
                 target_source_type      = f'Static',
@@ -683,27 +816,29 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         pargs.iscsi.targets = []
-        for item in kwargs['immDict']['orgs'][kwargs['org']]['netapp']['svm']:
-            for i in item['data_interfaces']:
-                i = DotMap(deepcopy(i))
-                if 'iscsi' in i.name:
-                    name = pargs.netapp.data_svm + ':' + i.name
+        pargs.storage = DotMap(deepcopy(kwargs['immDict']['orgs'][kwargs['org']]['storage']))
+        for k, v in pargs.storage.items():
+            for e in v:
+                for i in e['iscsi']['interfaces']:
+                    i = DotMap(deepcopy(i))
+                    name = e.svm + ':' + i.interface
                     polVars = dict(
                         description = f'{name} {descr} Policy',
-                        ip_address  = deepcopy(i.ip.address),
+                        ip_address  = i.ip_address,
                         luns        = [{
                             'bootable':True,
                             'lun_id':0
                         }],
                         name        = f'{name}',
                         port        = 3260,
-                        target_name = pargs.netapp.iscsi.iqn,
+                        target_name = v[0]['iscsi']['iqn'],
                     )
                     pargs.iscsi.targets.append(name)
-
+                    
                     # Add Policy Variables to immDict
                     kwargs['class_path'] = f'policies,{self.type}'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)
+       
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -716,12 +851,12 @@ class imm(object):
     def lan_connectivity(self, pargs, **kwargs):
         # Build Dictionary
         vic_gen = []
-        for i in pargs.server_settings: vic_gen.append(f'{i.vic_gen}')
-        vic_gen = numpy.unique(numpy.array(vic_gen))
+        for k, v in pargs.servers.items(): vic_gen.append(f'{v.vic}')
+        vic_gen = list(numpy.unique(numpy.array(vic_gen)))
         lan_policies = ['lcp']
         for i in pargs.vlans:
             i = DotMap(deepcopy(i))
-            if i.type == 'iscsi':
+            if i.vlan_type == 'iscsi':
                 lan_policies.append('lcp-iscsi')
                 break
         for g in vic_gen:
@@ -729,14 +864,14 @@ class imm(object):
                 descr     = (self.type.replace('_', ' ')).title()
                 pci_order = deepcopy(pargs.pci_order)
                 polVars = dict(
-                    description          = f'{pargs.ppfx}vic-{g}-{lcp} {descr} Policy',
+                    description          = f'{pargs.domain.policies.prefix}vic-{g}-{lcp} {descr} Policy',
                     iqn_pool             = '',
-                    name                 = f'{pargs.ppfx}vic-{g}-{lcp}',
+                    name                 = f'{pargs.domain.policies.prefix}vic-{g}-{lcp}',
                     target_platform      = 'FIAttached',
                     vnics                = [],
                 )
                 if re.search('iscsi', lcp):
-                    polVars['iqn_pool'] = f'{pargs.ppfx}iscsi'
+                    polVars['iqn_pool'] = f'{pargs.domain.policies.prefix}iscsi'
                 else: polVars.pop('iqn_pool')
                 plist = ['mgmt-Silver', 'migration-Bronze', 'storage-Platinum', 'dvs-Gold']
                 vnic_count = 0
@@ -783,8 +918,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description = f'{pargs.ppfx}link-agg {descr} Policy',
-            name        = f'{pargs.ppfx}link-agg',
+            description = f'{pargs.domain.policies.prefix}link-agg {descr} Policy',
+            name        = f'{pargs.domain.policies.prefix}link-agg',
         )
 
         # Add Policy Variables to immDict
@@ -803,8 +938,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description = f'{pargs.ppfx}link-ctrl {descr} Policy',
-            name        = f'{pargs.ppfx}link-ctrl',
+            description = f'{pargs.domain.policies.prefix}link-ctrl {descr} Policy',
+            name        = f'{pargs.domain.policies.prefix}link-ctrl',
         )
 
         # Add Policy Variables to immDict
@@ -823,13 +958,13 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description = f'{pargs.ppfx}users {descr} Policy',
-            name        = f'{pargs.ppfx}users',
+            description = f'{pargs.domain.policies.prefix}users {descr} Policy',
+            name        = f'{pargs.domain.policies.prefix}users',
             users       = [dict(
                 enabled  = True,
                 password = 1,
                 role     = 'admin',
-                username = pargs.local_user
+                username = pargs.domain.policies.local_user
             )]
         )
 
@@ -855,10 +990,10 @@ class imm(object):
                 pool = n[2]
                 polVars = dict(
                     assignment_order = 'sequential',
-                    description      = f'{pargs.ppfx}{pool}-{flist[x]} Pool',
-                    name             = f'{pargs.ppfx}{pool}-{flist[x]}',
+                    description      = f'{pargs.domain.policies.prefix}{pool}-{flist[x]} Pool',
+                    name             = f'{pargs.domain.policies.prefix}{pool}-{flist[x]}',
                     mac_blocks       = [{
-                        'from':f'00:25:B5:{pargs.pool_prefix}:{n[x]}0:00',
+                        'from':f'00:25:B5:{pargs.domain.pools.prefix}:{n[x]}0:00',
                         'size':1024
                     }],
                 )
@@ -879,8 +1014,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description = f'{pargs.ppfx}mcast {descr} Policy',
-            name        = f'{pargs.ppfx}mcast',
+            description = f'{pargs.domain.policies.prefix}mcast {descr} Policy',
+            name        = f'{pargs.domain.policies.prefix}mcast',
         )
 
         # Add Policy Variables to immDict
@@ -899,8 +1034,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description    = f'{pargs.ppfx}dns {descr} Policy',
-            name           = f'{pargs.ppfx}dns',
+            description    = f'{pargs.domain.policies.prefix}dns {descr} Policy',
+            name           = f'{pargs.domain.policies.prefix}dns',
             dns_servers_v4 = pargs.dns_servers,
         )
 
@@ -920,8 +1055,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description = f'{pargs.ppfx}ntp {descr} Policy',
-            name        = f'{pargs.ppfx}ntp',
+            description = f'{pargs.domain.policies.prefix}ntp {descr} Policy',
+            name        = f'{pargs.domain.policies.prefix}ntp',
             ntp_servers = pargs.ntp_servers,
             timezone    = pargs.timezone,
         )
@@ -942,39 +1077,41 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         ports = []
-        for i in (pargs.uplinks.split('/')[-1]).split('-'):
-            ports.append({'port_id':int(i)})
-        epc = int((pargs.uplinks.split('/')[-1]).split('-')[0])
+        for i in pargs.domain.eth_uplinks:
+            ports.append({'port_id':int(i.split('/')[-1])})
+        x = str(pargs.domain.eth_uplinks[0]).split('/')
+        if len(x) == 3: pc_id = '1' + x[1] + x[2]
+        else: pc_id = x[-1]
+        pc_id = int(pc_id)
         polVars = dict(
-            description  = f'{pargs.name} {descr} Policy',
-            device_model = pargs.device_model,
-            names        = [f'{pargs.name}-A', f'{pargs.name}-B'],
+            description  = f'{pargs.domain.name} {descr} Policy',
+            device_model = pargs.domain.device_model,
+            names        = [f'{pargs.domain.name}-A', f'{pargs.domain.name}-B'],
             port_channel_ethernet_uplinks = [dict(
                 admin_speed                   = 'Auto',
-                ethernet_network_group_policy = 'all_vlans',
-                flow_control_policy           = 'flow-ctrl',
+                ethernet_network_group_policy = f'{pargs.domain.policies.prefix}all_vlans',
+                flow_control_policy           = f'{pargs.domain.policies.prefix}flow-ctrl',
                 interfaces                    = ports,
-                link_aggregation_policy       = 'link-agg',
-                link_control_policy           = 'link-ctrl',
-                pc_ids                        = [epc, epc],
+                link_aggregation_policy       = f'{pargs.domain.policies.prefix}link-agg',
+                link_control_policy           = f'{pargs.domain.policies.prefix}link-ctrl',
+                pc_ids                        = [pc_id, pc_id],
             )]
         )
-        configure_fc = False
-        if re.search('(fc|fc-nvme)', pargs.dtype): configure_fc = True
-        if configure_fc == True:
-            ports = []
-            x     = pargs.fcp_ports.split('/')
-            for i in (x[-1]).split('-'):
-                ports.append({'port_id':i})
+        if re.search('(fc|fc-nvme)', pargs.dtype):
+            ports= []
+            x    = pargs.domain.fcp_uplink_ports[0].split('/')
+            for i in pargs.domain.fcp_uplink_ports:
+                ports.append({'port_id':int(i.split('/')[-1])})
             if pargs.swmode == 'end-host':
-                fpc = int((x[-1]).split('-')[0])
+                if len(x) == 3: pc_id = '1' + x[1] + x[2]
+                else: pc_id = x[-1]
                 polVars.update(dict(
                     port_channel_fc_uplinks = [dict(
-                        admin_speed  = pargs.fcp_speed,
+                        admin_speed  = pargs.domain.fcp_uplink_speed,
                         fill_pattern = 'Idle',
                         interfaces   = ports,
-                        pc_ids       = [fpc, fpc],
-                        vsan_ids     = pargs.vsans
+                        pc_ids       = [pc_id, pc_id],
+                        vsan_ids     = pargs.domain.vsans
                     )]
                 ))
                 if len(x) == 3:
@@ -984,53 +1121,61 @@ class imm(object):
                 ports = x[-1]
                 polVars.update(dict(
                     port_role_fc_storage = [dict(
-                        admin_speed  = pargs.fcp_speed,
+                        admin_speed  = pargs.domain.fcp_uplink_speed,
                         port_list    = ports,
-                        vsan_ids     = pargs.vsans
+                        vsan_ids     = pargs.domain.vsans
                     )]
                 ))
                 if len(x) == 3:
                     polVars['port_role_fc_storage'].update({'breakout_port_id':x[2]})
             if len(x) == 3:
+                port_start = int(pargs.domain.fcp_uplink_ports[0].split('/')[-2])
+                port_end   = int(pargs.domain.fcp_uplink_ports[-1].split('/')[-2])
                 polVars.update(dict(
                     port_modes = [dict(
                         custom_mode = f'BreakoutFibreChannel{pargs.breakout_speed.fc}',
-                        port_list   = [35, 36]
+                        port_list   = [port_start, port_end]
                     )]
                 ))
             else:
-                ports = int(x[-1].split('-')[0])
-                porte = int(x[-1].split('-')[1])
-                if porte > 12: port_end = 16
-                elif porte > 8: port_end = 12
-                elif porte > 4: port_end = 8
+                port_start = int(pargs.domain.fcp_uplink_ports[0].split('/')[-1])
+                port_end   = int(pargs.domain.fcp_uplink_ports[-1].split('/')[-1])
+                if port_start < 15: port_start = 1
+                if port_end > 12: port_end = 16
+                elif port_end > 8: port_end = 12
+                elif port_end > 4: port_end = 8
                 else: port_end = 4
                 polVars.update(dict(
                     port_modes = [dict(
                         custom_mode = 'FibreChannel',
-                        port_list   = [1, port_end]
+                        port_list   = [port_start, port_end]
                     )]
                 ))
         polVars.update({'port_role_servers':[]})
-        for i in pargs.server_settings:
-            if len(i.ports.split('/')) == 3:
-                bp = int(i.ports.split('/'))[2]
-                polVars['port_modes'].append(dict(
-                    custom_mode = f'BreakoutEthernet{pargs.breakout_speed.eth}',
-                    port_list   = [bp, bp]
-                ))
-                polVars['port_role_servers'].append(dict(
-                    breakout_port_id      = bp,
-                    connected_device_type = i.equipement,
-                    device_number         = i.identifier,
-                    port_list             = i.ports.split('/')[-1]
-                ))
-            else:
-                polVars['port_role_servers'].append(dict(
-                    connected_device_type = i['equipment'],
-                    device_number         = i['identifier'],
-                    port_list             = i['ports'].split('/')[-1]
-                ))
+        for i in pargs.domain.profiles:
+                if len(i.domain_ports[0].split('/')) == 3:
+                    port_start= int(i.domain_ports[0].split('/'))[2]
+                    port_end  = int(i.domain_ports[-1].split('/'))[2]
+                    polVars['port_modes'].append(dict(
+                        custom_mode = f'BreakoutEthernet{pargs.breakout_speed.eth}',
+                        port_list   = [port_start, port_end]
+                    ))
+                    for e in i.domain_ports:
+                        polVars['port_role_servers'].append(dict(
+                            breakout_port_id      = e.split('/')[-2],
+                            connected_device_type = i.equipment_type,
+                            device_number         = i.identifier,
+                            port_list             = e.split('/')[-1]
+                        ))
+                else:
+                    ports = []
+                    for e in i.domain_ports: ports.append(int(e.split('/')[-1]))
+                    port_list = ezfunctions.vlan_list_format(ports)
+                    polVars['port_role_servers'].append(dict(
+                        connected_device_type = i.equipment_type,
+                        device_number         = i.identifier,
+                        port_list             = port_list
+                    ))
 
         # Add Policy Variables to immDict
         kwargs['class_path'] = f'policies,{self.type}'
@@ -1047,16 +1192,19 @@ class imm(object):
     def power(self, pargs, **kwargs):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
-        plist = ['5108', '9508', 'server']
-        for i in plist:
+        power_list = []
+        for i in pargs.chassis:
+            power_list.append(i)
+        power_list.append('server')
+        for i in power_list:
             polVars = dict(
-                description      = f'{pargs.ppfx}{i} {descr} Policy',
-                name             = f'{pargs.ppfx}{i}',
+                description      = f'{pargs.domain.policies.prefix}{i} {descr} Policy',
+                name             = f'{pargs.domain.policies.prefix}{i}',
                 power_allocation = 0,
                 power_redundancy = 'Grid',
             )
             if i == 'server': polVars.update({'power_restore':'LastState'})
-            if i == 9508: polVars['power_allocation'] = 8400
+            if '9508' in i: polVars['power_allocation'] = 8400
             else: polVars.pop('power_allocation')
 
             # Add Policy Variables to immDict
@@ -1076,37 +1224,43 @@ class imm(object):
         descr     = (self.type.replace('_', ' ')).title()
         pci_order = pargs.pci_order
         polVars = dict(
-            description          = f'{pargs.ppfx}scp {descr} Policy',
-            name                 = f'{pargs.ppfx}scp',
+            description          = f'{pargs.domain.policies.prefix}scp {descr} Policy',
+            name                 = f'{pargs.domain.policies.prefix}scp',
             target_platform      = 'FIAttached',
             vhbas                = [],
             wwnn_allocation_type = 'POOL',
-            wwnn_pool            = f'{pargs.ppfx}wwnn',
+            wwnn_pool            = f'{pargs.domain.policies.prefix}wwnn',
         )
         ncount = 1
         if   pargs.dtype == 'fc': adapter_list = ['VMware']
         elif pargs.dtype == 'fc-nvme': adapter_list = ['VMware', 'FCNVMeInitiator']
         vcount = 0
+        network_policies = []
+        for v in pargs.domain.vsans:
+            network_policies.append(f'vsan-{v}')
+        vsans = pargs.domain.vsans
         for x in range(0,len(adapter_list)):
             polVars['vhbas'].append(dict(
                 fc_zone_policies               = [],
                 fibre_channel_adapter_policy   = adapter_list[x],
-                fibre_channel_network_policies = [f'vsan-{pargs.vsans[0]}', f'vsan-{pargs.vsans[1]}'],
+                fibre_channel_network_policies = network_policies,
                 fibre_channel_qos_policy       = 'fc-qos',
                 names                          = [f'vhba{ncount}', f'vhba{ncount + 1}'],
                 placement_pci_order            = [pci_order, pci_order + 1],
                 wwpn_allocation_type           = 'POOL',
                 wwpn_pools                     = [f'wwpn-a', f'wwpn-b'],
             ))
-            if 'switch' in pargs.swmode:
+            if 'switch' in pargs.domain.switch_mode:
                 polVars['vhbas'][vcount].update({'fc_zone_policies': pargs.fc_zone})
             else: polVars['vhbas'][vcount].pop('fc_zone_policies')
             ncount += 2
             vcount += 1
             pci_order += 2
+            
             # Add Policy Variables to immDict
             kwargs['class_path'] = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
+        
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1120,8 +1274,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description = f'{pargs.ppfx}sol {descr} Policy',
-            name        = f'{pargs.ppfx}sol',
+            description = f'{pargs.domain.policies.prefix}sol {descr} Policy',
+            name        = f'{pargs.domain.policies.prefix}sol',
         )
 
         # Add Policy Variables to immDict
@@ -1140,60 +1294,58 @@ class imm(object):
         #=====================================================
         # Server Profile IP settings Function
         #=====================================================
-        def server_profiles_dict(name, p, pargs, smap):
-            pargs.server_profiles[name] = {
-                'firmware': smap.Firmware,
-                'model':  smap.Model,
-                'moid': smap.Moid,
-                'serial': smap.Serial,
-                'slot': smap.SlotId,
-                'object_type':smap.SourceObjectType
-            }
-            if smap.SourceObjectType == 'compute.Blade':
-                pargs.server_profiles[name].update({
-                    'chassis_id': p.identifier,
-                    'chassis_moid': smap.Parent.Moid,
-                })
-            else:
-                pargs.server_profiles[name].update({'id': p.identifier})
+        def server_profile_networks(name, p, pargs):
+            #=====================================================
             # Send Error Message if IP Range isn't long enough
+            #=====================================================
             def error_ip_range(i):
-                print(f'!!!ERROR!!!\nNot Enough IPs in Range {i.server} for {name}')
+                prRed(f'!!!ERROR!!!\nNot Enough IPs in Range {i.server} for {name}')
                 sys.exit(1)
-            # Send Error Message if Server Range is missing from VLAN
+
+            #=====================================================
+            # Send Error Message if Server Range is missing
+            #=====================================================
             def error_server_range(i):
-                print(f'!!!ERROR!!!\nDid Not Find Server IP Range defined for {i.type}:{i.name}:{i.vlan_id}')
+                prRed(f'!!!ERROR!!!\nDid Not Find Server IP Range defined for {i.vlan_type}:{i.name}:{i.vlan_id}')
                 sys.exit(1)
+
+            #=====================================================
             # Dictionary of IP Settings for Server
+            #=====================================================
             def ipdict(i, ipindex):
-                idict = {
-                    'gateway':i.gateway,
-                    'ip':i.server[ipindex],
-                    'netmask':i.netmask,
-                    'prefix':i.prefix,
-                    'vlan':i.vlan_id,
-                    'vlan_name':i.name,
-                }
+                idict = dict(
+                    gateway  = i.gateway,
+                    ip       = i.server[ipindex],
+                    netmask  = i.netmask,
+                    prefix   = i.prefix,
+                    vlan     = i.vlan_id,
+                    vlan_name= i.name,
+                )
                 return idict
-            for i in pargs.vlans:
-                if 'inband' in i['type']:
-                    ipindex = i['server'].index(p.inband)
-                    break
-            if 'compute.Blade' in smap.SourceObjectType:
-                ipindex = ipindex + int(smap.SlotId) - 1
+            
+            #=====================================================
+            # Obtain the Index of the Starting IP Address
+            #=====================================================
+            ipindex = pargs.inband.server.index(p.inband_start)
+            if 'compute.Blade' in pargs.server_profiles[name].object_type:
+                ipindex = ipindex + int(pargs.server_profiles[name].slot) - 1
+
+            #=====================================================
+            # Loop thru the VLANs
+            #=====================================================
             for i in pargs.vlans:
                 i = DotMap(deepcopy(i))
-                if re.search('(inband|iscsi|migration|nfs|nvme)', i.type):
+                if re.search('(inband|iscsi|migration|nfs|nvme)', i.vlan_type):
                     if not i.server: error_server_range(i)
                     if not len(i.server) >= ipindex: error_ip_range(i)
-                if re.search('(iscsi|nvme)', i.type):
-                    if not pargs.server_profiles[name].get(i.type):
-                        pargs.server_profiles[name].update({i.type:[]})
+                if re.search('(iscsi|nvme)', i.vlan_type):
+                    if not pargs.server_profiles[name].get(i.vlan_type):
+                        pargs.server_profiles[name].update({i.vlan_type:[]})
                     idict = ipdict(i, ipindex)
-                    pargs.server_profiles[name][i.type].append(idict)
-                if re.search('(inband|migration|nfs)', i.type):
+                    pargs.server_profiles[name][i.vlan_type].append(idict)
+                if re.search('(inband|migration|nfs)', i.vlan_type):
                     idict = ipdict(i, ipindex)
-                    pargs.server_profiles[name][i.type] = idict
+                    pargs.server_profiles[name][i.vlan_type] = idict
             return pargs
         
         #=====================================================
@@ -1201,75 +1353,50 @@ class imm(object):
         #=====================================================
         if 'fc' in pargs.dtype: t = 'fcp'
         else: t = 'iscsi'
-        rackServers = []
-        for p in pargs.server_settings:
-            if p.equipment == 'RackServer': rackServers.append(p.id)
-        if len(rackServers) > 0:
-            kwargs  = isdk.api('serial_number').calls(pargs, **kwargs)
-            rackmap = DotMap(deepcopy(kwargs['results']))
-        sDict = {}
-        for p in pargs.server_settings:
-            if 'True' in p.tpm:
-                template = f'{p.gen}-{p.cpu}-tpm-vic-{p.vic_gen}-{t}'
-            else: template = f'{p.gen}-{p.cpu}-vic-{p.vic_gen}-{t}'
-            if not sDict.get(template):
-                sDict.update({template:dict(
-                    action                      = 'Deploy',
-                    create_from_template        = False,
-                    targets                     = [],
-                    ucs_server_profile_template = template,
-                )})            
-        def profile_targets(name, sDict, template, smap):
-            sDict[template]['targets'].append(dict(
-                description   = f'{name} Server Profile',
-                name          = f'{name}',
-                serial_number = smap.Serial
-            ))
-            return sDict
-        #=====================================================
-        # Add Targets
-        #=====================================================
-        for p in pargs.server_settings:
-            if 'True' in p.tpm:
-                template = f'{p.gen}-{p.cpu}-tpm-vic-{p.vic_gen}-{t}'
-            else: template = f'{p.gen}-{p.cpu}-vic-{p.vic_gen}-{t}'
+        templates = []
+        for k, v in pargs.servers.items():
+            templates.append(v.template)
+        templates = numpy.unique(numpy.array(templates))
+        for template in templates:
+            polVars = dict(
+                action                     = 'Deploy',
+                create_from_template       = True,
+                targets                    = [],
+                ucs_server_profile_template= template + f'-{t}'
+            )
+            for k,v in pargs.servers.items():
+                if template == v.template:
+                    if v.object_type == 'compute.Blade':
+                        equipment_type= 'Chassis'
+                        identifier    = v.chassis_id
+                    else:
+                        equipment_type= 'RackServer'
+                        identifier    = v.server_id
+                    for p in pargs.domain.profiles:
+                        if equipment_type == p.equipment_type and int(identifier) == int(p.identifier):
+                            if equipment_type == 'RackServer':
+                                pstart = p.profile_start
+                            else:
+                                suffix = int(p.suffix_digits)
+                                pprefix= p.profile_start[:-(suffix)]
+                                pstart = int(p.profile_start[-(suffix):])
+                            break
+                    if equipment_type == 'RackServer': name = pstart
+                    else: name = f"{pprefix}{str(pstart+v.slot-1).zfill(suffix)}"
 
-            #=====================================================
-            # If Chassis, Loop Through Blades/Nodes
-            #=====================================================
-            if p.equipment == 'Chassis':
-                for k, v in pargs.chassis.items():
-                    if v.id == p.identifier:
-                        suffix = int(p.suffix)
-                        pprefix = p.profile[:-(suffix)]
-                        pstart  = int(p.profile[-(suffix):])
-                        for x in range(0,len(v.blades)):
-                            pargs.apiMethod = 'by_moid'
-                            pargs.pmoid     = v.blades[x].moid
-                            pargs.policy    = 'serial_number'
-                            pargs.purpose   = 'server'
-                            kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
-                            smap  = DotMap(deepcopy(kwargs['results']))
-                            name  = f'{pprefix}{str(pstart+smap.SlotId-1).zfill(suffix)}'
-                            sDict = profile_targets(name, sDict, template, smap)
-                            pargs = server_profiles_dict(name, p, pargs, smap)
-            elif p.equipment == 'RackServer':
-                pargs.apiMethod = 'get'
-                pargs.apiFilter  = f"RegisteredDevice.Moid eq '{pargs.registered_device}'"
-                pargs.policy    = 'serial_number'
-                pargs.purpose   = 'server'
-                kwargs          = isdk.api('serial_number').calls(pargs, **kwargs)
-                smap  = DotMap(deepcopy(kwargs['results']))
-                name  = p.profile
-                sDict = profile_targets(name, sDict, template, smap)
-                pargs = server_profiles_dict(name, p, pargs, smap)
+                    if template == template:
+                        polVars['targets'].append(dict(
+                            description  = f"{name} Server Profile.",
+                            name         = name,
+                            serial_number= k
+                        ))
+                        pargs.server_profiles[name] = v
+                        pargs = server_profile_networks(name, p, pargs)
+                    
+            polVars['targets']  = sorted(polVars['targets'], key=lambda item: item['name'])
+            kwargs['class_path']= f'profiles,{self.type}'
+            kwargs = ezfunctions.ez_append(polVars, **kwargs)
         
-        pargs.server_profiles = dict(sorted(pargs.server_profiles.items()))
-        for k, v in sDict.items():
-            # Add Policy Variables to immDict
-            v['targets'] = sorted(v['targets'], key=lambda item: item['name'])
-            kwargs['class_path'] = f'profiles,{self.type}'
-            kwargs = ezfunctions.ez_append(v, **kwargs)
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1282,34 +1409,34 @@ class imm(object):
     def snmp(self, pargs, **kwargs):
         # Build Dictionary
         polVars = dict(
-            description     = f'{pargs.ppfx}snmp Policy',
+            description     = f'{pargs.domain.policies.prefix}snmp Policy',
             enable_snmp     = True,
-            name            = f'{pargs.ppfx}snmp',
+            name            = f'{pargs.domain.policies.prefix}snmp',
             snmp_traps      = [],
             snmp_users      = [dict(
                 auth_password    = 1,
                 auth_type        = 'SHA',
-                name             = pargs.snmp_user,
+                name             = pargs.domain.policies.snmp.username,
                 privacy_password = 1,
                 privacy_type     = 'AES',
                 security_level   = 'AuthPriv'
             )],
-            system_contact  = pargs.snmp_contact,
-            system_location = pargs.snmp_location,
+            system_contact  = pargs.domain.policies.snmp.contact,
+            system_location = pargs.domain.policies.snmp.location,
         )
-        for i in pargs.snmp_servers:
+        for i in pargs.domain.policies.snmp.servers:
             polVars['snmp_traps'].append(dict(
                 destination_address = i,
                 port                = 162,
-                user                = pargs.snmp_user
+                user                = pargs.domain.policies.snmp.username
             ))
 
         # Add Policy Variables to immDict
         kwargs['class_path'] = f'policies,snmp'
         kwargs = ezfunctions.ez_append(polVars, **kwargs)
         polVars.update({
-            'description':f'{pargs.ppfx}snmp-domain Policy',
-            'name':f'{pargs.ppfx}snmp-domain'
+            'description':f'{pargs.domain.policies.prefix}snmp-domain Policy',
+            'name':f'{pargs.domain.policies.prefix}snmp-domain'
         })
         kwargs['class_path'] = f'policies,snmp'
         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1329,8 +1456,8 @@ class imm(object):
         plist = ['9508', 'Server']
         for i in plist:
             polVars = dict(
-                description      = f'{pargs.ppfx}{i} {descr} Policy',
-                name             = f'{pargs.ppfx}{i}',
+                description      = f'{pargs.domain.policies.prefix}{i} {descr} Policy',
+                name             = f'{pargs.domain.policies.prefix}{i}',
                 power_allocation = 8400,
                 power_redundancy = 'Grid',
             )
@@ -1351,10 +1478,12 @@ class imm(object):
     def switch_control(self, pargs, **kwargs):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
+        if 'fc' in pargs.dtype: switch_mode = pargs.domain.switch_mode
+        else: switch_mode = 'end-host'
         polVars = dict(
-            description       = f'{pargs.ppfx}sw-ctrl {descr} Policy',
-            fc_switching_mode = pargs.swmode,
-            name              = f'{pargs.ppfx}sw-ctrl',
+            description       = f'{pargs.domain.policies.prefix}sw-ctrl {descr} Policy',
+            fc_switching_mode = switch_mode,
+            name              = f'{pargs.domain.policies.prefix}sw-ctrl',
             vlan_port_count_optimization = True,
         )
 
@@ -1373,14 +1502,14 @@ class imm(object):
     def syslog(self, pargs, **kwargs):
         # Build Dictionary
         polVars = dict(
-            description = f'{pargs.ppfx}syslog Policy',
+            description = f'{pargs.domain.policies.prefix}syslog Policy',
             local_logging = dict(
                 minimum_severity = 'warning',
             ),
-            name            = f'{pargs.ppfx}syslog',
+            name            = f'{pargs.domain.policies.prefix}syslog',
             remote_logging      = [],
         )
-        for i in pargs.log_servers:
+        for i in pargs.domain.policies.syslog.servers:
             polVars['remote_logging'].append(dict(
                 enable           = True,
                 hostname         = i,
@@ -1391,8 +1520,8 @@ class imm(object):
         kwargs['class_path'] = f'policies,syslog'
         kwargs = ezfunctions.ez_append(polVars, **kwargs)
         polVars.update({
-            'description':f'{pargs.ppfx}syslog-domain Policy',
-            'name':f'{pargs.ppfx}syslog-domain'
+            'description':f'{pargs.domain.policies.prefix}syslog-domain Policy',
+            'name':f'{pargs.domain.policies.prefix}syslog-domain'
         })
         kwargs['class_path'] = f'policies,syslog'
         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1409,9 +1538,9 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description = f'{pargs.ppfx}qos {descr} Policy',
+            description = f'{pargs.domain.policies.prefix}qos {descr} Policy',
             classes     = [],
-            name        = f'{pargs.ppfx}qos',
+            name        = f'{pargs.domain.policies.prefix}qos',
         )
         for k, v in kwargs['ezData']['ezimm']['allOf'][1]['properties']['systemQos'].items():
             cDict = {'priority':k}
@@ -1434,55 +1563,48 @@ class imm(object):
         # Build Dictionary
         template_types = []
         server_profiles = []
-        for p in pargs.server_settings:
-            if len(server_profiles) == 0:
-                server_profiles.append(p)
-            else:
-                matched = True
-                for i in server_profiles:
-                    if not p.vic_gen == i.vic_gen: matched = False
-                    elif not p.cpu == i.cpu: matched = False
-                    elif not p.gen == i.gen: matched = False
-                    elif not p.tpm == i.tpm: matched = False
-                if matched == False: server_profiles.append(p)
+        for k, v in pargs.servers.items(): server_profiles.append(v.template)
+        server_profiles = list(numpy.unique(numpy.array(server_profiles)))
         if 'fc' in pargs.dtype: template_types.append('fcp')
         for i in pargs.vlans:
             i = DotMap(deepcopy(i))
-            if i.type == 'iscsi':
+            if i.vlan_type == 'iscsi':
                 template_types.append('iscsi')
-        template_types = numpy.unique(numpy.array(template_types))
+        template_types = list(numpy.unique(numpy.array(template_types)))
         for t in template_types:
             for p in server_profiles:
-                bios_policy = f'{p.gen}-{p.cpu}-virtual'
-                if 'True' in p.tpm:
+                bios_policy = p.split('-vic')[0] + '-virtual'
+                bios_policy = bios_policy.replace('-tpm', '')
+                if 'tpm' in p:
                     bios_policy = bios_policy + '-tpm'
-                    name = f'{p.gen}-{p.cpu}-tpm-vic-{p.vic_gen}-{t}'
-                else: name = f'{p.gen}-{p.cpu}-vic-{p.vic_gen}-{t}'
-                if 'iscsi' in t: lcp = f'vic-{p.vic_gen}-lcp-iscsi'
-                else: lcp = f'vic-{p.vic_gen}-lcp'
+                name = p + f'-{t}'
+                if 'iscsi' in t: lcp = 'vic-' + p.split('vic-')[1] + f'-lcp-iscsi'
+                else: lcp = 'vic-' + p.split('vic-')[1] + f'-lcp'
                 polVars = dict(
                     bios_policy             = bios_policy,
-                    boot_order_policy       = f'{t}-boot',
+                    boot_order_policy       = f'{pargs.domain.policies.prefix}{t}-boot',
                     description             = f'{name} Server Template',
-                    imc_access_policy       = f'{pargs.ppfx}kvm',
-                    lan_connectivity_policy = f'{pargs.ppfx}{lcp}',
-                    local_user_policy       = f'{pargs.ppfx}users',
+                    imc_access_policy       = f'{pargs.domain.policies.prefix}kvm',
+                    lan_connectivity_policy = f'{pargs.domain.policies.prefix}{lcp}',
+                    local_user_policy       = f'{pargs.domain.policies.prefix}users',
                     name                    = name,
-                    power_policy            = f'{pargs.ppfx}server',
+                    power_policy            = f'{pargs.domain.policies.prefix}server',
                     san_connectivity_policy = f'',
-                    serial_over_lan_policy  = f'{pargs.ppfx}sol',
-                    snmp_policy             = f'{pargs.ppfx}snmp',
-                    syslog_policy           = f'{pargs.ppfx}syslog',
-                    uuid_pool               = f'{pargs.ppfx}uuid',
-                    virtual_kvm_policy      = f'{pargs.ppfx}vkvm',
-                    virtual_media_policy    = f'{pargs.ppfx}vmedia',
+                    serial_over_lan_policy  = f'{pargs.domain.policies.prefix}sol',
+                    snmp_policy             = f'{pargs.domain.policies.prefix}snmp',
+                    syslog_policy           = f'{pargs.domain.policies.prefix}syslog',
+                    uuid_pool               = f'{pargs.domain.policies.prefix}uuid',
+                    virtual_kvm_policy      = f'{pargs.domain.policies.prefix}vkvm',
+                    virtual_media_policy    = f'{pargs.domain.policies.prefix}vmedia',
                 )
-                if p.gen == 'M5': polVars.pop('power_policy')
-                if 'fcp' in t: polVars.update({'san_connectivity_policy': 'scp'})
+                if 'M5' in p: polVars.pop('power_policy')
+                if 'fcp' in t: polVars.update({'san_connectivity_policy': f'{pargs.domain.policies.prefix}scp'})
                 else: polVars.pop('san_connectivity_policy')
+                
                 # Add Policy Variables to immDict
                 kwargs['class_path'] = f'{self.type},server'
                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
+        
         #=====================================================
         # Return pargs and kwargs
         #=====================================================
@@ -1495,12 +1617,11 @@ class imm(object):
     def thermal(self, pargs, **kwargs):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
-        plist = ['5108', '9508']
-        for i in plist:
+        for i in pargs.chassis:
             polVars = dict(
                 fan_control_mode = 'Balanced',
-                description      = f'{pargs.ppfx}{i} {descr} Policy',
-                name             = f'{pargs.ppfx}{i}',
+                description      = f'{pargs.domain.policies.prefix}{i} {descr} Policy',
+                name             = f'{pargs.domain.policies.prefix}{i}',
             )
 
             # Add Policy Variables to immDict
@@ -1519,11 +1640,11 @@ class imm(object):
         # Build Dictionary
         polVars = dict(
             assignment_order = 'sequential',
-            description      = f'{pargs.ppfx}uuid Pool',
-            name             = f'{pargs.ppfx}uuid',
+            description      = f'{pargs.domain.policies.prefix}uuid Pool',
+            name             = f'{pargs.domain.policies.prefix}uuid',
             prefix           = '000025B5-0000-0000',
             uuid_blocks      = [{
-                'from':f'{pargs.pool_prefix}00-000000000000',
+                'from':f'{pargs.domain.pools.prefix}00-000000000000',
                 'size':1024
             }],
         )
@@ -1544,8 +1665,8 @@ class imm(object):
         # Build Dictionary
         polVars = dict(
             allow_tunneled_vkvm = True,
-            description         = f'{pargs.ppfx}vkvm Virtual KVM Policy',
-            name                = f'{pargs.ppfx}vkvm',
+            description         = f'{pargs.domain.policies.prefix}vkvm Virtual KVM Policy',
+            name                = f'{pargs.domain.policies.prefix}vkvm',
         )
 
         # Add Policy Variables to immDict
@@ -1564,8 +1685,8 @@ class imm(object):
         descr = (self.type.replace('_', ' ')).title()
         # Build Dictionary
         polVars = dict(
-            description         = f'{pargs.ppfx}vmedia {descr} Policy',
-            name                = f'{pargs.ppfx}vmedia',
+            description         = f'{pargs.domain.policies.prefix}vmedia {descr} Policy',
+            name                = f'{pargs.domain.policies.prefix}vmedia',
         )
 
         # Add Policy Variables to immDict
@@ -1584,8 +1705,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).upper()
         polVars = dict(
-            description = f'{pargs.ppfx}vlans {descr} Policy',
-            name        = f'{pargs.ppfx}vlans',
+            description = f'{pargs.domain.policies.prefix}vlans {descr} Policy',
+            name        = f'{pargs.domain.policies.prefix}vlans',
             vlans       = [dict(
                 auto_allow_on_uplinks = True,
                 multicast_policy      = 'mcast',
@@ -1629,11 +1750,11 @@ class imm(object):
         else: vsan_scope = 'Storage'
         for i in pargs.vsans:
             polVars = dict(
-                description = f'{pargs.ppfx}vsan-{i} {descr} Policy',
-                name        = f'{pargs.ppfx}vsan-{i}',
+                description = f'{pargs.domain.policies.prefix}vsan-{i} {descr} Policy',
+                name        = f'{pargs.domain.policies.prefix}vsan-{i}',
                 vsans       = [dict(
                     fcoe_vlan_id = i,
-                    name         = f'{pargs.ppfx}vsan-{i}',
+                    name         = f'{pargs.domain.policies.prefix}vsan-{i}',
                     vsan_id      = i,
                     vsan_scope   = vsan_scope
                 )]
@@ -1663,10 +1784,17 @@ class wizard(object):
         # Configure Domain Policies
         #==================================
         policy_list = kwargs['ezData']['ezimm']['allOf'][1]['properties']['list_domains']['enum']
-        policy_list.pop('domain')
+        policy_list.remove('domain')
+        policy_list.insert(0, 'ethernet_network_group')
         policy_list.sort()
         if not re.search('fc(-nvme)?', pargs.dtype): policy_list.pop('vsan')
-        for i in policy_list: kwargs, pargs = eval(f'imm(i).{i}(pargs, **kwargs)')
+        for k, v in pargs.imm.domain.items():
+            for i in policy_list:
+                pargs.domain = v
+                pargs.domain.name = k
+                if pargs.domain.policies.prefix == None:
+                    pargs.domain.policies.prefix = ''
+                kwargs, pargs = eval(f'imm(i).{i}(pargs, **kwargs)')
 
         #==================================
         # Configure Domain Profiles
@@ -1684,32 +1812,69 @@ class wizard(object):
     #=============================================================================
     def build_imm_servers(self, pargs, **kwargs):
         #==================================
-        # Configure IMM Pools and Policies
+        # Configure IMM Pools
         #==================================
-        plist = list(kwargs['ezData']['pools']['allOf'][1]['properties'].keys())
-        plist.remove('resource')
-        plist.extend(list(kwargs['ezData']['policies']['allOf'][1]['properties'].keys()))
-        pop_list = kwargs['ezData']['ezimm']['allOf'][1]['properties']['converged.pop_list']['enum']
-        for i in pop_list: plist.remove(i)
-        pop_list = kwargs['ezData']['ezimm']['allOf'][1]['properties']['converged.fc_pop_list']['enum']
+        pool_list = list(kwargs['ezData']['pools']['allOf'][1]['properties'].keys())
+        pool_list.remove('resource')
+        for k, v in pargs.imm.domain.items():
+            for i in pool_list:
+                pargs.domain = v
+                pargs.domain.name = k
+                if pargs.domain.policies.prefix == None:
+                    pargs.domain.policies.prefix = ''
+                kwargs, pargs = eval(f'imm(i).{i}(pargs, **kwargs)')
+
+        #==================================
+        # Modify the Policy List
+        #==================================
+        ezData = kwargs['ezData']['policies']['allOf'][1]['properties']
+        policy_list = list(ezData.keys())
+        ezData = kwargs['ezData']['ezimm']['allOf'][1]['properties']
+        pop_list = ezData['converged.pop_list']['enum']
+        for i in pop_list: policy_list.remove(i)
+        pop_list = ezData['converged.fc_pop_list']['enum']
         if re.search('fc(-nvme)?', pargs.dtype):
-            if pargs.sw_mode == 'end-host': plist.remove('fc_zone')
+            if pargs.sw_mode == 'end-host': policy_list.remove('fc_zone')
         else:
-            for i in pop_list: plist.remove(i)
-        pargs.pci_order = 0
-        if 'iscsi_boot' in plist:
-            plist.remove('iscsi_static_target')
-            plist.insert((plist.index('iscsi_boot') - 1), 'iscsi_static_target')
-        for i in plist: kwargs, pargs = eval(f'imm(i).{i}(pargs, **kwargs)')
+            for i in pop_list: policy_list.remove(i)
+
+        if 'iscsi_boot' in policy_list:
+            policy_list.remove('iscsi_static_target')
+            policy_list.insert((policy_list.index('iscsi_boot') - 1), 'iscsi_static_target')
+        pop_list = ['ethernet_network_group', 'snmp', 'syslog']
+        for i in pop_list:
+            if kwargs['immDict']['orgs'].get(kwargs['org']):
+                if kwargs['immDict']['orgs'][kwargs['org']].get('policies'):
+                    if kwargs['immDict']['orgs'][kwargs['org']]['policies'].get(i):
+                        policy_list.remove(i)
+
         #==================================
-        # Configure Domain Profiles
+        # Configure IMM Policies
         #==================================
-        kwargs, pargs = imm('domain').domain(pargs, **kwargs)
+        for k, v in pargs.imm.domain.items():
+            pargs.domain = v
+            pargs.domain.name = k
+            if pargs.domain.policies.prefix == None:
+                pargs.domain.policies.prefix = ''
+            i = 'compute_environment'
+            #kwargs, pargs = eval(f"imm(i).{i}(pargs, **kwargs)")
+            #print(pargs.servers.toDict())
+            #print(pargs.chassis.toDict())
+            #exit()
+            pargs.servers = DotMap({'FCH21427CHB': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c64eeb76752d3135626948', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH21427CHB', 'server_id': 0, 'slot': 7, 'template': 'M5-intel-vic-gen4', 'tpm': '', 'vic': 'gen4'}, 'FCH213271VU': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c6513e76752d313562f0cc', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH213271VU', 'server_id': 0, 'slot': 3, 'template': 'M5-intel-vic-gen4', 'tpm': '', 'vic': 'gen4'}, 'FCH222974YZ': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c6559676752d313564167f', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH222974YZ', 'server_id': 0, 'slot': 2, 'template': 'M5-intel-vic-gen4', 'tpm': '', 'vic': 'gen4'}, 'FLM2509002F': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c655c476752d31356420ff', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FLM2509002F', 'server_id': 0, 'slot': 8, 'template': 'M5-intel-vic-gen4', 'tpm': '', 'vic': 'gen4'}, 'FCH21427JG8': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c65d7276752d313565f3bc', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH21427JG8', 'server_id': 0, 'slot': 5, 'template': 'M5-intel-vic-gen4', 'tpm': '', 'vic': 'gen4'}, 'FCH243974V2': {'chassis_id': '2', 'chassis_moid': '63a1ec1076752d31353e0780', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M6', 'moid': '63a1ecb176752d31353e3720', 'model': 'UCSX-210C-M6', 'object_type': 'compute.Blade', 'serial': 'FCH243974V2', 'server_id': 0, 'slot': 8, 'template': 'M6-intel-tpm-vic-gen4', 'tpm': '-tpm', 'vic': 'gen4'}, 'FCH24397500': {'chassis_id': '2', 'chassis_moid': '63a1ec1076752d31353e0780', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M6', 'moid': '63a1ecb276752d31353e377d', 'model': 'UCSX-210C-M6', 'object_type': 'compute.Blade', 'serial': 'FCH24397500', 'server_id': 0, 'slot': 7, 'template': 'M6-intel-tpm-vic-gen4', 'tpm': '-tpm', 'vic': 'gen4'}, 'FCH243974WZ': {'chassis_id': '2', 'chassis_moid': '63a1ec1076752d31353e0780', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M6', 'moid': '63a1ed0476752d31353e4938', 'model': 'UCSX-210C-M6', 'object_type': 'compute.Blade', 'serial': 'FCH243974WZ', 'server_id': 0, 'slot': 6, 'template': 'M6-intel-tpm-vic-gen4', 'tpm': '-tpm', 'vic': 'gen4'}})
+            pargs.chassis = DotMap({'ucsb-5108-ac2': [{'domain': 'r142c', 'identity': 1, 'serial': 'FOX2528PK0Z'}], 'ucsx-9508': [{'domain': 'r142c', 'identity': 2, 'serial': 'FOX2501P0BF'}]})
+            pargs.pci_order = 0
+            for i in policy_list:
+                kwargs, pargs = eval(f'imm(i).{i}(pargs, **kwargs)')
+
+        pargs.policy_list = policy_list
         #=====================================================
         # Configure Templates/Chassis/Server Profiles
         #=====================================================
         profiles_list = ['templates', 'chassis', 'server']
-        for p in profiles_list: kwargs, pargs = eval(f'imm(p).{p}(pargs, **kwargs)')
+        for p in profiles_list:
+            kwargs, pargs = eval(f'imm(p).{p}(pargs, **kwargs)')
+        
         #=====================================================
         # Return kwargs and pargs
         #=====================================================
@@ -1725,16 +1890,22 @@ class wizard(object):
         #=====================================================
         plist = ['cluster', 'nodes', 'schedule', 'snmp', 'svm', 'volume']
         plist = ['cluster']
-        for i in plist:
-            for k,v in pargs.netapp.cluster.items():
+        for k,v in pargs.netapp.cluster.items():
+            for i in plist:
                 kwargs, pargs = eval(f'netapp.build(i).{i}(pargs, k, v, **kwargs)')
         #==================================
         # Configure NetApp
         #==================================
-        plist= ['cluster', 'cluster_init']
+        plist= ['cluster']
         for i in plist:
-            pargs.items = kwargs['immDict']['orgs'][kwargs['org']]['netapp'][i]
             kwargs, pargs = eval(f'netapp.api(i).{i}(pargs, **kwargs)')
+
+        # Add Policy Variables to immDict
+        idict = pargs.storage.toDict()
+        for k, v in idict.items():
+            for a, b in v.items():
+                kwargs['class_path'] = f'storage,appliances'
+                kwargs = ezfunctions.ez_append(b, **kwargs)
 
         #=====================================================
         # Return kwargs and pargs
@@ -1777,12 +1948,14 @@ class wizard(object):
                 pargs.imm.pool.prefix    = item.pools.prefix
                 pargs.imm.policies       = item.policies
                 pargs.imm.domain[i.name] = DotMap(
-                    breakout_speed = i.eth_breakout_speed,
-                    eth_uplinks    = i.eth_uplink_ports,
-                    organization   = item.organization,
-                    profiles       = i.profiles,
-                    serial_numbers = i.serial_numbers,
-                    tags           = kwargs['ezData']['tags']
+                    eth_breakout_speed = i.eth_breakout_speed,
+                    eth_uplinks        = i.eth_uplink_ports,
+                    organization       = item.organization,
+                    policies           = item.policies,
+                    pools              = item.pools,
+                    profiles           = i.profiles,
+                    serial_numbers     = i.serial_numbers,
+                    tags               = kwargs['ezData']['tags']
                 )
                 #==================================
                 # Build Domain Network Dictionary
@@ -1815,10 +1988,10 @@ class wizard(object):
                 # Confirm if Fibre-Channel is in Use
                 #=====================================================
                 if re.search('(fc|fc-nvme)', pargs.dtype):
-                    pargs.imm.domain[i.name].fcp_ports  = i.fcp_uplink_ports
-                    pargs.imm.domain[i.name].fcp_speed  = i.fcp_uplink_speed
-                    pargs.imm.domain[i.name].switch_mode= i.switch_mode
-                    pargs.imm.domain[i.name].vsans      = i.vsans
+                    pargs.imm.domain[i.name].fcp_uplink_ports= i.fcp_uplink_ports
+                    pargs.imm.domain[i.name].fcp_uplink_speed= i.fcp_uplink_speed
+                    pargs.imm.domain[i.name].switch_mode     = i.switch_mode
+                    pargs.imm.domain[i.name].vsans           = i.vsans
         
         #=====================================================
         # Return pargs and kwargs
@@ -1838,12 +2011,19 @@ class wizard(object):
         for item in kwargs['immDict']['wizard']['netapp']:
             item = deepcopy(DotMap(item))
             for i in item.clusters:
+                pargs.storage[i.name][i.svm.name] = DotMap(
+                    cluster= i.name,
+                    name   = f"{i.name}:{i.svm.name}",
+                    svm    = i.svm.name,
+                    vendor = 'netapp'
+                )
                 cname = i.name
+                sname = i.svm.name
                 rootv = (i.svm.name).replace('-', '_').lower() + '_root'
                 pargs.netapp.cluster[cname] = DotMap(
                     autosupport= item.autosupport,
                     banner     = item.login_banner,
-                    hostPrompt = r'[\w]+::>',
+                    host_prompt= r'[\w]+::>',
                     nodes      = i.nodes,
                     protocols  = pargs.protocols,
                     snmp       = item.snmp,
@@ -1940,21 +2120,6 @@ class wizard(object):
 
 
     #=============================================================================
-    # Function - Wizard Worksheet Policy Settings
-    #=============================================================================
-    def settings(self, **kwargs):
-        # Get Variables from Library
-        kwargs['validateData'] = kwargs['ezData'][f'wizard.{self.type}']['allOf'][1]['properties']
-        # Build Dictionary of Policy Variables
-        polVars = ezfunctions.process_kwargs(**kwargs)
-
-        # Add Policy Variables to immDict
-        kwargs['class_path'] = f'{self.type}'
-        kwargs = ezfunctions.ez_append_wizard(polVars, **kwargs)
-        return kwargs
-
-
-    #=============================================================================
     # Function - Converged Stack - VLAN Attributes
     #=============================================================================
     def vlans(self, pargs, **kwargs):
@@ -2023,7 +2188,7 @@ class wizard(object):
         # Build Protocols Dictionary
         #==================================
         if 'fc' in pargs.dtype: protocols.append('fcp')
-        protocols = numpy.unique(numpy.array(protocols))
+        protocols = list(numpy.unique(numpy.array(protocols)))
         pargs.protocols = []
         for i in protocols: pargs.protocols.append(i)
 
@@ -2051,7 +2216,7 @@ class fw_os(object):
         pargs.models = []
         for k,v in  pargs.server_profiles.items():
             pargs.models.append(v['model'])
-        pargs.models = numpy.unique(numpy.array(pargs.models))
+        pargs.models = list(numpy.unique(numpy.array(pargs.models)))
         #==================================
         # Get CCO Password and Root
         #==================================
@@ -2071,7 +2236,6 @@ class fw_os(object):
             kwargs = isdk.api(self.type).calls(pargs, **kwargs)
             sw_moids.update({m:{'Moid':kwargs['results'][0]['Moid']}})
         pargs.pop('apiFilter')
-        print(sw_moids)
         #==================================
         # Software Repository Auth
         #==================================
@@ -2182,7 +2346,7 @@ class fw_os(object):
                         print(f'    - Completed Firmware Upgrade for {k}.')
                     elif kwargs['results']['Overallstatus'] == 'failed':
                         pargs.upgrade.failed.update({k:v.moid})
-                        print(f'!!!FAILED!!! Firmware Upgrade for Server Profile {k}: Server {v.serial} failed.')
+                        prRed(f'!!!FAILED!!! Firmware Upgrade for Server Profile {k}: Server {v.serial} failed.')
                         upgrade_complete = True
                     else: 
                         print(f'      * Firmware Upgrade still ongoing for {k}.  Waiting 120 seconds.')
@@ -2206,7 +2370,7 @@ class fw_os(object):
         pargs.models = []
         for k,v in  pargs.server_profiles.items():
             pargs.models.append(v['model'])
-        pargs.models = numpy.unique(numpy.array(pargs.models))
+        pargs.models = list(numpy.unique(numpy.array(pargs.models)))
         pargs.repository_server = 'rdp1.rich.ciscolabs.com'
         pargs.repository_path = '/'
         pargs.scu_iso = 'ucs-scu-6.2.3b.iso'
@@ -2269,7 +2433,7 @@ class fw_os(object):
         try:
             r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
         except requests.RequestException as e:
-            print(f"!!!ERROR!!!\n  Exception when calling {repo_url}:\n {e}\n")
+            prRed(f"!!!ERROR!!!\n  Exception when calling {repo_url}:\n {e}\n")
             sys.exit(1)
         #size = r.headers.get('content-length', -1)
         #==================================
@@ -2311,7 +2475,7 @@ class fw_os(object):
         try:
             r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
         except requests.RequestException as e:
-            print(f"!!!ERROR!!!\n  Exception when calling {repo_url}:\n {e}\n")
+            prRed(f"!!!ERROR!!!\n  Exception when calling {repo_url}:\n {e}\n")
             sys.exit(1)
         #size = r.headers.get('content-length', -1)
         #==================================
@@ -2435,7 +2599,7 @@ class fw_os(object):
                         print(f'    - Completed Operating System Installation for {k}.')
                     elif re.search('(FAILED|TERMINATED|TIME_OUT)', kwargs['results']['Status']):
                         pargs.upgrade.failed.update({k:v.moid})
-                        print(f'!!!FAILED!!! Operating System Installation for Server Profile {k} failed.')
+                        prRed(f'!!!FAILED!!! Operating System Installation for Server Profile {k} failed.')
                         install_complete = True
                     else:
                         progress = kwargs['results']['Progress']
@@ -2449,3 +2613,13 @@ class fw_os(object):
         validating.end_section(self.type, 'Install')
         return kwargs, pargs
 
+#=====================================================
+# Print Color Functions
+#=====================================================
+def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
+def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
