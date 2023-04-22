@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
-
+from classes import ezfunctionsv2 as ezfunctions
+from classes import validatingv2 as validating
 from copy import deepcopy
 from dotmap import DotMap
 import datetime
-import ezfunctions
 import ipaddress
 import os
 import pexpect
@@ -11,7 +10,6 @@ import pytz
 import re
 import sys
 import time
-import validating
 
 class nxos(object):
     def __init__(self, type):
@@ -20,7 +18,7 @@ class nxos(object):
     #=====================================================
     # NX-OS Configuration Setup
     #=====================================================
-    def config(self, network_config, sw_type, pargs, **kwargs):
+    def config(self, network_config, sw_type, kwargs):
         #=====================================================
         # Send Start Notification
         #=====================================================
@@ -30,13 +28,13 @@ class nxos(object):
         #=====================================================
         # Global Commands
         #=====================================================
-        base_commands = base_configuration(pargs)
+        base_commands = base_configuration(kwargs)
 
         #=====================================================
         # Timezone and NTP Configuration
         #=====================================================
-        base_commands.extend(timezone_conversion(pargs, **kwargs))
-        for ntp in  pargs.ntp_servers:
+        base_commands.extend(timezone_conversion(kwargs))
+        for ntp in  kwargs.ntp_servers:
             base_commands.append(f"ntp server {ntp} use-vrf management")
         
         #=====================================================
@@ -44,7 +42,7 @@ class nxos(object):
         #=====================================================
         base_commands.extend([
             f"vrf context management",
-            f"  ip route 0.0.0.0/0 {pargs.ooband.gateway}",
+            f"  ip route 0.0.0.0/0 {kwargs.ooband.gateway}",
             f"  exit"
         ])
         
@@ -75,8 +73,8 @@ class nxos(object):
         hostPrompt  = r'[\w\-]{3,64}(\([\w\-]+\))?#'
         sshQuestion = 'Are you sure you want to continue'
         systemShell = os.environ['SHELL']
-        kwargs['Variable'] = 'nexus_password'
-        kwargs   = ezfunctions.sensitive_var_value(**kwargs)
+        kwargs.sensitive_var= 'nexus_password'
+        kwargs = ezfunctions.sensitive_var_value(kwargs)
         #=====================================================
         # Spawn the environment Shell
         #=====================================================
@@ -86,8 +84,6 @@ class nxos(object):
         # Loop Through the Switch Configurations
         #=====================================================
         for x in range(0,len(nxmap)):
-            pargs.imm.allowed_vlans     = []
-            pargs.storage.allowed_vlans = []
             cmds = []
             if sw_type == 'network':
                 cmds = deepcopy(base_commands)
@@ -102,23 +98,22 @@ class nxos(object):
             # Append VLAN Configuration
             #================================
             if sw_type == 'network':
-                cmds.extend(vlan_config(x, nxmap, pargs))
+                cmds.extend(vlan_config(x, nxmap, kwargs))
 
             #================================
             # Configure Port-Channels as VPC
             #================================
-            cmds.extend(add_interfaces(x, nxmap, pargs))
+            cmds.extend(add_interfaces(x, nxmap, kwargs))
             cmds.append('end')
-
             #================================
             # Open SSH Session
             #================================
-            hostname = nxmap[x].hostname + '.' + pargs.dns_domains[0]
-            password = kwargs['var_value']
-            username = network_config.username
+            hostname= nxmap[x].hostname + '.' + kwargs.dns_domains[0]
+            password= kwargs['var_value']
+            username= network_config.username
             child.sendline(f'ssh {username}@{hostname}')
             child.expect(f'ssh {username}@{hostname}')
-
+            
             #================================
             # Login to the NX-OS Device
             #================================
@@ -135,7 +130,7 @@ class nxos(object):
                     child.sendline('enable')
                     child.expect('enable')
                 elif i == 4: logged_in = True
-
+            
             #=====================================================
             # Send Configuration to Switch
             #=====================================================
@@ -156,25 +151,25 @@ class nxos(object):
         # Send End Notification and return kwargs
         #=====================================================
         validating.end_section(self.type, 'nxos')
-        return kwargs, pargs
+        return kwargs
 
 
 #=====================================================
 # Add VLAN Configuration to Switch Commands
 #=====================================================
-def add_interfaces(x, nxmap, pargs):
+def add_interfaces(x, nxmap, kwargs):
     #================================
     # Allowed VLAN Lists
     #================================
-    storage_vlans= ezfunctions.vlan_list_format(pargs.storage.allowed_vlans)
-    domain_vlans = ezfunctions.vlan_list_format(pargs.imm.allowed_vlans)
+    storage_vlans= ezfunctions.vlan_list_format(kwargs.storage.allowed_vlans)
+    domain_vlans = ezfunctions.vlan_list_format(kwargs.imm.allowed_vlans)
     cmds = ["!"]
     #================================
     # Loop Thru Interfaces
     #================================
     net_list = ['imm', 'storage']
     for item in net_list:
-        for k, v in pargs.network[item].items():
+        for k, v in kwargs.network[item].items():
             if nxmap[x].sw_type == 'ooband':
                 if item == 'storage': descr = f"{k}-e0M"
                 elif   item == 'imm': descr = f"{k}-mgmt0"
@@ -186,7 +181,7 @@ def add_interfaces(x, nxmap, pargs):
                     f"  description {descr}",
                     f"  switchport",
                     f"  switchport host",
-                    f"  switchport access vlan {pargs.ooband.vlan_id}",
+                    f"  switchport access vlan {kwargs.ooband.vlan_id}",
                 ])
             #===============================================
             # Configure Network Ports and VPC Port-Channels
@@ -243,7 +238,7 @@ def add_interfaces(x, nxmap, pargs):
 #=====================================================
 # Base Configuration - features and global cmds
 #=====================================================
-def base_configuration(pargs):
+def base_configuration(kwargs):
     cmds = [
         f"configure terminal",
         f"feature interface-vlan",
@@ -257,8 +252,8 @@ def base_configuration(pargs):
         f"spanning-tree port type edge bpduguard default",
         f"spanning-tree port type edge bpdufilter default",
         f"port-channel load-balance src-dst l4port",
-        f"ip name-server {' '.join(pargs.dns_servers)}",
-        f"ip domain-name {pargs.dns_domains[0]}",
+        f"ip name-server {' '.join(kwargs.dns_servers)}",
+        f"ip domain-name {kwargs.dns_domains[0]}",
         f"ip domain-lookup",
         f"ntp master 3",
     ]
@@ -267,10 +262,10 @@ def base_configuration(pargs):
 #======================================================
 # Function - Convert Timezone to NX-OS Commands
 #======================================================
-def timezone_conversion(pargs, **kwargs):
-    cmds = []
-    tzDict = DotMap(deepcopy(kwargs['ezData']['wizard.nxos']['allOf'][1]['properties']))
-    tz = deepcopy(pargs.timezone)
+def timezone_conversion(kwargs):
+    cmds  = []
+    tzDict= kwargs.ezData['wizard.nxos'].allOf[1].properties
+    tz    = kwargs.timezone
     time_offset = pytz.timezone(tz).localize(datetime.datetime(2023,1,25)).strftime('%z')
     tzr = tz.split('/')[0]
     timezone_countries = {timezone: country 
@@ -300,14 +295,18 @@ def timezone_conversion(pargs, **kwargs):
 #=====================================================
 # Add VLAN Configuration to Switch Commands
 #=====================================================
-def vlan_config(x, nxmap, pargs):
-    cmds = ["!"]
+def vlan_config(x, nxmap, kwargs):
+    kwargs.imm    = DotMap()
+    kwargs.storage= DotMap()
+    cmds          = ["!"]
     #=====================================================
     # Add Ranges to Network Switches
     #=====================================================
-    for i in pargs.ranges:
+    kwargs.imm.allowed_vlans = []
+    for i in kwargs.ranges:
         vlan_range = ezfunctions.vlan_list_full(i.vlan_list)
-        if nxmap[x].sw_type == 'network': pargs.imm.allowed_vlans.extend(vlan_range)
+        if nxmap[x].sw_type == 'network':
+            kwargs.imm.allowed_vlans.extend(vlan_range)
         if i.configure_l2 == True and nxmap[x].sw_type == 'network':
             for v in vlan_range:
                 if   re.search(r'^[\d]{4}$', str(v)): vname = f"{i.name}-vl{v}"
@@ -323,10 +322,11 @@ def vlan_config(x, nxmap, pargs):
     #=====================================================
     # Add VLANs to the Appropriate Switch Types
     #=====================================================
-    for i in pargs.vlans:
+    kwargs.storage.allowed_vlans= []
+    for i in kwargs.vlans:
         if re.search('(inband|iscsi|nvme|nfs)', i.vlan_type) and nxmap[x].sw_type == 'network':
-            pargs.imm.allowed_vlans.append(i.vlan_id)
-            pargs.storage.allowed_vlans.append(i.vlan_id)
+            kwargs.imm.allowed_vlans.append(i.vlan_id)
+            kwargs.storage.allowed_vlans.append(i.vlan_id)
         ip_network  = ipaddress.IPv4Network(i.network)
         ip_broadcast= ip_network.broadcast_address
         ip_gateway  = ipaddress.IPv4Address(i.gateway)
@@ -403,7 +403,7 @@ def vpc_config(x, nxmap):
     #================================
     def breakout_config(x, cmds, nxmap, port):
         breakout = port.split("/")[1]
-        speed = deepcopy(nxmap[x]['breakout_speed'])
+        speed = nxmap[x]['breakout_speed']
         breakout_check = True
         for cmd in cmds:
             if f'breakout module 1 port {breakout}' in cmd: breakout_check = False

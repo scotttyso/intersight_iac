@@ -45,6 +45,7 @@ from intersight.api import workflow_api
 from intersight.exceptions import ApiException
 import credentials
 import json
+import intersight
 import re
 import sys
 import time
@@ -712,7 +713,7 @@ class api(object):
                     apiResults = json.loads(apiCall(pargs.pmoid, pargs.apiBody, **apiArgs).data)
                 elif 'create' in pargs.apiMethod:
                     apiResults = json.loads(apiCall(pargs.apiBody, **apiArgs).data)
-            except ApiException as e:
+            except intersight.ApiException as e:
                 if re.search('Your token has expired', str(e)) or re.search('Not Found', str(e)):
                     kwargs['results'] = False
                     return kwargs
