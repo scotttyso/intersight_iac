@@ -1,28 +1,23 @@
-#!/usr/bin/env python3
-
 #=============================================================================
 # Source Modules
 #=============================================================================
+from classes import ezfunctionsv2 as ezfunctions
+from classes import netapp
+from classes import isight
 from copy import deepcopy
 from dotmap import DotMap
-import difflib
 import ipaddress
 import json
 import numpy
 import os
 import re
 import requests
-import socket
 import sys
 import time
 import validatingv2 as validating
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-sys.path.insert(0, './classes')
-from classes import ezfunctionsv2 as ezfunctions
-from classes import netapp
-from classes import isight
 #=======================================================
 # IMM Class
 #=======================================================
@@ -351,7 +346,9 @@ class imm(object):
     def ethernet_adapter(self, kwargs):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
-        plist = ['16RxQs-4G', '16RxQs-5G', 'VMware', 'VMware-High-Trf']
+        plist = ['16RxQs-4G', '16RxQs-5G']
+        for item in kwargs.virtualization:
+            if item.type == 'vmware': plist.extend(['VMware', 'VMware-High-Trf'])
         for i in plist:
             polVars = dict(
                 adapter_template = i,
@@ -374,25 +371,24 @@ class imm(object):
     def ethernet_network_control(self, kwargs):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
-        plist = ['cdp', 'cdp-lldp', 'lldp']
-        for i in plist:
-            if 'cdp' in i: cdpe = True
-            else: cdpe = False
-            if 'lldp' in i: lldpe = True
-            else: lldpe = False
-            polVars = dict(
-                cdp_enable           = cdpe,
-                description          = f'{kwargs.domain.policies.prefix}{i} {descr} Policy',
-                name                 = f'{kwargs.domain.policies.prefix}{i}',
-                lldp_receive_enable  = lldpe,
-                lldp_transmit_enable = lldpe,
-                mac_register_mode    = 'nativeVlanOnly',
-                mac_security_forge   = 'allow',
-            )
+        name = kwargs.domain.discovery_protocol
+        if 'cdp' in name: cdpe = True
+        else: cdpe = False
+        if 'lldp' in name: lldpe = True
+        else: lldpe = False
+        polVars = dict(
+            cdp_enable           = cdpe,
+            description          = f'{kwargs.domain.policies.prefix}{name} {descr} Policy',
+            name                 = f'{kwargs.domain.policies.prefix}{name}',
+            lldp_receive_enable  = lldpe,
+            lldp_transmit_enable = lldpe,
+            mac_register_mode    = 'nativeVlanOnly',
+            mac_security_forge   = 'allow',
+        )
 
-            # Add Policy Variables to immDict
-            kwargs.class_path = f'policies,{self.type}'
-            kwargs = ezfunctions.ez_append(polVars, kwargs)
+        # Add Policy Variables to immDict
+        kwargs.class_path = f'policies,{self.type}'
+        kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -403,53 +399,129 @@ class imm(object):
     # Function - Build Policy - Ethernet Network Group
     #=============================================================================
     def ethernet_network_group(self, kwargs):
-        # Build Dictionary
-        descr = (self.type.replace('_', ' ')).title()
-        vlans = []
-        for i in kwargs.vlans: vlans.append(i.vlan_id)
-        for i in kwargs.ranges:
-            vrange = ezfunctions.vlan_list_full(i.vlan_list)
-            vlans.extend(vrange)
-        kwargs.vlan = DotMap()
-        kwargs.vlan.iscsi     = []
-        kwargs.vlan.mgmt      = ''
-        kwargs.vlan.migration = ''
-        kwargs.vlan.nfs       = ''
-        kwargs.vlan.nvme      = []
-        kwargs.vlan['all_vlans'] = ezfunctions.vlan_list_format(list(numpy.unique(numpy.array(vlans))))
-        for i in kwargs.vlans:
-            if   i.vlan_type == 'inband': kwargs.vlan.mgmt = i.vlan_id
-            elif i.vlan_type == 'iscsi': kwargs.vlan.iscsi.append(i.vlan_id)
-            elif i.vlan_type == 'migration': kwargs.vlan.migration = i.vlan_id
-            elif i.vlan_type == 'nfs': kwargs.vlan.nfs = i.vlan_id
-            elif i.vlan_type == 'nvme': kwargs.vlan.nvme.append(i.vlan_id)
-        if len(kwargs.vlan.iscsi) == 2 and len(kwargs.vlan.nvme) == 2:
-            kwargs.vlan.storage_a = ezfunctions.vlan_list_format(sorted(
-                [kwargs.vlan.nfs, kwargs.vlan.iscsi[0], kwargs.vlan.nvme[0]]))
-            kwargs.vlan.storage_b = ezfunctions.vlan_list_format(sorted(
-                [kwargs.vlan.nfs, kwargs.vlan.iscsi[1], kwargs.vlan.nvme[1]]))
-        else:
-            kwargs.vlan.storage_a = kwargs.vlan.nfs
-            kwargs.vlan.storage_b = kwargs.vlan.nfs
-        plist = ['mgmt', 'migration', 'storage-a', 'storage-b', 'all_vlans']
-        for i in plist:
-            if re.search('(mgmt|migration)', i) and len(str(kwargs.vlan[i])) > 0: nvlan = kwargs.vlan[i]
-            elif 'storage-a' == i and len(kwargs.vlan.iscsi) == 2:
-                nvlan = kwargs.vlan.iscsi[0]
-            elif 'storage-b' == i and len(kwargs.vlan.iscsi) == 2:
-                nvlan = kwargs.vlan.iscsi[1]
-            else: nvlan = 1
-            vlan_name = i.replace('-', '_')
+        kwargs.descr = (self.type.replace('_', ' ')).title()
+        #=====================================================
+        # Assign Configuration to Policy
+        #=====================================================
+        def create_eth_groups(kwargs):
             polVars = dict(
-                allowed_vlans = f'{kwargs.vlan[vlan_name]}',
-                description   = f'{kwargs.domain.policies.prefix}{i} {descr} Policy',
-                name          = f'{kwargs.domain.policies.prefix}{i}',
-                native_vlan   = nvlan,
+                allowed_vlans = kwargs.allowed,
+                description   = f'{kwargs.domain.policies.prefix}{kwargs.name} {kwargs.descr} Policy',
+                name          = f'{kwargs.domain.policies.prefix}{kwargs.name}',
+                native_vlan   = kwargs.native,
             )
-            
             # Add Policy Variables to immDict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
+            return kwargs
+
+        #=====================================================
+        # Add All VLANs for Guest vSwitch
+        #=====================================================
+        vlans = []
+        for i in kwargs.vlans: vlans.append(i.vlan_id)
+        for i in kwargs.ranges:
+            vrange = ezfunctions.vlan_list_full(i.vlan_list); vlans.extend(vrange)
+        vlans = list(numpy.unique(numpy.array(vlans))); vlans.sort()
+        kwargs.vlan.all_vlans = ezfunctions.vlan_list_format(vlans)
+
+        kwargs.disjoint= False
+        kwargs.iscsi = 0;  kwargs.iscsi_vlans= []; kwargs.nvme = 0; kwargs.nvme_vlans = []
+        for i in kwargs.vlans:
+            if i.disjoint == True: kwargs.disjoint = True
+            if i.vlan_type == 'iscsi': kwargs.iscsi+=1; kwargs.iscsi_vlans.append(i.vlan_id)
+            elif i.vlan_type == 'nvme': kwargs.nvme+=1; kwargs.nvme_vlans.append(i.vlan_id)
+
+        #=====================================================
+        # Create Uplink Groups if Disjoint is Present
+        #=====================================================
+        if kwargs.disjoint == True:
+            disjoint_vlans = []
+            disjoint_native= 1
+            native         = 1
+            for i in kwargs.vlans:
+                if i.disjoint == True:
+                    disjoint_vlans.append(i.vlan_id)
+                    if i.native_vlan == True: disjoint_native = i.vlan_id
+                elif i.native_vlan == True: native = i.vlan_id
+
+            for i in kwargs.ranges:
+                if i.disjoint == True: disjoint_vlans.extend(ezfunctions.vlan_list_full(i.vlan_list))
+            disjoint_vlans = list(numpy.unique(numpy.array(disjoint_vlans)))
+            disjoint_vlans.sort()
+            uplink1 = vlans
+            for i in disjoint_vlans: uplink1.remove(i)
+            kwargs.uplink1= ezfunctions.vlan_list_format(uplink1)
+            kwargs.uplink2= ezfunctions.vlan_list_format(disjoint_vlans)
+            kwargs.name   = 'uplink1'
+            kwargs.allowed= kwargs.uplink1
+            kwargs.native = native
+            kwargs = create_eth_groups(kwargs)
+            kwargs.name   = 'uplink2'
+            kwargs.allowed= kwargs.uplink2
+            kwargs.native = disjoint_native
+            kwargs = create_eth_groups(kwargs)
+
+        #=====================================================
+        # Create Eth NetworkGroups for Virtual Switches
+        #=====================================================
+        for item in kwargs.virtualization:
+            for i in item.virtual_switches:
+                kwargs.name  = i.name
+                kwargs.native= 1
+                if 'guests' in i.data_types:
+                    kwargs.name = 'all_vlans'
+                    kwargs.allowed= kwargs.vlan.all_vlans
+                    if 'management' in i.data_types:
+                        kwargs.native= kwargs.inband.vlan_id
+                        kwargs       = create_eth_groups(kwargs)
+                    elif 'storage' in i.data_types:
+                        if kwargs.iscsi == 2:
+                            for x in range(0,2):
+                                if re.search('[A-Z]', i.name): suffix = chr(ord('@')+x+1)
+                                else: suffix = chr(ord('@')+x+1).lower()
+                                kwargs.name  = f"{i.name}-{suffix}"
+                                kwargs.native= kwargs.iscsi_vlans[x]
+                                kwargs       = create_eth_groups(kwargs)
+                        elif 'migration' in i.data_types:
+                            kwargs.native= kwargs.migration.vlan_id
+                            kwargs       = create_eth_groups(kwargs)
+                        else: kwargs = create_eth_groups(kwargs)
+                    elif 'migration' in i.data_types:
+                            kwargs.native= kwargs.migration.vlan_id
+                            kwargs       = create_eth_groups(kwargs)
+                    else: kwargs = create_eth_groups(kwargs)
+                elif 'management' in i.data_types:
+                    kwargs.native= kwargs.inband.vlan_id
+                    mvlans       = [kwargs.inband.vlan_id]
+                    if 'migration' in i.data_types: mvlans.append(kwargs.migration.vlan_id)
+                    if 'storage' in i.data_types:
+                        for v in kwargs.vlans:
+                            if re.search('(iscsi|nfs|nvme)', v.vlan_type): mvlans.append(v.vlan_id)
+                    mvlans.sort()
+                    kwargs.allowed= ezfunctions.vlan_list_format(mvlans)
+                    kwargs        = create_eth_groups(kwargs)
+                elif 'migration' in i.data_types:
+                    kwargs.native= kwargs.migration.vlan_id
+                    mvlans       = [kwargs.migration.vlan_id]
+                    if 'storage' in i.data_types:
+                        for v in kwargs.vlans:
+                            if re.search('(iscsi|nfs|nvme)', v.vlan_type): mvlans.append(v.vlan_id)
+                    mvlans.sort()
+                    kwargs.allowed= ezfunctions.vlan_list_format(mvlans)
+                    kwargs        = create_eth_groups(kwargs)
+                elif 'storage' in i.data_types:
+                    if kwargs.iscsi == 2:
+                        for x in range(0,2):
+                            if re.search('[A-Z]', i.name): suffix = chr(ord('@')+x+1)
+                            else: suffix = chr(ord('@')+x+1).lower()
+                            kwargs.native= kwargs.iscsi_vlans[x]
+                            kwargs.name  = f"{i.name}-{suffix}"
+                            svlans       = [kwargs.iscsi_vlans[x]]
+                            for v in kwargs.vlans:
+                                if re.search('(nfs|nvme)', v.vlan_type): svlans.append(v.vlan_id)
+                            kwargs.allowed= ezfunctions.vlan_list_format(svlans)
+                            kwargs        = create_eth_groups(kwargs)
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -462,7 +534,9 @@ class imm(object):
     def ethernet_qos(self, kwargs):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
-        plist = ['Best Effort', 'Bronze', 'Gold', 'Platinum', 'Silver']
+        plist = ['Best Effort']
+        if kwargs.domain.cfg_qos_priorities == True:
+            plist = plist.extend(['Bronze', 'Gold', 'Platinum', 'Silver'])
         for i in plist:
             name = i.replace(' ', '-')
             polVars = dict(
@@ -474,7 +548,6 @@ class imm(object):
                 priority     = i,
                 rate_limit   = 0,
             )
-
             # Add Policy Variables to immDict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
@@ -903,20 +976,20 @@ class imm(object):
     #=============================================================================
     def lan_connectivity(self, kwargs):
         # Build Dictionary
-        vics  = []
+        descr= (self.type.replace('_', ' ')).title()
+        vics = []
         for k, v in kwargs.servers.items():
             if len(v.vics) == 2: vics = f'{v.vics[0].vic_gen}:{v.vics[0].vic_slot}-{v.vics[1].vic_slot}'
             else: vics = f'{v.vics[0].vic_gen}:{v.vics[0].vic_slot}'
 
         kwargs.vic_details= list(numpy.unique(numpy.array(vics)))
-        lan_policies = ['lcp']
-        for i in kwargs.vlans:
-            if i.vlan_type == 'iscsi':
-                lan_policies.append('lcp-iscsi')
-                break
+        lan_policies = []
+        if 'fc' in kwargs.dtype: lan_policies = ['lcp']
+        if re.search('(iscsi|nvme-tcp)', kwargs.dtype):
+            lan_policies.append('lcp-iscsi')
+
         for g in kwargs.vic_details:
             for lcp in lan_policies:
-                descr    = (self.type.replace('_', ' ')).title()
                 ga       = g.split(':')
                 gen      = ga[0]
                 name     = (f'{lcp}-vic-{g}').lower()
@@ -932,41 +1005,70 @@ class imm(object):
                 if re.search('iscsi', lcp):
                     polVars['iqn_pool'] = f'{kwargs.domain.policies.prefix}iscsi'
                 else: polVars.pop('iqn_pool')
-                plist = ['mgmt-Silver', 'migration-Bronze', 'storage-Platinum', 'dvs-Gold']
+                iscsi = 0
+                for v in kwargs.vlans:
+                    if 'iscsi' in v.vlan_type: iscsi+=1
                 vnic_count = 0
-                for i in plist:
-                    vname = i.split('-')[0]
-                    pqos  = i.split('-')[1]
-                    if 'dvs' in vname: pgroups = ['all_vlans']
-                    elif 'storage' in vname: pgroups = [f'{vname}-a', f'{vname}-b']
-                    else: pgroups = [vname]
-                    if re.search('(dvs|migration)', i): adapter_policy = 'VMware-High-Trf'
-                    elif 'storage' in i and gen == 'gen4': adapter_policy = '16RxQs-4G'
-                    elif 'storage' in i and gen == 'gen5': adapter_policy = '16RxQs-5G'
-                    else: adapter_policy = 'VMware'
-                    if len(slots) == 1: placement_order = pci_order, pci_order + 1,
-                    else: placement_order = pci_order, pci_order
-                    polVars['vnics'].append(dict(
-                        ethernet_adapter_policy        = adapter_policy,
-                        ethernet_network_control_policy= 'cdp',
-                        ethernet_network_group_policies= pgroups,
-                        ethernet_qos_policy            = pqos,
-                        iscsi_boot_policies            = [],
-                        names                          = [f'{vname}-a', f'{vname}-b'],
-                        mac_address_pools              = [f'{vname}-a', f'{vname}-b'],
-                        placement_pci_order            = placement_order,
-                        placement_slot_ids             = slots
-                    ))
-                    if 'storage' in vname and 'iscsi' in lcp:
-                        polVars['vnics'][vnic_count].update({'iscsi_boot_policies': kwargs.iscsi.boot})
-                    else: polVars['vnics'][vnic_count].pop('iscsi_boot_policies')
-                    if len(slots) == 1: pci_order += 2
-                    else: pci_order += 1
-                    vnic_count += 1
+                for e in kwargs.virtualization:
+                    for i in e.virtual_switches:
+                        print(i.data_types)
+                        if re.search('[A-Z]', i.name): a = 'A'; b = 'B'
+                        else: a = 'a'; b = 'b'
+                        if 'guests' in i.data_types:
+                            if iscsi==2 and 'storage' in i.data_types: network_groups = [
+                                    f'{kwargs.domain.policies.prefix}{i.name}-{a}',
+                                    f'{kwargs.domain.policies.prefix}{i.name}-{b}']
+                            else: network_groups = [f'{kwargs.domain.policies.prefix}all_vlans']
+                        elif 'storage' in i.data_types:
+                            if iscsi==2: network_groups = [
+                                    f'{kwargs.domain.policies.prefix}{i.name}-{a}',
+                                    f'{kwargs.domain.policies.prefix}{i.name}-{b}']
+                            else: network_groups = [f'{kwargs.domain.policies.prefix}{i.name}']
+                        else: network_groups = [i.name]
+                        if   'storage' in i.data_types:
+                            if gen == 'gen5': adapter_policy= '16RxQs-5G'
+                            else: adapter_policy= '16RxQs-4G'
+                            adapter_policy= '16RxQs-4G'
+                            if kwargs.domain.cfg_qos_priorities == True: qos_policy = 'Platinum'
+                            else: qos_policy = 'Best-Effort'
+                        elif 'guests' in i.data_types:
+                            if e.type == 'vmware': adapter_policy= 'VMware-High-Trf'
+                            if kwargs.domain.cfg_qos_priorities == True: qos_policy = 'Gold'
+                            else: qos_policy = 'Best-Effort'
+                        elif 'migration' in i.data_types:
+                            if e.type == 'vmware': adapter_policy= 'VMware-High-Trf'
+                            if kwargs.domain.cfg_qos_priorities == True: qos_policy = 'Bronze'
+                            else: qos_policy = 'Best-Effort'
+                        else:
+                            if e.type == 'vmware': adapter_policy = 'VMware'
+                            if kwargs.domain.cfg_qos_priorities == True: qos_policy = 'Silver'
+                            else: qos_policy = 'Best-Effort'
+                        qos_policy = 'Best-Effort'
+                        if len(slots) == 1: placement_order = pci_order, pci_order + 1,
+                        else: placement_order = pci_order, pci_order
+                        polVars['vnics'].append(dict(
+                            ethernet_adapter_policy        = adapter_policy,
+                            ethernet_network_control_policy= kwargs.domain.discovery_protocol,
+                            ethernet_network_group_policies= network_groups,
+                            ethernet_qos_policy            = qos_policy,
+                            iscsi_boot_policies            = [],
+                            names                          = [f'{i.name}-{a}', f'{i.name}-{b}'],
+                            mac_address_pools              = [f'{i.name}-{a}', f'{i.name}-{b}'],
+                            placement_pci_order            = placement_order,
+                            placement_slot_ids             = slots
+                        ))
+                        if 'storage' in i.data_type and 'iscsi' in lcp:
+                            polVars['vnics'][vnic_count].update({'iscsi_boot_policies': kwargs.iscsi.boot})
+                        else: polVars['vnics'][vnic_count].pop('iscsi_boot_policies')
+                        if len(slots) == 1: pci_order += 2
+                        else: pci_order += 1
+                        vnic_count += 1
                 
                 # Add Policy Variables to immDict
                 kwargs.class_path = f'policies,{self.type}'
                 kwargs = ezfunctions.ez_append(polVars, kwargs)
+        print(json.dumps(kwargs.immDict.orgs[kwargs.org].policies.lan_connectivity, indent=4))
+        exit()
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -1045,25 +1147,29 @@ class imm(object):
     #=============================================================================
     def mac(self, kwargs):
         # Build Dictionary
-        flist = ['a', 'b']
-        nlist = ['1-2-dvs', 'A-B-mgmt', 'C-D-migration', 'E-F-storage', ]
-        for i in nlist:
-            for x in range(0,len(flist)):
-                n = i.split('-')
-                pool = n[2]
-                polVars = dict(
-                    assignment_order = 'sequential',
-                    description      = f'{kwargs.domain.policies.prefix}{pool}-{flist[x]} Pool',
-                    name             = f'{kwargs.domain.policies.prefix}{pool}-{flist[x]}',
-                    mac_blocks       = [{
-                        'from':f'00:25:B5:{kwargs.domain.pools.prefix}:{n[x]}0:00',
-                        'size':1024
-                    }],
-                )
+        mcount = 1
+        for e in kwargs.virtualization:
+            for i in e.virtual_switches:
+                for x in range(0,2):
+                    if re.search('[A-Z]', i.name): pool= i.name + '-' + chr(ord('@')+x+1)
+                    else: pool= i.name + '-' + chr(ord('@')+x+1).lower()
+                    pid = mcount + x
+                    if pid > 8: pid=chr(ord('@')+pid-8)
+                    polVars = dict(
+                        assignment_order = 'sequential',
+                        description      = f'{kwargs.domain.policies.prefix}{pool} Pool',
+                        name             = f'{kwargs.domain.policies.prefix}{pool}',
+                        mac_blocks       = [{
+                            'from':f'00:25:B5:{kwargs.domain.pools.prefix}:{pid}0:00',
+                            'size':1024
+                        }],
+                    )
+                    mcount + 2
 
-                # Add Policy Variables to immDict
-                kwargs.class_path = f'pools,{self.type}'
-                kwargs = ezfunctions.ez_append(polVars, kwargs)
+                    # Add Policy Variables to immDict
+                    kwargs.class_path = f'pools,{self.type}'
+                    kwargs = ezfunctions.ez_append(polVars, kwargs)
+
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -1137,34 +1243,73 @@ class imm(object):
     # Function - Build Policy - Port
     #=============================================================================
     def port(self, kwargs):
-        # Build Dictionary
+        def ethernet_pc_uplinks(kwargs):
+            idict = [dict(
+                admin_speed                   = 'Auto',
+                ethernet_network_group_policy = f'{kwargs.domain.policies.prefix}{kwargs.vlan_group}',
+                flow_control_policy           = f'{kwargs.domain.policies.prefix}flow-ctrl',
+                interfaces                    = kwargs.ports,
+                link_aggregation_policy       = f'{kwargs.domain.policies.prefix}link-agg',
+                link_control_policy           = f'{kwargs.domain.policies.prefix}link-ctrl',
+                pc_ids                        = [kwargs.pc_id, kwargs.pc_id],
+            )]
+            return idict
+
+        eth_breakout_ports = []
+        #=====================================================
+        # Base Dictionary
+        #=====================================================
         descr = (self.type.replace('_', ' ')).title()
-        ports = []
-        for i in kwargs.domain.eth_uplinks:
-            ports.append({'port_id':int(i.split('/')[-1])})
-        x = str(kwargs.domain.eth_uplinks[0]).split('/')
-        if len(x) == 3: pc_id = '1' + x[1] + x[2]
-        else: pc_id = x[-1]
-        pc_id = int(pc_id)
         polVars = dict(
             description  = f'{kwargs.domain.name} {descr} Policy',
             device_model = kwargs.domain.device_model,
             names        = [f'{kwargs.domain.name}-A', f'{kwargs.domain.name}-B'],
-            port_channel_ethernet_uplinks = [dict(
-                admin_speed                   = 'Auto',
-                ethernet_network_group_policy = f'{kwargs.domain.policies.prefix}all_vlans',
-                flow_control_policy           = f'{kwargs.domain.policies.prefix}flow-ctrl',
-                interfaces                    = ports,
-                link_aggregation_policy       = f'{kwargs.domain.policies.prefix}link-agg',
-                link_control_policy           = f'{kwargs.domain.policies.prefix}link-ctrl',
-                pc_ids                        = [pc_id, pc_id],
-            )]
+            port_channel_ethernet_uplinks = []
         )
+
+        #=====================================================
+        # Uplink Port-Channels
+        #=====================================================
+        x = str(kwargs.domain.eth_uplinks[0]).split('/')
+        if len(x) == 3: eth_breakout_ports.extend(kwargs.domain.eth_uplinks)
+        if kwargs.disjoint == True:
+            # First Uplink
+            plength = len(kwargs.domain.eth_uplinks) // 2
+            kwargs.ports = []
+            for i in kwargs.domain.eth_uplinks[:plength]:
+                kwargs.ports.append({'port_id':int(i.split('/')[-1])})
+            if len(x) == 3: pc_id = '1' + x[1] + x[2]
+            else: pc_id = x[-1]
+            kwargs.pc_id     = int(pc_id)
+            kwargs.vlan_group= 'uplink1'
+            polVars['port_channel_ethernet_uplinks'].append(ethernet_pc_uplinks(kwargs))
+
+            # Second Uplink
+            kwargs.ports = []
+            for i in kwargs.domain.eth_uplinks[plength:]:
+                kwargs.ports.append({'port_id':int(i.split('/')[-1])})
+            x = str(kwargs.domain.eth_uplinks[plength:][0]).split('/')
+            if len(x) == 3: pc_id = '1' + x[1] + x[2]
+            else: pc_id = x[-1]
+            kwargs.pc_id     = int(pc_id)
+            kwargs.vlan_group= 'uplink2'
+            polVars['port_channel_ethernet_uplinks'].append(ethernet_pc_uplinks(kwargs))
+        else:
+            kwargs.ports = []
+            for i in kwargs.domain.eth_uplinks:
+                kwargs.ports.append({'port_id':int(i.split('/')[-1])})
+            if len(x) == 3: pc_id = '1' + x[1] + x[2]
+            else: pc_id = x[-1]
+            kwargs.pc_id     = int(pc_id)
+            kwargs.vlan_group= 'all_vlans'
+            polVars['port_channel_ethernet_uplinks'].append(ethernet_pc_uplinks(kwargs))
+
+        #=====================================================
+        # Fibre-Channel Uplinks/Port-Channels
+        #=====================================================
         if re.search('(fc|fc-nvme)', kwargs.dtype):
             ports= []
             x    = kwargs.domain.fcp_uplink_ports[0].split('/')
-            for i in kwargs.domain.fcp_uplink_ports:
-                ports.append({'port_id':int(i.split('/')[-1])})
             if kwargs.swmode == 'end-host':
                 if len(x) == 3: pc_id = '1' + x[1] + x[2]
                 else: pc_id = x[-1]
@@ -1172,25 +1317,51 @@ class imm(object):
                     port_channel_fc_uplinks = [dict(
                         admin_speed  = kwargs.domain.fcp_uplink_speed,
                         fill_pattern = 'Idle',
-                        interfaces   = ports,
+                        interfaces   = [],
                         pc_ids       = [pc_id, pc_id],
                         vsan_ids     = kwargs.domain.vsans
                     )]
                 ))
-                if len(x) == 3:
-                    for i in polVars['port_channel_fc_uplinks']['interfaces']:
-                        i.update({'breakout_port_id':x[2]})
+                for i in kwargs.domain.fcp_uplink_ports:
+                    idict = {}
+                    if len(x) == 3: idict.append({'breakout_port_id':int(i.split('/')[-2])})
+                    idict.append({'port_id':int(i.split('/')[-1])})
+                    polVars['port_channel_fc_uplinks']['interfaces'].append(idict)
             else:
-                ports = x[-1]
-                polVars.update(dict(
-                    port_role_fc_storage = [dict(
+                polVars['port_role_fc_storage'] = []
+                if x == 3:
+                    breakout = []
+                    for i in kwargs.domain.fcp_uplink_ports:
+                        breakout.append(int(i.split('/')[-2]))
+                    breakout = numpy.unique(numpy.array(breakout))
+                    for item in breakout:
+                        port_list = []
+                        for i in kwargs.domain.fcp_uplink_ports:
+                            if int(item) == int(i.split('/')[-2]):
+                                port_list.append(int(i.split('/')[-1]))
+                        port_list = ezfunctions.vlan_list_format(port_list)
+                        idict = dict(
+                            breakout_port_id = item,
+                            admin_speed  = kwargs.domain.fcp_uplink_speed,
+                            port_list    = port_list,
+                            vsan_ids     = kwargs.domain.vsans
+                        )
+                        polVars['port_role_fc_storage'].append(idict)
+                else:
+                    port_list = []
+                    for i in kwargs.domain.fcp_uplink_ports:
+                        port_list.append(int(i.split('/')[-1]))
+                    port_list = ezfunctions.vlan_list_format(port_list)
+                    idict = dict(
                         admin_speed  = kwargs.domain.fcp_uplink_speed,
-                        port_list    = ports,
+                        port_list    = port_list,
                         vsan_ids     = kwargs.domain.vsans
-                    )]
-                ))
-                if len(x) == 3:
-                    polVars['port_role_fc_storage'].update({'breakout_port_id':x[2]})
+                    )
+                    polVars['port_role_fc_storage'].append(idict)
+
+            #=====================================================
+            # Configure Fibre Channel Unified Port Mode
+            #=====================================================
             if len(x) == 3:
                 port_start = int(kwargs.domain.fcp_uplink_ports[0].split('/')[-2])
                 port_end   = int(kwargs.domain.fcp_uplink_ports[-1].split('/')[-2])
@@ -1214,35 +1385,51 @@ class imm(object):
                         port_list   = [port_start, port_end]
                     )]
                 ))
+
+        #=====================================================
+        # Ethernet Uplink Breakout Ports if present
+        #=====================================================
+        if len(eth_breakout_ports) > 0:
+            port_start= int(eth_breakout_ports[0].split('/'))[2]
+            port_end  = int(eth_breakout_ports[-1].split('/'))[2]
+            polVars['port_modes'].append(dict(
+                custom_mode = f'BreakoutEthernet{kwargs.breakout_speed.eth}',
+                port_list   = [port_start, port_end]
+            ))
+
+        #=====================================================
+        # Server Ports
+        #=====================================================
         polVars.update({'port_role_servers':[]})
         for i in kwargs.domain.profiles:
-                if len(i.domain_ports[0].split('/')) == 3:
-                    port_start= int(i.domain_ports[0].split('/'))[2]
-                    port_end  = int(i.domain_ports[-1].split('/'))[2]
-                    polVars['port_modes'].append(dict(
-                        custom_mode = f'BreakoutEthernet{kwargs.breakout_speed.eth}',
-                        port_list   = [port_start, port_end]
-                    ))
-                    for e in i.domain_ports:
-                        polVars['port_role_servers'].append(dict(
-                            breakout_port_id      = e.split('/')[-2],
-                            connected_device_type = i.equipment_type,
-                            device_number         = i.identifier,
-                            port_list             = e.split('/')[-1]
-                        ))
-                else:
-                    ports = []
-                    for e in i.domain_ports: ports.append(int(e.split('/')[-1]))
-                    port_list = ezfunctions.vlan_list_format(ports)
+            if len(i.domain_ports[0].split('/')) == 3:
+                port_start= int(i.domain_ports[0].split('/'))[2]
+                port_end  = int(i.domain_ports[-1].split('/'))[2]
+                polVars['port_modes'].append(dict(
+                    custom_mode = f'BreakoutEthernet{kwargs.breakout_speed.eth}',
+                    port_list   = [port_start, port_end]
+                ))
+                for e in i.domain_ports:
                     polVars['port_role_servers'].append(dict(
+                        breakout_port_id      = e.split('/')[-2],
                         connected_device_type = i.equipment_type,
                         device_number         = i.identifier,
-                        port_list             = port_list
+                        port_list             = e.split('/')[-1]
                     ))
+            else:
+                ports = []
+                for e in i.domain_ports: ports.append(int(e.split('/')[-1]))
+                port_list = ezfunctions.vlan_list_format(ports)
+                polVars['port_role_servers'].append(dict(
+                    connected_device_type = i.equipment_type,
+                    device_number         = i.identifier,
+                    port_list             = port_list
+                ))
 
         # Add Policy Variables to immDict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
+
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -2031,13 +2218,17 @@ class wizard(object):
                 kwargs.imm.pool.prefix    = item.pools.prefix
                 kwargs.imm.policies       = item.policies
                 kwargs.imm.domain[i.name] = DotMap(
+                    cfg_qos_priorities = item.cfg_qos_priorities,
+                    device_model       = '',
+                    discovery_protocol = item.discovery_protocol,
                     eth_breakout_speed = i.eth_breakout_speed,
                     eth_uplinks        = i.eth_uplink_ports,
-                    firmware           = item.server_firmware,
+                    firmware           = item.firmware,
                     organization       = item.organization,
                     policies           = item.policies,
                     pools              = item.pools,
                     profiles           = i.profiles,
+                    registered_device  = '',
                     serial_numbers     = i.serial_numbers,
                     tags               = kwargs.ezData.tags
                 )
@@ -2075,7 +2266,9 @@ class wizard(object):
                     kwargs.imm.domain[i.name].fcp_uplink_speed= i.fcp_uplink_speed
                     kwargs.imm.domain[i.name].switch_mode     = i.switch_mode
                     kwargs.imm.domain[i.name].vsans           = i.vsans
-        
+                kwargs.imm.domain[i.name].virtualization = item.virtualization
+            if len(kwargs.imm.domains) == 0: kwargs.imm.profiles = item.profiles
+            kwargs.virtualization = item.virtualization
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -2155,20 +2348,16 @@ class wizard(object):
             kwargs.models.append(i.model)
         kwargs.models   = list(numpy.unique(numpy.array(kwargs.models)))
 
-        # TEMP FIX for Dev Environment - Remove
-        kwargs.files_dir= '/mnt/c/Users/tyscott/Downloads/'
+        path_sep = os.sep
         dir_files = os.listdir(kwargs.files_dir)
         dir_files.sort()
-        file_types = ['Broadcom', 'Custom-Cisco','NetAppNas', 'nenic', 'nfnic', 'ucs-scu']
+        file_types = ['Custom-Cisco', 'ucs-scu']
         for ftype in file_types:
             for f in dir_files:
-                if os.path.isfile(kwargs.files_dir + os.sep + f):
+                if os.path.isfile(kwargs.files_dir + path_sep + f):
                     if ftype in f: kwargs.files[ftype] = f
 
-        kwargs.repo_server= socket.getfqdn()
-        # TEMP FIX for Dev Environment - Remove
-        kwargs.repo_server= 'rdp1.rich.ciscolabs.com'
-        kwargs.repo_path  = '/'
+        kwargs.scu_iso    = kwargs.files['ucs-scu']
         kwargs.scu_version= (kwargs.files['ucs-scu'].split('.iso')[0]).split('-')[2]
         kwargs.os_iso     = kwargs.files['Custom-Cisco']
         kwargs.os_name    = re.search('(ESXi-\\d.\\d(\\.\\d)?)', kwargs.files['Custom-Cisco']).group(1)
@@ -2195,6 +2384,22 @@ class wizard(object):
         kwargs.repository= kwargs.pmoids['user-catalog'].moid
 
         #==================================
+        # Get OS Catalogs and OS Config
+        #==================================
+        kwargs.api_filter= f"Name in  ('shared')"
+        kwargs.qtype     = 'os_catalog'
+        kwargs.uri       = 'os/Catalogs'
+        kwargs           = isight.api(kwargs.qtype).calls(kwargs)
+        kwargs.os_catalog= kwargs.pmoids['shared'].moid
+
+        kwargs.api_filter= f"Catalog.Moid eq '{kwargs.os_catalog}'"
+        kwargs.qtype     = 'os_configuration'
+        kwargs.uri       = 'os/ConfigurationFiles'
+        kwargs           = isight.api(kwargs.qtype).calls(kwargs)
+        kwargs.os_config = kwargs.pmoids[kwargs.os_config].moid
+        kwargs.pop('api_filter')
+
+        #==================================
         # Get Existing SCU Repositories
         #==================================
         kwargs.api_filter= f"Catalog.Moid eq '{kwargs.repository}'"
@@ -2209,25 +2414,20 @@ class wizard(object):
         kwargs.apiBody = server_config_utility_repo(kwargs)
         if kwargs.pmoids.get(kwargs.apiBody['Name']):
             kwargs.method = 'patch'
-            kwargs.pmoid     = kwargs.pmoids[kwargs.apiBody['Name']].moid
+            kwargs.pmoid  = kwargs.pmoids[kwargs.apiBody['Name']].moid
         else: kwargs.method = 'post'
-        kwargs    = isight.api(self.type).calls(kwargs)
+        kwargs          = isight.api(self.type).calls(kwargs)
         kwargs.scu_moid = kwargs.pmoid
 
         #==================================
         # Test Repo URL for File
         #==================================
         repo_url = f'https://{kwargs.repo_server}{kwargs.repo_path}{kwargs.scu_iso}'
-        try:
-            r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
+        try: requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
         except requests.RequestException as e:
             prRed(f"!!! ERROR !!!\n  Exception when calling {repo_url}:\n {e}\n")
             sys.exit(1)
 
-
-        #==================================
-        # Confirm if OS Repo Exists
-        #==================================
         kwargs.method    = 'get'
         kwargs.names     = [kwargs.os_name]
         kwargs.qtype     = 'operating_system'
@@ -2236,38 +2436,25 @@ class wizard(object):
         kwargs.os_repos  = kwargs.pmoids
 
         #==================================
-        # Get OS Catalog
-        #==================================
-        kwargs.api_filter= f"Name eq 'shared'"
-        kwargs.method    = 'get'
-        kwargs.qtype     = 'os_catalog'
-        kwargs.uri       = 'softwarerepository/OperatingSystemFiles'
-        kwargs           = isight.api(kwargs.qtype).calls(kwargs)
-        kwargs.os_catalog= kwargs.pmoids.shared.moid
-        kwargs.pop('api_filter')
-
-        #==================================
         # Create/Patch OS Repo apiBody
         #==================================
         kwargs.apiBody = os_software_repo(kwargs)
+        kwargs.uri     = 'softwarerepository/OperatingSystemFiles'
         if kwargs.pmoids.get(kwargs.apiBody['Name']):
-            kwargs.method = 'patch'
-            kwargs.pmoid     = kwargs.pmoids[kwargs.apiBody['Name']].moid
-        else: kwargs.method = 'post'
-
+            kwargs.method= 'patch'
+            kwargs.pmoid = kwargs.pmoids[kwargs.apiBody['Name']].moid
+        else: kwargs.method= 'post'
         kwargs = isight.api(self.type).calls(kwargs)
         kwargs.os_moid = kwargs.pmoid
-        repo_url = f'https://{kwargs.repo_server}{kwargs.repo_path}{kwargs.os_iso}'
 
         #==================================
         # Test Repo URL for File
         #==================================
-        try:
-            r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
+        repo_url = f'https://{kwargs.repo_server}{kwargs.repo_path}{kwargs.os_iso}'
+        try: requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
         except requests.RequestException as e:
             prRed(f"!!! ERROR !!!\n  Exception when calling {repo_url}:\n {e}\n")
             sys.exit(1)
-        #size = r.headers.get('content-length', -1)
 
         #==========================================
         # Deploy Operating System for each Profile
@@ -2276,10 +2463,6 @@ class wizard(object):
 
         # TEMP FIX for cabling issue - Remove
         kwargs.san_target = kwargs.immDict.orgs[kwargs.org].storage.appliances[0].wwpns.a[1].wwpn
-        print(json.dumps(kwargs.immDict.orgs[kwargs.org].wizard.os_configuration, indent=4))
-        for i in kwargs.immDict.orgs[kwargs.org].wizard.os_configuration:
-            for k, v in i.items():
-                kwargs.server_profiles[i.name][k] = v
         
         for k,v in kwargs.server_profiles.items():
             indx           = [e for e, d in enumerate(v.macs) if 'mgmt-a' in d.values()][0]
@@ -2291,24 +2474,25 @@ class wizard(object):
                 kwargs.qtype = self.type
                 kwargs.uri   = 'os/Installs'
                 prGreen(f"      * host {k}: initiator: {v.wwpns[0].wwpn}\n"\
-                        f"        target: {kwargs.san_target}\n"\
-                        f"        mac: {kwargs.mgmt_mac}")
+                        f"         target: {kwargs.san_target}\n"\
+                        f"         mac: {kwargs.mgmt_mac}")
                 kwargs = isight.api(self.type).calls(kwargs)
-                kwargs.server_profiles[k].os_install = { 'moid': kwargs.pmoid, 'workflow': ''}
-
-        time.sleep(60)
+                kwargs.server_profiles[k].os_install = DotMap(moid=kwargs.pmoid,workflow='')
+        
+        time.sleep(120)
         #=================================================
         # Monitor OS Installation until Complete
         #=================================================
         for k,v in  kwargs.server_profiles.items():
             if re.search('(esx03)', k):
-                kwargs.api_filter= f"Name eq '{k}-osinstall'"
+                kwargs.fqdn      = k + '.' + kwargs.dns_domains[0]
+                kwargs.api_filter= f"Input.OSInstallInputs.Answers.Hostname eq '{kwargs.fqdn}'"
                 kwargs.method    = 'get'
                 kwargs.qtype     = self.type
                 kwargs.uri       = 'workflow/WorkflowInfos'
                 kwargs           = isight.api(self.type).calls(kwargs)
                 kwargs.pop('api_filter')
-                v.os_install.workflow = kwargs.results[len(kwargs.results)-1]['WorkflowInfo'].Moid
+                v.os_install.workflow = kwargs.results[len(kwargs.results)-1].Moid
                 install_complete = False
                 while install_complete == False:
                     kwargs.method= 'get_by_moid'
@@ -2477,8 +2661,10 @@ class wizard(object):
             vDict = DotMap(
                 configure_l2= i.configure_l2,
                 configure_l3= i.configure_l3,
+                disjoint    = i.disjoint,
                 gateway     = i.network.split('/')[0],
                 name        = i.name,
+                native_vlan = i.native_vlan,
                 netmask     = ((ipaddress.IPv4Network(netwk)).with_netmask).split('/')[1],
                 network     = netwk,
                 prefix      = i.network.split('/')[1],
@@ -2508,6 +2694,7 @@ class wizard(object):
         for i in kwargs.immDict.wizard.vlan_ranges:
             kwargs.ranges.append(DotMap(
                 configure_l2= i.configure_l2,
+                disjoint    = i.disjoint,
                 name        = i.name_prefix,
                 vlan_list   = i.vlan_range
             ))
@@ -2516,7 +2703,7 @@ class wizard(object):
         # Build inband|nfs|ooband Dict
         #==================================
         for i in kwargs.vlans:
-            if re.search('(inband|nfs|ooband)', i.vlan_type):
+            if re.search('(inband|nfs|ooband|migration)', i.vlan_type):
                 kwargs[i.vlan_type] = i
 
         #==================================
@@ -2717,19 +2904,19 @@ def os_installation_body(k, v, kwargs):
         'ConfigurationFile': { 'Moid': kwargs.os_config,
             'ObjectType': 'os.ConfigurationFile',
         },
-        'image': { 'Moid': kwargs.os_moid,
+        'Image': { 'Moid': kwargs.os_moid,
             'ObjectType': 'softwarerepository.OperatingSystemFile',
         },
-        'install_method': 'vMedia',
-        'install_target': {
+        'InstallMethod': 'vMedia',
+        'InstallTarget': {
             'InitiatorWwpn': v.wwpns[0].wwpn,
             'LunId': 0,
             'ObjectType': 'os.FibreChannelTarget',
-            'TargeWwpn': kwargs.san_target
+            'TargetWwpn': kwargs.san_target
         },
         'Name': f'{k}-osinstall',
         'ObjectType': 'os.Install',
-        'organization': { 'Moid': kwargs.org_moid,
+        'Organization': { 'Moid': kwargs.org_moid,
             'ObjectType': 'organization.Organization',
         },
         'OsduImage': {
@@ -2737,7 +2924,7 @@ def os_installation_body(k, v, kwargs):
             'ObjectType': 'firmware.ServerConfigurationUtilityDistributable',
         },
         'OverrideSecureBoot': True,
-        'Server': { 'Moid': v.moid, 'ObjectType': v.object_type}
+        'Server': { 'Moid': v.hardware_moid, 'ObjectType': v.object_type}
     }
     return apiBody
 

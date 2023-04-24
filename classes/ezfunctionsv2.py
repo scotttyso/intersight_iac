@@ -425,7 +425,6 @@ def findVars(ws, func, rows, count):
 # Function - Prompt User for the Intersight Configurtion
 #========================================================
 def intersight_config(kwargs):
-    path_sep = kwargs.path_sep
     kwargs.jData = deepcopy({})
     if kwargs.args.api_key_id == None:
         kwargs.sensitive_var = 'intersight_apikey'
@@ -468,7 +467,7 @@ def intersight_config(kwargs):
                     print(f'  !!!Error!!! intersight_keyfile does not seem to contain a Valid Secret Key.')
         if not valid == True:
             kwargs.jData.description = 'Intersight SecretKey'
-            kwargs.jData.default = '%s%sDownloads%sSecretKey.txt' % (kwargs['home'], path_sep, path_sep)
+            kwargs.jData.default = '%s%sDownloads%sSecretKey.txt' % (kwargs['home'], os.sep, os.sep)
             kwargs.jData.pattern = '.*'
             kwargs.jData.varInput= 'What is the Path for the Intersight SecretKey?'
             kwargs.jData.varName = 'intersight_keyfile'
@@ -952,7 +951,7 @@ def sensitive_var_value(kwargs):
                     if password1 == password2:
                         secure_value = password1
                         valid_pass = True
-                    else: print('!!!Error!!! Sensitive Values did not match.  Please re-enter...')
+                    else: print('!!! ERROR !!! Sensitive Values did not match.  Please re-enter...')
 
             # Validate Sensitive Passwords
             cert_regex = re.compile(r'^\-{5}BEGIN (CERTIFICATE|PRIVATE KEY)\-{5}.*\-{5}END (CERTIFICATE|PRIVATE KEY)\-{5}$')
@@ -960,7 +959,7 @@ def sensitive_var_value(kwargs):
                 if not re.search(cert_regex, secure_value): valid = True
                 else:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'    Error!!! Invalid Value for the {sensitive_var}.  Please re-enter the {sensitive_var}.')
+                    print(f'    !!! ERROR !!! Invalid Value for the {sensitive_var}.  Please re-enter the {sensitive_var}.')
                     print(f'\n-------------------------------------------------------------------------------------------\n')
             elif re.search('intersight_apikey', sensitive_var):
                 minLength = 74
@@ -1007,6 +1006,8 @@ def sensitive_var_value(kwargs):
                 varName = 'Persistent Memory Secure Passphrase'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'snmp' in sensitive_var:
+                print('matched snmp')
+                exit()
                 jsonVars = jsonData['snmp.Policy'].allOf[1].properties
                 minLength = 1
                 maxLength = jsonVars['TrapCommunity']['maxLength']
@@ -1396,13 +1397,12 @@ def ucs_serial(kwargs):
     baseRepo    = kwargs['args'].dir
     device_type = kwargs['device_type']
     org         = kwargs['org']
-    path_sep    = kwargs['path_sep']
     yaml_file   = kwargs['yaml_file']
     valid = False
     while valid == False:
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'  Note: If you do not have the Serial Number at this time you can manually add it to:')
-        print(f'    - {baseRepo}{path_sep}{org}{path_sep}profiles{path_sep}{yaml_file}.yaml')
+        print(f'    - {baseRepo}{os.sep}{org}{os.sep}profiles{os.sep}{yaml_file}.yaml')
         print(f'      file later.')
         print(f'\n-------------------------------------------------------------------------------------------\n')
         serial = input(f'What is the Serial Number of the {device_type}? [press enter to skip]: ')
@@ -1420,10 +1420,9 @@ def ucs_serial(kwargs):
 def ucs_domain_serials(kwargs):
     baseRepo = kwargs['args'].dir
     org = kwargs['org']
-    path_sep = kwargs['path_sep']
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  Note: If you do not have the Serial Numbers at this time you can manually add them here:\n')
-    print(f'    * {baseRepo}{path_sep}{org}{path_sep}profiles{path_sep}domain.yaml\n')
+    print(f'    * {baseRepo}{os.sep}{org}{os.sep}profiles{os.sep}domain.yaml\n')
     print(f'  After the Wizard has completed.')
     print(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False

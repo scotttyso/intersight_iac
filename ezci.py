@@ -1,9 +1,26 @@
 #!/usr/bin/env python3
 """Converged Infrastructure Deployment - 
-This Script is built to Deploy Converged Infrastructure from an Excel Spreadsheet.
-It uses argparse to take in the following CLI arguments:
-    d or dir:        Base Directory to use for creation of the HCL Configuration Files
-    w or workbook:   Name of Excel Workbook file for the Data Source
+This Script is built to Deploy Converged Infrastructure from a YAML Configuration File.
+The Script uses argparse to take in the following CLI arguments:
+    a or api-key-id:      The Intersight API key id for HTTP signature scheme.
+    d or dir:             Base Directory to use for creation of the YAML Configuration Files.
+    e or endpoint:        The Intersight hostname for the API endpoint. The default is intersight.com.
+    i or ignore-tls:      Ignore TLS server-side certificate verification.  Default is False.
+    k or api-key-file:    Name of the file containing The Intersight secret key for the HTTP signature scheme.
+    s or deployment-step: The steps in the proceedure to run. Options Are:
+                            1. initial
+                            2. servers
+                            3. luns
+                            4. operating_system
+                            5. os_configuration
+    t or deployment-type: Ignore TLS server-side certificate verification.  Default is False.
+    k or api-key-file:    Infrastructure Deployment Type. Options Are:
+                            1. azure_hci
+                            2. netapp
+                            3. pure
+                            4. imm_domain
+    v or api-key-v3:      Flag for API Key Version 3.
+    y or yaml:            The input YAML File.
 """
 
 #======================================================
@@ -17,6 +34,7 @@ import json
 import os
 import platform
 import re
+import socket
 import sys
 import yaml
 
@@ -32,11 +50,25 @@ class MyDumper(yaml.Dumper):
     def increase_indent(self, flow=False, indentless=False):
         return super(MyDumper, self).increase_indent(flow, False)
 
+#=====================================================
+# Print Color Functions
+#=====================================================
+def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
+def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
+
+#=====================================================
+# Parse Arguments
+#=====================================================
 def cli_arguments():
     Parser = argparse.ArgumentParser(description='Intersight Converged Infrastructure Deployment Module')
     Parser.add_argument(
         '-a', '--api-key-id', default=os.getenv('intersight_apikey'),
-        help='The Intersight API client key id for HTTP signature scheme'
+        help='The Intersight API key id for HTTP signature scheme.'
     )
     Parser.add_argument(
         '-d', '--dir',
@@ -44,23 +76,19 @@ def cli_arguments():
         help = 'The Directory to use for the Creation of the Terraform Files.'
     )
     Parser.add_argument(
-        '-e', '--endpoint', default=os.getenv('intersight_endpoint'),
-        help='The Intersight hostname for the API endpoint. The default is intersight.com'
+        '-e', '--endpoint', default='intersight.com',
+        help='The Intersight hostname for the API endpoint. The default is intersight.com.'
     )
     Parser.add_argument(
-        '-i', '--ignore-tls', action='store_true',
-        help='Ignore TLS server-side certificate verification'
+        '-i', '--ignore-tls', action='store_false',
+        help='Ignore TLS server-side certificate verification.'
     )
     Parser.add_argument(
         '-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
-        help='Name of file containing The Intersight secret key for the HTTP signature scheme'
+        help='Name of the file containing The Intersight secret key for the HTTP signature scheme.'
     )
     Parser.add_argument(
-        '-l', '--load-config', action='store_false',
-        help='Skip Wizard and Just Load Configuration Files.'
-    )
-    Parser.add_argument(
-        '-s', '--deployment_step',
+        '-s', '--deployment-step',
         default ='flexpod',
         required=True,
         help    ='The steps in the proceedure to run. Options Are:'\
@@ -68,10 +96,10 @@ def cli_arguments():
             '2. servers'\
             '3. luns'\
             '4. operating_system'\
-            '5. management'
+            '5. os_configuration'
     )
     Parser.add_argument(
-        '-t', '--deployment_type',
+        '-t', '--deployment-type',
         default ='flexpod',
         required=True,
         help    ='Infrastructure Deployment Type. Options Are:'\
@@ -85,12 +113,8 @@ def cli_arguments():
         help='Flag for API Key Version 3.'
     )
     Parser.add_argument(
-        '-wb', '--workbook',
-        help = 'The source Workbook.'
-    )
-    Parser.add_argument(
         '-y', '--yaml',
-        help = 'The source YAML File.'
+        help = 'The input YAML File.'
     )
     kwargs = DotMap()
     kwargs.args = Parser.parse_args()
@@ -106,26 +130,27 @@ def main():
     kwargs   = cli_arguments()
     if '~' in kwargs.args.api_key_file:
         kwargs.args.api_key_file = os.path.expanduser(kwargs.args.api_key_file)
-    kwargs.deployment_type= 'converged'
+    kwargs.deployment_type= kwargs.args.deployment_type
     kwargs.home           = Path.home()
-    kwargs.opSystem   = platform.system()
-    kwargs.immDict.orgs = DotMap()
+    kwargs.opSystem       = platform.system()
+    kwargs.immDict.orgs   = DotMap()
 
     #==============================================
-    # Determine the Operating System Parameters
+    # Determine the Script Path
     #==============================================
     kwargs.script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
-    if kwargs.opSystem == 'Windows': kwargs.path_sep = '\\'
-    else: kwargs.path_sep = '/'
 
+    prLightGray(f'\n-----------------------------------------------------------------------------\n')
+    prLightGray(f'  Begin Deployment for {kwargs.deployment_type}.')
+    prLightGray(f'  * Deployment Step is {kwargs.args.deployment_step}.')
+    prLightGray(f'\n-----------------------------------------------------------------------------\n')
     #================================================
     # Import Stored Parameters
     #================================================
-    path_sep   = kwargs.path_sep
     script_path= kwargs.script_path
-    file       = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-11360.json'
+    file       = f'{script_path}{os.sep}variables{os.sep}intersight-openapi-v3-1.0.11-11360.json'
     jsonData   = json.load(open(file, 'r'))
-    file       = f'{script_path}{path_sep}variables{path_sep}easy_variablesv2.json'
+    file       = f'{script_path}{os.sep}variables{os.sep}easy_variablesv2.json'
     ezData     = json.load(open(file, 'r'))
 
     #================================================
@@ -142,30 +167,31 @@ def main():
     #==============================================
     kwargs = ezfunctions.intersight_config(kwargs)
     kwargs.args.url= 'https://%s' % (kwargs.args.endpoint)
+
     #==============================================
-    # Check Folder Naming for Illegal Characters
+    # Check Folder Path Naming for Bad Characters
     #==============================================
     destdirCheck = False
     while destdirCheck == False:
+        path_sep = os.sep
         splitDir = kwargs.args.dir.split(path_sep)
         splitDir = [i for i in splitDir if i]
         for folder in splitDir:
             if not re.search(r'^[\w\-\.\:\/\\]+$', folder):
-                print(folder)
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  !! ERROR !!')
-                print(f'  The Directory structure can only contain the following characters:')
-                print(f'  letters(a-z, A-Z), numbers(0-9), hyphen(-), period(.), colon(:), or and underscore(_).')
-                print(f'  It can be a short path or a fully qualified path. {folder} failed this check.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+                prRed(folder)
+                prRed(f'\n-------------------------------------------------------------------------------------------\n')
+                prRed(f'  !! ERROR !!')
+                prRed(f'  The Directory structure can only contain the following characters:')
+                prRed(f'  letters(a-z, A-Z), numbers(0-9), hyphen(-), period(.), colon(:), or and underscore(_).')
+                prRed(f'  It can be a short path or a fully qualified path. {folder} failed this check.')
+                prRed(f'\n-------------------------------------------------------------------------------------------\n')
                 sys.exit(1)
         destdirCheck = True
 
     #==============================================
     # Load Previous Configurations
     #==============================================
-    if kwargs.args.load_config == False:
-        kwargs = DotMap(ezfunctions.load_previous_configurations(kwargs))
+    kwargs = DotMap(ezfunctions.load_previous_configurations(kwargs))
 
     #==============================================
     # Process the YAML input File
@@ -186,6 +212,17 @@ def main():
     if re.search('(netapp|pure)', kwargs.args.deployment_type):
         kwargs = eval(f"ci.wizard(kwargs.args.deployment_type).{kwargs.args.deployment_type}(kwargs)")
 
+    #==============================================
+    # Installation Files Location
+    #==============================================
+    # TEMP FIX for Dev Environment - Remove
+    kwargs.files_dir= '/mnt/c/Users/tyscott/Downloads/'
+    kwargs.repo_server= socket.getfqdn()
+    # TEMP FIX for Dev Environment - Remove
+    kwargs.repo_server= 'rdp1.rich.ciscolabs.com'
+    kwargs.repo_path  = '/'
+
+
     #=================================================================
     # When Deployment Step is initial - Deploy NXOS|Storage|Domain
     #=================================================================
@@ -193,21 +230,21 @@ def main():
         #==============================================
         # Configure Switches if configure Set to True
         #==============================================
-        #if kwargs.immDict.wizard.get('nxos'):
-        #    network_config = DotMap(deepcopy(kwargs.immDict.wizard.nxos[0]))
-        #    network_types = ['network', 'ooband']
-        #    for network_type in network_types:
-        #        config_count = 0
-        #        for i in network_config.switches:
-        #            if i.configure == True and i.switch_type == network_type: config_count += 1
-        #        if config_count == 2:
-        #            kwargs = network.nxos('nxos').config(network_config, network_type, kwargs)
+        if kwargs.immDict.wizard.get('nxos'):
+            network_config = DotMap(deepcopy(kwargs.immDict.wizard.nxos[0]))
+            network_types = ['network', 'ooband']
+            for network_type in network_types:
+                config_count = 0
+                for i in network_config.switches:
+                    if i.configure == True and i.switch_type == network_type: config_count += 1
+                if config_count == 2:
+                    kwargs = network.nxos('nxos').config(network_config, network_type, kwargs)
 
         #==============================================
         # Configure Storage Appliances
         #==============================================
-        #if kwargs.args.deployment_type == 'netapp':
-        #    kwargs = ci.wizard('build').build_netapp(kwargs)
+        if kwargs.args.deployment_type == 'netapp':
+            kwargs = ci.wizard('build').build_netapp(kwargs)
 
         #==============================================
         # Configure and Deploy Domain
@@ -218,22 +255,18 @@ def main():
         #==============================================
         # Create YAML Files
         #==============================================
+        orgs = list(kwargs.immDict.orgs.keys())
         ezfunctions.create_yaml(orgs, kwargs)
 
-        orgs = list(kwargs.immDict.orgs.keys())
         for org in orgs:
             #==============================================
             # Policies
             #==============================================
             api = 'isight.policies_class'
             if kwargs.immDict.orgs[org].get('policies'):
-                print(kwargs.policy_type)
                 for ptype in kwargs.policy_list:
-                    print(ptype)
-                    if re.search('^[l-z]', ptype):
-                        if kwargs.immDict.orgs[org]['policies'].get(ptype):
-                            dpolicies = eval(f"{api}(ptype).policies(kwargs)")
-                            kwargs.deployed.update({ptype:dpolicies})
+                    if kwargs.immDict.orgs[org]['policies'].get(ptype):
+                        dpolicies = eval(f"{api}(ptype).policies(kwargs)")
 
             #==============================================
             # Deploy Domain
@@ -321,29 +354,47 @@ def main():
         #==============================================
         orgs   = list(kwargs.immDict.orgs.keys())
         for org in orgs:
-            #==============================================
-            # Upgrade Firmware
-            #==============================================
-            #if kwargs.nope == True:
-            #    kwargs = ci.fw_os('firmware').firmware(kwargs)
+            #=====================================================
+            # Load Variables and Login to ESXi Hosts
+            #=====================================================
+            for i in kwargs.immDict.orgs[kwargs.org].wizard.os_configuration:
+                for k, v in i.items():
+                    kwargs.server_profiles[i.name][k] = v
+
             #==============================================
             # Install OS
             #==============================================
             kwargs = ci.wizard('os_install').os_install(kwargs)
 
-    if kwargs.deployment_step == 'management':
+    #=================================================================
+    # Configure the Operating System
+    #=================================================================
+    if kwargs.args.deployment_step == 'os_configure':
+        #==============================================
+        # Loop Through the Orgs
+        #==============================================
+        orgs   = list(kwargs.immDict.orgs.keys())
         for org in orgs:
+            #=====================================================
+            # Load Variables and Login to ESXi Hosts
+            #=====================================================
+            for i in kwargs.immDict.orgs[kwargs.org].wizard.os_configuration:
+                for k, v in i.items():
+                    kwargs.server_profiles[i.name][k] = v
+            
             #==============================================
-            # Configure ESX Hosts and vCenter
+            # Configure Virtualization Environment
             #==============================================
-            if kwargs.nope == True:
-                kwargs = vsphere.api('esx').esx(kwargs)
-            kwargs = vsphere.api('vcenter').vcenter(kwargs)
-            #kwargs = vsphere.api('datastore').datastore(kwargs)
+            vmware = False
+            for i in kwargs.virtualization:
+                if i.type == 'vmware': vmware = True
+            if vmware == True:
+                #kwargs = vsphere.api('esx').esx(kwargs)
+                kwargs = vsphere.api('powercli').powercli(kwargs)
 
-    print(f'\n-----------------------------------------------------------------------------\n')
-    print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
-    print(f'\n-----------------------------------------------------------------------------\n')
+    prLightGray(f'\n-----------------------------------------------------------------------------\n')
+    prLightGray(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
+    prLightGray(f'\n-----------------------------------------------------------------------------\n')
     sys.exit(1)
 
 if __name__ == '__main__':

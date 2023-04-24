@@ -1,6 +1,7 @@
+from classes import pools
 from copy import deepcopy
 import ezfunctions
-import pools
+import os
 import re
 import secrets
 import textwrap
@@ -26,7 +27,7 @@ class policies(object):
         ezData         = kwargs['ezData']
         name_prefix    = self.name_prefix
         org            = self.org
-        path_sep       = kwargs['path_sep']
+        
         policy_type    = 'Ethernet Adapter'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -36,7 +37,7 @@ class policies(object):
             print(f'  configuration to the {yaml_file}.yaml file at your descretion.')
             print(f'  That will not be covered by this wizard as the focus of the wizard is on simplicity.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type} Policy?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -101,7 +102,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'ntwk-ctrl'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Ethernet Network Control Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -109,7 +109,7 @@ class policies(object):
             print(f'  An {policy_type} will allow you to control Network Discovery with ')
             print(f'  protocols like CDP and LLDP as well as MAC Address Control Features.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -199,7 +199,7 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = ['dvs', 'mgmt', 'migration', 'storage']
         org            = self.org
-        path_sep       = kwargs['path_sep']
+        
         policy_type    = 'Ethernet Network Group Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -219,7 +219,7 @@ class policies(object):
             print(f'     1-10,20-30 - Ranges and Lists of VLANs')
             print(f'  If you want to Assign a Native VLAN Make sure it is in the allowed list.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             #==============================================
             # Prompt User for VLAN Policy Name
@@ -333,7 +333,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'network'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Ethernet Network Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -342,7 +341,7 @@ class policies(object):
             print(f'  or multiple VLANs (Trunk) traffic. You can specify the VLAN to be associated with an ')
             print(f'  Ethernet packet if no tag is found.\n\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -416,7 +415,6 @@ class policies(object):
         name_prefix     = self.name_prefix
         name_suffix     = ['Bronze', 'Gold', 'Platinum', 'Silver']
         org             = self.org
-        path_sep        = kwargs['path_sep']
         policy_type     = 'Ethernet QoS Policy'
         target_platform = kwargs['target_platform']
         yaml_file       = 'ethernet'
@@ -436,7 +434,7 @@ class policies(object):
             print(f'     storage - Platinum')
             print(f'     dvs - Gold.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             #================================================
             # Prompt User for Sytem QoS Policy if FIAttached
@@ -563,7 +561,6 @@ class policies(object):
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'FC Zone Policy'
         yaml_file      = 'fibre_channel'
         while configure_loop == False:
@@ -572,7 +569,7 @@ class policies(object):
             print(f'  FC Zone Policy Notes:')
             print(f'  - You will need at a Minimum One Zone Policy per Fabric.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -727,7 +724,7 @@ class policies(object):
         ezData         = kwargs['ezData']
         name_prefix    = self.name_prefix
         org            = self.org
-        path_sep       = kwargs['path_sep']
+        
         policy_type    = 'Fibre-Channel Adapter Policy'
         yaml_file      = 'fibre_channel'
         while configure_loop == False:
@@ -738,7 +735,7 @@ class policies(object):
             print(f'  configuration to the {yaml_file}.yaml file at your descretion.  ')
             print(f'  That will not be covered by this wizard as the focus of the wizard is on simplicity.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -802,7 +799,6 @@ class policies(object):
         jsonData        = kwargs['jsonData']
         name_prefix     = self.name_prefix
         org             = self.org
-        path_sep        = kwargs['path_sep']
         policy_type     = 'Fibre-Channel Network Policy'
         target_platform = kwargs['target_platform']
         yaml_file       = 'fibre_channel'
@@ -812,7 +808,7 @@ class policies(object):
             print(f'  Fibre-Channel Network Policies Notes:')
             print(f'  - You will need one Policy per Fabric.  VSAN A and VSAN B.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -912,7 +908,7 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'fc-qos'
         org            = self.org
-        path_sep       = kwargs['path_sep']
+        
         policy_type    = 'Fibre-Channel QoS Policy'
         yaml_file      = 'fibre_channel'
         while configure_loop == False:
@@ -922,7 +918,7 @@ class policies(object):
             print(f'  creates the policy with all the default values, so you only need one')
             print(f'  {policy_type}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -974,7 +970,7 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'flow-ctrl'
         org            = self.org
-        path_sep       = kwargs['path_sep']
+        
         policy_type    = 'Flow Control Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -984,7 +980,7 @@ class policies(object):
             print(f'  description for the Policy.  You only need one of these policies for Organization')
             print(f'  {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1033,7 +1029,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'adapter'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'iSCSI Adapter Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -1041,7 +1036,7 @@ class policies(object):
             print(f'  The {policy_type} allows you to configure values for TCP Connection Timeout, ')
             print(f'  DHCP Timeout, and the Retry Count if the specified LUN ID is busy.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1125,7 +1120,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'boot'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'iSCSI Boot Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -1134,7 +1128,7 @@ class policies(object):
             print(f'  blade and rack servers from a remote disk across a Storage Area Network. The remote disk, ')
             print(f'  known as the target, is accessed using TCP/IP and iSCSI boot firmware.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1330,7 +1324,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'target'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'iSCSI Static Target Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -1339,7 +1332,7 @@ class policies(object):
             print(f'  logical unit number of the primary target for iSCSI boot. You can optionally specify these ')
             print(f'  details for a secondary target as well.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1440,7 +1433,6 @@ class policies(object):
         name_prefix     = self.name_prefix
         name_suffix     = ['mgmt', 'migration', 'storage', 'dvs']
         org             = self.org
-        path_sep        = kwargs['path_sep']
         policy_type     = 'LAN Connectivity Policy'
         target_platform = kwargs['target_platform']
         yaml_file       = 'lan_connectivity'
@@ -1454,7 +1446,7 @@ class policies(object):
             print(f'     3. storage')
             print(f'     4. dvs\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1802,7 +1794,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'link-agg'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Link Aggregation Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -1812,7 +1803,7 @@ class policies(object):
             print(f'  name and description for the Policy.  You only need one of these policies for ')
             print(f'  Organization {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1860,7 +1851,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'link-ctrl'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Link Control Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -1871,7 +1861,7 @@ class policies(object):
             print(f'  and description for the Policy.  You only need one of these policies for')
             print(f'  Organization {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1920,7 +1910,6 @@ class policies(object):
         jsonData       = kwargs['jsonData']
         name_suffix    = 'mcast'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Multicast Policy'
         yaml_file      = 'vlan'
         while configure_loop == False:
@@ -1931,7 +1920,7 @@ class policies(object):
             print(f'  If you configure IGMP Queriers for a Multicast Policy that Policy should only be')
             print(f'  Assigned to the VLAN for which those Queriers will service.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1998,7 +1987,6 @@ class policies(object):
         name_prefix     = self.name_prefix
         name_suffix     = 'scp'
         org             = self.org
-        path_sep        = kwargs['path_sep']
         policy_type     = 'SAN Connectivity Policy'
         target_platform = kwargs['target_platform']
         yaml_file       = 'san_connectivity'
@@ -2007,7 +1995,7 @@ class policies(object):
             print(f'  You can Skip this policy if you are not configuring Fibre-Channel.\n')
             print(f'  A {policy_type} will configure vHBA adapters for Server Profiles.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -2247,7 +2235,6 @@ class policies(object):
         jsonData       = kwargs['jsonData']
         name_suffix    = 'sw-ctrl'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Switch Control Policy'
         yaml_file      = 'switch'
         while configure_loop == False:
@@ -2258,7 +2245,7 @@ class policies(object):
             print(f'  the name and description for the Policy.  You only need one of these policies for')
             print(f'  Organization {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -2326,7 +2313,6 @@ class policies(object):
         jsonData       = kwargs['jsonData']
         name_suffix    = 'qos'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'System QoS Policy'
         yaml_file      = 'switch'
         while configure_loop == False:
@@ -2345,7 +2331,7 @@ class policies(object):
             print(f'  Beyond the System MTU, we recommend you utilize the default parameters of this wizard.')
             print(f'  You only need one of these policies for Organization {org}.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -2427,7 +2413,6 @@ class policies(object):
         domain_prefix  = kwargs['domain_prefix']
         name_suffix    = 'vlan'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'VLAN Policy'
         yaml_file      = 'vlan'
         while configure_loop == False:
@@ -2440,7 +2425,7 @@ class policies(object):
             print(f'  IMPORTANT NOTE: You can only have one Native VLAN for the Fabric at this time,')
             print(f'                  as Disjoint Layer 2 is not yet supported.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -2530,7 +2515,6 @@ class policies(object):
         domain_prefix  = kwargs['domain_prefix']
         jsonData       = kwargs['jsonData']
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'VSAN Policy'
         yaml_file      = 'vsan'
         while configure_loop == False:
@@ -2542,7 +2526,7 @@ class policies(object):
             print(f'                  in a FCoE (Fibre-Channel over Ethernet) VLAN.  This VLAN Must not be')
             print(f'                  already used by the VLAN Policy.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':

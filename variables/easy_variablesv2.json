@@ -2203,60 +2203,49 @@
                                 "uri": "ntp/Policies"
                             },
                             "port": {
-                                "classes": {
+                                "port_types": {
                                     "port_channel_appliances": {
-                                        "class_id": "fabric.AppliancePcRole",
-                                        "object_type": "fabric.AppliancePcRole",
+                                        "ObjectType": "fabric.AppliancePcRole",
                                         "uri": "fabric/AppliancePcRoles"
                                     },
                                     "port_channel_ethernet_uplinks": {
-                                        "class_id": "fabric.UplinkPcRole",
-                                        "object_type": "fabric.UplinkPcRole",
+                                        "ObjectType": "fabric.UplinkPcRole",
                                         "uri": "fabric/UplinkPcRoles"
                                     },
                                     "port_channel_fc_uplinks": {
-                                        "class_id": "fabric.FcUplinkPcRole",
-                                        "object_type": "fabric.FcUplinkPcRole",
+                                        "ObjectType": "fabric.FcUplinkPcRole",
                                         "uri": "fabric/FcUplinkPcRoles"
                                     },
                                     "port_channel_fcoe_uplinks": {
-                                        "class_id": "fabric.FcoeUplinkPcRole",
-                                        "object_type": "fabric.FcoeUplinkPcRole",
+                                        "ObjectType": "fabric.FcoeUplinkPcRole",
                                         "uri": "fabric/FcoeUplinkPcRoles"
                                     },
                                     "port_mode": {
-                                        "class_id": "fabric.PortMode",
-                                        "object_type": "fabric.PortMode",
+                                        "ObjectType": "fabric.PortMode",
                                         "uri": "fabric/PortModes"
                                     },
                                     "port_role_appliances": {
-                                        "class_id": "fabric.ApplianceRole",
-                                        "object_type": "fabric.ApplianceRole",
+                                        "ObjectType": "fabric.ApplianceRole",
                                         "uri": "fabric/ApplianceRoles"
                                     },
                                     "port_role_ethernet_uplinks": {
-                                        "class_id": "fabric.UplinkRole",
-                                        "object_type": "fabric.UplinkRole",
+                                        "ObjectType": "fabric.UplinkRole",
                                         "uri": "abric/UplinkRoles"
                                     },
                                     "port_role_fc_storage": {
-                                        "class_id": "fabric.FcStorageRole",
-                                        "object_type": "fabric.FcStorageRole",
+                                        "ObjectType": "fabric.FcStorageRole",
                                         "uri": "fabric/FcStorageRoles"
                                     },
                                     "port_role_fc_uplinks": {
-                                        "class_id": "fabric.FcUplinkRole",
-                                        "object_type": "fabric.FcUplinkRole",
+                                        "ObjectType": "fabric.FcUplinkRole",
                                         "uri": "fabric/FcUplinkRoles"
                                     },
                                     "port_role_fcoe_uplinks": {
-                                        "class_id": "fabric.FcoeUplinkRole",
-                                        "object_type": "fabric.FcoeUplinkRole",
+                                        "ObjectType": "fabric.FcoeUplinkRole",
                                         "uri": "fabric/FcoeUplinkRoles"
                                     },
                                     "port_role_servers": {
-                                        "class_id": "fabric.ServerRole",
-                                        "object_type": "fabric.ServerRole",
+                                        "ObjectType": "fabric.ServerRole",
                                         "uri": "fabric/ServerRoles"
                                     }
                                 },
@@ -2373,8 +2362,8 @@
                                 },
                                 "object_type": "snmp.Policy",
                                 "trap_map": {
-                                    "community_string": "community",
-                                    "destination_address": "DestinationAddress",
+                                    "community_string": "Community",
+                                    "destination_address": "Destination",
                                     "enable": "Enabled",
                                     "port": "Port",
                                     "trap_type": "Type",
@@ -2511,8 +2500,17 @@
                                 "uri": "syslog/Policies"
                             },
                             "system_qos": {
+                                "class_map": {
+                                    "bandwidth_percent": "BandwidthPercent",
+                                    "cos": "Cos",
+                                    "multicast_optimize": "MulticastOptimize",
+                                    "mtu": "Mtu",
+                                    "packet_drop": "PacketDrop",
+                                    "priority": "Name",
+                                    "state": "AdminState",
+                                    "weight": "Weight"
+                                },
                                 "key_map": {
-                                    "classes": "Classes",
                                     "description": "Description",
                                     "name": "Name",
                                     "tags": "Tags"

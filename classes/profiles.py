@@ -1,8 +1,9 @@
+from classes import lansan
+from classes import policies
+from classes import pools
 from copy import deepcopy
 import ezfunctions
-import lansan
-import policies
-import pools
+import os
 import re
 import textwrap
 import yaml
@@ -25,7 +26,6 @@ class profiles(object):
         configure_loop = False
         ezData         = kwargs['ezData']
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'UCS Chassis Profile'
         yaml_file      = 'chassis'
         while configure_loop == False:
@@ -33,7 +33,7 @@ class profiles(object):
             print(f'  This will create {policy_type}(s).  The Wizard will will first ask for the policies to')
             print(f'  assign.  Then you can assign multiple Names/Serials to the same Profile Policy.')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -166,14 +166,13 @@ class profiles(object):
         ezData         = kwargs['ezData']
         name_suffix    = 'ucs'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'UCS Domain Profile'
         yaml_file      = 'domain'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  This will create {policy_type}(s).')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -271,7 +270,6 @@ class profiles(object):
         name_prefix     = self.name_prefix
         name_suffix     = 'server'
         org             = self.org
-        path_sep        = kwargs['path_sep']
         policy_type     = 'UCS Server Profile'
         target_platform = kwargs['target_platform']
         yaml_file       = 'servers'
@@ -280,7 +278,7 @@ class profiles(object):
             print(f'  This will create {policy_type}(s).  The Wizard will will first ask for the policies to')
             print(f'  assign.  Then you can assign multiple Names/Serials to the same Profile Policy.')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -506,7 +504,6 @@ class profiles(object):
         name_prefix     = self.name_prefix
         name_suffix     = 'template'
         org             = self.org
-        path_sep        = kwargs['path_sep']
         policy_type     = 'UCS Server Profile Template'
         target_platform = kwargs['target_platform']
         yaml_file       = 'servers'
@@ -514,7 +511,7 @@ class profiles(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  This will create {policy_type}(s).')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}templates{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}templates{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':

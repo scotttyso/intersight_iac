@@ -1,7 +1,7 @@
+from classes import lansan
+from classes import pools
 from copy import deepcopy
 import base64
-import lansan
-import pools
 import ezfunctions
 import json
 import os
@@ -30,7 +30,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'adapter'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Adapter Configuration Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
@@ -38,7 +37,7 @@ class policies(object):
             print(f'  An {policy_type} configures the Ethernet and Fibre-Channel settings for the ')
             print(f'  Virtual Interface Card (VIC) adapter.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -136,7 +135,6 @@ class policies(object):
         ezData         = kwargs['ezData']
         name_prefix    = self.name_prefix
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'BIOS Policy'
         yaml_file      = 'compute'
         while configure_loop == False:
@@ -146,7 +144,7 @@ class policies(object):
             print(f'  configuration to the {yaml_file}.yaml file at your descretion.')
             print(f'  That will not be covered by this wizard as the focus of the wizard is on simplicity.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -204,24 +202,23 @@ class policies(object):
     # Boot Order Policy Module
     #==============================================
     def boot_order(self, **kwargs):
-        baseRepo        = kwargs['args'].dir
-        configure_loop  = False
-        ezData          = kwargs['ezData']
-        jsonData        = kwargs['jsonData']
-        name_prefix     = self.name_prefix
-        name_suffix     = 'boot'
-        org             = self.org
-        path_sep        = kwargs['path_sep']
-        policy_type     = 'Boot Order Policy'
-        target_platform = kwargs['target_platform']
-        yaml_file       = 'compute'
+        baseRepo       = kwargs['args'].dir
+        configure_loop = False
+        ezData         = kwargs['ezData']
+        jsonData       = kwargs['jsonData']
+        name_prefix    = self.name_prefix
+        name_suffix    = 'boot'
+        org            = self.org
+        policy_type    = 'Boot Order Policy'
+        target_platform= kwargs['target_platform']
+        yaml_file      = 'compute'
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  A {policy_type} configures the linear ordering of devices and enables you to change ')
             print(f'  the boot order and boot mode. You can also add multiple devices under various device types,')
             print(f'  rearrange the boot order, and set parameters for each boot device type.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}.  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -505,7 +502,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'cert'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Certificate Management Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -513,7 +509,7 @@ class policies(object):
             print(f'  A {policy_type} Allows you to specify the certificate and private key-pair ')
             print(f'  details for an external certificate.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 1
             configure = input(f'Do You Want to Configure a {policy_type}.  Enter "Y" or "N" [Y]: ')
@@ -605,7 +601,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'devcon'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Device Connector Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -623,7 +618,7 @@ class policies(object):
             print(f'    Intersight only is enabled through the Device Connector policy, or if the same ')
             print(f'    configuration is enabled in the Device Connector in Cisco IMC.\n\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -729,7 +724,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'imc'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'IMC Access Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -737,7 +731,7 @@ class policies(object):
             print(f'  You will need to configure an IMC Access Policy in order to Assign the VLAN and IPs to ')
             print(f'  the Servers for KVM Access.  At this time only inband access is supported in IMM mode.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 0
             policy_loop = False
@@ -858,7 +852,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'ipmi'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'IPMI over LAN Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -867,7 +860,7 @@ class policies(object):
             print(f'  allows you to determine whether IPMI commands can be sent directly to the server, using ')
             print(f'  the IP address.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -944,7 +937,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'ldap'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'LDAP Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -954,7 +946,7 @@ class policies(object):
             print(f'  LDAP server for user accounts not found in the local user database. You can enable and ')
             print(f'  configure LDAP, and configure LDAP servers and LDAP groups.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1306,7 +1298,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'users'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Local User Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -1314,7 +1305,7 @@ class policies(object):
             print(f'  A {policy_type} will configure servers with Local Users for KVM Access.  This Policy ')
             print(f'  is not required to standup a server but is a good practice for day 2 support.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1460,7 +1451,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'dns'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Network Connectivity Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -1468,7 +1458,7 @@ class policies(object):
             print(f'  It is strongly recommended to have a Network Connectivity (DNS) Policy for the')
             print(f'  UCS Domain Profile.  Without it, DNS resolution will fail.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1569,7 +1559,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'ntp'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'NTP Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -1579,7 +1568,7 @@ class policies(object):
             print(f'  Communication, as an example, could be interrupted with Certificate Validation\n')
             print(f'  checks, as an example.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -1667,7 +1656,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'pmem'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Persistent Memory Policy'
         yaml_file      = 'compute'
         while configure_loop == False:
@@ -1692,7 +1680,7 @@ class policies(object):
             print(f'    * Quad CPU for UCS C480 M5 and B480 M5 servers')
             print(f'  - Security - Used to configure the secure passphrase for all the persistent memory modules.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1876,7 +1864,6 @@ class policies(object):
         configure_loop = False
         jsonData       = kwargs['jsonData']
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Port Policy'
         yaml_file      = 'port'
         while configure_loop == False:
@@ -1898,7 +1885,7 @@ class policies(object):
             for i in port_type_list:
                 print(f'   - {i.split(":")[0]}')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -2001,7 +1988,6 @@ class policies(object):
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Power Policy'
         yaml_file      = 'environment'
         while configure_loop == False:
@@ -2009,7 +1995,7 @@ class policies(object):
             print(f'  A {policy_type} will configure the Power Redundancy Policies for Chassis and Servers.')
             print(f'  For Servers it will configure the Power Restore State.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 1
             policy_loop = False
@@ -2127,7 +2113,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'sdcard'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'SD Card Policy'
         yaml_file      = 'storage'
         while configure_loop == False:
@@ -2148,7 +2133,7 @@ class policies(object):
             print(f'      the M5 servers require at least 1 FlexFlash + 1 FlexUtil card.\n')
             print(f'  storage capacity of a virtual drive, and configure the M.2 RAID controllers.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             #==============================================
             # Get API Data
@@ -2271,7 +2256,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'sol'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Serial over LAN Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -2283,7 +2267,7 @@ class policies(object):
             print(f'   - SSH Port\n')
             print(f'  This Policy is not required to standup a server but is a good practice for day 2 support.')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -2361,7 +2345,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'smtp'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'SMTP Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -2370,7 +2353,7 @@ class policies(object):
             print(f'  You can specify the preferred settings for outgoing communication and select the fault ')
             print(f'  severity level to report and the mail recipients.\n\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -2465,7 +2448,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'snmp'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'SNMP Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -2473,7 +2455,7 @@ class policies(object):
             print(f'  An {policy_type} will configure chassis, domains, and servers with SNMP parameters.')
             print(f'  This Policy is not required to standup a server but is a good practice for day 2 support.')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -2633,7 +2615,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'ssh'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'SSH Policy'
         yaml_file      = 'storage'
         while configure_loop == False:
@@ -2642,7 +2623,7 @@ class policies(object):
             print(f'  create one or more SSH policies that contain a specific grouping of SSH properties for a ')
             print(f'  server or a set of servers.\n\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -2714,7 +2695,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'storage'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Storage Policy'
         yaml_file      = 'storage'
         while configure_loop == False:
@@ -2722,7 +2702,7 @@ class policies(object):
             print(f'  A {policy_type} allows you to create drive groups, virtual drives, configure the ')
             print(f'  storage capacity of a virtual drive, and configure the M.2 RAID controllers.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -3089,7 +3069,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'syslog'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Syslog Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -3098,7 +3077,7 @@ class policies(object):
             print(f'  You can configure up to two Remote Syslog Servers.')
             print(f'  This Policy is not required to standup a server but is a good practice for day 2 support.')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -3167,7 +3146,6 @@ class policies(object):
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Thermal Policy'
         yaml_file      = 'environment'
         while configure_loop == False:
@@ -3175,7 +3153,7 @@ class policies(object):
             print(f'  A {policy_type} will configure the Cooling/FAN Policy for Chassis.  We recommend ')
             print(f'  Balanced for a 5108 and Acoustic for a 9508 Chassis, as of this writing.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -3274,7 +3252,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'vkvm'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Virtual KVM Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -3284,7 +3261,7 @@ class policies(object):
             print(f'   - Video Encryption - encrypts all video information sent through KVM.')
             print(f'   - Remote Port - The port used for KVM communication. Range is 1 to 65535.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             policy_loop = False
             while policy_loop == False:
@@ -3368,7 +3345,6 @@ class policies(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'vmedia'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Virtual Media Policy'
         yaml_file      = 'management'
         while configure_loop == False:
@@ -3380,7 +3356,7 @@ class policies(object):
             print(f'  virtual media mappings, one for ISO files through CDD and the other for IMG files ')
             print(f'  through HDD.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 1
             policy_loop = False

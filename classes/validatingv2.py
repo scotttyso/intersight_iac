@@ -31,7 +31,7 @@ def completed_item(ptype, kwargs):
     if 'vlans' == ptype: name = f"VLAN {kwargs.apiBody['VlanId']}"
     elif 'autosupport' == ptype: name = "AutoSupport"
     elif 'vsans' == ptype: name = f"VSAN {kwargs.apiBody['VsanId']}"
-    elif 'port_channel' in ptype: name = f"PC {kwargs.apiBody['pcId']}"
+    elif 'port_channel' in ptype: name = f"PC {kwargs.apiBody['PcId']}"
     elif 'port_mode' in ptype: name = f"PortIdStart {kwargs.apiBody['PortIdStart']}"
     elif 'port_role' in ptype: name = f"Port {kwargs.apiBody['PortId']}"
     elif 'user_role' in ptype: name = f"Role for {kwargs.qtype}"

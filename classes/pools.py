@@ -1,6 +1,7 @@
 from copy import deepcopy
 import ezfunctions
 import ipaddress
+import os
 import re
 import textwrap
 import validating
@@ -26,7 +27,6 @@ class pools(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'ip'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'IP Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
@@ -35,7 +35,7 @@ class pools(object):
             print(f'  management is not supported for KVM access.  This IP Pool will need to be associated to a ')
             print(f'  VLAN assigned to the VLAN Pool of the Domain.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -290,7 +290,7 @@ class pools(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'ip'
         org            = self.org
-        path_sep       = kwargs['path_sep']
+        
         policy_type    = 'IQN Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
@@ -402,7 +402,6 @@ class pools(object):
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'MAC Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
@@ -413,7 +412,7 @@ class pools(object):
             print(f'  - Pool Size can be between 1 and 1024 addresses.')
             print(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 0
             policy_loop = False
@@ -500,7 +499,6 @@ class pools(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'resource'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'Resource Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
@@ -508,7 +506,7 @@ class pools(object):
             print(f'  The {policy_type} represents a collection of resources that can be associated to ')
             print(f'  the configuration entities such as server profiles.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -590,7 +588,7 @@ class pools(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'uuid'
         org            = self.org
-        path_sep       = kwargs['path_sep']
+        
         policy_type    = 'UUID Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
@@ -688,7 +686,6 @@ class pools(object):
         name_prefix    = self.name_prefix
         name_suffix    = 'wwnn'
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'WWNN Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
@@ -698,7 +695,7 @@ class pools(object):
             print(f'  - Pool Size can be between 1 and 1024 addresses.')
             print(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -776,7 +773,6 @@ class pools(object):
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         org            = self.org
-        path_sep       = kwargs['path_sep']
         policy_type    = 'WWPN Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
@@ -787,7 +783,7 @@ class pools(object):
             print(f'  - Pool Size can be between 1 and 1024 addresses.')
             print(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
             print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}{yaml_file}.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':

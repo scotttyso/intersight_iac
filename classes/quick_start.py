@@ -1,10 +1,11 @@
+from classes import lansan
+from classes import policies
+from classes import pools
 from copy import deepcopy
 import ezfunctions
 import ipaddress
 import json
-import lansan
-import policies
-import pools
+import os
 import re
 import textwrap
 import validating
@@ -26,11 +27,10 @@ class quick_start(object):
     def bios_policies(self, **kwargs):
         baseRepo = kwargs['args'].dir
         org      = self.org
-        path_sep = kwargs['path_sep']
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'  The Quick Deployment Module - BIOS policies for a UCS Server ')
         print(f'  This wizard will save the output for the BIOS Policy to the following file:\n')
-        print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}compute.yaml')
+        print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}compute.yaml')
         print(f'\n-------------------------------------------------------------------------------------------\n')
         #==============================================
         # Trusted Platform Module
@@ -78,12 +78,11 @@ class quick_start(object):
         baseRepo  = kwargs['args'].dir
         boot_type = kwargs['boot_type']
         org       = self.org
-        path_sep  = kwargs['path_sep']
         print(f'\n-------------------------------------------------------------------------------------------\n')
         print(f'  The Quick Deployment Module - Boot/Storage, Policies.\n')
         print(f'  This wizard will save the output for these pools in the following files:\n')
-        print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}compute.yaml')
-        print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}storage_policies.yaml')
+        print(f'  - {baseRepo}{os.sep}{org}{os.sep}policies{os.sep}compute.yaml')
+        print(f'  - {baseRepo}{os.sep}{org}{os.sep}policies{os.sep}storage_policies.yaml')
         print(f'\n-------------------------------------------------------------------------------------------\n')
         #==============================================
         # Configure Boot Order Policy
@@ -164,7 +163,6 @@ class quick_start(object):
         jsonData       = kwargs['jsonData']
         name_prefix    = kwargs['domain_prefix']
         org            = self.org
-        path_sep       = kwargs['path_sep']
         configure_loop = False
         kwargs['name_prefix'] = name_prefix
         while configure_loop == False:
@@ -172,14 +170,14 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Domain Policies, will configure pools for a UCS Domain ')
             print(f'  Profile.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}domain.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}management.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}port.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}switch.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}vlan.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}policies{path_sep}vsan.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}profiles{path_sep}chassis.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}profiles{path_sep}domain.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}policies{os.sep}domain.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}policies{os.sep}management.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}policies{os.sep}port.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}policies{os.sep}switch.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}policies{os.sep}vlan.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}policies{os.sep}vsan.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}profiles{os.sep}chassis.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}profiles{os.sep}domain.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Domain Policy Configuration?'\
                 '  \nEnter "Y" or "N" [Y]: ')
@@ -617,7 +615,6 @@ class quick_start(object):
         configure_loop = False
         ezData         = kwargs['ezData']
         org            = self.org
-        path_sep       = kwargs['path_sep']
         if kwargs['mtu'] > 8999: mtu = 9000
         else: mtu = 1500
         while configure_loop == False:
@@ -625,10 +622,10 @@ class quick_start(object):
             print(f'  The Quick Deployment Module - Network Configuration, will configure policies for the')
             print(f'  Network Configuration of a UCS Server Profile connected to an IMM Domain.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/ethernet.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/fibre_channel.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/lan_connectivity.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/san_connectivity.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}/ethernet.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}/fibre_channel.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}/lan_connectivity.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}/san_connectivity.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Network Configuration?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -891,13 +888,12 @@ class quick_start(object):
         configure_loop = False
         org            = self.org
         jsonData       = kwargs['jsonData']
-        path_sep       = kwargs['path_sep']
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Pools, will configure pools for a UCS Server Profile')
             print(f'  connected to an IMM Domain.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/pools.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}/pools.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Pools?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1014,7 +1010,6 @@ class quick_start(object):
         configure_loop = False
         jsonData       = kwargs['jsonData']
         org            = self.org
-        path_sep       = kwargs['path_sep']
         server_type    = kwargs['server_type']
         vlan_list      = kwargs['vlan_list']
 
@@ -1087,8 +1082,8 @@ class quick_start(object):
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Configure Policies for a UCS Server Profile.\n')
             print(f'  This wizard will save the output for these Policies in the following files:\n')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/environment.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/management.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}/environment.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}/management.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Policy Configuration?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
@@ -1428,15 +1423,14 @@ class quick_start(object):
         ezData          = kwargs['ezData']
         fc_ports_in_use = kwargs['fc_ports_in_use']
         org             = self.org
-        path_sep        = kwargs['path_sep']
         configure_loop  = False
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Domain Policies, will configure pools for a UCS Domain ')
             print(f'  Profile.\n')
             print(f'  This wizard will save the output for these pools in the following files:\n')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/ucs_server_profile_templates.yaml')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}/ucs_server_profiles.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}/ucs_server_profile_templates.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}/ucs_server_profiles.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Server Profiles Configuration?  \n'\
                 'Enter "Y" or "N" [Y]: ')
@@ -1600,12 +1594,11 @@ class quick_start(object):
         jsonData       = kwargs['jsonData']
         name_prefix    = self.name_prefix
         org            = self.org
-        path_sep       = kwargs['path_sep']
         while configure_loop == False:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  The Quick Deployment Module - Standalone Policies.\n')
             print(f'  This wizard will save the output for these policies in the following files:\n')
-            print(f'  - {baseRepo}{path_sep}{org}{path_sep}{self.type}{path_sep}management.yaml')
+            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}management.yaml')
             print(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to run the Quick Deployment Module - Standalone Policy Configuration?'\
                 '  Enter "Y" or "N" [Y]: ')

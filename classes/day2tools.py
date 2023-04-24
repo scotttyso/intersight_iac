@@ -55,10 +55,9 @@ class intersight_api(object):
 
     def add_policies(self, **kwargs):
         args = kwargs['args']
-        path_sep = kwargs['path_sep']
         script_path = kwargs['script_path']
         jsonArg = False
-        jsonFile = f'{script_path}{path_sep}variables{path_sep}easy_variables.json'
+        jsonFile = f'{script_path}{os.sep}variables{os.sep}easy_variables.json'
         jsonOpen = open(jsonFile, 'r')
         easy_jsonData = json.load(jsonOpen)
         jsonOpen.close()
