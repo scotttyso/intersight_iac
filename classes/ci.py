@@ -2,6 +2,7 @@
 # Source Modules
 #=============================================================================
 from classes import ezfunctionsv2 as ezfunctions
+from classes import validatingv2 as validating
 from classes import netapp
 from classes import isight
 from copy import deepcopy
@@ -14,7 +15,6 @@ import re
 import requests
 import sys
 import time
-import validatingv2 as validating
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
