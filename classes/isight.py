@@ -1,4 +1,5 @@
 from classes import ezfunctionsv2 as ezfunctions
+from classes import validatingv2 as validating
 from copy import deepcopy
 from dotmap import DotMap
 from intersight_auth import IntersightAuth
@@ -10,7 +11,6 @@ import requests
 import sys
 import time
 import urllib3
-import validatingv2 as validating
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 serial_regex = re.compile('^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\dA-Z]{4}$')

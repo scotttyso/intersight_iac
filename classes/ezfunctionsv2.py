@@ -1,4 +1,4 @@
-from classes import validating
+from classes import validatingv2 as validating
 from dotmap import DotMap
 from copy import deepcopy
 from git import cmd, Repo
