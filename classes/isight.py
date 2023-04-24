@@ -1,7 +1,7 @@
+from classes import ezfunctionsv2 as ezfunctions
 from copy import deepcopy
 from dotmap import DotMap
 from intersight_auth import IntersightAuth
-import ezfunctionsv2 as ezfunctions
 import json
 import numpy
 import os
