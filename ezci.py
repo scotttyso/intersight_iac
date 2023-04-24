@@ -139,8 +139,9 @@ def main():
     # Build kwargs
     #==============================================
     kwargs   = cli_arguments()
-    if '~' in kwargs.args.api_key_file:
-        kwargs.args.api_key_file = os.path.expanduser(kwargs.args.api_key_file)
+    if kwargs.args.api_key_file:
+        if '~' in kwargs.args.api_key_file:
+            kwargs.args.api_key_file = os.path.expanduser(kwargs.args.api_key_file)
     kwargs.deployment_type= kwargs.args.deployment_type
     kwargs.home           = Path.home()
     kwargs.opSystem       = platform.system()
