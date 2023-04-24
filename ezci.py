@@ -7,14 +7,14 @@ The Script uses argparse to take in the following CLI arguments:
     e or endpoint:        The Intersight hostname for the API endpoint. The default is intersight.com.
     i or ignore-tls:      Ignore TLS server-side certificate verification.  Default is False.
     k or api-key-file:    Name of the file containing The Intersight secret key for the HTTP signature scheme.
+    l or debug-level:     The Debug Level to Run for Script Output
     s or deployment-step: The steps in the proceedure to run. Options Are:
                             1. initial
                             2. servers
                             3. luns
                             4. operating_system
                             5. os_configuration
-    t or deployment-type: Ignore TLS server-side certificate verification.  Default is False.
-    k or api-key-file:    Infrastructure Deployment Type. Options Are:
+    t or deployment-type:    Infrastructure Deployment Type. Options Are:
                             1. azure_hci
                             2. netapp
                             3. pure
@@ -81,11 +81,22 @@ def cli_arguments():
     )
     Parser.add_argument(
         '-i', '--ignore-tls', action='store_false',
-        help='Ignore TLS server-side certificate verification.'
+        help='Ignore TLS server-side certificate verification.  Default is False.'
     )
     Parser.add_argument(
         '-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
         help='Name of the file containing The Intersight secret key for the HTTP signature scheme.'
+    )
+    Parser.add_argument(
+        '-l', '--debug-level',
+        default =0,
+        required=False,
+        help    ='The Amount of Debug output to Show:'\
+            '1. Shows the api request response status code'
+            '5. Show URL String + Lower Options'\
+            '6. Adds Results + Lower Options'\
+            '7. Adds json payload + Lower Options'\
+            'Note: payload shows as pretty and straight to check for stray object types like Dotmap and numpy'
     )
     Parser.add_argument(
         '-s', '--deployment-step',
@@ -204,8 +215,7 @@ def main():
     # Build Deployment Library
     #==============================================
     kwargs.nope = False
-    #kwargs = isight.api('organization').organizations(kwargs)
-    kwargs.org_moids = DotMap({'default': {'moid': '5ddea1e16972652d32b6493a'}, 'Asgard': {'moid': '5f6509326972652d32fa70a8'}, 'Wakanda': {'moid': '60aeca786972652d32ee5e46'}, 'Production': {'moid': '61b9e6516972652d32099398'}, 'terratest': {'moid': '633ed7606972652d32ecc0a6'}, 'Panther': {'moid': '636a5a086972652d32b1740e'}, 'RICH': {'moid': '639ffbbe6972652d3243d65f'}})
+    kwargs = isight.api('organization').organizations(kwargs)
     kwargs = ci.wizard('dns_ntp').dns_ntp(kwargs)
     kwargs = ci.wizard('imm').imm(kwargs)
     kwargs = ci.wizard('vlans').vlans(kwargs)
@@ -215,11 +225,8 @@ def main():
     #==============================================
     # Installation Files Location
     #==============================================
-    # TEMP FIX for Dev Environment - Remove
-    kwargs.files_dir= '/mnt/c/Users/tyscott/Downloads/'
+    kwargs.files_dir= '/var/www/upload'
     kwargs.repo_server= socket.getfqdn()
-    # TEMP FIX for Dev Environment - Remove
-    kwargs.repo_server= 'rdp1.rich.ciscolabs.com'
     kwargs.repo_path  = '/'
 
 
@@ -247,7 +254,7 @@ def main():
             kwargs = ci.wizard('build').build_netapp(kwargs)
 
         #==============================================
-        # Configure and Deploy Domain
+        # Configure Domain
         #==============================================
         if re.search('(imm_domain|netapp|pure)', kwargs.args.deployment_type):
             kwargs = ci.wizard('build').build_imm_domain(kwargs)
@@ -257,7 +264,6 @@ def main():
         #==============================================
         orgs = list(kwargs.immDict.orgs.keys())
         ezfunctions.create_yaml(orgs, kwargs)
-
         for org in orgs:
             #==============================================
             # Policies
@@ -278,7 +284,7 @@ def main():
     #=================================================================
     # Deploy Chassis/Server Pools/Policies/Profiles
     #=================================================================
-    elif kwargs.args.deployment_step == 'server':
+    elif kwargs.args.deployment_step == 'servers':
         kwargs.deployed = {}
         #==============================================
         # Configure and Deploy Server Profiles
@@ -389,7 +395,7 @@ def main():
             for i in kwargs.virtualization:
                 if i.type == 'vmware': vmware = True
             if vmware == True:
-                #kwargs = vsphere.api('esx').esx(kwargs)
+                kwargs = vsphere.api('esx').esx(kwargs)
                 kwargs = vsphere.api('powercli').powercli(kwargs)
 
     prLightGray(f'\n-----------------------------------------------------------------------------\n')

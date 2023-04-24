@@ -13,17 +13,6 @@ import urllib3
 import validatingv2 as validating
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-#=======================================================
-# Global options for debugging
-# 1 - Shows the api request response status code
-# 5 - Show URL String + Lower Options
-# 6 - Adds Results + Lower Options
-# 7 - Adds json payload + Lower Options
-# Note: payload shows as pretty and straight to check
-#       for stray object types like Dotmap and numpy
-#=======================================================
-debug_level   = 5
-
 serial_regex = re.compile('^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\dA-Z]{4}$')
 part1 = '(ethernet|fibre_channel)_qos|flow_control|iscsi_adapter|link_aggregation'
 part2 = 'multicast|ntp|port|power|serial_over_lan|thermal|virtual_kvm|vlan|vsan'
@@ -40,6 +29,17 @@ class api(object):
     # Perform API Calls to Intersight
     #=====================================================
     def calls(self, kwargs):
+        #=======================================================
+        # Global options for debugging
+        # 1 - Shows the api request response status code
+        # 5 - Show URL String + Lower Options
+        # 6 - Adds Results + Lower Options
+        # 7 - Adds json payload + Lower Options
+        # Note: payload shows as pretty and straight to check
+        #       for stray object types like Dotmap and numpy
+        #=======================================================
+        debug_level   = kwargs.args.debug_level
+
         #=====================================================
         # Authenticate to the API
         #=====================================================

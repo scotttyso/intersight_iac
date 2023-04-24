@@ -430,8 +430,6 @@ foreach($vcenter in $jsonData.vcenters) {
         # Configure Host Networking
         #=====================================================
         Write-Host "  Beginning Network Configuration for $($esxHost.Name)" -ForegroundColor Blue
-        # Remove all standard vswitches that are not "vSwitch0" - will be created as part of script.
-        #$esxHost | Get-VirtualSwitch -Standard | Where-Object {$_.name -ne "vswitch0"} | Remove-VirtualSwitch -Confirm:$false
         
         #=====================================================
         # Configure Management Networking
@@ -467,72 +465,69 @@ foreach($vcenter in $jsonData.vcenters) {
             # If Standard vSwitch Create on Host
             #=====================================================
             if ($vcenter.vswitches.$swname.type -eq "standard") {
-                if (!($stdvswitches | Where-Object {$_.name -eq  $vswitch.name})) {
-                    Write-Host "Didn't Match $($vswitch.name)"
+                if (!($stdvswitches | Where-Object {$_.name -eq $vswitch.name})) {
+                    Write-Host "  Configuring Virtual Switch $($vswitch.name) on $($esxHost)" -ForegroundColor Green
                     $stdvswitch = $esxHost | New-VirtualSwitch -Name $vswitch.name -Nic $vnic2 -Mtu $vcenter.vswitches.$swname.mtu
                 } else {
-                    Write-Host "Matched $($vswitch.name)"
-                    $stdvswitch = $stdvswitches | Where-Object {$_.name -eq  $vswitch.name}
-                }
-            }
-            #=====================================================
-            # Configure Standard vSwitch VMKs
-            #=====================================================
-            $vmks = $esxHost | Get-VMHostNetworkAdapter -VMKernel
-            foreach($vmk in $vswitch.vmks) {
-                #=====================================================
-                # Configure Standard vSwitch Port Group for VMK
-                #=====================================================
-                $port_groups = $esxHost | Get-VirtualPortGroup -Standard
-                if (!($port_groups | Where-Object {$_.name -eq $vmk.port_group})) {
-                    Write-Host "  Adding Port-Group $($vmk.port_group) to $($swname) on $($esxHost)" -ForegroundColor Green
-                    $pg = $vcenter.vswitches.$swname.port_groups | Where-Object {$_.name -eq $vmk.port_group}
-                    Write-Host "pg vlan is $($pg | Select-Object *)"
-                    if ($pg.vlan -is [int]) {
-                        $port_group = $stdvswitch | New-VirtualPortGroup -Name $vmk.port_group -VLanId $pg_vlan.vlan
-                    } else { $port_group = $stdvswitch | New-VirtualPortGroup -Name $vmk.port_group }
-                } else {
-                    Write-Host "  Found Existing Port-Group $($vmk.port_group) Assigned to $($swname) on $($esxHost)" -ForegroundColor Green
-                    $port_group = $port_groups | Where-Object {$_.name -eq $vmk.port_group}
+                    Write-Host "  Found Existing Virtual Switch $($vswitch.name) on $($esxHost)" -ForegroundColor Blue
+                    $stdvswitch = $stdvswitches | Where-Object {$_.name -eq $vswitch.name}
                 }
                 #=====================================================
-                # Configure Standard VMKernel Adapters
+                # Configure Standard vSwitch VMKs
                 #=====================================================
-                if (!($vmks | Where-Object {$_.name -eq  $vmk.name})) {
-                    Write-Host "      Beginning Configuration for VMKernel $($vmk.name) on host $($esxHost)" -ForegroundColor Green
-                    $vmkernel = $port_group | New-VMHostNetworkAdapter -IP $vmk.ip -SubnetMask $vmk.netmask -Mtu $vcenter.vswitches.$swname.mtu
-                } elseif (!($vmkernel.PortGroupName -eq $vmk.port_group)) {
-                    Write-Host "      Assigning VMKernel $($vmk.name) on host $($esxHost) to Port Group $($vmk.port_group)" -ForegroundColor Green
-                    $vmkernel = $vmks | Where-Object {$_.name -eq $vmk.name}
-                    $ArgsObj = $EsxCli2.network.ip.interface.add.CreateArgs()
-                    $ArgsObj.interfacename = $vmk.name
-                    $ArgsObj.PortGroupName = $port_group.Name
-                    $EsxCli2.network.ip.interface.add.Invoke($ArgsObj)
-                } else {
-                    Write-Host "      VMKernel $($vmk.name) on host $($esxHost) is Already assigned to Port Group $($vmk.port_group)" -ForegroundColor Blue
-                    $vmkernel = $vmks | Where-Object {$_.name -eq $vmk.name}
+                $vmks = $esxHost | Get-VMHostNetworkAdapter -VMKernel
+                foreach($vmk in $vswitch.vmks) {
+                    #=====================================================
+                    # Configure Standard vSwitch Port Group for VMK
+                    #=====================================================
+                    $port_groups = $esxHost | Get-VirtualPortGroup -Standard
+                    if (!($port_groups | Where-Object {$_.name -eq $vmk.port_group})) {
+                        Write-Host "  Adding Port-Group $($vmk.port_group) to $($swname) on $($esxHost)" -ForegroundColor Green
+                        $pg = $vcenter.vswitches.$swname.port_groups | Where-Object {$_.name -eq $vmk.port_group}
+                        Write-Host "pg vlan is $($pg | Select-Object *)"
+                        if ($pg.vlan -is [int]) {
+                            $port_group = $stdvswitch | New-VirtualPortGroup -Name $vmk.port_group -VLanId $pg_vlan.vlan
+                        } else { $port_group = $stdvswitch | New-VirtualPortGroup -Name $vmk.port_group }
+                    } else {
+                        Write-Host "  Found Existing Port-Group $($vmk.port_group) Assigned to $($swname) on $($esxHost)" -ForegroundColor Green
+                        $port_group = $port_groups | Where-Object {$_.name -eq $vmk.port_group}
+                    }
+                    #=====================================================
+                    # Configure Standard VMKernel Adapters
+                    #=====================================================
+                    if (!($vmks | Where-Object {$_.name -eq $vmk.name}) -and !($vmk.name -eq "vmk0")) {
+                        Write-Host "      Beginning Configuration for VMKernel $($vmk.name) on host $($esxHost)" -ForegroundColor Green
+                        $vmkernel = $port_group | New-VMHostNetworkAdapter -IP $vmk.ip -SubnetMask $vmk.netmask -Mtu $vcenter.vswitches.$swname.mtu
+                    } elseif (!($vmkernel.PortGroupName -eq $vmk.port_group)) {
+                        Write-Host "      Assigning VMKernel $($vmk.name) on host $($esxHost) to Port Group $($vmk.port_group)" -ForegroundColor Green
+                        $vmkernel = $vmks | Where-Object {$_.name -eq $vmk.name}
+                        $ArgsObj = $EsxCli2.network.ip.interface.add.CreateArgs()
+                        $ArgsObj.interfacename = $vmk.name
+                        $ArgsObj.PortGroupName = $port_group.Name
+                        $EsxCli2.network.ip.interface.add.Invoke($ArgsObj)
+                    } else {
+                        Write-Host "      VMKernel $($vmk.name) on host $($esxHost) is Already assigned to Port Group $($vmk.port_group)" -ForegroundColor Blue
+                        $vmkernel = $vmks | Where-Object {$_.name -eq $vmk.name}
+                    }
+                    if ($vmk.vmotion -eq "true") {
+                        $esxHost | Get-VMHostNetworkAdapter -Name $vmk.name | Set-VMHostNetworkAdapter -VMotionEnabled $true
+                    }
                 }
-                if ($vmk.vmotion -eq "true") {
-                    $esxHost | Get-VMHostNetworkAdapter -Name $vmk.name | Set-VMHostNetworkAdapter -VMotionEnabled $true
-                }
-            }
-            #=====================================================
-            # If Standard vSwitch Configure vNICs
-            #=====================================================
-            exit
-            if ($vcenter.vswitches.$swname.type -eq "standard") {
+                #=====================================================
+                # Configure vNICs
+                #=====================================================
                 $stdvswitch = $esxHost | Get-VirtualSwitch -Standard -Name $vswitch.name
                 $stdvswitch | Get-VirtualPortGroup | Where-Object {$_.Name -eq "VM Network"} | Remove-VirtualPortGroup -Confirm:$false
                 if($stdvswitch.ExtensionData.Pnic.Count -lt 2) {
                     if($stdvswitch.ExtensionData.Pnic | Select-String $vnic1.Name) {
                         $stdvswitch | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic $vnic2 -Confirm:$false
-                        $stdvswitch | Get-NicTeamingPolicy | Set-NicTeamingPolicy -MakeNicActive $vnic1, $vnic2
                     } 
-                    elseif ($stdvswitch.ExtensionData.Pnic | Select-String $vnic2.Name) {
+                    if ($stdvswitch.ExtensionData.Pnic | Select-String $vnic2.Name) {
                         $stdvswitch | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic $vnic1 -Confirm:$false
-                        $stdvswitch | Get-NicTeamingPolicy | Set-NicTeamingPolicy -MakeNicActive $vnic1, $vnic2
                     }
+                    $stdvswitch | Get-NicTeamingPolicy | Set-NicTeamingPolicy -MakeNicActive $vnic1, $vnic2
                 }
+            
             #=====================================================
             # Configure DVS Switch
             #=====================================================
@@ -571,9 +566,13 @@ foreach($vcenter in $jsonData.vcenters) {
                 foreach($vmk in $vswitch.vmks) {
                     Write-Host "      Beginning Configuration for VMKernel $($vmk.name) on host $($esxHost)" -ForegroundColor Blue
                     $dvsPg = Get-VDPortgroup -Name $vmk.port_group -VDSwitch $vdSwitch
-                    $esxVMK = Get-VMHostNetworkAdapter -VMHost $esxHost -VMKernel -Name $vmk.name
-                    if (!($vmk.name -eq "vmk0") -and !($esxVMK.Name -eq $vmk.name)) {
-                        $newVMK = New-VMHostNetworkAdapter -VMHost $esxHost -PortGroup $dvsPg -VirtualSwitch $vdSwitch -IP $vmk.ip -SubnetMask $vmk.netmask -Mtu $vcenter.vswitches.$swname.mtu -Confirm:$false
+                    $esxVmk = Get-VMHostNetworkAdapter -VMHost $esxHost -VMKernel -Name $vmk.name
+                    if (!($vmkPg.Name -eq $esxVmk.PortGroupName)) {
+                        if (!($esxVmk.Name)) {
+                            $newVMK = New-VMHostNetworkAdapter -VMHost $esxHost -PortGroup $dvsPg -VirtualSwitch $vdSwitch -IP $vmk.ip -SubnetMask $vmk.netmask -Mtu $vcenter.vswitches.$swname.mtu -Confirm:$false
+                        } else {
+                            $esxVmk | Set-VMHostNetworkAdapter -PortGroup $dvsPg -VirtualSwitch $vdSwitch -IP $vmk.ip -SubnetMask $vmk.netmask -Mtu $vcenter.vswitches.$swname.mtu -Confirm:$false
+                        }
                         if ($vmk.vmotion -eq $true) {
                             $esxHost | Get-VMHostNetworkAdapter -Name $vmk.name | Set-VMHostNetworkAdapter -VMotionEnabled $true -Confirm:$false 
                         }
@@ -605,7 +604,6 @@ foreach($vcenter in $jsonData.vcenters) {
             }
             Write-Host "    Completed Configuration for '$($vswitch.name)' on '$($esxHost.name)'" -ForegroundColor Blue
             Write-Host ""
-        }
         
         #=====================================================
         # Configure iSCSI Software Adapter
@@ -662,14 +660,13 @@ foreach($vcenter in $jsonData.vcenters) {
             Write-Host "  Completed Datastore $($dStore.name) configuration on $($esxHost)" -ForegroundColor Blue
             Write-Host ""
         }
-        $match_count = 0
-        foreach($vswitch in $esx_host.vswitches) {
-            if ($vswitch.name -eq "vswitch0") { $match_count = 1 }
-        }
-        if ($match_count -eq 0) {
-            Write-Host " Deleting vswitch0 from $($esxHost)" -ForegroundColor Red
-            exit
-            #$esxHost | Get-VirtualSwitch -Standard | Where-Object {$_.name -eq "vswitch0"} | Remove-VirtualSwitch -Confirm:$false
+        # Remove all standard vswitches that are not Configured in the JSON File.
+        $unused_vsws = $esxHost | Get-VirtualSwitch -Standard
+        foreach($vswitch in $unused_vsws) {
+            if (!($esx_host.vswitches | Where-Object {$_.name -eq $vswitch.name})) {
+                $unused_vsw = $unused_vsws | Where-Object {$_.name -eq $vswitch.name}
+                $unused_vsw | Remove-VirtualSwitch -Confirm:$false
+            }
         }
 
         #=====================================================
@@ -694,6 +691,7 @@ foreach($vcenter in $jsonData.vcenters) {
                 $hostView = Get-View -Id $hostStorage.Id
                 $nvmePnic = $hostView.StorageDeviceInfo.HostBusAdapter | Select-Object * | Where-Object {$_.AssociatedPnic -eq $physicalNic}
                 Write-Host "    * Added NVMe TcpHba on $($nvmePnic.Device)" -ForegroundColor Green
+                exit
                 
                 #---------------ConnectNvmeControllerEx_Task---------------
                 $specCount = 0
@@ -750,6 +748,7 @@ foreach($vcenter in $jsonData.vcenters) {
         }
         Write-Host "Completed Configuration for $($esx_host.name)" -ForegroundColor Blue
         Write-Host ""
+        }
     }
     
     #=====================================================

@@ -467,7 +467,8 @@ class imm(object):
         #=====================================================
         for item in kwargs.virtualization:
             for i in item.virtual_switches:
-                kwargs.name  = i.name
+                if not i.name == 'vSwitch0': kwargs.name = i.name
+                else: kwargs.name = i.alternate_name
                 kwargs.native= 1
                 if 'guests' in i.data_types:
                     kwargs.name = 'all_vlans'
@@ -522,6 +523,15 @@ class imm(object):
                                 if re.search('(nfs|nvme)', v.vlan_type): svlans.append(v.vlan_id)
                             kwargs.allowed= ezfunctions.vlan_list_format(svlans)
                             kwargs        = create_eth_groups(kwargs)
+                    else:
+                        mvlans       = [kwargs.migration.vlan_id]
+                        for v in kwargs.vlans:
+                            if re.search('(iscsi|nfs|nvme)', v.vlan_type): mvlans.append(v.vlan_id)
+                        mvlans.sort()
+                        kwargs.allowed= ezfunctions.vlan_list_format(mvlans)
+                        kwargs        = create_eth_groups(kwargs)
+        print(json.dumps(kwargs.immDict.orgs[kwargs.org].policies.ethernet_network_group, indent=4))
+        exit()
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -1012,19 +1022,21 @@ class imm(object):
                 for e in kwargs.virtualization:
                     for i in e.virtual_switches:
                         print(i.data_types)
-                        if re.search('[A-Z]', i.name): a = 'A'; b = 'B'
+                        if not i.name == 'vSwitch0': name = i.name
+                        else: name = i.alternate_name
+                        if re.search('[A-Z]', name): a = 'A'; b = 'B'
                         else: a = 'a'; b = 'b'
                         if 'guests' in i.data_types:
                             if iscsi==2 and 'storage' in i.data_types: network_groups = [
-                                    f'{kwargs.domain.policies.prefix}{i.name}-{a}',
-                                    f'{kwargs.domain.policies.prefix}{i.name}-{b}']
+                                    f'{kwargs.domain.policies.prefix}{name}-{a}',
+                                    f'{kwargs.domain.policies.prefix}{name}-{b}']
                             else: network_groups = [f'{kwargs.domain.policies.prefix}all_vlans']
                         elif 'storage' in i.data_types:
                             if iscsi==2: network_groups = [
-                                    f'{kwargs.domain.policies.prefix}{i.name}-{a}',
-                                    f'{kwargs.domain.policies.prefix}{i.name}-{b}']
-                            else: network_groups = [f'{kwargs.domain.policies.prefix}{i.name}']
-                        else: network_groups = [i.name]
+                                    f'{kwargs.domain.policies.prefix}{name}-{a}',
+                                    f'{kwargs.domain.policies.prefix}{name}-{b}']
+                            else: network_groups = [f'{kwargs.domain.policies.prefix}{name}']
+                        else: network_groups = [name]
                         if   'storage' in i.data_types:
                             if gen == 'gen5': adapter_policy= '16RxQs-5G'
                             else: adapter_policy= '16RxQs-4G'
@@ -1052,8 +1064,8 @@ class imm(object):
                             ethernet_network_group_policies= network_groups,
                             ethernet_qos_policy            = qos_policy,
                             iscsi_boot_policies            = [],
-                            names                          = [f'{i.name}-{a}', f'{i.name}-{b}'],
-                            mac_address_pools              = [f'{i.name}-{a}', f'{i.name}-{b}'],
+                            names                          = [f'{name}-{a}', f'{name}-{b}'],
+                            mac_address_pools              = [f'{name}-{a}', f'{name}-{b}'],
                             placement_pci_order            = placement_order,
                             placement_slot_ids             = slots
                         ))
@@ -1067,8 +1079,7 @@ class imm(object):
                 # Add Policy Variables to immDict
                 kwargs.class_path = f'policies,{self.type}'
                 kwargs = ezfunctions.ez_append(polVars, kwargs)
-        print(json.dumps(kwargs.immDict.orgs[kwargs.org].policies.lan_connectivity, indent=4))
-        exit()
+
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -1151,8 +1162,10 @@ class imm(object):
         for e in kwargs.virtualization:
             for i in e.virtual_switches:
                 for x in range(0,2):
-                    if re.search('[A-Z]', i.name): pool= i.name + '-' + chr(ord('@')+x+1)
-                    else: pool= i.name + '-' + chr(ord('@')+x+1).lower()
+                    if not i.name == 'vSwitch0': name = i.name
+                    else: name = i.alternate_name
+                    if re.search('[A-Z]', name): pool= name + '-' + chr(ord('@')+x+1)
+                    else: pool= name + '-' + chr(ord('@')+x+1).lower()
                     pid = mcount + x
                     if pid > 8: pid=chr(ord('@')+pid-8)
                     polVars = dict(
@@ -2129,11 +2142,9 @@ class wizard(object):
             kwargs.domain.name = k
             if kwargs.domain.policies.prefix == None:
                 kwargs.domain.policies.prefix = ''
-            #kwargs = imm('compute_environment').compute_environment(kwargs)
+            kwargs = imm('compute_environment').compute_environment(kwargs)
             #print(kwargs.chassis.toDict())
             #print(kwargs.servers.toDict())
-            kwargs.chassis = DotMap({'ucsb-5108-ac2': [{'domain': 'r142c', 'identity': 1, 'serial': 'FOX2528PK0Z'}], 'ucsx-9508': [{'domain': 'r142c', 'identity': 2, 'serial': 'FOX2501P0BF'}]})
-            kwargs.servers = DotMap({'FCH21427CHB': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c64eeb76752d3135626948', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH21427CHB', 'server_id': 0, 'slot': 7, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH213271VU': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c6513e76752d313562f0cc', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH213271VU', 'server_id': 0, 'slot': 3, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH222974YZ': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c6559676752d313564167f', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH222974YZ', 'server_id': 0, 'slot': 2, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FLM2509002F': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c655c476752d31356420ff', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FLM2509002F', 'server_id': 0, 'slot': 8, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH21427JG8': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c65d7276752d313565f3bc', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH21427JG8', 'server_id': 0, 'slot': 5, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH243974V2': {'chassis_id': '2', 'chassis_moid': '63a1ec1076752d31353e0780', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M6', 'moid': '63a1ecb176752d31353e3720', 'model': 'UCSX-210C-M6', 'object_type': 'compute.Blade', 'serial': 'FCH243974V2', 'server_id': 0, 'slot': 8, 'template': 'M6-intel-tpm-vic-gen4-mlom', 'tpm': '-tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH24397500': {'chassis_id': '2', 'chassis_moid': '63a1ec1076752d31353e0780', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M6', 'moid': '63a1ecb276752d31353e377d', 'model': 'UCSX-210C-M6', 'object_type': 'compute.Blade', 'serial': 'FCH24397500', 'server_id': 0, 'slot': 7, 'template': 'M6-intel-tpm-vic-gen4-mlom', 'tpm': '-tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH243974WZ': {'chassis_id': '2', 'chassis_moid': '63a1ec1076752d31353e0780', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M6', 'moid': '63a1ed0476752d31353e4938', 'model': 'UCSX-210C-M6', 'object_type': 'compute.Blade', 'serial': 'FCH243974WZ', 'server_id': 0, 'slot': 6, 'template': 'M6-intel-tpm-vic-gen4-mlom', 'tpm': '-tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}})
             kwargs.pci_order = 0
             for i in policy_list:
                 kwargs = eval(f'imm(i).{i}(kwargs)')
@@ -2600,7 +2611,7 @@ class wizard(object):
                 kwargs.server_profiles[k].iqn = r.IqnId
         kwargs.pop('api_filter')
         kwargs.server_profile = DotMap(kwargs.server_profiles)
-
+        
         # Query API for Ethernet Network Policies and Add to Server Profile Dictionaries
         kwargs.eth_moids = numpy.unique(numpy.array(kwargs.eth_moids))
         kwargs.method= 'get_by_moid'
@@ -2625,7 +2636,7 @@ class wizard(object):
         #=====================================================
         # Run Lun Creation Class
         #=====================================================
-        #kwargs = netapp.build('lun').lun(kwargs)
+        kwargs = netapp.build('lun').lun(kwargs)
 
         for k, v in kwargs.server_profiles.items():
             polVars = v.toDict()

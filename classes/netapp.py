@@ -63,11 +63,11 @@ class api(object):
         #=====================================================
         # Load Variables and Login to Storage Array
         #=====================================================
-        kwargs.hostname    = kwargs.netapp.node01 + '.' + kwargs.dns_domains[0]
-        kwargs.hostPassword= 'netapp_password'
-        kwargs.host_prompt = deepcopy(kwargs.netapp.host_prompt)
-        kwargs.username    = kwargs.netapp.user
-        child, kwargs      = ezfunctions.child_login(kwargs)
+        kwargs.hostname   = kwargs.netapp.node01 + '.' + kwargs.dns_domains[0]
+        kwargs.password   = 'netapp_password'
+        kwargs.host_prompt= deepcopy(kwargs.netapp.host_prompt)
+        kwargs.username   = kwargs.netapp.username
+        child, kwargs     = ezfunctions.child_login(kwargs)
         prCyan('\n\n')
         kwargs.count = 2
         kwargs.show  = f'autosupport invoke -node * -type all -message "FlexPod ONTAP storage configuration completed"'
@@ -1217,6 +1217,8 @@ class build(object):
         polVars = dict(
             contact     = items.snmp.contact,
             dns_domains = kwargs.dns_domains,
+            hostname    = items.nodes[0].name + '.' + kwargs.dns_domains[0],
+            host_prompt = items.host_prompt,
             license     = dict(keys = []),
             location    = items.snmp.location,
             management_interfaces = [dict(
@@ -1232,8 +1234,9 @@ class build(object):
         if items.get('licenses'):
             polVars.update({'license':{'keys':[items.licenses]}})
 
-        kwargs.netapp.hostname= items.nodes.node01 + '.' + kwargs.dns_domains[0]
-        kwargs.netapp.username= items.username
+        kwargs.netapp.hostname   = items.nodes.node01 + '.' + kwargs.dns_domains[0]
+        kwargs.netapp.host_prompt= items.host_prompt
+        kwargs.netapp.username   = items.username
         ilist = ['autosupport', 'broadcast_domain', 'nodes', 'snmp', 'svm']
         for i in ilist:
             idict = eval(f"build(i).{i}(items, kwargs)")
@@ -1290,14 +1293,41 @@ class build(object):
                     }
                     kwargs.lun_list.append(polVars)
                     api('lun').lun(polVars, kwargs)
+                elif str(e.volume_type) == 'nvme':
+                    kwargs.hostname   = kwargs.netapp.hostname
+                    kwargs.password   = 'netapp_password'
+                    kwargs.host_prompt= deepcopy(kwargs.netapp.host_prompt)
+                    kwargs.username   = kwargs.netapp.username
+                    child, kwargs     = ezfunctions.child_login(kwargs)
+                    for k, v in kwargs.server_profiles.items():
+                        x = kwargs.dns_domains[0].split('.')
+                        reverse_domain = '.'.join(x)
+                        server_nqn = f"nqn.2014-08.{reverse_domain}:nvme:{v.name}"
+                        kwargs.count = 1
+                        kwargs.show  = f"vserver nvme subsystem host show"
+                        kwargs.regex = server_nqn
+                        kwargs.cmds  = [
+                            f"vserver nvme subsystem host add -vserver {kwargs.svm} -subsystem {e.os_type}-hosts -host-nqn {server_nqn}"
+                        ]
+                        config_function(child, kwargs)
+                    #=====================================================
+                    # Close the Child Process
+                    #=====================================================
+                    child.sendline('exit')
+                    child.expect('closed')
+                    child.close()
+                    os.remove(f'{kwargs.hostname}.txt')
+
+
 
             return kwargs
 
         cluster = deepcopy(kwargs.immDict.orgs[kwargs.org].netapp.cluster)
         for i in cluster:
             for s in i.svm:
-                kwargs.netapp.hostname = i.nodes[0].name + '.' + kwargs.dns_domains[0]
-                kwargs.netapp.username = i.username
+                kwargs.netapp.hostname   = i.hostname
+                kwargs.netapp.username   = i.username
+                kwargs.netapp.host_prompt= i.host_prompt
                 kwargs.cluster = i.name
                 kwargs.svm     = s.name
                 kwargs.volumes = s.volumes

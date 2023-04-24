@@ -60,21 +60,21 @@ class api(object):
             prGreen(f"   Beginning VIB Installs for {esx_host}.")
             prGreen(f"\n{'-'*91}\n")
             time.sleep(2)
-            kwargs.hostname     = esx_host
-            kwargs.hostPassword = 'esx_password'
-            kwargs.username     = 'root'
-            kwargs.hostPrompt   = f'root\\@{k}\\:'
-            child, kwargs      = ezfunctions.child_login(kwargs, **kwargs)
+            kwargs.hostname   = esx_host
+            kwargs.password   = 'esx_password'
+            kwargs.username   = 'root'
+            kwargs.host_prompt= f'root\\@{k}\\:'
+            child, kwargs     = ezfunctions.child_login(kwargs)
 
             reboot_required = False
             for key, value in kwargs.files.items():
                 vib     = value
                 repo_url= f'https://{kwargs.repo_server}{kwargs.repo_path}{vib}'
                 child.sendline(f'rm -f {vib}')
-                child.expect(kwargs.hostPrompt)
+                child.expect(kwargs.host_prompt)
                 child.sendline(f'wget --no-check-certificate {repo_url}')
                 child.expect('saved')
-                child.expect(kwargs.hostPrompt)
+                child.expect(kwargs.host_prompt)
                 if re.search('(Broadcom|Cisco)', vib): child.sendline(f'esxcli software component apply -d /tmp/{vib}')
                 else: child.sendline(f'esxcli software vib install -d /tmp/{vib}')
                 cmd_check = False
@@ -82,19 +82,19 @@ class api(object):
                     regex1 = re.compile(f"(Components Installed: [a-zA-Z\\-\\_\\.]+)\r")
                     regex2 = re.compile('(Message: [a-zA-Z\\d ,]+\\.)\r')
                     regex3 = re.compile('Reboot Required: true')
-                    i = child.expect([regex1, regex2, regex3, kwargs.hostPrompt])
+                    i = child.expect([regex1, regex2, regex3, kwargs.host_prompt])
                     if   i == 0: prGreen(f'\n\n    {(child.match).group(1)}\n\n')
                     elif i == 1: prGreen(f'\n\n    VIB {vib} install message is {(child.match).group(1)}\n\n')
                     elif i == 2: reboot_required = True
                     elif i == 3: cmd_check = True
             child.sendline('esxcfg-advcfg -s 0 /Misc/HppManageDegradedPaths')
-            child.expect(kwargs.hostPrompt)
-            #if reboot_required == True:
-            #    child.sendline('reboot')
-            #    child.expect('closed')
-            #else:
-            child.sendline('exit')
-            child.expect('closed')
+            child.expect(kwargs.host_prompt)
+            if reboot_required == True:
+                child.sendline('reboot')
+                child.expect('closed')
+            else:
+                child.sendline('exit')
+                child.expect('closed')
             prGreen(f"\n{'-'*91}\n")
             prGreen(f"   Completed Base Configuration for {esx_host}")
             prGreen(f"\n{'-'*91}\n")
@@ -128,6 +128,8 @@ class api(object):
                 kwargs.vmware.datastores.extend(i.datastores)
             kwargs.vmware.dns_domains= kwargs.dns_domains
             kwargs.vmware.dns_servers= kwargs.dns_servers
+            if not item.name == 'vSwitch0': kwargs.vmware.name = item.name
+            else: kwargs.vmware.name = item.alternate_name
             kwargs.vmware.name       = item.name
             kwargs.vmware.ntp_servers= kwargs.ntp_servers
             kwargs.vmware.servers    = []
@@ -188,24 +190,27 @@ class api(object):
                             management= kwargs.management,
                             name      = f"vmk{vmk}",
                             netmask   = values.netmask,
+                            nvme      = kwargs.nvme,
                             port_group= values.vlan_name,
                             vmotion   = kwargs.vmotion)
+                        if vmk == 'vmk0': kdict.port_group = 'Management Network'
                         return kdict
-                    kwargs.management=False
-                    kwargs.vmotion   =False
+                    kwargs.management= False
+                    kwargs.nvme      = False
+                    kwargs.vmotion   = False
                     if 'management' in vv.data_types:
-                        kwargs.management=True
+                        kwargs.management= True
                         values= v.inband
                         kdict = create_vmk_dictionary(vmk, values, kwargs)
                         vdict.vmks.append(deepcopy(kdict))
-                        kwargs.management=False
+                        kwargs.management= False
                         vmk+=1
                     if 'migration' in vv.data_types:
-                        kwargs.vmotion=True
+                        kwargs.vmotion= True
                         values= v.migration
                         kdict = create_vmk_dictionary(vmk, values, kwargs)
                         vdict.vmks.append(deepcopy(kdict))
-                        kwargs.vmotion=False
+                        kwargs.vmotion= False
                         vmk+=1
                     if 'storage' in vv.data_types:
                         if len(v.nfs) > 0:
@@ -222,8 +227,10 @@ class api(object):
                         if len(v.nvme) == 2:
                             for x in v.nvme:
                                 values= x
+                                kwargs.nvme= True
                                 kdict = create_vmk_dictionary(vmk, values, kwargs)
                                 vdict.vmks.append(deepcopy(kdict))
+                                kwargs.nvme= False
                                 vmk+=1
 
                     # Append Virtual Switches to Dictionary
@@ -243,7 +250,7 @@ class api(object):
                 )
                 if 'management' in i.data_types:
                     pg = DotMap(
-                        name     =kwargs.inband.name,
+                        name     ="Management Network",
                         primary  =False,
                         secondary=False,
                         vlan     =None)
