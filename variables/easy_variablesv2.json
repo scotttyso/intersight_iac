@@ -1645,15 +1645,6 @@
                                         "ProcessorC6report": "disabled",
                                         "ProcessorCstate": "disabled"
                                     },
-                                    "M5-intel-virtual":{
-                                        "CdnEnable": "enabled",
-                                        "CpuPowerManagement": "custom",
-                                        "NvmdimmPerformConfig": "Balanced Profile",
-                                        "ProcessorC1e": "disabled",
-                                        "ProcessorC3report": "disabled",
-                                        "ProcessorC6report": "disabled",
-                                        "ProcessorCstate": "disabled"
-                                    },
                                     "M6-intel-analytical-DB":{
                                         "CdnEnable": "enabled",
                                         "CpuPerfEnhancement": "Auto",
@@ -1696,11 +1687,28 @@
                                         "UpiPowerManagement": "enabled",
                                         "XptPrefetch": "enabled"
                                     },
+                                    "M5-intel-virtual":{
+                                        "CdnEnable": "enabled",
+                                        "CpuPowerManagement": "custom",
+                                        "NvmdimmPerformConfig": "Balanced Profile",
+                                        "ProcessorC1e": "disabled",
+                                        "ProcessorC3report": "disabled",
+                                        "ProcessorC6report": "disabled",
+                                        "ProcessorCstate": "disabled"
+                                    },
                                     "M6-amd-virtual":{
                                         "CbsCmnFixedSocPstate": "P0",
                                         "CbsDfCmnAcpiSratL3numa": "enabled",
                                         "CbsDfCmnDramNps": "NPS4",
                                         "CdnEnable": "enabled"
+                                    },
+                                    "M6-intel-azure":{
+                                        "CpuPerfEnhancement": "Auto",
+                                        "CdnEnable": "enabled",
+                                        "EnergyEfficientTurbo": "enabled",
+                                        "NvmdimmPerformConfig": "Balanced Profile",
+                                        "ProcessorC1e": "enabled",
+                                        "ProcessorC6report": "enabled"
                                     },
                                     "M6-intel-virtual":{
                                         "CpuPerfEnhancement": "Auto",

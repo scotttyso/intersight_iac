@@ -122,8 +122,8 @@ class nxos(object):
                 i = child.expect([sshQuestion, 'closed', 'Password:', enablePrompt, hostPrompt])
                 if i == 0: child.sendline('yes')
                 elif i == 1:
-                    print(f'\n!!!ERROR!!! failed to connect.')
-                    print(f'Please Validate {hostname} and username {username} is correct.')
+                    prRed(f'\n!!!ERROR!!! failed to connect.')
+                    prRed(f'Please Validate {hostname} and username {username} is correct.')
                     sys.exit()
                 elif i == 2: child.sendline(password)
                 elif i == 3:
@@ -134,7 +134,7 @@ class nxos(object):
             #=====================================================
             # Send Configuration to Switch
             #=====================================================
-            print(f'\n\n!!! Starting Configuration on {hostname} !!!\n\n')
+            prLightPurple(f'\n\n!!! Starting Configuration on {hostname} !!!\n\n')
             time.sleep(2)
             for cmd in cmds:
                 child.sendline(cmd)
@@ -144,7 +144,7 @@ class nxos(object):
             child.expect(hostPrompt)
             child.sendline('exit')
             child.expect('closed')
-            print(f'\n\n!!! Completed Configuration on {hostname} !!!\n\n')
+            prLightPurple(f'\n\n!!! Completed Configuration on {hostname} !!!\n\n')
         child.close()
 
         #=====================================================
@@ -161,8 +161,8 @@ def add_interfaces(x, nxmap, kwargs):
     #================================
     # Allowed VLAN Lists
     #================================
-    storage_vlans= ezfunctions.vlan_list_format(kwargs.storage.allowed_vlans)
-    domain_vlans = ezfunctions.vlan_list_format(kwargs.imm.allowed_vlans)
+    storage_vlans= ezfunctions.vlan_list_format(kwargs.nxos.storage.allowed_vlans)
+    domain_vlans = ezfunctions.vlan_list_format(kwargs.nxos.imm.allowed_vlans)
     cmds = ["!"]
     #================================
     # Loop Thru Interfaces
@@ -264,7 +264,7 @@ def base_configuration(kwargs):
 #======================================================
 def timezone_conversion(kwargs):
     cmds  = []
-    tzDict= kwargs.ezData['wizard.nxos'].allOf[1].properties
+    tzDict= kwargs.ez_data['wizard.nxos'].allOf[1].properties
     tz    = kwargs.timezone
     time_offset = pytz.timezone(tz).localize(datetime.datetime(2023,1,25)).strftime('%z')
     tzr = tz.split('/')[0]
@@ -296,17 +296,17 @@ def timezone_conversion(kwargs):
 # Add VLAN Configuration to Switch Commands
 #=====================================================
 def vlan_config(x, nxmap, kwargs):
-    kwargs.imm    = DotMap()
-    kwargs.storage= DotMap()
+    kwargs.nxos.imm    = DotMap()
+    kwargs.nxos.storage= DotMap()
     cmds          = ["!"]
     #=====================================================
     # Add Ranges to Network Switches
     #=====================================================
-    kwargs.imm.allowed_vlans = []
+    kwargs.nxos.imm.allowed_vlans = []
     for i in kwargs.ranges:
         vlan_range = ezfunctions.vlan_list_full(i.vlan_list)
         if nxmap[x].sw_type == 'network':
-            kwargs.imm.allowed_vlans.extend(vlan_range)
+            kwargs.nxos.imm.allowed_vlans.extend(vlan_range)
         if i.configure_l2 == True and nxmap[x].sw_type == 'network':
             for v in vlan_range:
                 if   re.search(r'^[\d]{4}$', str(v)): vname = f"{i.name}-vl{v}"
@@ -322,11 +322,11 @@ def vlan_config(x, nxmap, kwargs):
     #=====================================================
     # Add VLANs to the Appropriate Switch Types
     #=====================================================
-    kwargs.storage.allowed_vlans= []
+    kwargs.nxos.storage.allowed_vlans= []
     for i in kwargs.vlans:
         if re.search('(inband|iscsi|nvme|nfs)', i.vlan_type) and nxmap[x].sw_type == 'network':
-            kwargs.imm.allowed_vlans.append(i.vlan_id)
-            kwargs.storage.allowed_vlans.append(i.vlan_id)
+            kwargs.nxos.imm.allowed_vlans.append(i.vlan_id)
+            kwargs.nxos.storage.allowed_vlans.append(i.vlan_id)
         ip_network  = ipaddress.IPv4Network(i.network)
         ip_broadcast= ip_network.broadcast_address
         ip_gateway  = ipaddress.IPv4Address(i.gateway)
@@ -470,3 +470,14 @@ def vpc_config(x, nxmap):
     # Return cmds
     #================================
     return cmds
+
+#=====================================================
+# Print Color Functions
+#=====================================================
+def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
+def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))

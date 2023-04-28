@@ -393,11 +393,11 @@ def length_and_regex_sensitive(regex_pattern, varName, varValue, minLength, maxL
         return True
     else: return False
 
-def list_values(var, jsonData, kwargs):
-    jsonData = kwargs['validateData']
+def list_values(var, json_data, kwargs):
+    json_data = kwargs['validateData']
     row_num = kwargs['row_num']
     ws = kwargs['ws']
-    varList = jsonData[var]['enum']
+    varList = json_data[var]['enum']
     varValue = kwargs['var_dict'][var]
     match_count = 0
     for x in varList:
@@ -414,10 +414,10 @@ def list_values(var, jsonData, kwargs):
         exit()
 
 def list_values_key(dictkey, var, kwargs):
-    jsonData = kwargs['validateData']
+    json_data = kwargs['validateData']
     row_num = kwargs['row_num']
     ws = kwargs['ws']
-    varList = jsonData[dictkey]['enum']
+    varList = json_data[dictkey]['enum']
     varValue = kwargs['var_dict'][var]
     match_count = 0
     for x in varList:
@@ -441,9 +441,9 @@ def mac_address(varName, varValue):
         return False
     else: return True
 
-def number_check(var, jsonData, kwargs):
-    minimum = jsonData[var]['minimum']
-    maximum = jsonData[var]['maximum']
+def number_check(var, json_data, kwargs):
+    minimum = json_data[var]['minimum']
+    maximum = json_data[var]['maximum']
     row_num = kwargs['row_num']
     ws = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -455,9 +455,9 @@ def number_check(var, jsonData, kwargs):
         exit()
 
 def number_list(var, kwargs):
-    jsonData = kwargs['validateData']
-    minimum = jsonData[var]['minimum']
-    maximum = jsonData[var]['maximum']
+    json_data = kwargs['validateData']
+    minimum = json_data[var]['minimum']
+    maximum = json_data[var]['maximum']
     row_num = kwargs['row_num']
     ws = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -477,11 +477,11 @@ def number_list(var, kwargs):
             print(f'\n-----------------------------------------------------------------------------\n')
             exit()
 
-def string_list(var, jsonData, kwargs):
+def string_list(var, json_data, kwargs):
     # Get Variables from Library
-    minimum = jsonData[var]['minimum']
-    maximum = jsonData[var]['maximum']
-    pattern = jsonData[var]['pattern']
+    minimum = json_data[var]['minimum']
+    maximum = json_data[var]['maximum']
+    pattern = json_data[var]['pattern']
     row_num = kwargs['row_num']
     varValues = kwargs['var_dict'][var]
     ws = kwargs['ws']
@@ -499,11 +499,11 @@ def string_list(var, jsonData, kwargs):
             print(f'\n-----------------------------------------------------------------------------\n')
             exit()
 
-def string_pattern(var, jsonData, kwargs):
+def string_pattern(var, json_data, kwargs):
     # Get Variables from Library
-    minimum = jsonData[var]['minimum']
-    maximum = jsonData[var]['maximum']
-    pattern = jsonData[var]['pattern']
+    minimum = json_data[var]['minimum']
+    maximum = json_data[var]['maximum']
+    pattern = json_data[var]['pattern']
     row_num = kwargs['row_num']
     varValue = kwargs['var_dict'][var]
     ws = kwargs['ws']

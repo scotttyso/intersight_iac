@@ -41,6 +41,17 @@ class MyDumper(yaml.Dumper):
         return super(MyDumper, self).increase_indent(flow, False)
 
 #=====================================================
+# Print Color Functions
+#=====================================================
+def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
+def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
+
+#=====================================================
 # pexpect - Login Function
 #=====================================================
 def child_login(kwargs):
@@ -63,15 +74,15 @@ def child_login(kwargs):
         i = child.expect(['Are you sure you want to continue', 'closed', 'Password:', kwargs.host_prompt, pexpect.TIMEOUT])
         if i == 0: child.sendline('yes')
         elif i == 1:
-            print(f'\n!!! FAILED !!! to connect.  '\
+            prRed(f'\n!!! FAILED !!! to connect.  '\
                 f'Please Validate {kwargs.hostname} is correct and username {kwargs.username} is correct.')
             sys.exit(1)
         elif i == 2: child.sendline(password)
         elif i == 3: logged_in = True
         elif i == 4:
-            print(f"\n{'-'*91}\n")
-            print(f'!!! FAILED !!!\n Could not open SSH Connection to {kwargs.hostname}')
-            print(f"\n{'-'*91}\n")
+            prRed(f"\n{'-'*91}\n")
+            prRed(f'!!! FAILED !!!\n Could not open SSH Connection to {kwargs.hostname}')
+            prRed(f"\n{'-'*91}\n")
             sys.exit(1)
     return child, kwargs
 
@@ -136,8 +147,8 @@ def countKeys(ws, func):
 #==========================================================
 def create_yaml(orgs, kwargs):
     baseRepo = kwargs.args.dir
-    ezData   = kwargs.ezData.ezimm.allOf[1].properties
-    classes  = ezData.classes.enum
+    ez_data   = kwargs.ez_data.ezimm.allOf[1].properties
+    classes  = ez_data.classes.enum
 
     def write_file(dest_dir, dest_file, dict, title1):
         if not os.path.exists(os.path.join(dest_dir, dest_file)):
@@ -153,24 +164,24 @@ def create_yaml(orgs, kwargs):
         wr_file.write(yaml.dump(dict, Dumper=MyDumper, default_flow_style=False))
         wr_file.close()
     for item in classes:
-        dest_dir = os.path.join(baseRepo, ezData[f'class.{item}'].directory)
+        dest_dir = os.path.join(baseRepo, ez_data[f'class.{item}'].directory)
         if item == 'policies':
             if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
-            for i in ezData[f'class.{item}'].enum:
+            for i in ez_data[f'class.{item}'].enum:
                 idict = DotMap()
                 for org in orgs:
                     if not idict.get(org):
                         idict[org] = DotMap()
-                    for x in ezData[f'class.{i}'].enum:
-                        if kwargs.immDict.orgs[org].get(item):
-                            if kwargs.immDict.orgs[org][item].get(x):
-                                idict[org][item][x] = deepcopy(kwargs.immDict.orgs[org][item][x])
+                    for x in ez_data[f'class.{i}'].enum:
+                        if kwargs.imm_dict.orgs[org].get(item):
+                            if kwargs.imm_dict.orgs[org][item].get(x):
+                                idict[org][item][x] = deepcopy(kwargs.imm_dict.orgs[org][item][x])
                             if not len(idict[org][item][x]) > 0: idict[org][item].pop(x)
                 if len(idict[org][item]) > 0:
                     idict = json.dumps(idict.toDict())
                     idict = json.loads(idict)
-                    for x in ezData[f'class.{i}'].enum:
-                        if kwargs.immDict.orgs[org][item].get(x):
+                    for x in ez_data[f'class.{i}'].enum:
+                        if kwargs.imm_dict.orgs[org][item].get(x):
                             if type(idict[org][item][x]) == list:
                                 if idict[org][item][x][0].get('name'):
                                     idict[org][item][x] = list({v['name']:v for v in idict[org][item][x]}.values())
@@ -181,13 +192,13 @@ def create_yaml(orgs, kwargs):
                     write_file(dest_dir, dest_file, idict, title1)
         else:
             if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
-            for i in ezData[f'class.{item}'].enum:
+            for i in ez_data[f'class.{item}'].enum:
                 idict = deepcopy(DotMap())
                 if item == i:
                     for org in orgs:
-                        if kwargs.immDict.orgs[org].get(item):
-                            if len(kwargs.immDict.orgs[org][item]) > 0:
-                                itemDict = deepcopy(kwargs.immDict.orgs[org][item].toDict())
+                        if kwargs.imm_dict.orgs[org].get(item):
+                            if len(kwargs.imm_dict.orgs[org][item]) > 0:
+                                itemDict = deepcopy(kwargs.imm_dict.orgs[org][item].toDict())
                                 idict[org][item] = itemDict
                                 idict = json.dumps(idict.toDict())
                                 idict = json.loads(idict)
@@ -201,18 +212,15 @@ def create_yaml(orgs, kwargs):
                                     else:
                                         for key, value in newdict[org][item].items():
                                             idict[org][item][key] = list({v['name']:v for v in value}.values())
-                                        #print(json.dumps(idict[org][item], indent=4))
-                                        #print('ERROR UNKNOWN')
-                                        #exit()
                                 dest_file = f'{i}.yaml'
                                 title1 = str.title(item.replace('_', ' '))
                                 write_file(dest_dir, dest_file, idict, title1)
                 else:
                     for org in orgs:
-                        if kwargs.immDict.orgs[org].get(item):
-                            if kwargs.immDict.orgs[org][item].get(i):
-                                if len(kwargs.immDict.orgs[org][item][i]) > 0:
-                                    idict[org][item][i] = deepcopy(kwargs.immDict.orgs[org][item][i])
+                        if kwargs.imm_dict.orgs[org].get(item):
+                            if kwargs.imm_dict.orgs[org][item].get(i):
+                                if len(kwargs.imm_dict.orgs[org][item][i]) > 0:
+                                    idict[org][item][i] = deepcopy(kwargs.imm_dict.orgs[org][item][i])
                                     idict = json.dumps(idict.toDict())
                                     idict = json.loads(idict)
                                     if type(idict[org][item][i]) == list:
@@ -225,10 +233,7 @@ def create_yaml(orgs, kwargs):
                                     else:
                                         for a, b in idict[org][item][i].items():
                                             b = list({v['name']:v for v in b}.values())
-                                    if re.search('(chassis|server)', i):
-                                        print(json.dumps(idict, indent=4))
                                     dest_file = f'{i}.yaml'
-                                    print(dest_file)
                                     title1 = f"{str.title(item.replace('_', ' '))} -> {str.title(i.replace('_', ' '))}"
                                     write_file(dest_dir, dest_file, idict, title1)
                         
@@ -298,7 +303,7 @@ def exit_loop_default_yes(loop_count, policy_type):
     return configure_loop, loop_count, policy_loop
 
 #========================================================
-# Function to Append the immDict Dictionary
+# Function to Append the imm_dict Dictionary
 #========================================================
 def ez_append(polVars, kwargs):
     class_path= kwargs['class_path']
@@ -307,66 +312,66 @@ def ez_append(polVars, kwargs):
     polVars   = ez_remove_empty(polVars)
     polVars   = DotMap(polVars)
     # Confirm the Key Exists
-    if not kwargs.immDict.orgs.get(org):
-        kwargs.immDict.orgs[org] = DotMap()
+    if not kwargs.imm_dict.orgs.get(org):
+        kwargs.imm_dict.orgs[org] = DotMap()
     if len(p) >= 2:
-        if not kwargs.immDict.orgs[org].get(p[0]):
-            kwargs.immDict.orgs[org][p[0]] = DotMap()
+        if not kwargs.imm_dict.orgs[org].get(p[0]):
+            kwargs.imm_dict.orgs[org][p[0]] = DotMap()
     if len(p) >= 3:
-        if not kwargs.immDict.orgs[org][p[0]].get(p[1]):
-            kwargs.immDict.orgs[org][p[0]][p[1]] = DotMap()
+        if not kwargs.imm_dict.orgs[org][p[0]].get(p[1]):
+            kwargs.imm_dict.orgs[org][p[0]][p[1]] = DotMap()
     if len(p) >= 4:
-        if not kwargs.immDict.orgs[org][p[0]][p[1]].get(p[2]):
-            kwargs.immDict.orgs[org][p[0]][p[1]][p[2]] = DotMap()
+        if not kwargs.imm_dict.orgs[org][p[0]][p[1]].get(p[2]):
+            kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]] = DotMap()
     if len(p) == 2:
-        if not kwargs.immDict.orgs[org][p[0]].get(p[1]):
-            kwargs.immDict.orgs[org][p[0]][p[1]] = [deepcopy(polVars)]
-        else: kwargs.immDict.orgs[org][p[0]][p[1]].append(deepcopy(polVars))
+        if not kwargs.imm_dict.orgs[org][p[0]].get(p[1]):
+            kwargs.imm_dict.orgs[org][p[0]][p[1]] = [deepcopy(polVars)]
+        else: kwargs.imm_dict.orgs[org][p[0]][p[1]].append(deepcopy(polVars))
     elif len(p) == 3:
-        if not kwargs.immDict.orgs[org][p[0]][p[1]].get(p[2]):
-            kwargs.immDict.orgs[org][p[0]][p[1]][p[2]] = [deepcopy(polVars)]
-        else: kwargs.immDict.orgs[org][p[0]][p[1]][p[2]].append(deepcopy(polVars))
+        if not kwargs.imm_dict.orgs[org][p[0]][p[1]].get(p[2]):
+            kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]] = [deepcopy(polVars)]
+        else: kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]].append(deepcopy(polVars))
     elif len(p) == 4:
-        if not kwargs.immDict.orgs[org][p[0]][p[1]][p[2]].get(p[3]):
-            kwargs.immDict.orgs[org][p[0]][p[1]][p[2]][p[3]] = [deepcopy(polVars)]
-        else: kwargs.immDict.orgs[org][p[0]][p[1]][p[2]][p[3]].append(deepcopy(polVars))
+        if not kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]].get(p[3]):
+            kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]][p[3]] = [deepcopy(polVars)]
+        else: kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]][p[3]].append(deepcopy(polVars))
     elif len(p) == 5:
-        if not kwargs.immDict.orgs[org][p[0]][p[1]][p[2]].get(p[3]):
-            kwargs.immDict.orgs[org][p[0]][p[1]][p[2]][p[3]] = DotMap()
-        if not kwargs.immDict.orgs[org][p[0]][p[1]][p[2]][p[3]].get(p[4]):
-            kwargs.immDict.orgs[org][p[0]][p[1]][p[2]][p[3]][p[4]] = [deepcopy(polVars)]
-        else: kwargs.immDict.orgs[org][p[0]][p[1]][p[2]][p[3]][p[4]].append(deepcopy(polVars))
+        if not kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]].get(p[3]):
+            kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]][p[3]] = DotMap()
+        if not kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]][p[3]].get(p[4]):
+            kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]][p[3]][p[4]] = [deepcopy(polVars)]
+        else: kwargs.imm_dict.orgs[org][p[0]][p[1]][p[2]][p[3]][p[4]].append(deepcopy(polVars))
 
     return kwargs
 
 #========================================================
-# Function to Append the immDict Dictionary
+# Function to Append the imm_dict Dictionary
 #========================================================
 def ez_append_wizard(polVars, kwargs):
     class_path = kwargs['class_path']
     p = class_path.split(',')
     polVars = ez_remove_empty(polVars)
     # Confirm the Key Exists
-    if not kwargs.immDict.get('wizard'): kwargs.immDict['wizard'] = {}
+    if not kwargs.imm_dict.get('wizard'): kwargs.imm_dict['wizard'] = {}
     if len(p) >= 2:
-        if not kwargs.immDict['wizard'].get(p[0]):
-            kwargs.immDict['wizard'].update(deepcopy({p[0]:{}}))
+        if not kwargs.imm_dict['wizard'].get(p[0]):
+            kwargs.imm_dict['wizard'].update(deepcopy({p[0]:{}}))
     if len(p) >= 3:
-        if not kwargs.immDict['wizard'][p[0]].get(p[1]):
-            kwargs.immDict['wizard'][p[0]].update(deepcopy({p[1]:{}}))
+        if not kwargs.imm_dict['wizard'][p[0]].get(p[1]):
+            kwargs.imm_dict['wizard'][p[0]].update(deepcopy({p[1]:{}}))
     if len(p) == 1:
-        if not kwargs.immDict['wizard'].get(p[0]):
-            kwargs.immDict['wizard'].update(deepcopy({p[0]:[]}))
+        if not kwargs.imm_dict['wizard'].get(p[0]):
+            kwargs.imm_dict['wizard'].update(deepcopy({p[0]:[]}))
     elif len(p) == 2:
-        if not kwargs.immDict['wizard'][p[0]].get(p[1]):
-            kwargs.immDict['wizard'][p[0]].update(deepcopy({p[1]:[]}))
+        if not kwargs.imm_dict['wizard'][p[0]].get(p[1]):
+            kwargs.imm_dict['wizard'][p[0]].update(deepcopy({p[1]:[]}))
     elif len(p) == 3:
-        if not kwargs.immDict['wizard'][p[0]][p[1]].get(p[2]):
-            kwargs.immDict['wizard'][p[0]][p[1]].update(deepcopy({p[2]:[]}))
+        if not kwargs.imm_dict['wizard'][p[0]][p[1]].get(p[2]):
+            kwargs.imm_dict['wizard'][p[0]][p[1]].update(deepcopy({p[2]:[]}))
     # append the Dictionary
-    if len(p) == 1: kwargs.immDict['wizard'][p[0]].append(deepcopy(polVars))
-    if len(p) == 2: kwargs.immDict['wizard'][p[0]][p[1]].append(deepcopy(polVars))
-    elif len(p) == 3: kwargs.immDict['wizard'][p[0]][p[1]][p[2]].append(deepcopy(polVars))
+    if len(p) == 1: kwargs.imm_dict['wizard'][p[0]].append(deepcopy(polVars))
+    if len(p) == 2: kwargs.imm_dict['wizard'][p[0]][p[1]].append(deepcopy(polVars))
+    elif len(p) == 3: kwargs.imm_dict['wizard'][p[0]][p[1]][p[2]].append(deepcopy(polVars))
     return kwargs
 
 #========================================================
@@ -513,8 +518,8 @@ def jprint(jDict):
 # Function - Load Previous YAML Files
 #======================================================
 def load_previous_configurations(kwargs):
-    ezData   = kwargs.ezData.ezimm.allOf[1].properties
-    vclasses = ezData.classes.enum
+    ez_data   = kwargs.ez_data.ezimm.allOf[1].properties
+    vclasses = ez_data.classes.enum
     dir_check   = 0
     if os.path.isdir(kwargs.args.dir):
         dir_list = os.listdir(kwargs.args.dir)
@@ -525,17 +530,17 @@ def load_previous_configurations(kwargs):
             elif i == 'templates': dir_check += 1
     if dir_check > 1:
         for item in vclasses:
-            dest_dir = ezData[f'class.{item}'].directory
+            dest_dir = ez_data[f'class.{item}'].directory
             if os.path.isdir(os.path.join(kwargs.args.dir, dest_dir)):
                 dir_list = os.listdir(os.path.join(kwargs.args.dir, dest_dir))
                 for i in dir_list:
                     yfile = open(os.path.join(kwargs.args.dir, dest_dir, i), 'r')
                     data = yaml.safe_load(yfile)
                     for key, value in data.items():
-                        if not kwargs.immDict.orgs.get(key): kwargs.immDict.orgs[key] = {}
+                        if not kwargs.imm_dict.orgs.get(key): kwargs.imm_dict.orgs[key] = {}
                         for k, v in value.items():
-                            if not kwargs.immDict.orgs[key].get(k): kwargs.immDict.orgs[key][k] = {}
-                            kwargs.immDict.orgs[key][k].update(deepcopy(v))
+                            if not kwargs.imm_dict.orgs[key].get(k): kwargs.imm_dict.orgs[key][k] = {}
+                            kwargs.imm_dict.orgs[key][k].update(deepcopy(v))
     # Return kwargs
     return kwargs
 
@@ -543,14 +548,14 @@ def load_previous_configurations(kwargs):
 # Function - Local User Policy - Users
 #======================================================
 def local_users_function(kwargs):
-    ezData = kwargs.ezData
+    ez_data = kwargs.ez_data
     inner_loop_count = 1
-    jsonData = kwargs['jsonData']
+    json_data = kwargs['json_data']
     kwargs['local_users'] = []
     valid_users = False
     while valid_users == False:
         kwargs['multi_select'] = False
-        jsonVars = jsonData['iam.EndPointUser'].allOf[1].properties
+        jsonVars = json_data['iam.EndPointUser'].allOf[1].properties
         #==============================================
         # Prompt User for Local Username
         #==============================================
@@ -563,7 +568,7 @@ def local_users_function(kwargs):
         #==============================================
         # Prompt User for User Role
         #==============================================
-        jsonVars = ezData.ezimm.allOf[1].properties['policies']['iam.LocalUserPasswordPolicy']
+        jsonVars = ez_data.ezimm.allOf[1].properties['policies']['iam.LocalUserPasswordPolicy']
         kwargs['jData'] = deepcopy(jsonVars['role'])
         kwargs['jData']['varType'] = 'User Role'
         role = variablesFromAPI(kwargs)
@@ -798,9 +803,9 @@ def ntp_primary():
 def policies_parse(ptype, policy_type, kwargs):
     org  = kwargs['org']
     kwargs['policies'] = []
-    if not kwargs.immDict.orgs[org].get(ptype) == None:
-        if not kwargs.immDict.orgs[org][ptype].get(policy_type) == None:
-            kwargs['policies'] = {policy_type:kwargs.immDict.orgs[org][ptype][policy_type]}
+    if not kwargs.imm_dict.orgs[org].get(ptype) == None:
+        if not kwargs.imm_dict.orgs[org][ptype].get(policy_type) == None:
+            kwargs['policies'] = {policy_type:kwargs.imm_dict.orgs[org][ptype][policy_type]}
         else: kwargs['policies'] = {policy_type:{}}
     else: kwargs['policies'] = {policy_type:{}}
     return kwargs
@@ -832,13 +837,13 @@ def policy_name(namex, policy_type):
 #======================================================
 def process_kwargs(kwargs):
     # Validate User Input
-    jsonData = kwargs['validateData']
+    json_data = kwargs['validateData']
     validate_args(kwargs)
 
     error_count = 0
     error_list = []
-    optional_args = jsonData['optional_args']
-    required_args = jsonData['required_args']
+    optional_args = json_data['optional_args']
+    required_args = json_data['required_args']
     for item in required_args:
         if item not in kwargs['var_dict'].keys():
             error_count =+ 1
@@ -906,7 +911,7 @@ def repo_url_test(file, pargs):
 # Function - Prompt User for Sensitive Values
 #======================================================
 def sensitive_var_value(kwargs):
-    jsonData = kwargs.jsonData
+    json_data = kwargs.json_data
     if kwargs.deployment_type:
         sensitive_var = kwargs.sensitive_var
     else: sensitive_var = 'TF_VAR_%s' % (kwargs.sensitive_var)
@@ -968,7 +973,7 @@ def sensitive_var_value(kwargs):
                 varName = 'Intersight API Key'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'bind' in sensitive_var:
-                jsonVars = jsonData['iam.LdapBaseProperties'].allOf[1].properties
+                jsonVars = json_data['iam.LdapBaseProperties'].allOf[1].properties
                 minLength = 1
                 maxLength = 254
                 rePattern = jsonVars['Password']['pattern']
@@ -979,19 +984,19 @@ def sensitive_var_value(kwargs):
                 valid = validating.snmp_string(varName, secure_value)
             elif 'ipmi_key' in sensitive_var: valid = validating.ipmi_key_check(secure_value)
             elif 'iscsi_boot' in sensitive_var:
-                jsonVars = jsonData['vnic.IscsiAuthProfile'].allOf[1].properties
-                minLength = 12
-                maxLength = 16
-                rePattern = jsonVars['Password']['pattern']
-                varName = 'iSCSI Boot Password'
+                jsonVars = json_data['vnic.IscsiAuthProfile'].allOf[1].properties
+                minLength= 12
+                maxLength= 16
+                rePattern= jsonVars.Password.pattern
+                varName  = 'iSCSI Boot Password'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
-            elif 'local' in sensitive_var:
-                jsonVars = jsonData['iam.EndPointUserRole'].allOf[1].properties
-                minLength = jsonVars['Password']['minLength']
-                maxLength = jsonVars['Password']['maxLength']
-                rePattern = jsonVars['Password']['pattern']
-                varName = 'Local User Password'
-                if kwargs.get('enforce_strong_password'): enforce_pass = kwargs['enforce_strong_password']
+            elif 'local' in sensitive_var or 'ucs_password' in sensitive_var:
+                jsonVars = json_data['iam.EndPointUserRole'].allOf[1].properties
+                minLength= jsonVars.Password.minLength
+                maxLength= jsonVars.Password.maxLength
+                rePattern= jsonVars.Password.pattern
+                varName  = 'Local User Password'
+                if kwargs.get('enforce_strong_password'): enforce_pass = kwargs.enforce_strong_password
                 else: enforce_pass = False
                 if enforce_pass == True:
                     minLength = 8
@@ -999,7 +1004,7 @@ def sensitive_var_value(kwargs):
                     valid = validating.strong_password(kwargs.sensitive_var, secure_value, minLength, maxLength)
                 else: valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'secure_passphrase' in sensitive_var:
-                jsonVars = jsonData['memory.PersistentMemoryLocalSecurity'].allOf[1].properties
+                jsonVars = json_data['memory.PersistentMemoryLocalSecurity'].allOf[1].properties
                 minLength = jsonVars['SecurePassphrase']['minLength']
                 maxLength = jsonVars['SecurePassphrase']['maxLength']
                 rePattern = jsonVars['SecurePassphrase']['pattern']
@@ -1008,7 +1013,7 @@ def sensitive_var_value(kwargs):
             elif 'snmp' in sensitive_var:
                 print('matched snmp')
                 exit()
-                jsonVars = jsonData['snmp.Policy'].allOf[1].properties
+                jsonVars = json_data['snmp.Policy'].allOf[1].properties
                 minLength = 1
                 maxLength = jsonVars['TrapCommunity']['maxLength']
                 rePattern = '^[\\S]+$'
@@ -1016,21 +1021,21 @@ def sensitive_var_value(kwargs):
                 else: varName = 'SNMP Privacy Password'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'vmedia' in sensitive_var:
-                jsonVars = jsonData['vmedia.Mapping'].allOf[1].properties
+                jsonVars = json_data['vmedia.Mapping'].allOf[1].properties
                 minLength = 1
                 maxLength = jsonVars['Password']['maxLength']
                 rePattern = '^[\\S]+$'
                 varName = 'vMedia Mapping Password'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         if kwargs.get('org'):
             org = kwargs.org
-            if not kwargs.immDict.orgs.get(org):
-                kwargs.immDict.orgs[org] = {}
-                if not kwargs.immDict.orgs[org].get('sensitive_vars'):
-                    kwargs.immDict.orgs[org].sensitive_vars = []
-                kwargs.immDict.orgs[org].sensitive_vars.append(sensitive_var)
+            if not kwargs.imm_dict.orgs.get(org):
+                kwargs.imm_dict.orgs[org] = {}
+                if not kwargs.imm_dict.orgs[org].get('sensitive_vars'):
+                    kwargs.imm_dict.orgs[org].sensitive_vars = []
+                kwargs.imm_dict.orgs[org].sensitive_vars.append(sensitive_var)
 
         # Add the Variable to the Environment
         os.environ[sensitive_var] = '%s' % (secure_value)
@@ -1047,7 +1052,7 @@ def sensitive_var_value(kwargs):
 # Function - Wizard for SNMP Trap Servers
 #======================================================
 def snmp_trap_servers(kwargs):
-    jsonData   = kwargs['jsonData']
+    json_data   = kwargs['json_data']
     loop_count = 1
     kwargs['snmp_traps'] = []
     valid_traps = False
@@ -1056,7 +1061,7 @@ def snmp_trap_servers(kwargs):
         # Get API Data
         #==============================================
         kwargs['multi_select'] = False
-        jsonVars = jsonData['snmp.Trap'].allOf[1].properties
+        jsonVars = json_data['snmp.Trap'].allOf[1].properties
         if len(kwargs['snmp_users']) == 0:
             print(f'\n-------------------------------------------------------------------------------------------\n')
             print(f'  There are no valid SNMP Users so Trap Destinations can only be set to SNMPv2.')
@@ -1133,12 +1138,12 @@ def snmp_trap_servers(kwargs):
 #======================================================
 def snmp_users(kwargs):
     loop_count = 1
-    jsonData = kwargs['jsonData']
+    json_data = kwargs['json_data']
     kwargs['snmp_users'] = []
     valid_users = False
     while valid_users == False:
         kwargs['multi_select'] = False
-        jsonVars = jsonData['snmp.User'].allOf[1].properties
+        jsonVars = json_data['snmp.User'].allOf[1].properties
         snmpUser = False
         while snmpUser == False:
             #================================================
@@ -1242,13 +1247,13 @@ def stdout_log(ws, row_num):
 # Function - Wizard for Syslog Servers
 #======================================================
 def syslog_servers(kwargs):
-    jsonData = kwargs['jsonData']
+    json_data = kwargs['json_data']
     kwargs['remote_logging'] = []
     policy_type = 'Syslog Server'
     syslog_count = 0
     syslog_loop = False
     while syslog_loop == False:
-        jsonVars = jsonData['syslog.RemoteClientBase'].allOf[1].properties
+        jsonVars = json_data['syslog.RemoteClientBase'].allOf[1].properties
         #================================================
         # Prompt User for Syslog Server
         #================================================
@@ -1374,7 +1379,7 @@ def terraform_provider_config(kwargs):
 #======================================================
 # Function - Prompt User for Sensitive Variables
 #======================================================
-def tfc_sensitive_variables(varValue, jsonData, polVars):
+def tfc_sensitive_variables(varValue, json_data, polVars):
     polVars['Variable'] = varValue
     if 'ipmi_key' in varValue: polVars['Description'] = 'IPMI over LAN Encryption Key'
     elif 'iscsi' in varValue: polVars['Description'] = 'iSCSI Boot Password'
@@ -1383,7 +1388,7 @@ def tfc_sensitive_variables(varValue, jsonData, polVars):
     elif 'snmp_auth' in varValue: polVars['Description'] = 'SNMP Authorization Password'
     elif 'snmp_priv' in varValue: polVars['Description'] = 'SNMP Privacy Password'
     elif 'trap_comm' in varValue: polVars['Description'] = 'SNMP Trap Community String'
-    polVars['varValue'] = sensitive_var_value(jsonData, **polVars)
+    polVars['varValue'] = sensitive_var_value(json_data, **polVars)
     polVars['varId'] = varValue
     polVars['varKey'] = varValue
     polVars['Sensitive'] = True
@@ -1446,13 +1451,13 @@ def ucs_domain_serials(kwargs):
 #========================================================
 # Function to Validate Worksheet User Input
 #========================================================
-def validate_args(jsonData, kwargs):
-    jsonData = kwargs['validateData']
-    for i in jsonData['required_args']:
-        if jsonData[i]['type'] == 'boolean':
+def validate_args(json_data, kwargs):
+    json_data = kwargs['validateData']
+    for i in json_data['required_args']:
+        if json_data[i]['type'] == 'boolean':
             if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
                 validating.boolean(i, kwargs)
-        elif jsonData[i]['type'] == 'hostname':
+        elif json_data[i]['type'] == 'hostname':
             if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
                 if ':' in kwargs['var_dict'][i]:
                     validating.ip_address_ws(i, kwargs)
@@ -1460,21 +1465,21 @@ def validate_args(jsonData, kwargs):
                     validating.dns_name_ws(i, kwargs)
                 else:
                     validating.ip_address_ws(i, kwargs)
-        elif jsonData[i]['type'] == 'list_of_email':
+        elif json_data[i]['type'] == 'list_of_email':
             if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
                 count = 1
                 for email in kwargs['var_dict'][i].split(','):
                     kwargs['var_dict'][f'{i}_{count}'] = email
                     validating.email_ws(f'{i}_{count}', kwargs)
-        elif jsonData[i]['type'] == 'email':
+        elif json_data[i]['type'] == 'email':
             if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
                 validating.email_ws(i, kwargs)
-        elif jsonData[i]['type'] == 'integer':
+        elif json_data[i]['type'] == 'integer':
             if kwargs['var_dict'][i] == None:
-                kwargs['var_dict'][i] = jsonData[i]['default']
+                kwargs['var_dict'][i] = json_data[i]['default']
             else:
-                validating.number_check(i, jsonData, kwargs)
-        elif jsonData[i]['type'] == 'list_of_domains':
+                validating.number_check(i, json_data, kwargs)
+        elif json_data[i]['type'] == 'list_of_domains':
             if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
                 count = 1
                 for domain in kwargs['var_dict'][i].split(','):
@@ -1482,7 +1487,7 @@ def validate_args(jsonData, kwargs):
                     validating.domain_ws(f'domain_{count}', kwargs)
                     kwargs['var_dict'].pop(f'domain_{count}')
                     count += 1
-        elif jsonData[i]['type'] == 'list_of_hosts':
+        elif json_data[i]['type'] == 'list_of_hosts':
             if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
                 count = 1
                 for hostname in kwargs['var_dict'][i].split(','):
@@ -1495,55 +1500,55 @@ def validate_args(jsonData, kwargs):
                         validating.ip_address_ws(f'{i}_{count}', kwargs)
                     kwargs['var_dict'].pop(f'{i}_{count}')
                     count += 1
-        elif jsonData[i]['type'] == 'list_of_integer':
+        elif json_data[i]['type'] == 'list_of_integer':
             if kwargs['var_dict'][i] == None:
-                kwargs['var_dict'][i] = jsonData[i]['default']
+                kwargs['var_dict'][i] = json_data[i]['default']
             else:
-                validating.number_list(i, jsonData, kwargs)
-        elif jsonData[i]['type'] == 'list_of_string':
+                validating.number_list(i, json_data, kwargs)
+        elif json_data[i]['type'] == 'list_of_string':
             if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
-                validating.string_list(i, jsonData, kwargs)
-        elif jsonData[i]['type'] == 'list_of_values':
+                validating.string_list(i, json_data, kwargs)
+        elif json_data[i]['type'] == 'list_of_values':
             if kwargs['var_dict'][i] == None:
-                kwargs['var_dict'][i] = jsonData[i]['default']
+                kwargs['var_dict'][i] = json_data[i]['default']
             else:
-                validating.list_values(i, jsonData, kwargs)
-        elif jsonData[i]['type'] == 'list_of_vlans':
+                validating.list_values(i, json_data, kwargs)
+        elif json_data[i]['type'] == 'list_of_vlans':
             if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
                 validating.vlans(i, kwargs)
-        elif jsonData[i]['type'] == 'string':
+        elif json_data[i]['type'] == 'string':
             if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
-                validating.string_pattern(i, jsonData, kwargs)
+                validating.string_pattern(i, json_data, kwargs)
         else:
-            print(f"error validating.  Type not found {jsonData[i]['type']}. 2.")
+            print(f"error validating.  Type not found {json_data[i]['type']}. 2.")
             exit()
-    for i in jsonData['optional_args']:
+    for i in json_data['optional_args']:
         if not (kwargs['var_dict'][i] == None or kwargs['var_dict'][i] == ''):
             if re.search(r'^module_[\d]+$', i):
-                validating.list_values_key('modules', i, jsonData, kwargs)
-            elif jsonData[i]['type'] == 'boolean':
-                validating.boolean(i, jsonData, kwargs)
-            elif jsonData[i]['type'] == 'domain':
+                validating.list_values_key('modules', i, json_data, kwargs)
+            elif json_data[i]['type'] == 'boolean':
+                validating.boolean(i, json_data, kwargs)
+            elif json_data[i]['type'] == 'domain':
                 validating.domain_ws(i, kwargs)
-            elif jsonData[i]['type'] == 'list_of_email':
+            elif json_data[i]['type'] == 'list_of_email':
                 count = 1
                 for email in kwargs['var_dict'][i].split(','):
                     kwargs['var_dict'][f'{i}_{count}'] = email
-                    validating.email_ws(f'{i}_{count}', jsonData, kwargs)
-            elif jsonData[i]['type'] == 'email':
-                validating.email_ws(i, jsonData, kwargs)
-            elif jsonData[i]['type'] == 'hostname':
+                    validating.email_ws(f'{i}_{count}', json_data, kwargs)
+            elif json_data[i]['type'] == 'email':
+                validating.email_ws(i, json_data, kwargs)
+            elif json_data[i]['type'] == 'hostname':
                 if ':' in kwargs['var_dict'][i]:
                     validating.ip_address_ws(i, kwargs)
                 elif re.search('[a-z]', kwargs['var_dict'][i], re.IGNORECASE):
                     validating.dns_name_ws(i, kwargs)
                 else:
                     validating.ip_address_ws(i, kwargs)
-            elif jsonData[i]['type'] == 'integer':
-                validating.number_check(i, jsonData, kwargs)
-            elif jsonData[i]['type'] == 'list_of_integer':
-                validating.number_list(i, jsonData, kwargs)
-            elif jsonData[i]['type'] == 'list_of_hosts':
+            elif json_data[i]['type'] == 'integer':
+                validating.number_check(i, json_data, kwargs)
+            elif json_data[i]['type'] == 'list_of_integer':
+                validating.number_list(i, json_data, kwargs)
+            elif json_data[i]['type'] == 'list_of_hosts':
                 count = 1
                 for hostname in kwargs['var_dict'][i].split(','):
                     kwargs[f'{i}_{count}'] = hostname
@@ -1555,25 +1560,25 @@ def validate_args(jsonData, kwargs):
                         validating.ip_address_ws(f'{i}_{count}', kwargs)
                     kwargs['var_dict'].pop(f'{i}_{count}')
                     count += 1
-            elif jsonData[i]['type'] == 'list_of_macs':
+            elif json_data[i]['type'] == 'list_of_macs':
                 count = 1
                 for mac in kwargs['var_dict'][i].split(','):
                     kwargs[f'{i}_{count}'] = mac
                     validating.mac_address(f'{i}_{count}', kwargs)
                     kwargs.pop(f'{i}_{count}')
                     count += 1
-            elif jsonData[i]['type'] == 'list_of_string':
-                validating.string_list(i, jsonData, kwargs)
-            elif jsonData[i]['type'] == 'list_of_values':
-                validating.list_values(i, jsonData, kwargs)
-            elif jsonData[i]['type'] == 'list_of_vlans':
+            elif json_data[i]['type'] == 'list_of_string':
+                validating.string_list(i, json_data, kwargs)
+            elif json_data[i]['type'] == 'list_of_values':
+                validating.list_values(i, json_data, kwargs)
+            elif json_data[i]['type'] == 'list_of_vlans':
                 validating.vlans(i, kwargs)
-            elif jsonData[i]['type'] == 'mac_address':
+            elif json_data[i]['type'] == 'mac_address':
                 validating.mac_address(i, kwargs)
-            elif jsonData[i]['type'] == 'string':
-                validating.string_pattern(i, jsonData, kwargs)
+            elif json_data[i]['type'] == 'string':
+                validating.string_pattern(i, json_data, kwargs)
             else:
-                print(f"error validating.  Type not found {jsonData[i]['type']}. 3.")
+                print(f"error validating.  Type not found {json_data[i]['type']}. 3.")
                 exit()
     return kwargs
 

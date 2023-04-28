@@ -109,7 +109,7 @@ foreach($vcenter in $jsonData.vcenters) {
     # Create/update Virtual Distributed Switches
     #=====================================================
     foreach ($sw in $vcenter.vswitches.PSObject.Properties) {
-        if ($sw.value.type -eq "vds") {
+        if ($sw.value.type -eq "dvs") {
             Write-Host "Beginning DVSwitch '$($sw.value.name)' in DataCenter '$($DataCenter)'" -ForegroundColor Blue
             $checkDVS = Get-VDSwitch -Location $DataCenter
             if (-Not($checkDVS | Where-Object { $sw.value.name -match $_ })) {
@@ -531,10 +531,10 @@ foreach($vcenter in $jsonData.vcenters) {
             #=====================================================
             # Configure DVS Switch
             #=====================================================
-            } elseif ($vcenter.vswitches.$swname.type -eq "vds")  {
+            } elseif ($vcenter.vswitches.$swname.type -eq "dvs")  {
                 if($vdSwitches | Where-Object { $_.Name -eq $vswitch.name }) {
                     #=====================================================
-                    # Host is already a member of the vds confirm config
+                    # Host is already a member of the dvs confirm config
                     #=====================================================
                     Write-Host "    $($esxHost) is already a member of DVSwitch $($vdSwitch)" -ForegroundColor Blue
         
@@ -550,7 +550,7 @@ foreach($vcenter in $jsonData.vcenters) {
                     }
                 } else {
                     #=====================================================
-                    # Host is not a member of the vds - add host
+                    # Host is not a member of the dvs - add host
                     #=====================================================
                     Write-Host "    * Adding $($esxHost) to DVSwitch $($vswitch.name)" -ForegroundColor Green
                     $vdSwitch | Add-VDSwitchVMHost -VMHost $esxHost

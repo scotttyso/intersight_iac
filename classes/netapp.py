@@ -142,7 +142,7 @@ class api(object):
     # NetApp Cluster Initialization
     #=====================================================
     def cluster_init(self, kwargs):
-        for i in kwargs.immDict.orgs[kwargs.org].netapp.cluster:
+        for i in kwargs.imm_dict.orgs[kwargs.org].netapp.cluster:
             i = DotMap(deepcopy(i))
             #=====================================================
             # Send Begin Notification
@@ -286,7 +286,7 @@ class api(object):
         #=====================================================
         # Load Variables and Send Notification
         #=====================================================
-        netapp = kwargs.immDict.orgs[kwargs.org].netapp.cluster
+        netapp = kwargs.imm_dict.orgs[kwargs.org].netapp.cluster
         netapp = list({v['name']:v for v in netapp}.values())
         for i in netapp:
             i = DotMap(deepcopy(i))
@@ -1194,7 +1194,7 @@ class build(object):
                 bdomains.append(polVars)
         
         #=====================================================
-        # Add Default Policy Variables to immDict
+        # Add Default Policy Variables to imm_dict
         #=====================================================
         polVars = { "name": "Default", "mtu": 9000}
         bdomains.append(polVars)
@@ -1217,7 +1217,7 @@ class build(object):
         polVars = dict(
             contact     = items.snmp.contact,
             dns_domains = kwargs.dns_domains,
-            hostname    = items.nodes[0].name + '.' + kwargs.dns_domains[0],
+            hostname    = items.nodes.node01 + '.' + kwargs.dns_domains[0],
             host_prompt = items.host_prompt,
             license     = dict(keys = []),
             location    = items.snmp.location,
@@ -1233,7 +1233,6 @@ class build(object):
         )
         if items.get('licenses'):
             polVars.update({'license':{'keys':[items.licenses]}})
-
         kwargs.netapp.hostname   = items.nodes.node01 + '.' + kwargs.dns_domains[0]
         kwargs.netapp.host_prompt= items.host_prompt
         kwargs.netapp.username   = items.username
@@ -1243,7 +1242,7 @@ class build(object):
             polVars.update(deepcopy({i:idict}))
 
         #=====================================================
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         #=====================================================
         kwargs.class_path = f'netapp,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
@@ -1301,6 +1300,7 @@ class build(object):
                     child, kwargs     = ezfunctions.child_login(kwargs)
                     for k, v in kwargs.server_profiles.items():
                         x = kwargs.dns_domains[0].split('.')
+                        x = list(reversed(x))
                         reverse_domain = '.'.join(x)
                         server_nqn = f"nqn.2014-08.{reverse_domain}:nvme:{v.name}"
                         kwargs.count = 1
@@ -1322,7 +1322,7 @@ class build(object):
 
             return kwargs
 
-        cluster = deepcopy(kwargs.immDict.orgs[kwargs.org].netapp.cluster)
+        cluster = deepcopy(kwargs.imm_dict.orgs[kwargs.org].netapp.cluster)
         for i in cluster:
             for s in i.svm:
                 kwargs.netapp.hostname   = i.hostname
@@ -1340,7 +1340,7 @@ class build(object):
                 kwargs = create_lun_list(kwargs)
                 cx = [e for e, d in enumerate(cluster) if i.name in d.values()][0]
                 sx = [e for e, d in enumerate(cluster[cx].svm) if s.name in d.values()][0]
-                kwargs.immDict.orgs[kwargs.org].netapp.cluster[cx].svm[sx].luns = kwargs.lun_list
+                kwargs.imm_dict.orgs[kwargs.org].netapp.cluster[cx].svm[sx].luns = kwargs.lun_list
         
         #=====================================================
         # Return kwargs and kwargs
@@ -1632,6 +1632,7 @@ def auth(kwargs, section=''):
             prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
         except Exception as e:
+            prRed(f'{url}')
             prRed("!!! ERROR !!! Method %s Failed. Exception: %s" % (section[:-5], e))
             sys.exit(1)
     return s, url
@@ -1787,6 +1788,7 @@ def get(uri, kwargs, section=''):
             prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
         except Exception as e:
+            prRed(f'{url}/api/{uri}')
             prRed("!!! ERROR !!! Method %s Failed. Exception: %s" % (section[:-5], e))
             sys.exit(1)
 
@@ -1855,6 +1857,7 @@ def patch(uri, kwargs, payload, section=''):
             prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
         except Exception as e:
+            prRed(f'{url}/api/{uri}')
             prRed("!!! ERROR !!! Method %s Failed. Exception: %s" % (section[:-5], e))
             sys.exit(1)
 
@@ -1907,6 +1910,7 @@ def post(uri, kwargs, payload, section=''):
             prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
         except Exception as e:
+            prRed(f'{url}/api/{uri}')
             prRed("!!! ERROR !!! Method %s Failed. Exception: %s" % (section[:-5], e))
             sys.exit(1)
 

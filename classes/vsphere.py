@@ -128,8 +128,9 @@ class api(object):
                 kwargs.vmware.datastores.extend(i.datastores)
             kwargs.vmware.dns_domains= kwargs.dns_domains
             kwargs.vmware.dns_servers= kwargs.dns_servers
-            if not item.name == 'vSwitch0': kwargs.vmware.name = item.name
-            else: kwargs.vmware.name = item.alternate_name
+            if re.search('vswitch0', i.name, re.IGNORECASE):
+                kwargs.vmware.name = 'vSwitch0'
+            else: kwargs.vmware.name = item.name
             kwargs.vmware.name       = item.name
             kwargs.vmware.ntp_servers= kwargs.ntp_servers
             kwargs.vmware.servers    = []

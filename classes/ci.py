@@ -34,12 +34,16 @@ class imm(object):
         btemplates= []
         dataset   = []
         for k, v in kwargs.servers.items():
-            dataset.append(f"{v.gen}_{v.cpu}_{v.tpm}")
+            dataset.append(f"{v.gen}-{v.cpu}-{v.tpm}")
         models = numpy.unique(numpy.array(dataset))
         for i in models:
-            gen, cpu, tpm = i.split('_')
-            if tpm == True:btemplates.append(f'{gen}-{cpu}-virtual-tpm')
-            else: btemplates.append(f'{gen}-{cpu}-virtual')
+            gen, cpu, tpm = i.split('-')
+            if kwargs.args.deployment_type == 'azure_hci':
+                if tpm == True:btemplates.append(f'{gen}-{cpu}-azure-tpm')
+                else: btemplates.append(f'{gen}-{cpu}-azure')
+            else:
+                if tpm == True:btemplates.append(f'{gen}-{cpu}-virtual-tpm')
+                else: btemplates.append(f'{gen}-{cpu}-virtual')
         btemplates = list(numpy.unique(numpy.array(btemplates)))
         for i in btemplates:
             polVars = dict(
@@ -52,7 +56,7 @@ class imm(object):
                 terminal_type       = f'vt100',
             )
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
 
@@ -87,7 +91,7 @@ class imm(object):
             if 'fcp' in i:
                 fabrics = ['a', 'b']
                 for x in range(0,len(fabrics)):
-                    for k,v in kwargs.immDict.orgs[kwargs.org].storage.items():
+                    for k,v in kwargs.imm_dict.orgs[kwargs.org].storage.items():
                         for e in v:
                             for s in e['wwpns'][chr(ord('@')+x+1).lower()]:
                                 polVars['boot_devices'].append({
@@ -120,7 +124,7 @@ class imm(object):
                 'object_type': 'boot.UefiShell'
             })
             
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
 
@@ -151,7 +155,7 @@ class imm(object):
                     serial_number = i.serial
                 ))
             
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'profiles,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         
@@ -191,9 +195,12 @@ class imm(object):
             for e in vic:
                 if re.search('(V5)', e.Model): vic_generation = 'gen5'
                 else: vic_generation = 'gen4'
-                if 'MLOM' in e.PciSlot: vic_slot = 'MLOM'
-                else: vic_slot = re.search('SlotId:(\\d)', vic).group(1)
-                vics.append(DotMap(vic_gen= vic_generation, vic_slot=vic_slot))
+                if 'MLOM' in e.PciSlot:
+                    vic_slot = 'MLOM'
+                    vics.append(DotMap(vic_gen= vic_generation, vic_slot=vic_slot))
+                elif not 'MEZZ' in e.PciSlot:
+                    vic_slot = re.search('SlotID:(\\d)', e.PciSlot).group(1)
+                    vics.append(DotMap(vic_gen= vic_generation, vic_slot=vic_slot))
 
             sg = re.search('-(M[\\d])', i.Model).group(1)
             if type(vics[0].vic_slot) == str: vs1= (vics[0].vic_slot).lower()
@@ -228,8 +235,7 @@ class imm(object):
                 tpm         = tpm,
                 vics        = vics
             )
-            if i.SourceObjectType == 'compute.RackUnit':
-                kwargs.servers[i.Serial].pop('chassis_moid')
+            if i.SourceObjectType == 'compute.RackUnit': kwargs.servers[i.Serial].pop('chassis_moid')
             return kwargs
 
         #=====================================================
@@ -244,25 +250,24 @@ class imm(object):
             kwargs        = isight.api(kwargs.qtype).calls(kwargs)
             pmoids        = kwargs.pmoids
 
-            for k, v in pmoids.items():
-                reg_device = v.registered_device
+            for k, v in pmoids.items(): reg_device = v.registered_device
             kwargs.api_filter= f"RegisteredDevice.Moid eq '{reg_device}'"
             kwargs.uri       = 'equipment/Chasses'
             kwargs           = isight.api(kwargs.qtype).calls(kwargs)
             chassis_pmoids   = kwargs.pmoids
-            kwargs.uri       = 'compute/PhysicalSummaries'
+            platform_types   = "('IMCBlade', 'IMCM5', 'IMCM6', 'IMCM7', 'IMCM8', 'IMCM9')"
+            kwargs.api_filter= f"ParentConnection.Moid eq '{reg_device}' and PlatformType in {platform_types}"
+            kwargs.uri       = 'asset/DeviceRegistrations'
             kwargs           = isight.api(kwargs.qtype).calls(kwargs)
-            rack_pmoids      = kwargs.pmoids
+            server_pmoids    = kwargs.pmoids
             kwargs.pop('api_filter')
             #=====================================================
             # Build Chassis Dictionary
             #=====================================================
             models = []
-            for k, v in chassis_pmoids.items():
-                models.append(str(v.model).lower())
+            for k, v in chassis_pmoids.items(): models.append(str(v.model).lower())
             models = numpy.unique(numpy.array(models))
-            for model in models:
-                kwargs.chassis[model] = []
+            for model in models: kwargs.chassis[model] = []
             for k, v in chassis_pmoids.items():
                 model = str(v.model).lower()
                 kwargs.chassis[model].append(DotMap(
@@ -274,21 +279,12 @@ class imm(object):
             #=====================================================
             # Build Server Dictionaries - Domain
             #=====================================================
-            for k, v in chassis_pmoids.items():
-                for e in v.blades:
-                    kwargs.method='get_by_moid'
-                    kwargs.qtype = 'serial_number'
-                    kwargs.uri   = 'compute/PhysicalSummaries'
-                    kwargs.pmoid = e.moid
-                    kwargs = isight.api(kwargs.qtype).calls(kwargs)
-                    kwargs = server_dictionary(kwargs.results, kwargs)
-            for k, v in rack_pmoids.items():
-                kwargs.method='get_by_moid'
-                kwargs.qtype = 'serial_number'
-                kwargs.uri   = 'compute/PhysicalSummaries'
-                kwargs.pmoid = e.moid
-                kwargs = isight.api(kwargs.qtype).calls(kwargs)
-                kwargs = server_dictionary(kwargs.results, kwargs)
+            kwargs.names = []
+            for k, v in server_pmoids.items(): kwargs.names.append(k)
+            kwargs.method='get'
+            kwargs.uri   = 'compute/PhysicalSummaries'
+            kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+            for i in kwargs.results: kwargs = server_dictionary(i, kwargs)
         else:
             #=====================================================
             # Build Server Dictionaries - Standalone
@@ -298,9 +294,7 @@ class imm(object):
             kwargs.qtype = 'serial_number'
             kwargs.uri   = 'compute/PhysicalSummaries'
             kwargs = isight.api(kwargs.qtype).calls(kwargs)
-            for i in kwargs.results:
-                kwargs = server_dictionary(i, kwargs)
-
+            for i in kwargs.results: kwargs = server_dictionary(i, kwargs)
 
         #=====================================================
         # Return kwargs and kwargs
@@ -331,7 +325,7 @@ class imm(object):
             polVars['vsan_policies'] = []
             for i in kwargs.domain.vsans:
                 polVars['vsan_policies'].append(f'{kwargs.domain.policies.prefix}vsan-{i}')
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'profiles,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -356,7 +350,7 @@ class imm(object):
                 name             = f'{kwargs.domain.policies.prefix}{i}',
             )
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -386,7 +380,7 @@ class imm(object):
             mac_security_forge   = 'allow',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -410,7 +404,7 @@ class imm(object):
                 name          = f'{kwargs.domain.policies.prefix}{kwargs.name}',
                 native_vlan   = kwargs.native,
             )
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
             return kwargs
@@ -467,8 +461,9 @@ class imm(object):
         #=====================================================
         for item in kwargs.virtualization:
             for i in item.virtual_switches:
-                if not i.name == 'vSwitch0': kwargs.name = i.name
-                else: kwargs.name = i.alternate_name
+                if re.search('vswitch0', i.name, re.IGNORECASE):
+                    kwargs.name = i.alternate_name
+                else: kwargs.name = i.name
                 kwargs.native= 1
                 if 'guests' in i.data_types:
                     kwargs.name = 'all_vlans'
@@ -530,8 +525,6 @@ class imm(object):
                         mvlans.sort()
                         kwargs.allowed= ezfunctions.vlan_list_format(mvlans)
                         kwargs        = create_eth_groups(kwargs)
-        print(json.dumps(kwargs.immDict.orgs[kwargs.org].policies.ethernet_network_group, indent=4))
-        exit()
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -558,7 +551,7 @@ class imm(object):
                 priority     = i,
                 rate_limit   = 0,
             )
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         
@@ -583,7 +576,7 @@ class imm(object):
             }],
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'pools,wwnn'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
 
@@ -621,7 +614,7 @@ class imm(object):
                 name                  = name,
                 targets               = [],
             )
-            kwargs.storage = kwargs.immDict.orgs[kwargs.org].storage
+            kwargs.storage = kwargs.imm_dict.orgs[kwargs.org].storage
             for k, v in kwargs.storage.items():
                 for e in v:
                     for i in e.wwpns[fabrics[x]]:
@@ -633,7 +626,7 @@ class imm(object):
                         ))
                     kwargs.fc_zone.append(polVars['name'])
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -656,7 +649,7 @@ class imm(object):
                 name             = f'{kwargs.domain.policies.prefix}{i}',
             )
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -678,7 +671,7 @@ class imm(object):
                 vsan_id     = i,
             )
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -703,7 +696,7 @@ class imm(object):
                 rate_limit          = 0,
             )
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -737,7 +730,7 @@ class imm(object):
                 model_family  = i
             ))
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
 
@@ -758,7 +751,7 @@ class imm(object):
             name        = f'{kwargs.domain.policies.prefix}flow-ctrl',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -781,7 +774,7 @@ class imm(object):
             name                = f'{kwargs.domain.policies.prefix}kvm',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -833,7 +826,7 @@ class imm(object):
                     )],
                 )
                 kwargs.pools.ip[i.vlan_type].append(polVars['name'])
-                # Add Policy Variables to immDict
+                # Add Policy Variables to imm_dict
                 kwargs.class_path = f'pools,{self.type}'
                 kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -859,7 +852,7 @@ class imm(object):
             }],
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'pools,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -879,7 +872,7 @@ class imm(object):
             name        = f'{kwargs.domain.policies.prefix}ipmi',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -902,7 +895,7 @@ class imm(object):
             tcp_connection_timeout = 15,
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -938,7 +931,7 @@ class imm(object):
             )
             kwargs.iscsi.boot.append(polVars['name'])
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -954,7 +947,7 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         kwargs.iscsi.targets = []
-        for k, v in kwargs.immDict.orgs[kwargs.org].storage.items():
+        for k, v in kwargs.imm_dict.orgs[kwargs.org].storage.items():
             for e in v:
                 for i in e.iscsi.interfaces:
                     name = e.svm + ':' + i.interface
@@ -971,7 +964,7 @@ class imm(object):
                     )
                     kwargs.iscsi.targets.append(name)
                     
-                    # Add Policy Variables to immDict
+                    # Add Policy Variables to imm_dict
                     kwargs.class_path = f'policies,{self.type}'
                     kwargs = ezfunctions.ez_append(polVars, kwargs)
        
@@ -1022,8 +1015,9 @@ class imm(object):
                 for e in kwargs.virtualization:
                     for i in e.virtual_switches:
                         print(i.data_types)
-                        if not i.name == 'vSwitch0': name = i.name
-                        else: name = i.alternate_name
+                        if re.search('vswitch0', i.name, re.IGNORECASE):
+                            name = i.alternate_name
+                        else: name = i.name
                         if re.search('[A-Z]', name): a = 'A'; b = 'B'
                         else: a = 'a'; b = 'b'
                         if 'guests' in i.data_types:
@@ -1076,7 +1070,7 @@ class imm(object):
                         else: pci_order += 1
                         vnic_count += 1
                 
-                # Add Policy Variables to immDict
+                # Add Policy Variables to imm_dict
                 kwargs.class_path = f'policies,{self.type}'
                 kwargs = ezfunctions.ez_append(polVars, kwargs)
 
@@ -1098,7 +1092,7 @@ class imm(object):
             name        = f'{kwargs.domain.policies.prefix}link-agg',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1118,7 +1112,7 @@ class imm(object):
             name        = f'{kwargs.domain.policies.prefix}link-ctrl',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1144,7 +1138,7 @@ class imm(object):
             )]
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1162,8 +1156,9 @@ class imm(object):
         for e in kwargs.virtualization:
             for i in e.virtual_switches:
                 for x in range(0,2):
-                    if not i.name == 'vSwitch0': name = i.name
-                    else: name = i.alternate_name
+                    if re.search('vswitch0', i.name, re.IGNORECASE):
+                        name = i.alternate_name
+                    else: name = i.name
                     if re.search('[A-Z]', name): pool= name + '-' + chr(ord('@')+x+1)
                     else: pool= name + '-' + chr(ord('@')+x+1).lower()
                     pid = mcount + x
@@ -1179,7 +1174,7 @@ class imm(object):
                     )
                     mcount + 2
 
-                    # Add Policy Variables to immDict
+                    # Add Policy Variables to imm_dict
                     kwargs.class_path = f'pools,{self.type}'
                     kwargs = ezfunctions.ez_append(polVars, kwargs)
 
@@ -1200,7 +1195,7 @@ class imm(object):
             name        = f'{kwargs.domain.policies.prefix}mcast',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1221,7 +1216,7 @@ class imm(object):
             dns_servers_v4 = kwargs.dns_servers,
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,network_connectivity'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1243,7 +1238,7 @@ class imm(object):
             timezone    = kwargs.timezone,
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,ntp'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1257,15 +1252,15 @@ class imm(object):
     #=============================================================================
     def port(self, kwargs):
         def ethernet_pc_uplinks(kwargs):
-            idict = [dict(
-                admin_speed                   = 'Auto',
-                ethernet_network_group_policy = f'{kwargs.domain.policies.prefix}{kwargs.vlan_group}',
-                flow_control_policy           = f'{kwargs.domain.policies.prefix}flow-ctrl',
-                interfaces                    = kwargs.ports,
-                link_aggregation_policy       = f'{kwargs.domain.policies.prefix}link-agg',
-                link_control_policy           = f'{kwargs.domain.policies.prefix}link-ctrl',
-                pc_ids                        = [kwargs.pc_id, kwargs.pc_id],
-            )]
+            idict = dict(
+                admin_speed                  = 'Auto',
+                ethernet_network_group_policy= f'{kwargs.domain.policies.prefix}{kwargs.vlan_group}',
+                flow_control_policy          = f'{kwargs.domain.policies.prefix}flow-ctrl',
+                interfaces                   = kwargs.ports,
+                link_aggregation_policy      = f'{kwargs.domain.policies.prefix}link-agg',
+                link_control_policy          = f'{kwargs.domain.policies.prefix}link-ctrl',
+                pc_ids                       = [kwargs.pc_id, kwargs.pc_id],
+            )
             return idict
 
         eth_breakout_ports = []
@@ -1439,7 +1434,7 @@ class imm(object):
                     port_list             = port_list
                 ))
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
 
@@ -1470,7 +1465,7 @@ class imm(object):
             if '9508' in i: polVars['power_allocation'] = 8400
             else: polVars.pop('power_allocation')
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1529,7 +1524,7 @@ class imm(object):
                 if len(slots) == 1: pci_order += 2
                 else: pci_order += 1
                 
-                # Add Policy Variables to immDict
+                # Add Policy Variables to imm_dict
                 kwargs.class_path = f'policies,{self.type}'
                 kwargs = ezfunctions.ez_append(polVars, kwargs)
         
@@ -1550,7 +1545,7 @@ class imm(object):
             name        = f'{kwargs.domain.policies.prefix}sol',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1713,7 +1708,7 @@ class imm(object):
                 user                = kwargs.domain.policies.snmp.username
             ))
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,snmp'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         polVars.update({
@@ -1745,7 +1740,7 @@ class imm(object):
             )
             if i == 'Server': polVars.update({'power_restore':'LastState'})
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1769,7 +1764,7 @@ class imm(object):
             vlan_port_count_optimization = True,
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,switch_control'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1798,7 +1793,7 @@ class imm(object):
                 minimum_severity = 'informational',
             ))
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,syslog'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         polVars.update({
@@ -1824,12 +1819,12 @@ class imm(object):
             classes     = [],
             name        = f'{kwargs.domain.policies.prefix}qos',
         )
-        for k, v in kwargs.ezData['ezimm'].allOf[1].properties['systemQos'].items():
+        for k, v in kwargs.ez_data['ezimm'].allOf[1].properties['systemQos'].items():
             cDict = {'priority':k}
             cDict.update(v)
             polVars['classes'].append(cDict)
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1885,7 +1880,7 @@ class imm(object):
                 if 'fcp' in t: polVars.update({'san_connectivity_policy': f'{kwargs.domain.policies.prefix}{scp}'})
                 else: polVars.pop('san_connectivity_policy')
                 
-                # Add Policy Variables to immDict
+                # Add Policy Variables to imm_dict
                 kwargs.class_path = f'{self.type},server'
                 kwargs = ezfunctions.ez_append(polVars, kwargs)
         
@@ -1908,7 +1903,7 @@ class imm(object):
                 name             = f'{kwargs.domain.policies.prefix}{i}',
             )
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1933,7 +1928,7 @@ class imm(object):
             }],
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'pools,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1953,7 +1948,7 @@ class imm(object):
             name                = f'{kwargs.domain.policies.prefix}vkvm',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -1973,7 +1968,7 @@ class imm(object):
             name                = f'{kwargs.domain.policies.prefix}vmedia',
         )
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -2015,7 +2010,7 @@ class imm(object):
                 name             = i['name'],
                 vlan_list        = vlan_list
             ))
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -2044,7 +2039,7 @@ class imm(object):
                 )]
             )
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'policies,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
         #=====================================================
@@ -2067,7 +2062,7 @@ class wizard(object):
         #==================================
         # Configure Domain Policies
         #==================================
-        policy_list = kwargs.ezData['ezimm'].allOf[1].properties['list_domains'].enum
+        policy_list = kwargs.ez_data['ezimm'].allOf[1].properties['list_domains'].enum
         policy_list.remove('domain')
         policy_list.insert(0, 'ethernet_network_group')
         policy_list.sort()
@@ -2099,7 +2094,7 @@ class wizard(object):
         #==================================
         # Configure IMM Pools
         #==================================
-        pool_list = list(kwargs.ezData['pools'].allOf[1].properties.keys())
+        pool_list = list(kwargs.ez_data['pools'].allOf[1].properties.keys())
         pool_list.remove('resource')
         for k, v in kwargs.imm.domain.items():
             for i in pool_list:
@@ -2112,11 +2107,11 @@ class wizard(object):
         #==================================
         # Modify the Policy List
         #==================================
-        policy_list = list((kwargs.ezData.policies.allOf[1].properties).keys())
-        ezData = kwargs.ezData['ezimm'].allOf[1].properties
-        pop_list = ezData['converged.pop_list'].enum
+        policy_list = list((kwargs.ez_data.policies.allOf[1].properties).keys())
+        ez_data = kwargs.ez_data['ezimm'].allOf[1].properties
+        pop_list = ez_data['converged.pop_list'].enum
         for i in pop_list: policy_list.remove(i)
-        pop_list = ezData['converged.fc_pop_list'].enum
+        pop_list = ez_data['converged.fc_pop_list'].enum
 
         if re.search('fc(-nvme)?', kwargs.dtype):
             if kwargs.sw_mode == 'end-host': policy_list.remove('fc_zone')
@@ -2128,9 +2123,9 @@ class wizard(object):
             policy_list.insert((policy_list.index('iscsi_boot') - 1), 'iscsi_static_target')
         pop_list = ['ethernet_network_group', 'snmp', 'syslog']
         for i in pop_list:
-            if kwargs.immDict.orgs.get(kwargs.org):
-                if kwargs.immDict.orgs[kwargs.org].get('policies'):
-                    if kwargs.immDict.orgs[kwargs.org].policies.get(i):
+            if kwargs.imm_dict.orgs.get(kwargs.org):
+                if kwargs.imm_dict.orgs[kwargs.org].get('policies'):
+                    if kwargs.imm_dict.orgs[kwargs.org].policies.get(i):
                         policy_list.remove(i)
         kwargs.policy_list = policy_list
 
@@ -2181,7 +2176,7 @@ class wizard(object):
         for i in plist:
             kwargs = eval(f'netapp.api(i).{i}(kwargs)')
 
-        # Add Policy Variables to immDict
+        # Add Policy Variables to imm_dict
         idict = kwargs.storage.toDict()
         for k, v in idict.items():
             for a, b in v.items():
@@ -2201,7 +2196,7 @@ class wizard(object):
         #=====================================================
         # DHCP, DNS, NTP, Organization
         #=====================================================
-        i = kwargs.immDict.wizard.protocols[0]
+        i = kwargs.imm_dict.wizard.protocols[0]
         kwargs.dns_servers = i.dns_servers
         kwargs.dns_domains = i.dns_domains
         kwargs.ntp_servers = i.ntp_servers
@@ -2220,9 +2215,9 @@ class wizard(object):
         #=====================================================
         # Intersight Attributes
         #=====================================================
-        for item in kwargs.immDict.wizard.intersight:
+        for item in kwargs.imm_dict.wizard.intersight:
             item = DotMap(item)
-            kwargs.dtype  = item.deployment_type
+            kwargs.dtype  = kwargs.imm_dict.wizard.deployment_type
             kwargs.org    = item.organization
             for i in item.domains:
                 i = DotMap(i)
@@ -2241,7 +2236,7 @@ class wizard(object):
                     profiles           = i.profiles,
                     registered_device  = '',
                     serial_numbers     = i.serial_numbers,
-                    tags               = kwargs.ezData.tags
+                    tags               = kwargs.ez_data.tags
                 )
                 #==================================
                 # Build Domain Network Dictionary
@@ -2295,7 +2290,7 @@ class wizard(object):
         #==================================
         kwargs.netapp.cluster = DotMap()
         kwargs.storage = DotMap()
-        for item in kwargs.immDict.wizard.netapp:
+        for item in kwargs.imm_dict.wizard.netapp:
             for i in item.clusters:
                 kwargs.storage[i.name][i.svm.name] = DotMap(
                     cluster= i.name,
@@ -2355,7 +2350,7 @@ class wizard(object):
         validating.begin_section(self.type, 'Install')
         kwargs.org_moid= kwargs.org_moids[kwargs.org].moid
         kwargs.models  = []
-        for i in  kwargs.immDict.orgs[kwargs.org].wizard.os_configuration:
+        for i in  kwargs.imm_dict.orgs[kwargs.org].wizard.os_configuration:
             kwargs.models.append(i.model)
         kwargs.models   = list(numpy.unique(numpy.array(kwargs.models)))
 
@@ -2372,7 +2367,7 @@ class wizard(object):
         kwargs.scu_version= (kwargs.files['ucs-scu'].split('.iso')[0]).split('-')[2]
         kwargs.os_iso     = kwargs.files['Custom-Cisco']
         kwargs.os_name    = re.search('(ESXi-\\d.\\d(\\.\\d)?)', kwargs.files['Custom-Cisco']).group(1)
-        jvars = kwargs.ezData.operatingSystem.allOf[1].properties[kwargs.os_name]
+        jvars = kwargs.ez_data.operatingSystem.allOf[1].properties[kwargs.os_name]
         kwargs.os_config  = jvars.config
         kwargs.os_vendor  = jvars.vendor
         kwargs.os_version = jvars.version
@@ -2470,10 +2465,10 @@ class wizard(object):
         #==========================================
         # Deploy Operating System for each Profile
         #==========================================
-        kwargs.san_target = kwargs.immDict.orgs[kwargs.org].storage.appliances[0].wwpns.a[0].wwpn
+        kwargs.san_target = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.a[0].wwpn
 
         # TEMP FIX for cabling issue - Remove
-        kwargs.san_target = kwargs.immDict.orgs[kwargs.org].storage.appliances[0].wwpns.a[1].wwpn
+        kwargs.san_target = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.a[1].wwpn
         
         for k,v in kwargs.server_profiles.items():
             indx           = [e for e, d in enumerate(v.macs) if 'mgmt-a' in d.values()][0]
@@ -2538,7 +2533,7 @@ class wizard(object):
         # Get Server Profile Names and Moids
         #=====================================================
         kwargs.names = []
-        for i in kwargs.immDict.orgs[kwargs.org].wizard.server_profiles:
+        for i in kwargs.imm_dict.orgs[kwargs.org].wizard.server_profiles:
             kwargs.server_profiles[i.name] = DotMap()
             for k, v in i.items():
                 kwargs.server_profiles[i.name][k] = v
@@ -2641,7 +2636,7 @@ class wizard(object):
         for k, v in kwargs.server_profiles.items():
             polVars = v.toDict()
 
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = f'wizard,os_configuration'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
 
@@ -2657,7 +2652,7 @@ class wizard(object):
     def vlans(self, kwargs):
         protocols   = []
         kwargs.vlans = []
-        for i in kwargs.immDict.wizard.vlans:
+        for i in kwargs.imm_dict.wizard.vlans:
             #==================================
             # Add i.vlan_type to protocols
             #==================================
@@ -2702,7 +2697,7 @@ class wizard(object):
         # Build VLAN Ranges Dictionary
         #==================================
         kwargs.ranges = []
-        for i in kwargs.immDict.wizard.vlan_ranges:
+        for i in kwargs.imm_dict.wizard.vlan_ranges:
             kwargs.ranges.append(DotMap(
                 configure_l2= i.configure_l2,
                 disjoint    = i.disjoint,

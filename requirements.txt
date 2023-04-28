@@ -12,8 +12,11 @@ numpy
 openpyxl
 ordered_set
 phonenumbers
+pkgutil
 pytz
 pyvmomi
 simplejson
+six
 stdiomask
+tabulate
 validators
