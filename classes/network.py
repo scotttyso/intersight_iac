@@ -5,10 +5,8 @@ from dotmap import DotMap
 import datetime
 import ipaddress
 import os
-import pexpect
 import pytz
 import re
-import sys
 import time
 
 class nxos(object):
@@ -65,21 +63,7 @@ class nxos(object):
                         peer_ports     = switch.vpc_config.peer_ports,
                     )
                 nxmap.append(i)
-        #=====================================================
-        # Setup Base Variables
-        #=====================================================
-        enablePrompt= r'^[\w\-]{3,64}>$'
-        hostPrompt  = r'^[\w\-]+(\([\w\-]+\))?#$'
-        hostPrompt  = r'[\w\-]{3,64}(\([\w\-]+\))?#'
-        sshQuestion = 'Are you sure you want to continue'
-        systemShell = os.environ['SHELL']
-        kwargs.sensitive_var= 'nexus_password'
-        kwargs = ezfunctions.sensitive_var_value(kwargs)
-        #=====================================================
-        # Spawn the environment Shell
-        #=====================================================
-        child = pexpect.spawn(systemShell, encoding='utf-8')
-        child.logfile_read = sys.stdout
+
         #=====================================================
         # Loop Through the Switch Configurations
         #=====================================================
@@ -105,47 +89,32 @@ class nxos(object):
             #================================
             cmds.extend(add_interfaces(x, nxmap, kwargs))
             cmds.append('end')
+
             #================================
-            # Open SSH Session
+            # Login to the Switch
             #================================
-            hostname= nxmap[x].hostname + '.' + kwargs.dns_domains[0]
-            password= kwargs['var_value']
-            username= network_config.username
-            child.sendline(f'ssh {username}@{hostname}')
-            child.expect(f'ssh {username}@{hostname}')
-            
-            #================================
-            # Login to the NX-OS Device
-            #================================
-            logged_in = False
-            while logged_in == False:
-                i = child.expect([sshQuestion, 'closed', 'Password:', enablePrompt, hostPrompt])
-                if i == 0: child.sendline('yes')
-                elif i == 1:
-                    prRed(f'\n!!!ERROR!!! failed to connect.')
-                    prRed(f'Please Validate {hostname} and username {username} is correct.')
-                    sys.exit()
-                elif i == 2: child.sendline(password)
-                elif i == 3:
-                    child.sendline('enable')
-                    child.expect('enable')
-                elif i == 4: logged_in = True
-            
+            kwargs.hostname   = nxmap[x].hostname + '.' + kwargs.dns_domains[0]
+            kwargs.host_prompt= r'[\w\-]{3,64}(\([\w\-]+\))?#'
+            kwargs.password   = 'nexus_password'
+            kwargs.username   = network_config.username
+            child, kwargs     = ezfunctions.child_login(kwargs)
+
             #=====================================================
             # Send Configuration to Switch
             #=====================================================
-            prLightPurple(f'\n\n!!! Starting Configuration on {hostname} !!!\n\n')
+            prLightPurple(f'\n\n!!! Starting Configuration on {kwargs.hostname} !!!\n\n')
             time.sleep(2)
             for cmd in cmds:
                 child.sendline(cmd)
-                child.expect(hostPrompt)
+                child.expect(kwargs.host_prompt)
             child.sendline('copy run start')
             child.expect('Copy complete')
-            child.expect(hostPrompt)
+            child.expect(kwargs.host_prompt)
             child.sendline('exit')
             child.expect('closed')
-            prLightPurple(f'\n\n!!! Completed Configuration on {hostname} !!!\n\n')
-        child.close()
+            os.remove(f'{kwargs.hostname}.txt')
+            child.close()
+            prLightPurple(f'\n\n!!! Completed Configuration on {kwargs.hostname} !!!\n\n')
 
         #=====================================================
         # Send End Notification and return kwargs
@@ -258,6 +227,17 @@ def base_configuration(kwargs):
         f"ntp master 3",
     ]
     return cmds
+
+#=====================================================
+# Print Color Functions
+#=====================================================
+def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
+def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
 
 #======================================================
 # Function - Convert Timezone to NX-OS Commands
@@ -470,14 +450,3 @@ def vpc_config(x, nxmap):
     # Return cmds
     #================================
     return cmds
-
-#=====================================================
-# Print Color Functions
-#=====================================================
-def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
-def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))

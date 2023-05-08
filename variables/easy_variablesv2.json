@@ -2815,6 +2815,30 @@
                     }
                 ]
             },
+            "wizard.azure_hci": {
+                "allOf": [
+                    {},
+                    {
+                        "properties": {
+                            "policy_list": {
+                                "type": "list_of_values",
+                                "enum": [
+                                    "bios",
+                                    "boot_order",
+                                    "firmware",
+                                    "local_user",
+                                    "network_connectivity",
+                                    "ntp",
+                                    "ssh",
+                                    "storage",
+                                    "virtual_kvm",
+                                    "virtual_media"
+                                ]
+                            }
+                        }
+                    }
+                ]
+            },
             "wizard.credentials": {
                 "allOf": [
                     {},

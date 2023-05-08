@@ -5,7 +5,6 @@ import subprocess
 import re
 from xml.etree import ElementTree
 from time import sleep
-import platform
 import requests
 
 import urllib3

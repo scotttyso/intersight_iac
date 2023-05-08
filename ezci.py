@@ -91,6 +91,22 @@ def cli_arguments():
         help='Ignore TLS server-side certificate verification.  Default is False.'
     )
     Parser.add_argument(
+        '-ilp1', '--imm-local-user-password-1',
+        help='Intersight Managed Mode Local User Password 1.'
+    )
+    Parser.add_argument(
+        '-ilp2', '--imm-local-user-password-2',
+        help='Intersight Managed Mode Local User Password 2.'
+    )
+    Parser.add_argument(
+        '-isa', '--imm-snmp-auth',
+        help='Intersight Managed Mode SNMP Auth Password.'
+    )
+    Parser.add_argument(
+        '-isp', '--imm-snmp-priv',
+        help='Intersight Managed Mode SNMP Privilege Password.'
+    )
+    Parser.add_argument(
         '-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
         help='Name of the file containing The Intersight secret key for the HTTP signature scheme.'
     )
@@ -103,6 +119,22 @@ def cli_arguments():
             '6. Adds Results + Lower Options'\
             '7. Adds json payload + Lower Options'\
             'Note: payload shows as pretty and straight to check for stray object types like Dotmap and numpy'
+    )
+    Parser.add_argument(
+        '-np', '--netapp-password',
+        help='NetApp Login Password.'
+    )
+    Parser.add_argument(
+        '-nsa', '--netapp-snmp-auth',
+        help='NetApp SNMP Auth Password.'
+    )
+    Parser.add_argument(
+        '-nsp', '--netapp-snmp-priv',
+        help='NetApp SNMP Privilege Password.'
+    )
+    Parser.add_argument(
+        '-nxp', '--nexus-password',
+        help='Nexus Login Password.'
     )
     Parser.add_argument(
         '-s', '--deployment-step',
@@ -128,6 +160,14 @@ def cli_arguments():
     Parser.add_argument(
         '-v', '--api-key-v3', action='store_true',
         help='Flag for API Key Version 3.'
+    )
+    Parser.add_argument(
+        '-vep', '--vmware-esx-password',
+        help='VMware ESXi Root Login Password.'
+    )
+    Parser.add_argument(
+        '-vvp', '--vmware-vcenter-password',
+        help='VMware vCenter Admin Login Password.'
     )
     Parser.add_argument(
         '-y', '--yaml-file',
@@ -174,6 +214,11 @@ def main():
     kwargs.imm_dict.orgs  = DotMap()
 
     #==============================================
+    # Add Sensitive Variables to Environment
+    #==============================================
+    if kwargs.args.nexus_password:
+        os.environ['nexus_password'] = kwargs.args.nexus_password
+    #==============================================
     # Determine the Script Path
     #==============================================
     kwargs.script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -187,14 +232,18 @@ def main():
     #================================================
     script_path= kwargs.script_path
     file       = f'{script_path}{os.sep}variables{os.sep}intersight-openapi-v3-1.0.11-11360.json'
-    json_data  = json.load(open(file, 'r'))
+    #print(json.dumps(file, indent=4))
+    #print(os.path.isfile(file))
+    #exit()
+    json_data  = json.load(open(file, 'r', encoding="utf8"))
     file       = f'{script_path}{os.sep}variables{os.sep}easy_variablesv2.json'
-    ez_data    = json.load(open(file, 'r'))
+    ez_data    = json.load(open(file, 'r', encoding="utf8"))
 
     #================================================
     # Add Data to kwargs
     #================================================
     kwargs.ez_data  = DotMap(ez_data['components']['schemas'])
+    kwargs.json_data= DotMap()
     kwargs.json_data= DotMap(json_data['components']['schemas'])
 
     #==============================================

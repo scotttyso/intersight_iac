@@ -55,20 +55,31 @@ def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
 # pexpect - Login Function
 #=====================================================
 def child_login(kwargs):
-    system_shell = os.environ['SHELL']
     kwargs.sensitive_var = kwargs.password
     kwargs   = sensitive_var_value(kwargs)
     password = kwargs.var_value
     #=====================================================
     # Use 
     #=====================================================
-    child = pexpect.spawn(system_shell, encoding='utf-8')
+    if kwargs.op_system == 'Windows':
+        from pexpect import popen_spawn
+        child = popen_spawn.PopenSpawn('cmd', encoding='utf-8', timeout=1)
+    else:
+        system_shell = os.environ['SHELL']
+        child = pexpect.spawn(system_shell, encoding='utf-8')
     child.logfile_read = sys.stdout
-    child.sendline(f'ping -c 2 {kwargs.hostname}')
-    child.expect(f'ping -c 2 {kwargs.hostname}')
-    child.expect_exact("$ ")
-    child.sendline(f'ssh {kwargs.username}@{kwargs.hostname} | tee {kwargs.hostname}.txt')
-    child.expect(f'tee {kwargs.hostname}.txt')
+    if kwargs.op_system == 'Windows':
+        child.sendline(f'ping -n 2 {kwargs.hostname}')
+        child.expect(f'ping -n 2 {kwargs.hostname}')
+        child.expect_exact("> ")
+        child.sendline(f'ssh {kwargs.username}@{kwargs.hostname} | Tee-Object {kwargs.hostname}.txt')
+        child.expect(f'Tee-Object {kwargs.hostname}.txt')
+    else:
+        child.sendline(f'ping -c 2 {kwargs.hostname}')
+        child.expect(f'ping -c 2 {kwargs.hostname}')
+        child.expect_exact("$ ")
+        child.sendline(f'ssh {kwargs.username}@{kwargs.hostname} | tee {kwargs.hostname}.txt')
+        child.expect(f'tee {kwargs.hostname}.txt')
     logged_in = False
     while logged_in == False:
         i = child.expect(['Are you sure you want to continue', 'closed', 'Password:', kwargs.host_prompt, pexpect.TIMEOUT])
