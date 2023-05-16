@@ -239,6 +239,7 @@ def create_yaml(orgs, kwargs):
                                             idict[org][item][i] = list({
                                                 v['targets'][0]['name']:v for v in idict[org][item][i]}.values())
                                         else:
+                                            print(json.dumps(idict[org][item][i], indent=4))
                                             idict[org][item][i] = list(
                                                 {v['name']:v for v in idict[org][item][i]}.values())
                                     else:
