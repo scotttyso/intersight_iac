@@ -231,8 +231,6 @@ class api(object):
                 kwargs.uri   = 'organization/Organizations'
                 kwargs       = api(kwargs.qtype).calls(kwargs)
                 kwargs.org_moids[org].moid = kwargs.results.Moid
-        print(kwargs.org_moids)
-        print(kwargs.rsg_moids)
         return kwargs
 
 #=======================================================

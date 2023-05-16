@@ -243,9 +243,6 @@ def main():
     # Import Stored Parameters
     #================================================
     file       = f'{script_path}{os.sep}variables{os.sep}intersight-openapi-v3-1.0.11-11360.json'
-    #print(json.dumps(file, indent=4))
-    #print(os.path.isfile(file))
-    #exit()
     json_data  = json.load(open(file, 'r', encoding="utf8"))
     file       = f'{script_path}{os.sep}variables{os.sep}easy_variablesv2.json'
     ez_data    = json.load(open(file, 'r', encoding="utf8"))
@@ -305,8 +302,6 @@ def main():
     kwargs = ci.wizard('imm').imm(kwargs)
     kwargs = isight.api('organization').organizations(kwargs)
     kwargs = ci.wizard('vlans').vlans(kwargs)
-    print(json.dumps(kwargs.imm_dict, indent=4))
-    exit()
     if re.search('(flexpod|flashstack)', kwargs.args.deployment_type):
         kwargs = eval(f"ci.wizard(kwargs.args.deployment_type).{kwargs.args.deployment_type}(kwargs)")
 
