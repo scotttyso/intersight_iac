@@ -324,6 +324,8 @@ def main():
         #==============================================
         if kwargs.imm_dict.wizard.get('nxos'):
             network_config = DotMap(deepcopy(kwargs.imm_dict.wizard.nxos[0]))
+            print(kwargs.imm_dict.wizard.nxos)
+            exit()
             network_types = ['network', 'ooband']
             for network_type in network_types:
                 config_count = 0
@@ -341,8 +343,8 @@ def main():
         #==============================================
         # Configure Domain
         #==============================================
-        #if re.search('(flashstack|flexpod|imm_domain)', kwargs.args.deployment_type):
-        #    kwargs = ci.wizard('build').build_imm_domain(kwargs)
+        if re.search('(flashstack|flexpod|imm_domain)', kwargs.args.deployment_type):
+            kwargs = ci.wizard('build').build_imm_domain(kwargs)
 
         #==============================================
         # Create YAML Files
