@@ -1623,6 +1623,9 @@ def auth(kwargs, section=''):
     kwargs = ezfunctions.sensitive_var_value(kwargs)
     password = kwargs.var_value
     s = requests.Session()
+    print(url)
+    print(username)
+    print(password)
     s.auth = (username, password)
     auth = ''
     while auth == '':
