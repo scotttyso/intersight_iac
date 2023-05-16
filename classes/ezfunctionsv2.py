@@ -540,6 +540,9 @@ def load_previous_configurations(kwargs):
             elif i == 'profiles': dir_check += 1
             elif i == 'templates': dir_check += 1
     if dir_check > 1:
+        print('found')
+        print(kwargs.args.dir)
+        exit()
         for item in vclasses:
             dest_dir = ez_data[f'class.{item}'].directory
             if os.path.isdir(os.path.join(kwargs.args.dir, dest_dir)):
