@@ -441,7 +441,7 @@ def findVars(ws, func, rows, count):
 # Function - Prompt User for the Intersight Configurtion
 #========================================================
 def intersight_config(kwargs):
-    kwargs.jData = deepcopy({})
+    kwargs.jData = DotMap()
     if kwargs.args.api_key_id == None:
         kwargs.sensitive_var = 'intersight_apikey'
         kwargs = sensitive_var_value(kwargs)
