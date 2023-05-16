@@ -1631,6 +1631,7 @@ def auth(kwargs, section=''):
     while auth == '':
         try:
             auth = s.post(url, verify=False)
+            print(s)
         except requests.exceptions.ConnectionError as e:
             prRed("Connection error, pausing before retrying. Error: %s" % (e))
             time.sleep(5)
