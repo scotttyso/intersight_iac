@@ -181,6 +181,8 @@ def create_yaml(orgs, kwargs):
             for i in ez_data[f'class.{item}'].enum:
                 idict = DotMap()
                 for org in orgs:
+                    print(org)
+                    print(orgs)
                     if not idict.get(org):
                         idict[org] = DotMap()
                     for x in ez_data[f'class.{i}'].enum:
@@ -451,7 +453,6 @@ def intersight_config(kwargs):
     # Prompt User for Intersight SecretKey File
     #==============================================
     secret_path = kwargs.args.api_key_file
-    print(f'path is {secret_path}')
     secret_loop = False
     while secret_loop == False:
         valid = False
