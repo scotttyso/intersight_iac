@@ -302,8 +302,10 @@ def main():
     kwargs = ci.wizard('imm').imm(kwargs)
     kwargs = isight.api('organization').organizations(kwargs)
     kwargs = ci.wizard('vlans').vlans(kwargs)
-    if re.search('(flexpod|flashstack)', kwargs.args.deployment_type):
-        kwargs = eval(f"ci.wizard(kwargs.args.deployment_type).{kwargs.args.deployment_type}(kwargs)")
+    if re.search('(flashstack|flexpod)', kwargs.args.deployment_type):
+        if kwargs.args.deployment_type == 'flexpod':  run_type = 'netapp'
+        elif kwargs.args.deployment_type == 'flashstack': run_type = 'pure'
+        kwargs = eval(f"ci.wizard(run_type).{run_type}(kwargs)")
 
     #==============================================
     # Installation Files Location
