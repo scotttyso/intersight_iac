@@ -286,6 +286,8 @@ def main():
     #==============================================
     # Load Previous Configurations
     #==============================================
+    print(kwargs.imm_dict)
+    print('\n\n\n\n\n\n')
     kwargs = DotMap(ezfunctions.load_previous_configurations(kwargs))
     print(kwargs.imm_dict)
     exit()
