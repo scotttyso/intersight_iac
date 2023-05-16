@@ -107,7 +107,8 @@ def cli_arguments():
         help='Intersight Managed Mode SNMP Privilege Password.'
     )
     Parser.add_argument(
-        '-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
+        '-k', '--api-key-file', default='~/Downloads/SecretKey.txt',
+        #'-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
         help='Name of the file containing The Intersight secret key for the HTTP signature scheme.'
     )
     Parser.add_argument(
