@@ -341,8 +341,8 @@ def main():
         #==============================================
         # Configure Domain
         #==============================================
-        if re.search('(flashstack|flexpod|imm_domain)', kwargs.args.deployment_type):
-            kwargs = ci.wizard('build').build_imm_domain(kwargs)
+        #if re.search('(flashstack|flexpod|imm_domain)', kwargs.args.deployment_type):
+        #    kwargs = ci.wizard('build').build_imm_domain(kwargs)
 
         #==============================================
         # Create YAML Files
