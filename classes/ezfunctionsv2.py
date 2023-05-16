@@ -451,6 +451,7 @@ def intersight_config(kwargs):
     # Prompt User for Intersight SecretKey File
     #==============================================
     secret_path = kwargs.args.api_key_file
+    print(f'path is {secret_path}')
     secret_loop = False
     while secret_loop == False:
         valid = False

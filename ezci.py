@@ -192,9 +192,10 @@ def main():
         create_file = f'type nul >> {os.path.join(dest_dir, dest_file)}'
         os.system(create_file)
 
+    script_name = sys.argv[0].split('/')[-1]
     FORMAT = '%(asctime)-15s [%(levelname)s] [%(filename)s:%(lineno)s] %(message)s'
     logging.basicConfig(
-        filename=f"{Path.home()}{os.sep}Logs{os.sep}{sys.argv[0].split('/')[-1]}.log",
+        filename=f"{Path.home()}{os.sep}Logs{os.sep}{script_name}.log",
         filemode='a',
         format=FORMAT,
         level=logging.DEBUG
@@ -221,8 +222,7 @@ def main():
     if kwargs.args.api_key_file:
         if '~' in kwargs.args.api_key_file:
             kwargs.args.api_key_file = os.path.expanduser(kwargs.args.api_key_file)
-            print(kwargs.args.api_key_file)
-    exit()
+
     kwargs.deployment_type= kwargs.args.deployment_type
     kwargs.home           = Path.home()
     kwargs.logger         = logger
