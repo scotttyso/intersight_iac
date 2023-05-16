@@ -747,9 +747,9 @@ class policies_class(object):
                     kwargs.item= item['users']
                     kwargs     = policies_class('local_users').local_users(kwargs)
             elif 'port' == self.type:
-                #if item.get('port_modes'):
-                #    kwargs.item= item
-                #    kwargs     = policies_class('port_mode').port_mode(kwargs)
+                if item.get('port_modes'):
+                    kwargs.item= item
+                    kwargs     = policies_class('port_mode').port_mode(kwargs)
                 kwargs.item= item
                 kwargs     = policies_class('ports').ports(kwargs)
             elif 'san_connectivity' == self.type:

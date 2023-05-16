@@ -1468,8 +1468,6 @@ class imm(object):
                     port_list             = port_list
                 ))
 
-        print(json.dumps(polVars, indent=4))
-        exit()
         # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
