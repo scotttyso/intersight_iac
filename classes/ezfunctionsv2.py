@@ -180,9 +180,8 @@ def create_yaml(orgs, kwargs):
             if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
             for i in ez_data[f'class.{item}'].enum:
                 idict = DotMap()
+                print(orgs)
                 for org in orgs:
-                    print(org)
-                    print(orgs)
                     if not idict.get(org):
                         idict[org] = DotMap()
                     for x in ez_data[f'class.{i}'].enum:
