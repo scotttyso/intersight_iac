@@ -43,7 +43,7 @@ class api(object):
         #=====================================================
         # Authenticate to the API
         #=====================================================
-        if not 'organization' in kwargs.uri:
+        if not re.search('^(organization|resource)/', kwargs.uri):
             org_moid = kwargs.org_moids[kwargs.org].moid
         #=====================================================
         # Authenticate to the API
@@ -64,12 +64,13 @@ class api(object):
         #=====================================================
         if kwargs.method == 'by_moid': kwargs.method = 'get_by_moid'
         if 'get' == kwargs.method:
-            if 'organization' in kwargs.qtype: api_args = ''
-            elif not kwargs.get('api_filter'):
+            if not kwargs.get('api_filter'):
                 if re.search('(vlans|vsans)', kwargs.qtype):
                     names = ", ".join(map(str, kwargs.names))
                 else: names = "', '".join(kwargs.names).strip("', '")
-                api_filter = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
+                if re.search('(organization|resource_group)', kwargs.qtype):
+                    api_filter = f"Name in ('{names}')"
+                else: api_filter = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
                 if 'asset_target' == kwargs.qtype:
                     api_filter = f"TargetId in ('{names}')"
                 elif 'user_role' == kwargs.qtype:
@@ -176,6 +177,7 @@ class api(object):
         if 'get_by_moid' in kwargs.method: kwargs.results = api_results
         elif 'get' in kwargs.method: kwargs.results = api_results.Results
         elif re.search('(os_install|upgrade)', kwargs.qtype): kwargs.results = api_results
+        elif re.search('(patch|post)', kwargs.method): kwargs.results = api_results
         #=====================================================
         # Print Progress Notifications
         #=====================================================
@@ -190,14 +192,45 @@ class api(object):
     # Get Organizations from Intersight
     #=====================================================
     def organizations(self, kwargs):
-        kwargs.method= 'get'
-        kwargs.qtype = 'organization'
-        kwargs.uri   = 'organization/Organizations'
+        names = []
+        for i in kwargs.orgs: names.append(i)
+        kwargs.method   = 'get'
+        kwargs.names    = names
+        kwargs.qtype    = 'resource_group'
+        kwargs.uri      = 'resource/Groups'
+        kwargs          = api(kwargs.qtype).calls(kwargs)
+        kwargs.rsg_moids= kwargs.pmoids
         #=====================================================
         # Get Organization List from the API
         #=====================================================
-        kwargs = api(self.type).calls(kwargs)
-        kwargs.org_moids = kwargs.pmoids
+        kwargs.qtype    = 'organization'
+        kwargs.uri      = 'organization/Organizations'
+        kwargs          = api(self.type).calls(kwargs)
+        kwargs.org_moids= kwargs.pmoids
+        for org in kwargs.orgs:
+            if not org in kwargs.rsg_moids:
+                kwargs.apiBody={
+                    'Description':f'{org} Resource Group',
+                    'Name':org
+                }
+                kwargs.method= 'post'
+                kwargs.uri   = 'resource/Groups'
+                kwargs       = api(kwargs.qtype).calls(kwargs)
+                kwargs.rsg_moids[org].moid     = kwargs.results.Moid
+                kwargs.rsg_moids[org].selectors= kwargs.results.Selectors
+            if not org in kwargs.org_moids:
+                kwargs.apiBody={
+                    'Description':f'{org} Organization',
+                    'Name':org,
+                    'ResourceGroups':[{
+                        'Moid': kwargs.rsg_moids[org].moid,
+                        'ObjectType': 'resource.Group'
+                    }]
+                }
+                kwargs.method= 'post'
+                kwargs.uri   = 'organization/Organizations'
+                kwargs       = api(kwargs.qtype).calls(kwargs)
+                kwargs.org_moids[org].moid = kwargs.results.Moid
         return kwargs
 
 #=======================================================
@@ -1908,6 +1941,8 @@ def build_pmoid_dictionary(api_results, kwargs):
                 if i.get('ChassisId'):
                     apiDict[iname]['id'] = i.ChassisId
                 if i.get('SourceObjectType'): apiDict[iname].object_type = i.SourceObjectType
+            if i.get('Selectors'):
+                apiDict[iname].selectors = i.Selectors
             if i.get('UpgradeStatus'):
                 apiDict[iname].upgrade_status = i.UpgradeStatus
             if i.get('Profiles'):

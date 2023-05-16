@@ -675,12 +675,12 @@ class api(object):
         #=====================================================
         # Get Auth and Privilege Passwords
         #=====================================================
-        kwargs.sensitive_var = 'snmp_auth_password'
+        kwargs.sensitive_var = 'netapp_snmp_auth'
         kwargs = ezfunctions.sensitive_var_value(kwargs)
-        snmp_auth_password = kwargs['var_value']
-        kwargs.sensitive_var = 'snmp_priv_password'
+        netapp_snmp_auth = kwargs['var_value']
+        kwargs.sensitive_var = 'netapp_snmp_priv'
         kwargs = ezfunctions.sensitive_var_value(kwargs)
-        snmp_priv_password = kwargs['var_value']
+        netapp_snmp_priv = kwargs['var_value']
         for snmp in i.snmp:
             #=====================================================
             # Configure SNMP Global Settings
@@ -711,8 +711,8 @@ class api(object):
                             method = 'patch'
                 if method == 'post':
                     userVars['snmpv3'].update({
-                        "authentication_password": snmp_auth_password,
-                        "privacy_password": snmp_priv_password,
+                        "authentication_password": netapp_snmp_auth,
+                        "privacy_password": netapp_snmp_priv,
                     })
                     payload = json.dumps(userVars)
                     if print_payload: prPurple(json.dumps(userVars, indent=4))

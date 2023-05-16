@@ -76,7 +76,7 @@ class nxos(object):
             # Append VPC Configuration
             #================================
             if nxmap[x].get('vpc'):
-                cmds.extend(vpc_config(x, nxmap))
+                cmds.extend(vpc_config(x, nxmap, kwargs))
 
             #================================
             # Append VLAN Configuration
@@ -85,9 +85,12 @@ class nxos(object):
                 cmds.extend(vlan_config(x, nxmap, kwargs))
 
             #================================
-            # Configure Port-Channels as VPC
+            # Configure Interfaces
             #================================
-            cmds.extend(add_interfaces(x, nxmap, kwargs))
+            if kwargs.deployment_type == 'azure_hci':
+                cmds.extend(add_interfaces_standalone(x, nxmap, kwargs))
+            else:
+                cmds.extend(add_interfaces(x, nxmap, kwargs))
             cmds.append('end')
 
             #================================
@@ -124,14 +127,14 @@ class nxos(object):
 
 
 #=====================================================
-# Add VLAN Configuration to Switch Commands
+# Add Interface Configuration to Switch Commands
 #=====================================================
 def add_interfaces(x, nxmap, kwargs):
     #================================
     # Allowed VLAN Lists
     #================================
-    storage_vlans= ezfunctions.vlan_list_format(kwargs.nxos.storage.allowed_vlans)
     domain_vlans = ezfunctions.vlan_list_format(kwargs.nxos.imm.allowed_vlans)
+    storage_vlans= ezfunctions.vlan_list_format(kwargs.nxos.storage.allowed_vlans)
     cmds = ["!"]
     #================================
     # Loop Thru Interfaces
@@ -205,11 +208,75 @@ def add_interfaces(x, nxmap, kwargs):
     return cmds
 
 #=====================================================
+# Add Standalone Interfaces to Switch Commands
+#=====================================================
+def add_interfaces_standalone(x, nxmap, kwargs):
+    #================================
+    # Allowed VLAN Lists
+    #================================
+    imm_vlans = ezfunctions.vlan_list_format(kwargs.nxos.imm.allowed_vlans)
+    native_vlan = kwargs.nxos.imm.native_vlan
+    cmds = ["!"]
+    #================================
+    # Loop Thru Interfaces
+    #================================
+    for k, v in kwargs.network.imm.items():
+        if nxmap[x].sw_type == 'ooband':
+            descr = f"{k}-cimc"
+            #==================================
+            # Add Mgmt Ports for Mgmt Switches
+            #==================================
+            cmds.extend([
+                f"interface {v.mgmt_port}",
+                f"  description {descr}",
+                f"  switchport",
+                f"  switchport host",
+                f"  switchport access vlan {kwargs.ooband.vlan_id}",
+            ])
+        #===============================================
+        # Configure Network Ports and VPC Port-Channels
+        #===============================================
+        elif nxmap[x].sw_type == 'network':
+            p1 = v.network_port.split('/')
+            if len(p1) == 3:
+                breakout_check = True
+                for cmd in cmds:
+                    if f'breakout module 1 port {p1[1]}' in cmd: breakout_check = False
+                if breakout_check == False:
+                    speed = nxmap[x]['breakout_speed']
+                    cmds.append(f"interface breakout module 1 port {p1[1]} map {speed}-4x")
+                    cmds.append('!')
+            #=================================
+            # Add Port Configuration Commands
+            #=================================
+            allowed_vlans = imm_vlans
+            cmds.extend([
+                f"interface {v.network_port}",
+                f"  description {k}-{v.data_ports[x]}",
+                f"  mtu 9216",
+                f"  switchport",
+                f"  switchport host",
+                f"  switchport mode trunk",
+                f"  switchport trunk native vlan {native_vlan}",
+                f"  switchport trunk allowed vlan {allowed_vlans}",
+                f"  priority-flow-control mode on",
+                f"  service-policy type qos input AzS_HCI_QoS",
+                f"  service-policy type queueing output QoS_Egress_Port",
+                f"  no shutdown",
+                f"!",
+            ])
+    #=====================================================
+    # Return Commands
+    #=====================================================
+    return cmds
+
+#=====================================================
 # Base Configuration - features and global cmds
 #=====================================================
 def base_configuration(kwargs):
     cmds = [
         f"configure terminal",
+        f"cfs eth distribute",
         f"feature interface-vlan",
         f"feature hsrp",
         f"feature lacp",
@@ -226,6 +293,57 @@ def base_configuration(kwargs):
         f"ip domain-lookup",
         f"ntp master 3",
     ]
+    if kwargs.deployment_type == 'azure_hci':
+        cmds.extend([
+            "feature bgp",
+            "feature dhcp"
+        ])
+    return cmds
+
+#=====================================================
+# BGP Configuration
+#=====================================================
+def bgp_configuration(x, nxmap, kwargs):
+    bgp_as = kwargs.network
+    cmds = [
+        f"router bgp 64911",
+        f"  router-id 192.168.200.41",
+        f"  bestpath as-path multipath-relax",
+        f"  log-neighbor-changes",
+        f"  address-family ipv4 unicast",
+        f"    network 192.168.101.0/24",
+        f"    network 192.168.126.0/26",
+        f"    network 192.168.200.41/32",
+        f"    network 192.168.200.44/30",
+        f"    network 192.168.200.56/30",
+        f"    network 192.168.200.60/30",
+        f"    maximum-paths 8",
+        f"    maximum-paths ibgp 8",
+        f"  template peer eBGP-64821",
+        f"    remote-as 64821",
+        f"    address-family ipv4 unicast",
+        f"      maximum-prefix 12000 warning-only",
+        f"  template peer iBGP-64911",
+        f"    remote-as 64911",
+        f"    address-family ipv4 unicast",
+        f"      maximum-prefix 12000 warning-only",
+        f"  neighbor 192.168.200.46",
+        f"    inherit peer iBGP-64911",
+        f"  neighbor 192.168.200.50",
+        f"    inherit peer eBGP-64821",
+        f"    address-family ipv4 unicast",
+        f"      prefix-list ExternalPrefix in",
+        f"      prefix-list ExternalPrefix out",
+        f"  neighbor 192.168.200.54",
+        f"    inherit peer eBGP-64821",
+        f"    address-family ipv4 unicast",
+        f"      prefix-list ExternalPrefix in",
+        f"      prefix-list ExternalPrefix out",
+        f"  neighbor 192.168.101.0/24",
+        f"    inherit peer iBGP-64911",
+        f"  neighbor 192.168.126.0/26",
+        f"    inherit peer iBGP-64911",
+    ]
     return cmds
 
 #=====================================================
@@ -238,6 +356,63 @@ def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
 def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
 def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
 def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
+
+#=====================================================
+# QoS Configuration
+#=====================================================
+def qos_configuration():
+    cmds = [
+        f"class-map type network-qos RDMA_NetQoS",
+        f"  match qos-group 4",
+        f"!",
+        f"class-map type network-qos ClusterCommunication_NetQoS",
+        f"  match qos-group 5",
+        f"!",
+        f"policy-map type network-qos QoS_Network",
+        f"  class type network-qos RDMA_ClassMap_NetQoS",
+        f"    pause pfc-cos 4",
+        f"    mtu 9216",
+        f"  class type network-qos ClusterCommunication_NetQoS",
+        f"    mtu 9216",
+        f"  class type network-qos class-default",
+        f"    mtu 9216",
+        f"!",
+        f"class-map type qos match-all RDMA",
+        f"  match cos 4",
+        f"class-map type qos match-all ClusterCommunication",
+        f"  match cos 5",
+        f"!",
+        f"policy-map type qos AzS_HCI_QoS",
+        f"  class RDMA",
+        f"    set qos-group 4",
+        f"  class ClusterCommunication",
+        f"    set qos-group 5",
+        f"!",
+        f"policy-map type queuing QoS_Egress_Port",
+        f"  class type queuing c-out-8q-q-default",
+        f"    bandwidth remaining percent 49",
+        f"  class type queuing c-out-8q-q1",
+        f"    bandwidth remaining percent 0",
+        f"  class type queuing c-out-8q-q2",
+        f"    bandwidth remaining percent 0",
+        f"  class type queuing c-out-8q-q3",
+        f"    bandwidth remaining percent 0",
+        f"  class type queuing c-out-8q-q4",
+        f"    bandwidth remaining percent 50",
+        f"    random-detect minimum-threshold 300 kbytes maximum-threshold 300 kbytes drop-probability 100 weight 0 ecn",
+        f"!",
+        f"  class type queuing c-out-8q-q5",
+        f"    bandwidth percent 1",
+        f"  class type queuing c-out-8q-q6",
+        f"    bandwidth remaining percent 0",
+        f"  class type queuing c-out-8q-q7",
+        f"    bandwidth remaining percent 0",
+        f"!",
+        f"system qos",
+        f"  service-policy type queuing output QoS_Egress_Port",
+        f"  service-policy type network-qos QoS_Network",
+    ]
+    return cmds
 
 #======================================================
 # Function - Convert Timezone to NX-OS Commands
@@ -304,15 +479,17 @@ def vlan_config(x, nxmap, kwargs):
     #=====================================================
     kwargs.nxos.storage.allowed_vlans= []
     for i in kwargs.vlans:
-        if re.search('(inband|iscsi|nvme|nfs)', i.vlan_type) and nxmap[x].sw_type == 'network':
+        if re.search('(inband|iscsi|nvme|nfs|storage|tenant|transit)', i.vlan_type) and nxmap[x].sw_type == 'network':
             kwargs.nxos.imm.allowed_vlans.append(i.vlan_id)
             kwargs.nxos.storage.allowed_vlans.append(i.vlan_id)
+            if i.native_vlan == True: kwargs.nxos.imm.native_vlan = i.vlan_id
         ip_network  = ipaddress.IPv4Network(i.network)
         ip_broadcast= ip_network.broadcast_address
         ip_gateway  = ipaddress.IPv4Address(i.gateway)
-        if int(ip_broadcast) - int(ip_gateway) > 1:
-            vlan_ip = ipaddress.IPv4Address(int(ip_gateway) +1 + x)
-        else: vlan_ip = ipaddress.IPv4Address(int(ip_gateway) -2 + x)
+        if not 'transit' in i.vlan_type:
+            if int(ip_broadcast) - int(ip_gateway) > 1:
+                vlan_ip = ipaddress.IPv4Address(int(ip_gateway) +1 + x)
+            else: vlan_ip = ipaddress.IPv4Address(int(ip_gateway) -2 + x)
         if i.switch_type == nxmap[x].sw_type and i.configure_l2 == True:
             cmds.extend([
                 f"vlan {i.vlan_id}",
@@ -323,22 +500,36 @@ def vlan_config(x, nxmap, kwargs):
                 if x == 0 and int(i.vlan_id) % 2 != 0: p = 40
                 elif x == 1 and int(i.vlan_id) % 2 == 0: p = 40
                 else: p = 20
-                cmds.extend([
-                    f'interface Vlan{i.vlan_id}',
-                    f'  description {i.name}',
-                    f'  no shutdown',
-                    f'  mtu 9216',
-                    f'  no ip redirects',
-                    f'  ip address {vlan_ip}/{i.prefix}',
-                    f'  no ipv6 redirects',
-                    f'  hsrp version 2',
-                    f'  hsrp {i.vlan_id}',
-                    f'    preempt delay minimum 30 reload 120',
-                    f'    priority 1{p}',
-                    f'    timers msec 250 msec 1000',
-                    f'    ip {i.gateway}',
-                    f"!"
-                ])
+                if 'transit' in i.vlan_type:
+                    cmds.extend([
+                        f'interface Vlan{i.vlan_id}',
+                        f'  description {i.name}',
+                        f'  no shutdown',
+                        f'  mtu 9216',
+                        f'  no ip redirects',
+                        f'  ip address {i.gateway}/{i.prefix}',
+                        f'  no ipv6 redirects',
+                        f'!'
+                    ])
+                else:
+                    cmds.extend([
+                        f'interface Vlan{i.vlan_id}',
+                        f'  description {i.name}',
+                        f'  no shutdown',
+                        f'  mtu 9216',
+                        f'  no ip redirects',
+                        f'  ip address {vlan_ip}/{i.prefix}',
+                        f'  no ipv6 redirects',
+                        f'  hsrp version 2',
+                        f'  hsrp {i.vlan_id}',
+                        f'    preempt delay minimum 30 reload 120',
+                        f'    priority 1{p} forwarding-threshold lower 1 upport 1{p}',
+                        f'    timers msec 250 msec 1000',
+                        f'    ip {i.gateway}',
+                    ])
+                    for d in kwargs.dhcp_servers:
+                        cmds.append(f'  ip dhcp relay address {d}')
+                    cmds.append(f'!')
     #================================
     # Return cmds
     #================================
@@ -347,7 +538,7 @@ def vlan_config(x, nxmap, kwargs):
 #=====================================================
 # Add VPC Settings
 #=====================================================
-def vpc_config(x, nxmap):
+def vpc_config(x, nxmap, kwargs):
     #================================
     # Configure Global VPC Settings
     #================================
@@ -445,6 +636,8 @@ def vpc_config(x, nxmap):
         f"  vpc peer-link",
         f"!",
     ])
+    if kwargs.deployment_type == 'azure_hci':
+        cmds.append(f" service-policy type qos input AzS_HCI_QoS")
 
     #================================
     # Return cmds

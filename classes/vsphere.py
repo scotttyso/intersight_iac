@@ -293,14 +293,14 @@ class api(object):
 
         if platform.system() == 'Windows': pwsh = 'powershell.exe'
         else: pwsh = 'pwsh'
-        script_path= kwargs.script_path + '/' + 'vcenter.ps1'
+        script_path= os.path.join(kwargs.script_path, 'vcenter.ps1')
 
         #=====================================================
         # Add Sensitive Passwords to env
         #=====================================================
-        kwargs.sensitive_var = 'esx_password'
+        kwargs.sensitive_var = 'vmware_esx_password'
         kwargs = ezfunctions.sensitive_var_value(kwargs)
-        kwargs.sensitive_var = 'vcenter_password'
+        kwargs.sensitive_var = 'vmware_vcenter_password'
         kwargs = ezfunctions.sensitive_var_value(kwargs)
 
         #=====================================================

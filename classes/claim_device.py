@@ -7,18 +7,29 @@ import numpy
 import re
 
 def claim_targets(kwargs):
-    kwargs.device_id.names = []
-    kwargs.resource_group.names = []
     return_code = 0
-
     result = DotMap()
+
+    resource_groups = []
+    for i in kwargs.yaml.device_list: resource_groups.append(i.resource_group)
+    names= "', '".join(numpy.unique(numpy.array(resource_groups))).strip("', '")
+
+    kwargs.api_filter= f"Name in ('{names}')"
+    kwargs.method    = 'get'
+    kwargs.qtype     = 'resource_group'
+    kwargs.uri       = 'resource/Groups'
+    kwargs           = isight.api(kwargs.qtype).calls(kwargs)
+    resource_groups  = kwargs.pmoids
+    kwargs.pop('api_filter')
+
     for i in kwargs.yaml.device_list:
         for e in i.devices:
             device = DotMap(
                 device_type   = i.device_type,
                 hostname      = e,
                 password      = kwargs.password,
-                resource_group=i.resource_group,
+                resource_group= i.resource_group,
+                script_path   = kwargs.script_path,
                 username      = kwargs.username
             )
             result[device.hostname] = DotMap(changed=False)
@@ -34,8 +45,8 @@ def claim_targets(kwargs):
                     dc_obj = device_connector.imc_device_connector(device)
             elif device.device_type == 'hx':
                 dc_obj = device_connector.hx_device_connector(device)
-            elif device.device_type == 'imc':
-                dc_obj = device_connector.ucs_device_connector(device)
+            #elif device.device_type == 'imc':
+            #    dc_obj = device_connector.ucs_device_connector(device)
             else:
                 result[device.hostname].msg += "  Unknown device_type %s" % device.device_type
                 return_code = 1
@@ -111,76 +122,71 @@ def claim_targets(kwargs):
                 kwargs.qtype   = 'device_claim'
                 kwargs.uri     = 'asset/DeviceClaims'
                 kwargs         = isight.api(kwargs.qtype).calls(kwargs)
-                claim_result   = kwargs.results
-                kwargs.serial.names.append(device_id)
-                kwargs.resource_group.names.append(device.resource_group)
+                reg_moid       = kwargs.results.Moid
+                result[device.hostname].reg_moid = reg_moid
                 result[device.hostname].changed= True
                 result[device.hostname].serial = device_id
-
-        kwargs.method  = 'get'
-        kwargs.names   = kwargs.device_id.names
-        kwargs.qtype   = 'asset_target'
-        kwargs.uri     = 'asset/Targets'
-        kwargs         = isight.api(kwargs.qtype).calls(kwargs)
-        asset_targets  = kwargs.results
-        kwargs.method  = 'get'
-        kwargs.names   = numpy.unique(numpy.array(kwargs.resource_group.names))
-        kwargs.qtype   = 'resource_group'
-        kwargs.uri     = 'resource/Groups'
-        kwargs         = isight.api(kwargs.qtype).calls(kwargs)
-        resource_groups= kwargs.results
-
-        for device in kwargs.device_list:
-            indx = [e for e, d in enumerate(asset_targets) if result[device.hostname].serial in d.values()][0]
-            print(indx)
-            #exit()
-            target_moid = asset_targets.results[indx].Moid
-            device_registration = asset_targets.results[indx].Parent.Moid
-            indx = [e for e, d in enumerate(resource_groups) if device.resource_group in d.values()][0]
-            resource_group_moid = resource_groups.results[indx].moid
-            device_registrations = re.search(
-                r'\(([0-9a-z\'\,]+)\)', resource_groups.results[indx].selectors[0].selector).group(1)
-            if not device_registration in device_registrations:
-                appended_targets = device_registrations + "," + f"'{device_registration}'"
-                kwargs.api_body = {
-                    "Selectors":[
-                        {
-                            "ClassId": "resource.Selector",
-                            "ObjectType": "resource.Selector",
-                            "Selector": "/api/v1/asset/DeviceRegistrations?$filter=Moid in("f"{appended_targets})"
-                        }
-                    ]
-                }
-                kwargs.method= 'patch'
-                kwargs.pmoid = resource_group_moid
-                kwargs.qtype = 'resource_group'
-                kwargs.uri   = 'resource/Groups'
-                kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-                result[device.hostname]['Resource Group'] = device.resource_group
-                result[device.hostname]['Resource Updated'] = True
-                result[device.hostname].changed = True
             else:
-                result[device.hostname]['Resource Group'] = device.resource_group
-                result[device.hostname]['Resource Updated'] = False
-
-            print('')
-            print('-' * 60)
-            for key, value in result.items():
-                for k, v in value.items():
-                    if key == 'msg':
-                        msg_split = value.split('  ')
-                        msg_split.sort()
-                        for msg in msg_split:
-                            if not msg == '':
-                                print(msg)
-                    else:
-                        print(k, ':', v)
-            print('-' * 60)
-            print('')
+                kwargs.method    = 'get'
+                kwargs.api_filter= f'contains(Serial,{device_id})'
+                kwargs.qtype     = 'device_registration'
+                kwargs.uri       = 'asset/DeviceRegistrations'
+                kwargs           = isight.api(kwargs.qtype).calls(kwargs)
+                reg_moid         = kwargs.results[0].Moid
+                result[device.hostname].reg_moid = reg_moid
+                result[device.hostname].changed= False
+                result[device.hostname].serial = device_id
 
 
-        # logout of any sessions active after exception handling
-        if ('dc_obj' in locals() or 'dc_obj' in globals()):
-            dc_obj.logout()
+        if re.search(r'\(([0-9a-z\'\,]+)\)', resource_groups[i.resource_group].selectors[0].Selector):
+            device_registrations= re.search(
+                r'\(([0-9a-z\'\,]+)\)', resource_groups[i.resource_group].selectors[0].Selector).group(1)
+        else: device_registrations= ''
+        result[s]['Resource Group'] = i.resource_group
+        for s in i.devices:
+            # 5f4bc8d86f72612d3035521a
+            if not result[s].reg_moid in device_registrations:
+                if len(device_registrations) > 0:
+                    appended_targets = device_registrations + "," + f"'{result[s].reg_moid}'"
+                else: appended_targets = f"'{result[s].reg_moid}'"
+                result[s]['Resource Updated'] = True
+            else: result[s]['Resource Updated'] = False
 
-    return return_code
+        kwargs.api_body = {
+            "Selectors":[
+                {
+                    "ClassId": "resource.Selector",
+                    "ObjectType": "resource.Selector",
+                    "Selector": "/api/v1/asset/DeviceRegistrations?$filter=Moid in("f"{appended_targets})"
+                }
+            ]
+        }
+        kwargs.method= 'patch'
+        kwargs.pmoid = resource_groups[i.resource_group].moid
+        kwargs.qtype = 'resource_group'
+        kwargs.uri   = 'resource/Groups'
+        kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+
+    print('')
+    print('-' * 60)
+    for key, value in result.items():
+        for k, v in value.items():
+            if key == 'msg':
+                msg_split = value.split('  ')
+                msg_split.sort()
+                for msg in msg_split:
+                    if not msg == '':
+                        print(msg)
+            else:
+                print(k, ':', v)
+    print('-' * 60)
+    print('')
+
+
+    # logout of any sessions active after exception handling
+    if ('dc_obj' in locals() or 'dc_obj' in globals()):
+        dc_obj.logout()
+    kwargs.result = result
+    kwargs.return_code= return_code
+
+    return kwargs

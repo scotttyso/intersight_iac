@@ -1043,7 +1043,7 @@ def sensitive_var_value(kwargs):
         if kwargs.get('org'):
             org = kwargs.org
             if not kwargs.imm_dict.orgs.get(org):
-                kwargs.imm_dict.orgs[org] = {}
+                kwargs.imm_dict.orgs[org] = DotMap()
                 if not kwargs.imm_dict.orgs[org].get('sensitive_vars'):
                     kwargs.imm_dict.orgs[org].sensitive_vars = []
                 kwargs.imm_dict.orgs[org].sensitive_vars.append(sensitive_var)

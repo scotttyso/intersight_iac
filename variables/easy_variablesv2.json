@@ -436,42 +436,57 @@
                                     "os_configuration"
                                 ]
                             },
+                            "converged.azure_hci.pop_list": {
+                                "enum": [
+                                    "adapter_configuration",
+                                    "device_connector",
+                                    "ethernet_adapter",
+                                    "ethernet_network_control",
+                                    "ethernet_network",
+                                    "ethernet_qos",
+                                    "fc_zone",
+                                    "fibre_channel_adapter",
+                                    "fibre_channel_network",
+                                    "fibre_channel_qos",
+                                    "iscsi_adapter",
+                                    "iscsi_boot",
+                                    "iscsi_static_target",
+                                    "lan_connectivity",
+                                    "ldap",
+                                    "persistent_memory",
+                                    "san_connectivity",
+                                    "sd_card",
+                                    "server",
+                                    "server_profile_templates",
+                                    "smtp",
+                                    "syslog"
+                                ]
+                            },
                             "converged.fc_pop_list": {
                                 "enum": [
                                     "fc_zone",
                                     "fibre_channel_adapter",
                                     "fibre_channel_network",
                                     "fibre_channel_qos",
-                                    "san_connectivity",
-                                    "vsan"
+                                    "san_connectivity"
                                 ]
                             },
-                            "converged.pop_list": {
+                            "converged.imm_domain.pop_list": {
                                 "enum": [
-                                    "adapter_configuration",
                                     "certificate_management",
-                                    "device_connector",
-                                    "FIAttached",
-                                    "flow_control",
-                                    "ldap",
-                                    "link_aggregation",
-                                    "link_control",
-                                    "multicast",
-                                    "network_connectivity",
-                                    "ntp",
-                                    "port",
-                                    "smtp",
-                                    "snmp_trap_destinations",
-                                    "Standalone",
-                                    "ssh",
-                                    "switch_control",
-                                    "system_qos",
-                                    "vhbas",
-                                    "vlan",
-                                    "vlans",
-                                    "vnics",
-                                    "vsan",
-                                    "vsans"
+                                    "ethernet_network_control",
+                                    "ethernet_network_group",
+                                    "sd_card",
+                                    "server",
+                                    "server_template",
+                                    "storage"
+                                ]
+                            },
+                            "converged.iscsi_pop_list": {
+                                "enum": [
+                                    "iscsi_adapter",
+                                    "iscsi_boot",
+                                    "iscsi_static_target"
                                 ]
                             },
                             "intersightEndpoint": {
@@ -665,6 +680,7 @@
                                     "iscsi_adapter",
                                     "iscsi_boot",
                                     "iscsi_static_target",
+                                    "fc_zone",
                                     "fibre_channel_adapter",
                                     "fibre_channel_network",
                                     "fibre_channel_qos",
@@ -1703,12 +1719,86 @@
                                         "CdnEnable": "enabled"
                                     },
                                     "M6-intel-azure":{
-                                        "CpuPerfEnhancement": "Auto",
-                                        "CdnEnable": "enabled",
-                                        "EnergyEfficientTurbo": "enabled",
-                                        "NvmdimmPerformConfig": "Balanced Profile",
-                                        "ProcessorC1e": "enabled",
-                                        "ProcessorC6report": "enabled"
+                                        "Ipv4http": "disabled",
+                                        "Ipv4pxe": "enabled",
+                                        "Ipv6http": "disabled",
+                                        "Ipv6pxe": "enabled",
+                                        "PopSupport": "disabled",
+
+                                        "IntelVtForDirectedIo": "enabled",
+                                        "IntelVtdCoherencySupport": "disabled",
+                                        "IntelVtdatsSupport": "enabled",
+
+                                        "PcieSlotsCdnEnable": "enabled",
+
+                                        "C1autoDemotion": "enabled",
+                                        "C1autoUnDemotion": "enabled",
+                                        "CpuPerfEnhancement": "Disabled",
+                                        "LlcAlloc": "enabled",
+                                        "UpiLinkEnablement": "Auto",
+                                        "UpiPowerManagement": "disabled",
+                                        "VirtualNuma": "disabled",
+                                        "XptRemotePrefetch": "Auto",
+
+                                        "AdjacentCacheLinePrefetch": "enabled",
+                                        "AutonumousCstateEnable": "disabled",
+                                        "BootPerformanceMode": "Max Performance",
+
+                                        "CmciEnable": "enabled",
+                                        "ConfigTdpLevel": "Normal",
+                                        "CoreMultiProcessing": "all",
+                                        "CpuEnergyPerformance": "balanced performance",
+                                        "CpuPerformance": "custom",
+                                        "EnergyEfficientTurbo": "disabled",
+                                        "EnhancedIntelSpeedStepTech": "enabled",
+                                        "EppProfile": "Balanced Performance",
+
+                                        "ExtendedApic": "disabled",
+                                        "HardwarePrefetch": "enabled",
+                                        "HwpmEnable": "Disabled",
+                                        "IntelDynamicSpeedSelect": "disabled",
+                                        "IntelHyperThreadingTech": "enabled",
+                                        "IntelSpeedSelect": "Base",
+                                        "IntelTurboBoostTech": "enabled",
+                                        "IntelVirtualizationTechnology": "enabled",
+                                        "IpPrefetch": "enabled",
+                                        "KtiPrefetch": "enabled",
+                                        "LlcPrefetch": "disabled",
+                                        "PackageCstateLimit": "C0 C1 State",
+                                        "PatrolScrub": "enabled",
+
+                                        "ProcessorC1e": "disabled",
+                                        "ProcessorC6report": "disabled",
+                                        "PstateCoordType": "HW ALL",
+                                        "PwrPerfTuning": "os",
+                                        "QpiLinkFrequency": "Auto",
+                                        "Snc": "disabled",
+                                        "StreamerPrefetch": "enabled",
+                                        "UfsDisable": "enabled",
+                                        "WorkLoadConfig": "I/O Sensitive",
+                                        "X2apicOptOut": "disabled",
+                                        "XptPrefetch": "enabled",
+
+
+                                        "CpuPaLimit": "enabled",
+                                        "DmaCtrlOptIn": "enabled",
+                                        "EnableMktme": "disabled",
+                                        "EnableSgx": "disabled",
+                                        "EnableTme": "enabled",
+                                        "EpochUpdate": "Manual User Defined Owner EPOCHs",
+                                        "SgxAutoRegistrationAgent": "disabled",
+                                        "SgxEpoch0": 0,
+                                        "SgxEpoch1": 0,
+                                        "SgxFactoryReset": "disabled",
+                                        "SgxLePubKeyHash0": 0,
+                                        "SgxLePubKeyHash1": 0,
+                                        "SgxLePubKeyHash2": 0,
+                                        "SgxLePubKeyHash3": 0,
+                                        "SgxLeWr": "enabled",
+                                        "SgxPackageInfoInBandAccess": "disabled",
+                                        "SgxQos": "enabled",
+                                        "Sha256pcrBank": "enabled",
+                                        "TxtSupport": "enabled"
                                     },
                                     "M6-intel-virtual":{
                                         "CpuPerfEnhancement": "Auto",
@@ -1721,6 +1811,7 @@
                                     "tpm":{
                                         "Sha1pcrBank": "disabled",
                                         "TpmControl": "enabled",
+                                        "TpmPpiRequired": "enabled",
                                         "TpmSupport": "enabled"
                                     },
                                     "tpm_disabled":{
@@ -2829,8 +2920,12 @@
                                     "local_user",
                                     "network_connectivity",
                                     "ntp",
+                                    "power",
+                                    "serial_over_lan",
+                                    "snmp",
                                     "ssh",
                                     "storage",
+                                    "syslog",
                                     "virtual_kvm",
                                     "virtual_media"
                                 ]
@@ -3013,6 +3108,35 @@
                                 "maximum": 64,
                                 "pattern": "^[a-zA-Z0-9_.:-]{1,64}$",
                                 "x-omitempty": true
+                            },
+                            "policy_list": {
+                                "type": "list_of_values",
+                                "enum": [
+                                    "bios",
+                                    "boot_order",
+                                    "ethernet_adapter",
+                                    "ethernet_qos",
+                                    "fc_zone",
+                                    "fibre_channel_adapter",
+                                    "fibre_channel_network",
+                                    "fibre_channel_qos",
+                                    "firmware",
+                                    "imc_access",
+                                    "ipmi_over_lan",
+                                    "iscsi_adapter",
+                                    "iscsi_static_target",
+                                    "iscsi_boot",
+                                    "lan_connectivity",
+                                    "local_user",
+                                    "ntp",
+                                    "power",
+                                    "san_connectivity",
+                                    "serial_over_lan",
+                                    "ssh",
+                                    "storage",
+                                    "virtual_kvm",
+                                    "virtual_media"
+                                ]
                             },
                             "required_args": {
                                 "deployment_type": "",

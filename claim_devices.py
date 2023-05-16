@@ -123,15 +123,16 @@ def main():
         kwargs.sensitive_var= 'ucs_password'
         kwargs              = ezfunctions.sensitive_var_value(kwargs)
         kwargs.password     = kwargs.var_value
-    
-        return_code = claim_device.claim_targets(kwargs)
+        kwargs = claim_device.claim_targets(kwargs)
 
     except Exception as err:
         print("Exception:", str(err))
         print('-' * 60)
         traceback.print_exc(file=sys.stdout)
         print('-' * 60)
-        sys.exit(return_code)
+        if kwargs.return_code:
+            sys.exit(kwargs.return_code)
+        else: sys.exit(return_code)
 
     prLightGray(f'\n{"-"*91}\n')
     prLightGray(f'  * Completed Device Claims.')

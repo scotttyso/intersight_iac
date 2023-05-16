@@ -91,19 +91,19 @@ def cli_arguments():
         help='Ignore TLS server-side certificate verification.  Default is False.'
     )
     Parser.add_argument(
-        '-ilp1', '--imm-local-user-password-1',
+        '-ilp', '--local-password-1',
         help='Intersight Managed Mode Local User Password 1.'
     )
     Parser.add_argument(
-        '-ilp2', '--imm-local-user-password-2',
+        '-ilp2', '--local-password-2',
         help='Intersight Managed Mode Local User Password 2.'
     )
     Parser.add_argument(
-        '-isa', '--imm-snmp-auth',
+        '-isa', '--snmp-auth-password-1',
         help='Intersight Managed Mode SNMP Auth Password.'
     )
     Parser.add_argument(
-        '-isp', '--imm-snmp-priv',
+        '-isp', '--snmp-privacy-password-1',
         help='Intersight Managed Mode SNMP Privilege Password.'
     )
     Parser.add_argument(
@@ -140,21 +140,21 @@ def cli_arguments():
         '-s', '--deployment-step',
         default ='flexpod',
         help    ='The steps in the proceedure to run. Options Are:'\
-            '1. initial'
-            '2. servers'\
-            '3. luns'\
-            '4. operating_system'\
-            '5. os_configuration',
+            '1. initial '
+            '2. servers '\
+            '3. luns '\
+            '4. operating_system '\
+            '5. os_configuration ',
         required=True
     )
     Parser.add_argument(
         '-t', '--deployment-type',
         default ='flexpod',
         help    ='Infrastructure Deployment Type. Options Are:'\
-            '1. azure_hci'
-            '2. flashstack'\
-            '3. flexpod'\
-            '4. imm_domain',
+            '1. azure_hci '
+            '2. flashstack '\
+            '3. flexpod '\
+            '4. imm_domain ',
         required=True
     )
     Parser.add_argument(
@@ -162,7 +162,7 @@ def cli_arguments():
         help='Flag for API Key Version 3.'
     )
     Parser.add_argument(
-        '-vep', '--vmware-esx-password',
+        '-vep', '--vmware-esxi-password',
         help='VMware ESXi Root Login Password.'
     )
     Parser.add_argument(
@@ -204,6 +204,19 @@ def main():
     # Build kwargs
     #==============================================
     kwargs   = cli_arguments()
+
+    #==============================================
+    # Determine the Script Path
+    #==============================================
+    kwargs.script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
+    script_path= kwargs.script_path
+    kwargs.args.dir = os.path.join(script_path, kwargs.args.yaml_file.split('/')[0])
+
+    args_dict = vars(kwargs.args)
+    for k,v in args_dict.items():
+        if type(v) == str:
+            if v: os.environ[k] = v
+
     if kwargs.args.api_key_file:
         if '~' in kwargs.args.api_key_file:
             kwargs.args.api_key_file = os.path.expanduser(kwargs.args.api_key_file)
@@ -218,10 +231,6 @@ def main():
     #==============================================
     if kwargs.args.nexus_password:
         os.environ['nexus_password'] = kwargs.args.nexus_password
-    #==============================================
-    # Determine the Script Path
-    #==============================================
-    kwargs.script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
 
     prLightGray(f'\n{"-"*91}\n')
     prLightGray(f'  Begin Deployment for {kwargs.deployment_type}.')
@@ -230,7 +239,6 @@ def main():
     #================================================
     # Import Stored Parameters
     #================================================
-    script_path= kwargs.script_path
     file       = f'{script_path}{os.sep}variables{os.sep}intersight-openapi-v3-1.0.11-11360.json'
     #print(json.dumps(file, indent=4))
     #print(os.path.isfile(file))
@@ -290,10 +298,9 @@ def main():
     #==============================================
     # Build Deployment Library
     #==============================================
-    kwargs.nope = False
-    kwargs = isight.api('organization').organizations(kwargs)
     kwargs = ci.wizard('dns_ntp').dns_ntp(kwargs)
     kwargs = ci.wizard('imm').imm(kwargs)
+    kwargs = isight.api('organization').organizations(kwargs)
     kwargs = ci.wizard('vlans').vlans(kwargs)
     if re.search('(netapp|pure)', kwargs.args.deployment_type):
         kwargs = eval(f"ci.wizard(kwargs.args.deployment_type).{kwargs.args.deployment_type}(kwargs)")
@@ -371,7 +378,7 @@ def main():
         #==============================================
         # Create YAML Files
         #==============================================
-        orgs   = list(kwargs.imm_dict.orgs.keys())
+        orgs = list(kwargs.imm_dict.orgs.keys())
         ezfunctions.create_yaml(orgs, kwargs)
 
         for org in orgs:
@@ -415,7 +422,7 @@ def main():
         #==============================================
         # Loop Through the Orgs
         #==============================================
-        orgs   = list(kwargs.imm_dict.orgs.keys())
+        orgs = list(kwargs.imm_dict.orgs.keys())
         for org in orgs:
             #==============================================
             # Server Identities
@@ -435,7 +442,7 @@ def main():
         #==============================================
         # Loop Through the Orgs
         #==============================================
-        orgs   = list(kwargs.imm_dict.orgs.keys())
+        orgs = list(kwargs.imm_dict.orgs.keys())
         for org in orgs:
             #=====================================================
             # Load Variables and Login to ESXi Hosts
@@ -456,7 +463,7 @@ def main():
         #==============================================
         # Loop Through the Orgs
         #==============================================
-        orgs   = list(kwargs.imm_dict.orgs.keys())
+        orgs = list(kwargs.imm_dict.orgs.keys())
         for org in orgs:
             #=====================================================
             # Load Variables and Login to ESXi Hosts

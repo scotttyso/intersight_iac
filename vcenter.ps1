@@ -61,7 +61,7 @@ foreach($vcenter in $jsonData.vcenters) {
                 $credential = Import-CliXml -Path "${env:HOME}\powercli.Cred"
                 $null = Connect-VIServer $vcenter.name -Credential $credential
             } else {
-                $null = Connect-VIServer $vcenter.name -User $vcenter.username -Password $env:vcenter_password
+                $null = Connect-VIServer $vcenter.name -User $vcenter.username -Password $env:vmware_vcenter_password
             }
         }
         catch {
@@ -176,7 +176,7 @@ foreach($vcenter in $jsonData.vcenters) {
         #=====================================================
         if (!($esxHosts | Where-Object { $esx_host.name -match $_})) {
             Write-Host " Adding $($esx_host.name) to Data Center $DataCenter" -ForegroundColor Green
-            Add-VMHost -Location $DataCenter -Name $esx_host.name -User "root" -Password $env:esx_password -Force
+            Add-VMHost -Location $DataCenter -Name $esx_host.name -User "root" -Password $env:vmware_esxi_password -Force
             Write-Host "  * Sleeping 60 Seconds to wait for Host Inventory." -ForegroundColor Green
             Start-Sleep -Seconds 60
         } else {
