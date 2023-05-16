@@ -56,12 +56,13 @@ class nxos(object):
                     sw_type       = switch.switch_type
                 )
                 if switch.get('vpc_config'):
-                    i.vpc = DotMap(
-                        domain_id      = switch.vpc_config.domain_id,
-                        keepalive_ip   = switch.vpc_config.keepalive_ip,
-                        keepalive_ports= switch.vpc_config.keepalive_ports,
-                        peer_ports     = switch.vpc_config.peer_ports,
-                    )
+                    if len(switch.vpc_config.domain_id) > 0:
+                        i.vpc = DotMap(
+                            domain_id      = switch.vpc_config.domain_id,
+                            keepalive_ip   = switch.vpc_config.keepalive_ip,
+                            keepalive_ports= switch.vpc_config.keepalive_ports,
+                            peer_ports     = switch.vpc_config.peer_ports,
+                        )
                 nxmap.append(i)
 
         #=====================================================

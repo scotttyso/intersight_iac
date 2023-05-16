@@ -322,21 +322,21 @@ def main():
         #==============================================
         # Configure Switches if configure Set to True
         #==============================================
-        if kwargs.imm_dict.wizard.get('nxos'):
-            network_config = DotMap(deepcopy(kwargs.imm_dict.wizard.nxos[0]))
-            network_types = ['network', 'ooband']
-            for network_type in network_types:
-                config_count = 0
-                for i in network_config.switches:
-                    if i.switch_type == network_type: config_count += 1
-                if config_count == 2:
-                    kwargs = network.nxos('nxos').config(network_config, network_type, kwargs)
+        #if kwargs.imm_dict.wizard.get('nxos'):
+        #    network_config = DotMap(deepcopy(kwargs.imm_dict.wizard.nxos[0]))
+        #    network_types = ['network', 'ooband']
+        #    for network_type in network_types:
+        #        config_count = 0
+        #        for i in network_config.switches:
+        #            if i.switch_type == network_type: config_count += 1
+        #        if config_count == 2:
+        #            kwargs = network.nxos('nxos').config(network_config, network_type, kwargs)
 
         #==============================================
         # Configure Storage Appliances
         #==============================================
-        if kwargs.args.deployment_type == 'flexpod':
-            kwargs = ci.wizard('build').build_netapp(kwargs)
+        #if kwargs.args.deployment_type == 'flexpod':
+        #    kwargs = ci.wizard('build').build_netapp(kwargs)
 
         #==============================================
         # Configure Domain
