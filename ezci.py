@@ -185,17 +185,17 @@ def main():
     #==============================================
     # Configure logger
     #==============================================
-    dest_dir = f"{Path.home()}/Logs"
-    dest_file = dest_dir + os.sep + sys.argv[0] + '.log'
+    script_name = (sys.argv[0].split({os.sep})[-1]).split('.')[0]
+    dest_dir = f"{Path.home()}{os.sep}Logs"
+    dest_file = script_name + '.log'
     if not os.path.exists(dest_dir): os.mkdir(dest_dir)
     if not os.path.exists(os.path.join(dest_dir, dest_file)): 
         create_file = f'type nul >> {os.path.join(dest_dir, dest_file)}'
         os.system(create_file)
 
-    script_name = sys.argv[0].split('/')[-1]
     FORMAT = '%(asctime)-15s [%(levelname)s] [%(filename)s:%(lineno)s] %(message)s'
     logging.basicConfig(
-        filename=f"{Path.home()}{os.sep}Logs{os.sep}{script_name}.log",
+        filename=f"{dest_dir}{os.sep}{script_name}.log",
         filemode='a',
         format=FORMAT,
         level=logging.DEBUG
@@ -212,7 +212,7 @@ def main():
     #==============================================
     kwargs.script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
     script_path= kwargs.script_path
-    kwargs.args.dir = os.path.join(script_path, kwargs.args.yaml_file.split('/')[0])
+    kwargs.args.dir = os.path.join(Path.home(), kwargs.args.yaml_file.split('/')[0])
 
     args_dict = vars(kwargs.args)
     for k,v in args_dict.items():
