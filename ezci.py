@@ -305,7 +305,7 @@ def main():
     kwargs = ci.wizard('imm').imm(kwargs)
     kwargs = isight.api('organization').organizations(kwargs)
     kwargs = ci.wizard('vlans').vlans(kwargs)
-    print(kwargs.imm_dict)
+    print(json.dumps(kwargs.imm_dict, indent=4))
     exit()
     if re.search('(flexpod|flashstack)', kwargs.args.deployment_type):
         kwargs = eval(f"ci.wizard(kwargs.args.deployment_type).{kwargs.args.deployment_type}(kwargs)")
