@@ -297,8 +297,7 @@ def main():
     if (kwargs.args.yaml_file):
         yfile = open(os.path.join(kwargs.args.yaml_file), 'r')
         kwargs.imm_dict.wizard = DotMap(yaml.safe_load(yfile))
-    print(kwargs.imm_dict.wizard)
-    exit()
+
     #==============================================
     # Build Deployment Library
     #==============================================
@@ -306,7 +305,9 @@ def main():
     kwargs = ci.wizard('imm').imm(kwargs)
     kwargs = isight.api('organization').organizations(kwargs)
     kwargs = ci.wizard('vlans').vlans(kwargs)
-    if re.search('(netapp|pure)', kwargs.args.deployment_type):
+    print(kwargs.imm_dict)
+    exit()
+    if re.search('(flexpod|flashstack)', kwargs.args.deployment_type):
         kwargs = eval(f"ci.wizard(kwargs.args.deployment_type).{kwargs.args.deployment_type}(kwargs)")
 
     #==============================================
