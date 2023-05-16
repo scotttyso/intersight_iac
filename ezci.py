@@ -286,11 +286,7 @@ def main():
     #==============================================
     # Load Previous Configurations
     #==============================================
-    print(kwargs.imm_dict)
-    print('\n\n\n\n\n\n')
     kwargs = DotMap(ezfunctions.load_previous_configurations(kwargs))
-    print(kwargs.imm_dict)
-    exit()
 
     #==============================================
     # Process the YAML input File
@@ -339,8 +335,8 @@ def main():
         #==============================================
         # Configure Storage Appliances
         #==============================================
-        #if kwargs.args.deployment_type == 'flexpod':
-        #    kwargs = ci.wizard('build').build_netapp(kwargs)
+        if kwargs.args.deployment_type == 'flexpod':
+            kwargs = ci.wizard('build').build_netapp(kwargs)
 
         #==============================================
         # Configure Domain
