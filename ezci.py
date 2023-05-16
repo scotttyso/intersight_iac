@@ -221,6 +221,8 @@ def main():
     if kwargs.args.api_key_file:
         if '~' in kwargs.args.api_key_file:
             kwargs.args.api_key_file = os.path.expanduser(kwargs.args.api_key_file)
+            print(kwargs.args.api_key_file)
+    exit()
     kwargs.deployment_type= kwargs.args.deployment_type
     kwargs.home           = Path.home()
     kwargs.logger         = logger
