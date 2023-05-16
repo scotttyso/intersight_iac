@@ -297,7 +297,8 @@ def main():
     if (kwargs.args.yaml_file):
         yfile = open(os.path.join(kwargs.args.yaml_file), 'r')
         kwargs.imm_dict.wizard = DotMap(yaml.safe_load(yfile))
-
+    print(kwargs.imm_dict.wizard)
+    exit()
     #==============================================
     # Build Deployment Library
     #==============================================
