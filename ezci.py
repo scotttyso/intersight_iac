@@ -186,7 +186,7 @@ def main():
     # Configure logger
     #==============================================
     print(sys.argv[0])
-    script_name = (sys.argv[0].split({os.sep})[-1]).split('.')[0]
+    script_name = (sys.argv[0].split(os.sep)[-1]).split('.')[0]
     dest_dir = f"{Path.home()}{os.sep}Logs"
     dest_file = script_name + '.log'
     if not os.path.exists(dest_dir): os.mkdir(dest_dir)
