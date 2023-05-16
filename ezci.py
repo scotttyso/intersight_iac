@@ -193,7 +193,7 @@ def main():
 
     FORMAT = '%(asctime)-15s [%(levelname)s] [%(filename)s:%(lineno)s] %(message)s'
     logging.basicConfig(
-        filename=f'{Path.home()}{os.sep}Logs{os.sep}{sys.argv[0]}.log',
+        filename=f"{Path.home()}{os.sep}Logs{os.sep}{sys.argv[0].split('/')[-1]}.log",
         filemode='a',
         format=FORMAT,
         level=logging.DEBUG
