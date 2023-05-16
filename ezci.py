@@ -287,6 +287,8 @@ def main():
     # Load Previous Configurations
     #==============================================
     kwargs = DotMap(ezfunctions.load_previous_configurations(kwargs))
+    print(kwargs.imm_dict)
+    exit()
 
     #==============================================
     # Process the YAML input File
