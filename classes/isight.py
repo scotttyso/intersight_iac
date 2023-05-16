@@ -747,7 +747,7 @@ class policies_class(object):
                     kwargs.item= item['users']
                     kwargs     = policies_class('local_users').local_users(kwargs)
             elif 'port' == self.type:
-                print(json.dumps(kwargs.item, indent=4))
+                print(json.dumps(item, indent=4))
                 exit()
                 if item.get('port_modes'):
                     kwargs.item= item
