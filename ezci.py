@@ -348,6 +348,8 @@ def main():
         # Create YAML Files
         #==============================================
         orgs = list(kwargs.imm_dict.orgs.keys())
+        print(json.dumps(kwargs.imm_dict, indent=4))
+        exit()
         ezfunctions.create_yaml(orgs, kwargs)
 
         for org in orgs:
