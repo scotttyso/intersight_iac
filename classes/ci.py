@@ -334,6 +334,7 @@ class imm(object):
         kwargs.qtype  = 'serial'
         kwargs.uri    = 'network/Elements'
         serials       = kwargs.pmoids
+        print('here')
         print(serials)
         exit()
         # Build Dictionary
