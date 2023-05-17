@@ -335,8 +335,8 @@ def main():
         #==============================================
         # Configure Storage Appliances
         #==============================================
-        if kwargs.args.deployment_type == 'flexpod':
-            kwargs = ci.wizard('build').build_netapp(kwargs)
+        #if kwargs.args.deployment_type == 'flexpod':
+        #    kwargs = ci.wizard('build').build_netapp(kwargs)
 
         #==============================================
         # Configure Domain
