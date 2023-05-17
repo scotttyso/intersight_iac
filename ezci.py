@@ -363,7 +363,7 @@ def main():
             #==============================================
             # Deploy Domain
             #==============================================
-            if re.search('(imm_domain|netapp|pure)', kwargs.args.deployment_type):
+            if re.search('(flashstack|flexpod|imm_domain)', kwargs.args.deployment_type):
                 kwargs = eval(f"isight.profiles_class('domain').profiles(kwargs)")
 
 
