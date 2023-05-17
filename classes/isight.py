@@ -1943,6 +1943,7 @@ def build_pmoid_dictionary(api_results, kwargs):
                 if i.get('SourceObjectType'): apiDict[iname].object_type = i.SourceObjectType
             if i.get('Selectors'):
                 apiDict[iname].selectors = i.Selectors
+            if i.get('SwitchId'): apiDict[iname]['switch_id'] = i.SwitchId
             if i.get('UpgradeStatus'):
                 apiDict[iname].upgrade_status = i.UpgradeStatus
             if i.get('Profiles'):

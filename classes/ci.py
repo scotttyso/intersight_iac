@@ -329,6 +329,13 @@ class imm(object):
     # Function - Build Profiles - Domain
     #=============================================================================
     def domain(self, kwargs):
+        kwargs.method = 'get'
+        kwargs.names  = kwargs.serial_numbers
+        kwargs.qtype  = 'serial'
+        kwargs.uri    = 'network/Elements'
+        serials       = kwargs.pmoids
+        print(serials)
+        exit()
         # Build Dictionary
         polVars = dict(
             action                     = 'Deploy',
