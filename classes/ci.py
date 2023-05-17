@@ -329,14 +329,6 @@ class imm(object):
     # Function - Build Profiles - Domain
     #=============================================================================
     def domain(self, kwargs):
-        kwargs.method = 'get'
-        kwargs.names  = kwargs.serial_numbers
-        kwargs.qtype  = 'serial'
-        kwargs.uri    = 'network/Elements'
-        serials       = kwargs.pmoids
-        print('here')
-        print(serials)
-        exit()
         # Build Dictionary
         polVars = dict(
             action                     = 'Deploy',
@@ -2374,6 +2366,8 @@ class wizard(object):
                     serial       = kwargs.imm.domain[i.name].serial_numbers[0]
                     kwargs.imm.domain[i.name].device_model     = serial_moids[serial]['model']
                     kwargs.imm.domain[i.name].registered_device= serial_moids[serial]['registered_device']
+                    serial_moids = {k: v for k, v in sorted(serial_moids.items(), key=lambda item: (item[1]['switch_id']))}
+                    kwargs.imm.domain[i.name].serial_numbers = list(serial_moids.keys())
 
                     #=====================================================
                     # Confirm if Fibre-Channel is in Use
