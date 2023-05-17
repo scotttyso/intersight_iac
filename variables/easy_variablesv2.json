@@ -538,6 +538,7 @@
                                 "enum": [
                                     "bios",
                                     "boot_order",
+                                    "firmware",
                                     "virtual_media",
                                     "certificate_management",
                                     "imc_access",

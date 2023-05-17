@@ -198,7 +198,6 @@ class imm(object):
             kwargs.uri  = 'adapter/Units'
             kwargs = isight.api(kwargs.qtype).calls(kwargs)
             vic    = kwargs.results
-            kwargs.pop('api_filter')
             if 'Intel' in cpu.Vendor: cv = 'intel'
             else: cv = 'amd'
             vics = []
@@ -219,7 +218,7 @@ class imm(object):
                 if type(vics[1].vic_slot) == str: vs2= (vics[1].vic_slot).lower()
                 else: vs2= vics[1].vic_slot
             if len(tpmd) > 0:
-                tpm = '-tpm'
+                tpm = 'tpm'
                 if len(vics) == 2:
                     template = f"{sg}-{cv}-tpm-vic-{vics[0].vic_gen}-{vs1}-{vs2}"
                 else: template = f"{sg}-{cv}-tpm-vic-{vics[0].vic_gen}-{vs1}"
@@ -270,7 +269,6 @@ class imm(object):
             kwargs.uri       = 'asset/DeviceRegistrations'
             kwargs           = isight.api(kwargs.qtype).calls(kwargs)
             server_pmoids    = kwargs.pmoids
-            kwargs.pop('api_filter')
             #=====================================================
             # Build Chassis Dictionary
             #=====================================================
@@ -733,25 +731,34 @@ class imm(object):
     #=============================================================================
     def firmware(self, kwargs):
         # Build Dictionary
-        descr   = (self.type.replace('_', ' ')).upper()
+        descr   = (self.type.replace('_', ' ')).capitalize()
         dataset = []
-        fw = kwargs.domain.firmware
-        fw_name = (fw.replace(')', '')).replace('(', '-')
+        #fw_name = (fw.replace(')', '')).replace('(', '-')
+        fw_name = kwargs.domain.name
         kwargs.firmware_policy_name = fw_name
         for k, v in kwargs.servers.items():
+            m = re.search('(M[5-9][A-Z]?[A-Z]?)', v.model).group(1)
+            g = re.search('(M[5-9])', v.model).group(1)
+            v.model = v.model.replace(m, g)
             dataset.append(v.model)
         models = numpy.unique(numpy.array(dataset))
         polVars = dict(
-            description       = f'{kwargs.imm.policies.prefix}{fw_name} {descr} Policy',
-            model_bundle_combo= [],
-            name              = f'{kwargs.imm.policies.prefix}{fw_name}',
-            target_platform   = 'FIAttached'
+            description    = f'{kwargs.imm.policies.prefix}{fw_name} {descr} Policy',
+            models         = [],
+            name           = f'{kwargs.imm.policies.prefix}{fw_name}',
+            target_platform= 'FIAttached'
         )
         for i in models:
-            polVars['model_bundle_combo'].append(dict(
-                bundle_version= fw,
-                model_family  = i
-            ))
+            if 'UCSC' in i:
+                polVars['models'].append(dict(
+                    firmware_version= kwargs.domain.firmware.rackmount,
+                    server_model    = i
+                ))
+            else:
+                polVars['models'].append(dict(
+                    firmware_version= kwargs.domain.firmware.blades,
+                    server_model    = i
+                ))
 
         # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
@@ -1037,7 +1044,6 @@ class imm(object):
                 vnic_count = 0
                 for e in kwargs.virtualization:
                     for i in e.virtual_switches:
-                        print(i.data_types)
                         if re.search('vswitch0', i.name, re.IGNORECASE):
                             name = i.alternate_name
                         else: name = i.name
@@ -1195,11 +1201,12 @@ class imm(object):
                             'size':1024
                         }],
                     )
-                    mcount + 2
 
                     # Add Policy Variables to imm_dict
                     kwargs.class_path = f'pools,{self.type}'
                     kwargs = ezfunctions.ez_append(polVars, kwargs)
+                # Increment MAC Count
+                mcount = mcount + 2
 
         #=====================================================
         # Return kwargs and kwargs
@@ -1672,15 +1679,27 @@ class imm(object):
                     else:
                         equipment_type= 'RackServer'
                         identifier    = v.server_id
+                    match_profile = False
                     for p in kwargs.domain.profiles:
                         if equipment_type == p.equipment_type and int(identifier) == int(p.identifier):
                             if equipment_type == 'RackServer':
                                 pstart = p.profile_start
+                                match_profile = True
                             else:
                                 suffix = int(p.suffix_digits)
                                 pprefix= p.profile_start[:-(suffix)]
                                 pstart = int(p.profile_start[-(suffix):])
+                                match_profile = True
                             break
+                    if match_profile == False:
+                        prRed('!!! ERROR !!!')
+                        prRed(f'Did not Find Profile Definition for {k}')
+                        prRed(f'Profiles:\n')
+                        prRed(json.dumps(kwargs.domain.profiles, indent=4))
+                        prRed(f'Server Settings:\n')
+                        prRed(json.dumps(v, indent=4))
+                        prRed('!!! ERROR !!!\n Exiting...')
+                        sys.exit(1)
                     if equipment_type == 'RackServer': name = pstart
                     else: name = f"{pprefix}{str(pstart+v.slot-1).zfill(suffix)}"
 
@@ -2175,27 +2194,31 @@ class wizard(object):
                 kwargs = eval(f'imm(i).{i}(kwargs)')
         else:
             policy_list= ezjson.list_fi_attached.enum
+            policy_list.sort()
+            policy_list.remove('iscsi_static_target')
+            policy_list.insert((policy_list.index('iscsi_boot')), 'iscsi_static_target')
             pop_list   = ezjson['converged.imm_domain.pop_list'].enum
             for i in pop_list: policy_list.remove(i)
             if re.search('fc(-nvme)?', kwargs.dtype):
                 if kwargs.sw_mode == 'end-host': policy_list.remove('fc_zone')
             iscsi_type = False
             for i in kwargs.vlans:
-                if i.vlan_type == 'iscsi': iscsi_type == True
+                if i.vlan_type == 'iscsi': iscsi_type = True
             if iscsi_type == False:
                 pop_list = ezjson['converged.iscsi_pop_list'].enum
                 for i in pop_list: policy_list.remove(i)
-            pop_list = ezjson['converged.fc_pop_list'].enum
-            for i in pop_list: policy_list.remove(i)
-
+            if not re.search('fc(-nvme)?', kwargs.dtype):
+                pop_list = ezjson['converged.fc_pop_list'].enum
+                for i in pop_list: policy_list.remove(i)
 
             #==================================
             # Configure IMM Policies
             #==================================
-            for k, v in kwargs.imm.domain.items():
-                kwargs.domain = v
-                kwargs.domain.name = k
-                kwargs = imm('compute_environment').compute_environment(kwargs)
+            #for k, v in kwargs.imm.domain.items():
+            #    kwargs.domain = v
+            #    kwargs.domain.name = k
+            #    kwargs = imm('compute_environment').compute_environment(kwargs)
+            kwargs.servers = DotMap({'FCH213271VU': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c6513e76752d313562f0cc', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH213271VU', 'server_id': 0, 'slot': 3, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH21427CHB': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c64eeb76752d3135626948', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH21427CHB', 'server_id': 0, 'slot': 7, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH21427JDU': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '4.2(2d)', 'gen': 'M5', 'moid': '644832ed76752d3501d233cc', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH21427JDU', 'server_id': 0, 'slot': 1, 'template': 'M5-intel-tpm-vic-gen4-mlom', 'tpm': 'tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH21427JG8': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c65d7276752d313565f3bc', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH21427JG8', 'server_id': 0, 'slot': 5, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH222974YZ': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '64484c2c76752d3501d9e631', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FCH222974YZ', 'server_id': 0, 'slot': 4, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH243974V2': {'chassis_id': '2', 'chassis_moid': '63a1ec1076752d31353e0780', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M6', 'moid': '63a1ecb176752d31353e3720', 'model': 'UCSX-210C-M6', 'object_type': 'compute.Blade', 'serial': 'FCH243974V2', 'server_id': 0, 'slot': 8, 'template': 'M6-intel-tpm-vic-gen4-mlom', 'tpm': 'tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH243974WZ': {'chassis_id': '2', 'chassis_moid': '63a1ec1076752d31353e0780', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M6', 'moid': '63a1ed0476752d31353e4938', 'model': 'UCSX-210C-M6', 'object_type': 'compute.Blade', 'serial': 'FCH243974WZ', 'server_id': 0, 'slot': 6, 'template': 'M6-intel-tpm-vic-gen4-mlom', 'tpm': 'tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FCH24397500': {'chassis_id': '2', 'chassis_moid': '63a1ec1076752d31353e0780', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M6', 'moid': '63a1ecb276752d31353e377d', 'model': 'UCSX-210C-M6', 'object_type': 'compute.Blade', 'serial': 'FCH24397500', 'server_id': 0, 'slot': 7, 'template': 'M6-intel-tpm-vic-gen4-mlom', 'tpm': 'tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FLM250803J8': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '4.2(2d)', 'gen': 'M5', 'moid': '64488bc076752d3501ed61a5', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FLM250803J8', 'server_id': 0, 'slot': 6, 'template': 'M5-intel-tpm-vic-gen4-mlom', 'tpm': 'tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'FLM2509002F': {'chassis_id': '1', 'chassis_moid': '63a1ec0d76752d31353e06dd', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '5.1(0.230054)', 'gen': 'M5', 'moid': '63c655c476752d31356420ff', 'model': 'UCSB-B200-M5', 'object_type': 'compute.Blade', 'serial': 'FLM2509002F', 'server_id': 0, 'slot': 8, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'WZP22020L3F': {'chassis_id': '', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '4.1(3d)', 'gen': 'M5', 'moid': '6448c24776752d3501fcdce4', 'model': 'UCSC-C240-M5SX', 'object_type': 'compute.RackUnit', 'serial': 'WZP22020L3F', 'server_id': 2, 'slot': 0, 'template': 'M5-intel-tpm-vic-gen4-mlom', 'tpm': 'tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'WZP22020L3V': {'chassis_id': '', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '4.1(3d)', 'gen': 'M5', 'moid': '6448cbdb76752d3501ff9eda', 'model': 'UCSC-C240-M5SX', 'object_type': 'compute.RackUnit', 'serial': 'WZP22020L3V', 'server_id': 4, 'slot': 0, 'template': 'M5-intel-tpm-vic-gen4-mlom', 'tpm': 'tpm', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}, 'WZP22020L71': {'chassis_id': '', 'cpu': 'intel', 'domain': 'r142c', 'firmware': '4.1(3d)', 'gen': 'M5', 'moid': '6448b82076752d3501fa10f1', 'model': 'UCSC-C240-M5SX', 'object_type': 'compute.RackUnit', 'serial': 'WZP22020L71', 'server_id': 3, 'slot': 0, 'template': 'M5-intel-vic-gen4-mlom', 'tpm': '', 'vics': [{'vic_gen': 'gen4', 'vic_slot': 'MLOM'}]}})
             kwargs.pci_order = 0
             for i in policy_list:
                 kwargs = eval(f'imm(i).{i}(kwargs)')
@@ -2322,13 +2345,35 @@ class wizard(object):
                             network_port= nport
                         )
             else:
+                if len(str(item.pools.prefix)) == 1: item.pools.prefix = f'0{item.pools.prefix}'
                 for i in item.domains:
                     i = DotMap(i)
+                    #==================================
+                    # Get Moids for Fabric Switches
+                    #==================================
+                    kwargs.method = 'get'
+                    kwargs.qtype = 'serial_number'
+                    kwargs.uri   = 'network/Elements'
+                    kwargs.names = i.serial_numbers
+                    kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+                    serial_moids = kwargs.pmoids
+                    serial       = i.serial_numbers[0]
+                    serial_moids = {k: v for k, v in sorted(serial_moids.items(), key=lambda item: (item[1]['switch_id']))}
+                    kwargs.api_filter= f"RegisteredDevice.Moid eq '{serial_moids[serial]['registered_device']}'"
+                    kwargs.qtype     = 'asset_target'
+                    kwargs.uri       = 'asset/Targets'
+                    kwargs           = isight.api(kwargs.qtype).calls(kwargs)
+                    names = list(kwargs.pmoids.keys())
+                    i.name= names[0]
+
+                    #==================================
+                    # Build Domain Dictionary
+                    #==================================
                     kwargs.imm.pool.prefix    = item.pools.prefix
                     kwargs.imm.policies       = item.policies
                     kwargs.imm.domain[i.name] = DotMap(
                         cfg_qos_priorities = item.cfg_qos_priorities,
-                        device_model       = '',
+                        device_model       = serial_moids[serial]['model'],
                         discovery_protocol = item.discovery_protocol,
                         eth_breakout_speed = i.eth_breakout_speed,
                         eth_uplinks        = i.eth_uplink_ports,
@@ -2337,8 +2382,8 @@ class wizard(object):
                         policies           = item.policies,
                         pools              = item.pools,
                         profiles           = i.profiles,
-                        registered_device  = '',
-                        serial_numbers     = i.serial_numbers,
+                        registered_device  = serial_moids[serial]['registered_device'],
+                        serial_numbers     = list(serial_moids.keys()),
                         tags               = kwargs.ez_data.tags
                     )
                     #==================================
@@ -2353,21 +2398,6 @@ class wizard(object):
                             network_port= i.network.data[x],
                             port_channel=True
                         )
-
-                    #==================================
-                    # Get Moids for Fabric Switches
-                    #==================================
-                    kwargs.method = 'get'
-                    kwargs.qtype = 'serial_number'
-                    kwargs.uri   = 'network/Elements'
-                    kwargs.names = kwargs.imm.domain[i.name].serial_numbers
-                    kwargs       = isight.api('serial_number').calls(kwargs)
-                    serial_moids = kwargs.pmoids
-                    serial       = kwargs.imm.domain[i.name].serial_numbers[0]
-                    kwargs.imm.domain[i.name].device_model     = serial_moids[serial]['model']
-                    kwargs.imm.domain[i.name].registered_device= serial_moids[serial]['registered_device']
-                    serial_moids = {k: v for k, v in sorted(serial_moids.items(), key=lambda item: (item[1]['switch_id']))}
-                    kwargs.imm.domain[i.name].serial_numbers = list(serial_moids.keys())
 
                     #=====================================================
                     # Confirm if Fibre-Channel is in Use
@@ -2507,7 +2537,6 @@ class wizard(object):
         kwargs.uri       = 'os/ConfigurationFiles'
         kwargs           = isight.api(kwargs.qtype).calls(kwargs)
         kwargs.os_config = kwargs.pmoids[kwargs.os_config].moid
-        kwargs.pop('api_filter')
 
         #==================================
         # Get Existing SCU Repositories
@@ -2601,7 +2630,6 @@ class wizard(object):
                 kwargs.qtype     = self.type
                 kwargs.uri       = 'workflow/WorkflowInfos'
                 kwargs           = isight.api(self.type).calls(kwargs)
-                kwargs.pop('api_filter')
                 v.os_install.workflow = kwargs.results[len(kwargs.results)-1].Moid
                 install_complete = False
                 while install_complete == False:
@@ -2708,7 +2736,6 @@ class wizard(object):
                 kwargs = isight.api(kwargs.qtype).calls(kwargs)
                 r = DotMap(kwargs.results)
                 kwargs.server_profiles[k].iqn = r.IqnId
-        kwargs.pop('api_filter')
         kwargs.server_profile = DotMap(kwargs.server_profiles)
         
         # Query API for Ethernet Network Policies and Add to Server Profile Dictionaries
@@ -2867,7 +2894,6 @@ class fw_os(object):
             kwargs.api_filter = f"Version eq '{kwargs.fw_version}' and contains(SupportedModels, '{m}')"
             kwargs = isight.api(self.type).calls(kwargs)
             sw_moids.update({m:{'Moid':kwargs.results[0].Moid}})
-        kwargs.pop('api_filter')
         #==================================
         # Software Repository Auth
         #==================================
@@ -2938,7 +2964,6 @@ class fw_os(object):
                     kwargs.api_filter = f"Server.Moid eq '{v.moid}'"
                     kwargs.srv_moid  = v.moid
                     kwargs = isight.api(self.type).calls(kwargs)
-                    kwargs.pop('api_filter')
                     kwargs.upgrade[k].moid   = kwargs.pmoids[v.moid].Moid
                     kwargs.upgrade[k].status = kwargs.pmoids[v.moid].UpgradeStatus.Moid
                 else:
@@ -2954,7 +2979,6 @@ class fw_os(object):
         #    kwargs.uri       = 'compute/ServerSettings'
         #    kwargs = isight.api('server').calls(kwargs)
         #    pmoid = kwargs['pmoid']
-        #    kwargs.pop('api_filter')
         #    kwargs.apiBody   = {'AdminPowerState': 'PowerCycle'}
         #    kwargs.method = 'patch'
         #    kwargs = isight.api('server').calls(kwargs)

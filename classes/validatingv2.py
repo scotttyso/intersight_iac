@@ -41,7 +41,8 @@ def completed_item(ptype, kwargs):
     elif 'eula' in kwargs.qtype: name = f"Account EULA Acceptance"
     elif kwargs.apiBody.get('Action'):
         if kwargs.apiBody['Action'] == 'Deploy': name = f"Deploy Profile {kwargs.pmoid}"
-        else: kwargs.apiBody['Name']
+    elif kwargs.apiBody.get('ScheduledActions'):
+        name = f"Activating Profile {kwargs.pmoid}"
     elif kwargs.apiBody.get('Targets'):
         name = kwargs.apiBody['Targets'][0]['Name']
     else: name = kwargs.apiBody['Name']
@@ -49,7 +50,7 @@ def completed_item(ptype, kwargs):
         if 'port' in ptype:
             prLightPurple(f'      * Completed {method} for port_policy {kwargs.port_policy_name}: {name} - Moid: {pmoid}')
         else: prLightPurple(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
-    elif 'Deploy' in name: prCyan(f'      * Deploying Profile.')
+    elif re.search('^(Activating|Deploy)', name): prCyan(f'      * {name}.')
     elif re.search(policy_regex, kwargs.qtype) and 'switch ' in kwargs.qtype:
         pname = kwargs.qtype.split(' ')[1]
         name = kwargs.apiBody['Name']

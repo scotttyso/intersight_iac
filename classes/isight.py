@@ -62,7 +62,6 @@ class api(object):
         #=====================================================
         # Setup API Parameters
         #=====================================================
-        if kwargs.method == 'by_moid': kwargs.method = 'get_by_moid'
         if 'get' == kwargs.method:
             if not kwargs.get('api_filter'):
                 if re.search('(vlans|vsans)', kwargs.qtype):
@@ -116,7 +115,7 @@ class api(object):
                     response= requests.post(f'{url}/api/v1/{uri}', auth=api_auth, json=payload)
                 status = response
 
-                if not re.search('(20[0-4])', str(status)):
+                if not re.search('(20[0-9])', str(status)):
                     prRed(json.dumps(kwargs.apiBody, indent=4))
                     prRed(kwargs.apiBody)
                     prRed(f'!!! ERROR !!!')
@@ -186,6 +185,7 @@ class api(object):
         #=====================================================
         # Return kwargs
         #=====================================================
+        if kwargs.get('api_filter'): kwargs.pop('api_filter')
         return kwargs
 
     #=====================================================
@@ -379,7 +379,7 @@ class policies_class(object):
             apiBody['ModelBundleCombo'] = []
             for i in item.models:
                 idict = {}
-                for k, v in item.models.items():
+                for k, v in i.items():
                     if k in jsonVars: idict.update({jsonVars[k]:v})
                 idict.update({'ObjectType':'firmware.ModelBundleVersion'})
                 apiBody['ModelBundleCombo'].append(idict)
@@ -593,9 +593,8 @@ class policies_class(object):
         kwargs.qtype     = 'user_role'
         kwargs.uri       = jsonVars.uri_user_role
         kwargs = api('user_role').calls(kwargs)
-        urole_moids = kwargs.pmoids
-        kwargs.pop('api_filter')
-        local_user_moid = kwargs.pmoid
+        urole_moids    = kwargs.pmoids
+        local_user_moid= kwargs.pmoid
         #=====================================================
         # Construct API Body Users
         #=====================================================
@@ -672,7 +671,6 @@ class policies_class(object):
         # Get Existing Policies
         #=====================================================
         kwargs.names = []
-        kwargs.pop('api_filter')
         for i in policies:
             if self.type == 'port':
                 for x in range(0,len(i['names'])): kwargs.names.append(i['names'][x])
@@ -800,9 +798,8 @@ class policies_class(object):
                 kwargs.api_filter= f"PortIdStart eq {i.port_list[0]} and PortPolicy.Moid eq '{port_moid}'"
                 kwargs.uri       = jsonVars.port_types.port_mode.uri
                 kwargs           = api('port_mode').calls(kwargs)
-                kwargs.pop('api_filter')
-                pm_moids = kwargs.pmoids
-                apiBody  = {'ObjectType':'fabric.PortMode'}
+                pm_moids         = kwargs.pmoids
+                apiBody          = {'ObjectType':'fabric.PortMode'}
                 apiBody.update({
                     'CustomMode':i['custom_mode'],'PortIdStart':i.port_list[0],'PortIdEnd':i.port_list[1]
                 })
@@ -847,7 +844,6 @@ class policies_class(object):
             kwargs.qtype = kwargs.type
             kwargs.uri = jsonVars.uri
             kwargs = api(kwargs.qtype).calls(kwargs)
-            kwargs.pop('api_filter')
             kwargs.moids[kwargs.type] = kwargs.pmoids
             #=====================================================
             # Create or Patch the Policy via the Intersight API
@@ -1863,6 +1859,7 @@ class profiles_class(object):
         #========================================================
         # Deploy Chassis/Server Profiles if Action is Deploy
         #========================================================
+        pending_changes = False
         if re.search('^(chassis|server)$', self.type):
             for item in profiles:
                 for i in item['targets']:
@@ -1871,14 +1868,85 @@ class profiles_class(object):
                             if deploy_profiles == False:
                                 deploy_profiles = True
                                 prLightPurple(f'\n{"-"*81}\n')
-                            pname = i['name']
-                            prGreen(f'    - Beginning Profile Deployment for {pname}')
-                            kwargs.apiBody= {'Action':'Deploy'}
-                            kwargs.method = 'patch'
+                            pname         = i['name']
+                            kwargs.method = 'get_by_moid'
                             kwargs.pmoid  = kwargs.moids[self.type][pname].moid
                             kwargs.qtype  = self.type
                             kwargs.uri    = jsonVars.uri
                             kwargs = api(self.type).calls(kwargs)
+                            results = DotMap(kwargs['results'])
+                            if len(results.ConfigChanges.Changes) > 0: pending_changes = True
+        if pending_changes == True: time.sleep(120)
+        if re.search('^(chassis|server)$', self.type) and pending_changes == True:
+            for item in profiles:
+                for i in item['targets']:
+                    if item.get('action'):
+                        if item['action'] == 'Deploy' and re.search(serial_regex, i.serial_number):
+                            if deploy_profiles == False:
+                                deploy_profiles = True
+                                prLightPurple(f'\n{"-"*81}\n')
+                            pname         = i['name']
+                            kwargs.method = 'get_by_moid'
+                            kwargs.pmoid  = kwargs.moids[self.type][pname].moid
+                            kwargs.qtype  = self.type
+                            kwargs.uri    = jsonVars.uri
+                            kwargs = api(self.type).calls(kwargs)
+                            results = DotMap(kwargs['results'])
+                            if len(results.ConfigChanges.Changes) > 0:
+                                prGreen(f'    - Beginning Profile Deployment for {pname}')
+                                kwargs.apiBody= {'Action':'Deploy'}
+                                kwargs.method = 'patch'
+                                kwargs.pmoid  = kwargs.moids[self.type][pname].moid
+                                kwargs.qtype  = self.type
+                                kwargs.uri    = jsonVars.uri
+                                kwargs = api(self.type).calls(kwargs)
+                            else:
+                                prLightPurple(f'    - Skipping Profile Deployment for {pname}.  No Pending Changes')
+            if deploy_profiles == True:
+                prLightPurple(f'\n{"-"*81}\n')
+                if pending_changes == True: time.sleep(60)
+            for item in profiles:
+                for i in item['targets']:
+                    if item.get('action'):
+                        if item['action'] == 'Deploy' and re.search(serial_regex, i.serial_number):
+                            pname           = i['name']
+                            deploy_profiles = True
+                            deploy_complete = False
+                            while deploy_complete == False:
+                                kwargs.method = 'get_by_moid'
+                                kwargs.pmoid  = kwargs.moids[self.type][pname].moid
+                                kwargs.qtype  = self.type
+                                kwargs = api(self.type).calls(kwargs)
+                                results = DotMap(kwargs['results'])
+                                if results.ConfigContext.ControlAction == 'No-op':
+                                    deploy_complete = True
+                                    if re.search('^(chassis)$', self.type):
+                                        prGreen(f'    - Completed Profile Deployment for {pname}')
+                                else: 
+                                    prCyan(f'      * Deploy Still Occuring on {pname}.  Waiting 120 seconds.')
+                                    #validating.deploy_notification(self.type, pname)
+                                    time.sleep(120)
+            if deploy_profiles == True:
+                prLightPurple(f'\n{"-"*81}\n')
+        if re.search('^(server)$', self.type) and pending_changes == True:
+            for item in profiles:
+                for i in item['targets']:
+                    if item.get('action'):
+                        if item['action'] == 'Deploy' and re.search(serial_regex, i.serial_number):
+                            pname = i['name']
+                            kwargs.method = 'get_by_moid'
+                            kwargs.pmoid  = kwargs.moids[self.type][pname].moid
+                            kwargs.qtype  = self.type
+                            kwargs = api(self.type).calls(kwargs)
+                            results = DotMap(kwargs['results'])
+                            if len(results.ConfigChanges.PolicyDisruptions) > 0:
+                                prGreen(f'    - Beginning Profile Activation for {pname}')
+                                kwargs.apiBody= {'ScheduledActions':[{'Action':'Activate', 'ProceedOnReboot':True}]}
+                                kwargs.method = 'patch'
+                                kwargs.pmoid  = kwargs.moids[self.type][pname].moid
+                                kwargs.qtype  = self.type
+                                kwargs.uri    = jsonVars.uri
+                                kwargs = api(self.type).calls(kwargs)
             if deploy_profiles == True:
                 prLightPurple(f'\n{"-"*81}\n')
                 time.sleep(60)
@@ -1894,12 +1962,12 @@ class profiles_class(object):
                                 kwargs.pmoid  = kwargs.moids[self.type][pname].moid
                                 kwargs.qtype  = self.type
                                 kwargs = api(self.type).calls(kwargs)
-                                if kwargs['results']['ConfigContext']['ControlAction'] == 'No-op':
+                                results = DotMap(kwargs['results'])
+                                if results.ConfigContext.ControlAction == 'No-op':
                                     deploy_complete = True
                                     prGreen(f'    - Completed Profile Deployment for {pname}')
                                 else: 
                                     prCyan(f'      * Deploy Still Occuring on {pname}.  Waiting 120 seconds.')
-                                    #validating.deploy_notification(self.type, pname)
                                     time.sleep(120)
             if deploy_profiles == True:
                 prLightPurple(f'\n{"-"*81}\n')
@@ -2141,14 +2209,15 @@ def profile_function(item, kwargs):
         #=====================================================
         # Create the Profile from the Template
         #=====================================================
-        if not kwargs.moids[kwargs.type].get(apiBody['Name']):
+        existing_profiles = list(kwargs.moids[kwargs.type].keys())
+        if not apiBody['Name'] in existing_profiles:
             kwargs.apiBody= bulkBody
             kwargs.method = 'post'
             kwargs.qtype  = 'bulk'
             kwargs.uri    = 'bulk/MoCloners'
             kwargs = api('bulk').calls(kwargs)
-            kwargs.moids['server'].update({apiBody['Name']:{'Moid':kwargs.pmoid}})
-            kwargs.pmoid = kwargs.pmoid
+            #kwargs.moids['server'][apiBody['Name']] = DotMap(moid = kwargs.pmoid)
+            #kwargs.pmoid = kwargs.pmoid
         else: kwargs.pmoid = kwargs.moids[kwargs.type][apiBody['Name']].moid
 
     #=================================================================
