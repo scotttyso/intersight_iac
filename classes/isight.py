@@ -798,7 +798,7 @@ class policies_class(object):
                 kwargs.method= 'get'
                 kwargs.qtype = 'port_mode'
                 kwargs.api_filter= f"PortIdStart eq {i.port_list[0]} and PortPolicy.Moid eq '{port_moid}'"
-                kwargs.uri       = jsonVars.classes.port_mode.uri
+                kwargs.uri       = jsonVars.port_types.port_mode.uri
                 kwargs           = api('port_mode').calls(kwargs)
                 kwargs.pop('api_filter')
                 pm_moids = kwargs.pmoids
