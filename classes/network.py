@@ -56,7 +56,7 @@ class nxos(object):
                     sw_type       = switch.switch_type
                 )
                 if switch.get('vpc_config'):
-                    if len(switch.vpc_config.domain_id) > 0:
+                    if len(str(switch.vpc_config.domain_id)) > 0:
                         i.vpc = DotMap(
                             domain_id      = switch.vpc_config.domain_id,
                             keepalive_ip   = switch.vpc_config.keepalive_ip,
