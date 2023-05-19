@@ -1096,6 +1096,7 @@ class api(object):
             polVars = deepcopy(i.toDict())
             polVars.pop('os_type')
             polVars.pop('volume_type')
+            if i.volume_type == 'mirror': polVars.pop('nas')
             #=====================================================
             # Create/Patch Volumes
             #=====================================================
@@ -1112,16 +1113,20 @@ class api(object):
                         if polVars.get(p): polVars.pop(p)
             prGreen(f"    - Configuring Volume {i.name} on {svm.name}.")
             payload = json.dumps(polVars)
+
             if print_payload: prCyan(json.dumps(polVars, indent=4))
             eval(f"{method}(uri, kwargs, payload)")
 
             #=====================================================
             # Configure Volume Properties from CLI if Needed
             #=====================================================
+            kwargs.vcreated = False
+            if method == 'post': kwargs.vcreated = True
             volume_pexpect(child, i, kwargs, svm)
 
             prLightPurple(f"  Completed SVM {svm.name} Volume - {i.name} Configuration.")
             prCyan('')
+
         #=====================================================
         # Initialize the snapmirror
         #=====================================================
@@ -1717,6 +1722,7 @@ def configure_interfaces(x, items, kwargs):
     elif 'nvme'  == kwargs.vlan_settings.vlan_type: servicePolicy = 'default-data-nvme-tcp'
     home_port = f"a0a-{kwargs.vlan_settings.vlan_id}"
     services = 'data_nfs'
+    kwargs.polVars = {}
     if 'inband' == kwargs.vlan_settings.vlan_type and x == 1: proceed = False
     else: proceed = True
     if proceed == True:
@@ -2038,6 +2044,7 @@ def svm_pexpect(child, host_file, i, kwargs, svm):
 # Function - Volume pexpect Process
 #=====================================================
 def volume_pexpect(child, i, kwargs, svm):
+    if kwargs.vcreated == True: time.sleep(10)
     if i.volume_type == 'audit':
         kwargs.count= 1
         kwargs.show = f"vserver audit show -vserver {i.svm.name}"
@@ -2066,7 +2073,8 @@ def volume_pexpect(child, i, kwargs, svm):
         kwargs.count= 1
         kwargs.show = f"vserver nvme namespace show -vserver {i.svm.name} -path /vol/{i.name}/{i.name}"
         kwargs.regex= f"online"
-        kwargs.cmds = [f"vserver nvme namespace create -vserver {i.svm.name} -path /vol/{i.name}/{i.name}"]
+        kwargs.cmds = [
+            f"vserver nvme namespace create -vserver {i.svm.name} -path /vol/{i.name}/{i.name} -size {i.size} -ostype {i.os_type}"]
         config_function(child, kwargs)
         kwargs.count= 1
         kwargs.show = f"vserver nvme subsystem show -vserver {i.svm.name} -subsystem {i.os_type}-hosts"
@@ -2085,7 +2093,12 @@ def volume_pexpect(child, i, kwargs, svm):
     elif i.volume_type == 'swap':
         kwargs.count= 1
         kwargs.show = f"volume efficiency show -vserver {i.svm.name} -volume {i.name}"
-        kwargs.regex= f"Disabled"
+        kwargs.regex= f"  State\\:"
+        kwargs.cmds = [f"volume efficiency off -vserver {i.svm.name} -volume {i.name}"]
+        config_function(child, kwargs)
+        kwargs.count= 1
+        kwargs.show = f"volume efficiency show -vserver {i.svm.name} -volume {i.name}"
+        kwargs.regex= f"State: Disabled"
         kwargs.cmds = [f"volume efficiency off -vserver {i.svm.name} -volume {i.name}"]
         config_function(child, kwargs)
 

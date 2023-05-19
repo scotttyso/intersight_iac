@@ -157,9 +157,9 @@ def countKeys(ws, func):
 # Function for Processing easyDict and Creating YAML Files
 #==========================================================
 def create_yaml(orgs, kwargs):
-    baseRepo = kwargs.args.dir
-    ez_data   = kwargs.ez_data.ezimm.allOf[1].properties
-    classes  = ez_data.classes.enum
+    baseRepo= kwargs.args.dir
+    ez_data = kwargs.ez_data.ezimm.allOf[1].properties
+    classes = ez_data.classes.enum
 
     def write_file(dest_dir, dest_file, dict, title1):
         if not os.path.exists(os.path.join(dest_dir, dest_file)):
@@ -529,9 +529,9 @@ def jprint(jDict):
 # Function - Load Previous YAML Files
 #======================================================
 def load_previous_configurations(kwargs):
-    ez_data   = kwargs.ez_data.ezimm.allOf[1].properties
+    ez_data  = kwargs.ez_data.ezimm.allOf[1].properties
     vclasses = ez_data.classes.enum
-    dir_check   = 0
+    dir_check= 0
     if os.path.isdir(kwargs.args.dir):
         dir_list = os.listdir(kwargs.args.dir)
         for i in dir_list:

@@ -387,10 +387,10 @@ def main():
             #==============================================
             # Pools
             #==============================================
-            api = 'isight.pools_class'
-            if kwargs.imm_dict.orgs[org].get('pools'):
-                for pool_type in kwargs.imm_dict.orgs[org]['pools']:
-                    kwargs = eval(f"{api}(pool_type).pools(kwargs)")
+            #api = 'isight.pools_class'
+            #if kwargs.imm_dict.orgs[org].get('pools'):
+            #    for pool_type in kwargs.imm_dict.orgs[org]['pools']:
+            #        kwargs = eval(f"{api}(pool_type).pools(kwargs)")
 
             #==============================================
             # Policies

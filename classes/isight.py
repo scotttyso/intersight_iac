@@ -554,12 +554,21 @@ class policies_class(object):
     #=======================================================
     def local_user(self, apiBody, item, kwargs):
         jsonVars = kwargs.ez_data.policies.allOf[1].properties.local_user.key_map_password
+        apiBody['PasswordProperties'] = {
+            "EnablePasswordExpiry": False,
+            "EnforceStrongPassword": True,
+            "ForceSendPassword": False,
+            "GracePeriod": 0,
+            "NotificationPeriod": 15,
+            "ObjectType": "iam.EndPointPasswordProperties",
+            "PasswordExpiryDuration": 90,
+            "PasswordHistory": 0
+        }
         for k, v in item.items():
             if k in jsonVars:
-                if not apiBody.get('password_properties'): apiBody['password_properties'] = {}
-                apiBody['password_properties'].update({jsonVars[k]:v})
-                if apiBody['password_properties'].get("password_history"):
-                    apiBody['password_properties'].update({'password_history': 0})
+                apiBody['PasswordProperties'].update({jsonVars[k]:v})
+        if apiBody['PasswordProperties']['PasswordHistory'] != 0:
+            apiBody['PasswordProperties'].update({'PasswordHistory': 0})
         return apiBody
 
     #=====================================================
@@ -643,14 +652,14 @@ class policies_class(object):
     # Network Connectivity Policy Modification
     #=======================================================
     def network_connectivity(self, apiBody, item, kwargs):
-        dns_list = ['V4', 'V6']
+        dns_list = ['v4', 'v6']
         kwargs   = kwargs
         for i in dns_list:
-            if f'dns_servers_{i.lower()}' in item:
+            if f'dns_servers_{i}' in item:
                 if len(item[f'dns_servers_{i}']) > 0:
-                    apiBody.update({f'PreferredIp{i}DnsServer':item[f'dns_servers_{i}'][0]})
+                    apiBody.update({f'PreferredIp{i}dnsServer':item[f'dns_servers_{i}'][0]})
                 if len(item[f'dns_servers_{i}']) > 1:
-                    apiBody.update({f'alternateIp{i}DnsServer':item[f'dns_servers_{i}'][1]})
+                    apiBody.update({f'AlternateIp{i}dnsServer':item[f'dns_servers_{i}'][1]})
         return apiBody
 
     #=====================================================
@@ -1351,7 +1360,7 @@ class policies_class(object):
                     if patchVlan == True:
                         kwargs.method = 'patch'
                         kwargs.qtype = 'vlans'
-                        kwargs.uri = 'vlans'
+                        kwargs.uri = jsonVars.uri
                         kwargs.apiBody = apiBody
                         kwargs = api('vlans').calls(kwargs)
                     else: prCyan(f"      * Skipping VLAN {x}.  Intersight Matches Configuration.")
@@ -1875,9 +1884,12 @@ class profiles_class(object):
                             kwargs.uri    = jsonVars.uri
                             kwargs = api(self.type).calls(kwargs)
                             results = DotMap(kwargs['results'])
-                            if len(results.ConfigChanges.Changes) > 0: pending_changes = True
+                            if len(results.ConfigChanges.Changes) > 0:
+                                pending_changes = True
+                                break
+                if pending_changes == True: break
         if pending_changes == True: time.sleep(120)
-        if re.search('^(chassis|server)$', self.type) and pending_changes == True:
+        if re.search('^(chassis|server)$', self.type):
             for item in profiles:
                 for i in item['targets']:
                     if item.get('action'):
@@ -1892,7 +1904,7 @@ class profiles_class(object):
                             kwargs.uri    = jsonVars.uri
                             kwargs = api(self.type).calls(kwargs)
                             results = DotMap(kwargs['results'])
-                            if len(results.ConfigChanges.Changes) > 0:
+                            if (len(results.ConfigChanges.Changes) > 0 and 'server' in self.type) or 'chassis' in self.type:
                                 prGreen(f'    - Beginning Profile Deployment for {pname}')
                                 kwargs.apiBody= {'Action':'Deploy'}
                                 kwargs.method = 'patch'
@@ -1902,9 +1914,9 @@ class profiles_class(object):
                                 kwargs = api(self.type).calls(kwargs)
                             else:
                                 prLightPurple(f'    - Skipping Profile Deployment for {pname}.  No Pending Changes')
-            if deploy_profiles == True:
-                prLightPurple(f'\n{"-"*81}\n')
-                if pending_changes == True: time.sleep(60)
+            if deploy_profiles == True: prLightPurple(f'\n{"-"*81}\n')
+        if pending_changes == True: time.sleep(60)
+        if re.search('^(chassis|server)$', self.type):
             for item in profiles:
                 for i in item['targets']:
                     if item.get('action'):
@@ -2011,7 +2023,8 @@ def build_pmoid_dictionary(api_results, kwargs):
                 if i.get('SourceObjectType'): apiDict[iname].object_type = i.SourceObjectType
             if i.get('Selectors'):
                 apiDict[iname].selectors = i.Selectors
-            if i.get('SwitchId'): apiDict[iname]['switch_id'] = i.SwitchId
+            if i.get('SwitchId'): apiDict[iname].switch_id = i.SwitchId
+            if i.get('Tags'): apiDict[iname].tags = i.Tags
             if i.get('UpgradeStatus'):
                 apiDict[iname].upgrade_status = i.UpgradeStatus
             if i.get('Profiles'):

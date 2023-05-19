@@ -474,7 +474,6 @@
                             "converged.imm_domain.pop_list": {
                                 "enum": [
                                     "certificate_management",
-                                    "ethernet_network_control",
                                     "ethernet_network_group",
                                     "sd_card",
                                     "server",
@@ -539,6 +538,7 @@
                                     "bios",
                                     "boot_order",
                                     "firmware",
+                                    "power",
                                     "virtual_media",
                                     "certificate_management",
                                     "imc_access",
