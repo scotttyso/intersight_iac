@@ -524,7 +524,7 @@ def vlan_config(x, nxmap, kwargs):
                         f'  hsrp version 2',
                         f'  hsrp {i.vlan_id}',
                         f'    preempt delay minimum 30 reload 120',
-                        f'    priority 1{p} forwarding-threshold lower 1 upport 1{p}',
+                        f'    priority 1{p} forwarding-threshold lower 1 upper 1{p}',
                         f'    timers msec 250 msec 1000',
                         f'    ip {i.gateway}',
                     ])
