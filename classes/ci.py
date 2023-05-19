@@ -2579,8 +2579,6 @@ class wizard(object):
         kwargs.uri       = 'softwarerepository/OperatingSystemFiles'
         kwargs           = isight.api(kwargs.qtype).calls(kwargs)
         kwargs.os_repos  = kwargs.pmoids
-        print(kwargs.os_repos)
-        exit()
 
         #==================================
         # Create/Patch OS Repo apiBody
