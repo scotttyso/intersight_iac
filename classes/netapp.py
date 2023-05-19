@@ -834,7 +834,7 @@ class api(object):
             jData = get(uri, kwargs)
             r = DotMap(deepcopy(jData))
             if not r.locked == False:
-                uri = f'security/accounts/{kwargs.netapp.svms[svm.name]}/vsadmin'
+                uri = f'security/accounts/{kwargs.netapp.cluster[svm.cluster].svm.moid}/vsadmin'
                 polVars = { "locked": False, "password": password }
                 payload = json.dumps(polVars)
                 if print_payload: prCyan(json.dumps(polVars, indent=4))
