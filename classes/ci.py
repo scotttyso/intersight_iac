@@ -2578,15 +2578,17 @@ class wizard(object):
         kwargs.uri       = 'softwarerepository/OperatingSystemFiles'
         kwargs           = isight.api(kwargs.qtype).calls(kwargs)
         kwargs.os_repos  = kwargs.pmoids
+        print(kwargs.os_repos)
+        exit()
 
         #==================================
         # Create/Patch OS Repo apiBody
         #==================================
         kwargs.apiBody = os_software_repo(kwargs)
         kwargs.uri     = 'softwarerepository/OperatingSystemFiles'
-        if kwargs.pmoids.get(kwargs.apiBody['Name']):
+        if kwargs.os_repos.get(kwargs.apiBody['Name']):
             kwargs.method= 'patch'
-            kwargs.pmoid = kwargs.pmoids[kwargs.apiBody['Name']].moid
+            kwargs.pmoid = kwargs.os_repos[kwargs.apiBody['Name']].moid
         else: kwargs.method= 'post'
         kwargs = isight.api(self.type).calls(kwargs)
         kwargs.os_moid = kwargs.pmoid
@@ -3100,8 +3102,6 @@ def os_installation_body(k, v, kwargs):
         'OverrideSecureBoot': True,
         'Server': { 'Moid': v.hardware_moid, 'ObjectType': v.object_type}
     }
-    print(json.dumps(apiBody, indent=4))
-    exit()
     return apiBody
 
 #=============================================================================
