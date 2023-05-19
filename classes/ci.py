@@ -2516,7 +2516,7 @@ class wizard(object):
         #==================================
         kwargs.sensitive_var = 'vmware_esxi_password'
         kwargs = ezfunctions.sensitive_var_value(kwargs)
-        kwargs.vmware_esx_password = kwargs.var_value
+        kwargs.vmware_esxi_password = kwargs.var_value
 
         #==================================
         # Get Org Software Repo
@@ -3100,6 +3100,8 @@ def os_installation_body(k, v, kwargs):
         'OverrideSecureBoot': True,
         'Server': { 'Moid': v.hardware_moid, 'ObjectType': v.object_type}
     }
+    print(json.dumps(apiBody, indent=4))
+    exit()
     return apiBody
 
 #=============================================================================
