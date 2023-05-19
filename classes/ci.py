@@ -2572,6 +2572,7 @@ class wizard(object):
             prRed(f"!!! ERROR !!!\n  Exception when calling {repo_url}:\n {e}\n")
             sys.exit(1)
 
+        kwargs.api_filter= f"Name eq '{kwargs.os_name}'"
         kwargs.method    = 'get'
         kwargs.names     = [kwargs.os_name]
         kwargs.qtype     = 'operating_system'
