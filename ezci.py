@@ -487,7 +487,7 @@ def main():
     prLightGray(f'\n{"-"*91}\n')
     prLightGray(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
     prLightGray(f'\n{"-"*91}\n')
-    sys.exit(1)
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()

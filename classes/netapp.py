@@ -350,7 +350,7 @@ class api(object):
                     if r.name == p: license_installed = True
                 if license_installed == False:
                     prRed(f'\n!!! ERROR !!!\nNo License was found for protocol {p}\n')
-                    sys.exit()
+                    sys.exit(1)
 
             #=====================================================
             # Configure Sub-Sections
