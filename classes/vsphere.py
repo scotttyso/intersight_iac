@@ -84,8 +84,9 @@ class api(object):
                 f'ping {kwargs.repo_server}'
             ]
             for cmd in cmds:
+                cmds = cmd.split(' ')
                 child.sendline(cmd)
-                child.expect(cmd)
+                child.expect(cmds[0])
                 child.expect(kwargs.host_prompt)
 
             reboot_required = False
