@@ -8,6 +8,7 @@ import os
 import platform
 import re
 import requests
+import socket
 import subprocess
 import sys
 import time
@@ -23,7 +24,7 @@ class api(object):
         #=====================================================
         # Send Begin Notification
         #=====================================================
-        validating.begin_section('vCenter', self.type)
+        validating.begin_section('vCenter', self.type.capitalize())
         time.sleep(2)
         #=====================================================
         # Get VIBs from Files Directory
@@ -33,7 +34,7 @@ class api(object):
         file_types = ['Broadcom', 'NetAppNas', 'nenic', 'nfnic']
         for ftype in file_types:
             for f in dir_files:
-                if os.path.isfile(kwargs.files_dir + os.path.sep + f):
+                if os.path.isfile(os.path.join(kwargs.files_dir, f)):
                     if ftype in f: kwargs.files[ftype] = f
         
         #==================================
@@ -50,18 +51,16 @@ class api(object):
         #=====================================================
         # Load Variables and Login to ESXi Hosts
         #=====================================================
-        for i in kwargs.immDict.orgs[kwargs.org].wizard.os_configuration:
-            for k, v in i.items():
-                kwargs.server_profiles[i.name][k] = v
-
-        for k, v in kwargs.server_profiles.items():
+        reboot_count = 0
+        server_profiles = deepcopy(kwargs.server_profiles)
+        for k, v in server_profiles.items():
             esx_host = k + '.' + kwargs.dns_domains[0]
             prGreen(f"\n{'-'*91}\n")
             prGreen(f"   Beginning VIB Installs for {esx_host}.")
             prGreen(f"\n{'-'*91}\n")
             time.sleep(2)
             kwargs.hostname   = esx_host
-            kwargs.password   = 'esx_password'
+            kwargs.password   = 'vmware_esxi_password'
             kwargs.username   = 'root'
             kwargs.host_prompt= f'root\\@{k}\\:'
             child, kwargs     = ezfunctions.child_login(kwargs)
@@ -92,7 +91,10 @@ class api(object):
             if reboot_required == True:
                 child.sendline('reboot')
                 child.expect('closed')
+                reboot_count += 1
+                kwargs.server_profiles[k].rebooted = True
             else:
+                kwargs.server_profiles[k].rebooted = False
                 child.sendline('exit')
                 child.expect('closed')
             prGreen(f"\n{'-'*91}\n")
@@ -101,10 +103,36 @@ class api(object):
             time.sleep(2)
         child.close()
 
+        def isReachable(ipOrName, port, timeout=2):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(timeout)
+            try:
+                s.connect((ipOrName, int(port)))
+                s.shutdown(socket.SHUT_RDWR)
+                return True
+            except: return False
+            finally: s.close()
+        
+        if reboot_count > 0:
+            time.sleep(240)
+            for k, v in kwargs.server_profiles.items():
+                if v.rebooted == True:
+                    esx_host = k + '.' + kwargs.dns_domains[0]
+                    prGreen(f"   Checking Host {esx_host} Reachability after reboot.")
+                    reachable = False
+                    while reachable == False:
+                        connected = isReachable(esx_host, '443')
+                        if connected == True:
+                            prGreen(f"   Connection to {esx_host} Succeeded..")
+                            reachable = True
+                        else:
+                            prCyan(f"   Connection to {esx_host} Failed.  Sleeping for 2 minutes.")
+                            time.sleep(120)
+
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
-        validating.end_section('vCenter', self.type)
+        validating.end_section('vCenter', self.type.capitalize())
         return kwargs
 
     #=====================================================
@@ -128,9 +156,6 @@ class api(object):
                 kwargs.vmware.datastores.extend(i.datastores)
             kwargs.vmware.dns_domains= kwargs.dns_domains
             kwargs.vmware.dns_servers= kwargs.dns_servers
-            if re.search('vswitch0', i.name, re.IGNORECASE):
-                kwargs.vmware.name = 'vSwitch0'
-            else: kwargs.vmware.name = item.name
             kwargs.vmware.name       = item.name
             kwargs.vmware.ntp_servers= kwargs.ntp_servers
             kwargs.vmware.servers    = []
@@ -180,6 +205,8 @@ class api(object):
                 for vv in item.virtual_switches:
                     indx = [e for e, d in enumerate(item.virtual_switches) if vv.name in d.values()][0]
                     indx = indx*2
+                    if re.search('vswitch0', vv.name, re.IGNORECASE):
+                        vv.name = 'vSwitch0'
                     vdict = DotMap(name=vv.name,
                         maca=v.macs[indx].mac,
                         macb=v.macs[indx+1].mac,
@@ -242,6 +269,8 @@ class api(object):
             # Add Virtual Switches
             #=====================================================
             for i in item.virtual_switches:
+                if re.search('vswitch0', i.name, re.IGNORECASE):
+                    i.name = 'vSwitch0'
                 kwargs.vmware.vswitches[i.name] = DotMap(
                     data_types = i.data_types,
                     mtu        = 9000,
@@ -286,7 +315,7 @@ class api(object):
         #=====================================================
         # Write Attributes to settings.json
         #=====================================================
-        json_file = os.getcwd() + '/' + 'settings.json'
+        json_file = os.path.join(kwargs.args.dir, 'vcenter_json_data.json')
         with open(json_file, 'w') as fp:
             json_formated = json.dumps({'vcenters':[kwargs.vmware]}, indent=4)
             print(json_formated, file=fp)
@@ -298,7 +327,7 @@ class api(object):
         #=====================================================
         # Add Sensitive Passwords to env
         #=====================================================
-        kwargs.sensitive_var = 'vmware_esx_password'
+        kwargs.sensitive_var = 'vmware_esxi_password'
         kwargs = ezfunctions.sensitive_var_value(kwargs)
         kwargs.sensitive_var = 'vmware_vcenter_password'
         kwargs = ezfunctions.sensitive_var_value(kwargs)

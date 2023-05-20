@@ -17,7 +17,9 @@ param (
     # $(throw "-j is required. It is the Source of Data for the Script.")
 )
 $jsonData = Get-Content -Path $j | ConvertFrom-Json
-
+$folder_path = Split-Path $j
+Write-Host "Folder Path is $($folder_path)"
+exit
 #=====================================================
 # Start Log and Configure PowerCLI
 #=====================================================
@@ -788,7 +790,10 @@ foreach($vcenter in $jsonData.vcenters) {
     Write-Host "Completed vSphere configuration on $($vcenter.name).  Exiting Script."
     Write-Host ""
 }
-$storageOutput | ConvertTo-Json -depth 5 | Set-Content "esx_host_identifiers.json"
-
+if ($folder_path -contains "/") {
+    $storageOutput | ConvertTo-Json -depth 5 | Set-Content "$($folder_path)/esx_host_identifiers.json" -Encoding UTF8
+} else {
+    $storageOutput | ConvertTo-Json -depth 5 | Set-Content "$($folder_path)\esx_host_identifiers.json" -Encoding UTF8
+}
 Stop-Transcript
 Exit

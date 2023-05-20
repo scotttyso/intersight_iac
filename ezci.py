@@ -468,7 +468,7 @@ def main():
         orgs = list(kwargs.imm_dict.orgs.keys())
         for org in orgs:
             #=====================================================
-            # Load Variables and Login to ESXi Hosts
+            # merge os_configuration with server_profiles
             #=====================================================
             for i in kwargs.imm_dict.orgs[kwargs.org].wizard.os_configuration:
                 for k, v in i.items():
