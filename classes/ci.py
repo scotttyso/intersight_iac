@@ -2667,12 +2667,14 @@ class wizard(object):
                     kwargs.uri   = 'workflow/WorkflowInfos'
                     kwargs = isight.api(self.type).calls(kwargs)
                     if kwargs.results.Status == 'COMPLETED':
-                        install_complete = True
+                        install_complete= True
+                        install_success = True
                         prGreen(f'    - Completed Operating System Installation for {k}.')
                     elif re.search('(FAILED|TERMINATED|TIME_OUT)', kwargs.results.Status):
                         kwargs.upgrade.failed.update({k:v.moid})
                         prRed(f'!!! FAILED !!! Operating System Installation for Server Profile {k} failed.')
-                        install_complete = True
+                        install_complete= True
+                        install_success = False
                     else:
                         progress= kwargs.results.Progress
                         status  = kwargs.results.Status
@@ -2683,15 +2685,17 @@ class wizard(object):
                 #=================================================
                 # Add Tag to Physical Server for os_installed
                 #=================================================
-                tags = v.tags
-                tags.append({'os_installed':v.os_type})
-                tags  =[dict(t) for t in set([tuple(d.items()) for d in tags])]
-                tags['os_installed'] = v.os_type
-                kwargs.apiBody={'Tags':tags}
-                kwargs.method = 'patch'
-                kwargs.pmoid  = v.hardware_moid
-                kwargs.qtype  = 'compute'
-                kwargs        = isight.api(kwargs.qtype).calls(kwargs)
+                if install_success == True:
+                    tags = DotMap(v.tags)
+                    if 'os_installed' in tags:
+                        indx = [e for e, d in enumerate(tags) if 'os_installed' in d.values()][0]
+                        tags[indx].update({'Value':v.os_type})
+                    else: tags.append({'Key':'os_installed','Value':v.os_type})
+                    kwargs.apiBody={'Tags':tags}
+                    kwargs.method = 'patch'
+                    kwargs.pmoid  = v.hardware_moid
+                    kwargs.qtype  = 'compute'
+                    kwargs        = isight.api(kwargs.qtype).calls(kwargs)
 
         #=====================================================
         # Send End Notification and return kwargs
