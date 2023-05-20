@@ -133,7 +133,9 @@ class api(object):
                     if   i == 0: prGreen(f'\n\n    {(child.match).group(1)}\n\n')
                     elif i == 1: prGreen(f'\n\n    VIB {vib} install message is {(child.match).group(1)}\n\n')
                     elif i == 2: reboot_required = True; cmd_check = True; prGreen('\n\nneeed to reboot host\n\n')
-                    elif i == 3: reboot_required = False; cmd_check = True
+                    elif i == 3: reboot_required = False; cmd_check = True; prGreen('\n\nno reboot required\n\n')
+                print(f'reboot required == {reboot_required}')
+                exit()
             child.sendline('esxcfg-advcfg -s 0 /Misc/HppManageDegradedPaths')
             child.expect(kwargs.host_prompt)
             if reboot_required == True:
