@@ -95,6 +95,7 @@ class api(object):
                 vib     = value
                 repo_url= f'http://{kwargs.repo_server}{kwargs.repo_path}{vib}'
                 child.sendline(f'rm -f {vib}')
+                child.expect(f'rm -f')
                 child.expect(kwargs.host_prompt)
                 child.sendline(f'wget {repo_url}')
                 attempt_count = 0
@@ -116,18 +117,23 @@ class api(object):
                         attempt_count += 1
                         time.sleep(5)
 
-                if re.search('(Broadcom|Cisco)', vib): child.sendline(f'esxcli software component apply -d /tmp/{vib}')
-                else: child.sendline(f'esxcli software vib install -d /tmp/{vib}')
+                if re.search('(Broadcom|Cisco)', vib):
+                    child.sendline(f'esxcli software component apply -d /tmp/{vib}')
+                    child.expect(f'esxcli software component apply')
+                else:
+                    child.sendline(f'esxcli software vib install -d /tmp/{vib}')
+                    child.expect(f'esxcli software vib install')
                 cmd_check = False
                 while cmd_check == False:
                     regex1 = re.compile(f"(Components Installed: [a-zA-Z\\-\\_\\.]+)\r")
                     regex2 = re.compile('(Message: [a-zA-Z\\d ,]+\\.)\r')
                     regex3 = re.compile('Reboot Required: true')
+                    regex3 = re.compile('Reboot Required: false')
                     i = child.expect([regex1, regex2, regex3, kwargs.host_prompt])
                     if   i == 0: prGreen(f'\n\n    {(child.match).group(1)}\n\n')
                     elif i == 1: prGreen(f'\n\n    VIB {vib} install message is {(child.match).group(1)}\n\n')
-                    elif i == 2: reboot_required = True
-                    elif i == 3: cmd_check = True
+                    elif i == 2: reboot_required = True; cmd_check = True
+                    elif i == 3: reboot_required = False; cmd_check = True
             child.sendline('esxcfg-advcfg -s 0 /Misc/HppManageDegradedPaths')
             child.expect(kwargs.host_prompt)
             if reboot_required == True:
