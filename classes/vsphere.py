@@ -88,7 +88,6 @@ class api(object):
                 child.expect(cmd)
                 child.expect(kwargs.host_prompt)
 
-            time.sleep(30)
             reboot_required = False
             for key, value in kwargs.files.items():
                 vib     = value
