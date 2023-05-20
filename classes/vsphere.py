@@ -335,7 +335,7 @@ class api(object):
         #=====================================================
         # Run the PowerShell Script
         #=====================================================
-        commandline_options = [pwsh, '-ExecutionPolicy', 'Unrestricted', '-File', script_path, '-j', json_file]
+        commandline_options = [pwsh, '-ExecutionPolicy', 'Unrestricted', '-File', 'ezvcenter.ps1', '-j', json_file]
         #for param in params:
         #    commandline_options.append("'" + param + "'")
 
