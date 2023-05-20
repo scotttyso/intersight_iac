@@ -80,7 +80,7 @@ class api(object):
                 'vim-cmd hostsvc/enable_esx_shell',
                 'vim-cmd hostsvc/advopt/update UserVars.SuppressShellWarning long 1',
                 ntp_cfg,
-                'cd /tmp'
+                'cd /tmp',
                 f'ping {kwargs.repo_server}'
             ]
             for cmd in cmds:
