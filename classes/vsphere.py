@@ -81,9 +81,11 @@ class api(object):
                 'vim-cmd hostsvc/advopt/update UserVars.SuppressShellWarning long 1',
                 ntp_cfg,
                 'cd /tmp'
+                f'ping {kwargs.repo_server}'
             ]
             for cmd in cmds:
                 child.sendline(cmd)
+                child.expect(cmd)
                 child.expect(kwargs.host_prompt)
 
             time.sleep(30)
