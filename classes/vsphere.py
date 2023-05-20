@@ -75,7 +75,7 @@ class api(object):
                 'vim-cmd hostsvc/enable_ssh > /dev/null 2>&1',
                 'chkconfig SSH on > /dev/null 2>&1',
                 'esxcli network firewall ruleset set -e true -r httpClient',
-                f'esxcli system hostname set --fqdn={esx_host}'
+                f'esxcli system hostname set --fqdn={esx_host}',
                 'vim-cmd hostsvc/enable_ssh',
                 'vim-cmd hostsvc/enable_esx_shell',
                 'vim-cmd hostsvc/advopt/update UserVars.SuppressShellWarning long 1',
