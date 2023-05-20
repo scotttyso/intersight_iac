@@ -2484,6 +2484,23 @@ class wizard(object):
     # Function - Build Policies - BIOS
     #=============================================================================
     def os_install(self, kwargs):
+        names = []
+        for k,v in kwargs.server_profiles.items():
+            names.append(v.serial)
+        kwargs.method = 'get'
+        kwargs.names = names
+        kwargs.pmoid = v.moid
+        kwargs.qtype = 'serial_number'
+        kwargs.uri   = 'compute/PhysicalSummaries'
+        kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+        server_profiles = deepcopy(kwargs.server_profiles)
+        for k,v in server_profiles.items():
+            kwargs.server_profiles[k].hardware_moid = kwargs.pmoids[v.serial].moid
+            kwargs.server_profiles[k].tags = deepcopy(kwargs.pmoids[v.serial].tags)
+            for e in kwargs.pmoids[v.serial].tags:
+                if e.Key == 'os_installed' and e.Value == v.os_type:
+                    kwargs.server_profiles[k].os_installed = True
+                else: kwargs.server_profiles[k].os_installed = False
         #=====================================================
         # Load Variables and Send Begin Notification
         #=====================================================
@@ -2623,10 +2640,10 @@ class wizard(object):
         for k,v in server_profiles.items():
             kwargs.server_profiles[k].hardware_moid = kwargs.pmoids[v.serial].moid
             kwargs.server_profiles[k].tags = kwargs.pmoids[v.serial].tags
+            kwargs.server_profiles[k].os_installed = False
             for e in kwargs.pmoids[v.serial].tags:
-                if e.Key == 'os_installed' and e.Value == 'vmware':
+                if e.Key == 'os_installed' and e.Value == v.os_type:
                     kwargs.server_profiles[k].os_installed = True
-                else: kwargs.server_profiles[k].os_installed = False
 
         #==========================================
         # Install Operating System on Servers
@@ -2683,20 +2700,23 @@ class wizard(object):
                         time.sleep(120)
 
                 #=================================================
-                # Add Tag to Physical Server for os_installed
+                # Add os_installed Tag to Physical Server
                 #=================================================
                 if install_success == True:
-                    tags = DotMap(v.tags)
-                    if 'os_installed' in tags:
-                        indx = [e for e, d in enumerate(tags) if 'os_installed' in d.values()][0]
-                        tags[indx].update({'Value':v.os_type})
-                    else: tags.append({'Key':'os_installed','Value':v.os_type})
-                    kwargs.apiBody={'Tags':tags}
+                    tags = deepcopy(v.tags)
+                    tags.append(DotMap(Key = 'os_installed',Value = v.os_type))
+                    tag_body = []
+                    for e in tags: tag_body.append(e.toDict())
+                    kwargs.apiBody={'Tags':tag_body}
                     kwargs.method = 'patch'
                     kwargs.pmoid  = v.hardware_moid
-                    kwargs.qtype  = 'compute'
+                    kwargs.qtype  = 'update_tags'
+                    kwargs.tag_server_profile = k
+                    if v.object_type == 'compute.Blade': kwargs.uri = 'compute/Blades'
+                    else: kwargs.uri = 'compute/RackUnits'
                     kwargs        = isight.api(kwargs.qtype).calls(kwargs)
-
+            else:
+                prCyan(f'      * Skipping Operating System Install for {k}. OS Already Installed.')
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================

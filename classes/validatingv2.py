@@ -45,6 +45,7 @@ def completed_item(ptype, kwargs):
         name = f"Activating Profile {kwargs.pmoid}"
     elif kwargs.apiBody.get('Targets'):
         name = kwargs.apiBody['Targets'][0]['Name']
+    elif 'update_tags' in kwargs.qtype: name = f"Tags updated for Physical Server attached to {kwargs.tag_server_profile}"
     else: name = kwargs.apiBody['Name']
     if re.search('(storage_drive|user_role|v(l|s)ans|vhbas|vnics|port_(channel|mode|role))', ptype):
         if 'port' in ptype:
