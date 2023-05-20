@@ -2625,7 +2625,7 @@ class wizard(object):
             kwargs.server_profiles[k].tags = kwargs.pmoids[v.serial].tags
             kwargs.server_profiles[k].os_installed = False
             for e in kwargs.pmoids[v.serial].tags:
-                if e.Key == 'os_installed' and e.Value == v.os_type and e.Value == 'blah':
+                if e.Key == 'os_installed' and e.Value == v.os_type:
                     kwargs.server_profiles[k].os_installed = True
 
         #==========================================
@@ -2637,8 +2637,6 @@ class wizard(object):
                 kwargs.mgmt_mac= v.macs[indx].mac
                 kwargs.fqdn    = k + '.' + kwargs.dns_domains[0]
                 kwargs.apiBody = os_installation_body(k, v, kwargs)
-                print(json.dumps(kwargs.apiBody, indent=4))
-                exit()
                 kwargs.method= 'post'
                 kwargs.qtype = self.type
                 kwargs.uri   = 'os/Installs'
@@ -2689,10 +2687,10 @@ class wizard(object):
                 #=================================================
                 if install_success == True:
                     tags = deepcopy(v.tags)
-                    for t in v.tags:
-                        if t.Key == 'os_installed':
-                            indx = [e for e, d in enumerate(v.tags) if 'os_installed' in d.values()][0]
-                            tags.pop(indx)
+                    #for t in v.tags:
+                    #    if t.Key == 'os_installed':
+                    #        indx = [e for e, d in enumerate(v.tags) if 'os_installed' in d.values()][0]
+                    #        tags.pop(indx)
                     tags.append(DotMap(Key = 'os_installed',Value = v.os_type))
                     tag_body = []
                     for e in tags: tag_body.append(e.toDict())
