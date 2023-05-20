@@ -461,7 +461,7 @@ def main():
     #=================================================================
     # Configure the Operating System
     #=================================================================
-    if kwargs.args.deployment_step == 'os_configure':
+    if kwargs.args.deployment_step == 'os_configuration':
         #==============================================
         # Loop Through the Orgs
         #==============================================
