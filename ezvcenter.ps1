@@ -37,13 +37,13 @@ Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Confirm:$false
 #=====================================================
 # Obtain Username and Password
 #=====================================================
-if (Test-Path -Path ${env:HOME}\powercli.Cred) {
-    $credential = Import-CliXml -Path "${env:HOME}\powercli.Cred"
-}
-else {
-    $credential = Get-Credential
-    $credential | Export-CliXml -Path "${env:HOME}\powercli.Cred"
-}
+#if (Test-Path -Path ${env:HOME}\powercli.Cred) {
+#    $credential = Import-CliXml -Path "${env:HOME}\powercli.Cred"
+#}
+#else {
+#    $credential = Get-Credential
+#    $credential | Export-CliXml -Path "${env:HOME}\powercli.Cred"
+#}
 
 #=====================================================
 # Build Hash Table for Identity Output
