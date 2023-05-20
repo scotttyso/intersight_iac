@@ -65,6 +65,27 @@ class api(object):
             kwargs.host_prompt= f'root\\@{k}\\:'
             child, kwargs     = ezfunctions.child_login(kwargs)
 
+            #=====================================================
+            # Enable DNS, NTP, SSH Shell, and WGET
+            #=====================================================
+            ntp_cfg = 'esxcli system ntp set '
+            for ntp in kwargs.ntp_servers: ntp_cfg = ntp_cfg + f'--server {ntp} '
+            ntp_cfg = ntp_cfg + '--enabled true'
+            cmds = [
+                'vim-cmd hostsvc/enable_ssh > /dev/null 2>&1',
+                'chkconfig SSH on > /dev/null 2>&1',
+                'esxcli network firewall ruleset set -e true -r httpClient',
+                f'esxcli system hostname set --fqdn={esx_host}'
+                'vim-cmd hostsvc/enable_ssh',
+                'vim-cmd hostsvc/enable_esx_shell',
+                'vim-cmd hostsvc/advopt/update UserVars.SuppressShellWarning long 1',
+                ntp_cfg,
+                'cd /tmp'
+            ]
+            for cmd in cmds:
+                child.sendline(cmd)
+                child.expect(kwargs.host_prompt)
+
             reboot_required = False
             for key, value in kwargs.files.items():
                 vib     = value
