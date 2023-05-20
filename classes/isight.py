@@ -875,7 +875,7 @@ class policies_class(object):
             for i in item[kwargs.type]:
                 apiBody = {'PortPolicy':{
                     'Moid':kwargs.port_policy,'ObjectType':'fabric.PortPolicy'}}
-                for z in kwargs.qtype_list:
+                for z in kwargs.policy_list:
                     pshort = z.replace('_policy', '')
                     jVars = kwargs.ez_data.policies.allOf[1].properties[pshort]
                     if i.get(z):
@@ -885,10 +885,10 @@ class policies_class(object):
                             ppname = kwargs.port_policy_name
                             validating.error_policy_doesnt_exist(z, i[z], kwargs.type, 'Port Policy', ppname)
                         if 'network_group' in z:
-                            apiBody.update({jVars['object_name']:{
-                                'Moid':pmoid,'ObjectType':jVars['object_type']}})
-                        else: apiBody.update({jVars['object_name']:[{
+                            apiBody.update({jVars['object_name']:[{
                                 'Moid':pmoid,'ObjectType':jVars['object_type']}]})
+                        else: apiBody.update({jVars['object_name']:{
+                                'Moid':pmoid,'ObjectType':jVars['object_type']}})
                 if i.get('admin_speed'): apiBody.update({'AdminSpeed':i['admin_speed']})
                 if i.get('fec'): apiBody.update({'Fec':i['fec']})
                 if i.get('mode'): apiBody.update({'Mode':i['mode']})
