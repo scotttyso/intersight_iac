@@ -128,14 +128,18 @@ class api(object):
                     regex1 = re.compile(f"(Components Installed: [a-zA-Z\\-\\_\\.]+)\r")
                     regex2 = re.compile('(Message: [a-zA-Z\\d ,]+\\.)\r')
                     regex3 = re.compile('Reboot Required: true')
-                    regex3 = re.compile('Reboot Required: false')
-                    i = child.expect([regex1, regex2, regex3, kwargs.host_prompt])
+                    regex4 = re.compile('Reboot Required: false')
+                    i = child.expect([regex1, regex2, regex3, regex4])
                     if   i == 0: prGreen(f'\n\n    {(child.match).group(1)}\n\n')
                     elif i == 1: prGreen(f'\n\n    VIB {vib} install message is {(child.match).group(1)}\n\n')
-                    elif i == 2: reboot_required = True; cmd_check = True; prGreen('\n\nneeed to reboot host\n\n')
-                    elif i == 3: reboot_required = False; cmd_check = True; prGreen('\n\nno reboot required\n\n')
-                print(f'reboot required == {reboot_required}')
-                exit()
+                    elif i == 2:
+                        reboot_required = True
+                        cmd_check = True
+                        prGreen(f'\n\nNeed to reboot {esx_host}\n\n')
+                    elif i == 3:
+                        reboot_required = False
+                        cmd_check = True
+                        prGreen('\n\nno reboot required for {esx_host}\n\n')
             child.sendline('esxcfg-advcfg -s 0 /Misc/HppManageDegradedPaths')
             child.expect(kwargs.host_prompt)
             if reboot_required == True:
