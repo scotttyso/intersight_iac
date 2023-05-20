@@ -40,13 +40,13 @@ class api(object):
         #==================================
         # Test Repo URL for File
         #==================================
-        #for k, v in kwargs.files.items():
-        #    repo_url = f'https://{kwargs.repo_server}{kwargs.repo_path}{v}'
-        #    try:
-        #        r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
-        #    except requests.RequestException as e:
-        #        prRed(f"!!! ERROR !!!\n  Exception when calling {repo_url}:\n {e}\n")
-        #        sys.exit(1)
+        for k, v in kwargs.files.items():
+            repo_url = f'https://{kwargs.repo_server}{kwargs.repo_path}{v}'
+            try:
+                r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
+            except requests.RequestException as e:
+                prRed(f"!!! ERROR !!!\n  Exception when calling {repo_url}:\n {e}\n")
+                sys.exit(1)
 
         #=====================================================
         # Load Variables and Login to ESXi Hosts
@@ -86,6 +86,7 @@ class api(object):
                 child.sendline(cmd)
                 child.expect(kwargs.host_prompt)
 
+            time.sleep(30)
             reboot_required = False
             for key, value in kwargs.files.items():
                 vib     = value
