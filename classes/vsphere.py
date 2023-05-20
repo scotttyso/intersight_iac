@@ -93,26 +93,26 @@ class api(object):
             reboot_required = False
             for key, value in kwargs.files.items():
                 vib     = value
-                repo_url= f'https://{kwargs.repo_server}{kwargs.repo_path}{vib}'
+                repo_url= f'http://{kwargs.repo_server}{kwargs.repo_path}{vib}'
                 child.sendline(f'rm -f {vib}')
                 child.expect(kwargs.host_prompt)
-                child.sendline(f'wget --no-check-certificate {repo_url}')
+                child.sendline(f'wget {repo_url}')
                 attempt_count = 0
                 download_success = False
                 while download_success == False:
                     i = child.expect(['error getting response', 'saved', kwargs.host_prompt, pexpect.TIMEOUT])
-                    if i == 3 or attempt_count == 5:
+                    if i == 3 or attempt_count == 3:
                         prRed(f"\n{'-'*91}\n")
                         prRed(f'!!! FAILED !!!\n Failed to Download {vib} via {kwargs.repo_server}')
                         prRed(f"\n{'-'*91}\n")
                         sys.exit(1)
                     elif i == 0:
-                        child.sendline(f'wget --no-check-certificate {repo_url}')
+                        child.sendline(f'wget {repo_url}')
                         attempt_count += 1
                         time.sleep(5)
                     elif i == 1: download_success = True
                     elif i == 2:
-                        child.sendline(f'wget --no-check-certificate {repo_url}')
+                        child.sendline(f'wget {repo_url}')
                         attempt_count += 1
                         time.sleep(5)
 
