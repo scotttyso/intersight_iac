@@ -18,8 +18,7 @@ param (
 )
 $jsonData = Get-Content -Path $j | ConvertFrom-Json
 $folder_path = Split-Path $j
-Write-Host "Folder Path is $($folder_path)"
-exit
+
 #=====================================================
 # Start Log and Configure PowerCLI
 #=====================================================

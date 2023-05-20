@@ -132,22 +132,18 @@ class api(object):
                     i = child.expect([regex1, regex2, regex3, regex4])
                     if   i == 0: prGreen(f'\n\n    {(child.match).group(1)}\n\n')
                     elif i == 1: prGreen(f'\n\n    VIB {vib} install message is {(child.match).group(1)}\n\n')
-                    elif i == 2:
-                        reboot_required = True
-                        cmd_check = True
-                        prGreen(f'\n\nNeed to reboot {esx_host}\n\n')
-                    elif i == 3:
-                        reboot_required = False
-                        cmd_check = True
-                        prGreen('\n\nno reboot required for {esx_host}\n\n')
+                    elif i == 2: reboot_required = True; cmd_check = True
+                    elif i == 3: reboot_required = False; cmd_check = True
             child.sendline('esxcfg-advcfg -s 0 /Misc/HppManageDegradedPaths')
             child.expect(kwargs.host_prompt)
             if reboot_required == True:
+                prGreen(f'\n\nNeed to reboot {esx_host}\n\n')
                 child.sendline('reboot')
                 child.expect('closed')
                 reboot_count += 1
                 kwargs.server_profiles[k].rebooted = True
             else:
+                prGreen(f'\n\nno reboot required for {esx_host}\n\n')
                 kwargs.server_profiles[k].rebooted = False
                 child.sendline('exit')
                 child.expect('closed')
@@ -167,12 +163,14 @@ class api(object):
             except: return False
             finally: s.close()
         
+        failed_hosts = 0
         if reboot_count > 0:
             time.sleep(240)
-            for k, v in kwargs.server_profiles.items():
+            for k, v in server_profiles.items():
                 if v.rebooted == True:
                     esx_host = k + '.' + kwargs.dns_domains[0]
                     prGreen(f"   Checking Host {esx_host} Reachability after reboot.")
+                    reach_count = 0
                     reachable = False
                     while reachable == False:
                         connected = isReachable(esx_host, '443')
@@ -180,8 +178,20 @@ class api(object):
                             prGreen(f"   Connection to {esx_host} Succeeded..")
                             reachable = True
                         else:
-                            prCyan(f"   Connection to {esx_host} Failed.  Sleeping for 2 minutes.")
-                            time.sleep(120)
+                            if reach_count == 5:
+                                prCyan(f"   Connection to {esx_host} Failed.  Skipping Host.")
+                                kwargs.server_profiles[k].failed_host = True
+                                failed_hosts += 1
+                                reachable = True
+                            else:
+                                reach_count += 1
+                                prCyan(f"   Connection to {esx_host} Failed.  Sleeping for 2 minutes.")
+                                time.sleep(120)
+            if failed_hosts > 0:
+                for k, v in kwargs.server_profiles.items():
+                    esx_host = k + '.' + kwargs.dns_domains[0]
+                    if v.get('failed_host'): prCyan(f"   Connection to {esx_host} Failed.  Host Failed.")
+                sys.exit(1)
 
         #=====================================================
         # Send End Notification and return kwargs
@@ -389,7 +399,7 @@ class api(object):
         #=====================================================
         # Run the PowerShell Script
         #=====================================================
-        commandline_options = [pwsh, '-ExecutionPolicy', 'Unrestricted', '-File', 'ezvcenter.ps1', '-j', json_file]
+        commandline_options = [pwsh, '-ExecutionPolicy', 'Unrestricted', '-File', '/usr/bin/ezvcenter.ps1', '-j', json_file]
         #for param in params:
         #    commandline_options.append("'" + param + "'")
 
