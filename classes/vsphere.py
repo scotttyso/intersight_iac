@@ -101,18 +101,20 @@ class api(object):
                 download_success = False
                 while download_success == False:
                     i = child.expect(['error getting response', 'saved', kwargs.host_prompt, pexpect.TIMEOUT])
-                    if i == 0:
-                        child.sendline(f'wget --no-check-certificate {repo_url}')
-                        attempt_count += 1
-                    elif i == 1: download_success = True
-                    elif i == 2:
-                        child.sendline(f'wget --no-check-certificate {repo_url}')
-                        attempt_count += 1
-                    elif i == 3 or attempt_count == 5:
+                    if i == 3 or attempt_count == 5:
                         prRed(f"\n{'-'*91}\n")
                         prRed(f'!!! FAILED !!!\n Failed to Download {vib} via {kwargs.repo_server}')
                         prRed(f"\n{'-'*91}\n")
                         sys.exit(1)
+                    elif i == 0:
+                        child.sendline(f'wget --no-check-certificate {repo_url}')
+                        attempt_count += 1
+                        time.sleep(5)
+                    elif i == 1: download_success = True
+                    elif i == 2:
+                        child.sendline(f'wget --no-check-certificate {repo_url}')
+                        attempt_count += 1
+                        time.sleep(5)
 
                 if re.search('(Broadcom|Cisco)', vib): child.sendline(f'esxcli software component apply -d /tmp/{vib}')
                 else: child.sendline(f'esxcli software vib install -d /tmp/{vib}')
