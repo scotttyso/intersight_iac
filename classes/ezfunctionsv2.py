@@ -72,14 +72,14 @@ def child_login(kwargs):
         child.sendline(f'ping -n 2 {kwargs.hostname}')
         child.expect(f'ping -n 2 {kwargs.hostname}')
         child.expect_exact("> ")
-        child.sendline(f'ssh {kwargs.username}@{kwargs.hostname} | Tee-Object {kwargs.hostname}.txt')
-        child.expect(f'Tee-Object {kwargs.hostname}.txt')
+        child.sendline(f'ssh {kwargs.username}@{kwargs.hostname} | Tee-Object Logs\{kwargs.hostname}.txt')
+        child.expect(f'Tee-Object Logs\{kwargs.hostname}.txt')
     else:
         child.sendline(f'ping -c 2 {kwargs.hostname}')
         child.expect(f'ping -c 2 {kwargs.hostname}')
         child.expect_exact("$ ")
-        child.sendline(f'ssh {kwargs.username}@{kwargs.hostname} | tee {kwargs.hostname}.txt')
-        child.expect(f'tee {kwargs.hostname}.txt')
+        child.sendline(f'ssh {kwargs.username}@{kwargs.hostname} | tee Logs/{kwargs.hostname}.txt')
+        child.expect(f'tee Logs/{kwargs.hostname}.txt')
     logged_in = False
     while logged_in == False:
         i = child.expect(['Are you sure you want to continue', 'closed', 'Password:', kwargs.host_prompt, pexpect.TIMEOUT])

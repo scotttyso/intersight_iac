@@ -382,6 +382,7 @@ class api(object):
         i = DotMap(deepcopy(polVars))
         polVars.pop('lun_type')
         if polVars.get('profile'): polVars.pop('profile')
+        if polVars.get('protocol'): polVars.pop('protocol')
         if polVars.get('lun_name'): polVars.pop('lun_name')
         method = 'post'
         uri    = f'storage/luns'
@@ -765,7 +766,7 @@ class api(object):
         kwargs.password   = 'netapp_password'
         kwargs.username   = kwargs.netapp.cluster[i.name].username
         child, kwargs    = ezfunctions.child_login(kwargs)
-        host_file = open(f'{kwargs.hostname}.txt', 'r')
+        host_file = open(f'Logs{os.sep}{kwargs.hostname}.txt', 'r')
         
         #=====================================================
         # Using pexpect, configure SVM
@@ -780,7 +781,6 @@ class api(object):
         child.expect('closed')
         child.close()
         host_file.close()
-        os.remove(f'{kwargs.hostname}.txt')
 
         #=====================================================
         # Configure the SVM Through the API
@@ -1096,6 +1096,7 @@ class api(object):
             polVars = deepcopy(i.toDict())
             polVars.pop('os_type')
             polVars.pop('volume_type')
+            if polVars.get('protocol'): polVars.pop('protocol')
             if i.volume_type == 'mirror': polVars.pop('nas')
             #=====================================================
             # Create/Patch Volumes
@@ -1142,7 +1143,6 @@ class api(object):
         child.sendline('exit')
         child.expect('closed')
         child.close()
-        os.remove(f'{kwargs.hostname}.txt')
 
         #=====================================================
         # Send End Notification and return kwargs
@@ -1277,9 +1277,10 @@ class build(object):
                             "space":{"guarantee":{"requested": False}, "size":f"128GB"},
                             "svm":{"name":kwargs.svm},
                             "lun_type": "boot",
-                            "profile": k
+                            "profile": k,
+                            "protocol": e.protocol
                         }
-                        kwargs.lun_list.append(polVars)
+                        kwargs.lun_list.append(deepcopy(polVars))
                         kwargs = api('lun').lun(polVars, kwargs)
 
             for e in kwargs.volumes:
@@ -1294,8 +1295,9 @@ class build(object):
                         "svm":{"name":kwargs.svm},
                         "lun_type": e.volume_type,
                         "lun_name": e.name,
+                        "protocol": e.protocol
                     }
-                    kwargs.lun_list.append(polVars)
+                    kwargs.lun_list.append(deepcopy(polVars))
                     api('lun').lun(polVars, kwargs)
                 elif str(e.volume_type) == 'nvme':
                     kwargs.hostname   = kwargs.netapp.hostname
@@ -1315,20 +1317,38 @@ class build(object):
                             f"vserver nvme subsystem host add -vserver {kwargs.svm} -subsystem {e.os_type}-hosts -host-nqn {server_nqn}"
                         ]
                         config_function(child, kwargs)
+                    regex1 = "Namespace UUID: ([0-9a-f\\-]{36})"
+                    child.sendline(f"vserver nvme namespace show -vserver {kwargs.svm} -path /vol/{e.name}/{e.name}")
+                    child.expect('vserver nvme namespace')
+                    cmd_check = False
+                    while cmd_check == False:
+                        i = child.expect([regex1, kwargs.host_prompt])
+                        if i == 0:
+                            if not kwargs.get('datastores'):
+                                kwargs.datastores = []
+                            kwargs.datastores.append(DotMap(
+                                lun_uuid   = f"uuid.{((child.match).group(1)).replace('-', '')}",
+                                name       = e.name,
+                                path       = '',
+                                protocol   = 'nvme',
+                                size       = e.size,
+                                target     = '',
+                                volume_type= e.volume_type
+                            ))
+                        elif i == 1: cmd_check = True
                     #=====================================================
                     # Close the Child Process
                     #=====================================================
                     child.sendline('exit')
                     child.expect('closed')
                     child.close()
-                    os.remove(f'{kwargs.hostname}.txt')
 
 
 
             return kwargs
 
-        cluster = deepcopy(kwargs.imm_dict.orgs[kwargs.org].netapp.cluster)
-        for i in cluster:
+        clusters = deepcopy(kwargs.imm_dict.orgs[kwargs.org].netapp.cluster)
+        for i in clusters:
             for s in i.svm:
                 kwargs.netapp.hostname   = i.hostname
                 kwargs.netapp.username   = i.username
@@ -1336,17 +1356,48 @@ class build(object):
                 kwargs.cluster = i.name
                 kwargs.svm     = s.name
                 kwargs.volumes = s.volumes
-                check_for_boot_lun(kwargs)
                 #=====================================================
                 # Get Existing Luns
                 #=====================================================
-                uri    = f'storage/luns/?svm.name={kwargs.svm}'
+                uri    = f'storage/luns/?svm.name={kwargs.svm}&fields=name,serial_number,svm,uuid'
                 kwargs.lun_results = get(uri, kwargs)
+                check_for_boot_lun(kwargs)
                 kwargs = create_lun_list(kwargs)
-                cx = [e for e, d in enumerate(cluster) if i.name in d.values()][0]
-                sx = [e for e, d in enumerate(cluster[cx].svm) if s.name in d.values()][0]
+                cx = [e for e, d in enumerate(clusters) if i.name in d.values()][0]
+                sx = [e for e, d in enumerate(clusters[cx].svm) if s.name in d.values()][0]
                 kwargs.imm_dict.orgs[kwargs.org].netapp.cluster[cx].svm[sx].luns = kwargs.lun_list
-        
+
+                #=====================================================
+                # Build Datastore Dictionary
+                #=====================================================
+                uri    = f'storage/luns/?svm.name={kwargs.svm}&fields=name,serial_number,svm,uuid'
+                kwargs.lun_results = get(uri, kwargs)
+                lun_results = DotMap(kwargs.lun_results)
+                for v in kwargs.volumes:
+                    for e in lun_results.records:
+                        if re.search('(data|swap|vcls)', v.volume_type) and v.name in e.name:
+                            if not kwargs.get('datastores'):
+                                kwargs.datastores = []
+                            kwargs.datastores.append(DotMap(
+                                lun_uuid   = f"naa.600a0980{((e.serial_number).encode('utf-8').hex())}",
+                                name       = e.name,
+                                path       = v.nas.path,
+                                protocol   = v.protocol,
+                                size       = v.size,
+                                target     = '',
+                                volume_type= v.volume_type
+                            ))
+                dcount = 0
+                for e in kwargs.datastores:
+                    if e.protocol == 'nfs':
+                        if dcount % 2 == 0:
+                            e.target = kwargs.nfs.controller[0]
+                        else: e.target = kwargs.nfs.controller[1]
+                        dcount += 1
+                clusters = deepcopy(kwargs.imm_dict.orgs[kwargs.org].storage.appliances)
+                cx = [e for e, d in enumerate(clusters) if i.name in d.values()][0]
+                kwargs.imm_dict.orgs[kwargs.org].storage.appliances[cx].datastores = kwargs.datastores
+
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -1563,6 +1614,7 @@ class build(object):
                 "name": name,
                 "size": 1,
                 "os_type": "netapp",
+                "protocol": "local",
                 "type": "DP",
                 "volume_type": "mirror"
             })
@@ -1578,6 +1630,7 @@ class build(object):
                 "aggregate": agg,
                 "name": volDict.name,
                 "os_type": volDict.os_type,
+                "protocol": volDict.protocol,
                 "size": volDict.size,
                 "type": "rw",
                 "volume_type": volDict.volume_type
@@ -1601,6 +1654,7 @@ class build(object):
                     "security_style": "unix",
                 },
                 "os_type": i.os_type,
+                "protocol": i.protocol,
                 "size": f"{i.size}GB",
                 "snapshot_policy": "none",
                 "state": "online",
@@ -2025,8 +2079,8 @@ def svm_pexpect(child, host_file, i, kwargs, svm):
             elif 'nvme' in p: kwargs.regex3 = "NQN: (nqn\\..*discovery)"
             kwargs.p = p
             value = config_protocols(child, kwargs)
-            if 'iscsi' in p: kwargs.storage[svm.cluster][svm.name]['iscsi'].iqn = value
-            elif 'nvme' in p: kwargs.storage[svm.cluster][svm.name]['nvme'].nqn = value
+            if 'iscsi' in p: kwargs.storage[svm.cluster][svm.name][p].iqn = value
+            elif 'nvme' in p: kwargs.storage[svm.cluster][svm.name][p].nqn = value
 
     #=====================================================
     # Configure NFS Export Policy

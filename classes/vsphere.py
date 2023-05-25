@@ -211,12 +211,14 @@ class api(object):
             # Add Global Attributes - datacenter|cluster|dns|ntp etc
             #=====================================================
             models = []
-            for k, v in kwargs.server_profiles.items(): models.append(v.model)
+            for k, v in kwargs.server_profiles.items():
+                gen = re.search('(M[0-9])', v.model).group(1)
+                models.append(f"{(v.cpu).capitalize()}-{gen}")
             models = numpy.unique(numpy.array(models))
             for model in models: kwargs.vmware.clusters[model].name = model
             kwargs.vmware.datacenter = item.datacenter
             kwargs.vmware.datastores = []
-            for i in kwargs.immDict.orgs[kwargs.org].storage.appliances:
+            for i in kwargs.imm_dict.orgs[kwargs.org].storage.appliances:
                 kwargs.vmware.datastores.extend(i.datastores)
             kwargs.vmware.dns_domains= kwargs.dns_domains
             kwargs.vmware.dns_servers= kwargs.dns_servers
@@ -224,32 +226,37 @@ class api(object):
             kwargs.vmware.ntp_servers= kwargs.ntp_servers
             kwargs.vmware.servers    = []
             kwargs.vmware.username   = item.username
-            kwargs.vmware.ucs_domain =v.domain
+            kwargs.vmware.ucs_domain = v.domain
 
             #=====================================================
             # Add Servers
             #=====================================================
             for k, v in kwargs.server_profiles.items():
                 idict = (DotMap(
-                    iscsi=[],
-                    license_type=item.license_type,
-                    name=v.name + '.' + kwargs.dns_domains[0],
-                    nvme_adapters=[],
-                    serial=v.serial,
-                    server_dn='',
-                    vswitches=[]
+                    iscsi        = [],
+                    license_type = item.license_type,
+                    name         = v.name + '.' + kwargs.dns_domains[0],
+                    nvme_adapters= [],
+                    serial       = v.serial,
+                    server_dn    = '',
+                    syslog_server= item.syslog_server,
+                    vswitches    = []
                 ))
-                if len(v.domain) == 0: idict.server_dn = v.server_id
-                else: idict.server_dn = f"{v.domain}-{v.chassis_id}-{v.slot}"
+                if len(v.domain) == 0:
+                    idict.server_dn = v.server_id
+                else:
+                    if v.object_type == 'compute.RackUnit':
+                        idict.server_dn  = f"{v.domain}-{v.server_id}"
+                    else: idict.server_dn= f"{v.domain}-{v.chassis_id}-{v.slot}"
 
                 if len(v.iscsi) > 0:
                     edict = DotMap(port_groups=[], targets=[])
                     for e in v.iscsi: edict.port_groups.append(e.vlan_name)
-                    for e in kwargs.immDict.orgs[kwargs.org].storage.appliances:
+                    for e in kwargs.imm_dict.orgs[kwargs.org].storage.appliances:
                         for s in e.iscsi.interfaces: edict.targets.append(s.ip_address)
                     idict.iscsi.append(edict)
                 if len(v.nvme) > 0:
-                    for e in kwargs.immDict.orgs[kwargs.org].storage.appliances:
+                    for e in kwargs.imm_dict.orgs[kwargs.org].storage.appliances:
                         controllers = []
                         nqn_id = e.nvme.nqn
                         for s in e.nvme.interfaces: controllers.append(s.ip_address)
@@ -375,7 +382,7 @@ class api(object):
                                 else: pg.secondary = True
                                 vcount += 1
                             kwargs.vmware.vswitches[i.name].port_groups.append(pg)
-        
+
         #=====================================================
         # Write Attributes to settings.json
         #=====================================================
@@ -383,10 +390,8 @@ class api(object):
         with open(json_file, 'w') as fp:
             json_formated = json.dumps({'vcenters':[kwargs.vmware]}, indent=4)
             print(json_formated, file=fp)
-
         if platform.system() == 'Windows': pwsh = 'powershell.exe'
         else: pwsh = 'pwsh'
-        script_path= os.path.join(kwargs.script_path, 'vcenter.ps1')
 
         #=====================================================
         # Add Sensitive Passwords to env

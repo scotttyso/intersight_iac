@@ -116,7 +116,6 @@ class nxos(object):
             child.expect(kwargs.host_prompt)
             child.sendline('exit')
             child.expect('closed')
-            os.remove(f'{kwargs.hostname}.txt')
             child.close()
             prLightPurple(f'\n\n!!! Completed Configuration on {kwargs.hostname} !!!\n\n')
 

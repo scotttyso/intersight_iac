@@ -2310,6 +2310,10 @@ class wizard(object):
             kwargs.dtype         = kwargs.imm_dict.wizard.deployment_type
             kwargs.org           = item.organization
             kwargs.virtualization= item.virtualization
+            ecount = 0
+            for e in kwargs.virtualization:
+                kwargs.virtualization[ecount].syslog_server = item.policies.syslog.servers[0]
+                ecount += 1
             if kwargs.args.deployment_type == 'azure_hci':
                 kwargs.imm.cimc          = item.cimc
                 kwargs.imm.firmware      = item.firmware
