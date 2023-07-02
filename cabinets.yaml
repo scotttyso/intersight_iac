@@ -1,6 +1,12 @@
 ---
 cabinets:
   - DD05:
-    domains:
-      - name: NC-TEST-FI-1
-        chassis: [3]
+      domains:
+        - name: r142c-a
+          chassis: [1, 2]
+          type: IMM
+  - DD06:
+      domains:
+        - name: r143d-ucs
+          chassis: [1]
+          type: UCSM
