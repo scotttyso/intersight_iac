@@ -1395,9 +1395,9 @@ class imm(object):
                         port_list = ezfunctions.vlan_list_format(port_list)
                         idict = dict(
                             breakout_port_id = item,
-                            admin_speed  = kwargs.domain.fcp_uplink_speed,
-                            port_list    = port_list,
-                            vsan_ids     = kwargs.domain.vsans
+                            admin_speed      = kwargs.domain.fcp_uplink_speed,
+                            port_list        = port_list,
+                            vsan_ids         = kwargs.domain.vsans
                         )
                         polVars['port_role_fc_storage'].append(idict)
                 else:
@@ -1420,7 +1420,7 @@ class imm(object):
                 port_end   = int(kwargs.domain.fcp_uplink_ports[-1].split('/')[-2])
                 polVars.update(dict(
                     port_modes = [dict(
-                        custom_mode = f'BreakoutFibreChannel{kwargs.breakout_speed.fc}',
+                        custom_mode = f'BreakoutFibreChannel{kwargs.domain.fcp_uplink_speed}',
                         port_list   = [port_start, port_end]
                     )]
                 ))
@@ -1446,7 +1446,7 @@ class imm(object):
             port_start= int(eth_breakout_ports[0].split('/'))[2]
             port_end  = int(eth_breakout_ports[-1].split('/'))[2]
             polVars['port_modes'].append(dict(
-                custom_mode = f'BreakoutEthernet{kwargs.breakout_speed.eth}',
+                custom_mode = f'BreakoutEthernet{kwargs.domain.eth_breakout_speed}',
                 port_list   = [port_start, port_end]
             ))
 
@@ -1459,7 +1459,7 @@ class imm(object):
                 port_start= int(i.domain_ports[0].split('/'))[2]
                 port_end  = int(i.domain_ports[-1].split('/'))[2]
                 polVars['port_modes'].append(dict(
-                    custom_mode = f'BreakoutEthernet{kwargs.breakout_speed.eth}',
+                    custom_mode = f'BreakoutEthernet{kwargs.domain.eth_breakout_speed}',
                     port_list   = [port_start, port_end]
                 ))
                 for e in i.domain_ports:
@@ -2500,7 +2500,13 @@ class wizard(object):
 
         dir_files = os.listdir(kwargs.files_dir)
         dir_files.sort()
-        file_types = ['Custom-Cisco', 'ucs-scu']
+        if kwargs.deployment_type == 'azure_hci':
+            file_types = ['AzureStack', 'ucs-scu']
+            os_type    = 'AzureStack'
+        else:
+            file_types = ['Custom-Cisco', 'ucs-scu']
+            os_type    = 'Custom-Cisco'
+
         for ftype in file_types:
             for f in dir_files:
                 if os.path.isfile(os.path.join(kwargs.files_dir , f)):
@@ -2508,8 +2514,11 @@ class wizard(object):
 
         kwargs.scu_iso    = kwargs.files['ucs-scu']
         kwargs.scu_version= (kwargs.files['ucs-scu'].split('.iso')[0]).split('-')[2]
-        kwargs.os_iso     = kwargs.files['Custom-Cisco']
-        kwargs.os_name    = re.search('(ESXi-\\d.\\d(\\.\\d)?)', kwargs.files['Custom-Cisco']).group(1)
+        kwargs.os_iso     = kwargs.files[os_type]
+        if kwargs.deployment_type == 'azure_hci':
+            kwargs.os_name    = re.search('(AzureStackHCI_\\d+.\\d+)', kwargs.files[os_type]).group(1)
+        else:
+            kwargs.os_name    = re.search('(ESXi-\\d.\\d(\\.\\d)?)', kwargs.files[os_type]).group(1)
         jvars = kwargs.ez_data.operatingSystem.allOf[1].properties[kwargs.os_name]
         kwargs.os_config  = jvars.config
         kwargs.os_vendor  = jvars.vendor

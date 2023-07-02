@@ -1207,6 +1207,11 @@
                     {},
                     {
                         "properties": {
+                            "AzureStackHCI_20349.1607": {
+                                "config": "Windows2022ConfigFile",
+                                "version": "Windows Server 2022",
+                                "vendor": "Microsoft"
+                            },
                             "ESXi-7.0.3": {
                             "config": "ESXi7.0ConfigFile",
                             "version": "ESXi 7.0 U3",
@@ -1654,16 +1659,15 @@
                                 "object_type": "bios.Policy",
                                 "template_tuning":{
                                     "M5-amd-virtual":{
-                                        "CdnEnable": "enabled",
                                         "CpuPowerManagement": "custom",
                                         "NvmdimmPerformConfig": "Balanced Profile",
+                                        "PcieSlotsCdnEnable": "enabled",
                                         "ProcessorC1e": "disabled",
                                         "ProcessorC3report": "disabled",
                                         "ProcessorC6report": "disabled",
                                         "ProcessorCstate": "disabled"
                                     },
                                     "M6-intel-analytical-DB":{
-                                        "CdnEnable": "enabled",
                                         "CpuPerfEnhancement": "Auto",
                                         "EnergyEfficientTurbo": "enabled",
                                         "IntelVirtualizationTechnology": "disabled",
@@ -1671,11 +1675,11 @@
                                         "MemoryRefreshRate": "1x",
                                         "NvmdimmPerformConfig": "Balanced Profile",
                                         "PatrolScrub": "enabled",
+                                        "PcieSlotsCdnEnable": "enabled",
                                         "ProcessorC6report": "enabled",
                                         "WorkLoadConfig": "Balanced"
                                     },
                                     "M6-intel-HPC":{
-                                        "CdnEnable": "enabled",
                                         "CpuPerfEnhancement": "Auto",
                                         "IntelVirtualizationTechnology": "disabled",
                                         "IntelVtForDirectedIo": "disabled",
@@ -1685,13 +1689,13 @@
                                         "MemoryRefreshRate": "1x",
                                         "NvmdimmPerformConfig": "Balanced Profile",
                                         "PatrolScrub": "enabled",
+                                        "PcieSlotsCdnEnable": "enabled",
                                         "Snc": "enabled",
                                         "UpiPowerManagement": "enabled",
                                         "WorkLoadConfig": "Balanced",
                                         "XptPrefetch": "enabled"
                                     },
                                     "M6-intel-relational-DB":{
-                                        "CdnEnable": "enabled",
                                         "CpuPerfEnhancement": "Auto",
                                         "LlcAlloc": "disabled",
                                         "LlcPrefetch": "disabled",
@@ -1699,15 +1703,16 @@
                                         "MemoryRefreshRate": "1x",
                                         "NvmdimmPerformConfig": "Balanced Profile",
                                         "PatrolScrub": "enabled",
+                                        "PcieSlotsCdnEnable": "enabled",
                                         "processor_c6report": "enabled",
                                         "Snc": "enabled",
                                         "UpiPowerManagement": "enabled",
                                         "XptPrefetch": "enabled"
                                     },
                                     "M5-intel-virtual":{
-                                        "CdnEnable": "enabled",
                                         "CpuPowerManagement": "custom",
                                         "NvmdimmPerformConfig": "Balanced Profile",
+                                        "PcieSlotsCdnEnable": "enabled",
                                         "ProcessorC1e": "disabled",
                                         "ProcessorC3report": "disabled",
                                         "ProcessorC6report": "disabled",
@@ -1717,7 +1722,7 @@
                                         "CbsCmnFixedSocPstate": "P0",
                                         "CbsDfCmnAcpiSratL3numa": "enabled",
                                         "CbsDfCmnDramNps": "NPS4",
-                                        "CdnEnable": "enabled"
+                                        "PcieSlotsCdnEnable": "enabled"
                                     },
                                     "M6-intel-azure":{
                                         "Ipv4http": "disabled",
@@ -1803,9 +1808,9 @@
                                     },
                                     "M6-intel-virtual":{
                                         "CpuPerfEnhancement": "Auto",
-                                        "CdnEnable": "enabled",
                                         "EnergyEfficientTurbo": "enabled",
                                         "NvmdimmPerformConfig": "Balanced Profile",
+                                        "PcieSlotsCdnEnable": "enabled",
                                         "ProcessorC1e": "enabled",
                                         "ProcessorC6report": "enabled"
                                     },

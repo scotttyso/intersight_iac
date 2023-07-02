@@ -166,7 +166,7 @@ def add_interfaces(x, nxmap, kwargs):
                     for cmd in cmds:
                         if f'breakout module 1 port {p1[1]}' in cmd: breakout_check = False
                     if breakout_check == False:
-                        speed = nxmap[x]['breakout_speed']
+                        speed = nxmap[x].breakout_speed
                         cmds.append(f"interface breakout module 1 port {p1[1]} map {speed}-4x")
                         cmds.append('!')
                 else: vpc = p1[-1]
@@ -243,7 +243,7 @@ def add_interfaces_standalone(x, nxmap, kwargs):
                 for cmd in cmds:
                     if f'breakout module 1 port {p1[1]}' in cmd: breakout_check = False
                 if breakout_check == False:
-                    speed = nxmap[x]['breakout_speed']
+                    speed = nxmap[x].breakout_speed
                     cmds.append(f"interface breakout module 1 port {p1[1]} map {speed}-4x")
                     cmds.append('!')
             #=================================
@@ -260,11 +260,15 @@ def add_interfaces_standalone(x, nxmap, kwargs):
                 f"  switchport trunk native vlan {native_vlan}",
                 f"  switchport trunk allowed vlan {allowed_vlans}",
                 f"  priority-flow-control mode on",
-                f"  service-policy type qos input AzS_HCI_QoS",
-                f"  service-policy type queueing output QoS_Egress_Port",
                 f"  no shutdown",
                 f"!",
             ])
+            if kwargs.deployment_type == 'azure_hci':
+                cmds.extend([
+                    f"  service-policy type qos input AzS_HCI_QoS",
+                    f"  service-policy type queueing output QoS_Egress_Port",
+                ])
+
     #=====================================================
     # Return Commands
     #=====================================================
@@ -304,10 +308,12 @@ def base_configuration(kwargs):
 # BGP Configuration
 #=====================================================
 def bgp_configuration(x, nxmap, kwargs):
-    bgp_as = kwargs.network
+    as_number = kwargs.network.bgp.as_number
+    remote_as = kwargs.network.bgp.remote_as
+    router_id = kwargs.network
     cmds = [
-        f"router bgp 64911",
-        f"  router-id 192.168.200.41",
+        f"router bgp {as_number}",
+        f"  router-id {router_id}",
         f"  bestpath as-path multipath-relax",
         f"  log-neighbor-changes",
         f"  address-family ipv4 unicast",
@@ -319,30 +325,26 @@ def bgp_configuration(x, nxmap, kwargs):
         f"    network 192.168.200.60/30",
         f"    maximum-paths 8",
         f"    maximum-paths ibgp 8",
-        f"  template peer eBGP-64821",
-        f"    remote-as 64821",
+        f"  template peer eBGP-{remote_as}",
+        f"    remote-as {remote_as}",
         f"    address-family ipv4 unicast",
         f"      maximum-prefix 12000 warning-only",
-        f"  template peer iBGP-64911",
-        f"    remote-as 64911",
+        f"      prefix-list ExternalPrefix in",
+        f"      prefix-list ExternalPrefix out",
+        f"  template peer iBGP",
+        f"    remote-as {as_number}",
         f"    address-family ipv4 unicast",
         f"      maximum-prefix 12000 warning-only",
         f"  neighbor 192.168.200.46",
-        f"    inherit peer iBGP-64911",
+        f"    inherit peer iBGP",
         f"  neighbor 192.168.200.50",
-        f"    inherit peer eBGP-64821",
-        f"    address-family ipv4 unicast",
-        f"      prefix-list ExternalPrefix in",
-        f"      prefix-list ExternalPrefix out",
+        f"    inherit peer eBGP-{remote_as}",
         f"  neighbor 192.168.200.54",
-        f"    inherit peer eBGP-64821",
-        f"    address-family ipv4 unicast",
-        f"      prefix-list ExternalPrefix in",
-        f"      prefix-list ExternalPrefix out",
+        f"    inherit peer eBGP-{remote_as}",
         f"  neighbor 192.168.101.0/24",
-        f"    inherit peer iBGP-64911",
+        f"    inherit peer iBGP",
         f"  neighbor 192.168.126.0/26",
-        f"    inherit peer iBGP-64911",
+        f"    inherit peer iBGP",
     ]
     return cmds
 
@@ -369,7 +371,7 @@ def qos_configuration():
         f"  match qos-group 5",
         f"!",
         f"policy-map type network-qos QoS_Network",
-        f"  class type network-qos RDMA_ClassMap_NetQoS",
+        f"  class type network-qos RDMA_NetQoS",
         f"    pause pfc-cos 4",
         f"    mtu 9216",
         f"  class type network-qos ClusterCommunication_NetQoS",
@@ -479,7 +481,7 @@ def vlan_config(x, nxmap, kwargs):
     #=====================================================
     kwargs.nxos.storage.allowed_vlans= []
     for i in kwargs.vlans:
-        if re.search('(inband|iscsi|nvme|nfs|storage|tenant|transit)', i.vlan_type) and nxmap[x].sw_type == 'network':
+        if re.search('(inband|iscsi|migration|nvme|nfs|storage|tenant|transit)', i.vlan_type) and nxmap[x].sw_type == 'network':
             kwargs.nxos.imm.allowed_vlans.append(i.vlan_id)
             kwargs.nxos.storage.allowed_vlans.append(i.vlan_id)
             if i.native_vlan == True: kwargs.nxos.imm.native_vlan = i.vlan_id
@@ -574,7 +576,7 @@ def vpc_config(x, nxmap, kwargs):
     #================================
     def breakout_config(x, cmds, nxmap, port):
         breakout = port.split("/")[1]
-        speed = nxmap[x]['breakout_speed']
+        speed = nxmap[x].breakout_speed
         breakout_check = True
         for cmd in cmds:
             if f'breakout module 1 port {breakout}' in cmd: breakout_check = False

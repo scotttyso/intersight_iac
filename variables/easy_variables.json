@@ -1593,6 +1593,7 @@
                                         "cdn_enable":"enabled",
                                         "cpu_power_management":"custom",
                                         "nvmdimm_perform_config":"Balanced Profile",
+                                        "pcie_slots_cdn_enable":"enabled",
                                         "processor_c1e":"disabled",
                                         "processor_c3report":"disabled",
                                         "processor_c6report":"disabled",
@@ -1602,6 +1603,7 @@
                                         "cdn_enable":"enabled",
                                         "cpu_power_management":"custom",
                                         "nvmdimm_perform_config":"Balanced Profile",
+                                        "pcie_slots_cdn_enable":"enabled",
                                         "processor_c1e":"disabled",
                                         "processor_c3report":"disabled",
                                         "processor_c6report":"disabled",
@@ -1616,6 +1618,7 @@
                                         "memory_refresh_rate":"1x",
                                         "nvmdimm_perform_config":"Balanced Profile",
                                         "patrol_scrub":"enabled",
+                                        "pcie_slots_cdn_enable":"enabled",
                                         "processor_c6report":"enabled",
                                         "work_load_config":"Balanced"
                                     },
@@ -1630,6 +1633,7 @@
                                         "memory_refresh_rate":"1x",
                                         "nvmdimm_perform_config":"Balanced Profile",
                                         "patrol_scrub":"enabled",
+                                        "pcie_slots_cdn_enable":"enabled",
                                         "snc":"enabled",
                                         "xpt_prefetch":"enabled",
                                         "upi_power_management":"enabled",
@@ -1644,6 +1648,7 @@
                                         "memory_refresh_rate":"1x",
                                         "nvmdimm_perform_config":"Balanced Profile",
                                         "patrol_scrub":"enabled",
+                                        "pcie_slots_cdn_enable":"enabled",
                                         "processor_c6report":"enabled",
                                         "snc":"enabled",
                                         "xpt_prefetch":"enabled",
@@ -1653,13 +1658,15 @@
                                         "cbs_cmn_fixed_soc_pstate":"P0",
                                         "cbs_df_cmn_acpi_srat_l3numa":"enabled",
                                         "cbs_df_cmn_dram_nps":"NPS4",
-                                        "cdn_enable":"enabled"
+                                        "cdn_enable":"enabled",
+                                        "pcie_slots_cdn_enable":"enabled"
                                     },
                                     "M6-intel-virtual":{
                                         "cdn_enable":"enabled",
                                         "cpu_perf_enhancement":"Auto",
                                         "energy_efficient_turbo":"enabled",
                                         "nvmdimm_perform_config":"Balanced Profile",
+                                        "pcie_slots_cdn_enable":"enabled",
                                         "processor_c1e":"enabled",
                                         "processor_c6report":"enabled"
                                     },

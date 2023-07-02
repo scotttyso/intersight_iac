@@ -1,0 +1,6 @@
+---
+cabinets:
+  - DD05:
+    domains:
+      - name: NC-TEST-FI-1
+        chassis: [3]
