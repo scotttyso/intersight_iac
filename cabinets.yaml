@@ -7,6 +7,9 @@ cabinets:
           type: IMM
   - DD06:
       domains:
-        - name: r143d-ucs
+        - name: r143c-ucs
           chassis: [1]
+          rackmounts: false
           type: UCSM
+      rackmounts:
+        - name: asgard-apic01-cimc

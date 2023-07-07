@@ -17,6 +17,7 @@ if (-not ($y)) {
 if (-not (Test-Path $y)) {
     throw "File $y doesn't exist."
 }
+Import-Module -Name Cisco.IMC
 Import-Module -Name Cisco.UCSManager
 Import-module -Name powershell-yaml
 
@@ -67,7 +68,7 @@ Do {
             $null = Invoke-WebRequest -Uri "https://$HostName/Login" -Method POST -Body ($JSON | ConvertTo-Json) -SkipCertificateCheck -UseBasicParsing -SessionVariable cookie
             foreach($chassis in $domain.chassis) {
                 Write-Host ""
-                Write-Host "$($domain.name) Chassis $chassis."
+                Write-Host "$($domain.name) Chassis $chassis Power Supplies."
                 $io_card = 'IoCard-{0}-1' -f $chassis
                 $headers = @{'inventory-type'='Chassis'; 'inventory-id'=$io_card}
                 $power = Invoke-WebRequest -Uri "https://$HostName/api-explorer/resources/redfish/v1/Chassis/$chassis/Power" -Headers $headers -WebSession $cookie -SkipCertificateCheck 
@@ -86,11 +87,36 @@ Do {
             $null = Connect-Ucs -Name $domain.name -Credential $credential
             foreach($chassis in $domain.chassis) {
                 Write-Host ""
-                Write-Host "$($domain.name) Chassis $chassis."
+                Write-Host "$($domain.name) Chassis $chassis Power Supplies."
                 $regex = 'chassis-{0}' -f $chassis
                 Get-UcsPsu | Where-Object { $_.Dn -match $regex } | Format-Table Ucs,Dn,Model,Serial,OperState
             }
+            if ($domain.rackmounts) {
+                if ($domain.rackmounts -eq $true) {
+                    Write-Host ""
+                    Write-Host "$($domain.name) Rackmount Power Supplies."
+                    $regex = 'sys/rackmount'
+                    Get-UcsPsu | Where-Object { $_.Dn -match $regex } | Format-Table Ucs,Dn,Model,Serial,OperState
+                }
+            }
+            Write-Host ""
+            Write-Host "$($domain.name) Power Supplies."
+            Get-UcsPsu | Where-Object { $_.Dn -match 'sys/switch' } | Format-Table Ucs,Dn,Model,Serial,OperState
             $null = Disconnect-Ucs
+        }
+    }
+    if ($yamlData.cabinets.$($MenuList[$Choice - 1]).rackmounts) {
+        foreach ($rackmount in $yamlData.cabinets.$($MenuList[$Choice - 1]).rackmounts) {
+            If (Test-Path -Path $env:HOME\powercliIMC.Cred) {
+                $credential = Import-CliXml -Path "$env:HOME\powercliIMC.Cred"
+            } Else {
+                $credential = Get-Credential
+                $credential | Export-CliXml -Path "$env:HOME\powercliIMC.Cred"
+            }
+            $null = Connect-IMC -Name $rackmount.name -Credential $credential
+            Write-Host ""
+            Get-ImcPsu | Format-Table Imc,Dn,Pid,Serial,Operability
+            $null = Disconnect-IMC
         }
     }
     $Answer = Read-Host "Press 1 to rerun the script and choose another cabinet Any other Key to exit."
