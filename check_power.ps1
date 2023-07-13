@@ -95,7 +95,7 @@ Do {
                 if ($domain.rackmounts -eq $true) {
                     Write-Host ""
                     Write-Host "$($domain.name) Rackmount Power Supplies."
-                    $regex = 'sys/rackmount'
+                    $regex = 'sys/rack-unit'
                     Get-UcsPsu | Where-Object { $_.Dn -match $regex } | Format-Table Ucs,Dn,Model,Serial,OperState
                 }
             }
