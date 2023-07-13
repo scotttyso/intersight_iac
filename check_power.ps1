@@ -55,6 +55,8 @@ Do {
     'You chose {0}' -f $MenuList[$Choice - 1]
 
     foreach ($domain in $yamlData.cabinets.$($MenuList[$Choice - 1]).domains) {
+        Write-Host ""
+        Write-Host "Starting Login for $($domain.name)"
         if ($domain.type -eq "IMM") {
             If (Test-Path -Path $env:HOME\powercliIMM.Cred) {
                 $credential = Import-CliXml -Path "$env:HOME\powercliIMM.Cred"
@@ -78,6 +80,8 @@ Do {
                 $power.PowerSupplies | Format-Table Domain,Chassis,MemberId,Model,SerialNumber,Status
             }
         } elseif ($domain.type -eq "UCSM") {
+            Write-Host ""
+            Write-Host "Starting Login for $($domain.name)"
             If (Test-Path -Path $env:HOME\powercliUCSM.Cred) {
                 $credential = Import-CliXml -Path "$env:HOME\powercliUCSM.Cred"
             } Else {
@@ -107,6 +111,8 @@ Do {
     }
     if ($yamlData.cabinets.$($MenuList[$Choice - 1]).rackmounts) {
         foreach ($rackmount in $yamlData.cabinets.$($MenuList[$Choice - 1]).rackmounts) {
+            Write-Host ""
+            Write-Host "Starting Login for $($rackmount.name)"
             If (Test-Path -Path $env:HOME\powercliIMC.Cred) {
                 $credential = Import-CliXml -Path "$env:HOME\powercliIMC.Cred"
             } Else {
