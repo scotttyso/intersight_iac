@@ -545,13 +545,14 @@ def load_previous_configurations(kwargs):
             if os.path.isdir(os.path.join(kwargs.args.dir, dest_dir)):
                 dir_list = os.listdir(os.path.join(kwargs.args.dir, dest_dir))
                 for i in dir_list:
-                    yfile = open(os.path.join(kwargs.args.dir, dest_dir, i), 'r')
-                    data = yaml.safe_load(yfile)
-                    for key, value in data.items():
-                        if not kwargs.imm_dict.orgs.get(key): kwargs.imm_dict.orgs[key] = {}
-                        for k, v in value.items():
-                            if not kwargs.imm_dict.orgs[key].get(k): kwargs.imm_dict.orgs[key][k] = {}
-                            kwargs.imm_dict.orgs[key][k].update(deepcopy(v))
+                    if os.path.isfile(os.path.join(kwargs.args.dir, dest_dir, i)):
+                        yfile = open(os.path.join(kwargs.args.dir, dest_dir, i), 'r')
+                        data = yaml.safe_load(yfile)
+                        for key, value in data.items():
+                            if not kwargs.imm_dict.orgs.get(key): kwargs.imm_dict.orgs[key] = {}
+                            for k, v in value.items():
+                                if not kwargs.imm_dict.orgs[key].get(k): kwargs.imm_dict.orgs[key][k] = {}
+                                kwargs.imm_dict.orgs[key][k].update(deepcopy(v))
     # Return kwargs
     return kwargs
 
@@ -1022,8 +1023,6 @@ def sensitive_var_value(kwargs):
                 varName = 'Persistent Memory Secure Passphrase'
                 valid = validating.length_and_regex_sensitive(rePattern, varName, secure_value, minLength, maxLength)
             elif 'snmp' in sensitive_var:
-                print('matched snmp')
-                exit()
                 jsonVars = json_data['snmp.Policy'].allOf[1].properties
                 minLength = 1
                 maxLength = jsonVars['TrapCommunity']['maxLength']

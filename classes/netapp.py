@@ -3,6 +3,7 @@ from classes import validatingv2 as validating
 from copy import deepcopy
 from dotmap import DotMap
 import json
+import numpy
 import os
 import re
 import requests
@@ -341,17 +342,21 @@ class api(object):
             # Validate Licenses Exist for Each Protocol
             #=====================================================
             prLightPurple(f"\n    Validating Licensing for {i.name}")
-            uri = 'cluster/licensing/licenses'
+            uri = 'cluster/licensing/licenses?fields=state'
             licenseData = get(uri, kwargs)
             for p in kwargs.netapp.cluster[i.name].protocols:
-                license_installed = False
-                for r in licenseData['records']:
-                    r = DotMap(deepcopy(r))
-                    if r.name == p: license_installed = True
-                if license_installed == False:
-                    prRed(f'\n!!! ERROR !!!\nNo License was found for protocol {p}\n')
-                    sys.exit(1)
-
+                if re.search('fcp|iscsi|nfs|nvme_of', p):
+                    license_installed = False
+                    for r in licenseData['records']:
+                        r = DotMap(deepcopy(r))
+                        if r.name == p and r.state == 'compliant': license_installed = True
+                        #elif r.name == p and r.state == 'noncompliant':
+                        #    prRed(f'\n!!! ERROR !!!\nLicense for protocol {p} is {r.state}\n')
+                        #    sys.exit(1)
+                        elif r.name == p: license_installed = True
+                    if license_installed == False:
+                        prRed(f'\n!!! ERROR !!!\nNo License was found for protocol {p}\n')
+                        sys.exit(1)
             #=====================================================
             # Configure Sub-Sections
             #=====================================================
@@ -408,13 +413,13 @@ class api(object):
                 'os_type': i.os_type,
                 'svm': i.svm.toDict()
             }
-            if re.search('fc-nvme|fc', kwargs.dtype):
+            if 'fc' in i.protocol:
                 for w in kwargs.server_profiles[i.profile].wwpns:
                     e = DotMap(w)
                     grpVars['initiators'].append({
                         "comment": f"{i.profile}-{e.name}", "name": e.wwpn
                     })
-            else:
+            elif 'iscsi' in i.protocol:
                 iqn = kwargs.server_profiles[i.profile].iqn
                 grpVars['initiators'].append({"comment": i.profile, "name": iqn})
             igroup(grpVars, kwargs)
@@ -436,7 +441,7 @@ class api(object):
                 'svm': i.svm.toDict()
             }
             for k, v in kwargs.server_profiles.items():
-                if re.search('fc-nvme|fc', kwargs.dtype):
+                if 'fc' in i.protocol:
                     for w in v.wwpns:
                         e = DotMap(w)
                         grpVars['initiators'].append({
@@ -993,7 +998,7 @@ class api(object):
             #=====================================================
             # Configure SVM FCP Interfaces
             #=====================================================
-            if 'fc' in kwargs.dtype:
+            if 'fc' in i.protocol:
                 uri = 'network/fc/interfaces?fields=enabled,data_protocol,location,svm'
                 intfData = get(uri, kwargs)
                 for intf in svm.fcp_interfaces:
@@ -1170,7 +1175,7 @@ class build(object):
             'from':items.autosupport.from_address,
             'is_minimal':False,
             'mail_hosts':items.autosupport.mail_hosts,
-            'transport':items.autosupport.transport,
+            'transport':'https',
             'to':items.autosupport.to_addresses,
         }
         if items.autosupport.get('proxy_url'):
@@ -1287,7 +1292,7 @@ class build(object):
                 #=====================================================
                 # Build Data Luns
                 #=====================================================
-                if re.search('(data|swap|vcls)', str(e.volume_type)):
+                if not e.volume_type == 'boot' and re.search('fcp|iscsi', str(e.protocol)):
                     polVars = {
                         "name": f"/vol/{e.name}/{e.name}",
                         "os_type": f"{e.os_type}",
@@ -1299,7 +1304,7 @@ class build(object):
                     }
                     kwargs.lun_list.append(deepcopy(polVars))
                     api('lun').lun(polVars, kwargs)
-                elif str(e.volume_type) == 'nvme':
+                elif re.search('nvme', str(e.protocol)):
                     kwargs.hostname   = kwargs.netapp.hostname
                     kwargs.password   = 'netapp_password'
                     kwargs.host_prompt= deepcopy(kwargs.netapp.host_prompt)
@@ -1330,7 +1335,7 @@ class build(object):
                                 lun_uuid   = f"uuid.{((child.match).group(1)).replace('-', '')}",
                                 name       = e.name,
                                 path       = '',
-                                protocol   = 'nvme',
+                                protocol   = e.protocol,
                                 size       = e.size,
                                 target     = '',
                                 volume_type= e.volume_type
@@ -1342,8 +1347,6 @@ class build(object):
                     child.sendline('exit')
                     child.expect('closed')
                     child.close()
-
-
 
             return kwargs
 
@@ -1374,19 +1377,30 @@ class build(object):
                 kwargs.lun_results = get(uri, kwargs)
                 lun_results = DotMap(kwargs.lun_results)
                 for v in kwargs.volumes:
-                    for e in lun_results.records:
-                        if re.search('(data|swap|vcls)', v.volume_type) and v.name in e.name:
-                            if not kwargs.get('datastores'):
-                                kwargs.datastores = []
-                            kwargs.datastores.append(DotMap(
-                                lun_uuid   = f"naa.600a0980{((e.serial_number).encode('utf-8').hex())}",
-                                name       = e.name,
-                                path       = v.nas.path,
-                                protocol   = v.protocol,
-                                size       = v.size,
-                                target     = '',
-                                volume_type= v.volume_type
-                            ))
+                    if not kwargs.get('datastores'):
+                        kwargs.datastores = []
+                    if re.search('(data|swap|vcls)', v.volume_type) and re.search('fcp|iscsi', v.protocol):
+                        for e in lun_results.records:
+                            if v.name in e.name:
+                                kwargs.datastores.append(DotMap(
+                                    lun_uuid   = f"naa.600a0980{((e.serial_number).encode('utf-8').hex())}",
+                                    name       = v.name,
+                                    path       = v.nas.path,
+                                    protocol   = v.protocol,
+                                    size       = v.size,
+                                    target     = '',
+                                    volume_type= v.volume_type
+                                ))
+                    elif re.search('(data|swap|vcls)', v.volume_type):
+                        kwargs.datastores.append(DotMap(
+                            lun_uuid   = 'not_applicable',
+                            name       = v.name,
+                            path       = v.nas.path,
+                            protocol   = v.protocol,
+                            size       = v.size,
+                            target     = '',
+                            volume_type= v.volume_type
+                        ))
                 dcount = 0
                 for e in kwargs.datastores:
                     if e.protocol == 'nfs':
@@ -1445,7 +1459,7 @@ class build(object):
             #=====================================================
             # Add FCP Ports if used
             #=====================================================
-            if re.search('(fc|fc-nvme)', kwargs.dtype):
+            if items.nodes.get('fcp_ports'):
                 polVars['interfaces'].update({'fcp':[]})
                 for i in items.nodes.fcp_ports:
                     fcpPort = { "enabled": True, "name": i, "speed": {"configured": items.nodes.fcp_speed} }
@@ -1525,7 +1539,7 @@ class build(object):
         #=====================================================
         polVars = {
             "aggregates": [ {"name": items.svm.agg1}, {"name": items.svm.agg2} ],
-            "banner": items.banner,
+            "banner": items.svm.banner,
             "cluster": items.name,
             "name": items.svm.name,
             "dns":{"domains": kwargs.dns_domains, "servers": kwargs.dns_servers},
@@ -1546,8 +1560,9 @@ class build(object):
             }]
         }
         polVars['protocols'] = {}
-        for p in items.protocols: polVars['protocols'].update({p:{"allowed": True, "enabled": True}})
-
+        for p in items.protocols:
+            if re.search('fcp|iscsi|nfs|nvme_of', p):
+                polVars['protocols'].update({p:{"allowed": True, "enabled": True}})
         #=====================================================
         # Configure Ethernet Interfaces
         #=====================================================
@@ -1567,21 +1582,21 @@ class build(object):
         #=====================================================
         # Configure Fibre-Channel if in Use
         #=====================================================
-        if re.search('fc(-nvme)?', kwargs.dtype):
+        if 'fcp' in items.protocols or 'nvme-fc' in items.protocols:
             polVars['fcp_interfaces'] = []
-            if kwargs.dtype == 'fc':
-                kwargs.netapp.data_protocol = 'fcp'
-                kwargs = configure_fcports(x, items, kwargs)
-                polVars['fcp_interfaces'].extend(kwargs.polVars)
-            else:
-                fcp_temp = kwargs.netapp.fcp_ports
+            if 'nvme-fc' in items.protocols:
+                fcp_temp = items.nodes.fcp_ports
                 half = len(fcp_temp)//2
                 kwargs.netapp.fcp_ports = fcp_temp[:half]
                 kwargs.netapp.data_protocol = 'fcp'
                 kwargs = configure_fcports(x, items, kwargs)
                 polVars['fcp_interfaces'].extend(kwargs.polVars)
                 kwargs.netapp.fcp_ports = fcp_temp[half:]
-                kwargs.netapp.data_protocol = kwargs.dtype
+                kwargs.netapp.data_protocol = 'fc-nvme'
+                kwargs = configure_fcports(x, items, kwargs)
+                polVars['fcp_interfaces'].extend(kwargs.polVars)
+            else:
+                kwargs.netapp.data_protocol = 'fcp'
                 kwargs = configure_fcports(x, items, kwargs)
                 polVars['fcp_interfaces'].extend(kwargs.polVars)
 
@@ -1612,9 +1627,9 @@ class build(object):
             volList.append({
                 "aggregate": items.svm[f'agg{x+1}'],
                 "name": name,
-                "size": 1,
                 "os_type": "netapp",
                 "protocol": "local",
+                "size": 1,
                 "type": "DP",
                 "volume_type": "mirror"
             })
@@ -1630,7 +1645,7 @@ class build(object):
                 "aggregate": agg,
                 "name": volDict.name,
                 "os_type": volDict.os_type,
-                "protocol": volDict.protocol,
+                "protocol": volDict.mount_protocol,
                 "size": volDict.size,
                 "type": "rw",
                 "volume_type": volDict.volume_type
@@ -1995,7 +2010,7 @@ def svm_pexpect(child, host_file, i, kwargs, svm):
     #=====================================================
     cmds = [
         f'vserver modify {svm.name} -aggr-list {svm.aggregates[0].name},{svm.aggregates[1].name}',
-        f'security login banner modify -vserver {svm.name} -message "{i.banner}"'
+        f'security login banner modify -vserver {svm.name} -message "{svm.banner}"'
     ]
     for cmd in cmds:
         child.sendline(cmd)

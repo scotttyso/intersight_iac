@@ -16,8 +16,8 @@ The Script uses argparse to take in the following CLI arguments:
                             5. os_configuration
     t or deployment-type:    Infrastructure Deployment Type. Options Are:
                             1. azure_hci
-                            2. netapp
-                            3. pure
+                            2. flashstack
+                            3. flexpod
                             4. imm_domain
     v or api-key-v3:      Flag for API Key Version 3.
     y or yaml-file:       The input YAML File.
@@ -318,25 +318,26 @@ def main():
     #=================================================================
     # When Deployment Step is initial - Deploy NXOS|Storage|Domain
     #=================================================================
+    kwargs.protocols = ['fcp', 'iscsi', 'nfs', 'nvme-tcp']
     if kwargs.args.deployment_step == 'initial':
-        #==============================================
-        # Configure Switches if configure Set to True
-        #==============================================
-        if kwargs.imm_dict.wizard.get('nxos'):
-            network_config = DotMap(deepcopy(kwargs.imm_dict.wizard.nxos[0]))
-            network_types = ['network', 'ooband']
-            for network_type in network_types:
-                config_count = 0
-                for i in network_config.switches:
-                    if i.switch_type == network_type: config_count += 1
-                if config_count == 2:
-                    kwargs = network.nxos('nxos').config(network_config, network_type, kwargs)
-
-        #==============================================
-        # Configure Storage Appliances
-        #==============================================
-        if kwargs.args.deployment_type == 'flexpod':
-            kwargs = ci.wizard('build').build_netapp(kwargs)
+        ##==============================================
+        ## Configure Switches if configure Set to True
+        ##==============================================
+        #if kwargs.imm_dict.wizard.get('nxos'):
+        #    network_config = DotMap(deepcopy(kwargs.imm_dict.wizard.nxos[0]))
+        #    network_types = ['network', 'ooband']
+        #    for network_type in network_types:
+        #        config_count = 0
+        #        for i in network_config.switches:
+        #            if i.switch_type == network_type: config_count += 1
+        #        if config_count == 2:
+        #            kwargs = network.nxos('nxos').config(network_config, network_type, kwargs)
+        #
+        ##==============================================
+        ## Configure Storage Appliances
+        ##==============================================
+        #if kwargs.args.deployment_type == 'flexpod':
+        #    kwargs = ci.wizard('build').build_netapp(kwargs)
 
         #==============================================
         # Configure Domain
@@ -387,10 +388,10 @@ def main():
             #==============================================
             # Pools
             #==============================================
-            #api = 'isight.pools_class'
-            #if kwargs.imm_dict.orgs[org].get('pools'):
-            #    for pool_type in kwargs.imm_dict.orgs[org]['pools']:
-            #        kwargs = eval(f"{api}(pool_type).pools(kwargs)")
+            api = 'isight.pools_class'
+            if kwargs.imm_dict.orgs[org].get('pools'):
+                for pool_type in kwargs.imm_dict.orgs[org]['pools']:
+                    kwargs = eval(f"{api}(pool_type).pools(kwargs)")
 
             #==============================================
             # Policies
@@ -417,10 +418,9 @@ def main():
                     if kwargs.imm_dict.orgs[org][ptype].get(i):
                         kwargs = eval(f"{api}(i).profiles(kwargs)")
 
-    #=================================================================
-    # Configure Luns/igroups/mapping - Collect Server Identities
-    #=================================================================
-    elif kwargs.args.deployment_step == 'luns':
+        #=================================================================
+        # Configure Luns/igroups/mapping - Collect Server Identities
+        #=================================================================
         #==============================================
         # Loop Through the Orgs
         #==============================================
@@ -460,7 +460,7 @@ def main():
     #=================================================================
     # Configure the Operating System
     #=================================================================
-    if kwargs.args.deployment_step == 'os_configuration':
+    elif kwargs.args.deployment_step == 'os_configuration':
         #==============================================
         # Loop Through the Orgs
         #==============================================

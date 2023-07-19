@@ -115,7 +115,7 @@ class api(object):
                     response= requests.post(f'{url}/api/v1/{uri}', auth=api_auth, json=payload)
                 status = response
 
-                if not re.search('(20[0-9])', str(status)):
+                def send_error():
                     prRed(json.dumps(kwargs.apiBody, indent=4))
                     prRed(kwargs.apiBody)
                     prRed(f'!!! ERROR !!!')
@@ -128,6 +128,16 @@ class api(object):
                     for k, v in (response.json()).items():
                         prRed(f"    {k} is '{v}'")
                     sys.exit(1)
+                if '403' in str(status):
+                    retry_action = False
+                    for k, v in (response.json()).items():
+                        if 'user_action_is_not_allowed' in v: retry_action = True
+                    if i < retries -1 and retry_action == True:
+                        time.sleep(45)
+                        continue
+                    else: send_error()
+
+                elif not re.search('(20[0-9])', str(status)): send_error()
                 api_results = DotMap(response.json())
             except requests.HTTPError as e:
                 if re.search('Your token has expired', str(e)) or re.search('Not Found', str(e)):
@@ -501,14 +511,11 @@ class policies_class(object):
     # iSCSI Adapter Policy Modification
     #=======================================================
     def iscsi_static_target(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.iscsi_static_target.lun_map
-        apiBody['Lun'] = deepcopy(apiBody['Lun'][0].toDict())
-        apiBody['Lun'].update({'ObjectType':'vnic.Lun'})
-        idict = deepcopy(apiBody['Lun'])
-        for k, v in idict.items():
-            if  k in jsonVars:
-                apiBody['Lun'].update({jsonVars[k]:v})
-                apiBody['Lun'].pop(k)
+        apiBody['Lun'] = {
+            'Bootable':True,
+            'LunId': item.lun_id,
+            'ObjectType':'vnic.Lun'
+        }
         return apiBody
 
     #=======================================================
@@ -996,7 +1003,7 @@ class policies_class(object):
         jsonVars = kwargs.ez_data.policies.allOf[1].properties[self.type]
         apiBody['SnmpTraps'] = []
         jvars = jsonVars.trap_map
-        for e in item.snmp_traps:
+        for e in item.snmp_trap_destinations:
             idict = {}
             for k, v in e.items():
                 if k in jvars: idict.update({jvars[k]:v})
@@ -1155,6 +1162,11 @@ class policies_class(object):
             for k, v in i.items():
                 if k in jsonVars: idict.update({jsonVars[k]:v})
             idict.update({'ObjectType':'fabric.QosClass'})
+            if i.priority == 'FC': idict['Mtu'] = 2240
+            elif item.get('jumbo_mtu'):
+                if item.jumbo_mtu == True: idict['Mtu'] = 9216
+                else: idict['Mtu'] = 1500
+            else: idict['Mtu'] = 1500
             apiBody['Classes'].append(idict)
         return apiBody
 
@@ -1191,8 +1203,8 @@ class policies_class(object):
         for x in remove_list: policy_list.remove(x)
         for i in kwargs.item:
             if not i.get('fc_zone_policies'): policy_list.remove('fc_zone_policies')
-            for x in range(0,len(i['names'])):
-                apiBody = {'Name':i['names'][x],'Order':i['placement_pci_order'][x]}
+            for x in range(0,len(i.names)):
+                apiBody = {'Name':i.names[x],'Order':i.placement.pci_order[x]}
                 for k, v in i.items():
                     if k in jsonVars.key_map:
                         apiBody.update({jsonVars.key_map[k]:v})
@@ -1212,8 +1224,10 @@ class policies_class(object):
                 apiBody.update({'SanConnectivityPolicy':{
                     'Moid':scp_moid,'ObjectType':'vnic.SanConnectivityPolicy'
                 }})
+                if x == 0: side = 'A'
+                else: side = 'B'
                 apiBody.update({'Placement':{
-                    'Id':'MLOM','ObjectType':'vnic.PlacementSettings','PciLink':0,'Uplink':0
+                    'Id':'MLOM','ObjectType':'vnic.PlacementSettings','PciLink':0,'SwitchId':side,'Uplink':0
                 }})
                 if i.get('fc_zone_policies'):
                     zone_policies = numpy.array_split(i['fc_zone_policies'], 2)
@@ -1227,23 +1241,19 @@ class policies_class(object):
                             'Moid':kwargs.moids['fc_zone_policies'][pname].moid,
                             'ObjectType':'fabric.FcZonePolicy'}
                         )
-                if i.get('placement_switch_id'):
-                    apiBody['Placement'].update({'SwitchId':i['placement_switch_id']})
-                else:
-                    if x == 0: side = 'A'
-                    else: side = 'B'
-                    apiBody['Placement'].update({'SwitchId':side})
-                place_list = ['placement_pci_links', 'placement_slot_ids', 'placement_uplink_ports']
-                for p in place_list:
-                    count = 0
-                    if i.get(p): count += 1
-                    if count == 1:
-                        if len(i[p]) == 2: pval = i[p][x]
-                        else: pval = i[p][0]
-                        if 'uplink' in p: pvar = 'UplinkPort'
-                        elif 'slot' in p: pvar = 'Id'
-                        else: pvar = 'PciLink'
-                        apiBody['Placement'][pvar] = pval
+                if i.get('placement'):
+                    place_list = ['pci_links', 'slot_ids', 'switch_ids', 'uplink_ports']
+                    for p in place_list:
+                        count = 0
+                        if i.get(p): count += 1
+                        if count == 1:
+                            if len(i[p]) == 2: pval = i[p][x]
+                            else: pval = i[p][0]
+                            if 'uplink' in p: pvar = 'UplinkPort'
+                            elif 'slot' in p: pvar = 'Id'
+                            elif 'switch_id' in p: pvar = 'SwitchId'
+                            else: pvar = 'PciLink'
+                            apiBody['Placement'][pvar] = pval
                 if i.get('vhba_type'):
                     apiBody.update({'Type':i['vhba_type']})
                     apiBody.pop('vhba_type')
@@ -1396,16 +1406,16 @@ class policies_class(object):
         # Create API Body for vNICs
         #=====================================================
         for i in kwargs.item:
-            vnic_count = len(i['names'])
+            vnic_count = len(i.names)
             for x in range(0,vnic_count):
-                apiBody = {'Name':i['names'][x],'Order':i['placement_pci_order'][x]}
+                apiBody = {'Name':i.names[x],'Order':i.placement.pci_order[x]}
                 apiBody.update({'ObjectType':'vnic.EthIf'})
                 if not i.get('cdn_values'):
                     apiBody.update({'Cdn':{
-                        'Value':i['names'][x],'Source':'vnic','ObjectType':'vnic.Cdn'}})
+                        'Value':i.names[x],'Source':'vnic','ObjectType':'vnic.Cdn'}})
                 else:
                     apiBody.update({'Cdn':{
-                        'Value':i['cdn_values'][x],'Source':i['cdn_source'],'ObjectType':'vnic.Cdn'}
+                        'Value':i.cdn_values[x],'Source':i.cdn_source,'ObjectType':'vnic.Cdn'}
                     })
                 for k, v in i.items():
                     if k in jsonVars.key_map:
@@ -1437,27 +1447,24 @@ class policies_class(object):
                 apiBody.update({'LanConnectivityPolicy':{
                     'Moid':lcp_moid,'ObjectType':'vnic.LanConnectivityPolicy'
                 }})
-                apiBody.update({
-                    'Placement':{'Id':'MLOM','ObjectType':'vnic.PlacementSettings','PciLink':0,'Uplink':0}
-                })
-                if i.get('placement_switch_id'):
-                    apiBody['Placement'].update({'SwitchId':i['placement_switch_id']})
-                    apiBody.pop('placement_switch_id')
-                else:
-                    if x == 0: side = 'A'
-                    else: side = 'B'
-                    apiBody['Placement'].update({'SwitchId':side})
-                place_list = ['placement_pci_links', 'placement_slot_ids', 'placement_uplink_ports']
-                for p in place_list:
-                    count = 0
-                    if i.get(p): count += 1
-                    if count == 1:
-                        if len(i[p]) == 2: pval = i[p][x]
-                        else: pval = i[p][0]
-                        if 'uplink' in p: pvar = 'UplinkPort'
-                        elif 'slot' in p: pvar = 'Id'
-                        else: pvar = 'PciLink'
-                        apiBody['Placement'][pvar] = pval
+                if x == 0: side = 'A'
+                else: side = 'B'
+                apiBody.update({'Placement':{
+                    'Id':'MLOM','ObjectType':'vnic.PlacementSettings','PciLink':0,'SwitchId':side,'Uplink':0
+                }})
+                if i.get('placement'):
+                    place_list = ['pci_links', 'slot_ids', 'switch_ids', 'uplink_ports']
+                    for p in place_list:
+                        count = 0
+                        if i.get(p): count += 1
+                        if count == 1:
+                            if len(i[p]) == 2: pval = i[p][x]
+                            else: pval = i[p][0]
+                            if 'uplink' in p: pvar = 'UplinkPort'
+                            elif 'slot' in p: pvar = 'Id'
+                            elif 'switch_id' in p: pvar = 'SwitchId'
+                            else: pvar = 'PciLink'
+                            apiBody['Placement'][pvar] = pval
                 if i.get('mac_address_pools'):
                     pname = i['mac_address_pools'][x]
                     ptype = 'mac_address_pool'
@@ -1553,7 +1560,7 @@ class pools_class(object):
                         'From':i['from'], 'ObjectType':f'ippool.{x}Block', 'Size':i['size']
                     })
             if item.get(f'{xlower}_configuration'):
-                ipcfg = item[f'{xlower}_configuration'][0]
+                ipcfg = item[f'{xlower}_configuration']
                 apiBody.update({f'{x}Config':{
                     'Gateway':ipcfg['gateway'], 'ObjectType':f'ippool.{x}Config',
                     'PrimaryDns':ipcfg['primary_dns'], 'SecondaryDns':ipcfg['secondary_dns']
@@ -2021,6 +2028,7 @@ def build_pmoid_dictionary(api_results, kwargs):
                 if i.get('ChassisId'):
                     apiDict[iname]['id'] = i.ChassisId
                 if i.get('SourceObjectType'): apiDict[iname].object_type = i.SourceObjectType
+                if i.get('StorageControllers'): apiDict[iname].storage_controller = i.StorageControllers
             if i.get('Selectors'):
                 apiDict[iname].selectors = i.Selectors
             if i.get('SwitchId'): apiDict[iname].switch_id = i.SwitchId
@@ -2085,76 +2093,40 @@ def profile_domain(item, kwargs):
                 serial_moid = kwargs.serial_moids[item.serial_numbers[x]].moid
             else: validating.error_serial_number(sw_name, item.serial_numbers[x])
             apiBody.update({'AssignedSwitch':{'Moid':serial_moid,'ObjectType':'network.Element'}})
+        #=====================================================
+        # Attach Policies to Switch Profiles
+        #=====================================================
+        for p in kwargs.jsonVars.policy_list:
+            pshort = ((p.replace('_policy', '')).replace('_pool', '')).replace('_policies', '')
+            pObject = kwargs.ez_data.policies.allOf[1].properties[pshort]['object_type']
+            add_policy = False
+            if item.get(p):
+                if len(item[p]) > 0: add_policy = True
+            if add_policy == True:
+                if not apiBody.get('PolicyBucket'): apiBody.update({'PolicyBucket':[]})
+                if type(item[p]) == list:
+                    if len(item[p]) == 2: ppolicy = item[p][x]
+                    else: ppolicy = item[p][0]
+                else: ppolicy = item[p]
+                if not kwargs.policy_moids[p].get(ppolicy):
+                    validating.error_policy_doesnt_exist(p, ppolicy, item.name, kwargs.type, 'Profile')
+                pmoid = kwargs.policy_moids[p][ppolicy].moid
+                pbucket = {'Moid':pmoid,'ObjectType':pObject}
+                apiBody['PolicyBucket'].append(pbucket)
+
+        #=====================================================
+        # Attach Policies to Switch Profiles
+        #=====================================================
         kwargs.apiBody= apiBody
         kwargs.qtype  = 'switch'
         kwargs.uri    = kwargs.jsonVars.uri_switch
+        print(kwargs.apiBody)
         if kwargs.moids['switch'].get(apiBody['Name']):
             kwargs.method = 'patch'
             kwargs.pmoid = kwargs.moids['switch'][apiBody['Name']].moid
         else: kwargs.method = 'post'
         kwargs = api('switch').calls(kwargs)
         kwargs.moids['switch'][sw_name].moid = kwargs.pmoid
-    #=====================================================
-    # Attach Switch Profiles to the Policies
-    #=====================================================
-    profiles = []
-    for i in range(0,len(sw_names)):
-        profile_moid = kwargs.moids['switch'][sw_names[i]].moid
-        profiles.append(DotMap(
-            Moid=profile_moid,ObjectType='fabric.SwitchProfile'))
-    #=====================================================
-    # Get Policy Moid and Data
-    #=====================================================
-    def get_pdict(item, p, policy_name):
-        if not kwargs.policy_moids[p].get(policy_name):
-            validating.error_policy_doesnt_exist(p, policy_name, item['name'], 'Domain', 'Profile')
-        pdict = kwargs.policy_moids[p][policy_name]
-        return pdict
-    #=====================================================
-    # Update the Policy Objects
-    #=====================================================
-    def update_policy(kwargs):
-        jsonVars      = kwargs.ez_data.policies.allOf[1].properties[kwargs.ptype]
-        kwargs.apiBody= {'Name':kwargs.name, 'ObjectType':jsonVars.object_type, 'Profiles': []}
-        for i in kwargs.result: kwargs.apiBody['Profiles'].append(i.toDict())
-        kwargs.method = 'patch'
-        kwargs.qtype  = f'switch {kwargs.ptype}'
-        kwargs.uri    = kwargs.ez_data.policies.allOf[1].properties[kwargs.ptype].uri
-        kwargs = api(kwargs.ptype).calls(kwargs)
-        return kwargs
-    #=====================================================
-    # Attach Policies to the Domain Switch Profiles
-    #=====================================================
-    for p in kwargs.jsonVars.policy_list:
-        kwargs.ptype = ((p.replace('_policy', '')).replace('_pool', '')).replace('_policies', '')
-        add_to_policy = False
-        if item.get(p):
-            if len(item[p]) > 0: add_to_policy = True
-        if add_to_policy == True:
-            if type(item[p]) == list:
-                for x in range(0,len(item[p])):
-                    pdict       = get_pdict(item, p, item[p][x])
-                    kwargs.name = item[p][x]
-                    kwargs.pmoid= pdict.moid
-                    if pdict.get('profiles'): pol_profiles = pdict.profiles
-                    else: pol_profiles = []
-                    if len(item[p]) == 2: pol_profiles.append(profiles[x])
-                    else: pol_profiles.extend(profiles)
-                    kwargs.result = []
-                    for z in pol_profiles:
-                        if z not in kwargs.result: kwargs.result.append(z)
-                    kwargs = update_policy(kwargs)
-            else:
-                pdict       = get_pdict(item, p, item[p])
-                kwargs.name = item[p]
-                kwargs.pmoid= pdict.moid
-                if pdict.get('profiles'): pol_profiles = pdict.profiles
-                else: pol_profiles = []
-                pol_profiles.extend(profiles)
-                kwargs.result = []
-                for z in pol_profiles:
-                    if z not in kwargs.result: kwargs.result.append(z)
-                kwargs = update_policy(kwargs)
 
     # Retrun to profiles Module
     return kwargs
