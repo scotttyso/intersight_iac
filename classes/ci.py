@@ -191,6 +191,11 @@ class imm(object):
             kwargs= isight.api(kwargs.qtype).calls(kwargs)
             cpu   = kwargs.results[0]
             kwargs.api_filter= f"Ancestors/any(t:t/Moid eq '{i.Moid}')"
+            kwargs.qtype     = 'storage_controllers'
+            kwargs.uri       = 'storage/Controllers'
+            kwargs = isight.api(kwargs.qtype).calls(kwargs)
+            storage= kwargs.results
+            kwargs.api_filter= f"Ancestors/any(t:t/Moid eq '{i.Moid}')"
             kwargs.qtype     = 'tpm'
             kwargs.uri       = 'equipment/Tpms'
             kwargs= isight.api(kwargs.qtype).calls(kwargs)
@@ -202,6 +207,9 @@ class imm(object):
             vic    = kwargs.results
             if 'Intel' in cpu.Vendor: cv = 'intel'
             else: cv = 'amd'
+            storage_controllers = DotMap()
+            for e in storage:
+                storage_controllers[i.Model] = i.Moid
             vics = []
             for e in vic:
                 if re.search('(V5)', e.Model): vic_generation = 'gen5'
@@ -230,21 +238,22 @@ class imm(object):
                     template = f"{sg}-{cv}-vic-{vics[0].vic_gen}-{vs1}-{vs2}"
                 else: template = f"{sg}-{cv}-vic-{vics[0].vic_gen}-{vs1}"
             kwargs.servers[i.Serial] = DotMap(
-                chassis_id  = i.ChassisId,
-                chassis_moid= i.Parent.Moid,
-                cpu         = cv,
-                domain      = kwargs.domain.name,
-                firmware    = i.Firmware,
-                gen         = sg,
-                moid        = i.Moid,
-                model       = i.Model,
-                object_type = i.SourceObjectType,
-                serial      = i.Serial,
-                server_id   = i.ServerId,
-                slot        = i.SlotId,
-                template    = template,
-                tpm         = tpm,
-                vics        = vics
+                chassis_id         = i.ChassisId,
+                chassis_moid       = i.Parent.Moid,
+                cpu                = cv,
+                domain             = kwargs.domain.name,
+                firmware           = i.Firmware,
+                gen                = sg,
+                moid               = i.Moid,
+                model              = i.Model,
+                object_type        = i.SourceObjectType,
+                serial             = i.Serial,
+                server_id          = i.ServerId,
+                slot               = i.SlotId,
+                storage_controllers= storage_controllers,
+                template           = template,
+                tpm                = tpm,
+                vics               = vics
             )
             if i.SourceObjectType == 'compute.RackUnit': kwargs.servers[i.Serial].pop('chassis_moid')
             return kwargs
@@ -2510,11 +2519,8 @@ class wizard(object):
         # Existing OS Install
         #==========================================
         AzureStack= False
-        bnames    = []
-        m2_boot   = False
         names     = []
         OpenShift = False
-        rnames    = []
         san_boot  = False
         VMware    = False
         for k,v in kwargs.server_profiles.items():
@@ -2537,42 +2543,13 @@ class wizard(object):
             elif v.os_type == 'OpenShift': OpenShift = True
             elif v.os_type == 'VMware': VMware = True
             if v.boot_volume == 'm2':
-                if v.object_type == 'compute.Blade':  bnames.append(v.serial)
-                else: rnames.append(v.serial)
-                m2_boot = True
+                if not v.storage_controllers.get('UCS-M2-HWRAID'):
+                    prRed(f"!!! ERROR !!!\n  Could not determine the Controller Slot for:\n")
+                    prRed(f"  * Profile: {kwargs.server_profiles[k].name}\n")
+                    prRed(f"  * Serial:  {kwargs.server_profiles[k].serial}\n")
+                    sys.exit(1)
             elif v.boot_volume == 'san':
                 san_boot = True
-
-        if len(bnames) > 0:
-            kwargs.names = bnames
-            kwargs.pmoid = v.moid
-            kwargs.qtype = 'serial_number'
-            kwargs.uri   = 'compute/Blades'
-            kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-            blade_pmoids = deepcopy(kwargs.pmoids)
-        if len(rnames) > 0:
-            kwargs.names = rnames
-            kwargs.pmoid = v.moid
-            kwargs.qtype = 'serial_number'
-            kwargs.uri   = 'compute/RackUnits'
-            kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-            rack_pmoids = deepcopy(kwargs.pmoids)
-        for k, v in server_profiles.items():
-            controllers = []
-            if v.boot_volume == 'm2':
-                if v.object_type == 'compute.Blade':
-                    for i in blade_pmoids[v.serial].storage_controllers: controllers.append(i.Moid)
-                else:
-                    for i in rack_pmoids[v.serial].storage_controllers: controllers.append(i.Moid)
-                for i in controllers:
-                    kwargs.method = 'get_by_moid'
-                    kwargs.pmoid = i
-                    kwargs.uri   = 'storage/Controllers'
-                    kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-                    print(kwargs.results)
-                    if kwargs.results.Model == 'UCS-M2-HWRAID' or kwargs.results.PciSlot == 'MSTOR-RAID':
-                        kwargs.server_profiles[k].controller_id = kwargs.results.ControllerId
-                        break
 
         #==========================================
         # Deploy Operating System for each Profile
@@ -3193,7 +3170,7 @@ def os_installation_body(k, v, kwargs):
             "Id": "0",
             "Name": "MStorBootVd",
             "ObjectType": "os.VirtualDrive",
-            "StorageControllerSlotId": v.controller_id
+            "StorageControllerSlotId": v.storage_controllers['UCS-M2-HWRAID']
         }
     return apiBody
 
