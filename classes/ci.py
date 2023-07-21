@@ -2537,8 +2537,8 @@ class wizard(object):
             elif v.os_type == 'OpenShift': OpenShift = True
             elif v.os_type == 'VMware': VMware = True
             if v.boot_volume == 'm2':
-                if v.object_type == 'compute.Blade':  bnames.append
-                else: rnames.append
+                if v.object_type == 'compute.Blade':  bnames.append(v.serial)
+                else: rnames.append(v.serial)
                 m2_boot = True
             elif v.boot_volume == 'san':
                 san_boot = True
@@ -3167,12 +3167,7 @@ def os_installation_body(k, v, kwargs):
             'ObjectType': 'softwarerepository.OperatingSystemFile',
         },
         'InstallMethod': 'vMedia',
-        'InstallTarget': {
-            'InitiatorWwpn': v.wwpns[0].wwpn,
-            'LunId': 0,
-            'ObjectType': 'os.FibreChannelTarget',
-            'TargetWwpn': kwargs.san_target
-        },
+        'InstallTarget': {},
         'Name': f'{k}-osinstall',
         'ObjectType': 'os.Install',
         'Organization': { 'Moid': kwargs.org_moid,
