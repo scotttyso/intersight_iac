@@ -1645,7 +1645,7 @@ class build(object):
                 "aggregate": agg,
                 "name": volDict.name,
                 "os_type": volDict.os_type,
-                "protocol": volDict.mount_protocol,
+                "protocol": volDict.protocol,
                 "size": volDict.size,
                 "type": "rw",
                 "volume_type": volDict.volume_type

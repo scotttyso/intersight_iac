@@ -1,0 +1,1235 @@
+{
+    "Catalog": {
+      "Moid": "5c81dc95696f6e2d3010731d",
+      "ObjectType": "workflow.Catalog",
+      "link": "https://www.intersight.com/api/v1/workflow/Catalogs/5c81dc95696f6e2d3010731d"
+    },
+    "DefaultVersion": true,
+    "Description": "FlexPod Deployment Wizard",
+    "InputDefinition": [
+      {
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": true,
+          "Value": "fc"
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "Deployment Type",
+        "Name": "deployment_type",
+        "ObjectType": "workflow.PrimitiveDataType",
+        "Properties": {
+          "Constraints": {
+            "EnumList": [
+              {
+                "Label": "fc",
+                "ObjectType": "workflow.EnumEntry",
+                "Value": "fc"
+              },
+              {
+                "Label": "fc-nvme",
+                "ObjectType": "workflow.EnumEntry",
+                "Value": "fc-nvme"
+              },
+              {
+                "Label": "iscsi",
+                "ObjectType": "workflow.EnumEntry",
+                "Value": "iscsi"
+              },
+              {
+                "Label": "nvme-tcp",
+                "ObjectType": "workflow.EnumEntry",
+                "Value": "nvme-tcp"
+              }
+            ],
+            "Max": 0,
+            "Min": 0,
+            "ObjectType": "workflow.Constraints",
+            "Regex": ""
+          },
+          "InventorySelector": [],
+          "ObjectType": "workflow.PrimitiveDataProperty",
+          "Secure": false,
+          "Type": "enum"
+        },
+        "Required": true
+      },
+      {
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": false,
+          "Value": "644be4887564613001fc7206"
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "Intersight API Key Id",
+        "Name": "apikeyid",
+        "ObjectType": "workflow.PrimitiveDataType",
+        "Properties": {
+          "Constraints": {
+            "EnumList": [],
+            "Max": 0,
+            "Min": 0,
+            "ObjectType": "workflow.Constraints",
+            "Regex": ""
+          },
+          "InventorySelector": [
+            {
+              "DisplayAttributes": [
+                "Purpose"
+              ],
+              "ObjectType": "workflow.MoReferenceProperty",
+              "Selector": "/api/v1/iam/ApiKeys",
+              "SelectorProperty": {
+                "Body": null,
+                "Method": "GET",
+                "ObjectType": "workflow.SelectorProperty"
+              },
+              "ValueAttribute": "Moid"
+            }
+          ],
+          "ObjectType": "workflow.PrimitiveDataProperty",
+          "Secure": false,
+          "Type": "string"
+        },
+        "Required": false
+      },
+      {
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": true,
+          "Value": {
+            "dhcp_servers": [
+              "10.101.128.15",
+              "10.101.128.16"
+            ],
+            "dns_domains": [
+              "example.com"
+            ],
+            "dns_servers": [
+              "10.101.128.15",
+              "10.101.128.16"
+            ],
+            "ntp_servers": [
+              "10.101.128.15",
+              "10.101.128.16"
+            ],
+            "timezone": "America/New_York"
+          }
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "Protocols",
+        "Name": "protocols",
+        "ObjectType": "workflow.CustomDataType",
+        "Properties": {
+          "CatalogMoid": "5c81dc95696f6e2d3010731d",
+          "CustomDataTypeId": "643c3069696f6e2d30255242",
+          "CustomDataTypeName": "ci_protocols",
+          "ObjectType": "workflow.CustomDataProperty"
+        },
+        "Required": false
+      },
+      {
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": true,
+          "Value": {
+            "cfg_qos_priorities": false,
+            "discovery_protocol": "cdp",
+            "domains": [
+              {
+                "eth_breakout_speed": "25G",
+                "eth_uplink_ports": [
+                  "eth1/1",
+                  "eth1/2"
+                ],
+                "eth_uplink_speed": "Auto",
+                "fcp_breakout_speed": "32Gbps",
+                "fcp_ports": [
+                  "fc1/35/1",
+                  "fc1/36/1"
+                ],
+                "network_data": [
+                  "eth1/1",
+                  "eth1/2"
+                ],
+                "network_management": "eth1/6",
+                "profiles": [
+                  {
+                    "domain_ports": [
+                      "eth1/5",
+                      "eth1/6"
+                    ],
+                    "equipment_type": "Chassis",
+                    "identifier": 1,
+                    "inband_start": "198.18.1.21",
+                    "os_type": "VMware",
+                    "profile_start": "flexpod-esx01",
+                    "suffix_digits": 2
+                  },
+                  {
+                    "domain_ports": [
+                      "eth1/7",
+                      "eth1/8"
+                    ],
+                    "equipment_type": "Chassis",
+                    "identifier": 2,
+                    "inband_start": "198.18.1.29",
+                    "os_type": "VMware",
+                    "profile_start": "flexpod-esx09",
+                    "suffix_digits": 2
+                  }
+                ],
+                "serial_numbers": [
+                  "FDO2416170G",
+                  "FDO2416171W"
+                ],
+                "switch_mode": "switch",
+                "vsans": [
+                  100,
+                  200
+                ]
+              }
+            ],
+            "firmware": "5.1(0.230054)",
+            "organization": "default",
+            "policies": {
+              "local_user": "admin",
+              "snmp": {
+                "contact": "admin@example.com",
+                "location": "Example Data Center",
+                "snmp_servers": [
+                  "198.18.1.161",
+                  "198.18.2.161"
+                ],
+                "username": "snmpadmin"
+              },
+              "syslog_servers": [
+                "198.18.5.14",
+                "198.19.5.14"
+              ]
+            },
+            "pools_prefix": "01",
+            "virtualization": {
+              "datacenter": "flexpod",
+              "license_type": "enterprise",
+              "type": "vmware",
+              "vcenter": "vcenter.example.com",
+              "vcenter_username": "administrator@vcenter.local",
+              "virtual_switches": [
+                {
+                  "alternate_name": "mgmt",
+                  "data_types": [
+                    "management"
+                  ],
+                  "name": "vswitch0",
+                  "type": "standard"
+                },
+                {
+                  "data_types": [
+                    "migration"
+                  ],
+                  "name": "vni",
+                  "type": "dvs"
+                },
+                {
+                  "data_types": [
+                    "storage"
+                  ],
+                  "name": "data",
+                  "type": "dvs"
+                },
+                {
+                  "data_types": [
+                    "guests"
+                  ],
+                  "name": "guests",
+                  "type": "dvs"
+                }
+              ]
+            }
+          }
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "Intersight",
+        "Name": "imm",
+        "ObjectType": "workflow.CustomDataType",
+        "Properties": {
+          "CatalogMoid": "5c81dc95696f6e2d3010731d",
+          "CustomDataTypeId": "643c306a696f6e2d3025528d",
+          "CustomDataTypeName": "ci_imm_deploy",
+          "ObjectType": "workflow.CustomDataProperty"
+        },
+        "Required": false
+      },
+      {
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": true,
+          "Value": {
+            "IspasswordSet": true,
+            "autosupport": {
+              "from_address": "admin@example.com",
+              "mail_hosts": [
+                "smtp.example.com"
+              ],
+              "to_addresses": [
+                "admin@example.com"
+              ]
+            },
+            "clusters": [
+              {
+                "cluster_name": "flexpod",
+                "nodes": {
+                  "data_ports": [
+                    "e0e",
+                    "e0g"
+                  ],
+                  "data_speed": "100",
+                  "fcp_ports": [
+                    "1a",
+                    "1c"
+                  ],
+                  "fcp_speed": "32",
+                  "network_data": [
+                    "eth1/1",
+                    "eth1/2"
+                  ],
+                  "network_management": "eth1/3",
+                  "node01": "flexpod-ct0",
+                  "node02": "flexpod-ct1"
+                },
+                "svm": "FLEXPOD",
+                "volumes": [
+                  {
+                    "name": "audit_log",
+                    "os_type": "netapp",
+                    "protocol": "local",
+                    "size": 50,
+                    "volume_type": "audit"
+                  },
+                  {
+                    "name": "infra_datastore",
+                    "os_type": "vmware",
+                    "protocol": "nfs",
+                    "size": 1024,
+                    "volume_type": "data"
+                  },
+                  {
+                    "name": "infra_swap",
+                    "os_type": "vmware",
+                    "protocol": "nvme-fc",
+                    "size": 256,
+                    "volume_type": "swap"
+                  },
+                  {
+                    "name": "esxi_boot",
+                    "os_type": "vmware",
+                    "protocol": "fcp",
+                    "size": 1024,
+                    "volume_type": "boot"
+                  },
+                  {
+                    "name": "vCLS",
+                    "os_type": "vmware",
+                    "protocol": "nvme-fc",
+                    "size": 128,
+                    "volume_type": "vcls"
+                  },
+                  {
+                    "name": "nvme_datastore",
+                    "os_type": "nvme-fc",
+                    "size": 1024,
+                    "volume_type": "nvme"
+                  }
+                ]
+              }
+            ],
+            "login_banner": "Access restricted to authorized users",
+            "snmp": {
+              "IsauthSet": true,
+              "IsprivSet": true,
+              "snmp_contact": "admin@example.com",
+              "snmp_location": "Example DC 1",
+              "snmp_username": "snmpadmin",
+              "trap_server": "snmp-traps.example.com"
+            },
+            "username": "admin"
+          }
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "NetApp",
+        "Name": "netapp",
+        "ObjectType": "workflow.CustomDataType",
+        "Properties": {
+          "CatalogMoid": "5c81dc95696f6e2d3010731d",
+          "CustomDataTypeId": "644bd5b3696f6e300122286a",
+          "CustomDataTypeName": "CINetappConfig",
+          "ObjectType": "workflow.CustomDataProperty"
+        },
+        "Required": false
+      },
+      {
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": true,
+          "Value": true
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "Configure NXOS",
+        "Name": "config_nxos",
+        "ObjectType": "workflow.PrimitiveDataType",
+        "Properties": {
+          "Constraints": {
+            "EnumList": [],
+            "Max": 0,
+            "Min": 0,
+            "ObjectType": "workflow.Constraints",
+            "Regex": ""
+          },
+          "InventorySelector": [],
+          "ObjectType": "workflow.PrimitiveDataProperty",
+          "Secure": false,
+          "Type": "boolean"
+        },
+        "Required": false
+      },
+      {
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": true,
+          "Value": {
+            "switches": [
+              {
+                "breakout_speed": "25G",
+                "configure_vpc": true,
+                "hostname": "sw1",
+                "switch_type": "network",
+                "vpc_domain_id": 101,
+                "vpc_keepalive_ip": "198.18.1.1/24",
+                "vpc_keepalive_ports": [
+                  "mgmt0"
+                ],
+                "vpc_peer_ports": [
+                  "eth1/35",
+                  "eth1/36"
+                ]
+              },
+              {
+                "breakout_speed": "25G",
+                "configure_vpc": true,
+                "hostname": "sw2",
+                "switch_type": "network",
+                "vpc_domain_id": 101,
+                "vpc_keepalive_ip": "198.18.1.2/24",
+                "vpc_keepalive_ports": [
+                  "mgmt0"
+                ],
+                "vpc_peer_ports": [
+                  "eth1/35",
+                  "eth1/36"
+                ]
+              },
+              {
+                "breakout_speed": "25G",
+                "configure_vpc": false,
+                "hostname": "oob01",
+                "switch_type": "ooband"
+              },
+              {
+                "breakout_speed": "25G",
+                "configure_vpc": false,
+                "hostname": "oob02",
+                "switch_type": "ooband"
+              }
+            ],
+            "username": "admin"
+          }
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "NXOS Configration",
+        "Name": "nxos",
+        "ObjectType": "workflow.CustomDataType",
+        "Properties": {
+          "CatalogMoid": "5c81dc95696f6e2d3010731d",
+          "CustomDataTypeId": "645d2a8d696f6e30018f8dec",
+          "CustomDataTypeName": "ci_nxos_config",
+          "ObjectType": "workflow.CustomDataProperty"
+        },
+        "Required": false
+      },
+      {
+        "ArrayItemType": {
+          "ObjectType": "workflow.CustomArrayItem",
+          "Properties": {
+            "CatalogMoid": "5c81dc95696f6e2d3010731d",
+            "CustomDataTypeId": "",
+            "CustomDataTypeName": "ci_vlans",
+            "ObjectType": "workflow.CustomDataProperty"
+          }
+        },
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": true,
+          "Value": [
+            {
+              "configure_l2": false,
+              "configure_l3": false,
+              "disjoint": false,
+              "name": "OOB-MGMT",
+              "native_vlan": false,
+              "network": "198.18.0.1/24",
+              "ranges_controller": "198.18.0.25-29",
+              "ranges_pool": "198.18.0.159-170",
+              "switch_type": "ooband",
+              "vlan_id": 1000,
+              "vlan_type": "ooband"
+            },
+            {
+              "configure_l2": true,
+              "configure_l3": true,
+              "disjoint": true,
+              "name": "IB-MGMT",
+              "native_vlan": true,
+              "network": "198.18.1.1/24",
+              "ranges_controller": "198.18.1.11-12",
+              "ranges_pool": "198.18.1.101-150",
+              "ranges_server": "198.18.1.21-50",
+              "switch_type": "network",
+              "vlan_id": 1001,
+              "vlan_type": "inband"
+            },
+            {
+              "configure_l2": true,
+              "configure_l3": true,
+              "disjoint": false,
+              "name": "vMotion",
+              "native_vlan": false,
+              "network": "198.18.2.1/24",
+              "ranges_server": "198.18.2.21-50",
+              "switch_type": "network",
+              "vlan_id": 1002,
+              "vlan_type": "migration"
+            },
+            {
+              "configure_l2": true,
+              "configure_l3": true,
+              "disjoint": false,
+              "name": "NVMe-TCP-A",
+              "native_vlan": false,
+              "network": "198.18.3.1/24",
+              "ranges_controller": "198.18.3.11-12",
+              "ranges_server": "198.18.3.21-50",
+              "switch_type": "network",
+              "vlan_id": 1013,
+              "vlan_type": "nvme"
+            },
+            {
+              "configure_l2": true,
+              "configure_l3": true,
+              "disjoint": false,
+              "name": "NVMe-TCP-B",
+              "native_vlan": false,
+              "network": "198.18.4.1/24",
+              "ranges_controller": "198.18.4.11-12",
+              "ranges_server": "198.18.4.21-50",
+              "switch_type": "network",
+              "vlan_id": 1014,
+              "vlan_type": "nvme"
+            },
+            {
+              "configure_l2": true,
+              "configure_l3": true,
+              "disjoint": false,
+              "name": "NFS",
+              "native_vlan": false,
+              "network": "198.18.5.1/24",
+              "ranges_controller": "198.18.5.11-12",
+              "ranges_server": "198.18.5.21-50",
+              "switch_type": "network",
+              "vlan_id": 1015,
+              "vlan_type": "nfs"
+            }
+          ]
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "VLANS",
+        "Max": 100,
+        "Min": 0,
+        "Name": "vlans",
+        "ObjectType": "workflow.ArrayDataType",
+        "Required": false
+      },
+      {
+        "ArrayItemType": {
+          "ObjectType": "workflow.CustomArrayItem",
+          "Properties": {
+            "CatalogMoid": "5c81dc95696f6e2d3010731d",
+            "CustomDataTypeId": "",
+            "CustomDataTypeName": "ci_vlan_ranges",
+            "ObjectType": "workflow.CustomDataProperty"
+          }
+        },
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": true,
+          "Value": [
+            {
+              "configure_network": true,
+              "name_prefix": "vm-data",
+              "vlan_range": "1003-1009"
+            },
+            {
+              "configure_network": false,
+              "name_prefix": "vm-data",
+              "vlan_range": "2001-2009"
+            }
+          ]
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "VLAN Ranges",
+        "Max": 100,
+        "Min": 0,
+        "Name": "vlan_ranges",
+        "ObjectType": "workflow.ArrayDataType",
+        "Required": false
+      },
+      {
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": false,
+          "Value": "-----BEGIN RSA PRIVATE KEY----- MIIEpAIBAAKCAQEA1Alwid9E/O0phiKCDIwcTK1tfa/dHEdNmcdoAntsnMHlSc8f kKYNAuJcVSn6b05sk/HM38WwYfWgAt4z87wwcrmRsA5ACWR0lgJ4XYu/6jQJ8kr0 4RpNqYC6GqPGh6+nYakBn0OFa5tQhqQ3cslv7Se6+/9QiPK5Y7MzCLh1C39ddUQp LipldBC2+p7lvyywl2bXs9yBPblcMHyObobGScxkuxTIj2NP6HljwSDeO6NiocYi l1ks0xx5d5hUmZ2WElgORTs1DrP9g0XxqjBrJX7Tj54i32VxDep3HnT9KTSWyt5M 6XDYdNQ15+HPfchIv0l3oJipeQlKDBlskrju3wIDAQABAoIBAQCb5YjZxc+aSuEB 3zNQ+F8CPWzIQVpHpWE31HXzhT25D5J+rwudNYlReo66iw+3cKjCKcEhMd9aVtbb 5PW7mbzhTPEByahpf3N8q7pFxS9IihRaEaR0MPuyyZOLbKjWMF7XngQ0Tde1407U f77I5bQmYNTI3NIgrp2B4Up/eeeMmDO8DwYNlxuSvu8SYKAvWE/BUhQBEM7A3NP/ ctXOq8DO55GEH4cPZQzIINe+NjoDKqyhPW2oxorGzTpCXJ8BxlExJVQZDH0K8R6g aujcXqLp0ZbgBum95ydzb5EBC1+TPOYbrUl9jC2/WiWNbeiAU6KyVbw7w8w3jzFJ olYOwO0pAoGBANdXuN2n9LNUMTuWe61YXHV9BrCaqSCTovz8jhbVAIlyuCfvRqLF XH7wLCJ43nv2bTdzv3sUkHmNQS0wQK8lKXiLtrS4aWAY2ANc7XJ0jh/buQ/rVhqg LoVmDAjmGQU0PmDBrUCuxu3BA7OMtI0AYtQP0GW1UcdpfUXRYfxOSp+1AoGBAPwR 79MFJMdfE8x1WPeuOIr/7dhKxUkZK7r1sTl6pfwYHJpeJynerrOdjgvFWGpDnTUR RcLQBBLnCGHuReDO2v0E9kDWhZTOK9/KM7QyzgydhDMr1wzcBihBoM9IZZIox+Wm OhbggvoxHmglEBpnMBaJVb9CS8a6wGbwFr9dWSjDAoGACWGJ7SYO8+z8BBOHKcMK rBeZPgJO0dt8ozbBXd9DmblEqoCy/A5K/ECsO4g2cQIIOf0x30PDE3iC2VwbxUWC K/0yJWdPN999MZBPy8emFV82Dap74scNn8QVTCHx/xcKjJ6DVKkIg30AE0dS6j2V EJXrxzKB8IT47xyy/xHOEG0CgYAbvyW1BsXrpE2bnfczHFxhAJb/zgs1Zq3noI/n kdafj0/mtiJ9e2Ojpd4y8YAwAk1VwBb7wMYSBphnn0DV5C861sb8kCCYJrGxqqJS XZ1MyjH5KAQ+CCItYDwBVSjJE/AdGVUfm4sPW0TLlfjVzzH96RQlP3jz4S64pgj6 +52K3QKBgQCzPIKzSKzoAxK/EmtIgPPrzJjpvd0kPVICjKG88CrgpUuCI3iMS5ZP 53NWs0FZPDjkZ6JDnV/BQifvCEZTk1Lr7kIvCieR7hcSwALxEpN4Zq+x6/6PeBhl giNkpMux05WIKDhxcmeExeNF5cG3SuKkpxllQXv5JmxP48/YJdw/rw== -----END RSA PRIVATE KEY-----"
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "API Key",
+        "Name": "api_key",
+        "ObjectType": "workflow.PrimitiveDataType",
+        "Properties": {
+          "Constraints": {
+            "EnumList": [],
+            "Max": 0,
+            "Min": 0,
+            "ObjectType": "workflow.Constraints",
+            "Regex": ""
+          },
+          "InventorySelector": [],
+          "ObjectType": "workflow.PrimitiveDataProperty",
+          "Secure": false,
+          "Type": "string"
+        },
+        "Required": false
+      },
+      {
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": false,
+          "Value": "643c306b696f6e2d302552b8"
+        },
+        "Description": "The Moid of the workflow you want to get the current running Infos from",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "Workflow Definition Moid",
+        "Name": "moid",
+        "ObjectType": "workflow.PrimitiveDataType",
+        "Properties": {
+          "Constraints": {
+            "EnumList": [],
+            "Max": 0,
+            "Min": 0,
+            "ObjectType": "workflow.Constraints",
+            "Regex": ""
+          },
+          "InventorySelector": [],
+          "ObjectType": "workflow.PrimitiveDataProperty",
+          "Secure": false,
+          "Type": "string"
+        },
+        "Required": true
+      },
+      {
+        "CustomDataTypeProperties": {
+          "CatalogMoid": "5c81e342696f6e2d309e5ddd",
+          "CustomDataTypeId": "",
+          "CustomDataTypeName": "",
+          "ObjectType": "workflow.CustomDataProperty"
+        },
+        "Default": {
+          "IsValueSet": true,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": false,
+          "Value": {
+            "Moid": "644bd6b56f72613201b9fb14",
+            "ObjectType": "asset.Target"
+          }
+        },
+        "Description": "The external target on which the SSH commands are run. The SSH commands can be run only on targets added as SSH Endpoint or Ansible Endpoint target in Intersight and are in the connected state.\n",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "IsArray": false,
+        "Label": "Python Target",
+        "Max": 0,
+        "Min": 0,
+        "Name": "Target",
+        "ObjectType": "workflow.TargetDataType",
+        "Properties": [
+          {
+            "ConnectorAttribute": "",
+            "ConstraintAttributes": [],
+            "DisplayAttributes": [
+              "Name",
+              "TargetType"
+            ],
+            "ObjectType": "workflow.TargetProperty",
+            "Selector": "/api/v1/asset/Targets?$filter=((TargetType eq SSHEndpoint or TargetType eq AnsibleEndpoint) and Status eq Connected)",
+            "SelectorProperty": {
+              "Body": null,
+              "Method": "GET",
+              "ObjectType": "workflow.SelectorProperty"
+            },
+            "SupportedObjects": [
+              "asset.Target"
+            ]
+          }
+        ],
+        "Required": true
+      }
+    ],
+    "InputParameterSet": [
+      {
+        "Condition": "eq",
+        "ControlParameter": "config_nxos",
+        "EnableParameters": [
+          "nxos"
+        ],
+        "Name": "NXOSConfig",
+        "ObjectType": "workflow.ParameterSet",
+        "Value": "true"
+      }
+    ],
+    "Label": "Deploy Flexpod Day 0",
+    "Name": "DeployFlexpodDay0",
+    "OutputDefinition": [],
+    "OutputParameters": null,
+    "Properties": {
+      "Cloneable": true,
+      "EnableDebug": true,
+      "ExternalMeta": true,
+      "ObjectType": "workflow.WorkflowProperties",
+      "Retryable": false,
+      "RollbackOnCancel": false,
+      "RollbackOnFailure": false,
+      "SupportStatus": "Supported"
+    },
+    "Tags": [],
+    "Tasks": [
+      {
+        "Description": "",
+        "Label": "",
+        "Name": "StartTask",
+        "NextTask": "GetRunningWorkflowInfosId1",
+        "ObjectType": "workflow.StartTask"
+      },
+      {
+        "CatalogMoid": "5c81dc95696f6e2d3010731d",
+        "Description": "",
+        "InputParameters": {
+          "moid": "${workflow.input.moid}"
+        },
+        "Label": "Get Running WorkflowInfos Id",
+        "Name": "GetRunningWorkflowInfosId1",
+        "ObjectType": "workflow.WorkerTask",
+        "OnFailure": "",
+        "OnSuccess": "InvokeGenericWebApi1",
+        "RollbackDisabled": false,
+        "TaskDefinitionId": "643d71b5696f6e2d302d0123",
+        "TaskDefinitionName": "GetRunningWorkflowInfosId",
+        "VariableParameters": null,
+        "Version": 1
+      },
+      {
+        "CatalogMoid": "5c81e342696f6e2d309e5ddd",
+        "Description": "Invokes the given Web API against the given endpoint. The endpoint can be Intersight API or an external endpoint added as Target in Intersight. Please refer Supported Endpoints section in the Web API request end user documentation for the list of Intersight Targets on which Web API task can be invoked.\n",
+        "InputParameters": {
+          "Method": "GET",
+          "ResponseParser": {
+            "Parameters": [
+              {
+                "Name": "AccountMoid",
+                "Path": "$.AccountMoid",
+                "Type": "string"
+              },
+              {
+                "Name": "ParentMoid",
+                "Path": "$.Parent.Moid",
+                "Type": "string"
+              }
+            ]
+          },
+          "Url": "/api/v1/iam/ApiKeys/{{.global.workflow.input.apikeyid}}"
+        },
+        "Label": "Get API key data",
+        "Name": "InvokeGenericWebApi1",
+        "ObjectType": "workflow.WorkerTask",
+        "OnFailure": "",
+        "OnSuccess": "InvokeSleepTask2",
+        "RollbackDisabled": false,
+        "TaskDefinitionId": "61fc898f696f6e2d30c8a19a",
+        "TaskDefinitionName": "InvokeGenericWebApi",
+        "VariableParameters": null,
+        "Version": 2
+      },
+      {
+        "CatalogMoid": "5c81e342696f6e2d309e5ddd",
+        "Description": "Pauses the current workflow for the specified duration.",
+        "InputParameters": {
+          "SleepTimeInSec": 1
+        },
+        "Label": "Build API Key",
+        "Name": "InvokeSleepTask2",
+        "ObjectType": "workflow.WorkerTask",
+        "OnFailure": "",
+        "OnSuccess": "InvokeSshCommands1",
+        "RollbackDisabled": false,
+        "TaskDefinitionId": "604ac203696f6e2d30effe5e",
+        "TaskDefinitionName": "InvokeSleepTask",
+        "VariableParameters": {
+          "api_key": "{{- /* Auto-generated by transformed mapping section. DO NOT EDIT. */ -}}\r\n{{- $Replacespace := StringReplace .global.workflow.input.api_key \" \" \"\\\\n\" 100 -}}\r\n{{- $fixprefix := StringReplace $Replacespace \"-----BEGIN\\\\nRSA\\\\nPRIVATE\\\\nKEY-----\" \"-----BEGIN RSA PRIVATE KEY-----\" 1 -}}\r\n{{- $postfix := StringReplace $fixprefix \"-----END\\\\nRSA\\\\nPRIVATE\\\\nKEY-----\" \"-----END RSA PRIVATE KEY-----\" 1 -}}\r\n{{- $postfix -}}",
+          "intersight_api_id": "{{.global.InvokeGenericWebApi1.output.Parameters.AccountMoid}}/{{.global.InvokeGenericWebApi1.output.Parameters.ParentMoid}}/{{.global.workflow.input.apikeyid}}"
+        },
+        "Version": 1
+      },
+      {
+        "CatalogMoid": "5c81e342696f6e2d309e5ddd",
+        "Description": "Executes SSH commands against the given endpoint. This task can be executed on targets added as SSH Endpoint or Ansible Endpoint in Intersight.\n",
+        "InputParameters": {
+          "SshCommand": {
+            "Command": "mkdir -p {{.global.GetRunningWorkflowInfosId1.output.Workflowinfos_id}} ; echo -e \"{{.global.workflow.variable.api_key}}\" > {{.global.GetRunningWorkflowInfosId1.output.Workflowinfos_id}}/intersight_api_key.key",
+            "CommandType": "NonInteractiveCmd"
+          },
+          "Target": "${workflow.input.Target}"
+        },
+        "Label": "Write key file",
+        "Name": "InvokeSshCommands1",
+        "ObjectType": "workflow.WorkerTask",
+        "OnFailure": "",
+        "OnSuccess": "InvokeSleepTask1",
+        "RollbackDisabled": false,
+        "TaskDefinitionId": "618e0eef696f6e2d30e82b65",
+        "TaskDefinitionName": "InvokeSshCommands",
+        "VariableParameters": null,
+        "Version": 1
+      },
+      {
+        "CatalogMoid": "5c81e342696f6e2d309e5ddd",
+        "Description": "Pauses the current workflow for the specified duration.",
+        "InputParameters": {
+          "SleepTimeInSec": 1
+        },
+        "Label": "Generate yaml config",
+        "Name": "InvokeSleepTask1",
+        "ObjectType": "workflow.WorkerTask",
+        "OnFailure": "",
+        "OnSuccess": "InvokeSshCommands2",
+        "RollbackDisabled": false,
+        "TaskDefinitionId": "604ac203696f6e2d30effe5e",
+        "TaskDefinitionName": "InvokeSleepTask",
+        "VariableParameters": {
+          "ci_template": "{{$input := .global.workflow.input}}{{$protocols := .global.workflow.input.protocols}}{{$netapp := .global.workflow.input.netapp}}{{$imm := .global.workflow.input.imm}}{{$nxos := .global.workflow.input.nxos}}{{$vlans := .global.workflow.input.vlans}}{{$vlan_ranges := .global.workflow.input.vlan_ranges}}---\\ndeployment_type: {{$input.deployment_type}}\\nprotocols:\\n{{if index $protocols \"dhcp_servers\"}}  - dhcp_servers: \\n{{ range $i, $dhcps := $protocols.dhcp_servers}}      - {{$dhcps}}\\n{{end}}{{else}}  - dhcp_servers: []\\n{{end}}{{if index $protocols \"dns_domains\"}}    dns_domains:\\n{{ range $i, $dnsdomains := $protocols.dns_domains}}      - {{$dnsdomains}}\\n{{end}}{{else}}    dns_domains: []\\n{{end}}{{if index $protocols \"dns_servers\"}}    dns_servers:\\n{{ range $i, $dnsservers := $protocols.dns_servers}}      - {{$dnsservers}}\\n{{end}}{{else}}    dns_servers: []\\n{{end}}    timezone: {{if index $protocols \"timezone\"}}{{$protocols.timezone}}{{end}}\\n{{if index $protocols \"ntp_servers\"}}    ntp_servers:\\n{{ range $i, $ntpservers := $protocols.ntp_servers}}      - {{$ntpservers}}\\n{{end}}{{else}}    ntp_servers: []\\n{{end}}netapp:\\n  - username: {{if index $netapp \"username\"}}{{$netapp.username}}{{end}}\\n    autosupport:\\n      transport: {{if index $netapp.autosupport \"transport\"}}{{$netapp.autosupport.transport}}{{end}}\\n{{if index $netapp.autosupport \"mail_hosts\"}}      mail_hosts:\\n{{ range $i, $netapp_autosupport_mail_hosts := $netapp.autosupport.mail_hosts}}        - {{$netapp_autosupport_mail_hosts}}\\n{{end}}{{else}}      mail_hosts: []\\n{{end}}      proxy_url: {{if index $netapp.autosupport \"proxy_url\" }}{{$netapp.autosupport.proxy_url}}{{end}}\\n      from_address: {{if index $netapp.autosupport \"from_address\"}}{{$netapp.autosupport.from_address}}{{end}}\\n{{if index $netapp.autosupport \"to_addresses\"}}      to_addresses:\\n{{ range $i, $netapp_autosupport_to_address := $netapp.autosupport.to_addresses}}        - {{$netapp_autosupport_to_address}}\\n{{end}}{{else}}      to_addresses: []\\n{{end}}    snmp:\\n      contact: {{if index $netapp.snmp \"snmp_contact\"}}{{$netapp.snmp.snmp_contact}}{{end}}\\n      location: {{if index $netapp.snmp \"snmp_location\"}}{{$netapp.snmp.snmp_location}}{{end}}\\n      username: {{if index $netapp.snmp \"snmp_username\"}}{{$netapp.snmp.snmp_username}}{{end}}\\n      trap_server: {{if index $netapp.snmp \"trap_server\"}}{{$netapp.snmp.trap_server}}{{end}}\\n    login_banner: {{if index $netapp \"login_banner\"}}{{$netapp.login_banner}}{{end}}\\n    clusters:\\n{{range $i, $cluster := $netapp.clusters}}      - name: {{if index $cluster \"cluster_name\"}}{{$cluster.cluster_name}}{{end}}\\n        nodes:\\n          node01: {{if index $cluster.nodes \"node01\"}}{{$cluster.nodes.node01}}{{end}}\\n          node02: {{if index $cluster.nodes \"node02\"}}{{$cluster.nodes.node02}}{{end}}\\n{{if index $cluster.nodes \"data_ports\"}}          data_ports:\\n{{ range $i, $netapp_data_ports := $cluster.nodes.data_ports}}            - {{$netapp_data_ports}}\\n{{end}}{{else}}          data_ports: []\\n{{end}}          data_speed: {{if index $cluster.nodes \"data_speed\"}}{{$cluster.nodes.data_speed}}{{end}}\\n{{if index $cluster.nodes \"fcp_ports\"}}          fcp_ports:\\n{{ range $i, $netapp_fcp_ports := $cluster.nodes.fcp_ports}}            - {{$netapp_fcp_ports}}\\n{{end}}{{else}}          fcp_ports: []\\n{{end}}          fcp_speed: {{if index $cluster.nodes \"fcp_speed\"}}{{$cluster.nodes.fcp_speed}}{{end}}\\n          network:\\n{{if index $cluster.nodes \"network_data\"}}            data:\\n{{ range $i, $data := $cluster.nodes.network_data}}              - {{$data}}\\n{{end}}{{else}}            data: []\\n{{end}}            management: {{if index $cluster.nodes \"network_management\"}}{{$cluster.nodes.network_management}}{{end}}\\n        svm:\\n          name: {{if index $cluster \"svm\"}}{{$cluster.svm}}{{end}}\\n{{if index $cluster \"volumes\"}}          volumes:\\n{{range $i, $volume := $cluster.volumes}}            - name: {{if index $volume \"name\"}}{{$volume.name}}{{end}}\\n              os_type: {{if index $volume \"os_type\"}}{{$volume.os_type}}{{end}}\\n              protocol: {{if index $volume \"protocol\"}}{{$volume.protocol}}{{end}}\\n              size: {{if index $volume \"size\"}}{{$volume.size}}{{end}}\\n              volume_type: {{if index $volume \"volume_type\"}}{{$volume.volume_type}}{{end}}\\n{{end}}{{else}}          volumes: []\\n{{end}}{{end}}intersight:\\n  - organization: {{if index $imm \"organization\"}}{{$imm.organization}}{{end}}\\n    cfg_qos_priorities: {{if index $imm \"cfg_qos_priorities\"}}{{$imm.cfg_qos_priorities}}{{else}}false{{end}}\\n    discovery_protocol: {{if index $imm \"discovery_protocol\"}}{{$imm.discovery_protocol}}{{end}}\\n{{if index $imm \"domains\"}}    domains:\\n{{range $i, $domain := $imm.domains}}      - name: {{if index $domain \"domain_name\"}}{{$domain.domain_name}}{{end}}\\n        switch_mode: {{if index $domain \"switch_mode\"}}{{$domain.switch_mode}}{{end}}\\n{{if index $domain \"serial_numbers\"}}        serial_numbers:\\n{{range $i, $serial := $domain.serial_numbers}}          - {{$serial}}\\n{{end}}{{else}}        serial_numbers: []\\n{{end}}        eth_uplink_ports:\\n{{ range $i, $eth_uplink_ports := $domain.eth_uplink_ports}}          - {{$eth_uplink_ports}}\\n{{end}}        eth_uplink_speed: {{if index $domain \"eth_uplink_speed\"}}{{$domain.eth_uplink_speed}}{{end}}\\n        eth_breakout_speed: {{if index $domain \"eth_breakout_speed\"}}{{$domain.eth_breakout_speed}}{{end}}\\n{{if index $domain \"fcp_ports\"}}        fcp_uplink_ports:\\n{{ range $i, $fcp_uplink_ports := $domain.fcp_ports}}          - {{$fcp_uplink_ports}}\\n{{end}}{{else}}        fcp_uplink_ports: []\\n{{end}}        fcp_uplink_speed: {{if index $domain \"fcp_breakout_speed\"}}{{$domain.fcp_breakout_speed}}{{end}}\\n{{if index $domain \"vsans\"}}        vsans:\\n{{ range $i, $vsan := $domain.vsans}}          - {{$vsan}}\\n{{end}}{{else}}        vsans: []\\n{{end}}        network:\\n{{if index $domain \"network_data\"}}          data:\\n{{ range $i, $data := $domain.network_data}}            - {{$data}}\\n{{end}}{{else}}          data: []\\n{{end}}          management: {{if index $domain \"network_management\"}}{{$domain.network_management}}{{end}}\\n{{ if index $domain \"profiles\" }}        profiles:\\n{{ range $i, $profile := $domain.profiles}}          - equipment_type: {{if index $profile \"equipment_type\"}}{{$profile.equipment_type}}{{end}}\\n            identifier: {{if index $profile \"identifier\"}}{{$profile.identifier}}{{end}}\\n{{if index $profile \"domain_ports\"}}            domain_ports:\\n{{ range $i, $domain_ports := $profile.domain_ports}}              - {{$domain_ports}}\\n{{end}}{{else}}            domain_ports: []\\n{{end}}            profile_start: {{if index $profile \"profile_start\"}}{{$profile.profile_start}}{{end}}\\n            suffix_digits: {{if index $profile \"suffix_digits\"}}{{$profile.suffix_digits}}{{end}}\\n            inband_start: {{if index $profile \"inband_start\"}}{{$profile.inband_start}}{{end}}\\n            os_type: {{if index $profile \"os_type\"}}{{$profile.os_type}}{{end}}\\n{{end}}{{else}}        profiles: []\\n{{end}}{{end}}{{else}}    domains: []\\n{{end}}    firmware:\\n      blades: {{if index $imm \"firmware\"}}{{$imm.firmware}}{{end}}\\n      rackmount: {{if index $imm \"rack_firmware\"}}{{$imm.rack_firmware}}{{end}}\\n    pools:\\n      prefix: {{if index $imm \"pools_prefix\"}}{{$imm.pools_prefix}}{{end}}\\n    policies:\\n      prefix: {{if index $imm.policies \"prefix\"}}{{$imm.policies.prefix}}{{end}}\\n      local_user: {{if index $imm.policies \"local_user\"}}{{$imm.policies.local_user}}{{end}}\\n      snmp:\\n        contact: {{if index $imm.policies.snmp \"contact\"}}{{$imm.policies.snmp.contact}}{{end}}\\n        location: {{if index $imm.policies.snmp \"location\"}}{{$imm.policies.snmp.location}}{{end}}\\n        username: {{if index $imm.policies.snmp \"username\"}}{{$imm.policies.snmp.username}}{{end}}\\n{{if index $imm.policies.snmp \"snmp_servers\"}}        servers:\\n{{ range $i, $snmp_servers := $imm.policies.snmp.snmp_servers}}          - {{$snmp_servers}}\\n{{end}}{{else}}        servers: []\\n{{end}}      syslog: \\n{{if index $imm.policies \"syslog_servers\"}}        servers: \\n{{ range $i, $syslog_servers := $imm.policies.syslog_servers}}          - {{$syslog_servers}}\\n{{end}}{{else}}        servers: []\\n{{end}}    virtualization:\\n      - datacenter: {{if index $imm.virtualization \"datacenter\"}}{{$imm.virtualization.datacenter}}{{end}}\\n        license_type: {{if index $imm.virtualization \"license_type\"}}{{$imm.virtualization.license_type}}{{end}}\\n        name: {{if index $imm.virtualization \"vcenter\"}}{{$imm.virtualization.vcenter}}{{end}}\\n        type: {{if index $imm.virtualization \"type\"}}{{$imm.virtualization.type}}{{end}}\\n        username: {{if index $imm.virtualization \"vcenter_username\"}}{{$imm.virtualization.vcenter_username}}{{end}}\\n{{if index $imm.virtualization \"virtual_switches\"}}        virtual_switches:\\n{{range $i, $switch := $imm.virtualization.virtual_switches}}{{if index $switch \"data_types\"}}          - data_types:\\n{{range $i, $data_types := $switch.data_types}}              - {{$data_types}}\\n{{end}}{{else}}          - data_types: []\\n{{end}}            name: {{if index $switch \"name\"}}{{$switch.name}}{{end}}\\n            type: {{if index $switch \"type\"}}{{$switch.type}}{{end}}\\n            alternate_name: {{if index $switch \"alternate_name\"}}{{$switch.alternate_name}}{{end}}\\n{{end}}{{else}}        virtual_switches: []\\n{{end}}{{if eq .global.workflow.input.config_nxos true}}nxos:\\n  - username: {{if index .global.workflow.input.nxos \"username\"}}{{.global.workflow.input.nxos.username}}{{end}}\\n{{if index .global.workflow.input.nxos \"switches\"}}    switches:\\n{{ range $i, $switch := .global.workflow.input.nxos.switches}}      - hostname: {{if index $switch \"hostname\"}}{{$switch.hostname}}{{end}}\\n        switch_type: {{if index $switch \"switch_type\"}}{{$switch.switch_type}}{{end}}\\n        configure: {{if index $switch \"configure_l3\"}}{{$switch.configure_l3}}{{else}}false{{end}}\\n        breakout_speed: {{if index $switch \"breakout_speed\"}}{{$switch.breakout_speed}}{{end}}\\n        vpc_config:\\n          domain_id: {{if index $switch \"vpc_domain_id\"}}{{$switch.vpc_domain_id}}{{end}}\\n          keepalive_ip: {{if index $switch \"vpc_keepalive_ip\"}}{{$switch.vpc_keepalive_ip}}{{end}}\\n{{if index $switch \"vpc_keepalive_ports\"}}          keepalive_ports:\\n{{ range $i, $vpc_keepalive_ports := $switch.vpc_keepalive_ports}}            - {{$vpc_keepalive_ports}}\\n{{end}}{{else}}          keepalive_ports: []\\n{{end}}{{if index $switch \"vpc_peer_ports\"}}          peer_ports:\\n{{ range $i, $vpc_peer_ports := $switch.vpc_peer_ports}}            - {{$vpc_peer_ports}}\\n{{end}}{{else}}          peer_ports: []\\n{{end}}{{else}}    switches: []\\n{{end}}{{end}}{{else}}nxos: []\\n{{end}}{{if index .global.workflow.input \"vlans\"}}vlans:\\n{{ range $i, $vlan := .global.workflow.input.vlans}}  - vlan_type: {{if index $vlan \"vlan_type\"}}{{$vlan.vlan_type}}{{end}}\\n    vlan_id: {{if index $vlan \"vlan_id\"}}{{$vlan.vlan_id}}{{end}}\\n    name: {{if index $vlan \"name\"}}{{$vlan.name}}{{end}}\\n    network: {{if index $vlan \"network\"}}{{$vlan.network}}{{end}}\\n    configure_l2: {{if index $vlan \"configure_l2\"}}{{$vlan.configure_l2}}{{else}}false{{end}}\\n    configure_l3: {{if index $vlan \"configure_l3\"}}{{$vlan.configure_l3}}{{else}}false{{end}}\\n    disjoint: {{if index $vlan \"disjoint\"}}{{$vlan.disjoint}}{{else}}false{{end}}\\n    native_vlan: {{if index $vlan \"native_vlan\"}}{{$vlan.native_vlan}}{{else}}false{{end}}\\n    switch_type: {{if index $vlan \"switch_type\"}}{{$vlan.switch_type}}{{end}}\\n    ranges:\\n      controller: {{if index $vlan \"ranges_controller\"}}{{$vlan.ranges_controller}}{{end}}\\n      pool: {{if index $vlan \"ranges_pool\"}}{{$vlan.ranges_pool}}{{end}}\\n      server: {{if index $vlan \"ranges_server\"}}{{$vlan.ranges_server}}{{end}}\\n{{end}}{{else}}vlans: []\\n{{end}}{{if index .global.workflow.input \"vlan_ranges\"}}vlan_ranges:\\n{{ range $i, $vlan := .global.workflow.input.vlan_ranges}}  - vlan_range: {{if index $vlan \"vlan_range\"}}{{$vlan.vlan_range}}{{end}}\\n    name_prefix: {{if index $vlan \"name_prefix\"}}{{$vlan.name_prefix}}{{end}}\\n    configure_l2: {{if index $vlan \"configure_l2\"}}{{$vlan.configure_l2}}{{else}}false{{end}}\\n    disjoint: {{if index $vlan \"disjoint\"}}{{$vlan.disjoint}}{{else}}false{{end}}\\n{{end}}{{else}}vlan_ranges: []\\n{{end}}"
+        },
+        "Version": 1
+      },
+      {
+        "CatalogMoid": "5c81e342696f6e2d309e5ddd",
+        "Description": "Executes SSH commands against the given endpoint. This task can be executed on targets added as SSH Endpoint or Ansible Endpoint in Intersight.\n",
+        "InputParameters": {
+          "SshCommand": {
+            "Command": "echo -e \"{{.global.workflow.variable.ci_template}}\" > {{.global.GetRunningWorkflowInfosId1.output.Workflowinfos_id}}/ci_template.yaml",
+            "CommandType": "NonInteractiveCmd"
+          },
+          "Target": "${workflow.input.Target}"
+        },
+        "Label": "Write Config to File",
+        "Name": "InvokeSshCommands2",
+        "ObjectType": "workflow.WorkerTask",
+        "OnFailure": "",
+        "OnSuccess": "InvokeSshCommands3",
+        "RollbackDisabled": false,
+        "TaskDefinitionId": "618e0eef696f6e2d30e82b65",
+        "TaskDefinitionName": "InvokeSshCommands",
+        "VariableParameters": null,
+        "Version": 1
+      },
+      {
+        "CatalogMoid": "5c81e342696f6e2d309e5ddd",
+        "Description": "Executes SSH commands against the given endpoint. This task can be executed on targets added as SSH Endpoint or Ansible Endpoint in Intersight.\n",
+        "InputParameters": {
+          "ShowCommandOutput": true,
+          "SshCommand": {
+            "Command": "ezci.py -a {{.global.workflow.variable.intersight_api_id}} -y {{.global.GetRunningWorkflowInfosId1.output.Workflowinfos_id}}/ci_template.yaml -t flexpod -s initial -isa '{{.global.workflow.input.imm.policies.snmp.auth}}' -isp '{{.global.workflow.input.imm.policies.snmp.priv}}' -nxp '{{.global.workflow.input.nxos.password}}' -np '{{.global.workflow.input.netapp.password}}' -nsa '{{.global.workflow.input.netapp.snmp.auth}}' -nsp '{{.global.workflow.input.netapp.snmp.priv}}'",
+            "CommandType": "NonInteractiveCmd"
+          },
+          "Target": "${workflow.input.Target}"
+        },
+        "Label": "Run Initial Configuration",
+        "Name": "InvokeSshCommands3",
+        "ObjectType": "workflow.WorkerTask",
+        "OnFailure": "",
+        "OnSuccess": "CIConfigureServerProfiles1",
+        "RollbackDisabled": false,
+        "TaskDefinitionId": "618e0eef696f6e2d30e82b65",
+        "TaskDefinitionName": "InvokeSshCommands",
+        "VariableParameters": null,
+        "Version": 1
+      },
+      {
+        "CatalogMoid": "5c81dc95696f6e2d3010731d",
+        "Description": "",
+        "InputParameters": {
+          "Islocal_user_passwordSet": true,
+          "Target": "${workflow.input.Target}",
+          "Workflowinfos_id": "${GetRunningWorkflowInfosId1.output.Workflowinfos_id}",
+          "intersight_api_key": "${workflow.variable.intersight_api_id}",
+          "local_user_password": "${workflow.input.imm.policies.local_user_password}"
+        },
+        "Label": "CI Configure Server Profiles",
+        "Name": "CIConfigureServerProfiles1",
+        "ObjectType": "workflow.SubWorkflowTask",
+        "OnFailure": "",
+        "OnSuccess": "CIConfigureLunsMappings1",
+        "RollbackDisabled": false,
+        "VariableParameters": {},
+        "Version": 1,
+        "WorkflowDefinitionId": "6451145f696f6e3001388f7a",
+        "WorkflowDefinitionName": "CIConfigureServerProfiles"
+      },
+      {
+        "CatalogMoid": "5c81dc95696f6e2d3010731d",
+        "Description": "",
+        "InputParameters": {
+          "IspasswordSet": true,
+          "Target": "${workflow.input.Target}",
+          "Workflowinfos_id": "${GetRunningWorkflowInfosId1.output.Workflowinfos_id}",
+          "intersight_api_key": "${workflow.variable.intersight_api_id}",
+          "password": "${workflow.input.netapp.password}"
+        },
+        "Label": "CI Configure Luns Mappings",
+        "Name": "CIConfigureLunsMappings1",
+        "ObjectType": "workflow.SubWorkflowTask",
+        "OnFailure": "",
+        "OnSuccess": "CIConfigureOS1",
+        "RollbackDisabled": false,
+        "VariableParameters": null,
+        "Version": 1,
+        "WorkflowDefinitionId": "64515b99696f6e30013a94f7",
+        "WorkflowDefinitionName": "CIConfigureLunsMappings"
+      },
+      {
+        "CatalogMoid": "5c81dc95696f6e2d3010731d",
+        "Description": "",
+        "InputParameters": {
+          "IspasswordSet": true,
+          "Target": "${workflow.input.Target}",
+          "Workflowinfos_id": "${GetRunningWorkflowInfosId1.output.Workflowinfos_id}",
+          "intersight_api_key": "${workflow.variable.intersight_api_id}",
+          "password": "${workflow.input.imm.virtualization.esxi_password}"
+        },
+        "Label": "CI Configure OS",
+        "Name": "CIConfigureOS1",
+        "ObjectType": "workflow.SubWorkflowTask",
+        "OnFailure": "",
+        "OnSuccess": "CIConfigureVCenter1",
+        "RollbackDisabled": false,
+        "VariableParameters": null,
+        "Version": 1,
+        "WorkflowDefinitionId": "645178e1696f6e30013b36fd",
+        "WorkflowDefinitionName": "CIConfigureOS"
+      },
+      {
+        "CatalogMoid": "5c81dc95696f6e2d3010731d",
+        "Description": "",
+        "InputParameters": {
+          "Isesxi_passwordSet": true,
+          "Isvcenter_passwordSet": true,
+          "Target": "${workflow.input.Target}",
+          "Workflowinfos_id": "${GetRunningWorkflowInfosId1.output.Workflowinfos_id}",
+          "esxi_password": "${workflow.input.imm.virtualization.esxi_password}",
+          "intersight_api_key": "${workflow.variable.intersight_api_id}",
+          "vcenter_password": "${workflow.input.imm.virtualization.vcenter_password}"
+        },
+        "Label": "CI Configure VCenter",
+        "Name": "CIConfigureVCenter1",
+        "ObjectType": "workflow.SubWorkflowTask",
+        "OnFailure": "",
+        "OnSuccess": "SuccessEndTask",
+        "RollbackDisabled": false,
+        "VariableParameters": null,
+        "Version": 1,
+        "WorkflowDefinitionId": "64517a45696f6e30013b3bdd",
+        "WorkflowDefinitionName": "CIConfigureVCenter"
+      },
+      {
+        "Description": "",
+        "Label": "",
+        "Name": "SuccessEndTask",
+        "ObjectType": "workflow.SuccessEndTask"
+      },
+      {
+        "Description": "",
+        "Label": "",
+        "Name": "FailureEndTask",
+        "ObjectType": "workflow.FailureEndTask"
+      }
+    ],
+    "UiInputFilters": [],
+    "UiRenderingData": {
+      "Positions": [
+        {
+          "Name": "StartTask",
+          "X": 696.7462295749997,
+          "Y": 275.7399905844264
+        },
+        {
+          "Name": "GetRunningWorkflowInfosId1",
+          "X": 602.5997206221259,
+          "Y": 367.7399905844263
+        },
+        {
+          "Name": "InvokeGenericWebApi1",
+          "X": 604.1350428376495,
+          "Y": 450.73999058442627
+        },
+        {
+          "Name": "InvokeSleepTask2",
+          "X": 598.2714207111054,
+          "Y": 529.2527670210053
+        },
+        {
+          "Name": "InvokeSshCommands1",
+          "X": 593.0997206221259,
+          "Y": 618.2862733809754
+        },
+        {
+          "Name": "InvokeSleepTask1",
+          "X": 589.0997206221259,
+          "Y": 713.6485528493433
+        },
+        {
+          "Name": "InvokeSshCommands2",
+          "X": 583.0997206221259,
+          "Y": 792.7862733809757
+        },
+        {
+          "Name": "InvokeSshCommands3",
+          "X": 563.0997206221259,
+          "Y": 872.7397428939869
+        },
+        {
+          "Name": "CIConfigureServerProfiles1",
+          "X": 564.0997206221259,
+          "Y": 945.7399905844268
+        },
+        {
+          "Name": "SuccessEndTask",
+          "X": 402.81859092708567,
+          "Y": 1275.5257445515851
+        },
+        {
+          "Name": "FailureEndTask",
+          "X": 847.4728175261079,
+          "Y": 1297.2000484477244
+        },
+        {
+          "Name": "CIConfigureLunsMappings1",
+          "X": 560.8818593812239,
+          "Y": 1033.1488612843307
+        },
+        {
+          "Name": "CIConfigureOS1",
+          "X": 563.8818593812239,
+          "Y": 1111.1488612843307
+        },
+        {
+          "Name": "CIConfigureVCenter1",
+          "X": 558.3818593812239,
+          "Y": 1190.1488612843302
+        }
+      ]
+    },
+    "VariableDefinition": [
+      {
+        "Default": {
+          "IsValueSet": false,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": false,
+          "Value": null
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "ci_template",
+        "Name": "ci_template",
+        "ObjectType": "workflow.PrimitiveDataType",
+        "Properties": {
+          "Constraints": {
+            "EnumList": [],
+            "Max": 0,
+            "Min": 0,
+            "ObjectType": "workflow.Constraints",
+            "Regex": ""
+          },
+          "InventorySelector": [],
+          "ObjectType": "workflow.PrimitiveDataProperty",
+          "Secure": false,
+          "Type": "string"
+        },
+        "Required": false
+      },
+      {
+        "Default": {
+          "IsValueSet": false,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": false,
+          "Value": null
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "intersight_api_id",
+        "Name": "intersight_api_id",
+        "ObjectType": "workflow.PrimitiveDataType",
+        "Properties": {
+          "Constraints": {
+            "EnumList": [],
+            "Max": 0,
+            "Min": 0,
+            "ObjectType": "workflow.Constraints",
+            "Regex": ""
+          },
+          "InventorySelector": [],
+          "ObjectType": "workflow.PrimitiveDataProperty",
+          "Secure": false,
+          "Type": "string"
+        },
+        "Required": false
+      },
+      {
+        "Default": {
+          "IsValueSet": false,
+          "ObjectType": "workflow.DefaultValue",
+          "Override": false,
+          "Value": null
+        },
+        "Description": "",
+        "DisplayMeta": {
+          "InventorySelector": true,
+          "ObjectType": "workflow.DisplayMeta",
+          "WidgetType": "None"
+        },
+        "InputParameters": null,
+        "Label": "api_key",
+        "Name": "api_key",
+        "ObjectType": "workflow.PrimitiveDataType",
+        "Properties": {
+          "Constraints": {
+            "EnumList": [],
+            "Max": 0,
+            "Min": 0,
+            "ObjectType": "workflow.Constraints",
+            "Regex": ""
+          },
+          "InventorySelector": [],
+          "ObjectType": "workflow.PrimitiveDataProperty",
+          "Secure": false,
+          "Type": "string"
+        },
+        "Required": false
+      }
+    ],
+    "Version": 1,
+    "WorkflowMetadata": null
+  }

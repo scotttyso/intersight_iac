@@ -2437,7 +2437,7 @@ class wizard(object):
         for item in kwargs.imm_dict.wizard.netapp:
             for i in item.clusters:
                 protocols = []
-                for e in i.svm.volumes: protocols.append(e.mount_protocol)
+                for e in i.svm.volumes: protocols.append(e.protocol)
                 if 'local' in protocols: protocols.remove('local')
                 if 'nvme-fc' in protocols or 'nvme-tcp' in protocols: protocols.append('nvme_of')
                 protocols = list(numpy.unique(numpy.array(protocols)))
@@ -2505,6 +2505,95 @@ class wizard(object):
             kwargs.models.append(i.model)
         kwargs.models   = list(numpy.unique(numpy.array(kwargs.models)))
 
+        #==========================================
+        # Get Physical Server Tags to Check for
+        # Existing OS Install
+        #==========================================
+        AzureStack= False
+        bnames    = []
+        m2_boot   = False
+        names     = []
+        OpenShift = False
+        rnames    = []
+        san_boot  = False
+        VMware    = False
+        for k,v in kwargs.server_profiles.items():
+            names.append(v.serial)
+        kwargs.method = 'get'
+        kwargs.names = names
+        kwargs.pmoid = v.moid
+        kwargs.qtype = 'serial_number'
+        kwargs.uri   = 'compute/PhysicalSummaries'
+        kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+        server_profiles = deepcopy(kwargs.server_profiles)
+        for k,v in server_profiles.items():
+            kwargs.server_profiles[k].hardware_moid = kwargs.pmoids[v.serial].moid
+            kwargs.server_profiles[k].tags = kwargs.pmoids[v.serial].tags
+            kwargs.server_profiles[k].os_installed = False
+            for e in kwargs.pmoids[v.serial].tags:
+                if e.Key == 'os_installed' and e.Value == v.os_type:
+                    kwargs.server_profiles[k].os_installed = True
+            if v.os_type == 'AzureStack': AzureStack = True
+            elif v.os_type == 'OpenShift': OpenShift = True
+            elif v.os_type == 'VMware': VMware = True
+            if v.boot_volume == 'm2':
+                if v.object_type == 'compute.Blade':  bnames.append
+                else: rnames.append
+                m2_boot = True
+            elif v.boot_volume == 'san':
+                san_boot = True
+
+        if len(bnames) > 0:
+            kwargs.names = bnames
+            kwargs.pmoid = v.moid
+            kwargs.qtype = 'serial_number'
+            kwargs.uri   = 'compute/Blades'
+            kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+            blade_pmoids = deepcopy(kwargs.pmoids)
+        if len(rnames) > 0:
+            kwargs.names = rnames
+            kwargs.pmoid = v.moid
+            kwargs.qtype = 'serial_number'
+            kwargs.uri   = 'compute/RackUnits'
+            kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+            rack_pmoids = deepcopy(kwargs.pmoids)
+        for k, v in server_profiles.items():
+            controllers = []
+            if v.boot_volume == 'm2':
+                if v.object_type == 'compute.Blade':
+                    for i in blade_pmoids[v.serial].storage_controllers: controllers.append(i.Moid)
+                else:
+                    for i in rack_pmoids[v.serial].storage_controllers: controllers.append(i.Moid)
+                kwargs.names = controllers
+                kwargs.pmoid = v.moid
+                kwargs.qtype = 'serial_number'
+                kwargs.uri   = 'storage/Controllers'
+                kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+                for i in kwargs.results:
+                    if i.Model == 'UCS-M2-HWRAID' or i.PciSlot == 'MSTOR-RAID':
+                        kwargs.server_profiles[k].controller_id = i.ControllerId
+
+        #==========================================
+        # Deploy Operating System for each Profile
+        #==========================================
+        if san_boot == True:
+            kwargs.san_target = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.a[0].wwpn
+
+        #==================================
+        # Get ESXi Root Password
+        #==================================
+        if AzureStack == True:
+            kwargs.sensitive_var = 'windows_admin_password'
+            kwargs = ezfunctions.sensitive_var_value(kwargs)
+            kwargs.vmware_esxi_password = kwargs.var_value
+        elif VMware == True:
+            kwargs.sensitive_var = 'vmware_esxi_password'
+            kwargs = ezfunctions.sensitive_var_value(kwargs)
+            kwargs.vmware_esxi_password = kwargs.var_value
+
+        #==================================
+        # Get Repository Files for Wizard
+        #==================================
         dir_files = os.listdir(kwargs.files_dir)
         dir_files.sort()
         if kwargs.deployment_type == 'azure_hci':
@@ -2513,12 +2602,14 @@ class wizard(object):
         else:
             file_types = ['Custom-Cisco', 'ucs-scu']
             os_type    = 'Custom-Cisco'
-
         for ftype in file_types:
             for f in dir_files:
                 if os.path.isfile(os.path.join(kwargs.files_dir , f)):
                     if ftype in f: kwargs.files[ftype] = f
 
+        #==================================
+        # Setup Repository Files for Wizard
+        #==================================
         kwargs.scu_iso    = kwargs.files['ucs-scu']
         kwargs.scu_version= (kwargs.files['ucs-scu'].split('.iso')[0]).split('-')[2]
         kwargs.os_iso     = kwargs.files[os_type]
@@ -2531,12 +2622,6 @@ class wizard(object):
         kwargs.os_vendor  = jvars.vendor
         kwargs.os_version = jvars.version
 
-        #==================================
-        # Get ESXi Root Password
-        #==================================
-        kwargs.sensitive_var = 'vmware_esxi_password'
-        kwargs = ezfunctions.sensitive_var_value(kwargs)
-        kwargs.vmware_esxi_password = kwargs.var_value
 
         #==================================
         # Get Org Software Repo
@@ -2622,68 +2707,6 @@ class wizard(object):
             sys.exit(1)
 
         #==========================================
-        # Deploy Operating System for each Profile
-        #==========================================
-        kwargs.san_target = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.a[0].wwpn
-
-        #==========================================
-        # Get Physical Server Tags to Check for
-        # Existing OS Install
-        #==========================================
-        names = []
-        for k,v in kwargs.server_profiles.items():
-            names.append(v.serial)
-        kwargs.method = 'get'
-        kwargs.names = names
-        kwargs.pmoid = v.moid
-        kwargs.qtype = 'serial_number'
-        kwargs.uri   = 'compute/PhysicalSummaries'
-        kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-        server_profiles = deepcopy(kwargs.server_profiles)
-        for k,v in server_profiles.items():
-            kwargs.server_profiles[k].hardware_moid = kwargs.pmoids[v.serial].moid
-            kwargs.server_profiles[k].tags = kwargs.pmoids[v.serial].tags
-            kwargs.server_profiles[k].os_installed = False
-            for e in kwargs.pmoids[v.serial].tags:
-                if e.Key == 'os_installed' and e.Value == v.os_type:
-                    kwargs.server_profiles[k].os_installed = True
-        bnames = []
-        rnames = []
-        for k,v in kwargs.server_profiles.items():
-            if v.boot_volume == 'm2':
-                if v.object_type == 'compute.Blade':  bnames.append
-                else: rnames.append
-        if len(bnames) > 0:
-            kwargs.names = names
-            kwargs.pmoid = v.moid
-            kwargs.qtype = 'serial_number'
-            kwargs.uri   = 'compute/Blades'
-            kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-            blade_pmoids = deepcopy(kwargs.pmoids)
-        if len(rnames) > 0:
-            kwargs.names = names
-            kwargs.pmoid = v.moid
-            kwargs.qtype = 'serial_number'
-            kwargs.uri   = 'compute/RackUnits'
-            kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-            rack_pmoids = deepcopy(kwargs.pmoids)
-        for k, v in server_profiles.items():
-            controllers = []
-            if v.boot_volume == 'm2':
-                if v.object_type == 'compute.Blade':
-                    for i in blade_pmoids[v.serial].storage_controllers: controllers.append(i.Moid)
-                else:
-                    for i in rack_pmoids[v.serial].storage_controllers: controllers.append(i.Moid)
-                kwargs.names = controllers
-                kwargs.pmoid = v.moid
-                kwargs.qtype = 'serial_number'
-                kwargs.uri   = 'storage/Controllers'
-                kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-                for i in kwargs.results:
-                    if i.Model == 'UCS-M2-HWRAID' or i.PciSlot == 'MSTOR-RAID':
-                        kwargs.server_profiles[k].controller_id = i.ControllerId
-
-        #==========================================
         # Install Operating System on Servers
         #==========================================
         for k,v in kwargs.server_profiles.items():
@@ -2696,13 +2719,17 @@ class wizard(object):
                 kwargs.qtype = self.type
                 kwargs.uri   = 'os/Installs'
                 if v.boot_volume == 'san':
-                    prGreen(f"      * host {k}: initiator: {v.wwpns[0].wwpn}\n"\
+                    prGreen(f"{'-'*91}\n"\
+                            f"      * host {k}: initiator: {v.wwpns[0].wwpn}\n"\
                             f"         target: {kwargs.san_target}\n"\
-                            f"         mac: {kwargs.mgmt_mac}")
+                            f"         mac: {kwargs.mgmt_mac}"\
+                            f"{'-'*91}\n")
                 else:
-                    prGreen(f"      * host {k}:\n"\
+                    prGreen(f"{'-'*91}\n"\
+                            f"      * host {k}:\n"\
                             f"         target: {v.boot_volume}\n"\
-                            f"         mac: {kwargs.mgmt_mac}")
+                            f"         mac: {kwargs.mgmt_mac}"\
+                            f"{'-'*91}\n")
                 kwargs = isight.api(self.type).calls(kwargs)
                 kwargs.server_profiles[k].os_install = DotMap(moid=kwargs.pmoid,workflow='')
         
@@ -2872,10 +2899,10 @@ class wizard(object):
                             kwargs.server_profiles[k].macs[ix]['allowed']   = results.VlanSettings.AllowedVlans
                             kwargs.server_profiles[k].macs[ix]['native']    = results.VlanSettings.NativeVlan
 
+        #=====================================================
+        # Run Lun Creation Class
+        #=====================================================
         if kwargs.args.deployment_type == 'flexpod':
-            #=====================================================
-            # Run Lun Creation Class
-            #=====================================================
             kwargs = netapp.build('lun').lun(kwargs)
 
         for k, v in kwargs.server_profiles.items():
