@@ -2564,14 +2564,15 @@ class wizard(object):
                     for i in blade_pmoids[v.serial].storage_controllers: controllers.append(i.Moid)
                 else:
                     for i in rack_pmoids[v.serial].storage_controllers: controllers.append(i.Moid)
-                kwargs.names = controllers
-                kwargs.pmoid = v.moid
-                kwargs.qtype = 'serial_number'
-                kwargs.uri   = 'storage/Controllers'
-                kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-                for i in kwargs.results:
-                    if i.Model == 'UCS-M2-HWRAID' or i.PciSlot == 'MSTOR-RAID':
-                        kwargs.server_profiles[k].controller_id = i.ControllerId
+                for i in controllers:
+                    kwargs.method = 'get_by_moid'
+                    kwargs.pmoid = i
+                    kwargs.uri   = 'storage/Controllers'
+                    kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+                    print(kwargs.results)
+                    if kwargs.results.Model == 'UCS-M2-HWRAID' or kwargs.results.PciSlot == 'MSTOR-RAID':
+                        kwargs.server_profiles[k].controller_id = kwargs.results.ControllerId
+                        break
 
         #==========================================
         # Deploy Operating System for each Profile
