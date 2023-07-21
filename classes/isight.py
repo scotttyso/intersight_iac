@@ -2018,6 +2018,7 @@ def build_pmoid_dictionary(api_results, kwargs):
             elif i.get('EndPointUser'): iname = i.EndPointUser.Moid
             elif i.get('PortIdStart'): iname = i.PortIdStart
             elif i.get('Version'): iname = i.Version
+            elif i.get('ControllerId'): iname = i.ControllerId
             if i.get('PcId') or i.get('PortId') or i.get('PortIdStart'):
                 apiDict[i.PortPolicy.Moid][iname].moid = i.Moid
             else: apiDict[iname].moid = i.Moid
@@ -2025,11 +2026,9 @@ def build_pmoid_dictionary(api_results, kwargs):
                 apiDict[iname].model = i.Model
                 apiDict[iname].object_type = i.ObjectType
                 apiDict[iname].registered_device = i.RegisteredDevice.Moid
-                if i.get('Board'): apiDict[iname].board = i.Board.Moid
                 if i.get('ChassisId'):
                     apiDict[iname]['id'] = i.ChassisId
                 if i.get('SourceObjectType'): apiDict[iname].object_type = i.SourceObjectType
-                if i.get('StorageControllers'): apiDict[iname].storage_controller = i.StorageControllers
             if i.get('Selectors'):
                 apiDict[iname].selectors = i.Selectors
             if i.get('SwitchId'): apiDict[iname].switch_id = i.SwitchId

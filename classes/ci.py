@@ -209,7 +209,7 @@ class imm(object):
             else: cv = 'amd'
             storage_controllers = DotMap()
             for e in storage:
-                storage_controllers[i.Model] = i.Moid
+                storage_controllers[e.Model] = e.Moid
             vics = []
             for e in vic:
                 if re.search('(V5)', e.Model): vic_generation = 'gen5'
@@ -303,7 +303,11 @@ class imm(object):
             kwargs.method='get'
             kwargs.uri   = 'compute/PhysicalSummaries'
             kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-            for i in kwargs.results: kwargs = server_dictionary(i, kwargs)
+            for i in kwargs.results:
+                prGreen(f'\n   Pulling Server Inventory for the Server: {i.Serial}')
+                kwargs = server_dictionary(i, kwargs)
+                prGreen(f'   Completed Server Inventory for Server: {i.Serial}\n')
+
         else:
             #=====================================================
             # Build Server Dictionaries - Standalone
@@ -326,7 +330,10 @@ class imm(object):
             kwargs.qtype = 'serial_number'
             kwargs.uri   = 'compute/PhysicalSummaries'
             kwargs = isight.api(kwargs.qtype).calls(kwargs)
-            for i in kwargs.results: kwargs = server_dictionary(i, kwargs)
+            for i in kwargs.results:
+                prGreen(f'\n   Pulling Server Inventory for the Server: {i.Serial}')
+                kwargs = server_dictionary(i, kwargs)
+                prGreen(f'   Completed Server Inventory for Server: {i.Serial}\n')
 
         #=====================================================
         # Return kwargs and kwargs
