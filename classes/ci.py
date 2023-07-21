@@ -209,7 +209,7 @@ class imm(object):
             else: cv = 'amd'
             storage_controllers = DotMap()
             for e in storage:
-                storage_controllers[e.Model] = e.Moid
+                if len(e.Model) > 0: storage_controllers[e.Model] = e.ControllerId
             vics = []
             for e in vic:
                 if re.search('(V5)', e.Model): vic_generation = 'gen5'
@@ -303,10 +303,12 @@ class imm(object):
             kwargs.method='get'
             kwargs.uri   = 'compute/PhysicalSummaries'
             kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+            prCyan('')
             for i in kwargs.results:
-                prGreen(f'\n   Pulling Server Inventory for the Server: {i.Serial}')
+                prCyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
                 kwargs = server_dictionary(i, kwargs)
-                prGreen(f'   Completed Server Inventory for Server: {i.Serial}\n')
+                prCyan(f'     Completed Server Inventory for Server: {i.Serial}')
+            prCyan('')
 
         else:
             #=====================================================
@@ -330,10 +332,12 @@ class imm(object):
             kwargs.qtype = 'serial_number'
             kwargs.uri   = 'compute/PhysicalSummaries'
             kwargs = isight.api(kwargs.qtype).calls(kwargs)
+            prCyan('')
             for i in kwargs.results:
-                prGreen(f'\n   Pulling Server Inventory for the Server: {i.Serial}')
+                prCyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
                 kwargs = server_dictionary(i, kwargs)
-                prGreen(f'   Completed Server Inventory for Server: {i.Serial}\n')
+                prCyan(f'     Completed Server Inventory for Server: {i.Serial}')
+            prCyan('')
 
         #=====================================================
         # Return kwargs and kwargs
@@ -2599,9 +2603,8 @@ class wizard(object):
         kwargs.scu_version= (kwargs.files['ucs-scu'].split('.iso')[0]).split('-')[2]
         kwargs.os_iso     = kwargs.files[os_type]
         if kwargs.deployment_type == 'azure_hci':
-            kwargs.os_name    = re.search('(AzureStackHCI_\\d+.\\d+)', kwargs.files[os_type]).group(1)
-        else:
-            kwargs.os_name    = re.search('(ESXi-\\d.\\d(\\.\\d)?)', kwargs.files[os_type]).group(1)
+            kwargs.os_name   = re.search('(AzureStackHCI_\\d+.\\d+)', kwargs.files[os_type]).group(1)
+        else:  kwargs.os_name= re.search('(ESXi-\\d.\\d(\\.\\d)?)', kwargs.files[os_type]).group(1)
         jvars = kwargs.ez_data.operatingSystem.allOf[1].properties[kwargs.os_name]
         kwargs.os_config  = jvars.config
         kwargs.os_vendor  = jvars.vendor
@@ -2647,11 +2650,11 @@ class wizard(object):
         #==================================
         kwargs.apiBody = server_config_utility_repo(kwargs)
         if kwargs.pmoids.get(kwargs.apiBody['Name']):
-            kwargs.method = 'patch'
-            kwargs.pmoid  = kwargs.pmoids[kwargs.apiBody['Name']].moid
+            kwargs.method= 'patch'
+            kwargs.pmoid = kwargs.pmoids[kwargs.apiBody['Name']].moid
         else: kwargs.method = 'post'
-        kwargs          = isight.api(self.type).calls(kwargs)
-        kwargs.scu_moid = kwargs.pmoid
+        kwargs         = isight.api(self.type).calls(kwargs)
+        kwargs.scu_moid= kwargs.pmoid
 
         #==================================
         # Test Repo URL for File
@@ -2679,8 +2682,8 @@ class wizard(object):
             kwargs.method= 'patch'
             kwargs.pmoid = kwargs.os_repos[kwargs.apiBody['Name']].moid
         else: kwargs.method= 'post'
-        kwargs = isight.api(self.type).calls(kwargs)
-        kwargs.os_moid = kwargs.pmoid
+        kwargs        = isight.api(self.type).calls(kwargs)
+        kwargs.os_moid= kwargs.pmoid
 
         #==================================
         # Test Repo URL for File
@@ -2700,9 +2703,9 @@ class wizard(object):
                 kwargs.mgmt_mac= v.macs[indx].mac
                 kwargs.fqdn    = k + '.' + kwargs.dns_domains[0]
                 kwargs.apiBody = os_installation_body(k, v, kwargs)
-                kwargs.method= 'post'
-                kwargs.qtype = self.type
-                kwargs.uri   = 'os/Installs'
+                kwargs.method  = 'post'
+                kwargs.qtype   = self.type
+                kwargs.uri     = 'os/Installs'
                 if v.boot_volume == 'san':
                     prGreen(f"{'-'*91}\n"\
                             f"      * host {k}: initiator: {v.wwpns[0].wwpn}\n"\
@@ -2759,10 +2762,6 @@ class wizard(object):
                 #=================================================
                 if install_success == True:
                     tags = deepcopy(v.tags)
-                    #for t in v.tags:
-                    #    if t.Key == 'os_installed':
-                    #        indx = [e for e, d in enumerate(v.tags) if 'os_installed' in d.values()][0]
-                    #        tags.pop(indx)
                     tags.append(DotMap(Key = 'os_installed',Value = v.os_type))
                     tag_body = []
                     for e in tags: tag_body.append(e.toDict())
@@ -2775,8 +2774,7 @@ class wizard(object):
                     if v.object_type == 'compute.Blade': kwargs.uri = 'compute/Blades'
                     else: kwargs.uri = 'compute/RackUnits'
                     kwargs        = isight.api(kwargs.qtype).calls(kwargs)
-            else:
-                prCyan(f'      * Skipping Operating System Install for {k}. OS Already Installed.')
+            else: prCyan(f'      * Skipping Operating System Install for {k}. OS Already Installed.')
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
