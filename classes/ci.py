@@ -2702,8 +2702,12 @@ class wizard(object):
         count = 1
         for k,v in kwargs.server_profiles.items():
             if v.boot_volume == 'san':
-                if count % 2 == 0: kwargs.san_target = san_target_a
-                else: kwargs.san_target = san_target_b
+                if count % 2 == 0:
+                    kwargs.san_target = san_target_a
+                    kwargs.wwpn = 0
+                else:
+                    kwargs.san_target = san_target_b
+                    kwargs.wwpn = 1
             if v.os_installed == False:
                 indx           = [e for e, d in enumerate(v.macs) if 'mgmt-a' in d.values()][0]
                 kwargs.mgmt_mac= v.macs[indx].mac
@@ -2714,7 +2718,7 @@ class wizard(object):
                 kwargs.uri     = 'os/Installs'
                 if v.boot_volume == 'san':
                     prGreen(f"{'-'*91}\n"\
-                            f"      * host {k}: initiator: {v.wwpns[0].wwpn}\n"\
+                            f"      * host {k}: initiator: {v.wwpns[kwargs.wwpn].wwpn}\n"\
                             f"         target: {kwargs.san_target}\n"\
                             f"         mac: {kwargs.mgmt_mac}\n"\
                             f"{'-'*91}\n")
@@ -3177,7 +3181,7 @@ def os_installation_body(k, v, kwargs):
     }
     if v.boot_volume == 'san':
         apiBody['InstallTarget'] = {
-            'InitiatorWwpn': v.wwpns[0].wwpn,
+            'InitiatorWwpn': v.wwpns[kwargs.wwpn].wwpn,
             'LunId': 0,
             'ObjectType': 'os.FibreChannelTarget',
             'TargetWwpn': kwargs.san_target
