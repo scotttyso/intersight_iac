@@ -2576,11 +2576,13 @@ class wizard(object):
         if AzureStack == True:
             kwargs.sensitive_var = 'windows_admin_password'
             kwargs = ezfunctions.sensitive_var_value(kwargs)
-            kwargs.vmware_esxi_password = kwargs.var_value
+            kwargs.windows_admin_password = kwargs.var_value
         elif VMware == True:
             kwargs.sensitive_var = 'vmware_esxi_password'
             kwargs = ezfunctions.sensitive_var_value(kwargs)
             kwargs.vmware_esxi_password = kwargs.var_value
+            print(kwargs.vmware_esxi_password)
+            exit()
 
         #==================================
         # Get Repository Files for Wizard
