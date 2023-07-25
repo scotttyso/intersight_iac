@@ -2771,7 +2771,7 @@ class wizard(object):
                 # Add os_installed Tag to Physical Server
                 #=================================================
         for k,v in  kwargs.server_profiles.items():
-            if v.os_installed == True:
+            if v.os_installed == True or v.os_installed == False:
                 install_success = True
                 if install_success == True:
                     tags = deepcopy(v.tags)
