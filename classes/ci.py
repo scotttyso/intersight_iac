@@ -2736,7 +2736,7 @@ class wizard(object):
         # Monitor OS Installation until Complete
         #=================================================
         for k,v in  kwargs.server_profiles.items():
-            if v.os_installed == True:
+            if v.os_installed == 'BLAH':
                 kwargs.fqdn      = k + '.' + kwargs.dns_domains[0]
                 kwargs.api_filter= f"Input.OSInstallInputs.Answers.Hostname eq '{kwargs.fqdn}'"
                 kwargs.method    = 'get'
