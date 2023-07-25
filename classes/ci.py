@@ -2736,7 +2736,7 @@ class wizard(object):
         # Monitor OS Installation until Complete
         #=================================================
         for k,v in  kwargs.server_profiles.items():
-            if v.os_installed == False:
+            if v.os_installed == True:
                 kwargs.fqdn      = k + '.' + kwargs.dns_domains[0]
                 kwargs.api_filter= f"Input.OSInstallInputs.Answers.Hostname eq '{kwargs.fqdn}'"
                 kwargs.method    = 'get'
@@ -2770,11 +2770,15 @@ class wizard(object):
                 #=================================================
                 # Add os_installed Tag to Physical Server
                 #=================================================
+        for k,v in  kwargs.server_profiles.items():
+            if v.os_installed == True:
+                install_success = True
                 if install_success == True:
                     tags = deepcopy(v.tags)
                     tag_body = []
                     os_installed = False
                     for e in tags:
+                        print(e)
                         if e.Key == 'os_installed':
                             os_installed = True
                             tag_body.append({'Key':e.key,'Value':v.os_type})
