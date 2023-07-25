@@ -2581,8 +2581,6 @@ class wizard(object):
             kwargs.sensitive_var = 'vmware_esxi_password'
             kwargs = ezfunctions.sensitive_var_value(kwargs)
             kwargs.vmware_esxi_password = kwargs.var_value
-            print(kwargs.vmware_esxi_password)
-            exit()
 
         #==================================
         # Get Repository Files for Wizard
