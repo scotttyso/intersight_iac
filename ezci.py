@@ -231,9 +231,23 @@ def main():
     #==============================================
     # Add Sensitive Variables to Environment
     #==============================================
-    if kwargs.args.nexus_password:
-        os.environ['nexus_password'] = kwargs.args.nexus_password
+    sensitive_list = [
+        'local_user_password_1',
+        'local_user_password_2',
+        'snmp_auth_password_1',
+        'snmp_privacy_password_1',
+        'netapp_password',
+        'nexus_password',
+        'vmware_esxi_password',
+        'vmware_vcenter_password'
+    ]
+    for e in sensitive_list:
+        if vars(kwargs.args)[e]:
+            os.environ[e] = vars(kwargs.args)[e]
 
+    #==============================================
+    # Send Notification Message
+    #==============================================
     prLightGray(f'\n{"-"*91}\n')
     prLightGray(f'  Begin Deployment for {kwargs.deployment_type}.')
     prLightGray(f'  * Deployment Step is {kwargs.args.deployment_step}.')
