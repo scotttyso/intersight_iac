@@ -74,7 +74,7 @@ class MyDumper(yaml.Dumper):
 def cli_arguments():
     Parser = argparse.ArgumentParser(description='Intersight Converged Infrastructure Deployment Module')
     Parser.add_argument(
-        '-a', '--api-key-id', default=os.getenv('intersight_apikey'),
+        '-a', '--intersight-api-key-id', default=os.getenv('intersight_api_key_id'),
         help='The Intersight API key id for HTTP signature scheme.'
     )
     Parser.add_argument(
@@ -83,7 +83,7 @@ def cli_arguments():
         help = 'The Directory to use for the Creation of the Terraform Files.'
     )
     Parser.add_argument(
-        '-e', '--endpoint', default='intersight.com',
+        '-f', '--intersight-fqdn', default='intersight.com',
         help='The Intersight hostname for the API endpoint. The default is intersight.com.'
     )
     Parser.add_argument(
@@ -107,8 +107,7 @@ def cli_arguments():
         help='Intersight Managed Mode SNMP Privilege Password.'
     )
     Parser.add_argument(
-        '-k', '--api-key-file', default='~/Downloads/SecretKey.txt',
-        #'-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
+        '-k', '--intersight-secret-key', default='~/Downloads/SecretKey.txt',
         help='Name of the file containing The Intersight secret key for the HTTP signature scheme.'
     )
     Parser.add_argument(
@@ -219,9 +218,9 @@ def main():
         if type(v) == str:
             if v: os.environ[k] = v
 
-    if kwargs.args.api_key_file:
-        if '~' in kwargs.args.api_key_file:
-            kwargs.args.api_key_file = os.path.expanduser(kwargs.args.api_key_file)
+    if kwargs.args.intersight_secret_key:
+        if '~' in kwargs.args.intersight_secret_key:
+            kwargs.args.intersight_secret_key = os.path.expanduser(kwargs.args.intersight_secret_key)
 
     kwargs.deployment_type= kwargs.args.deployment_type
     kwargs.home           = Path.home()
@@ -261,7 +260,7 @@ def main():
     # - keyfile
     #==============================================
     kwargs         = ezfunctions.intersight_config(kwargs)
-    kwargs.args.url= 'https://%s' % (kwargs.args.endpoint)
+    kwargs.args.url= 'https://%s' % (kwargs.args.intersight_fqdn)
 
     #==============================================
     # Check Folder Path Naming for Bad Characters
@@ -377,13 +376,13 @@ def main():
         # Configure and Deploy Server Profiles
         #==============================================
         kwargs = ci.wizard('build').build_imm_servers(kwargs)
-
+        
         #==============================================
         # Create YAML Files
         #==============================================
         orgs = list(kwargs.imm_dict.orgs.keys())
         ezfunctions.create_yaml(orgs, kwargs)
-
+        
         for org in orgs:
             #==============================================
             # Pools
@@ -392,7 +391,7 @@ def main():
             if kwargs.imm_dict.orgs[org].get('pools'):
                 for pool_type in kwargs.imm_dict.orgs[org]['pools']:
                     kwargs = eval(f"{api}(pool_type).pools(kwargs)")
-
+        
             #==============================================
             # Policies
             #==============================================
@@ -402,7 +401,7 @@ def main():
                     if kwargs.imm_dict.orgs[org]['policies'].get(ptype):
                         dpolicies = eval(f"{api}(ptype).policies(kwargs)")
                         kwargs.deployed.update({ptype:dpolicies})
-
+        
             #==============================================
             # Profiles
             #==============================================

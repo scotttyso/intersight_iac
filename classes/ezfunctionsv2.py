@@ -442,20 +442,20 @@ def findVars(ws, func, rows, count):
 #========================================================
 def intersight_config(kwargs):
     kwargs.jData = DotMap()
-    if kwargs.args.api_key_id == None:
-        kwargs.sensitive_var = 'intersight_apikey'
+    if kwargs.args.intersight_api_key_id == None:
+        kwargs.sensitive_var = 'intersight_api_key_id'
         kwargs = sensitive_var_value(kwargs)
-        kwargs.args.api_key_id = kwargs.var_value
+        kwargs.args.intersight_api_key_id = kwargs.var_value
 
     #==============================================
     # Prompt User for Intersight SecretKey File
     #==============================================
-    secret_path = kwargs.args.api_key_file
+    secret_path = kwargs.args.intersight_secret_key
     secret_loop = False
     while secret_loop == False:
         valid = False
         if secret_path == None:
-            varName = 'intersight_keyfile'
+            varName = 'intersight_secret_key'
             print(f"\n-------------------------------------------------------------------------------------------\n")
             print(f"  The Script did not find {varName} as an 'environment' variable.")
             print(f"  To not be prompted for the value of {varName} each time")
@@ -467,7 +467,7 @@ def intersight_config(kwargs):
         if not secret_path == '':
             if not os.path.isfile(secret_path):
                 print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  !!!Error!!! intersight_keyfile not found.')
+                print(f'  !!!Error!!! intersight_secret_key not found.')
             else:
                 secret_file = open(secret_path, 'r')
                 count = 0
@@ -480,13 +480,13 @@ def intersight_config(kwargs):
                     valid = True
                 else:
                     print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  !!!Error!!! intersight_keyfile does not seem to contain a Valid Secret Key.')
+                    print(f'  !!!Error!!! intersight_secret_key does not seem to contain a Valid Secret Key.')
         if not valid == True:
-            kwargs.jData.description = 'Intersight SecretKey'
-            kwargs.jData.default = '%s%sDownloads%sSecretKey.txt' % (kwargs['home'], os.sep, os.sep)
-            kwargs.jData.pattern = '.*'
-            kwargs.jData.varInput= 'What is the Path for the Intersight SecretKey?'
-            kwargs.jData.varName = 'intersight_keyfile'
+            kwargs.jData.description = 'Intersight Secret Key'
+            kwargs.jData.default     = '%s%sDownloads%sSecretKey.txt' % (kwargs['home'], os.sep, os.sep)
+            kwargs.jData.pattern     = '.*'
+            kwargs.jData.varInput    = 'What is the Path for the Intersight Secret Key?'
+            kwargs.jData.varName     = 'intersight_secret_key'
             secret_path = varStringLoop(kwargs)
 
     #==============================================
@@ -494,9 +494,9 @@ def intersight_config(kwargs):
     #==============================================
     valid = False
     while valid == False:
-        varValue = kwargs['args'].endpoint
+        varValue = kwargs['args'].intersight_fqdn
         if not varValue == None:
-            varName = 'Intersight Endpoint'
+            varName = 'Intersight FQDN'
             if re.search(r'^[a-zA-Z0-9]:', varValue):
                 valid = validating.ip_address(varName, varValue)
             if re.search(r'[a-zA-Z]', varValue):
@@ -508,13 +508,13 @@ def intersight_config(kwargs):
                 print('  "{}" is not a valid address.').format(varValue)
                 print(f'\n-------------------------------------------------------------------------------------------\n')
         if valid == False:
-            kwargs.jData.description = 'Hostname of the Intersight Endpoint'
-            kwargs.jData.default = 'intersight.com'
-            kwargs.jData.pattern = '.*'
-            kwargs.jData.varInput= 'What is the Intersight Endpoint Hostname?'
-            kwargs.jData.varName = 'Intersight Endpoint'
-            kwargs.jData.varType = 'hostname'
-            kwargs.args.endpoint = varStringLoop(kwargs)
+            kwargs.jData.description    = 'Hostname of the Intersight FQDN'
+            kwargs.jData.default        = 'intersight.com'
+            kwargs.jData.pattern        = '.*'
+            kwargs.jData.varInput       = 'What is the Intersight FQDN Hostname?'
+            kwargs.jData.varName        = 'Intersight FQDN'
+            kwargs.jData.varType        = 'hostname'
+            kwargs.args.intersight_fqdn = varStringLoop(kwargs)
             valid = True
     # Return kwargs
     return kwargs

@@ -1314,7 +1314,7 @@ class build(object):
                         x = kwargs.dns_domains[0].split('.')
                         x = list(reversed(x))
                         reverse_domain = '.'.join(x)
-                        server_nqn = f"nqn.2014-08.{reverse_domain}:nvme:{v.name}"
+                        server_nqn = f"nqn.2014-08.{reverse_domain}:nvme:{v.name}\r"
                         kwargs.count = 1
                         kwargs.show  = f"vserver nvme subsystem host show"
                         kwargs.regex = server_nqn

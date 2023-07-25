@@ -2554,9 +2554,10 @@ class wizard(object):
             elif v.os_type == 'OpenShift': OpenShift = True
             elif v.os_type == 'VMware': VMware = True
             if v.boot_volume == 'm2':
+                print(v)
                 if not v.storage_controllers.get('UCS-M2-HWRAID'):
-                    prRed(f"!!! ERROR !!!\n  Could not determine the Controller Slot for:\n")
-                    prRed(f"  * Profile: {kwargs.server_profiles[k].name}\n")
+                    prRed(f"!!! ERROR !!!\n  Could not determine the Controller Slot for:")
+                    prRed(f"  * Profile: {kwargs.server_profiles[k].name}")
                     prRed(f"  * Serial:  {kwargs.server_profiles[k].serial}\n")
                     sys.exit(1)
             elif v.boot_volume == 'san':
@@ -2566,7 +2567,8 @@ class wizard(object):
         # Deploy Operating System for each Profile
         #==========================================
         if san_boot == True:
-            kwargs.san_target = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.a[0].wwpn
+            san_target_a = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.a[0].wwpn
+            san_target_b = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.b[0].wwpn
 
         #==================================
         # Get ESXi Root Password
@@ -2697,7 +2699,11 @@ class wizard(object):
         #==========================================
         # Install Operating System on Servers
         #==========================================
+        count = 1
         for k,v in kwargs.server_profiles.items():
+            if v.boot_volume == 'san':
+                if count % 2 == 0: kwargs.san_target = san_target_a
+                else: kwargs.san_target = san_target_b
             if v.os_installed == False:
                 indx           = [e for e, d in enumerate(v.macs) if 'mgmt-a' in d.values()][0]
                 kwargs.mgmt_mac= v.macs[indx].mac
@@ -2710,13 +2716,13 @@ class wizard(object):
                     prGreen(f"{'-'*91}\n"\
                             f"      * host {k}: initiator: {v.wwpns[0].wwpn}\n"\
                             f"         target: {kwargs.san_target}\n"\
-                            f"         mac: {kwargs.mgmt_mac}"\
+                            f"         mac: {kwargs.mgmt_mac}\n"\
                             f"{'-'*91}\n")
                 else:
                     prGreen(f"{'-'*91}\n"\
                             f"      * host {k}:\n"\
                             f"         target: {v.boot_volume}\n"\
-                            f"         mac: {kwargs.mgmt_mac}"\
+                            f"         mac: {kwargs.mgmt_mac}\n"\
                             f"{'-'*91}\n")
                 kwargs = isight.api(self.type).calls(kwargs)
                 kwargs.server_profiles[k].os_install = DotMap(moid=kwargs.pmoid,workflow='')
@@ -2762,9 +2768,15 @@ class wizard(object):
                 #=================================================
                 if install_success == True:
                     tags = deepcopy(v.tags)
-                    tags.append(DotMap(Key = 'os_installed',Value = v.os_type))
                     tag_body = []
-                    for e in tags: tag_body.append(e.toDict())
+                    os_installed = False
+                    for e in tags:
+                        if e.Key == 'os_installed':
+                            os_installed = True
+                            tag_body.append({'Key':e.key,'Value':v.os_type})
+                        else: tag_body.append(e.toDict())
+                    if os_installed == False:
+                        tag_body.append({'Key':'os_installed','Value':v.os_type})
                     tags = list({v['Key']:v for v in tags}.values())
                     kwargs.apiBody={'Tags':tag_body}
                     kwargs.method = 'patch'
@@ -3172,10 +3184,10 @@ def os_installation_body(k, v, kwargs):
         }
     elif v.boot_volume == 'm2':
         apiBody['InstallTarget'] = {
-            "Id": "0",
+            "Id": 0,
             "Name": "MStorBootVd",
             "ObjectType": "os.VirtualDrive",
-            "StorageControllerSlotId": v.storage_controllers['UCS-M2-HWRAID']
+            "StorageControllerSlotId": int(v.storage_controllers['UCS-M2-HWRAID'])
         }
     return apiBody
 

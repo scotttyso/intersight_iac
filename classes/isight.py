@@ -49,8 +49,8 @@ class api(object):
         # Authenticate to the API
         #=====================================================
         def api_auth_function(kwargs):
-            api_key_id      = kwargs.args.api_key_id
-            api_key_file    = kwargs.args.api_key_file
+            api_key_id      = kwargs.args.intersight_api_key_id
+            api_key_file    = kwargs.args.intersight_secret_key
             kwargs.api_auth = IntersightAuth(api_key_id=api_key_id, secret_key_filename=api_key_file)
             kwargs.auth_time= time.time()
             return kwargs
@@ -128,11 +128,13 @@ class api(object):
                     for k, v in (response.json()).items():
                         prRed(f"    {k} is '{v}'")
                     sys.exit(1)
-                if '403' in str(status):
+                if re.search('40[0|3]', str(status)):
                     retry_action = False
                     for k, v in (response.json()).items():
                         if 'user_action_is_not_allowed' in v: retry_action = True
+                        elif 'policy_attached_to_multiple_profiles_cannot_be_edited' in v: retry_action = True
                     if i < retries -1 and retry_action == True:
+                        prPurple('     **NOTICE** Profile in Validating State.  Sleeping for 45 Seconds and Retrying.')
                         time.sleep(45)
                         continue
                     else: send_error()
@@ -2120,7 +2122,6 @@ def profile_domain(item, kwargs):
         kwargs.apiBody= apiBody
         kwargs.qtype  = 'switch'
         kwargs.uri    = kwargs.jsonVars.uri_switch
-        print(kwargs.apiBody)
         if kwargs.moids['switch'].get(apiBody['Name']):
             kwargs.method = 'patch'
             kwargs.pmoid = kwargs.moids['switch'][apiBody['Name']].moid
