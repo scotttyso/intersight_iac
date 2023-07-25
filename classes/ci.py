@@ -2708,7 +2708,7 @@ class wizard(object):
                 else:
                     kwargs.san_target = san_target_b
                     kwargs.wwpn = 1
-            if v.os_installed == False:
+            if v.os_installed == 'BLAH':
                 indx           = [e for e, d in enumerate(v.macs) if 'mgmt-a' in d.values()][0]
                 kwargs.mgmt_mac= v.macs[indx].mac
                 kwargs.fqdn    = k + '.' + kwargs.dns_domains[0]
