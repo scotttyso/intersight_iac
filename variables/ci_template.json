@@ -1,0 +1,400 @@
+{
+    "protocols": {
+        "dhcp_servers": [
+            "10.101.128.15",
+            "10.101.128.16"
+        ],
+        "dns_domains": [
+            "rich.ciscolabs.com"
+        ],
+        "dns_servers": [
+            "10.101.128.15",
+            "10.101.128.16"
+        ],
+        "timezone": "America/New_York",
+        "ntp_servers": [
+            "10.101.128.15",
+            "10.101.128.16"
+        ]
+    },
+    "netapp": [
+        {
+            "username": "admin",
+            "autosupport": {
+                "mail_hosts": [
+                    "smtp-ext.cisco.com"
+                ],
+                "proxy_url": "",
+                "from_address": "rich-lab@cisco.com",
+                "to_addresses": [
+                    "rich-lab@cisco.com"
+                ]
+            },
+            "snmp": {
+                "contact": "rich-lab@cisco.com",
+                "location": "Richfield SE Lab - Room 142 Rack B",
+                "username": "snmpadmin",
+                "trap_server": "lnx1.rich.ciscolabs.com"
+            },
+            "clusters": [
+                {
+                    "login_banner": "Access restricted to authorized users",
+                    "name": "r142b-netapp01",
+                    "nodes": {
+                        "node01": "r142b-netapp01-ct0",
+                        "node02": "r142b-netapp01-ct1",
+                        "data_ports": [
+                            "e0e",
+                            "e0g"
+                        ],
+                        "data_speed": 10,
+                        "fcp_ports": [
+                            "1a",
+                            "1c"
+                        ],
+                        "fcp_speed": 16,
+                        "network": {
+                            "data": [
+                                "eth1/2/1",
+                                "eth1/2/2"
+                            ],
+                            "management": "eth1/3"
+                        }
+                    },
+                    "svm": {
+                        "login_banner": "RICH - Access restricted to authorized users",
+                        "name": "RICH",
+                        "volumes": [
+                            {
+                                "name": "audit_log",
+                                "os_type": "netapp",
+                                "protocol": "local",
+                                "size": 50,
+                                "volume_type": "audit"
+                            },
+                            {
+                                "name": "infra_datastore",
+                                "os_type": "vmware",
+                                "protocol": "nfs",
+                                "size": 1024,
+                                "volume_type": "data"
+                            },
+                            {
+                                "name": "infra_swap",
+                                "os_type": "vmware",
+                                "protocol": "nfs",
+                                "size": 256,
+                                "volume_type": "swap"
+                            },
+                            {
+                                "name": "esxi_boot",
+                                "os_type": "vmware",
+                                "protocol": "fcp",
+                                "size": 1024,
+                                "volume_type": "boot"
+                            },
+                            {
+                                "name": "vCLS",
+                                "os_type": "vmware",
+                                "protocol": "nfs",
+                                "size": 128,
+                                "volume_type": "vcls"
+                            },
+                            {
+                                "name": "nvme_datastore",
+                                "os_type": "vmware",
+                                "protocol": "nvme-tcp",
+                                "size": 1024,
+                                "volume_type": "nvme"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "intersight": [
+        {
+            "organization": "RICH",
+            "cfg_qos_priorities": false,
+            "discovery_protocol": "cdp",
+            "domains": {
+                "switch_mode": "switch",
+                "serial_numbers": [
+                    "FDO2416170G",
+                    "FDO2416171W"
+                ],
+                "eth_uplink_ports": [
+                    "eth1/53",
+                    "eth1/54"
+                ],
+                "eth_uplink_speed": "Auto",
+                "eth_breakout_speed": "10G",
+                "fcp_uplink_ports": [
+                    "fc1/3",
+                    "fc1/4"
+                ],
+                "fcp_uplink_speed": "16Gbps",
+                "vsans": [
+                    100,
+                    200
+                ],
+                "network": {
+                    "data": [
+                        "eth1/5",
+                        "eth1/6"
+                    ],
+                    "management": "eth1/6"
+                },
+                "profiles": [
+                    {
+                        "equipment_type": "Chassis",
+                        "identifier": 1,
+                        "domain_ports": [
+                            "eth1/17",
+                            "eth1/18"
+                        ],
+                        "profile_start": "r142c-1-1",
+                        "suffix_digits": 1,
+                        "inband_start": "198.18.1.21",
+                        "os_type": "VMware"
+                    },
+                    {
+                        "equipment_type": "Chassis",
+                        "identifier": 2,
+                        "domain_ports": [
+                            "eth1/33",
+                            "eth1/34"
+                        ],
+                        "profile_start": "r142c-2-1",
+                        "suffix_digits": 1,
+                        "inband_start": "198.18.1.29",
+                        "os_type": "VMware"
+                    },
+                    {
+                        "equipment_type": "RackServer",
+                        "identifier": 1,
+                        "domain_ports": [
+                            "eth1/37"
+                        ],
+                        "profile_start": "r142c-1",
+                        "suffix_digits": 1,
+                        "inband_start": "198.18.1.37",
+                        "os_type": "VMware"
+                    },
+                    {
+                        "equipment_type": "RackServer",
+                        "identifier": 2,
+                        "domain_ports": [
+                            "eth1/38"
+                        ],
+                        "profile_start": "r142c-2",
+                        "suffix_digits": 1,
+                        "inband_start": "198.18.1.38",
+                        "os_type": "VMware"
+                    },
+                    {
+                        "equipment_type": "RackServer",
+                        "identifier": 3,
+                        "domain_ports": [
+                            "eth1/39"
+                        ],
+                        "profile_start": "r142c-3",
+                        "suffix_digits": 1,
+                        "inband_start": "198.18.1.39",
+                        "os_type": "VMware"
+                    },
+                    {
+                        "equipment_type": "RackServer",
+                        "identifier": 4,
+                        "domain_ports": [
+                            "eth1/40"
+                        ],
+                        "profile_start": "r142c-4",
+                        "suffix_digits": 1,
+                        "inband_start": "198.18.1.40",
+                        "os_type": "VMware"
+                    }
+                ]
+            },
+            "firmware": {
+                "blades": "5.1(0.230054)",
+                "rackmount": "4.2(3d)"
+            },
+            "pools": {
+                "prefix": 1
+            },
+            "policies": {
+                "boot_volume": "san",
+                "prefix": null,
+                "local_user": "admin",
+                "snmp": {
+                    "contact": "rich-lab@cisco.com",
+                    "location": "Richfield SE Lab - Room 142 Rack C",
+                    "username": "snmpadmin",
+                    "servers": [
+                        "10.101.128.24",
+                        "10.101.128.25"
+                    ]
+                },
+                "syslog": {
+                    "servers": [
+                        "10.101.128.24",
+                        "10.101.128.25"
+                    ]
+                }
+            },
+            "virtualization": [
+                {
+                    "datacenter": "flexpod",
+                    "license_type": "enterprise",
+                    "name": "vcenter.rich.ciscolabs.com",
+                    "type": "vmware",
+                    "username": "administrator@rich.local",
+                    "virtual_switches": [
+                        {
+                            "data_types": [
+                                "management"
+                            ],
+                            "name": "vswitch0",
+                            "type": "standard",
+                            "alternate_name": "mgmt"
+                        },
+                        {
+                            "data_types": [
+                                "migration"
+                            ],
+                            "name": "vni",
+                            "type": "dvs",
+                            "alternate_name": "mgmt"
+                        },
+                        {
+                            "data_types": [
+                                "storage"
+                            ],
+                            "name": "data",
+                            "type": "dvs",
+                            "alternate_name": "mgmt"
+                        },
+                        {
+                            "data_types": [
+                                "guests"
+                            ],
+                            "name": "guests",
+                            "type": "dvs",
+                            "alternate_name": "mgmt"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "nxos_configure": false,
+    "nxos": [],
+    "vlans": [
+        {
+            "vlan_type": "ooband",
+            "vlan_id": 1000,
+            "name": "OOB-MGMT",
+            "network": "192.168.64.1/23",
+            "configure_l2": false,
+            "configure_l3": false,
+            "disjoint": false,
+            "native_vlan": false,
+            "switch_type": "ooband",
+            "ranges": {
+                "controller": "192.168.64.25-29",
+                "pool": "192.168.65.159-170",
+                "server": null
+            }
+        },
+        {
+            "vlan_type": "inband",
+            "vlan_id": 1001,
+            "name": "IB-MGMT",
+            "network": "198.18.1.1/24",
+            "configure_l2": false,
+            "configure_l3": false,
+            "disjoint": false,
+            "native_vlan": false,
+            "switch_type": "network",
+            "ranges": {
+                "controller": "198.18.1.11-12",
+                "pool": "198.18.1.101-150",
+                "server": "198.18.1.21-50"
+            }
+        },
+        {
+            "vlan_type": "migration",
+            "vlan_id": 1002,
+            "name": "vMotion",
+            "network": "198.18.2.1/24",
+            "configure_l2": false,
+            "configure_l3": false,
+            "disjoint": false,
+            "native_vlan": false,
+            "switch_type": "network",
+            "ranges": {
+                "controller": null,
+                "pool": null,
+                "server": "198.18.2.21-50"
+            }
+        },
+        {
+            "vlan_type": "nvme",
+            "vlan_id": 1013,
+            "name": "NVMe-TCP-A",
+            "network": "198.18.3.1/24",
+            "configure_l2": false,
+            "configure_l3": false,
+            "disjoint": false,
+            "native_vlan": false,
+            "switch_type": "network",
+            "ranges": {
+                "controller": "198.18.13.11-12",
+                "pool": null,
+                "server": "198.18.13.21-50"
+            }
+        },
+        {
+            "vlan_type": "nvme",
+            "vlan_id": 1014,
+            "name": "NVMe-TCP-B",
+            "network": "198.18.14.1/24",
+            "configure_l2": false,
+            "configure_l3": false,
+            "disjoint": false,
+            "native_vlan": false,
+            "switch_type": "network",
+            "ranges": {
+                "controller": "198.18.14.11-12",
+                "pool": null,
+                "server": "198.18.14.21-50"
+            }
+        },
+        {
+            "vlan_type": "nfs",
+            "vlan_id": 1015,
+            "name": "NFS",
+            "network": "198.18.15.1/24",
+            "configure_l2": false,
+            "configure_l3": false,
+            "disjoint": false,
+            "native_vlan": false,
+            "switch_type": "network",
+            "ranges": {
+                "controller": "198.18.15.11-12",
+                "pool": null,
+                "server": "198.18.15.21-50"
+            }
+        }
+    ],
+    "vlan_ranges": [
+        {
+            "vlan_range": "125-131",
+            "name_prefix": "vm-data",
+            "configure_l2": false,
+            "disjoint": false
+        }
+    ]
+}

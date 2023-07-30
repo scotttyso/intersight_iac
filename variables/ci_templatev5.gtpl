@@ -1,7 +1,7 @@
+---\n
 {{$protocols := .global.workflow.input.protocols}}
 {{$netapp := .global.workflow.input.netapp}}
 {{$imm := .global.workflow.input.imm}}
----\n
 protocols:\n
 {{if index $protocols "dhcp_servers"}}
   dhcp_servers:\n
@@ -65,10 +65,10 @@ netapp:\n
     clusters:\n
 {{range $i, $cluster := $netapp.clusters}}
       - login_banner: {{ if index $cluster "login_banner" }}{{ $cluster.login_banner }}{{else}}''{{ end  }}\n
-        name: {{$cluster.cluster_name}}\n
+        name: {{ if index $cluster "cluster_name" }}{{$cluster.cluster_name}}{{end}}\n
         nodes:\n
-          node01: {{$cluster.nodes.node01}}\n
-          node02: {{$cluster.nodes.node02}}\n
+          node01: {{ if index $cluster.nodes "node01" }}{{$cluster.nodes.node01}}{{end}}\n
+          node02: {{ if index $cluster.nodes "node02" }}{{$cluster.nodes.node02}}{{end}}\n
 {{if index $cluster.nodes "data_ports"}}
           data_ports:\n
 {{range $i, $netapp_data_ports := $cluster.nodes.data_ports}}
@@ -114,13 +114,12 @@ netapp:\n
 {{end}}
 {{end}}
 intersight:\n
-  - organization: {{$imm.organization}}\n
+  - organization: {{if index $imm "organization"}}{{$imm.organization}}{{end}}\n
     cfg_qos_priorities: {{if index $imm "cfg_qos_priorities"}}{{$imm.cfg_qos_priorities}}{{else}}false{{end}}\n
     discovery_protocol: {{if index $imm "discovery_protocol"}}{{$imm.discovery_protocol}}{{else}}cdp{{end}}\n
 {{if index $imm "domains"}}
     domains:\n
 {{range $i, $domain := $imm.domains}}
-      - name: {{$domain.domain_name}}\n
         switch_mode: {{if index $domain "switch_mode"}}{{$domain.switch_mode}}{{else}}end-host{{end}}\n
 {{if index $domain "serial_numbers"}}
         serial_numbers:\n
@@ -130,9 +129,13 @@ intersight:\n
 {{else}}
         serial_numbers: []\n
 {{end}}
+{{if index $domain "fcp_ports"}}
         eth_uplink_ports:\n
 {{range $i, $eth_uplink_ports := $domain.eth_uplink_ports}}
           - {{$eth_uplink_ports}}\n
+{{end}}
+{{else}}
+        eth_uplink_ports: []\n
 {{end}}
         eth_uplink_speed: {{if index $domain "eth_uplink_speed"}}{{$domain.eth_uplink_speed}}{{else}}Auto{{end}}\n
         eth_breakout_speed: {{if index $domain "eth_breakout_speed"}}{{$domain.eth_breakout_speed}}{{else}}25G{{end}}\n
@@ -221,7 +224,7 @@ intersight:\n
     virtualization:\n
       - datacenter: {{if index $imm.virtualization "datacenter"}}{{$imm.virtualization.datacenter}}{{else}}flexpod{{end}}\n
         license_type: {{if index $imm.virtualization "license_type"}}{{$imm.virtualization.license_type}}{{else}}enterprise{{end}}\n
-        name: {{$imm.virtualization.vcenter}}\n
+        name: {{if index $imm.virtualization "vcenter"}}{{$imm.virtualization.vcenter}}{{end}}\n
         type: {{if index $imm.virtualization "type"}}{{$imm.virtualization.type}}{{end}}\n
         username: {{if index $imm.virtualization "vcenter_username"}}{{$imm.virtualization.vcenter_username}}{{else}}administrator@vsphere.local{{end}}\n
 {{if index $imm.virtualization "virtual_switches"}}
@@ -235,7 +238,7 @@ intersight:\n
 {{else}}
           - data_types: []\n
 {{end}}
-            name: {{$switch.name}}\n
+            name: {{if index $switch "name"}}{{$switch.name}}{{end}}\n
             type: {{if index $switch "type"}}{{$switch.type}}{{else}}dvs{{end}}\n
             alternate_name: {{if index $switch "alternate_name"}}{{$switch.alternate_name}}{{else}}''{{end}}\n
 {{end}}
@@ -246,9 +249,9 @@ nxos_configure: {{if index .global.workflow.input "config_nxos"}}{{.global.workf
 {{if eq .global.workflow.input.config_nxos true}}
 nxos:\n
   - username: {{if index .global.workflow.input.nxos "username"}}{{.global.workflow.input.nxos.username}}{{end}}\n
-  {{if index .global.workflow.input.nxos "switches"}}
+{{if index .global.workflow.input.nxos "switches"}}
     switches:\n
-    {{range $i, $switch := .global.workflow.input.nxos.switches}}
+{{range $i, $switch := .global.workflow.input.nxos.switches}}
       - hostname: {{if index $switch "hostname"}}{{$switch.hostname}}{{end}}\n
         switch_type: {{if index $switch "switch_type"}}{{$switch.switch_type}}{{else}}network{{end}}\n
         configure: {{if index $switch "configure_l3"}}{{$switch.configure_l3}}{{else}}false{{end}}\n
@@ -256,26 +259,26 @@ nxos:\n
         vpc_config:\n
           domain_id: {{if index $switch "vpc_domain_id"}}{{$switch.vpc_domain_id}}{{end}}\n
           keepalive_ip: {{if index $switch "vpc_keepalive_ip"}}{{$switch.vpc_keepalive_ip}}{{end}}\n
-      {{if index $switch "vpc_keepalive_ports"}}
+{{if index $switch "vpc_keepalive_ports"}}
           keepalive_ports:\n
-        {{range $i, $vpc_keepalive_ports := $switch.vpc_keepalive_ports}}
+{{range $i, $vpc_keepalive_ports := $switch.vpc_keepalive_ports}}
             - {{$vpc_keepalive_ports}}\n
-        {{end}}
-      {{else}}
+{{end}}
+{{else}}
           keepalive_ports: []\n
-      {{end}}
-      {{if index $switch "vpc_peer_ports"}}
+{{end}}
+{{if index $switch "vpc_peer_ports"}}
           peer_ports:\n
-        {{range $i, $vpc_peer_ports := $switch.vpc_peer_ports}}
+{{range $i, $vpc_peer_ports := $switch.vpc_peer_ports}}
             - {{$vpc_peer_ports}}\n
-        {{end}}
-      {{else}}
+{{end}}
+{{else}}
           peer_ports: []\n
-      {{end}}
-    {{end}}
-  {{else}}
+{{end}}
+{{end}}
+{{else}}
     switches: []\n
-  {{end}}
+{{end}}
 {{else}}
 nxos: []\n
 {{end}}
@@ -284,7 +287,7 @@ vlans:\n
 {{range $i, $vlan := .global.workflow.input.vlans}}
   - vlan_type: {{if index $vlan "vlan_type"}}{{$vlan.vlan_type}}{{else}}vm{{end}}\n
     vlan_id: {{if index $vlan "vlan_id"}}{{$vlan.vlan_id}}{{end}}\n
-    name: {{$vlan.name}}\n
+    name: {{if index $vlan "name"}}{{$vlan.name}}{{end}}\n
     network: {{if index $vlan "network"}}{{$vlan.network}}{{end}}\n
     configure_l2: {{if index $vlan "configure_l2"}}{{$vlan.configure_l2}}{{else}}false{{end}}\n
     configure_l3: {{if index $vlan "configure_l3"}}{{$vlan.configure_l3}}{{else}}false{{end}}\n
@@ -302,7 +305,7 @@ vlans: []\n
 {{if index .global.workflow.input "vlan_ranges"}}
 vlan_ranges:\n
 {{range $i, $vlan := .global.workflow.input.vlan_ranges}}
-  - vlan_range: {{$vlan.vlan_range}}\n
+  - vlan_range: {{if index $vlan "vlan_range"}}{{$vlan.vlan_range}}{{end}}\n
     name_prefix: {{if index $vlan "name_prefix"}}{{$vlan.name_prefix}}{{end}}\n
     configure_l2: {{if index $vlan "configure_l2"}}{{$vlan.configure_l2}}{{else}}false{{end}}\n
     disjoint: {{if index $vlan "disjoint"}}{{$vlan.disjoint}}{{else}}false{{end}}\n

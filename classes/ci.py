@@ -2708,7 +2708,7 @@ class wizard(object):
                 else:
                     kwargs.san_target = san_target_b
                     kwargs.wwpn = 1
-            if v.os_installed == 'BLAH':
+            if v.os_installed == False:
                 indx           = [e for e, d in enumerate(v.macs) if 'mgmt-a' in d.values()][0]
                 kwargs.mgmt_mac= v.macs[indx].mac
                 kwargs.fqdn    = k + '.' + kwargs.dns_domains[0]
@@ -2736,7 +2736,7 @@ class wizard(object):
         # Monitor OS Installation until Complete
         #=================================================
         for k,v in  kwargs.server_profiles.items():
-            if v.os_installed == 'BLAH':
+            if v.os_installed == False:
                 kwargs.fqdn      = k + '.' + kwargs.dns_domains[0]
                 kwargs.api_filter= f"Input.OSInstallInputs.Answers.Hostname eq '{kwargs.fqdn}'"
                 kwargs.method    = 'get'
@@ -2770,18 +2770,14 @@ class wizard(object):
                 #=================================================
                 # Add os_installed Tag to Physical Server
                 #=================================================
-        for k,v in  kwargs.server_profiles.items():
-            if v.os_installed == True or v.os_installed == False:
-                install_success = True
                 if install_success == True:
                     tags = deepcopy(v.tags)
                     tag_body = []
                     os_installed = False
                     for e in tags:
-                        print(e)
                         if e.Key == 'os_installed':
                             os_installed = True
-                            tag_body.append({'Key':e.key,'Value':v.os_type})
+                            tag_body.append({'Key':e.Key,'Value':v.os_type})
                         else: tag_body.append(e.toDict())
                     if os_installed == False:
                         tag_body.append({'Key':'os_installed','Value':v.os_type})
