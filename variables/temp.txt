@@ -18,4 +18,23 @@ int vlan 1015
   ip add 198.18.15.253/24
   hsrp 1015
    ip 198.18.15.254
- wr
+asgard-vcenter.rich.ciscolabs.com
+vcenter.rich.ciscolabs.com
+wakanda-vcenter.rich.ciscolabs.com
+
+r142a.rich.ciscolabs.com
+.rich.ciscolabs.com
+.rich.ciscolabs.com
+.rich.ciscolabs.com
+.rich.ciscolabs.com
+.rich.ciscolabs.com
+.rich.ciscolabs.com
+.rich.ciscolabs.com
+.rich.ciscolabs.com
+.rich.ciscolabs.com
+.rich.ciscolabs.com
+san:dns=vcenter.rich.ciscolabs.com&dns=asgard-vcenter.rich.ciscolabs.com&dns=wakanda-vcenter.rich.ciscolabs.com
+san:dns=ise01.rich.ciscolabs.com&dns=ise02.rich.ciscolabs.com
+san:dns=r142a.rich.ciscolabs.com&dns=r142a-ucs-a.rich.ciscolabs.com&dns=r142a-ucs-b.rich.ciscolabs.com&dns=r143c-ucs.rich.ciscolabs.com&dns=r143c-ucs-a.rich.ciscolabs.com&dns=r143c-ucs-b.rich.ciscolabs.com&dns=r143d-ucs.rich.ciscolabs.com&dns=r143d-ucs-a.rich.ciscolabs.com&dns=r143d-ucs-b.rich.ciscolabs.com
+san:dns=apic.rich.ciscolabs.com&dns=asgard-apic01.rich.ciscolabs.com&dns=asgard-apic02.rich.ciscolabs.com&dns=asgard-apic03.rich.ciscolabs.com&dns=wakanda-apic01.rich.ciscolabs.com&dns=wakanda-apic02.rich.ciscolabs.com&dns=wakanda-apic03.rich.ciscolabs.com
+san:dns=odin.rich.ciscolabs.com&dns=odin-nd01.rich.ciscolabs.com&dns=odin-nd02.rich.ciscolabs.com&dns=odin-nd03.rich.ciscolabs.com&dns=odin-nd04.rich.ciscolabs.com&dns=odin-nd05.rich.ciscolabs.com&dns=odin-nd06.rich.ciscolabs.com

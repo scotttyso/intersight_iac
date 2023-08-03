@@ -50,8 +50,10 @@ class api(object):
         #=====================================================
         def api_auth_function(kwargs):
             api_key_id      = kwargs.args.intersight_api_key_id
-            api_key_file    = kwargs.args.intersight_secret_key
-            kwargs.api_auth = IntersightAuth(api_key_id=api_key_id, secret_key_filename=api_key_file)
+            secret_key      = kwargs.args.intersight_secret_key
+            if os.path.isfile(secret_key):
+                kwargs.api_auth = IntersightAuth(api_key_id=api_key_id, secret_key_filename=secret_key)
+            else: kwargs.api_auth = IntersightAuth(api_key_id=api_key_id, secret_key_string=secret_key)
             kwargs.auth_time= time.time()
             return kwargs
         #if not kwargs.get('api_auth'):

@@ -107,8 +107,8 @@ def cli_arguments():
         help='Intersight Managed Mode SNMP Privilege Password.'
     )
     Parser.add_argument(
-        '-k', '--intersight-secret-key', default='~/Downloads/SecretKey.txt',
-        help='Name of the file containing The Intersight secret key for the HTTP signature scheme.'
+        '-k', '--intersight_secret_key', default='~/Downloads/SecretKey.txt',
+        help='Name of the file containing The Intersight secret key or contents of the secret key in environment.'
     )
     Parser.add_argument(
         '-l', '--debug-level',
