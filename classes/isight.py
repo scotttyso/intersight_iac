@@ -1,16 +1,28 @@
-from classes import ezfunctionsv2 as ezfunctions
-from classes import validatingv2 as validating
-from copy import deepcopy
-from dotmap import DotMap
-from intersight_auth import IntersightAuth
-import json
-import numpy
-import os
-import re
-import requests
-import sys
-import time
-import urllib3
+#=============================================================================
+# Print Color Functions
+#=============================================================================
+def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
+def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
+
+#=============================================================================
+# Source Modules
+#=============================================================================
+try:
+    from classes import ezfunctions, validating
+    from intersight_auth import IntersightAuth
+    from copy import deepcopy
+    from dotmap import DotMap
+    import json, numpy, os, re, requests, sys, time, urllib3
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 serial_regex = re.compile('^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\dA-Z]{4}$')
@@ -74,24 +86,36 @@ class api(object):
                 else: api_filter = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
                 if 'asset_target' == kwargs.qtype:
                     api_filter = f"TargetId in ('{names}')"
-                elif 'user_role' == kwargs.qtype:
-                    api_filter = f"Name in ('{names}') and Type eq 'IMC'"
+                elif 'wwnn_pool_leases' == kwargs.qtype:
+                    api_filter = f"PoolPurpose eq 'WWNN' and AssignedToEntity.Moid in ('{names}')"
+                elif 'hcl_status' == kwargs.qtype:
+                    api_filter = f"ManagedObject.Moid in ('{names}')"
+                elif 'registered_device' == kwargs.qtype:
+                    api_filter = f"Moid in ('{names}')"
                 elif 'serial_number' == kwargs.qtype:
                     api_filter = f"Serial in ('{names}')"
                 elif 'switch' == kwargs.qtype:
                     api_filter = f"Name in ('{names}') and SwitchClusterProfile.Moid eq '{kwargs.pmoid}'"
-                elif 'vhbas' == kwargs.qtype:
+                elif re.search('^vhbas|san_connectivity.vhbas$', kwargs.qtype):
                     api_filter = f"Name in ('{names}') and SanConnectivityPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'vlans' == kwargs.qtype:
+                elif re.search('vlans|vlan.vlans', kwargs.qtype):
                     api_filter = f"VlanId in ({names}) and EthNetworkPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'vnics' == kwargs.qtype:
+                elif 'user_role' == kwargs.qtype:
+                    api_filter = f"Name in ('{names}') and Type eq 'IMC'"
+                elif re.search('^vnics|lan_connectivity.vnics$', kwargs.qtype):
                     api_filter = f"Name in ('{names}') and LanConnectivityPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'vsans' == kwargs.qtype:
+                elif re.search('^vsans|vsan.vsans$', kwargs.qtype):
                     api_filter = f"VsanId in ({names}) and FcNetworkPolicy.Moid eq '{kwargs.pmoid}'"
+                elif 'wwnn_pool_leases' == kwargs.qtype:
+                    api_filter = f"PoolPurpose eq 'WWNN' and AssignedToEntity.Moid in ('{names}')"
                 elif re.search('ww(n|p)n', kwargs.qtype):
                     api_filter = api_filter + f" and PoolPurpose eq '{kwargs.qtype.upper()}'"
-                if kwargs.top1000 == True: api_args = '?top=1000'
+                if kwargs.top1000 == True and len(kwargs.api_filter) > 0:
+                    api_args = f'?$filter={kwargs.api_filter}&$top=1000'
+                elif kwargs.top1000 == True: api_args = '?$top=1000'
+                elif api_filter == '': ''
                 else: api_args = f'?$filter={api_filter}'
+            elif kwargs.api_filter == 'ignore': api_args=''
             else: api_args = f'?$filter={kwargs.api_filter}'
         else: api_args = ''
 
@@ -183,7 +207,9 @@ class api(object):
                 kwargs.pmoid = api_results.Responses[0].Body.Moid
             else: kwargs.pmoid = api_results.Moid
         elif 'inventory' in kwargs.uri: icount = 0
-        else: kwargs.pmoids = build_pmoid_dictionary(api_results, kwargs)
+        else:
+            if not kwargs.get('build_skip'):
+                kwargs.pmoids = build_pmoid_dictionary(api_results, kwargs)
         if re.search('(patch|post)', kwargs.method):
             if kwargs.apiBody.get('name'):
                 kwargs.pmoids[kwargs.apiBody['Name']] = kwargs.pmoid
@@ -200,6 +226,23 @@ class api(object):
         # Return kwargs
         #=====================================================
         if kwargs.get('api_filter'): kwargs.pop('api_filter')
+        if kwargs.get('build_skip'): kwargs.pop('build_skip')
+        if kwargs.get('top1000'): kwargs.pop('top1000')
+        return kwargs
+
+    #=====================================================
+    # Get Organizations from Intersight
+    #=====================================================
+    def all_organizations(self, kwargs):
+        #=====================================================
+        # Get Organization List from the API
+        #=====================================================
+        kwargs.api_filter= 'ignore'
+        kwargs.method    = 'get'
+        kwargs.qtype     = 'organization'
+        kwargs.uri       = 'organization/Organizations'
+        kwargs           = api(self.type).calls(kwargs)
+        kwargs.org_moids = kwargs.pmoids
         return kwargs
 
     #=====================================================
@@ -258,7 +301,7 @@ class policies_class(object):
     # BIOS Policy Modification
     #=======================================================
     def bios(self, apiBody, item, kwargs):
-        bios_vars= kwargs.ez_data.policies.allOf[1].properties.bios.template_tuning
+        bios_vars= kwargs.ezdata.policies.allOf[1].properties.bios.template_tuning
         for k, v in apiBody.items():
             if type(v) == int or type(v) == float: apiBody[k] = str(v)
         if item.get('bios_template'):
@@ -276,7 +319,7 @@ class policies_class(object):
     # Boot Order Policy Modification
     #=======================================================
     def boot_order(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.boot_order
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.boot_order
         if item.get('boot_devices'):
             apiBody['BootDevices'] = deepcopy([])
             for i in item['boot_devices']:
@@ -302,7 +345,7 @@ class policies_class(object):
     #=======================================================
     def ethernet_adapter(self, apiBody, item, kwargs):
         kwargs    = kwargs
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.ethernet_adapter.template_tuning
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.ethernet_adapter.template_tuning
         if item.get('adapter_template'):
             template = item['adapter_template']
             apiBody = dict(apiBody, **jsonVars[template])
@@ -313,7 +356,7 @@ class policies_class(object):
     #=======================================================
     def ethernet_network_control(self, apiBody, item, kwargs):
         kwargs    = kwargs
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties['ethernet_network_control'].key_map
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties['ethernet_network_control'].key_map
         for k, v in item.items():
             if 'lldp' in k:
                 if not apiBody.get('lldp_settings'): apiBody['LldpSettings'] = {}
@@ -325,7 +368,7 @@ class policies_class(object):
     # Ethernet Network Group Policies Policy Modification
     #=======================================================
     def ethernet_network_group(self, apiBody, item, kwargs):
-        jsonVars= kwargs.ez_data.policies.allOf[1].properties[self.type].vlan_settings
+        jsonVars= kwargs.ezdata.policies.allOf[1].properties[self.type].vlan_settings
         apiBody.update({'VlanSettings':{'ObjectType':'fabric.VlanSettings'}})
         klist = ['allowed_vlans','native_vlan']
         for i in klist:
@@ -344,7 +387,7 @@ class policies_class(object):
     # Fibre-Channel Adapter Policy Modification
     #=======================================================
     def fc_zone(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.fc_zone.member_map
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.fc_zone.member_map
         if apiBody.get('FcTargetMembers'):
             targets = apiBody['FcTargetMembers']
             apiBody['FcTargetMembers'] = []
@@ -360,7 +403,7 @@ class policies_class(object):
     #=======================================================
     def fibre_channel_adapter(self, apiBody, item, kwargs):
         kwargs    = kwargs
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.fibre_channel_adapter.template_tuning
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.fibre_channel_adapter.template_tuning
         if item.get('adapter_template'):
             template = item['adapter_template']
             apiBody = dict(apiBody, **jsonVars[template])
@@ -371,7 +414,7 @@ class policies_class(object):
     #=======================================================
     def fibre_channel_network(self, apiBody, item, kwargs):
         kwargs    = kwargs
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.fibre_channel_network.key_map
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.fibre_channel_network.key_map
         apiBody.update({'VsanSettings':{'ObjectType':'vnic.VsanSettings'}})
         for k, v in item.items():
             if re.search('(default_)?(v(l|s)an(_id)?)', k) and k in jsonVars:
@@ -388,7 +431,7 @@ class policies_class(object):
         if item.get('exclude_drives'): apiBody['ExcludeComponentList'].append('local-disk')
         if item.get('exclude_storage_controllers'): apiBody['ExcludeComponentList'].append('storage-controller')
 
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties[self.type].ModelBundleCombo
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type].ModelBundleCombo
         if item.get('models'):
             apiBody['ModelBundleCombo'] = []
             for i in item.models:
@@ -564,7 +607,7 @@ class policies_class(object):
     # Local User Policy Modification
     #=======================================================
     def local_user(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.local_user.key_map_password
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.local_user.key_map_password
         apiBody['PasswordProperties'] = {
             "EnablePasswordExpiry": False,
             "EnforceStrongPassword": True,
@@ -589,7 +632,7 @@ class policies_class(object):
         #=====================================================
         # Get Existing Users
         #=====================================================
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.local_user
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.local_user
         kwargs.method= 'get'
         kwargs.names = []
         kwargs.qtype = 'local_users'
@@ -680,7 +723,7 @@ class policies_class(object):
         #=====================================================
         # Load Variables and Send Begin Notification
         #=====================================================
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties[self.type]
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type]
         policies = kwargs.imm_dict.orgs[kwargs.org].policies[self.type]
         if re.search('^port$', self.type):
             policies = list({v['names'][0]:v for v in policies}.values())
@@ -709,8 +752,8 @@ class policies_class(object):
                 if k in jsonVars.key_map:
                     apiBody.update({jsonVars.key_map[k]:v})
             apiBody = org_map(apiBody, kwargs.org_moids[kwargs.org].moid)
-            if apiBody.get('tags'): apiBody['Tags'].append(kwargs.ez_data.tags.toDict())
-            else: apiBody.update({'Tags':[kwargs.ez_data.tags.toDict()]})
+            if apiBody.get('tags'): apiBody['Tags'].append(kwargs.ezdata.tags.toDict())
+            else: apiBody.update({'Tags':[kwargs.ezdata.tags.toDict()]})
             return apiBody
 
         #=====================================================
@@ -799,7 +842,7 @@ class policies_class(object):
         #=====================================================
         # Get Port Policy
         #=====================================================
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.port
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.port
         kwargs.names  = []
         kwargs.names.extend(kwargs.item['names'])
         kwargs.method= 'get'
@@ -850,7 +893,7 @@ class policies_class(object):
         # Create/Patch the Port Policy Port Types
         #=====================================================
         def api_calls(apiBody, kwargs):
-            jsonVars = kwargs.ez_data.policies.allOf[1].properties.port.port_types[kwargs.type]
+            jsonVars = kwargs.ezdata.policies.allOf[1].properties.port.port_types[kwargs.type]
             #=====================================================
             # Check if the Port Policy Port Type Exists
             #=====================================================
@@ -888,7 +931,7 @@ class policies_class(object):
                     'Moid':kwargs.port_policy,'ObjectType':'fabric.PortPolicy'}}
                 for z in kwargs.policy_list:
                     pshort = z.replace('_policy', '')
-                    jVars = kwargs.ez_data.policies.allOf[1].properties[pshort]
+                    jVars = kwargs.ezdata.policies.allOf[1].properties[pshort]
                     if i.get(z):
                         if kwargs.moids[pshort].get(i[z]):
                             pmoid = kwargs.moids[pshort][i[z]].moid
@@ -940,7 +983,7 @@ class policies_class(object):
                         kwargs = api_calls(intfBody, kwargs)
             return kwargs
 
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.port
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.port
         #=====================================================
         # Get Policies
         #=====================================================
@@ -961,7 +1004,7 @@ class policies_class(object):
                         if y.get(i): kwargs.names.append(y[i])
             kwargs.names= numpy.unique(numpy.array(kwargs.names))
             kwargs.qtype= i.replace('_policy', '')
-            kwargs.uri  = kwargs.ez_data.policies.allOf[1].properties[kwargs.qtype].uri
+            kwargs.uri  = kwargs.ezdata.policies.allOf[1].properties[kwargs.qtype].uri
             kwargs = api(kwargs.qtype).calls(kwargs)
             kwargs.moids[kwargs.qtype] = kwargs.pmoids
         #=====================================================
@@ -980,7 +1023,7 @@ class policies_class(object):
     # SAN Connectivity Policy Modification
     #=======================================================
     def san_connectivity(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.pools.allOf[1].properties.fc
+        jsonVars = kwargs.ezdata.pools.allOf[1].properties.fc
         kwargs.names = []
         if item.get('wwnn_pool'): kwargs.names.append(item['wwnn_pool'])
         kwargs.method= 'get'
@@ -1004,7 +1047,7 @@ class policies_class(object):
         #=====================================================
         # Add SNMP Traps
         #=====================================================
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties[self.type]
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type]
         apiBody['SnmpTraps'] = []
         jvars = jsonVars.trap_map
         for e in item.snmp_trap_destinations:
@@ -1040,7 +1083,7 @@ class policies_class(object):
     # Storage Policy Modification
     #=======================================================
     def storage(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties['bios'].template_tuning
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties['bios'].template_tuning
         for k, v in apiBody.items():
             if type(v) == int or type(v) == float: apiBody[k] = str(v)
         if item.get('bios_template'):
@@ -1058,7 +1101,7 @@ class policies_class(object):
     # Assign Drive Groups to Storage Policies
     #=====================================================
     def storage_drive_group(self, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.storage.virtual_drive_map
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.storage.virtual_drive_map
         #=====================================================
         # Get Storage Policies
         #=====================================================
@@ -1120,7 +1163,7 @@ class policies_class(object):
     # Switch Control Policy Modification
     #=======================================================
     def switch_control(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.switch_control.mac_and_udld
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.switch_control.mac_and_udld
         apiBody.update({
             'MacAgingSettings':{
                 'MacAgingOption':'Default', 'MacAgingTime':14500, 'ObjectType':'fabric.MacAgingSettings'
@@ -1139,7 +1182,7 @@ class policies_class(object):
     # Syslog Policy Modification
     #=======================================================
     def syslog(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties.syslog.remote_logging
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.syslog.remote_logging
         if 'local_logging' in item:
             apiBody.update({'LocalClients':[{
                 'ObjectType':'syslog.LocalFileLoggingClient',
@@ -1159,7 +1202,7 @@ class policies_class(object):
     # System QoS Policy Modification
     #=======================================================
     def system_qos(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties[self.type].class_map
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type].class_map
         apiBody['Classes'] = []
         for i in item['classes']:
             idict = {}
@@ -1178,7 +1221,7 @@ class policies_class(object):
     # Assign VNICs to LAN Connectivity Policies
     #=====================================================
     def vhbas(self, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties[self.type]
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type]
         #=====================================================
         # Get Policies and Pools
         #=====================================================
@@ -1193,8 +1236,8 @@ class policies_class(object):
                 elif i.get(p): kwargs.names.extend(i[p])
             kwargs.qtype = pshort
             if 'wwpn' in p:
-                kwargs.uri = kwargs.ez_data.pools.allOf[1].properties.fc.uri
-            else: kwargs.uri = kwargs.ez_data.policies.allOf[1].properties[pshort].uri
+                kwargs.uri = kwargs.ezdata.pools.allOf[1].properties.fc.uri
+            else: kwargs.uri = kwargs.ezdata.policies.allOf[1].properties[pshort].uri
             kwargs.names   = numpy.unique(numpy.array(kwargs.names))
             kwargs         = api(pshort).calls(kwargs)
             kwargs.moids[p]= kwargs.pmoids
@@ -1215,7 +1258,7 @@ class policies_class(object):
                 apiBody.update({'ObjectType':'vnic.FcIf'})
                 for p in policy_list:
                     pshort = (p.replace('_policy', '')).replace('_policies', '')
-                    jVars = kwargs.ez_data.policies.allOf[1].properties[pshort]
+                    jVars = kwargs.ezdata.policies.allOf[1].properties[pshort]
                     if type(i[p]) == list: pname = i[p][x]
                     else: pname = i[p]
                     if not kwargs.moids[p].get(pname):
@@ -1235,7 +1278,7 @@ class policies_class(object):
                 }})
                 if i.get('fc_zone_policies'):
                     zone_policies = numpy.array_split(i['fc_zone_policies'], 2)
-                    jVars = kwargs.ez_data.policies.allOf[1].properties['fc_zone']
+                    jVars = kwargs.ezdata.policies.allOf[1].properties['fc_zone']
                     apiBody.update({jVars['object_name']:[]})
                     for z in zone_policies[x]:
                         pname = z
@@ -1285,7 +1328,7 @@ class policies_class(object):
     # Virtual Media Policy Modification
     #=======================================================
     def virtual_media(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties['virtual_media']['add_key_map']
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties['virtual_media']['add_key_map']
         if item.get('add_virtual_media'):
             apiBody.update({'mappings':[]})
             for i in item['add_virtual_media']:
@@ -1300,7 +1343,7 @@ class policies_class(object):
     # Assign VLANs to VLAN Policies
     #=====================================================
     def vlans(self, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties['multicast']
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties['multicast']
         #=====================================================
         # Get Policies and Pools
         #=====================================================
@@ -1316,7 +1359,7 @@ class policies_class(object):
         for item in kwargs.item:
             vlan_list = ezfunctions.vlan_list_full(item['vlan_list'])
             for i in vlan_list: kwargs.names.append(i)
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties[self.type]
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type]
         kwargs.qtype= 'vlans'
         kwargs.uri  = jsonVars.uri
         kwargs      = api('vlan').calls(kwargs)
@@ -1384,7 +1427,7 @@ class policies_class(object):
     # Assign VNICs to LAN Connectivity Policies
     #=====================================================
     def vnics(self, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties[self.type]
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type]
         #=====================================================
         # Get Policies and Pools
         #=====================================================
@@ -1394,8 +1437,8 @@ class policies_class(object):
             ptype = (item.replace('_policy', '')).replace('_policies', '')
             kwargs.names = []
             kwargs.qtype = ptype
-            if 'mac' in ptype: kwargs.uri = kwargs.ez_data.pools.allOf[1].properties[ptype].uri
-            else: kwargs.uri = kwargs.ez_data.policies.allOf[1].properties[ptype].uri
+            if 'mac' in ptype: kwargs.uri = kwargs.ezdata.pools.allOf[1].properties[ptype].uri
+            else: kwargs.uri = kwargs.ezdata.policies.allOf[1].properties[ptype].uri
             for i in kwargs.item:
                 if i.get('iscsi_boot_policies') and ptype == 'iscsi_boot': kwargs.names.extend(i[item])
                 elif i.get('ethernet_network_group_policies') and ptype == 'ethernet_network_group':
@@ -1430,7 +1473,7 @@ class policies_class(object):
                 if not i.get('iscsi_boot_policies'): policy_list.remove('iscsi_boot_policies')
                 for p in policy_list:
                     pshort = (p.replace('_policy', '')).replace('_policies', '')
-                    jVars = kwargs.ez_data.policies.allOf[1].properties[pshort]
+                    jVars = kwargs.ezdata.policies.allOf[1].properties[pshort]
                     if 'iscsi_boot' in p:
                         pname = i[p][x]
                     elif 'network_group' in p:
@@ -1498,7 +1541,7 @@ class policies_class(object):
     # Assign VSANs to VSAN Policies
     #=====================================================
     def vsans(self, kwargs):
-        jsonVars = kwargs.ez_data.policies.allOf[1].properties[self.type]
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type]
         #=====================================================
         # Get Policies and Pools
         #=====================================================
@@ -1545,9 +1588,7 @@ class pools_class(object):
         if item.get('id_blocks'):
             apiBody.update({'IdBlocks':[]})
             for i in item['id_blocks']:
-                apiBody['IdBlocks'].append({
-                    'From':i['from'], 'ObjectType':'fcpool.Block', 'Size':i['size']
-                })
+                apiBody['IdBlocks'].append({'From':i['from'], 'ObjectType':'fcpool.Block', 'Size':i['size']})
         return apiBody
 
     #=======================================================
@@ -1604,22 +1645,19 @@ class pools_class(object):
         #=====================================================
         # Load Variables and Send Begin Notification
         #=====================================================
-        if re.search('ww(n|p)n', self.type):
-            jsonVars = kwargs.ez_data.pools.allOf[1].properties.fc
-        else: jsonVars = kwargs.ez_data.pools.allOf[1].properties[self.type]
-        pools = kwargs.imm_dict.orgs[kwargs.org].pools[self.type]
-        pools = list({v['name']:v for v in pools}.values())
+        ezdata = kwargs.ezdata[self.type].allOf
+        idata  = ezdata[0].properties.toDict() | ezdata[1].properties.toDict()
+        print(json.dumps(idata, indent=4))
+        exit()
+        #print(json.dumps(idata, indent=4))
+        #exit()
+        pools = list({v['name']:v for v in kwargs.imm_dict.orgs[kwargs.org].pools[self.type]}.values())
         org_moid = kwargs.org_moids[kwargs.org].moid
         validating.begin_section(self.type, 'pool')
         #=====================================================
         # Get Existing Pools
         #=====================================================
-        kwargs.names = []
-        for i in pools: kwargs.names.append(i['name'])
-        kwargs.method = 'get'
-        kwargs.qtype  = self.type
-        kwargs.uri    = jsonVars.uri
-        kwargs    = api(self.type).calls(kwargs)
+        kwargs = api_get(True, [e.name for e in pools], self.type, kwargs)
         pool_moids= kwargs.pmoids
         #=====================================================
         # Loop through Items
@@ -1630,11 +1668,14 @@ class pools_class(object):
             #=====================================================
             apiBody = {}
             for k, v in item.items():
-                if k in jsonVars.key_map: apiBody.update({jsonVars.key_map[k]:v})
+                if k in idata:
+                    #if 'object'
+                    if re.search('boolean|string|integer', idata[k].type):
+                        apiBody.update({idata[k].intersightApi:v})
             if not apiBody.get('AssignmentOrder'): apiBody.update({'AssignmentOrder':'sequential'})
             apiBody = org_map(apiBody, org_moid)
-            if apiBody.get('Tags'): apiBody['Tags'].append(kwargs.ez_data.tags.toDict())
-            else: apiBody.update({'Tags':[kwargs.ez_data.tags.toDict()]})
+            if apiBody.get('Tags'): apiBody['Tags'].append(kwargs.ezdata.tags.toDict())
+            else: apiBody.update({'Tags':[kwargs.ezdata.tags.toDict()]})
             #=====================================================
             # Add Pool Specific Attributes
             #=====================================================
@@ -1683,7 +1724,7 @@ class profiles_class(object):
         #=====================================================
         # Load Variables and Send Begin Notification
         #=====================================================
-        jsonVars = kwargs.ez_data.profiles.allOf[1].properties[self.type]
+        jsonVars = kwargs.ezdata.profiles.allOf[1].properties[self.type]
         if 'templates' == self.type:
             profiles = kwargs.imm_dict.orgs[kwargs.org][self.type]['server']
             profiles = list({v['name']:v for v in profiles}.values())
@@ -1768,8 +1809,8 @@ class profiles_class(object):
                     if templates[spt].get(p):
                         kwargs.names.append(templates[spt][p])
             ptype = ((p.replace('_policy', '')).replace('_pool', '')).replace('_policies', '')
-            if 'pool' in p: kwargs.uri = kwargs.ez_data.pools.allOf[1].properties[ptype].uri
-            else: kwargs.uri = kwargs.ez_data.policies.allOf[1].properties[ptype].uri
+            if 'pool' in p: kwargs.uri = kwargs.ezdata.pools.allOf[1].properties[ptype].uri
+            else: kwargs.uri = kwargs.ezdata.policies.allOf[1].properties[ptype].uri
             kwargs.names  = numpy.unique(numpy.array(kwargs.names))
             kwargs.method = 'get'
             kwargs.qtype  = ptype
@@ -1798,8 +1839,8 @@ class profiles_class(object):
             if kwargs.tags: kwargs.pop('tags')
             if item.get('tags'):
                 kwargs.tags = item.tags.toDict()
-                kwargs.tags.extend(kwargs.ez_data.tags.toDict())
-            else: kwargs.tags = [kwargs.ez_data.tags.toDict()]
+                kwargs.tags.extend(kwargs.ezdata.tags.toDict())
+            else: kwargs.tags = [kwargs.ezdata.tags.toDict()]
             if re.search('^(chassis|server)$', self.type):
                 for i in item['targets']:
                     kwargs.apiBody = {'Name':i.name, 'Description': '', 'Tags':kwargs.tags}
@@ -2031,8 +2072,10 @@ def build_pmoid_dictionary(api_results, kwargs):
                 apiDict[iname].object_type = i.ObjectType
                 apiDict[iname].registered_device = i.RegisteredDevice.Moid
                 if i.get('ChassisId'):
-                    apiDict[iname]['id'] = i.ChassisId
+                    apiDict[iname].id = i.ChassisId
                 if i.get('SourceObjectType'): apiDict[iname].object_type = i.SourceObjectType
+            if i.get('PolicyBucket'):
+                apiDict[iname].policy_bucket = i.PolicyBucket
             if i.get('Selectors'):
                 apiDict[iname].selectors = i.Selectors
             if i.get('SwitchId'): apiDict[iname].switch_id = i.SwitchId
@@ -2102,7 +2145,7 @@ def profile_domain(item, kwargs):
         #=====================================================
         for p in kwargs.jsonVars.policy_list:
             pshort = ((p.replace('_policy', '')).replace('_pool', '')).replace('_policies', '')
-            pObject = kwargs.ez_data.policies.allOf[1].properties[pshort]['object_type']
+            pObject = kwargs.ezdata.policies.allOf[1].properties[pshort]['object_type']
             add_policy = False
             if item.get(p):
                 if len(item[p]) > 0: add_policy = True
@@ -2219,7 +2262,7 @@ def profile_function(item, kwargs):
         if 'uuid_pool' in kwargs.jsonVars.policy_list: kwargs.jsonVars.policy_list.remove('uuid_pool')
         for p in kwargs.jsonVars.policy_list:
             pshort = p.replace('_policy', '')
-            pObject = kwargs.ez_data.policies.allOf[1].properties[pshort]['object_type']
+            pObject = kwargs.ezdata.policies.allOf[1].properties[pshort]['object_type']
             add_policy = False
             if item.get(p):
                 if len(item[p]) > 0:
@@ -2262,7 +2305,7 @@ def profile_function(item, kwargs):
         if not kwargs.policy_moids[p].get(pname):
             validating.error_policy_doesnt_exist(p, pname, item.name, kwargs.type, 'Profile')
         pmoid = kwargs.policy_moids[p][pname].moid
-        pObject = kwargs.ez_data.pools.allOf[1].properties[pshort]['object_type']
+        pObject = kwargs.ezdata.pools.allOf[1].properties[pshort]['object_type']
         apiBody.update({'UuidAddressType':'POOL'})
         apiBody.update({'UuidPool':{'Moid':pmoid, 'ObjectType':pObject}})
 
@@ -2281,13 +2324,25 @@ def profile_function(item, kwargs):
         kwargs.pmoid = kwargs.pmoid
     return kwargs
 
-#=====================================================
-# Print Color Functions
-#=====================================================
-def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
-def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
+
+#======================================================
+# Function - API Get Calls
+#======================================================
+def api_get(empty, names, otype, kwargs):
+    kwargs.names = names
+    kwargs.method= 'get'
+    kwargs.qtype = otype
+    kwargs.uri   = kwargs.ezdata[otype].intersight_uri
+    print(kwargs.qtype)
+    print(kwargs.uri)
+    kwargs       = api(kwargs.qtype).calls(kwargs)
+    if empty == False and kwargs.results == []: empty_results(kwargs)
+    return kwargs
+
+
+#======================================================
+# Function - Exit on Empty Results
+#======================================================
+def empty_results(kwargs):
+        prRed(f"The API Query Results were empty for {kwargs.uri}.  Exiting...")
+        sys.exit(1)

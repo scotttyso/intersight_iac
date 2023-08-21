@@ -1,5 +1,5 @@
-from classes import ezfunctionsv2 as ezfunctions
-from classes import validatingv2 as validating
+from classes import ezfunctions as ezfunctions
+from classes import validating as validating
 from copy import deepcopy
 from dotmap import DotMap
 import datetime

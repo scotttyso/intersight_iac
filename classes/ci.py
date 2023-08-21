@@ -1,27 +1,33 @@
 #=============================================================================
+# Print Color Functions
+#=============================================================================
+def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
+def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
+
+#=============================================================================
 # Source Modules
 #=============================================================================
-from classes import claim_device
-from classes import ezfunctionsv2 as ezfunctions
-from classes import validatingv2 as validating
-from classes import netapp
-from classes import isight
-from copy import deepcopy
-from dotmap import DotMap
-import ipaddress
-import json
-import numpy
-import os
-import re
-import requests
-import sys
-import time
-import urllib3
+try:
+    from classes import claim_device, ezfunctions, isight, netapp, validating
+    from copy import deepcopy
+    from dotmap import DotMap
+    import ipaddress, json, numpy, os, re, requests, sys, time, urllib3
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-#=======================================================
+#=============================================================================
 # IMM Class
-#=======================================================
+#=============================================================================
 class imm(object):
     def __init__(self, type):
         self.type = type
@@ -1905,7 +1911,7 @@ class imm(object):
             jumbo_mtu   = True,
             name        = f'{kwargs.imm.policies.prefix}qos',
         )
-        for k, v in kwargs.ez_data['ezimm'].allOf[1].properties['systemQos'].items():
+        for k, v in kwargs.ezdata['ezimm'].allOf[1].properties['systemQos'].items():
             cDict = {'priority':k}
             cDict.update(v)
             polVars['classes'].append(cDict)
@@ -2143,9 +2149,9 @@ class imm(object):
         return kwargs
 
 
-#=======================================================
+#=============================================================================
 # Wizard Class
-#=======================================================
+#=============================================================================
 class wizard(object):
     def __init__(self, type):
         self.type = type
@@ -2157,7 +2163,7 @@ class wizard(object):
         #==================================
         # Configure Domain Policies
         #==================================
-        policy_list = kwargs.ez_data['ezimm'].allOf[1].properties['list_domains'].enum
+        policy_list = kwargs.ezdata['ezimm'].allOf[1].properties['list_domains'].enum
         policy_list.remove('domain')
         policy_list.insert(0, 'ethernet_network_group')
         policy_list.sort()
@@ -2192,7 +2198,7 @@ class wizard(object):
             #==================================
             # Configure IMM Pools
             #==================================
-            pool_list = list(kwargs.ez_data.pools.allOf[1].properties.keys())
+            pool_list = list(kwargs.ezdata.pools.allOf[1].properties.keys())
             pool_list.remove('resource')
             for k, v in kwargs.imm.domain.items():
                 for i in pool_list:
@@ -2203,7 +2209,7 @@ class wizard(object):
         #==================================
         # Modify the Policy List
         #==================================
-        ezjson = kwargs.ez_data['ezimm'].allOf[1].properties
+        ezjson = kwargs.ezdata['ezimm'].allOf[1].properties
         if kwargs.args.deployment_type == 'azure_hci':
             policy_list= ezjson.list_standalone.enum
             pop_list   = ezjson['converged.azure_hci.pop_list'].enum
@@ -2295,7 +2301,7 @@ class wizard(object):
     #=============================================================================
     def dns_ntp(self, kwargs):
         #=====================================================
-        # DHCP, DNS, NTP, Organization
+        # DHCP, DNS, NTP, Organization & Return kwargs
         #=====================================================
         i = kwargs.imm_dict.wizard.protocols[0]
         kwargs.dhcp_servers= i.dhcp_servers
@@ -2303,10 +2309,6 @@ class wizard(object):
         kwargs.dns_domains = i.dns_domains
         kwargs.ntp_servers = i.ntp_servers
         kwargs.timezone    = i.timezone
-        
-        #=====================================================
-        # Return kwargs and kwargs
-        #=====================================================
         return kwargs
 
 
@@ -2332,7 +2334,7 @@ class wizard(object):
                 kwargs.imm.firmware      = item.firmware
                 kwargs.imm.policies      = item.policies
                 kwargs.imm.profiles      = item.profiles
-                kwargs.imm.tags          = kwargs.ez_data.tags
+                kwargs.imm.tags          = kwargs.ezdata.tags
                 kwargs.imm.username      = item.username
                 for p in item.profiles:
                     dlength= len(p.network.data.split('/'))
@@ -2407,7 +2409,7 @@ class wizard(object):
                         profiles           = i.profiles,
                         registered_device  = serial_moids[serial]['registered_device'],
                         serial_numbers     = list(serial_moids.keys()),
-                        tags               = kwargs.ez_data.tags
+                        tags               = kwargs.ezdata.tags
                     )
                     #==================================
                     # Build Domain Network Dictionary
@@ -2607,7 +2609,7 @@ class wizard(object):
         if kwargs.deployment_type == 'azure_hci':
             kwargs.os_name   = re.search('(AzureStackHCI_\\d+.\\d+)', kwargs.files[os_type]).group(1)
         else:  kwargs.os_name= re.search('(ESXi-\\d.\\d(\\.\\d)?)', kwargs.files[os_type]).group(1)
-        jvars = kwargs.ez_data.operatingSystem.allOf[1].properties[kwargs.os_name]
+        jvars = kwargs.ezdata.operatingSystem.allOf[1].properties[kwargs.os_name]
         kwargs.os_config  = jvars.config
         kwargs.os_vendor  = jvars.vendor
         kwargs.os_version = jvars.version
@@ -2981,9 +2983,9 @@ class wizard(object):
         return kwargs
 
 
-#=======================================================
+#=============================================================================
 # IMM Class
-#=======================================================
+#=============================================================================
 class fw_os(object):
     def __init__(self, type):
         self.type = type

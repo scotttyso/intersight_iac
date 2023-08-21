@@ -11,116 +11,114 @@ It uses argparse to take in the following CLI arguments:
     l or load-config:        Skip Wizard and Just Load Configuration Files.
     t or deploy-type:        Deployment Type.  Values are: Intersight or Terraform
 """
-from collections import OrderedDict
-from copy import deepcopy
-from dotmap import DotMap
-from intersight.api import organization_api
-from intersight.api import resource_api
-from intersight.model.organization_organization_relationship import OrganizationOrganizationRelationship
-from pathlib import Path
-import argparse
-import credentials
-import json
-import os
-import platform
-import re
-import requests
-import sys
-import urllib3
-import yaml
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+#=============================================================================
+# Print Color Functions
+#=============================================================================
+def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
+def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
 
-sys.path.insert(0, './classes')
-from classes import isdk
-import classes.ezfunctions
-import classes.imm
-import classes.isdkp
-import classes.lansan
-import classes.policies
-import classes.pools
-import classes.profiles
-import classes.quick_start
-import classes.tf
-import classes.validating
+#=============================================================================
+# Source Modules
+#=============================================================================
+try:
+    import sys
+    sys.path.insert(0, './classes')
+    from classes import ezfunctions, imm, isight, lansan, policies, pools, profiles, quick_start, tf, validating
+    from collections import OrderedDict
+    from copy import deepcopy
+    from dotmap import DotMap
+    from pathlib import Path
+    import argparse, json, os, platform, re, requests, urllib3, yaml
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+
 
 class MyDumper(yaml.Dumper):
     def increase_indent(self, flow=False, indentless=False):
         return super(MyDumper, self).increase_indent(flow, False)
 
 def create_terraform_workspaces(orgs, **kwargs):
-    jsonData = kwargs['jsonData']
-    opSystem = kwargs['opSystem']
-    org = kwargs['org']
+    jsonData = kwargs.jsonData
+    opSystem = kwargs.opSystem
+    org = kwargs.org
     tfcb_config = []
-    polVars = {}
-    kwargs['jData'] = deepcopy({})
-    kwargs['jData']['default']     = True
-    kwargs['jData']['description'] = f'Terraform Cloud Workspaces'
-    kwargs['jData']['varInput']    = f'Do you want to Proceed with creating Workspaces in Terraform Cloud or Enterprise?'
-    kwargs['jData']['varName']     = 'Terraform Cloud Workspaces'
-    runTFCB = classes.ezfunctions.varBoolLoop(**kwargs)
+    polVars = DotMap()
+    kwargs.jData = DotMap()
+    kwargs.jData.default     = True
+    kwargs.jData.description = f'Terraform Cloud Workspaces'
+    kwargs.jData.varInput    = f'Do you want to Proceed with creating Workspaces in Terraform Cloud or Enterprise?'
+    kwargs.jData.varName     = 'Terraform Cloud Workspaces'
+    runTFCB = ezfunctions.varBoolLoop(**kwargs)
     if runTFCB == True:
         polVars = {}
-        kwargs['multi_select'] = False
-        kwargs['jData'] = deepcopy({})
-        kwargs['jData']['default']     = 'Terraform Cloud'
-        kwargs['jData']['description'] = 'Select the Terraform Target.'
-        kwargs['jData']['enum']        = ['Terraform Cloud', 'Terraform Enterprise']
-        kwargs['jData']['varType']     = 'Target'
-        terraform_target = classes.ezfunctions.variablesFromAPI(**kwargs)
+        kwargs.multi_select = False
+        kwargs.jData = DotMap()
+        kwargs.jData.default     = 'Terraform Cloud'
+        kwargs.jData.description = 'Select the Terraform Target.'
+        kwargs.jData.enum        = ['Terraform Cloud', 'Terraform Enterprise']
+        kwargs.jData.varType     = 'Target'
+        terraform_target = ezfunctions.variablesFromAPI(**kwargs)
 
         if terraform_target[0] == 'Terraform Enterprise':
-            kwargs['jData'] = deepcopy({})
-            kwargs['jData']['default']     = f'app.terraform.io'
-            kwargs['jData']['description'] = f'Hostname of the Terraform Enterprise Instance'
-            kwargs['jData']['pattern']     = '^[a-zA-Z0-9\\-\\.\\:]+$'
-            kwargs['jData']['minimum']     = 1
-            kwargs['jData']['maximum']     = 90
-            kwargs['jData']['varInput']    = f'What is the Hostname of the TFE Instance?'
-            kwargs['jData']['varName']     = f'Terraform Target Name'
-            polVars['tfc_host'] = classes.ezfunctions.varStringLoop(**kwargs)
-            if re.search(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", polVars['tfc_host']):
-                classes.validating.ip_address('Terraform Target', polVars['tfc_host'])
-            elif ':' in polVars['tfc_host']:
-                classes.validating.ip_address('Terraform Target', polVars['tfc_host'])
-            else: classes.validating.dns_name('Terraform Target', polVars['tfc_host'])
+            kwargs.jData = DotMap()
+            kwargs.jData.default     = f'app.terraform.io'
+            kwargs.jData.description = f'Hostname of the Terraform Enterprise Instance'
+            kwargs.jData.pattern     = '^[a-zA-Z0-9\\-\\.\\:]+$'
+            kwargs.jData.minimum     = 1
+            kwargs.jData.maximum     = 90
+            kwargs.jData.varInput    = f'What is the Hostname of the TFE Instance?'
+            kwargs.jData.varName     = f'Terraform Target Name'
+            polVars.tfc_host = ezfunctions.varStringLoop(**kwargs)
+            if re.search(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", polVars.tfc_host):
+                validating.ip_address('Terraform Target', polVars.tfc_host)
+            elif ':' in polVars.tfc_host:
+                validating.ip_address('Terraform Target', polVars.tfc_host)
+            else: validating.dns_name('Terraform Target', polVars.tfc_host)
         else:
-            polVars['tfc_host'] = 'app.terraform.io'
+            polVars.tfc_host = 'app.terraform.io'
         #polVars = {}
-        polVars['terraform_cloud_token'] = classes.tf.terraform_cloud().terraform_token()
+        polVars.terraform_cloud_token = tf.terraform_cloud().terraform_token()
         #==============================================
         # Obtain Terraform Cloud Organization
         #==============================================
         if os.environ.get('tfc_organization') is None:
-            polVars['tfc_organization'] = classes.tf.terraform_cloud().tfc_organization(polVars, **kwargs)
-            os.environ['tfc_organization'] = polVars['tfc_organization']
-        else: polVars['tfc_organization'] = os.environ.get('tfc_organization')
-        tfcb_config.append({'tfc_organization':polVars['tfc_organization']})
+            polVars.tfc_organization = tf.terraform_cloud().tfc_organization(polVars, **kwargs)
+            os.environ.tfc_organization = polVars.tfc_organization
+        else: polVars.tfc_organization = os.environ.get('tfc_organization')
+        tfcb_config.append({'tfc_organization':polVars.tfc_organization})
         #==============================================
         # Obtain Version Control Provider
         #==============================================
         if os.environ.get('tfc_vcs_provider') is None:
-            tfc_vcs_provider,polVars['tfc_oath_token'] = classes.tf.terraform_cloud().tfc_vcs_providers(polVars, **kwargs)
-            polVars['tfc_vcs_provider'] = tfc_vcs_provider
-            os.environ['tfc_vcs_provider'] = tfc_vcs_provider
-            os.environ['tfc_oath_token'] = polVars['tfc_oath_token']
+            tfc_vcs_provider,polVars.tfc_oath_token = tf.terraform_cloud().tfc_vcs_providers(polVars, **kwargs)
+            polVars.tfc_vcs_provider = tfc_vcs_provider
+            os.environ.tfc_vcs_provider = tfc_vcs_provider
+            os.environ.tfc_oath_token = polVars.tfc_oath_token
         else:
-            polVars['tfc_vcs_provider'] = os.environ.get('tfc_vcs_provider')
-            polVars['tfc_oath_token'] = os.environ['tfc_oath_token']
+            polVars.tfc_vcs_provider = os.environ.get('tfc_vcs_provider')
+            polVars.tfc_oath_token = os.environ.tfc_oath_token
         #==============================================
         # Obtain Version Control Base Repo
         #==============================================
         if os.environ.get('vcsBaseRepo') is None:
-            polVars['vcsBaseRepo'] = classes.tf.terraform_cloud().tfc_vcs_repository(polVars, **kwargs)
-            os.environ['vcsBaseRepo'] = polVars['vcsBaseRepo']
-        else: polVars['vcsBaseRepo'] = os.environ.get('vcsBaseRepo')
+            polVars.vcsBaseRepo = tf.terraform_cloud().tfc_vcs_repository(polVars, **kwargs)
+            os.environ.vcsBaseRepo = polVars.vcsBaseRepo
+        else: polVars.vcsBaseRepo = os.environ.get('vcsBaseRepo')
         
-        polVars['agentPoolId'] = ''
-        polVars['allowDestroyPlan'] = False
-        polVars['executionMode'] = 'remote'
-        polVars['queueAllRuns'] = False
-        polVars['speculativeEnabled'] = True
-        polVars['triggerPrefixes'] = []
+        polVars.agentPoolId = ''
+        polVars.allowDestroyPlan = False
+        polVars.executionMode = 'remote'
+        polVars.queueAllRuns = False
+        polVars.speculativeEnabled = True
+        polVars.triggerPrefixes = []
         #==============================================
         # Obtain Terraform Versions from GitHub
         #==============================================
@@ -145,45 +143,45 @@ def create_terraform_workspaces(orgs, **kwargs):
         #==============================================
         # Assign the Terraform Version
         #==============================================
-        kwargs['jData'] = deepcopy({})
-        kwargs['jData']['default']     = terraform_versions[0]
-        kwargs['jData']['description'] = "Terraform Version for Workspaces:"
-        kwargs['jData']['dontsort']    = True
-        kwargs['jData']['enum']        = terraform_versions
-        kwargs['jData']['varType']     = 'Terraform Version'
-        polVars['terraformVersion'] = classes.ezfunctions.variablesFromAPI(**kwargs)
+        kwargs.jData = DotMap()
+        kwargs.jData.default     = terraform_versions[0]
+        kwargs.jData.description = "Terraform Version for Workspaces:"
+        kwargs.jData.dontsort    = True
+        kwargs.jData.enum        = terraform_versions
+        kwargs.jData.varType     = 'Terraform Version'
+        polVars.terraformVersion = ezfunctions.variablesFromAPI(**kwargs)
         #==============================================
         # Begin Creating Workspaces
         #==============================================
         for org in orgs:
-            kwargs['org'] = org
-            kwargs['jData'] = deepcopy({})
-            kwargs['jData']['default']     = f'{org}'
-            kwargs['jData']['description'] = f'Name of the {org} Workspace to Create in Terraform Cloud'
-            kwargs['jData']['pattern']     = '^[a-zA-Z0-9\\-\\_]+$'
-            kwargs['jData']['minimum']     = 1
-            kwargs['jData']['maximum']     = 90
-            kwargs['jData']['varInput']    = f'Terraform Cloud Workspace Name.'
-            kwargs['jData']['varName']     = f'Workspace Name'
-            polVars['workspaceName'] = classes.ezfunctions.varStringLoop(**kwargs)
-            polVars['workspace_id'] = classes.tf.terraform_cloud().tfcWorkspace(polVars, **kwargs)
+            kwargs.org = org
+            kwargs.jData = DotMap()
+            kwargs.jData.default     = f'{org}'
+            kwargs.jData.description = f'Name of the {org} Workspace to Create in Terraform Cloud'
+            kwargs.jData.pattern     = '^[a-zA-Z0-9\\-\\_]+$'
+            kwargs.jData.minimum     = 1
+            kwargs.jData.maximum     = 90
+            kwargs.jData.varInput    = f'Terraform Cloud Workspace Name.'
+            kwargs.jData.varName     = f'Workspace Name'
+            polVars.workspaceName = ezfunctions.varStringLoop(**kwargs)
+            polVars.workspace_id = tf.terraform_cloud().tfcWorkspace(polVars, **kwargs)
             vars = ['apikey.Intersight API Key', 'secretkey.Intersight Secret Key' ]
             for var in vars:
-                print(f"* Adding {var.split('.')[1]} to {polVars['workspaceName']}")
+                print(f"* Adding {var.split('.')[1]} to {polVars.workspaceName}")
                 kwargs['Variable'] = var.split('.')[0]
                 if 'secret' in var:
                     kwargs['Multi_Line_Input'] = True
-                polVars['description'] = var.split('.')[1]
+                polVars.description = var.split('.')[1]
                 polVars['varId'] = var.split('.')[0]
                 polVars['varKey'] = var.split('.')[0]
-                kwargs = classes.ezfunctions.sensitive_var_value(**kwargs)
+                kwargs = ezfunctions.sensitive_var_value(**kwargs)
                 polVars['varValue'] = kwargs['var_value']
                 polVars['Sensitive'] = True
                 if 'secret' in var and opSystem == 'Windows':
                     if os.path.isfile(polVars['varValue']):
                         f = open(polVars['varValue'])
                         polVars['varValue'] = f.read().replace('\n', '\\n')
-                classes.tf.terraform_cloud().tfcVariables(polVars, **kwargs)
+                tf.terraform_cloud().tfcVariables(polVars, **kwargs)
                 kwargs['Multi_Line_Input'] = False
             vars = [
                 'ipmi_over_lan.ipmi_key',
@@ -196,212 +194,186 @@ def create_terraform_workspaces(orgs, **kwargs):
             ]
             for var in vars:
                 policy = '%s' % (var.split('.')[0])
-                kwargs = classes.ezfunctions.policies_parse('policies', policy, policy)
+                kwargs = ezfunctions.policies_parse('policies', policy, policy)
                 policies = deepcopy(kwargs['policies'][policy])
                 y = var.split('.')[0]
                 z = var.split('.')[1]
                 if len(policies) > 0:
                     if y == 'persistent_memory':
                         varValue = z
-                        polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, **polVars)
-                        classes.tf.terraform_cloud().tfcVariables(**polVars)
+                        polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, **polVars)
+                        tf.terraform_cloud().tfcVariables(**polVars)
                     else:
                         for item in policies:
                             if y == 'ipmi_over_lan' and item.get('enabled'):
                                 varValue = z
-                                polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                tf.terraform_cloud().tfcVariables(**polVars)
                             elif y == 'iscsi_boot' and item.get('authentication'):
                                 if re.search('chap', item['authentication']):
                                     varValue = z
-                                    polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                    classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                    polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                    tf.terraform_cloud().tfcVariables(**polVars)
                             elif y == 'ldap' and item.get('binding_parameters'):
                                 if item['binding_parameters'].get('bind_method'):
                                     if item['binding_parameters']['bind_method'] == 'ConfiguredCredentials':
                                         varValue = z
-                                        polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                        classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                        polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                        tf.terraform_cloud().tfcVariables(**polVars)
                             elif y == 'local_user':
                                 if item.get('enforce_strong_password'):
                                     polVars['enforce_strong_password'] = item['enforce_strong_password']
                                 else: polVars['enforce_strong_password'] = True
                                 for i in item['users']:
                                     varValue = '%s_%s' % (z, i['password'])
-                                    polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                    classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                    polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                    tf.terraform_cloud().tfcVariables(**polVars)
                             elif y == 'snmp':
                                 if item.get('access_community_string'):
                                     varValue = 'access_community_string_%s' % (i['access_community_string'])
-                                    polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                    classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                    polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                    tf.terraform_cloud().tfcVariables(**polVars)
                                 if item.get('snmp_users'):
                                     for i in item['snmp_users']:
                                         varValue = 'snmp_auth_password_%s' % (i['auth_password'])
-                                        polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                        classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                        polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                        tf.terraform_cloud().tfcVariables(**polVars)
                                         if i.get('privacy_password'):
                                             varValue = 'snmp_privacy_password_%s' % (i['privacy_password'])
-                                            polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                            classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                            polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                            tf.terraform_cloud().tfcVariables(**polVars)
                                 if item.get('snmp_traps'):
                                     for i in item['snmp_traps']:
                                         if i.get('community_string'):
                                             varValue = 'snmp_trap_community_%s' % (i['community_string'])
-                                            polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                            classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                            polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                            tf.terraform_cloud().tfcVariables(**polVars)
                                 if item.get('trap_community_string'):
                                     varValue = 'trap_community_string'
-                                    polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                    classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                    polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                    tf.terraform_cloud().tfcVariables(**polVars)
                             elif y == 'virtual_media' and item.get('add_virtual_media'):
                                 for i in item['add_virtual_media']:
                                     if i.get('password'):
                                         varValue = '%s_%s' % (z, i['password'])
-                                        polVars = classes.ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
-                                        classes.tf.terraform_cloud().tfcVariables(**polVars)
+                                        polVars = ezfunctions.tfc_sensitive_variables(varValue, jsonData, polVars)
+                                        tf.terraform_cloud().tfcVariables(**polVars)
     else:
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'  Skipping Step to Create Terraform Cloud Workspaces.')
-        print(f'  Moving to last step to Confirm the Intersight Organization Exists.')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
+        prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+        prCyan(f'  Skipping Step to Create Terraform Cloud Workspaces.')
+        prCyan(f'  Moving to last step to Confirm the Intersight Organization Exists.')
+        prCyan(f'\n-------------------------------------------------------------------------------------------\n')
     # Configure the provider.tf and variables.auto.tfvars
     name_prefix = 'dummy'
     type = 'policies'
-    classes.policies.policies(name_prefix, org, type).variables(**kwargs)
+    policies.policies(name_prefix, org, type).variables(**kwargs)
     # Return kwargs
     return kwargs
      
 def intersight_org_check(**kwargs):
-    args = kwargs['args']
-    home = kwargs['home']
-    org = kwargs['org']
+    org = kwargs.org
     check_org = True
     while check_org == True:
         print(f'\n-------------------------------------------------------------------------------------------\n')
-        question = input(f'Do You Want to Check Intersight for the Organization {org}?  Enter "Y" or "N" [N]: ')
+        question = input(f'Do You Want to Check Intersight for the Organization {kwargs.org}?  Enter "Y" or "N" [N]: ')
         #if question == 'Y' or question == '':
         if question == 'Y':
-            # Login to Intersight API
-            api_client = credentials.config_credentials(home, args)
-
             #========================================================================
             # Create Intersight API instance and Verify if the Resource Group Exists
             #========================================================================
-            api_handle = resource_api.ResourceApi(api_client)
-            query_filter = f"Name eq '{org}_rg'"
-            kwargs = dict(filter=query_filter)
-            rg_list = api_handle.get_resource_group_list(**kwargs)
-            resourceGroup = f'{org}_rg'
-            if not rg_list.results:
-                api_body = { "ClassId":"resource.Group", "Name":resourceGroup, "ObjectType":"resource.Group"}
-                resource_group = api_handle.create_resource_group(api_body)
-                rg_2nd_list = api_handle.get_resource_group_list(**kwargs)
-                if rg_2nd_list.results:
-                    rg_moid = rg_2nd_list.results[0].moid
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Resource Group {org}_rg has the Moid of {rg_moid},')
-                    print(f'  which was just Created.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-            elif rg_list.results:
-                rg_moid = rg_list.results[0].moid
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Resource Group {org}_rg has the Moid of {rg_moid},')
-                print(f'  which already exists.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+            kwargs.api_filter= f"Name eq '{kwargs.org}_rg'"
+            kwargs.method    = 'get'
+            kwargs.qtype     = 'resource_group'
+            kwargs.uri       = 'resource/Groups'
+            kwargs           = isight.api(kwargs.qtype).calls(kwargs)
+            if kwargs.results == []:
+                kwargs.apiBody= { "Name":f'{kwargs.org}_rg', "ObjectType":"resource.Group" }
+                kwargs.method = 'post'
+                kwargs = isight.api(kwargs.qtype).calls(kwargs)
+                rg_moid = kwargs.pmoid
+                prCyan(f'\n{"-"*91}\n')
+                prCyan(f'  Resource Group {kwargs.org}_rg has the Moid of {rg_moid},\n  which was just Created.\n\n{"-"*91}\n')
+            else:
+                rg_moid = kwargs.pmoids[f'{kwargs.org}_rg'].moid
+                prCyan(f'\n{"-"*91}\n')
+                prCyan(f'  Resource Group {kwargs.org}_rg has the Moid of {rg_moid},\n  which already exists.\n\n{"-"*91}\n')
 
             #=============================================================
             # Create Intersight API instance and Verify if the Org Exists
             #=============================================================
-            api_handle = organization_api.OrganizationApi(api_client)
-            query_filter = f"Name eq '{org}'"
-            kwargs = dict(filter=query_filter)
-            org_list = api_handle.get_organization_organization_list(**kwargs)
-            if not org_list.results:
-                api_body = {
-                    "ClassId":"organization.Organization",
-                    "Name":org,
-                    "ObjectType":"organization.Organization",
-                    "ResourceGroups":[{"ClassId":"mo.MoRef", "Moid": rg_moid, "ObjectType":"resource.Group"}]
-                }
-                organization = api_handle.create_organization_organization(api_body)
-                org_2nd_list = api_handle.get_organization_organization_list(**kwargs)
-                if org_2nd_list.results:
-                    org_moid = org_2nd_list.results[0].moid
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-                    print(f'  Organization {org} has the Moid of {org_moid},')
-                    print(f'  which was just Created.')
-                    print(f'\n-------------------------------------------------------------------------------------------\n')
-            elif org_list.results:
-                org_moid = org_list.results[0].moid
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  Organization {org} has the Moid of {org_moid},')
-                print(f'  which already exists.')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+            kwargs = isight.api.all_organizations(kwargs)
+            org_list = list(kwargs.org_moid.keys())
+            if org in org_list:
+                org_moid = kwargs.org_moids[kwargs.org].moid
+                prCyan(f'\n{"-"*91}\n')
+                prCyan(f'  Organization {org} has the Moid of {org_moid},\n  which already exists.\n\n{"-"*91}\n')
+            else:
+                kwargs.apiBody = {
+                    "Name":org, "ObjectType":"organization.Organization",
+                    "ResourceGroups":[{"ClassId":"mo.MoRef", "Moid": rg_moid, "ObjectType":"resource.Group"}]}
+                kwargs.method = 'post'
+                kwargs = isight.api(kwargs.qtype).calls(kwargs)
+                org_moid = kwargs.pmoid
+                prCyan(f'\n{"-"*91}\n')
+                prCyan(f'  Organization {org} has the Moid of {org_moid},\n  which was just Created.\n\n{"-"*91}\n')
             check_org = False
-        elif question == 'N' or question == '':
-            check_org = False
-        else:
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  Error!! Invalid Value.  Please enter "Y" or "N".')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
+        elif question == 'N' or question == '': check_org = False
+        else: prRed(f'\n{"-"*91}\n\n  Error!! Invalid Value.  Please enter "Y" or "N".\n\n{"-"*91}\n')
 
 def prompt_deploy_type(**kwargs):
-    ezData = kwargs['ezData']
-    kwargs['multi_select'] = False
-    jsonVars = ezData['ezimm']['allOf'][1]['properties']['wizard']
+    ezData = kwargs.ezData
+    kwargs.multi_select = False
+    jsonVars = ezData.ezimm.allOf[1].properties.wizard
     #==============================================
     # Prompt User for Deployment versus IaC
     #==============================================
-    deploy_type = kwargs['args'].deploy_type
+    deploy_type = kwargs.args.deploy_type
     if deploy_type == None: deploy_type = ''
     if re.search('Intersight|Terraform', deploy_type):
         kwargs['deploy_type'] = deploy_type
     else:
-        kwargs['jData'] = deepcopy(jsonVars['deployType'])
-        kwargs['jData']['varType'] = 'Deployment Type'
-        kwargs['deploy_type'] = classes.ezfunctions.variablesFromAPI(**kwargs)
+        kwargs.jData = deepcopy(jsonVars['deployType'])
+        kwargs.jData.varType = 'Deployment Type'
+        kwargs['deploy_type'] = ezfunctions.variablesFromAPI(**kwargs)
     return kwargs
 
 def prompt_main_menu(**kwargs):
-    ezData = kwargs['ezData']
-    jsonData = kwargs['jsonData']
-    print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  Starting the Easy IMM Initial Configuration Wizard!')
-    print(f'\n-------------------------------------------------------------------------------------------\n')
+    ezData = kwargs.ezData
+    jsonData = kwargs.jsonData
+    prCyan(f'\n{"-"*91}\n\n  Starting the Easy IMM Initial Configuration Wizard!\n\n{"-"*91}\n')
 
-    kwargs['multi_select'] = False
-    jsonVars = ezData['ezimm']['allOf'][1]['properties']['wizard']
+    kwargs.multi_select = False
+    jsonVars = ezData.ezimm.allOf[1].properties.wizard
     #==============================================
     # Prompt User for Main Menu
     #==============================================
-    kwargs['jData'] = deepcopy(jsonVars['mainMenu'])
-    kwargs['jData']['varType'] = 'Main Menu'
-    main_menu = classes.ezfunctions.variablesFromAPI(**kwargs)
+    kwargs.jData = deepcopy(jsonVars['mainMenu'])
+    kwargs.jData.varType = 'Main Menu'
+    main_menu = ezfunctions.variablesFromAPI(**kwargs)
     main_menu = main_menu.replace(' ', '_').lower()
     #==============================================
     # Prompt User for Target Platform
     #==============================================
-    jsonVars = jsonData['vnic.EthNetworkPolicy']['allOf'][1]['properties']
+    jsonVars = jsonData['vnic.EthNetworkPolicy'].allOf[1].properties
     if 'domain' in main_menu: kwargs['target_platform'] = 'FIAttached'
     elif 'standalone' in main_menu: kwargs['target_platform'] = 'Standalone'
     elif 'skip' in main_menu: kwargs['target_platform'] = 'FIAttached'
     else:
-        kwargs['jData'] = deepcopy(jsonVars['TargetPlatform'])
-        kwargs['jData']['default'] = 'FIAttached'
-        kwargs['jData']['varType'] = 'Target Platform'
-        kwargs['target_platform'] = classes.ezfunctions.variablesFromAPI(**kwargs)
+        kwargs.jData = deepcopy(jsonVars['TargetPlatform'])
+        kwargs.jData.default = 'FIAttached'
+        kwargs.jData.varType = 'Target Platform'
+        kwargs['target_platform'] = ezfunctions.variablesFromAPI(**kwargs)
         target_platform = kwargs['target_platform']
     #==============================================
     # Get Policy Data
     #==============================================
-    jsonVars         = ezData['ezimm']['allOf'][1]['properties']['wizard']
-    list_chassis     = ezData['ezimm']['allOf'][1]['properties']['list_chassis']
-    list_domains     = ezData['ezimm']['allOf'][1]['properties']['list_domains']
-    list_fi_attached = ezData['ezimm']['allOf'][1]['properties']['list_fi_attached']
-    list_pools       = ezData['ezimm']['allOf'][1]['properties']['list_pools']
-    list_pools_racks = ezData['ezimm']['allOf'][1]['properties']['rack_pools']
-    list_standalone  = ezData['ezimm']['allOf'][1]['properties']['list_standalone']
+    jsonVars         = ezData.ezimm.allOf[1].properties.wizard
+    list_chassis     = ezData.ezimm.allOf[1].properties['list_chassis']
+    list_domains     = ezData.ezimm.allOf[1].properties['list_domains']
+    list_fi_attached = ezData.ezimm.allOf[1].properties['list_fi_attached']
+    list_pools       = ezData.ezimm.allOf[1].properties['list_pools']
+    list_pools_racks = ezData.ezimm.allOf[1].properties['rack_pools']
+    list_standalone  = ezData.ezimm.allOf[1].properties['list_standalone']
     policy_list = []
     if main_menu == 'deploy_domain_wizard':
         policy_list.extend(list_pools)
@@ -433,40 +405,40 @@ def prompt_main_menu(**kwargs):
         #==============================================
         # Prompt User for Indivdual Policy Type
         #==============================================
-        kwargs['jData'] = deepcopy(jsonVars['Individual'])
-        kwargs['jData']['varType'] = 'Configuration Type'
-        type_menu = classes.ezfunctions.variablesFromAPI(**kwargs)
+        kwargs.jData = deepcopy(jsonVars['Individual'])
+        kwargs.jData.varType = 'Configuration Type'
+        type_menu = ezfunctions.variablesFromAPI(**kwargs)
         if   type_menu == 'Policies': multi_select_descr = '\n    - Single Policy: 1 or 5\n'
         elif type_menu == 'Pools':    multi_select_descr = '\n    - Single Pool: 1 or 5\n'
         elif type_menu == 'Profiles': multi_select_descr = '\n    - Single Profile: 1 or 5\n'
         multi_select_descr = multi_select_descr + ''\
             '    - List of {type_menu}: 1,2,3\n'\
             '    - Range of {type_menu}: 1-3,5-6\n'
-        kwargs['multi_select'] = True
+        kwargs.multi_select = True
         def policy_list_modify(policies_list):
             for line in policies_list:
                 policy_list.append((line.replace(' ', '_')).replace('-', '_').lower())
             return policy_list
         if type_menu == 'Policies':
-            kwargs['jData'] = deepcopy(jsonVars[f'Policies.{target_platform}'])
-            kwargs['jData']['dontsort'] = True
-            kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
-            kwargs['jData']['varType'] = 'Policies'
-            policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
+            kwargs.jData = deepcopy(jsonVars[f'Policies.{target_platform}'])
+            kwargs.jData.dontsort = True
+            kwargs.jData.description = kwargs.jData.description + multi_select_descr
+            kwargs.jData.varType = 'Policies'
+            policies_list = ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Pools':
-            kwargs['jData'] = deepcopy(jsonVars[f'Pools.{target_platform}'])
-            kwargs['jData']['dontsort'] = True
-            kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
-            kwargs['jData']['varType'] = 'Pools'
-            policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
+            kwargs.jData = deepcopy(jsonVars[f'Pools.{target_platform}'])
+            kwargs.jData.dontsort = True
+            kwargs.jData.description = kwargs.jData.description + multi_select_descr
+            kwargs.jData.varType = 'Pools'
+            policies_list = ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
         elif type_menu == 'Profiles':
-            kwargs['jData'] = deepcopy(jsonVars[f'Profiles.{target_platform}'])
-            kwargs['jData']['dontsort'] = True
-            kwargs['jData']['description'] = kwargs['jData']['description'] + multi_select_descr
-            kwargs['jData']['varType'] = 'Profiles'
-            policies_list = classes.ezfunctions.variablesFromAPI(**kwargs)
+            kwargs.jData = deepcopy(jsonVars[f'Profiles.{target_platform}'])
+            kwargs.jData.dontsort = True
+            kwargs.jData.description = kwargs.jData.description + multi_select_descr
+            kwargs.jData.varType = 'Profiles'
+            policies_list = ezfunctions.variablesFromAPI(**kwargs)
             policy_list = policy_list_modify(policies_list)
     # Return Main Menu Outputs
     kwargs['main_menu'] = main_menu
@@ -478,14 +450,14 @@ def prompt_org(**kwargs):
     while valid == False:
         org = input('What is your Intersight Organization Name?  [default]: ')
         if org == '': org = 'default'
-        valid = classes.validating.org_rule('Intersight Organization', org, 1, 62)
-    kwargs['org'] = org
+        valid = validating.org_rule('Intersight Organization', org, 1, 62)
+    kwargs.org = org
     return kwargs
 
 def prompt_previous_configurations(**kwargs):
-    baseRepo = kwargs['args'].dir
-    ezData   = kwargs['ezData']['ezimm']['allOf'][1]['properties']
-    vclasses = ezData['classes']['enum']
+    baseRepo = kwargs.args.dir
+    ezData   = kwargs.ezData.ezimm.allOf[1].properties
+    vclasses = ezData['classes'].enum
     dir_check   = 0
     use_configs = False
     if os.path.isdir(baseRepo):
@@ -496,12 +468,12 @@ def prompt_previous_configurations(**kwargs):
             elif i == 'profiles': dir_check += 1
             elif i == 'templates': dir_check += 1
     if dir_check > 1:
-        kwargs['jData'] = {}
-        kwargs['jData']['default']     = True
-        kwargs['jData']['description'] = 'Load Previous Configurations'
-        kwargs['jData']['varInput']    = f'Do You want to Import Configuration found in "{baseRepo}"?'
-        kwargs['jData']['varName']     = 'Existing Configuration'
-        use_configs = classes.ezfunctions.varBoolLoop(**kwargs)
+        kwargs.jData = {}
+        kwargs.jData.default     = True
+        kwargs.jData.description = 'Load Previous Configurations'
+        kwargs.jData.varInput    = f'Do You want to Import Configuration found in "{baseRepo}"?'
+        kwargs.jData.varName     = 'Existing Configuration'
+        use_configs = ezfunctions.varBoolLoop(**kwargs)
     if use_configs == True:
         for item in vclasses:
             dest_dir = ezData[f'class.{item}']['directory']
@@ -511,36 +483,36 @@ def prompt_previous_configurations(**kwargs):
                     yfile = open(os.path.join(baseRepo, dest_dir, i), 'r')
                     data = yaml.safe_load(yfile)
                     for key, value in data.items():
-                        if not kwargs['immDict']['orgs'].get(key): kwargs['immDict']['orgs'][key] = {}
+                        if not kwargs.immDict.orgs.get(key): kwargs.immDict.orgs[key] = {}
                         for k, v in value.items():
-                            if not kwargs['immDict']['orgs'][key].get(k): kwargs['immDict']['orgs'][key][k] = {}
-                            kwargs['immDict']['orgs'][key][k].update(deepcopy(v))
+                            if not kwargs.immDict.orgs[key].get(k): kwargs.immDict.orgs[key][k] = {}
+                            kwargs.immDict.orgs[key][k].update(deepcopy(v))
     # Return kwargs
     return kwargs
 
 def process_wizard(**kwargs):
-    ezData      = kwargs['ezData']
+    ezData      = kwargs.ezData
     main_menu   = kwargs['main_menu']
-    org         = kwargs['org']
+    org         = kwargs.org
     policy_list = kwargs['policy_list']
     if not main_menu == 'skip_policy_deployment':
-        print(f'\n-------------------------------------------------------------------------------------------\n')
-        print(f'  By Default, the Intersight Organization will be used as the Name Prefix for Pools ')
-        print(f'  and Policies.  To Assign a different Prefix to the Pools and Policies use the prefix ')
-        print(f'  options below.  As Options, a different prefix for UCS domain policies and a prefix')
-        print(f'  for Pools and Server Policies can be entered to override the default behavior.')
-        print(f'\n-------------------------------------------------------------------------------------------\n')
+        prCyan(f'\n{"-"*91}\n')
+        prCyan(f'  By Default, the Intersight Organization will be used as the Name Prefix for Pools ')
+        prCyan(f'  and Policies.  To Assign a different Prefix to the Pools and Policies use the prefix ')
+        prCyan(f'  options below.  As Options, a different prefix for UCS domain policies and a prefix')
+        prCyan(f'  for Pools and Server Policies can be entered to override the default behavior.')
+        prCyan(f'\n{"-"*91}\n')
         if not 'quick_start' in main_menu:
             valid = False
             while valid == False:
                 domain_prefix = input('Enter a Name Prefix for Domain Profile Policies.  [press enter to skip]: ')
                 if domain_prefix == '': valid = True
-                else: valid = classes.validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
+                else: valid = validating.name_rule(f"Name Prefix", domain_prefix, 1, 62)
             valid = False
             while valid == False:
                 name_prefix = input('Enter a Name Prefix for Pools and Server Policies.  [press enter to skip]: ')
                 if name_prefix == '': valid = True
-                else: valid = classes.validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
+                else: valid = validating.name_rule(f"Name Prefix", name_prefix, 1, 62)
         else:
             domain_prefix = org
             name_prefix = org
@@ -552,37 +524,37 @@ def process_wizard(**kwargs):
         #==============================================
         cpool = 'classes.pools.pools'
         type = 'pools'
-        plist = ezData['ezimm']['allOf'][1]['properties']['list_pools']['enum']
+        plist = ezData.ezimm.allOf[1].properties['list_pools'].enum
         for i in plist:
             if policy == i: kwargs = eval(f"{cpool}(name_prefix, org, type).{policy}(**kwargs)")
         #==============================================
         # Intersight Policies
         #==============================================
         type = 'policies'
-        list_lansan   = ezData['ezimm']['allOf'][1]['properties']['list_lansan']['enum']
-        list_policies = ezData['ezimm']['allOf'][1]['properties']['list_policies']['enum']
+        list_lansan   = ezData.ezimm.allOf[1].properties['list_lansan'].enum
+        list_policies = ezData.ezimm.allOf[1].properties['list_policies'].enum
         plist         = list_lansan + list_policies
         plist.sort()
         for i in plist:
             if policy == i:
                 if policy in list_lansan:
-                    kwargs = eval(f"classes.lansan.policies(name_prefix, org, type).{i}(**kwargs)")
+                    kwargs = eval(f"lansan.policies(name_prefix, org, type).{i}(**kwargs)")
                 elif policy in list_policies:
-                    kwargs = eval(f"classes.policies.policies(name_prefix, org, type).{i}(**kwargs)")
+                    kwargs = eval(f"policies.policies(name_prefix, org, type).{i}(**kwargs)")
         #==============================================
         # Intersight Profiles
         #==============================================
-        plist = ezData['ezimm']['allOf'][1]['properties']['list_profiles']['enum']
+        plist = ezData.ezimm.allOf[1].properties['list_profiles'].enum
         type = 'profiles'
         for i in plist:
-            if policy == i: kwargs = eval(f"classes.profiles.profiles(name_prefix, org, type).{i}(**kwargs)")
+            if policy == i: kwargs = eval(f"classes.profiles.profiles(name_prefix, org, 'profiles').{i}(**kwargs)")
         #==============================================
         # Quick Start - Pools
         #==============================================
-        quick = 'classes.quick_start.quick_start'
+        quick = 'quick_start.quick_start'
         type = 'pools'
         if 'quick_start_pools' in policy:
-            kwargs = eval(f"{quick}(name_prefix, org, type).pools(**kwargs)")
+            kwargs = eval("quick_start.quick_start(name_prefix, org, 'pools').pools(**kwargs)")
         #==============================================
         # TESTING TEMP PARAMETERS
         #==============================================
@@ -590,7 +562,7 @@ def process_wizard(**kwargs):
         #path_sep = kwargs['path_sep']
         #jsonFile = f'{script_path}{path_sep}asgard.json'
         #jsonOpen = open(jsonFile, 'r')
-        #kwargs['immDict'] = json.load(jsonOpen)
+        #kwargs.immDict = json.load(jsonOpen)
         #jsonOpen.close()
         #kwargs['primary_dns'] = '208.67.220.220'
         #kwargs['secondary_dns'] = '208.67.220.220'
@@ -608,14 +580,14 @@ def process_wizard(**kwargs):
             kwargs['Config'] = True
             if 'quick_start_domain_policies' in policy:
                 kwargs.update(deepcopy({'server_type':'FIAttached'}))
-                kwargs = eval(f"{quick}(name_prefix, org, type).domain_policies(**kwargs)")
+                kwargs = eval(f"quick_start.quick_start(name_prefix, org, type).domain_policies(**kwargs)")
             else: kwargs.update(deepcopy({'fc_ports':[],'server_type':'Standalone'}))
             if not kwargs['Config'] == False:
-                kwargs = eval(f"{quick}(name_prefix, org, type).bios_policies(**kwargs)")
-                kwargs = eval(f"{quick}(name_prefix, org, type).server_policies(**kwargs)")
+                kwargs = eval(f"quick_start.quick_start(name_prefix, org, type).bios_policies(**kwargs)")
+                kwargs = eval(f"quick_start.quick_start(name_prefix, org, type).server_policies(**kwargs)")
             if 'quick_start_rack_policies' in policy:
                 type = 'policies'
-                kwargs = eval(f"{quick}(name_prefix, org, type).standalone_policies(**kwargs)")
+                kwargs = eval(f"quick_start.quick_start(name_prefix, org, type).standalone_policies(**kwargs)")
         elif 'quick_start_lan_san_policies' in policy:
             type = 'policies'
             if not kwargs['Config'] == False:
@@ -647,7 +619,7 @@ def main():
         help='The Directory to Publish the Terraform Files to.'
     )
     Parser.add_argument(
-        '-e', '--endpoint', default=os.getenv('intersight_endpoint'),
+        '-e', '--intersight-fqdn', default=os.getenv('intersight_fqdn'),
         help='The Intersight hostname for the API endpoint. The default is intersight.com'
     )
     Parser.add_argument(
@@ -689,7 +661,7 @@ def main():
     #================================================
     # Check if User has Stored Intersight Parameters
     #================================================
-    jsonFile    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-11360.json'
+    jsonFile    = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-13165.json'
     jsonOpen    = open(jsonFile, 'r')
     jsonData    = json.load(jsonOpen)
     jsonOpen.close()
@@ -701,14 +673,14 @@ def main():
     # Build kwargs
     #==============================================
     kwargs = {}
-    kwargs['args']        = args
-    kwargs['home']        = Path.home()
-    kwargs['opSystem']    = platform.system()
+    kwargs.args        = args
+    kwargs.home        = Path.home()
+    kwargs.opSystem    = platform.system()
     kwargs['path_sep']    = path_sep
     kwargs['script_path'] = script_path
-    kwargs['jsonData']    = jsonData['components']['schemas']
-    kwargs['ezData']      = ezData['components']['schemas']
-    kwargs['immDict']     = {'orgs':{}}
+    kwargs.jsonData    = jsonData.components.schemas
+    kwargs.ezData      = ezData.components.schemas
+    kwargs.immDict     = {'orgs':{}}
     kwargs['ez_settings'] = {}
     #==============================================
     # Get Intersight Configuration
@@ -716,8 +688,8 @@ def main():
     # - endpoint
     # - keyfile
     #==============================================
-    kwargs = classes.ezfunctions.intersight_config(**kwargs)
-    kwargs['args'].url = 'https://%s' % (kwargs['args'].endpoint)
+    kwargs = ezfunctions.intersight_config(**kwargs)
+    kwargs.args.url = 'https://%s' % (kwargs.args.endpoint)
 
     #==============================================
     # Check Folder Naming for Illegal Characters
@@ -728,14 +700,12 @@ def main():
         for folder in splitDir:
             if folder == '': folderCount = 0
             elif not re.search(r'^[\w\-\.\:\/\\]+$', folder):
-                print(folder)
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  !!ERROR!!')
-                print(f'  The Directory structure can only contain the following characters:')
-                print(f'  letters(a-z, A-Z), numbers(0-9), hyphen(-), period(.), colon(:), and underscore(-).')
-                print(f'  It can be a short path or a fully qualified path.  "{folder}" does not qualify.')
-                print(f'  Exiting...')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+                prRed(folder)
+                prRed(f'\n{"-"*91}\n\n  !!ERROR!!')
+                prRed(f'  The Directory structure can only contain the following characters:')
+                prRed(f'  letters(a-z, A-Z), numbers(0-9), hyphen(-), period(.), colon(:), and underscore(-).')
+                prRed(f'  It can be a short path or a fully qualified path.  "{folder}" does not qualify.')
+                prRed(f'  Exiting...\n\n{"-"*91}\n')
                 sys.exit(1)
         destdirCheck = True
     #==============================================
@@ -746,41 +716,34 @@ def main():
         # Validate the Existence of the json File
         #==============================================
         if not os.path.isfile(args.json_file):
-            print(folder)
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  !!ERROR!!')
-            print(f'  Did not find the file {args.json_file}.')
-            print(f'  Please Validate that you have specified the correct file and path.')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
+            prRed(f'\n{"-"*91}\n\n  !!ERROR!!\n  Did not find the file {args.json_file}.')
+            prRed(f'  Please Validate that you have specified the correct file and path.\n\n{"-"*91}\n')
             sys.exit(1)
         else:
             kwargs['deploy_type'] = 'Terraform'
             json_file = args.json_file
             json_open = open(json_file, 'r')
-            kwargs['json_data'] = json.load(json_open)
-            device_type = kwargs['json_data']['easyucs']['metadata'][0]['device_type']
+            kwargs.json_data = DotMap(json.load(json_open))
+            device_type = kwargs.json_data.easyucs.metadata[0].device_type
             #==============================================
             # Validate the device_type in json file
             #==============================================
             if not device_type == 'intersight':
-                print(f'\n-------------------------------------------------------------------------------------------\n')
-                print(f'  !!ERROR!!')
-                print(f'  The File "{args.json_file}" device_type is "{device_type}".')
-                print(f'  This file is the UCSM Configuration converted from XML to JSON.')
-                print(f'  The device_type is found on line 10 of the json config file.')
-                print(f'  The Script is looking for the file that has been converted to Intersight Managed Mode.')
-                print(f'  The JSON file should be downloaded at the last step of the IMM Transition tool where the')
-                print(f'  API Key and Secret would be entered to upload to Intersight.')
-                print(f'  Exiting Wizard...')
-                print(f'\n-------------------------------------------------------------------------------------------\n')
+                prRed(f'\n{"-"*91}\n\n  !!ERROR!!\n  The File "{args.json_file}" device_type is "{device_type}".')
+                prRed(f'  This file is the UCSM Configuration converted from XML to JSON.')
+                prRed(f'  The device_type is found on line 10 of the json config file.')
+                prRed(f'  The Script is looking for the file that has been converted to Intersight Managed Mode.')
+                prRed(f'  The JSON file should be downloaded at the last step of the IMM Transition tool where the')
+                prRed(f'  API Key and Secret would be entered to upload to Intersight.')
+                prRed(f'  Exiting Wizard...\n\n{"-"*91}\n')
                 sys.exit(1)
             #==============================================
             # Run through the IMM Transition Wizard
             #==============================================
-            kwargs = classes.imm.transition('transition').policy_loop(**kwargs)
-            orgs = list(kwargs['immDict']['orgs'].keys())
+            kwargs = imm.transition('transition').policy_loop(**kwargs)
+            orgs = list(kwargs.immDict.orgs.keys())
     else:
-        #kwargs['immDict']['orgs'].update(deepcopy({kwargs['org']:{'intersight':{}}}))
+        #kwargs.immDict.orgs.update(deepcopy({kwargs.org:{'intersight':{}}}))
         kwargs = prompt_previous_configurations(**kwargs)
         kwargs = prompt_deploy_type(**kwargs)
         if args.load_config == False:
@@ -793,15 +756,15 @@ def main():
             # Run through the Wizard
             #==============================================
             kwargs = process_wizard(**kwargs)
-        orgs = list(kwargs['immDict']['orgs'].keys())
+        orgs = list(kwargs.immDict.orgs.keys())
 
     #==============================================
     # Merge Repository and Create YAML Files
     #==============================================
-    classes.ezfunctions.merge_easy_imm_repository(orgs, **kwargs)
-    classes.ezfunctions.create_yaml(orgs, **kwargs)
+    ezfunctions.merge_easy_imm_repository(orgs, **kwargs)
+    ezfunctions.create_yaml(orgs, **kwargs)
     for org in orgs:
-        kwargs['org'] = org
+        kwargs.org = org
         #==============================================
         # Check Existence of Intersight Orgs
         #==============================================
@@ -810,11 +773,11 @@ def main():
         #==============================================
         # Create Terraform Config and Workspaces
         #==============================================
-        kwargs = classes.ezfunctions.terraform_provider_config(**kwargs)
+        kwargs = ezfunctions.terraform_provider_config(**kwargs)
         kwargs = create_terraform_workspaces(orgs, **kwargs)
     elif kwargs['deploy_type'] == 'Intersight':
+        kwargs = isight.api.all_organizations(kwargs)
         pargs = DotMap()
-        kwargs = isdk.api('organization').organizations(pargs, **kwargs)
         #kwargs = isdk_pools('org_query').organizations(**kwargs)
         #==============================================
         # Loop Through the Orgs
@@ -825,15 +788,15 @@ def main():
             # Pools
             #==============================================
             cisdk = 'classes.isdkp.api_pools'
-            if kwargs['immDict']['orgs'][org].get('pools'):
-                for pool_type in kwargs['immDict']['orgs'][org]['pools']:
+            if kwargs.immDict.orgs[org].get('pools'):
+                for pool_type in kwargs.immDict.orgs[org]['pools']:
                     kwargs = eval(f"{cisdk}(pool_type).pools(pargs, **kwargs)")
             #==============================================
             # Policies
             #==============================================
-            policies_in_order = OrderedDict(sorted(kwargs['immDict']['orgs'][org]['policies'].items()))
+            policies_in_order = OrderedDict(sorted(kwargs.immDict.orgs[org]['policies'].items()))
             cisdk = 'classes.isdkp.api_policies'
-            if kwargs['immDict']['orgs'][org].get('policies'):
+            if kwargs.immDict.orgs[org].get('policies'):
                 for ptype in policies_in_order:
                     dpolicies = eval(f"{cisdk}(ptype).policies(pargs, **kwargs)")
                     kwargs['isdk_deployed'].update({ptype:dpolicies})
@@ -842,20 +805,18 @@ def main():
             #==============================================
             cisdk = 'classes.isdkp.api_profiles'
             ptype = 'templates'
-            if kwargs['immDict']['orgs'][org].get(ptype):
-                if kwargs['immDict']['orgs'][org][ptype].get('server'):
+            if kwargs.immDict.orgs[org].get(ptype):
+                if kwargs.immDict.orgs[org][ptype].get('server'):
                     kwargs = eval(f"{cisdk}(ptype).profiles(pargs, **kwargs)")
             ptype = 'profiles'
-            if kwargs['immDict']['orgs'][org].get(ptype):
-                if kwargs['immDict']['orgs'][org][ptype].get('domain'):
+            if kwargs.immDict.orgs[org].get(ptype):
+                if kwargs.immDict.orgs[org][ptype].get('domain'):
                     kwargs = eval(f"{cisdk}('domain').profiles(pargs, **kwargs)")
-                if kwargs['immDict']['orgs'][org][ptype].get('chassis'):
+                if kwargs.immDict.orgs[org][ptype].get('chassis'):
                     kwargs = eval(f"{cisdk}('chassis').profiles(pargs, **kwargs)")
-                if kwargs['immDict']['orgs'][org][ptype].get('server'):
+                if kwargs.immDict.orgs[org][ptype].get('server'):
                     kwargs = eval(f"{cisdk}('server').profiles(pargs, **kwargs)")
-    print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  Proceedures Complete!!! Closing Environment and Exiting Script.')
-    print(f'\n-------------------------------------------------------------------------------------------\n')
+    prCyan(f'\n{"-"*91}\n\n  Proceedures Complete!!! Closing Environment and Exiting Script.\n\n{"-"*91}\n')
 
 if __name__ == '__main__':
     main()

@@ -1,152 +1,219 @@
 #!/usr/bin/env python3
+"""Day 2 Tools - 
+This Script is built to Perform Day 2 Configuration Tasks.
+The Script uses argparse to take in the following CLI arguments:
+    -a or --intersight-api-key-id: The Intersight API key id for HTTP signature scheme.
+    -d or --dir:                   Base Directory to use for creation of the YAML Configuration Files.
+    -f or --intersight-fqdn:       The Intersight hostname for the API endpoint. The default is intersight.com.
+    -fi or --full-inventory:       Used in conjunction with srv-inventory to pull more indepth inventory.
+    -i or --ignore-tls:            Ignore TLS server-side certificate verification.  Default is False.
+    -k or --intersight-secret-key: Name of the file containing The Intersight secret key for the HTTP signature scheme.
+    -l or --debug-level:           The Debug Level to Run for Script Output
+                                     1. Shows the api request response status code
+                                     5. Shows URL String + Lower Options
+                                     6. Adds Results + Lower Options
+                                     7. Adds json payload + Lower Options
+                                   Note: payload shows as pretty and straight to check for stray object types like Dotmap
+                                         and numpy
+    -p or --process:               Which Process to run with the Script.  Options are:  
+                                     1. add_policies
+                                     2. add_vlan
+                                     3. srv_inventory
+                                     4. hcl_inventory
+    -v or --api-key-v3:            Flag for API Key Version 3.
+    -wb or --workbook:             The Source Workbook for hcl_inventory
+    -y or --yaml-file:             The input YAML File.
+"""
 
-from copy import deepcopy
-from pathlib import Path
-import argparse
-import codecs
-import json
-import io
-import os
-import platform
-import sys
+#=====================================================
+# Print Color Functions
+#=====================================================
+def prCyan(skk):      print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk):     print("\033[92m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
+def prPurple(skk):    print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk):       print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk):    print("\033[93m {}\033[00m" .format(skk))
 
-sys.path.insert(0, './classes')
-from classes import day2tools
-from classes import ezfunctions
+#======================================================
+# Source Modules
+#======================================================
+try:
+    import sys
+    sys.path.insert(0, './classes')
+    from classes import day2tools
+    from classes import isight
+    from classes import ezfunctions as ezfunctions
+    from dotmap import DotMap
+    from json_ref_dict import materialize, RefDict
+    from pathlib import Path
+    import argparse
+    import codecs
+    import json
+    import logging
+    import os
+    import platform
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
+
+
 # Global Variables
 excel_workbook = None
-Parser = argparse.ArgumentParser(description='Intersight Day 2 Tools')
 
-def main():
-    description = None
-    if description is not None:
-        Parser.description = description
+#=================================================================
+# Parse Arguments
+#=================================================================
+def cli_arguments():
+    Parser = argparse.ArgumentParser(description='Intersight Converged Infrastructure Deployment Module')
     Parser.add_argument(
-        '-a', '--api-key-id', default=os.getenv('intersight_apikey'),
-        help='The Intersight API client key id for HTTP signature scheme'
-    )
+        '-a', '--intersight-api-key-id', default=os.getenv('intersight_api_key_id'),
+        help='The Intersight API key id for HTTP signature scheme.')
     Parser.add_argument(
-        '-e', '--endpoint', default=os.getenv('intersight_endpoint'),
-        help='The Intersight hostname for the API endpoint. The default is intersight.com'
-    )
+        '-d', '--dir', default = 'Intersight',
+        help = 'The Directory to use for the Creation of the Terraform Files.')
     Parser.add_argument(
-        '-f', '--full-inventory', action='store_true',
-        help='For Spreadsheet Pull the Full Server Inventory'
-    )
+        '-f', '--intersight-fqdn', default='intersight.com',
+        help='The Intersight hostname for the API endpoint. The default is intersight.com.')
     Parser.add_argument(
-        '-i', '--ignore-tls', action='store_true',
-        help='Ignore TLS server-side certificate verification'
-    )
+        '-fi', '--full-inventory', action='store_true',
+        help='Used in conjunction with srv-inventory to pull more indepth inventory.')
     Parser.add_argument(
-        '-j',
-        '--json-file',
-        default=None,
-        help='Source JSON File for VLAN Additional Process.'
-    )
+        '-i', '--ignore-tls', action='store_false',
+        help='Ignore TLS server-side certificate verification.  Default is False.')
     Parser.add_argument(
-        '-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
-        help='Name of file containing The Intersight secret key for the HTTP signature scheme'
-    )
+        '-k', '--intersight-secret-key', default='~/Downloads/SecretKey.txt',
+        help='Name of the file containing The Intersight secret key or contents of the secret key in environment.')
     Parser.add_argument(
-        '-p', '--process',
-        default='server_inventory',
-        help='Which Process to run with the Script.  Options are:'\
+        '-l', '--debug-level', default =0,
+        help    ='The Amount of Debug output to Show:'\
+            '1. Shows the api request response status code'
+            '5. Show URL String + Lower Options'\
+            '6. Adds Results + Lower Options'\
+            '7. Adds json payload + Lower Options'\
+            'Note: payload shows as pretty and straight to check for stray object types like Dotmap and numpy')
+    Parser.add_argument(
+        '-p', '--process', default='srv_inventory',
+        help='Which Process to run with the Script.  Options are:  '\
             '1. add_policies '\
             '2. add_vlan '\
-            '3. server_inventory '\
+            '3. srv_inventory '\
             '4. hcl_inventory '\
-            '5. hcl_status.'
-    )
+            '5. hcl_status.')
     Parser.add_argument(
-        '-v', '--api-key-v3', action='store_true',
-        help='Flag for API Key Version 3.'
-    )
+        '-v', '--api-key-v3', action='store_true', help='Flag for API Key Version 3.')
     Parser.add_argument(
-        '-wb', '--workbook', default='Settings.xlsx',
-        help = 'The source Workbook.'
-    )
-    args = Parser.parse_args()
-    # Determine the Operating System
-    opSystem = platform.system()
-    script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
-    if opSystem == 'Windows': path_sep = '\\'
-    else: path_sep = '/'
-    script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
-    #================================================
-    # Import Stored Parameters
-    #================================================
-    jsonFile = f'{script_path}{path_sep}variables{path_sep}intersight-openapi-v3-1.0.11-11360.json'
-    jsonOpen = open(jsonFile, 'r')
-    jsonData = json.load(jsonOpen)
-    jsonOpen.close()
-    jsonFile = f'{script_path}{path_sep}variables{path_sep}easy_variables.json'
-    jsonOpen = open(jsonFile, 'r')
-    ezData   = json.load(jsonOpen)
-    jsonOpen.close()
+        '-wb', '--workbook', default='Settings.xlsx', help = 'The source Workbook.')
+    Parser.add_argument(
+        '-y', '--yaml-file', default=None,  help = 'The input YAML File.')
+    kwargs = DotMap()
+    kwargs.args = Parser.parse_args()
+    return kwargs
+
+def main():
+    #==============================================
+    # Configure logger
+    #==============================================
+    script_name = (sys.argv[0].split(os.sep)[-1]).split('.')[0]
+    dest_dir = f"{Path.home()}{os.sep}Logs"
+    dest_file = script_name + '.log'
+    if not os.path.exists(dest_dir): os.mkdir(dest_dir)
+    if not os.path.exists(os.path.join(dest_dir, dest_file)): 
+        create_file = f'type nul >> {os.path.join(dest_dir, dest_file)}'
+        os.system(create_file)
+
+    FORMAT = '%(asctime)-15s [%(levelname)s] [%(filename)s:%(lineno)s] %(message)s'
+    logging.basicConfig(
+        filename=f"{dest_dir}{os.sep}{script_name}.log",
+        filemode='a',
+        format=FORMAT,
+        level=logging.DEBUG)
+    logger = logging.getLogger('openapi')
+
     #==============================================
     # Build kwargs
     #==============================================
-    kwargs = {}
-    kwargs['args'] = args
-    kwargs['ezData']      = ezData['components']['schemas']
-    kwargs['home']        = Path.home()
-    kwargs['jsonData']    = jsonData['components']['schemas']
-    kwargs['opSystem']    = platform.system()
-    kwargs['path_sep']    = path_sep
-    kwargs['script_path'] = script_path
-    kwargs = ezfunctions.intersight_config(**kwargs)
-    kwargs['args'].url = 'https://%s' % (kwargs['args'].endpoint)
-    args   = kwargs['args']
+    kwargs   = cli_arguments()
 
-    if not args.json_file == None:
-        if not os.path.isfile(args.json_file):
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  !!ERROR!!')
-            print(f'  Did not find the file {args.json_file}.')
-            print(f'  Please Validate that you have specified the correct file and path.')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
+    #==============================================
+    # Determine the Script Path
+    #==============================================
+    kwargs.script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
+    script_path= kwargs.script_path
+    #kwargs.args.dir = os.path.join(Path.home(), kwargs.args.yaml_file.split('/')[0])
+
+    args_dict = vars(kwargs.args)
+    for k,v in args_dict.items():
+        if type(v) == str: os.environ[k] = v
+
+    if kwargs.args.intersight_secret_key:
+        if '~' in kwargs.args.intersight_secret_key:
+            kwargs.args.intersight_secret_key = os.path.expanduser(kwargs.args.intersight_secret_key)
+    kwargs.home          = Path.home()
+    kwargs.logger        = logger
+    kwargs.op_system     = platform.system()
+    kwargs.imm_dict.orgs = DotMap()
+
+    #==============================================
+    # Send Notification Message
+    #==============================================
+    prLightGray(f'\n{"-"*91}\n')
+    prLightGray(f'  Begin Function: {kwargs.args.process}.')
+    prLightGray(f'\n{"-"*91}\n')
+    #================================================
+    # Import Stored Parameters
+    #================================================
+    ez_data= DotMap(materialize(RefDict(f'{script_path}{os.sep}variables{os.sep}easy-imm.json')))
+    kwargs.ez_data= DotMap(ez_data['components']['schemas'])
+    #==============================================
+    # Get Intersight Configuration
+    # - intersight_api_key_id
+    # - intersight_fqdn
+    # - intersight_secret_key
+    #==============================================
+    kwargs         = ezfunctions.intersight_config(kwargs)
+    kwargs.args.url= 'https://%s' % (kwargs.args.intersight_fqdn)
+    #==============================================
+    # Build Deployment Library
+    #==============================================
+    kwargs = isight.api('organization').all_organizations(kwargs)
+    if not kwargs.args.json_file == None:
+        if not os.path.isfile(kwargs.args.json_file):
+            prRed(f'\n-------------------------------------------------------------------------------------------\n')
+            prRed(f'  !!ERROR!!')
+            prRed(f'  Did not find the file {kwargs.args.json_file}.')
+            prRed(f'  Please Validate that you have specified the correct file and path.')
+            prRed(f'\n-------------------------------------------------------------------------------------------\n')
             exit()
         else:
             def try_utf8(json_file):
                 try:
                     f = codecs.open(json_file, encoding='utf-8', errors='strict')
                     for line in f: pass
-                    print("Valid utf-8")
+                    prGreen("Valid utf-8")
                     return 'Good'
                 except UnicodeDecodeError:
-                    print("invalid utf-8")
+                    prGreen("invalid utf-8")
                     return None
-
-            json_file = args.json_file
-            if 'hcl_inventory' in args.process:
-                udata = try_utf8(json_file)
-                if udata is None: json_open = open(json_file, 'r', encoding='utf-16')
-                else: json_open = open(json_file, 'r')
-            else:
-                json_open = open(json_file, 'r')
-            kwargs['json_data'] = json.load(json_open)
-        if args.process == 'hcl_inventory':
+            if 'hcl_inventory' in kwargs.args.process:
+                if try_utf8(kwargs.args.json_file) is None: json_open = open(kwargs.args.json_file, 'r', encoding='utf-16')
+                else: json_open = open(kwargs.args.json_file, 'r')
+            else: json_open = open(kwargs.args.json_file, 'r')
+            kwargs.json_data = DotMap(json.load(json_open))
+        if kwargs.args.process == 'hcl_inventory':
             json_data = []
-            for item in kwargs['json_data']:
-                if 'Cisco' in item['Hostname']['Manufacturer']:
-                    json_data.append(item)
-            kwargs['json_data'] = deepcopy(json_data)
-
-    if args.process == 'server_inventory':
-        type = 'server_inventory'
-        day2tools.intersight_api(type).server_inventory(**kwargs)
-    elif args.process == 'add_policies':
-        type = 'add_policies'
-        day2tools.intersight_api(type).add_policies(**kwargs)
-    elif args.process == 'add_vlan':
-        type = 'add_vlan'
-        day2tools.intersight_api(type).add_vlan(**kwargs)
-    elif args.process == 'hcl_inventory':
-        type = 'hcl_inventory'
-        day2tools.intersight_api('hcl_inventory').hcl_inventory(**kwargs)
-    elif args.process == 'hcl_status':
-        type = 'hcl_status'
-        day2tools.intersight_api(type).hcl_status(**kwargs)
+            for e in kwargs.json_data:
+                if 'Cisco' in e.Hostname.Manufacturer: json_data.append(e)
+        kwargs.json_data = DotMap(json_data)
+    
+    if   kwargs.args.process == 'add_policies':  day2tools.intersight_api('add_policies').add_policies(kwargs)
+    elif kwargs.args.process == 'add_vlan':      day2tools.intersight_api('add_vlans').add_vlans(kwargs)
+    elif kwargs.args.process == 'hcl_inventory': day2tools.intersight_api('hcl_inventory').hcl_inventory(kwargs)
+    elif kwargs.args.process == 'hcl_status':    day2tools.intersight_api('hcl_status').hcl_status(kwargs)
+    elif kwargs.args.process == 'srv_inventory': day2tools.intersight_api('srv_inventory').srv_inventory(kwargs)
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,341 @@
+[
+    {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "",
+        "required": [
+            "name"
+        ],
+        "title": "abstract_pool - pool.AbstractPool",
+        "properties": {
+            "assignment_order": {
+                "type": "string",
+                "default": "sequential",
+                "description": "Assignment order decides the order in which the next identifier is allocated.  Options are:\n  * default\n  * sequential: (default)",
+                "intersightApi": "AssignmentOrder",
+                "enum": [
+                    "default",
+                    "sequential"
+                ],
+                "title": "assignment_order"
+            },
+            "description": {
+                "type": "string",
+                "default": "default",
+                "description": "Description of the Pool.",
+                "intersightApi": "Description",
+                "minLength": 1,
+                "maxLength": 1024,
+                "pattern": "^$|^[a-zA-Z0-9]+[\\x00-\\xFF]*$",
+                "title": "description"
+            },
+            "name": {
+                "type": "string",
+                "default": "default",
+                "description": "Name of the Pool.",
+                "intersightApi": "Name",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-zA-Z0-9_\\. :-]{1,64}$",
+                "title": "name"
+            }
+        }
+    },
+    {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Pool represents a collection of IPv4 and/or IPv6 addresses that can be allocated to other configuration entities like server profiles.",
+        "required": [],
+        "title": "ip",
+        "properties": {
+            "ipv4_blocks": {
+                "type": "array",
+                "description": "A block of IPv4 addresses.\n\nRequired Attributes:\n  * from\n\nOptional Attributes:\n  * size\n  * to\nNote: Only assign either size or to, not both.",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "",
+                    "ObjectType": "ippool.IpV4Block",
+                    "required": [
+                        "from"
+                    ],
+                    "title": "ipv4_blocks - Ipv4 Block of Addresses",
+                    "properties": {
+                        "from": {
+                            "type": "string",
+                            "default": "198.18.0.10",
+                            "description": "First IPv4 address of the block.  Example `198.18.0.10`.",
+                            "intersightApi": "From",
+                            "minLength": 7,
+                            "maxLength": 15,
+                            "title": "from"
+                        },
+                        "size": {
+                            "type": "integer",
+                            "default": 255,
+                            "description": "Size of the Pool.  Allowed range is 1-1024.",
+                            "intersightApi": "Size",
+                            "minimum": 1,
+                            "maximum": 1024,
+                            "title": "size"
+                        },
+                        "to": {
+                            "type": "string",
+                            "default": "198.18.0.250",
+                            "description": "Last IPv4 address of the block. Example `198.18.0.250`.",
+                            "intersightApi": "To",
+                            "minLength": 7,
+                            "maxLength": 15,
+                            "title": "to"
+                        }
+                    }
+                },
+                "title": "ipv4_blocks"
+            },
+            "ipv4_configuration": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Network interface configuration data for IPv4 interfaces. Netmask, Gateway and DNS settings.\n\nRequired Attributes:\n  * gateway\n  * netmask\n  * primary_dns\n\nOptional Attributes:\n  * secondary_dns.",
+                "ObjectType": "ippool.IpV4Config",
+                "required": [
+                    "gateway",
+                    "primary_dns"
+                ],
+                "title": "ipv4_configuration - IPv4 Configuration Settings",
+                "properties": {
+                    "gateway": {
+                        "type": "string",
+                        "default": "198.18.0.1",
+                        "description": "Gateway to assign to the pool.  Example `198.18.0.1`.",
+                        "intersightApi": "Gateway",
+                        "minLength": 7,
+                        "maxLength": 15,
+                        "pattern": "^(([1-9]|[1-9][0-9]{1}|1[0-9]{2}|2[0-1][0-9]|22[0-3])\\.)(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$",
+                        "title": "gateway"
+                    },
+                    "netmask": {
+                        "type": "string",
+                        "default": "255.255.255.0",
+                        "description": "A subnet mask is a 32-bit number that masks an IP address and divides the IP address into network address and host address.  Example `255.255.255.0`.",
+                        "intersightApi": "Netmask",
+                        "minLength": 7,
+                        "maxLength": 15,
+                        "pattern": "^(([1-9]|[1-9][0-9]{1}|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.)(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$",
+                        "title": "netmask"
+                    },
+                    "primary_dns": {
+                        "type": "string",
+                        "default": "208.67.220.220",
+                        "description": "IP Address of the primary Domain Name System (DNS) server.  Example `208.67.220.220`.",
+                        "intersightApi": "PrimaryDns",
+                        "minLength": 7,
+                        "maxLength": 15,
+                        "pattern": "^(([1-9]|[1-9][0-9]{1}|1[0-9]{2}|2[0-1][0-9]|22[0-3])\\.)(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$",
+                        "title": "primary_dns"
+                    },
+                    "secondary_dns": {
+                        "type": "string",
+                        "default": "208.67.222.222",
+                        "description": "IP Address of the secondary Domain Name System (DNS) server.  Example `208.67.222.222`.",
+                        "intersightApi": "SecondaryDns",
+                        "minLength": 0,
+                        "maxLength": 15,
+                        "optional": true,
+                        "pattern": "^$|^(([1-9]|[1-9][0-9]{1}|1[0-9]{2}|2[0-1][0-9]|22[0-3])\\.)(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$",
+                        "title": "secondary_dns"
+                    }
+                }
+            },
+            "ipv6_blocks": {
+                "type": "array",
+                "description": "A block of IPv6 addresses.\n\nRequired Attributes:\n  * from\n\nOptional Attributes:\n  * size\n  * to\nNote: Only assign either size or to, not both.",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "",
+                    "ObjectType": "ippool.IpV6Block",
+                    "required": [
+                        "from"
+                    ],
+                    "title": "ipv6_blocks - Ipv6 Block of Addresses",
+                    "properties": {
+                        "from": {
+                            "type": "string",
+                            "default": "2001:db8::10",
+                            "description": "First IPv6 address of the block.  Example `2001:db8::10`.",
+                            "intersightApi": "From",
+                            "minLength": 6,
+                            "maxLength": 39,
+                            "pattern": "^$|^(([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{0,4}|:[0-9A-Fa-f]{1,4})?|(:[0-9A-Fa-f]{1,4}){0,2})|(:[0-9A-Fa-f]{1,4}){0,3})|(:[0-9A-Fa-f]{1,4}){0,4})|:(:[0-9A-Fa-f]{1,4}){0,5})((:[0-9A-Fa-f]{1,4}){2}|:(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])(\\.(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])){3})|(([0-9A-Fa-f]{1,4}:){1,6}|:):[0-9A-Fa-f]{0,4}|([0-9A-Fa-f]{1,4}:){7}:)$",
+                            "title": "from"
+                        },
+                        "size": {
+                            "type": "integer",
+                            "default": 255,
+                            "description": "Size of the Pool.  Allowed range is 1-1024.",
+                            "intersightApi": "Size",
+                            "minimum": 1,
+                            "maximum": 1024,
+                            "title": "size"
+                        },
+                        "to": {
+                            "type": "string",
+                            "default": "2001:db8::250",
+                            "description": "Last IPv6 address of the block.  Example `2001:db8::250`.",
+                            "intersightApi": "To",
+                            "minLength": 6,
+                            "maxLength": 39,
+                            "pattern": "^$|^(([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{0,4}|:[0-9A-Fa-f]{1,4})?|(:[0-9A-Fa-f]{1,4}){0,2})|(:[0-9A-Fa-f]{1,4}){0,3})|(:[0-9A-Fa-f]{1,4}){0,4})|:(:[0-9A-Fa-f]{1,4}){0,5})((:[0-9A-Fa-f]{1,4}){2}|:(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])(\\.(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])){3})|(([0-9A-Fa-f]{1,4}:){1,6}|:):[0-9A-Fa-f]{0,4}|([0-9A-Fa-f]{1,4}:){7}:)$",
+                            "title": "to"
+                        }
+                    }
+                },
+                "title": "ipv6_blocks"
+            },
+            "ipv6_configuration": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Network interface configuration data for IPv6 interfaces. Prefix, Gateway and DNS settings.\n\nRequired Attributes:\n  * gateway\n  * prefix\n  * primary_dns\n\nOptional Attributes:\n  * secondary_dns.",
+                "ObjectType": "ippool.IpV6Config",
+                "required": [
+                    "gateway",
+                    "primary_dns"
+                ],
+                "title": "ipv6_configuration - IPv6 Configuration Settings",
+                "properties": {
+                    "gateway": {
+                        "type": "string",
+                        "default": "2001:db8::1",
+                        "description": "Gateway to assign to the pool.  Example `2001:db8::1`.",
+                        "intersightApi": "Gateway",
+                        "minLength": 6,
+                        "maxLength": 39,
+                        "pattern": "^$|^(([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{0,4}|:[0-9A-Fa-f]{1,4})?|(:[0-9A-Fa-f]{1,4}){0,2})|(:[0-9A-Fa-f]{1,4}){0,3})|(:[0-9A-Fa-f]{1,4}){0,4})|:(:[0-9A-Fa-f]{1,4}){0,5})((:[0-9A-Fa-f]{1,4}){2}|:(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])(\\.(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])){3})|(([0-9A-Fa-f]{1,4}:){1,6}|:):[0-9A-Fa-f]{0,4}|([0-9A-Fa-f]{1,4}:){7}:)$",
+                        "title": "gateway"
+                    },
+                    "prefix": {
+                        "type": "integer",
+                        "default": 64,
+                        "description": "Prefix to assign to the pool.  Example `64`.",
+                        "intersightApi": "Prefix",
+                        "minimum": 1,
+                        "maximum": 128,
+                        "title": "prefix"
+                    },
+                    "primary_dns": {
+                        "type": "string",
+                        "default": "2620:119:53::53",
+                        "description": "IP Address of the primary Domain Name System (DNS) server.  Example `2620:119:53::53`.",
+                        "intersightApi": "PrimaryDns",
+                        "minLength": 6,
+                        "maxLength": 39,
+                        "pattern": "^$|^(([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{0,4}|:[0-9A-Fa-f]{1,4})?|(:[0-9A-Fa-f]{1,4}){0,2})|(:[0-9A-Fa-f]{1,4}){0,3})|(:[0-9A-Fa-f]{1,4}){0,4})|:(:[0-9A-Fa-f]{1,4}){0,5})((:[0-9A-Fa-f]{1,4}){2}|:(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])(\\.(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])){3})|(([0-9A-Fa-f]{1,4}:){1,6}|:):[0-9A-Fa-f]{0,4}|([0-9A-Fa-f]{1,4}:){7}:)$",
+                        "title": "primary_dns"
+                    },
+                    "secondary_dns": {
+                        "type": "string",
+                        "default": "2620:119:35::35",
+                        "description": "IP Address of the secondary Domain Name System (DNS) server.  Example `2620:119:35::35`.",
+                        "intersightApi": "SecondaryDns",
+                        "minLength": 0,
+                        "maxLength": 39,
+                        "optional": true,
+                        "pattern": "^$|^(([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:([0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{0,4}|:[0-9A-Fa-f]{1,4})?|(:[0-9A-Fa-f]{1,4}){0,2})|(:[0-9A-Fa-f]{1,4}){0,3})|(:[0-9A-Fa-f]{1,4}){0,4})|:(:[0-9A-Fa-f]{1,4}){0,5})((:[0-9A-Fa-f]{1,4}){2}|:(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])(\\.(25[0-5]|(2[0-4]|1[0-9]|[1-9])?[0-9])){3})|(([0-9A-Fa-f]{1,4}:){1,6}|:):[0-9A-Fa-f]{0,4}|([0-9A-Fa-f]{1,4}:){7}:)$",
+                        "title": "secondary_dns"
+                    }
+                }
+            },
+            "reservations": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "The IP reservation object, used to hold reserved addresses.\nRequired Attributes:\n  * identities\n\nOptional Attributes:\n  * allocation_type\n  * ip_type",
+                "ObjectType": "ippool.Reservations",
+                "required": [
+                    "identities"
+                ],
+                "title": "Identity Reservations",
+                "properties": {
+                    "allocation_type": {
+                        "type": "string",
+                        "default": "static",
+                        "description": "Type of the allocation for the identity in the reservation either static or dynamic (i.e. via pool).\n  * dynamic - Identifiers to be allocated by system.\n  * static - Identifiers are assigned by the user.  (default)",
+                        "intersightApi": "AllocationType",
+                        "enum": [
+                            "dynamic",
+                            "static"
+                        ],
+                        "title": "allocation_type"
+                    },
+                    "ip_type": {
+                        "type": "string",
+                        "default": "IPv4",
+                        "description": "Type of the IP address that needs to be reserved.\n  * IPv4 - IP V4 address type requested. (default)\n  * IPv6 - IP V6 address type requested.",
+                        "intersightApi": "IpType",
+                        "enum": [
+                            "IPv4",
+                            "IPv6"
+                        ],
+                        "title": "ip_type"
+                    },
+                    "identities": {
+                        "type": "array",
+                        "additionalProperties": false,
+                        "description": "List of IP identities to be reserved.",
+                        "intersightApi": "Identity",
+                        "items": {
+                            "type": "string",
+                            "default": "198.18.1.1",
+                            "description": "IP identity to be reserved.  Example `198.18.1.1` or `2001:db8::1`",
+                            "intersightApi": "Identity",
+                            "minLength": 6,
+                            "maxLength": 39,
+                            "pattern": "^((([1-9]|[1-9][0-9]{1}|1[0-9]{2}|2[0-1][0-9]|22[0-3])\\.)(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^(([a-fA-F]|[a-fA-F][a-fA-F0-9\\-]*[a-fA-F0-9])\\.)*([A-Fa-f]|[A-Fa-f][A-Fa-f0-9\\-]*[A-Fa-f0-9])$|^(?:(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){6})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:::(?:(?:(?:[0-9a-fA-F]{1,4})):){5})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})))?::(?:(?:(?:[0-9a-fA-F]{1,4})):){4})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,1}(?:(?:[0-9a-fA-F]{1,4})))?::(?:(?:(?:[0-9a-fA-F]{1,4})):){3})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,2}(?:(?:[0-9a-fA-F]{1,4})))?::(?:(?:(?:[0-9a-fA-F]{1,4})):){2})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,3}(?:(?:[0-9a-fA-F]{1,4})))?::(?:(?:[0-9a-fA-F]{1,4})):)(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,4}(?:(?:[0-9a-fA-F]{1,4})))?::)(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,5}(?:(?:[0-9a-fA-F]{1,4})))?::)(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,6}(?:(?:[0-9a-fA-F]{1,4})))?::)))))$",
+                            "title": "identity"
+                        },
+                        "title": "identities"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "tags": {
+            "type": "array",
+            "description": "An arbitrary key and value pair that can be used to tag REST resources and organize managed objects by\nassigning meta-data tags to any object.\nRequired Attributes:\n  * key\n  * value",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "",
+                "ObjectType": "mo.Tag",
+                "required": [
+                    "key",
+                    "value"
+                ],
+                "title": "tags",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "default": "key",
+                        "description": "The tag key for which usage information is provided.",
+                        "intersightApi": "Key",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[\\S]+$",
+                        "title": "key"
+                    },
+                    "value": {
+                        "type": "string",
+                        "default": "value",
+                        "description": "A list of all Tag values that have been assigned to this tag Key.",
+                        "intersightApi": "Value",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[\\S]+$",
+                        "title": "value"
+                    }
+                }
+            },
+            "title": "tags - Tags"
+        }
+    }
+]

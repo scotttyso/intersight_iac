@@ -1,10 +1,27 @@
-from classes import device_connector
-from classes import isight
-from dotmap import DotMap
-from time import sleep
-import json
-import numpy
-import re
+#=============================================================================
+# Print Color Functions
+#=============================================================================
+def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
+def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
+
+#=============================================================================
+# Source Modules
+#=============================================================================
+try:
+    from classes import device_connector, isight
+    from dotmap import DotMap
+    from time import sleep
+    import json, numpy, re, sys
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 
 def claim_targets(kwargs):
     return_code = 0
@@ -30,8 +47,7 @@ def claim_targets(kwargs):
                 password      = kwargs.password,
                 resource_group= i.resource_group,
                 script_path   = kwargs.script_path,
-                username      = kwargs.username
-            )
+                username      = kwargs.username)
             result[device.hostname] = DotMap(changed=False)
             result[device.hostname].msg = f"  Host : {device.hostname}"
             if not i.get('read_only'): device.read_only = False
@@ -50,13 +66,13 @@ def claim_targets(kwargs):
             else:
                 result[device.hostname].msg += "  Unknown device_type %s" % device.device_type
                 return_code = 1
-                print(json.dumps(result[device.hostname]))
+                prCyan(json.dumps(result[device.hostname]))
                 continue
             
             if not dc_obj.logged_in:
                 result[device.hostname].msg += "  Login error"
                 return_code = 1
-                print(json.dumps(result[device.hostname]))
+                prCyan(json.dumps(result[device.hostname]))
                 continue
 
             ro_json = DotMap(dc_obj.configure_connector())
@@ -65,7 +81,7 @@ def claim_targets(kwargs):
                 return_code = 1
                 if ro_json.get('ApiError'):
                     result[device.hostname].msg += ro_json.ApiError
-                print(json.dumps(result[device.hostname]))
+                prCyan(json.dumps(result[device.hostname]))
                 continue
 
             # set access mode (ReadOnlyMode True/False) to desired state
@@ -74,7 +90,7 @@ def claim_targets(kwargs):
                 if ro_json.get('ApiError'):
                     result[device.hostname].msg += ro_json.ApiError
                     return_code = 1
-                    print(json.dumps(result[device.hostname]))
+                    prCyan(json.dumps(result[device.hostname]))
                     continue
                 result[device.hostname].changed = True
 
@@ -83,25 +99,21 @@ def claim_targets(kwargs):
             if ro_json.get('ApiError'):
                 result[device.hostname].msg += ro_json.ApiError
                 return_code = 1
-                print(json.dumps(result[device.hostname]))
+                prCyan(json.dumps(result[device.hostname]))
                 continue
 
             # wait for a connection to establish before checking claim state
 
             for _ in range(10):
-                if ro_json.ConnectionState != 'Connected':
-                    sleep(1)
-                    ro_json = dc_obj.get_status()
+                if ro_json.ConnectionState != 'Connected': sleep(1); ro_json = dc_obj.get_status()
 
             result[device.hostname].msg += f"  AdminState     : {ro_json.AdminState}"
             result[device.hostname].msg += f"  ConnectionState: {ro_json.ConnectionState}"
             result[device.hostname].msg += f"  Claimed state  : {ro_json.AccountOwnershipState}"
 
-            if ro_json.ConnectionState != 'Connected':
-                return_code = 1
-                continue
+            if ro_json.ConnectionState != 'Connected': return_code = 1; continue
             else:
-                print(ro_json.ConnectionState)
+                prCyan(ro_json.ConnectionState)
                 (claim_resp, device_id, claim_code) = dc_obj.get_claim_info(ro_json)
                 result[device.hostname].msg += f"  Id : {device_id}"
 
@@ -110,8 +122,7 @@ def claim_targets(kwargs):
                 (claim_resp, device_id, claim_code) = dc_obj.get_claim_info(ro_json)
                 if claim_resp.get('ApiError'):
                     result[device.hostname].msg += claim_resp['ApiError']
-                    return_code = 1
-                    continue
+                    return_code = 1; continue
 
                 result[device.hostname].msg += f"  Id    : {device_id}"
                 result[device.hostname].msg += f"  Token : {claim_code}"
@@ -137,7 +148,6 @@ def claim_targets(kwargs):
                 result[device.hostname].changed= False
                 result[device.hostname].serial = device_id
 
-
         if re.search(r'\(([0-9a-z\'\,]+)\)', resource_groups[i.resource_group].selectors[0].Selector):
             device_registrations= re.search(
                 r'\(([0-9a-z\'\,]+)\)', resource_groups[i.resource_group].selectors[0].Selector).group(1)
@@ -152,41 +162,30 @@ def claim_targets(kwargs):
                 result[s]['Resource Updated'] = True
             else: result[s]['Resource Updated'] = False
 
-        kwargs.api_body = {
-            "Selectors":[
-                {
-                    "ClassId": "resource.Selector",
-                    "ObjectType": "resource.Selector",
-                    "Selector": "/api/v1/asset/DeviceRegistrations?$filter=Moid in("f"{appended_targets})"
-                }
-            ]
-        }
+        kwargs.api_body = { "Selectors":[{
+            "ClassId": "resource.Selector",
+            "ObjectType": "resource.Selector",
+            "Selector": "/api/v1/asset/DeviceRegistrations?$filter=Moid in("f"{appended_targets})"
+        }] }
         kwargs.method= 'patch'
         kwargs.pmoid = resource_groups[i.resource_group].moid
         kwargs.qtype = 'resource_group'
         kwargs.uri   = 'resource/Groups'
         kwargs       = isight.api(kwargs.qtype).calls(kwargs)
 
-    print('')
-    print('-' * 60)
+    prCyan(f'\n{"-" * 60}')
     for key, value in result.items():
         for k, v in value.items():
             if key == 'msg':
                 msg_split = value.split('  ')
                 msg_split.sort()
                 for msg in msg_split:
-                    if not msg == '':
-                        print(msg)
-            else:
-                print(k, ':', v)
-    print('-' * 60)
-    print('')
-
+                    if not msg == '': prCyan(msg)
+            else: prCyan(k, ':', v)
+    prCyan(f'\n{"-" * 60}')
 
     # logout of any sessions active after exception handling
-    if ('dc_obj' in locals() or 'dc_obj' in globals()):
-        dc_obj.logout()
+    if ('dc_obj' in locals() or 'dc_obj' in globals()): dc_obj.logout()
     kwargs.result = result
     kwargs.return_code= return_code
-
     return kwargs

@@ -1,0 +1,9 @@
+---
+organizations:
+  - default
+  - Asgard
+policy_types:
+  - imc_access
+profiles:
+  - type: server
+    sub_type: FIAttached

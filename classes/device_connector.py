@@ -1,15 +1,30 @@
 #!/usr/bin/env python3
 """Intersight Device Connector API access classes."""
 
-import subprocess
-import re
-from xml.etree import ElementTree
-from time import sleep
-import requests
+#=============================================================================
+# Print Color Functions
+#=============================================================================
+def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
+def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
 
-import urllib3
+#=============================================================================
+# Source Modules
+#=============================================================================
+try:
+    from time import sleep
+    from xml.etree import ElementTree
+    import re, requests, subprocess, sys, urllib3
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 
 def requests_op(op, uri, header, ro_json, body):
     """perform op and retry on 5XX status errors"""
@@ -244,9 +259,9 @@ class imc_device_connector(device_connector, object):
                         'Referer': referer
                     }
                     self.logged_in = True
-                else: print("Unable to login: ", imc_login_uri)
+                else: prCyan("Unable to login: ", imc_login_uri)
         except subprocess.CalledProcessError as sub_ret:
-            print("Utils executable returns ", sub_ret.returncode, sub_ret.output)
+            prCyan("Utils executable returns ", sub_ret.returncode, sub_ret.output)
 
     def logout(self):
         """Logout of IMC webgui session if currently logged in."""

@@ -1,0 +1,31 @@
+---
+add_vlans:
+  organizations:
+    - default
+  patch:
+    ethernet_network_group:
+      - uplink
+    vlan_policy:
+      name: vlans
+      vlans:
+        - name: default
+          vlan_id: 1
+        - name: example2
+          vlan_id: 102
+        - name: example5
+          vlan_id: 105
+  post:
+    lan_connectivity:
+      name: '{{vlan_id}}'
+      target_platform: FIAttached
+      vnics:
+        - ethernet_adapter: VMware
+          ethernet_network_control: cdp
+          ethernet_network_group: '{{vlan_id}}_NIC-A'
+          ethernet_qos: Silver
+          mac_pool: mgmt-a
+          name: NIC-A
+          placement:
+            order: 2
+            slot: MLOM
+            switch_id: A

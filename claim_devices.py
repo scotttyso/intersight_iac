@@ -17,7 +17,7 @@ try:
     import sys
     sys.path.insert(0, './classes')
     from classes import claim_device
-    from classes import ezfunctionsv2 as ezfunctions
+    from classes import ezfunctions as ezfunctions
     from dotmap import DotMap
     from pathlib import Path
     import argparse

@@ -22,39 +22,67 @@ def begin_loop(ptype1, ptype2):
 
 def begin_section(ptype1, ptype2):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    prLightPurple(f"   Beginning {' '.join(ptype1.split('_')).title()} {' '.join(ptype2.split('_')).title()} Deployments.\n")
+    prLightPurple(
+        f"   Beginning {' '.join(ptype1.split('_')).title()} {' '.join(ptype2.split('_')).title()} Deployments.\n")
 
-def completed_item(ptype, pargs, pmoid):
-    method = pargs.apiMethod
-    if 'vlans' == ptype: name = f"VLAN {pargs.apiBody['vlan_id']}"
+def completed_item(ptype, kwargs):
+    method = kwargs.method
+    pmoid  = kwargs.pmoid
+    if 'vlans' == ptype: name = f"VLAN {kwargs.apiBody['VlanId']}"
     elif 'autosupport' == ptype: name = "AutoSupport"
-    elif 'vsans' == ptype: name = f"VSAN {pargs.apiBody['vsan_id']}"
-    elif 'port_channel' in ptype: name = f"PC {pargs.apiBody['pc_id']}"
-    elif 'port_mode' in ptype: name = f"PortIdStart {pargs.apiBody['port_id_start']}"
-    elif 'port_role' in ptype: name = f"Port {pargs.apiBody['port_id']}"
-    elif 'user_role' in ptype: name = f"Role for {pargs.purpose}"
-    elif 'upgrade' in pargs.policy: name = f".  Performing Firmware Upgrade on {pargs.serial} - {pargs.server} Server Profile"
-    elif 'auth' in pargs.policy: name = f"{pargs.apiBody['user_id']} CCO User Authentication"
-    elif 'eula' in pargs.policy: name = f"Account EULA Acceptance"
-    elif pargs.apiBody.get('action'):
-        if pargs.apiBody['action'] == 'Deploy': name = f"Deploy Profile {pargs.pmoid}"
-        else: pargs.apiBody['name']
-    elif pargs.apiBody.get('Targets'):
-        name = pargs.apiBody['Targets'][0]['Name']
-    else: name = pargs.apiBody['name']
+    elif 'vsans' == ptype: name = f"VSAN {kwargs.apiBody['VsanId']}"
+    elif 'port_channel' in ptype: name = f"PC {kwargs.apiBody['PcId']}"
+    elif 'port_mode' in ptype: name = f"PortIdStart {kwargs.apiBody['PortIdStart']}"
+    elif 'port_role' in ptype: name = f"Port {kwargs.apiBody['PortId']}"
+    elif 'user_role' in ptype: name = f"Role for {kwargs.qtype}"
+    elif 'upgrade' in kwargs.qtype:
+        name = f".  Performing Firmware Upgrade on {kwargs.serial} - {kwargs.server} Server Profile"
+    elif 'auth' in kwargs.qtype: name = f"{kwargs.apiBody['UserId']} CCO User Authentication"
+    elif 'eula' in kwargs.qtype: name = f"Account EULA Acceptance"
+    elif kwargs.apiBody.get('Action'):
+        if kwargs.apiBody['Action'] == 'Deploy': name = f"Deploy Profile {kwargs.pmoid}"
+    elif kwargs.apiBody.get('ScheduledActions'):
+        name = f"Activating Profile {kwargs.pmoid}"
+    elif kwargs.apiBody.get('Targets'):
+        name = kwargs.apiBody['Targets'][0]['Name']
+    elif 'update_tags' in kwargs.qtype: name = f"Tags updated for Physical Server attached to {kwargs.tag_server_profile}"
+    else: name = kwargs.apiBody['Name']
     if re.search('(storage_drive|user_role|v(l|s)ans|vhbas|vnics|port_(channel|mode|role))', ptype):
         if 'port' in ptype:
-            prLightPurple(f'      * Completed {method} for port_policy {pargs.port_policy_name}: {name} - Moid: {pmoid}')
-        else: prLightPurple(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
-    elif 'Deploy' in name: prLightPurple(f'      * Deploying Profile.')
-    elif re.search(policy_regex, pargs.policy) and pargs.purpose == 'switch':
-        name = pargs.apiBody['name']
-        prLightPurple(f'      * Completed {method} for {pargs.policy} name: {name} - Moid: {pmoid}. Updated Profiles.')
-    elif re.search('(eula|upgrade)', pargs.policy) and pargs.purpose == 'firmware':
-        prLightPurple(f'      * Completed {method} for {pargs.policy} {name}.')
-    elif pargs.apiBody.get('Targets'):
-        prLightPurple(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
-    else: prLightPurple(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
+            if method == 'post':
+                prGreen(f'      * Completed {method} for port_policy {kwargs.port_policy_name}: {name} - Moid: {pmoid}')
+            else:
+                prLightPurple(f'      * Completed {method} for port_policy {kwargs.port_policy_name}: {name} - Moid: {pmoid}')
+        else:
+            if method == 'post':
+                prGreen(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
+            else:
+                prLightPurple(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
+    elif re.search('^(Activating|Deploy)', name): prCyan(f'      * {name}.')
+    elif re.search(policy_regex, kwargs.qtype) and 'switch ' in kwargs.qtype:
+        pname = kwargs.qtype.split(' ')[1]
+        name = kwargs.apiBody['Name']
+        if method == 'post':
+            prGreen(
+                f'      * Completed {method} to attach profile(s) to {pname} policy name: {name} - Moid: {pmoid}. Updated Profiles.')
+        else:
+            prLightPurple(
+                f'      * Completed {method} to attach profile(s) to {pname} policy name: {name} - Moid: {pmoid}. Updated Profiles.')
+    elif re.search('(eula|upgrade)', kwargs.qtype) and kwargs.qtype == 'firmware':
+        if method == 'post':
+            prGreen(f'      * Completed {method} for {kwargs.qtype} {name}.')
+        else:
+            prLightPurple(f'      * Completed {method} for {kwargs.qtype} {name}.')
+    elif kwargs.apiBody.get('Targets'):
+        if method == 'post':
+            prGreen(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
+        else:
+            prLightPurple(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
+    else:
+        if method == 'post':
+            prGreen(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
+        else:
+            prLightPurple(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
 
 def deploy_notification(profile, profile_type):
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -63,7 +91,7 @@ def deploy_notification(profile, profile_type):
 
 def error_file_location(varName, varValue):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  !!!Error!!! The "{varName}" "{varValue}"')
+    print(f'  !!! ERROR !!! The "{varName}" "{varValue}"')
     print(f'  is invalid.  Please valid the Entry for "{varName}".')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
@@ -75,8 +103,8 @@ def end_section(ptype1, ptype2):
 
 def error_policy_doesnt_exist(policy_type, policy_name, profile, profile_type, ptype):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'   !!!Error!!! The Following policy was attached to {profile_type} {ptype} {profile}')
-    print(f'   But it has not been created:')
+    print(f'   !!! ERROR !!! The Following policy was attached to {profile_type} {ptype} {profile}')
+    print(f'   But it has not been created.')
     print(f'   Policy Type: {policy_type}')
     print(f'   Policy Name: {policy_name}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -84,7 +112,7 @@ def error_policy_doesnt_exist(policy_type, policy_name, profile, profile_type, p
 
 def error_request(status, text):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'   !!!Error!!! in Retreiving Terraform Cloud Organization Workspaces')
+    print(f'   !!! ERROR !!! in Retreiving Terraform Cloud Organization Workspaces')
     print(f'   Exiting on Error {status} with the following output:')
     print(f'   {text}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -92,7 +120,7 @@ def error_request(status, text):
 
 def error_request_netapp(method, status, text, uri):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'   !!!Error!!! when attempting {method} to {uri}')
+    print(f'   !!! ERROR !!! when attempting {method} to {uri}')
     print(f'   Exiting on Error {status} with the following output:')
     print(f'   {text}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
@@ -100,12 +128,12 @@ def error_request_netapp(method, status, text, uri):
 
 def error_serial_number(name, serial):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    print(f'  !!!Error!!! The Serial Number "{serial}" for "{name}" was not found in inventory.')
+    print(f'  !!! ERROR !!! The Serial Number "{serial}" for "{name}" was not found in inventory.')
     print(f'  Please check the serial number for "{name}".')
     print(f'\n-------------------------------------------------------------------------------------------\n')
     sys.exit(1)
 
-def error_subnet_check(**kwargs):
+def error_subnet_check(kwargs):
     ip_version = kwargs['ip_version']
     if ip_version == 'v4': prefix = kwargs['subnetMask']
     else: prefix = kwargs['prefix']
@@ -114,22 +142,22 @@ def error_subnet_check(**kwargs):
     pool_to = ipaddress.ip_address(kwargs['pool_to'])
     if not pool_from in ipaddress.ip_network(f"{gateway}/{prefix}", strict=False):
         print(f'\n{"-"*91}\n')
-        print(f'   !!!Error!!!  {pool_from} is not in network {gateway}/{prefix}:')
+        print(f'   !!! ERROR !!!  {pool_from} is not in network {gateway}/{prefix}:')
         print(f'   Exiting....')
         print(f'\n{"-"*91}\n')
         sys.exit(1)
     if not pool_to in ipaddress.ip_network(f"{gateway}/{prefix}", strict=False):
         print(f'\n{"-"*91}\n')
-        print(f'   !!!Error!!!  {pool_to} is not in network {gateway}/{prefix}:')
+        print(f'   !!! ERROR !!!  {pool_to} is not in network {gateway}/{prefix}:')
         print(f'   Exiting....')
         print(f'\n{"-"*91}\n')
         sys.exit(1)
 
 
-def error_subnet_not_found(**kwargs):
+def error_subnet_not_found(kwargs):
     poolFrom = kwargs['pool_from']
     print(f'\n{"-"*91}\n')
-    print(f'   !!!Error!!!  Did not Find a Correlating Network for {poolFrom}.')
+    print(f'   !!! ERROR !!!  Did not Find a Correlating Network for {poolFrom}.')
     print(f'   Defined Network List:')
     for i in kwargs['networks']:
         print(f'    * {i}')
@@ -140,12 +168,12 @@ def error_subnet_not_found(**kwargs):
 
 def unmapped_keys(policy_type, name, key):
     print(f'\n{"-"*91}\n')
-    print(f'   !!!Error!!!! For {policy_type}, {name}, unknown key {key}')
+    print(f'   !!! ERROR !!!! For {policy_type}, {name}, unknown key {key}')
     print(f'\n{"-"*91}\n')
     sys.exit(1)
  
 # Validations
-def boolean(var, **kwargs):
+def boolean(var, kwargs):
     row_num = kwargs['row_num']
     ws = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -157,7 +185,7 @@ def boolean(var, **kwargs):
         print(f'   Error on Worksheet "{ws.title}", Row {row_num}, Variable {var};')
         print(f'   must be True or False.  Exiting....')
         print(f'\n--------------------------------------------------------------------------------\n')
-        exit()
+        sys.exit(1)
 
 def description(varName, varValue, minLength, maxLength):
     if not (re.search(r'^[a-zA-Z0-9\\!#$%()*,-./:;@ _{|}~?&+]+$',  varValue) and \
@@ -181,7 +209,7 @@ def domain(varName, varValue):
         return False
     else: return True
 
-def domain_ws(var, **kwargs):
+def domain_ws(var, kwargs):
     row_num  = kwargs['row_num']
     ws       = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -191,7 +219,7 @@ def domain_ws(var, **kwargs):
         print(f'   Error with {var}. Invalid Domain "{varValue}"')
         print(f'   Please Validate the domain and retry.')
         print(f'\n-----------------------------------------------------------------------------\n')
-        sys.exit()
+        sys.sys.exit(1)
     else: return True
 
 def dns_name(varName, varValue):
@@ -210,7 +238,7 @@ def dns_name(varName, varValue):
         return False
     else: return True
 
-def dns_name_ws(var, **kwargs):
+def dns_name_ws(var, kwargs):
     row_num  = kwargs['row_num']
     ws       = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -232,7 +260,7 @@ def dns_name_ws(var, **kwargs):
         print(f'   is not a valid Hostname.  Confirm that you have entered the DNS Name Correctly.')
         print(f'   Exiting....')
         print(f'\n--------------------------------------------------------------------------------\n')
-        exit()
+        sys.exit(1)
 
 def email(varName, varValue):
     if not validators.email(varValue, whitelist=None):
@@ -243,7 +271,7 @@ def email(varName, varValue):
         return False
     else: return True
 
-def email_ws(var, **kwargs):
+def email_ws(var, kwargs):
     row_num  = kwargs['row_num']
     ws       = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -253,7 +281,7 @@ def email_ws(var, **kwargs):
         print(f'   Error with {var}. Email address "{varValue}"')
         print(f'   is invalid.  Please Validate the email and retry.')
         print(f'\n-----------------------------------------------------------------------------\n')
-        sys.exit()
+        sys.sys.exit(1)
     else: return True
 
 def ip_address(varName, varValue):
@@ -278,7 +306,7 @@ def ip_address(varName, varValue):
         return False
     else: return True
 
-def ip_address_ws(var, **kwargs):
+def ip_address_ws(var, kwargs):
     row_num  = kwargs['row_num']
     ws       = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -350,21 +378,21 @@ def iqn_address(varName, varValue):
         return False
     else: return True
 
-def length_and_regex(regex_pattern, varName, varValue, minLength, maxLength):
+def length_and_regex(answer, minLength, maxLength, pattern, title):
     invalid_count = 0
     if minLength == 0 and maxLength == 0: invalid_count = 0
     else:
-        if not validators.length(varValue, min=int(minLength), max=int(maxLength)):
+        if not validators.length(answer, min=int(minLength), max=int(maxLength)):
             invalid_count += 1
             print(f'\n--------------------------------------------------------------------------------------\n')
-            print(f'   !!! {varName} value "{varValue}" is Invalid!!!')
+            print(f'   !!! {title} value "{answer}" is Invalid!!!')
             print(f'   Length Must be between {minLength} and {maxLength} characters.')
             print(f'\n--------------------------------------------------------------------------------------\n')
-    if not re.search(regex_pattern, varValue):
+    if not re.search(pattern, str(answer)):
         invalid_count += 1
         print(f'\n--------------------------------------------------------------------------------------\n')
-        print(f'   !!! Invalid Characters in {varValue}.  The allowed characters are:')
-        print(f'   - "{regex_pattern}"')
+        print(f'   !!! Invalid Characters in {answer}.  The allowed characters are:')
+        print(f'   - "{pattern}"')
         print(f'\n--------------------------------------------------------------------------------------\n')
     if invalid_count == 0:
         return True
@@ -388,11 +416,11 @@ def length_and_regex_sensitive(regex_pattern, varName, varValue, minLength, maxL
         return True
     else: return False
 
-def list_values(var, jsonData, **kwargs):
-    jsonData = kwargs['validateData']
+def list_values(var, json_data, kwargs):
+    json_data = kwargs['validateData']
     row_num = kwargs['row_num']
     ws = kwargs['ws']
-    varList = jsonData[var]['enum']
+    varList = json_data[var]['enum']
     varValue = kwargs['var_dict'][var]
     match_count = 0
     for x in varList:
@@ -406,13 +434,13 @@ def list_values(var, jsonData, **kwargs):
             print(f'    - {x}')
         print(f'    Exiting....')
         print(f'\n-----------------------------------------------------------------------------\n')
-        exit()
+        sys.exit(1)
 
-def list_values_key(dictkey, var, **kwargs):
-    jsonData = kwargs['validateData']
+def list_values_key(dictkey, var, kwargs):
+    json_data = kwargs['validateData']
     row_num = kwargs['row_num']
     ws = kwargs['ws']
-    varList = jsonData[dictkey]['enum']
+    varList = json_data[dictkey]['enum']
     varValue = kwargs['var_dict'][var]
     match_count = 0
     for x in varList:
@@ -426,7 +454,7 @@ def list_values_key(dictkey, var, **kwargs):
             print(f'    - {x}')
         print(f'    Exiting....')
         print(f'\n-----------------------------------------------------------------------------\n')
-        exit()
+        sys.exit(1)
 
 def mac_address(varName, varValue):
     if not validators.mac_address(varValue):
@@ -436,9 +464,9 @@ def mac_address(varName, varValue):
         return False
     else: return True
 
-def number_check(var, jsonData, **kwargs):
-    minimum = jsonData[var]['minimum']
-    maximum = jsonData[var]['maximum']
+def number_check(var, json_data, kwargs):
+    minimum = json_data[var]['minimum']
+    maximum = json_data[var]['maximum']
     row_num = kwargs['row_num']
     ws = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -447,12 +475,12 @@ def number_check(var, jsonData, **kwargs):
         print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {varValue}. Valid Values ')
         print(f'   are between {minimum} and {maximum}.  Exiting....')
         print(f'\n-----------------------------------------------------------------------------\n')
-        exit()
+        sys.exit(1)
 
-def number_list(var, **kwargs):
-    jsonData = kwargs['validateData']
-    minimum = jsonData[var]['minimum']
-    maximum = jsonData[var]['maximum']
+def number_list(var, kwargs):
+    json_data = kwargs['validateData']
+    minimum = json_data[var]['minimum']
+    maximum = json_data[var]['maximum']
     row_num = kwargs['row_num']
     ws = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -470,13 +498,13 @@ def number_list(var, **kwargs):
             print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}, {x}. Valid Values ')
             print(f'   are between {minimum} and {maximum}.  Exiting....')
             print(f'\n-----------------------------------------------------------------------------\n')
-            exit()
+            sys.exit(1)
 
-def string_list(var, jsonData, **kwargs):
+def string_list(var, json_data, kwargs):
     # Get Variables from Library
-    minimum = jsonData[var]['minimum']
-    maximum = jsonData[var]['maximum']
-    pattern = jsonData[var]['pattern']
+    minimum = json_data[var]['minimum']
+    maximum = json_data[var]['maximum']
+    pattern = json_data[var]['pattern']
     row_num = kwargs['row_num']
     varValues = kwargs['var_dict'][var]
     ws = kwargs['ws']
@@ -492,13 +520,13 @@ def string_list(var, jsonData, **kwargs):
             print(f'    - Regex {pattern}')
             print(f'    Exiting....')
             print(f'\n-----------------------------------------------------------------------------\n')
-            exit()
+            sys.exit(1)
 
-def string_pattern(var, jsonData, **kwargs):
+def string_pattern(var, json_data, kwargs):
     # Get Variables from Library
-    minimum = jsonData[var]['minimum']
-    maximum = jsonData[var]['maximum']
-    pattern = jsonData[var]['pattern']
+    minimum = json_data[var]['minimum']
+    maximum = json_data[var]['maximum']
+    pattern = json_data[var]['pattern']
     row_num = kwargs['row_num']
     varValue = kwargs['var_dict'][var]
     ws = kwargs['ws']
@@ -513,7 +541,7 @@ def string_pattern(var, jsonData, **kwargs):
         print(f'    - Regex {pattern}')
         print(f'    Exiting....')
         print(f'\n-----------------------------------------------------------------------------\n')
-        exit()
+        sys.exit(1)
 
 def wwxn_address(varName, varValue):
     if not re.search(r'([0-9A-F]{2}[:-]){7}([0-9A-F]{2})', varValue):
@@ -664,7 +692,7 @@ def uuid_suffix(varName, varValue):
         return False
     else: return True
 
-def vlans(var, **kwargs):
+def vlans(var, kwargs):
     row_num = kwargs['row_num']
     ws = kwargs['ws']
     varValue = kwargs['var_dict'][var]
@@ -679,13 +707,13 @@ def vlans(var, **kwargs):
                         print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. Valid VLAN Values are:')
                         print(f'   between 1 and 4095.  "{z}" is not valid.  Exiting....')
                         print(f'\n-----------------------------------------------------------------------------\n')
-                        exit()
+                        sys.exit(1)
             elif not validators.between(int(x), min=1, max=4095):
                 print(f'\n-----------------------------------------------------------------------------\n')
                 print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. Valid VLAN Values are:')
                 print(f'   between 1 and 4095.  "{x}" is not valid.  Exiting....')
                 print(f'\n-----------------------------------------------------------------------------\n')
-                exit()
+                sys.exit(1)
     elif re.search('\\-', str(varValue)):
         dash_split = varValue.split('-')
         for x in dash_split:
@@ -694,13 +722,13 @@ def vlans(var, **kwargs):
                 print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. Valid VLAN Values are:')
                 print(f'   between 1 and 4095.  "{x}" is not valid.  Exiting....')
                 print(f'\n-----------------------------------------------------------------------------\n')
-                exit()
+                sys.exit(1)
     elif not validators.between(int(varValue), min=1, max=4095):
         print(f'\n-----------------------------------------------------------------------------\n')
         print(f'   Error on Worksheet {ws.title}, Row {row_num} {var}. Valid VLAN Values are:')
         print(f'   between 1 and 4095.  "{varValue}" is not valid.  Exiting....')
         print(f'\n-----------------------------------------------------------------------------\n')
-        exit()
+        sys.exit(1)
 
 def vname(varName, varValue):
     if not re.fullmatch(r'^[a-zA-Z0-9\-\.\_:]{1,31}$', varValue):
