@@ -1,15 +1,27 @@
-from dotmap import DotMap
-from classes import lansan
-from classes import pools
-from copy import deepcopy
-import base64
-import ezfunctions
-import json
-import os
-import re
-import textwrap
-import validating
-import yaml
+#=============================================================================
+# Print Color Functions
+#=============================================================================
+def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
+def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
+
+#=============================================================================
+# Source Modules
+#=============================================================================
+try:
+    from classes import ezfunctions, lansan, pools, validating
+    from copy import deepcopy
+    from dotmap import DotMap
+    import base64, json, os, re, sys, textwrap, yaml
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 
 class MyDumper(yaml.Dumper):
     def increase_indent(self, flow=False, indentless=False):
@@ -34,12 +46,12 @@ class policies(object):
         policy_type    = 'Adapter Configuration Policy'
         yaml_file      = 'ethernet'
         while configure_loop == False:
-            print(f'\n-------------------------------------------------------------------------------------------\n')
-            print(f'  An {policy_type} configures the Ethernet and Fibre-Channel settings for the ')
-            print(f'  Virtual Interface Card (VIC) adapter.\n')
-            print(f'  This wizard will save the configuration for this section to the following file:')
-            print(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
-            print(f'\n-------------------------------------------------------------------------------------------\n')
+            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+            prCyan(f'  An {policy_type} configures the Ethernet and Fibre-Channel settings for the ')
+            prCyan(f'  Virtual Interface Card (VIC) adapter.\n')
+            prCyan(f'  This wizard will save the configuration for this section to the following file:')
+            prCyan(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
+            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
@@ -533,7 +545,7 @@ class policies(object):
                     #==============================================
                     # Prompt User for Certificate
                     #==============================================
-                    kwargs.Multi_Line_Input = True
+                    kwargs.multi_line_input = True
                     kwargs.description = jsonVars.Certificate.description
                     kwargs.Variable = f'base64_certificate_{loop_count}'
                     kwargs = ezfunctions.sensitive_var_value(jsonData, **kwargs)
@@ -549,7 +561,7 @@ class policies(object):
                     #==============================================
                     # Prompt User for Private Key
                     #==============================================
-                    kwargs.Multi_Line_Input = True
+                    kwargs.multi_line_input = True
                     kwargs.description = jsonVars.Privatekey.description
                     kwargs.Variable = f'base64_private_key_{loop_count}'
                     kwargs = ezfunctions.sensitive_var_value(jsonData, **kwargs)
@@ -3914,15 +3926,11 @@ def port_list_fc(self, **kwargs):
             if question == 'Y' or (default_answer == 'Y' and question == ''):
                 configure_valid = False
                 while configure_valid == False:
-                    kwargs.multi_select = False
-                    if port_type == 'FC Uplink Port-Channels':
-                        kwargs.multi_select = True
-                        kwargs.Description = '    Please Select a Port for the FC Uplink Port-Channel:\n'
-                    elif port_type == 'FC Storage':
-                        kwargs.Description   = '    Please Select a Port for the FC Storage Port:\n'
-                    else: kwargs.Description = '    Please Select a Port for the FC Uplink Port:\n'
-                    kwargs.var_type = 'Unified Port'
-                    port_list = ezfunctions.vars_from_list(kwargs.fc_converted_ports, **kwargs)
+                    port_list = kwargs.fc_converted_ports
+                    kwargs.jdata = DotMap(
+                        default = port_list[0], enum = port_list, multi_select = True, title = 'Unified Port',
+                        description = f'    Port(s) for {port_type}.\n')
+                    port_list = ezfunctions.variablePrompt(kwargs)
 
                     # Prompt User for the Admin Speed of the Port
                     kwargs.multi_select = False
@@ -3959,14 +3967,14 @@ def port_list_fc(self, **kwargs):
                         vsan_list = []
                         for i in kwargs.immDict.orgs[org].policies.vsan:
                             if i.name == kwargs.vsan_policy:
-                                for item in i.vsans: vsan_list.append(item.vsan_id)
-                        kwargs.multi_select = False
+                                for e in i.vsans: vsan_list.append(e.vsan_id)
                         if port_type == 'FC Uplink Port-Channels': fc_type = 'Port-Channel'
                         elif port_type == 'FC Storage': fc_type = 'Storage Port'
                         else: fc_type = 'Uplink Port'
-                        kwargs.Description = f'    Please Select a VSAN for the Fibre-Channel {fc_type} Port:\n'
-                        kwargs.var_type = 'VSAN'
-                        vsan_x = ezfunctions.vars_from_list(vsan_list, **kwargs)
+                        kwargs.jdata = DotMap(
+                            default = vsan_list[0], enum = vsan_list, multi_select = False, title = 'VSAN',
+                            description = f'    VSAN for the Fibre-Channel {fc_type} Port.\n')
+                        vsan_x = ezfunctions.variablePrompt(kwargs)
                         for vs in vsan_x: vsan = vs
                         vsans.update({fabric:vsan})
                     if port_type == 'FC Uplink Port-Channels':

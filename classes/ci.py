@@ -46,15 +46,15 @@ class imm(object):
         for i in models:
             gen, cpu, tpm = i.split('-')
             if kwargs.args.deployment_type == 'azure_hci':
-                if len(tpm) > 0: btemplates.append(f'{gen}-{cpu}-azure-tpm')
-                else: btemplates.append(f'{gen}-{cpu}-azure')
+                if len(tpm) > 0: btemplates.append(f'{gen}-azure-{cpu}-tpm')
+                else: btemplates.append(f'{gen}-azure-{cpu}')
             else:
                 if len(tpm) > 0: btemplates.append(f'{gen}-{cpu}-virtual-tpm')
                 else: btemplates.append(f'{gen}-{cpu}-virtual')
         btemplates = list(numpy.unique(numpy.array(btemplates)))
         for i in btemplates:
             polVars = dict(
-                baud_rate           = 115200,
+                baud_rate           = '115200',
                 bios_template       = i,
                 console_redirection = f'serial-port-a',
                 description         = f'{kwargs.imm.policies.prefix}{i} {descr} Policy',
@@ -71,7 +71,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policies - Boot Order
@@ -149,7 +148,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Profiles - Chassis
     #=============================================================================
@@ -179,7 +177,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Profiles - Chassis
@@ -320,7 +317,7 @@ class imm(object):
             #=====================================================
             # Build Server Dictionaries - Standalone
             #=====================================================
-            kwargs.sensitive_var = 'ucs_password'
+            kwargs.sensitive_var = 'local_user_password'
             kwargs  = ezfunctions.sensitive_var_value(kwargs)
             password=kwargs.var_value
             kwargs.yaml.device_list = [DotMap(
@@ -349,7 +346,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Profiles - Domain
@@ -382,7 +378,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Ethernet Adapter
     #=============================================================================
@@ -407,7 +402,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Ethernet Network Control
     #=============================================================================
@@ -423,8 +417,8 @@ class imm(object):
             cdp_enable           = cdpe,
             description          = f'{kwargs.imm.policies.prefix}{name} {descr} Policy',
             name                 = f'{kwargs.imm.policies.prefix}{name}',
-            lldp_receive_enable  = lldpe,
-            lldp_transmit_enable = lldpe,
+            lldp_enable_receive  = lldpe,
+            lldp_enable_transmit = lldpe,
             mac_register_mode    = 'nativeVlanOnly',
             mac_security_forge   = 'allow',
         )
@@ -436,7 +430,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - Ethernet Network Group
@@ -579,7 +572,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Ethernet QoS
     #=============================================================================
@@ -608,42 +600,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
-
-    #=============================================================================
-    # Function - Build Pools - WWNN/WWPN
-    #=============================================================================
-    def fc(self, kwargs):
-        # Build Dictionary
-        polVars = dict(
-            assignment_order = 'sequential',
-            description      = f'{kwargs.imm.policies.prefix}wwnn Pool',
-            name             = f'{kwargs.imm.policies.prefix}wwnn',
-            id_blocks        = [{
-                'from':f'20:00:00:25:B5:{kwargs.domain.pools.prefix}:00:00',
-                'size':1024
-            }],
-        )
-
-        # Add Policy Variables to imm_dict
-        kwargs.class_path = f'pools,wwnn'
-        kwargs = ezfunctions.ez_append(polVars, kwargs)
-
-        # Loop through WWPN Pools
-        flist = ['A', 'B']
-        for i in flist:
-            polVars.update(dict(
-                description = f'{kwargs.imm.policies.prefix}wwpn-{i.lower()} Pool',
-                name        = f'{kwargs.imm.policies.prefix}wwpn-{i.lower()}',
-            ))
-            polVars['id_blocks'][0].update({'from':f'20:00:00:25:B5:{kwargs.domain.pools.prefix}:{i}0:00'})
-            kwargs.class_path = f'pools,wwpn'
-            kwargs = ezfunctions.ez_append(polVars, kwargs)
-        #=====================================================
-        # Return kwargs and kwargs
-        #=====================================================
-        return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - FC Zone
@@ -683,7 +639,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Fibre-Channel Adapter
     #=============================================================================
@@ -706,7 +661,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Fibre-Channel Network
     #=============================================================================
@@ -727,7 +681,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - Fibre-Channel QoS
@@ -753,7 +706,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policies - Firmware
     #=============================================================================
@@ -771,22 +723,15 @@ class imm(object):
             dataset.append(v.model)
         models = numpy.unique(numpy.array(dataset))
         polVars = dict(
-            description    = f'{kwargs.imm.policies.prefix}{fw_name} {descr} Policy',
-            models         = [],
-            name           = f'{kwargs.imm.policies.prefix}{fw_name}',
-            target_platform= 'FIAttached'
+            description = f'{kwargs.imm.policies.prefix}{fw_name} {descr} Policy', model_bundle_version = [],
+            name = f'{kwargs.imm.policies.prefix}{fw_name}', target_platform = 'FIAttached'
         )
+        stypes = ['blades', 'rackmount']
+        for s in stypes: polVars['model_bundle_version'].append(
+            dict(firmware_version= kwargs.domain.firmware[s], server_models = []))
         for i in models:
-            if 'UCSC' in i:
-                polVars['models'].append(dict(
-                    firmware_version= kwargs.domain.firmware.rackmount,
-                    server_model    = i
-                ))
-            else:
-                polVars['models'].append(dict(
-                    firmware_version= kwargs.domain.firmware.blades,
-                    server_model    = i
-                ))
+            if 'UCSC' in i: polVars['model_bundle_version'][1]['server_models'].append(i)
+            else: polVars['model_bundle_version'][0]['server_models'].append(i)
 
         # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
@@ -796,7 +741,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - Flow Control
@@ -816,7 +760,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - IMC Access
@@ -839,7 +782,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Pools - IP
@@ -892,7 +834,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Pools - IQN
     #=============================================================================
@@ -918,7 +859,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - IPMI over LAN
     #=============================================================================
@@ -938,7 +878,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - iSCSI Adapter
@@ -961,7 +900,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - iSCSI Boot
@@ -998,7 +936,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - iSCSI Target
     #=============================================================================
@@ -1028,7 +965,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - LAN Connectivity
@@ -1138,7 +1074,6 @@ class imm(object):
         kwargs.pci_order = pci_order
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Link Aggregation
     #=============================================================================
@@ -1158,7 +1093,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Link Control
     #=============================================================================
@@ -1177,7 +1111,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - Local User
@@ -1203,7 +1136,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Pools - MAC
@@ -1242,7 +1174,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Multicast
     #=============================================================================
@@ -1261,7 +1192,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - Network Connectivity
@@ -1294,7 +1224,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - NTP
     #=============================================================================
@@ -1315,7 +1244,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - Port
@@ -1513,7 +1441,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Power
     #=============================================================================
@@ -1542,7 +1469,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - SAN Connectivity
@@ -1605,7 +1531,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Serial over LAN
     #=============================================================================
@@ -1624,7 +1549,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Profiles - Server
@@ -1766,7 +1690,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - SNMP
     #=============================================================================
@@ -1803,7 +1726,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Storage
     #=============================================================================
@@ -1822,7 +1744,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - Storage
@@ -1844,7 +1765,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - Switch Control
@@ -1868,7 +1788,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - Syslog
@@ -1898,7 +1817,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - System QoS
     #=============================================================================
@@ -1923,7 +1841,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Templates - Server
@@ -1990,7 +1907,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Thermal
     #=============================================================================
@@ -2011,7 +1927,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Pools - MAC
@@ -2037,7 +1952,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Virtual KVM
     #=============================================================================
@@ -2057,7 +1971,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - Virtual Media
     #=============================================================================
@@ -2076,7 +1989,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Build Policy - VLAN
@@ -2119,7 +2031,6 @@ class imm(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policy - VSAN
     #=============================================================================
@@ -2148,6 +2059,43 @@ class imm(object):
         #=====================================================
         return kwargs
 
+    #=============================================================================
+    # Function - Build Pools - WWNN/WWPN
+    #=============================================================================
+    def wwnn(self, kwargs):
+        # Build Dictionary
+        pfx = kwargs.domain.pools.prefix
+        polVars = dict(
+            assignment_order = 'sequential',
+            description      = f'{kwargs.imm.policies.prefix}wwnn Pool',
+            name             = f'{kwargs.imm.policies.prefix}wwnn',
+            id_blocks        = [{ 'from':f'20:00:00:25:B5:{pfx}:00:00', 'size':1024 }])
+        # Add Policy Variables to imm_dict
+        kwargs.class_path = f'pools,wwnn'
+        kwargs = ezfunctions.ez_append(polVars, kwargs)
+        return kwargs
+
+    #=============================================================================
+    # Function - Build Pools - WWNN/WWPN
+    #=============================================================================
+    def wwpn(self, kwargs):
+        # Build Dictionary
+        # Loop through WWPN Pools
+        flist = ['A', 'B']
+        pfx = kwargs.domain.pools.prefix
+        for i in flist:
+            polVars = dict(
+                assignment_order = 'sequential',
+                description      = f'{kwargs.imm.policies.prefix}wwpn-{i.lower()} Pool',
+                name             = f'{kwargs.imm.policies.prefix}wwpn-{i.lower()}',
+                id_blocks        = [{ 'from':f'20:00:00:25:B5:{pfx}:{i}0:00', 'size':1024 }])
+            kwargs.class_path = f'pools,wwpn'
+            kwargs = ezfunctions.ez_append(polVars, kwargs)
+        #=====================================================
+        # Return kwargs and kwargs
+        #=====================================================
+        return kwargs
+
 
 #=============================================================================
 # Wizard Class
@@ -2163,107 +2111,90 @@ class wizard(object):
         #==================================
         # Configure Domain Policies
         #==================================
-        policy_list = kwargs.ezdata['ezimm'].allOf[1].properties['list_domains'].enum
-        policy_list.remove('domain')
-        policy_list.insert(0, 'ethernet_network_group')
-        policy_list.sort()
+        policy_list = []
+        for k, v in kwargs.ezdata.items():
+            if v.intersight_type == 'policy' and 'domain' in v.target_platforms: policy_list.append(k)
         for k, v in kwargs.imm.domain.items():
             dom_policy_list = deepcopy(policy_list)
             if not kwargs.imm.domain[k].get('vsans'): dom_policy_list.pop('vsan')
             for i in dom_policy_list:
-                kwargs.domain = v
-                kwargs.domain.name = k
-                if kwargs.imm.policies.prefix == None:
-                    kwargs.imm.policies.prefix = ''
+                kwargs.domain = v; kwargs.domain.name = k
+                if kwargs.imm.policies.prefix == None: kwargs.imm.policies.prefix = ''
                 kwargs = eval(f'imm(i).{i}(kwargs)')
-
         #==================================
         # Configure Domain Profiles
         #==================================
         kwargs = imm('domain').domain(kwargs)
-
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
         kwargs.policy_list = policy_list
         return kwargs
-
 
     #=============================================================================
     # Function - Converged Stack - Build IMM Dictionaries
     #=============================================================================
     def build_imm_servers(self, kwargs):
         if kwargs.imm.policies.prefix == None: kwargs.imm.policies.prefix = ''
-        if not kwargs.args.deployment_type == 'azure_hci':
+        pool_list = []; policy_list = []
+        if not kwargs.args.deployment_type == 'azurestack':
             #==================================
             # Configure IMM Pools
             #==================================
-            pool_list = list(kwargs.ezdata.pools.allOf[1].properties.keys())
+            for k, v in kwargs.ezdata.items():
+                if v.intersight_type == 'pool': pool_list.append(k)
             pool_list.remove('resource')
             for k, v in kwargs.imm.domain.items():
-                for i in pool_list:
-                    kwargs.domain = v
-                    kwargs.domain.name = k
-                    kwargs = eval(f'imm(i).{i}(kwargs)')
-
+                kwargs.domain = v; kwargs.domain.name = k
+                for i in pool_list: kwargs = eval(f'imm(i).{i}(kwargs)')
         #==================================
         # Modify the Policy List
         #==================================
-        ezjson = kwargs.ezdata['ezimm'].allOf[1].properties
-        if kwargs.args.deployment_type == 'azure_hci':
-            policy_list= ezjson.list_standalone.enum
-            pop_list   = ezjson['converged.azure_hci.pop_list'].enum
+        if kwargs.args.deployment_type == 'azurestack':
+            for k, v in kwargs.ezdata.items():
+                if v.intersight_type == 'policy' and 'Standalone' in v.target_platforms: policy_list.append(k)
+            pop_list = kwargs.ezdata.converged_pop_list.properties.azurestack.enum
             for i in pop_list: policy_list.remove(i)
             kwargs = imm('compute_environment').compute_environment(kwargs)
-            for i in policy_list:
-                kwargs = eval(f'imm(i).{i}(kwargs)')
+            for i in policy_list: kwargs = eval(f'imm(i).{i}(kwargs)')
         else:
-            policy_list= ezjson.list_fi_attached.enum
-            policy_list.append('thermal')
-            policy_list.sort()
+            for k, v in kwargs.ezdata.items():
+                if v.intersight_type == 'policy' and ('chassis' in v.target_platforms or 'FIAttached' in v.target_platforms):
+                    policy_list.append(k)
             policy_list.remove('iscsi_static_target')
             policy_list.insert((policy_list.index('iscsi_boot')), 'iscsi_static_target')
-            pop_list   = ezjson['converged.imm_domain.pop_list'].enum
+            pop_list = kwargs.ezdata.converged_pop_list.properties.domain.enum
             for i in pop_list: policy_list.remove(i)
             if kwargs.sw_mode == 'end-host': policy_list.remove('fc_zone')
             iscsi_type = False
             for i in kwargs.vlans:
                 if i.vlan_type == 'iscsi': iscsi_type = True
             if iscsi_type == False:
-                pop_list = ezjson['converged.iscsi_pop_list'].enum
+                pop_list = kwargs.ezdata.converged_pop_list.properties.iscsi.enum
                 for i in pop_list: policy_list.remove(i)
-
             #==================================
             # Configure IMM Policies
             #==================================
             domain_pop_list = True
             for k, v in kwargs.imm.domain.items():
-                if v.domain.get('vsans'): domain_pop_list = False
-                kwargs.domain = v
-                kwargs.domain.name = k
+                if v.get('vsans'): domain_pop_list = False
                 kwargs = imm('compute_environment').compute_environment(kwargs)
             if domain_pop_list == True:
-                pop_list = ezjson['converged.fc_pop_list'].enum
+                pop_list = kwargs.ezdata.converged_pop_list.properties.fc.enum
                 for i in pop_list: policy_list.remove(i)
             kwargs.pci_order = 0
-            for i in policy_list:
-                kwargs = eval(f'imm(i).{i}(kwargs)')
-
-        kwargs.policy_list = policy_list
-        kwargs.qtype_list = policy_list
+            for i in policy_list: kwargs = eval(f'imm(i).{i}(kwargs)')
         #=====================================================
         # Configure Templates/Chassis/Server Profiles
         #=====================================================
+        kwargs.policy_list = policy_list
         profiles_list = ['templates', 'chassis', 'server']
         if kwargs.args.deployment_type == 'azure_hci': profiles_list.remove('chassis')
-        for p in profiles_list:
-            kwargs = eval(f'imm(p).{p}(kwargs)')
-        
+        for p in profiles_list: kwargs = eval(f'imm(p).{p}(kwargs)')
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
     #=============================================================================
     # Function - Converged Stack - Build Storage Dictionaries
@@ -2295,7 +2226,6 @@ class wizard(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Converged Stack - Credentials - DHCP - DNS - NTP Attributes
     #=============================================================================
@@ -2303,14 +2233,13 @@ class wizard(object):
         #=====================================================
         # DHCP, DNS, NTP, Organization & Return kwargs
         #=====================================================
-        i = kwargs.imm_dict.wizard.protocols[0]
+        i = kwargs.imm_dict.wizard.protocols
         kwargs.dhcp_servers= i.dhcp_servers
         kwargs.dns_servers = i.dns_servers
         kwargs.dns_domains = i.dns_domains
         kwargs.ntp_servers = i.ntp_servers
         kwargs.timezone    = i.timezone
         return kwargs
-
 
     #=============================================================================
     # Function - Converged Stack - IMM Attributes
@@ -2446,7 +2375,6 @@ class wizard(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - FlexPod Converged Stack Attributes
     #=============================================================================
@@ -2512,7 +2440,6 @@ class wizard(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Build Policies - BIOS
     #=============================================================================
@@ -2556,7 +2483,6 @@ class wizard(object):
             elif v.os_type == 'OpenShift': OpenShift = True
             elif v.os_type == 'VMware': VMware = True
             if v.boot_volume == 'm2':
-                print(v)
                 if not v.storage_controllers.get('UCS-M2-HWRAID'):
                     prRed(f"!!! ERROR !!!\n  Could not determine the Controller Slot for:")
                     prRed(f"  * Profile: {kwargs.server_profiles[k].name}")
@@ -2799,7 +2725,6 @@ class wizard(object):
         validating.end_section(self.type, 'Install')
         return kwargs
 
-
     #=============================================================================
     # Function - Build Server Identies for Zoning host/igroups
     #=============================================================================
@@ -2918,7 +2843,6 @@ class wizard(object):
         #=====================================================
         return kwargs
 
-
     #=============================================================================
     # Function - Converged Stack - VLAN Attributes
     #=============================================================================
@@ -2981,7 +2905,6 @@ class wizard(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
 #=============================================================================
 # IMM Class
@@ -3234,14 +3157,3 @@ def server_config_utility_repo(kwargs):
         'Vendor': 'Cisco', 'Version': kwargs.scu_version
     }
     return apiBody
-
-#=====================================================
-# Print Color Functions
-#=====================================================
-def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
-def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))

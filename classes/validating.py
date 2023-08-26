@@ -331,22 +331,6 @@ def ip_address_ws(var, kwargs):
         return False
     else: return True
 
-def ipmi_key_check(varValue):
-    valid_count = 0
-    varValue = varValue.capitalize()
-    if ((varValue < '0' or varValue > '9') and (varValue < 'A' or varValue > 'F')): valid_count += 1
-    if not validators.length(varValue, min=2, max=40): valid_count += 1
-    if not len(varValue) % 2 == 0: valid_count += 1
-    if not valid_count == 0:
-        print(f'\n-----------------------------------------------------------------------------\n')
-        print(f'   Error with ipmi_key!!  The encryption key should have an even number of ')
-        print(f'   hexadecimal characters and not exceed 40 characters.\n')
-        print(f'   Valid Hex Characters are:')
-        print(f'    - {string.hexdigits}')
-        print(f'\n-----------------------------------------------------------------------------\n')
-        return False
-    else: return True
-
 def iqn_prefix(varName, varValue):
     invalid_count = 0
     if not re.fullmatch(r'^iqn\.[0-9]{4}-[0-9]{2}\.([A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])?)', varValue):
@@ -393,24 +377,6 @@ def length_and_regex(answer, minLength, maxLength, pattern, title):
         print(f'\n--------------------------------------------------------------------------------------\n')
         print(f'   !!! Invalid Characters in {answer}.  The allowed characters are:')
         print(f'   - "{pattern}"')
-        print(f'\n--------------------------------------------------------------------------------------\n')
-    if invalid_count == 0:
-        return True
-    else: return False
-
-def length_and_regex_sensitive(regex_pattern, varName, varValue, minLength, maxLength):
-    invalid_count = 0
-    if not validators.length(varValue, min=int(minLength), max=int(maxLength)):
-        invalid_count += 1
-        print(f'\n--------------------------------------------------------------------------------------\n')
-        print(f'   !!! {varName} is Invalid!!!')
-        print(f'   Length Must be between {minLength} and {maxLength} characters.')
-        print(f'\n--------------------------------------------------------------------------------------\n')
-    if not re.search(regex_pattern, varValue):
-        invalid_count += 1
-        print(f'\n--------------------------------------------------------------------------------------\n')
-        print(f'   !!! Invalid Characters in {varName}.  The allowed characters are:')
-        print(f'   - "{regex_pattern}"')
         print(f'\n--------------------------------------------------------------------------------------\n')
     if invalid_count == 0:
         return True
@@ -629,28 +595,6 @@ def url(varName, varValue):
         print(f'   {varName} should be a valid URL.  The Following is not a valid URL:')
         print(f'    - {varValue}')
         print(f'\n-----------------------------------------------------------------------------\n')
-        return False
-    else: return True
-
-def strong_password(varName, varValue, minLength, maxLength):
-    invalid_count = 0
-    if re.search(varName, varValue, re.IGNORECASE): invalid_count += 1
-    if not validators.length(str(varValue), min=int(minLength), max=int(maxLength)): invalid_count += 1
-    if not re.search(r'[a-z]', varValue): invalid_count += 1
-    if not re.search(r'[A-Z]', varValue): invalid_count += 1
-    if not re.search(r'[0-9]', varValue): invalid_count += 1
-    if not re.search(r'[\!\@\#\$\%\^\&\*\-\_\+\=]', varValue): invalid_count += 1
-    if not invalid_count == 0:
-        print(f'\n---------------------------------------------------------------------------------------\n')
-        print(f"   Error with {varName}! The password failed one of the following complexity rules:")
-        print(f'     - The password must have a minimum of 8 and a maximum of 20 characters.')
-        print(f"     - The password must not contain the User's Name.")
-        print(f'     - The password must contain characters from three of the following four categories.')
-        print(f'       * English uppercase characters (A through Z).')
-        print(f'       * English lowercase characters (a through z).')
-        print(f'       * Base 10 digits (0 through 9).')
-        print(f'       * Non-alphabetic characters (! , @, #, $, %, ^, &, *, -, _, +, =)')
-        print(f'\n---------------------------------------------------------------------------------------\n')
         return False
     else: return True
 

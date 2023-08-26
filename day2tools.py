@@ -166,8 +166,8 @@ def main():
     #================================================
     # Import Stored Parameters
     #================================================
-    ez_data= DotMap(materialize(RefDict(f'{script_path}{os.sep}variables{os.sep}easy-imm.json')))
-    kwargs.ez_data= DotMap(ez_data['components']['schemas'])
+    ezdata= DotMap(materialize(RefDict(f'{script_path}{os.sep}variables{os.sep}easy-imm.json')))
+    kwargs.ezdata= DotMap(ezdata['components']['schemas'])
     #==============================================
     # Get Intersight Configuration
     # - intersight_api_key_id

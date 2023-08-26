@@ -51,7 +51,7 @@ class intersight_api(object):
         target = DotMap()
         for e in target_platforms:
             target[e].policies = []
-        for k, v in kwargs.ez_data.items():
+        for k, v in kwargs.ezdata.items():
             if v.get('target_platforms') and v.get('intersight_type') == 'policy':
                 for e in v.target_platforms:
                     target[e].policies.append(k)
@@ -157,7 +157,7 @@ class intersight_api(object):
                     'MulticastPolicy':{'Moid':mcast_moid,'ObjectType':'fabric.MulticastPolicy'},
                     'Name':e.name, 'ObjectType': 'fabric.Vlan', 'VlanId':e.vlan_id}
                 kwargs.method = 'post'
-                kwargs.uri    = kwargs.ez_data['vlan.vlans'].intersight_uri
+                kwargs.uri    = kwargs.ezdata['vlan.vlans'].intersight_uri
                 kwargs        = isight.api('vlan').calls(kwargs)
             if len(ydata.patch.ethernet_network_group) > 0:
                 #======================================================
@@ -243,7 +243,7 @@ class intersight_api(object):
                         'Tags': tags, 'TargetPlatform': ydata.post.lan_connectivity.target_platform
                         }
                     kwargs.method= 'post'
-                    kwargs.uri   = kwargs.ez_data.lan_connectivity.intersight_uri
+                    kwargs.uri   = kwargs.ezdata.lan_connectivity.intersight_uri
                     kwargs       = isight.api(kwargs.qtype).calls(kwargs)
                     lan_moid     = kwargs.pmoid
                 #======================================================
@@ -287,7 +287,7 @@ class intersight_api(object):
                                         'SwitchId': i.placement.switch_id, 'Uplink': 0},
                         }
                         kwargs.method = 'post'
-                        kwargs.uri    = kwargs.ez_data['lan_connectivity.vnics'].intersight_uri
+                        kwargs.uri    = kwargs.ezdata['lan_connectivity.vnics'].intersight_uri
                         kwargs        = isight.api('vnics').calls(kwargs)
         prCyan(f'\n{"-"*91}\n\n  Finished Loop on Organization `{org}`.\n\n{"-"*91}\n')
         
@@ -662,7 +662,7 @@ class intersight_api(object):
 # Function - Setup Local Time
 #======================================================
 def get_local_time(kwargs):
-    timezones   = kwargs.ez_data.ntp.allOf[1].properties.timezone.enum
+    timezones   = kwargs.ezdata.ntp.allOf[1].properties.timezone.enum
     tz_regions = list(set([e.split('/')[0] for e in timezones]))
     kwargs.jdata = DotMap(
         default      = sorted(tz_regions)[0],
@@ -710,7 +710,7 @@ def update_profile(org, target, target_platform, yaml_arg, ydata, kwargs):
         kwargs.api_filter= f"Organization.Moid eq '{kwargs.org_moids[org].moid}'"
         kwargs.method    = 'get'
         kwargs.qtype     = policy
-        kwargs.uri       = kwargs.ez_data[policy].intersight_uri
+        kwargs.uri       = kwargs.ezdata[policy].intersight_uri
         kwargs           = isight.api(policy).calls(kwargs)
         if kwargs.results == None: isight.empty_results(kwargs)
         policies[policy] = kwargs.pmoids
@@ -734,7 +734,7 @@ def update_profile(org, target, target_platform, yaml_arg, ydata, kwargs):
         kwargs.api_filter= f"Organization.Moid eq '{org_moid}' and TargetPlatform eq '{target_type}'"
     else: kwargs.api_filter = f"Organization.Moid eq '{org_moid}'"
     kwargs.qtype      = target_platform
-    kwargs.uri        = kwargs.ez_data[kwargs.qtype].intersight_uri
+    kwargs.uri        = kwargs.ezdata[kwargs.qtype].intersight_uri
     kwargs = isight.api(target_platform).calls(kwargs)
     profiles = kwargs.pmoids
     for k,v in profiles.items(): profiles[k].name = k
@@ -760,8 +760,8 @@ def update_profile(org, target, target_platform, yaml_arg, ydata, kwargs):
         object_index  = dict((d.ObjectType, s) for s, d in enumerate(policy_bucket))
         for e in policies.keys():
             policy_moid = policies[e][policies[e].name].moid
-            object_type = kwargs.ez_data[e].ObjectType
-            policy_uri  = kwargs.ez_data[e].intersight_uri
+            object_type = kwargs.ezdata[e].ObjectType
+            policy_uri  = kwargs.ezdata[e].intersight_uri
             #======================================================
             # Index the Server List to find the Server Profile and 
             # pull the Policy BucketSee if the Policy Type is 
@@ -784,8 +784,8 @@ def update_profile(org, target, target_platform, yaml_arg, ydata, kwargs):
         kwargs.method = 'patch'
         kwargs.pmoid  = profiles[i].moid
         if re.search('FIAttached|Standalone', target_platform):
-            kwargs.uri   = kwargs.ez_data['server'].intersight_uri
-        else: kwargs.uri = kwargs.ez_data[target_platform].intersight_uri
+            kwargs.uri   = kwargs.ezdata['server'].intersight_uri
+        else: kwargs.uri = kwargs.ezdata[target_platform].intersight_uri
         kwargs = isight.api(target_platform).calls(kwargs)
 
 

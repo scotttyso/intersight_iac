@@ -329,7 +329,7 @@ class quick_start(object):
                                             loop_count += 1
                                             valid = True
                                     else: ezfunctions.message_fcoe_vlan(vsan_id, org)
-                                else: ezfunctions.message_invalid_vsan()
+                                else: ezfunctions.message_invalid_vxan()
                         #==============================================
                         # Configure VSAN Policies
                         #==============================================

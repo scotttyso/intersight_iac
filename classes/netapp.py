@@ -1224,6 +1224,8 @@ class build(object):
         #=====================================================
         # Build Cluster Dictionary
         #=====================================================
+        print(items.nodes.node01)
+        print(kwargs.dns_domains[0])
         polVars = dict(
             contact     = items.snmp.contact,
             dns_domains = kwargs.dns_domains,

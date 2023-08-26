@@ -7,11 +7,13 @@ git_status_checker
 intersight_auth
 ipaddress
 jinja2
+json_ref_dict
 requests
 numpy
 openpyxl
 ordered_set
 phonenumbers
+pyexpect
 pytz
 pyvmomi
 simplejson

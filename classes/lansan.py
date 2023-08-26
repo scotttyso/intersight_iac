@@ -2574,7 +2574,7 @@ class policies(object):
                             elif vsan_id == '': vsan_id = 200
                             if re.search(r'[0-9]{1,4}', str(vsan_id)):
                                 valid = validating.number_in_range('VSAN ID', vsan_id, 1, 4094)
-                            else: ezfunctions.message_invalid_vlan()
+                            else: ezfunctions.message_invalid_vxan()
                         #==============================================
                         # Prompt User for FCoE VLAN
                         #==============================================
@@ -2602,8 +2602,8 @@ class policies(object):
                                             overlap = True
                                             break
                                     if overlap == False: valid = True
-                                else: ezfunctions.message_invalid_vlan()
-                            else: ezfunctions.message_invalid_vlan()
+                                else: ezfunctions.message_invalid_vxan()
+                            else: ezfunctions.message_invalid_vxan()
                         jsonVars = jsonData.fabric.Vsan.allOf[1].properties
                         #==============================================
                         # Prompt User for VSAN Name
