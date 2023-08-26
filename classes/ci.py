@@ -1824,16 +1824,10 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            classes     = [],
+            configure_default_policy = True,
             description = f'{kwargs.imm.policies.prefix}qos {descr} Policy',
             jumbo_mtu   = True,
-            name        = f'{kwargs.imm.policies.prefix}qos',
-        )
-        for k, v in kwargs.ezdata['ezimm'].allOf[1].properties['systemQos'].items():
-            cDict = {'priority':k}
-            cDict.update(v)
-            polVars['classes'].append(cDict)
-
+            name        = f'{kwargs.imm.policies.prefix}qos')
         # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,{self.type}'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
@@ -2095,7 +2089,6 @@ class imm(object):
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
-
 
 #=============================================================================
 # Wizard Class
@@ -2904,161 +2897,6 @@ class wizard(object):
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
-        return kwargs
-
-#=============================================================================
-# IMM Class
-#=============================================================================
-class fw_os(object):
-    def __init__(self, type):
-        self.type = type
-
-    #=============================================================================
-    # Function - Build Policies - BIOS
-    #=============================================================================
-    def firmware(self, kwargs):
-        #=====================================================
-        # Load Variables and Send Begin Notification
-        #=====================================================
-        validating.begin_section(self.type, 'Install')
-        kwargs.models = []
-        for k,v in  kwargs.server_profiles.items():
-            kwargs.models.append(v['model'])
-        kwargs.models = list(numpy.unique(numpy.array(kwargs.models)))
-        #==================================
-        # Get CCO Password and Root
-        #==================================
-        kwargs.sensitive_var = 'cco_password'
-        kwargs = ezfunctions.sensitive_var_value(kwargs)
-        kwargs.cco_password = kwargs['var_value']
-        #==================================
-        # Get Firmware Moids
-        #==================================
-        kwargs.method = 'get'
-        kwargs.qtype = 'distributables'
-        kwargs.uri = self.type
-        kwargs.fw_version = '5.1(0.230054)'
-        sw_moids = {}
-        for m in kwargs.models:
-            kwargs.api_filter = f"Version eq '{kwargs.fw_version}' and contains(SupportedModels, '{m}')"
-            kwargs = isight.api(self.type).calls(kwargs)
-            sw_moids.update({m:{'Moid':kwargs.results[0].Moid}})
-        #==================================
-        # Software Repository Auth
-        #==================================
-        kwargs.apiBody = {
-            'object_type': 'softwarerepository.Authorization',
-            'password': kwargs.cco_password,
-            'repository_type': 'Cisco',
-            'user_id': kwargs.cco_user
-        }
-        kwargs.method = 'post'
-        kwargs.qtype    = 'auth'
-        kwargs.uri   = 'firmware'
-        kwargs = isight.api(self.type).calls(kwargs)
-        #==================================
-        # Software Eula
-        #==================================
-        kwargs.method = 'get_by_moid'
-        kwargs.pmoid     = kwargs.results[0]['AccountMoid']
-        kwargs.qtype    = 'eula'
-        kwargs.uri   = 'firmware'
-        kwargs = isight.api(self.type).calls(kwargs)
-        if not kwargs.results:
-            kwargs.apiBody   = {'class_id': 'firmware.Eula', 'object_type': 'firmware.Eula'}
-            kwargs.method = 'post'
-            kwargs = isight.api(self.type).calls(kwargs)
-        #==================================
-        # Upgrade Firmware
-        #==================================
-        for k,v in  kwargs.server_profiles.items():
-            #==================================
-            # Check Firmware Version
-            #==================================
-            if v.firmware == kwargs.fw_version:
-                prGreen(f'Server Profile {k} - Server {v.serial} running Target Firmware {v.firmware}.')
-            else:
-                kwargs.apiBody = {
-                    'class_id': 'firmware.Upgrade',
-                    'direct_download': {
-                        'class_id': 'firmware.DirectDownload',
-                        'object_type': 'firmware.DirectDownload',
-                        'upgradeoption': 'upgrade_full'
-                    },
-                    'distributable': {
-                        'class_id': 'mo.MoRef',
-                        'moid': sw_moids[v.model].Moid,
-                        'object_type': 'firmware.Distributable'
-                    },
-                    'network_share': {'object_type': 'firmware.NetworkShare'},
-                    'object_type': 'firmware.Upgrade',
-                    'server': {
-                        'class_id': 'mo.MoRef',
-                        'moid': v.moid,
-                        'object_type': v.object_type
-                    },
-                    'upgrade_type': 'direct_upgrade',
-                }
-                #==================================
-                # Upgrade Firmware
-                #==================================
-                kwargs.method = 'post'
-                kwargs.qtype = 'upgrade'
-                kwargs.server = k
-                kwargs.serial = v.serial
-                kwargs.uri = self.type
-                kwargs = isight.api(self.type).calls(kwargs)
-                if kwargs['running']:
-                    kwargs.method = 'get'
-                    kwargs.api_filter = f"Server.Moid eq '{v.moid}'"
-                    kwargs.srv_moid  = v.moid
-                    kwargs = isight.api(self.type).calls(kwargs)
-                    kwargs.upgrade[k].moid   = kwargs.pmoids[v.moid].Moid
-                    kwargs.upgrade[k].status = kwargs.pmoids[v.moid].UpgradeStatus.Moid
-                else:
-                    kwargs.upgrade[k].moid   = kwargs.results.Moid
-                    kwargs.upgrade[k].status = kwargs.results.UpgradeStatus.Moid
-        #==================================
-        # Power Cycle the Server
-        #==================================
-        #def power_cycle(v, kwargs):
-        #    kwargs.method    = 'get'
-        #    kwargs.api_filter= f"Server.Moid eq '{v.moid}'"
-        #    kwargs.qtype     = 'server_settings'
-        #    kwargs.uri       = 'compute/ServerSettings'
-        #    kwargs = isight.api('server').calls(kwargs)
-        #    pmoid = kwargs['pmoid']
-        #    kwargs.apiBody   = {'AdminPowerState': 'PowerCycle'}
-        #    kwargs.method = 'patch'
-        #    kwargs = isight.api('server').calls(kwargs)
-        #    return kwargs
-        #=================================================
-        # Monitor Firmware Upgrade until Complete
-        #=================================================
-        for k, v in  kwargs.server_profiles.items():
-            if not v.firmware == kwargs.fw_version:
-                upgrade_complete = False
-                while upgrade_complete == False:
-                    kwargs.method = 'get_by_moid'
-                    kwargs.pmoid     = kwargs.upgrade[k].status
-                    kwargs.qtype    = 'status'
-                    kwargs.uri   = self.type
-                    kwargs = isight.api(self.type).calls(kwargs)
-                    if kwargs.results['Overallstatus'] == 'success':
-                        upgrade_complete = True
-                        prGreen(f'    - Completed Firmware Upgrade for {k}.')
-                    elif kwargs.results['Overallstatus'] == 'failed':
-                        kwargs.upgrade.failed.update({k:v.moid})
-                        prRed(f'!!! FAILED !!! Firmware Upgrade for Server Profile {k}: Server {v.serial} failed.')
-                        upgrade_complete = True
-                    else: 
-                        prCyan(f'      * Firmware Upgrade still ongoing for {k}.  Waiting 120 seconds.')
-                        time.sleep(120)
-
-        #=====================================================
-        # Send End Notification and return kwargs
-        #=====================================================
-        validating.end_section(self.type, 'Install')
         return kwargs
 
 #=============================================================================

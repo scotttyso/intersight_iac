@@ -9302,7 +9302,7 @@
                                 "type": "string",
                                 "default": "none",
                                 "description": "Default is `none`.  When using Authentication which type of authentication should be used.\n  Options are:\n  * chap\n  * mutual_chap",
-                                "intersight_api": "not_applicable",
+                                "intersight_api": "authentication",
                                 "enum": [
                                     "chap",
                                     "mutual_chap",
@@ -9324,7 +9324,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the iSCSI IP Pool.",
-                                "intersight_api": "$ref:vnic.IscsiBootPolicy.Relationship:InitiatorIpPool",
+                                "intersight_api": "$ref:InitiatorIpPool:ippool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9349,7 +9349,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the iSCSI Adapter Policy to Assign to the iSCSI Boot Policy.",
-                                "intersight_api": "$ref:vnic.IscsiStaticTargetPolicy.Relationship:IscsiAdapterPolicy",
+                                "intersight_api": "$ref:IscsiAdapterPolicy:vnic.IscsiAdapterPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9359,7 +9359,7 @@
                                 "type": "integer",
                                 "default": 1,
                                 "description": "Default is `1`.  The iSCSI Remote Target Password Sensitive Variable Identifier.  i.e. `var.iscsi_boot_password`.",
-                                "intersight_api": "not_applicable",
+                                "intersight_api": "$ref:Chap:vnic.IscsiAuthProfile:Password",
                                 "minimum": 1,
                                 "maximum": 64,
                                 "title": "password"
@@ -9368,7 +9368,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the iSCSI Static Target Policy to Assign to the iSCSI Boot Policy.",
-                                "intersight_api": "$ref:vnic.IscsiStaticTargetPolicy.Relationship:PrimaryTargetPolicy",
+                                "intersight_api": "$ref:PrimaryTargetPolicy:vnic.IscsiStaticTargetPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9378,7 +9378,7 @@
                                 "type": "string",
                                 "default": "",
                                 "description": "The Name of the iSCSI Static Target Policy to Assign to the iSCSI Boot Policy.",
-                                "intersight_api": "$ref:vnic.IscsiStaticTargetPolicy.Relationship:SecondaryTargetPolicy",
+                                "intersight_api": "$ref:SecondaryTargetPolicy:vnic.IscsiStaticTargetPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "optional": true,
@@ -9400,7 +9400,7 @@
                                 "type": "string",
                                 "default": "",
                                 "description": "User Id of Initiator/Target Interface. Enter between 1 and 128 characters, spaces, or special characters.",
-                                "intersight_api": "$ref:vnic.IscsiAuthProfile:UserId",
+                                "intersight_api": "$ref:Chap:vnic.IscsiAuthProfile:UserId",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^$|^.{1,128}$",
@@ -9414,6 +9414,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "IPV4 configurations such as Netmask, Gateway and DNS for iSCSI Initiator.\nRequired Attributes:\n  * ip_address\n  * gateway\n  * netmask\n\nOptional Attributes:\n  * primary_dns\n  * secondary_dns",
+                "intersight_api": "InitiatorStaticIpV4Config",
                 "ObjectType": "vnic.IscsiStaticIpv4Config",
                 "required": [
                     "gateway",
@@ -9513,7 +9514,7 @@
                                 "type": "integer",
                                 "default": 0,
                                 "description": "Default is 0.  The Identifier of the LUN.",
-                                "intersight_api": "$ref:vnic.Lun:LunId",
+                                "intersight_api": "$ref:Lun:vnic.Lun:LunId",
                                 "minimum": 0,
                                 "maximum": 255,
                                 "title": "lun_id"
@@ -9588,7 +9589,7 @@
                                 "type": "string",
                                 "default": "",
                                 "description": "Default is IQN Pool to Assign to the Policy.",
-                                "intersight_api": "$ref:iqnpool.Pool.Relationship:IqnPool",
+                                "intersight_api": "$ref:IqnPool:iqnpool.Pool.Relationship:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9641,7 +9642,9 @@
                 ]
             },
             "lan_connectivity.vnics": {
+                "type": "object",
                 "description": "Virtual Ethernet Interface.",
+                "intersight_api": "vnics",
                 "intersight_uri": "vnic/EthIfs",
                 "ObjectType": "vnic.EthIf",
                 "title": "vnics - Virtual Ethernet Interface - Intersight Uri: vnic/EthIfs",
@@ -9696,7 +9699,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Ethernet Adapter Policy to Assign to the vNIC.",
-                                "intersight_api": "$ref:fabric.EthAdapterPolicy.Relationship:EthAdapterPolicy",
+                                "intersight_api": "$ref:EthAdapterPolicy:vnic.EthAdapterPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9706,7 +9709,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Ethernet Network Control Policy to Assign to the vNIC.",
-                                "intersight_api": "$ref:fabric.EthNetworkControlPolicy.Relationship:FabricEthNetworkControlPolicy",
+                                "intersight_api": "$ref:FabricEthNetworkControlPolicy:fabric.EthNetworkControlPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9715,12 +9718,12 @@
                             "ethernet_network_group_policies": {
                                 "type": "array",
                                 "description": "The Name(s) of the Ethernet Network Control Policy to Assign.  Can be a list of 1 or 2.",
-                                "intersight_api": "$ref:fabric.EthNetworkGroupPolicy.Relationship:FabricEthNetworkGroupPolicy",
+                                "intersight_api": "$ref:FabricEthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                                 "items": {
                                     "type": "string",
                                     "default": "default",
                                     "description": "The Name of the Ethernet Network Group Policy to Assign.",
-                                    "intersight_api": "$ref:fabric.EthNetworkGroupPolicy.Relationship:FabricEthNetworkGroupPolicy",
+                                    "intersight_api": "$ref:FabricEthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                                     "minLength": 1,
                                     "maxLength": 64,
                                     "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9733,7 +9736,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Ethernet Network Policy to Assign to the vNIC.  This is for Standalone Only.",
-                                "intersight_api": "$ref:fabric.EthNetworkPolicy.Relationship:EthNetworkPolicy",
+                                "intersight_api": "$ref:EthNetworkPolicy:vnic.EthNetworkPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9743,7 +9746,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Ethernet QoS Policy to Assign to the vNIC.",
-                                "intersight_api": "$ref:fabric.EthQosPolicy.Relationship:EthQosPolicy",
+                                "intersight_api": "$ref:EthQosPolicy:vnic.EthQosPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9757,7 +9760,7 @@
                                     "type": "string",
                                     "default": "default",
                                     "description": "The Name of the iSCSI Boot Policy to Assign to the vNIC.",
-                                    "intersight_api": "$ref:vnic.IscsiBootPolicy.Relationship:IscsiBootPolicy",
+                                    "intersight_api": "$ref:IscsiBootPolicy:vnic.IscsiBootPolicy:Moid",
                                     "minLength": 1,
                                     "maxLength": 64,
                                     "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9780,12 +9783,12 @@
                             "mac_address_pools": {
                                 "type": "array",
                                 "description": "A List of MAC Pools to Assign to each of the vNIC(s).",
-                                "intersight_uri": "macpool/Pools",
+                                "intersight_api": "$ref:MacPool:macpool.Pool:Moid",
                                 "items": {
                                     "type": "string",
                                     "default": "default",
                                     "description": "Name of the MAC Pool.",
-                                    "intersight_api": "Name",
+                                    "intersight_api": "$ref:MacPool:macpool.Pool:Moid",
                                     "minLength": 1,
                                     "maxLength": 64,
                                     "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9844,6 +9847,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Placement Settings for the virtual interface.\nRequired Attributes:\n  * pci_order\n\nOptional Attributes:\n  * pci_links\n  * slot_ids\n  * switch_ids\n  * uplink_ports",
+                "intersight_api": "Placement",
                 "ObjectType": "vnic.PlacementSettings",
                 "required": [
                     "pci_order"
@@ -9873,13 +9877,13 @@
                             "type": "integer",
                             "default": 0,
                             "description": "PCI Order Assigned to the Interface. The order should start from zero with no overlaps, including LAN and SAN Policies.",
-                            "intersight_api": "$ref:vnic/FcIfs:Order",
+                            "intersight_api": "Order",
                             "minimum": 0,
                             "maximum": 20,
                             "title": "pci_order"
                         },
                         "ObjectType": "Order",
-                        "title": "pci_order - Pci Order - Intersight Uri: vnic/FcIfs"
+                        "title": "pci_order - Pci Order"
                     },
                     "slot_ids": {
                         "type": "array",
@@ -9936,6 +9940,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "User Space NIC Settings that enable low-latency and higher throughput by bypassing the kernel layer when sending/receiving packets.\nOptional Attributes:\n  * class_of_service\n  * number_of_usnics\n  * usnic_adapter_policy",
+                "intersight_api": "UsnicSettings",
                 "ObjectType": "vnic.UsnicSettings",
                 "required": [],
                 "title": "usnic_settings - User Space NIC Settings - object_type: vnic.UsnicSettings",
@@ -9962,7 +9967,7 @@
                         "type": "string",
                         "default": "default",
                         "description": "Ethernet Adapter policy to be associated with the User Space vNICs. The Transmit Queue and Receive Queue resource value of VMMQ adapter policy should be greater than or equal to the configured number of sub vNICs.",
-                        "intersight_api": "$ref:fabric.EthAdapterPolicy.Relationship:UsnicAdapterPolicy",
+                        "intersight_api": "$ref:UsnicAdapterPolicy:fabric.EthAdapterPolicy.Relationship:Moid",
                         "minLength": 1,
                         "maxLength": 64,
                         "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -9974,6 +9979,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Virtual Machine Queue Settings for the virtual interface that allow efficient transfer of network traffic to the guest OS.\nOptional Attributes:\n  * enable_virtual_machine_multi_queue\n  * enabled\n  * number_of_interrupts\n  * number_of_sub_vnics\n  * number_of_virtual_machine_queues\n  * vmmq_adapter_policy",
+                "intersight_api": "VmqSettings",
                 "ObjectType": "vnic.VmqSettings",
                 "required": [],
                 "title": "vmq_settings - Virtual Machine Queue Settings - object_type: vnic.VmqSettings",
@@ -10023,7 +10029,7 @@
                         "type": "string",
                         "default": "default",
                         "description": "Ethernet Adapter policy to be associated with the VMQ vNICs. The Transmit Queue and Receive Queue resource value of VMMQ adapter policy should be greater than or equal to the configured number of sub vNICs.",
-                        "intersight_api": "$ref:fabric.EthAdapterPolicy.Relationship:VmmqAdapterPolicy",
+                        "intersight_api": "$ref:VmmqAdapterPolicy:fabric.EthAdapterPolicy.Relationship:Moid",
                         "minLength": 1,
                         "maxLength": 64,
                         "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -10111,7 +10117,7 @@
                                 "type": "integer",
                                 "default": 128,
                                 "description": "Default is 128.  Search depth to look for a nested LDAP group in an LDAP group map.  Range is 1-128",
-                                "intersight_api": "$ref:iam.LdapBaseProperties:NestedGroupSearchDepth",
+                                "intersight_api": "$ref:BaseProperties:iam.LdapBaseProperties:NestedGroupSearchDepth",
                                 "minimum": 1,
                                 "maximum": 128,
                                 "title": "nested_group_search_depth"
@@ -10138,6 +10144,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Base settings of LDAP required while configuring LDAP policy.\n  * Required Attributes:\n  * domain\n\nOptional Attributes:\n  * base_dn\n  * timeout",
+                "intersight_api": "BaseProperties",
                 "ObjectType": "iam.LdapBaseProperties",
                 "required": [
                     "domain"
@@ -10148,7 +10155,7 @@
                         "type": "string",
                         "default": "",
                         "description": "Distinguished Name (DN) of the user, that is used to authenticate against LDAP servers.  An example would be `DC=example,DC=com`",
-                        "intersight_api": "",
+                        "intersight_api": "BaseDn",
                         "minLength": 1,
                         "maxLength": 254,
                         "pattern": "^((CN=([^,]*)),)?((((?:CN|OU)=[^,]+,?)+),)?((DC=[^,]+,?)+)$",
@@ -10158,7 +10165,7 @@
                         "type": "string",
                         "default": "example.com",
                         "description": "The LDAP domain that all users must be in.  An example would be `example.com`.",
-                        "intersight_api": "",
+                        "intersight_api": "Domain",
                         "minLength": 1,
                         "maxLength": 64,
                         "pattern": "^(([a-zA-Z0-9])|([a-zA-Z0-9][a-zA-Z0-9\\.\\-]*[a-zA-Z0-9]))$",
@@ -10168,7 +10175,7 @@
                         "type": "integer",
                         "default": 0,
                         "description": "LDAP authentication timeout duration, in seconds.  Range is 0 to 180.",
-                        "intersight_api": "",
+                        "intersight_api": "Timeout",
                         "minimum": 0,
                         "maximum": 180,
                         "title": "timeout"
@@ -10179,6 +10186,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Base settings of LDAP required while configuring LDAP policy.\nRequired Attributes:\n  * bind_method\n\nOptional Attributes:\n  * bind_dn",
+                "intersight_api": "BaseProperties",
                 "ObjectType": "iam.LdapBaseProperties",
                 "required": [
                     "bind_method"
@@ -10211,7 +10219,7 @@
                         "type": "integer",
                         "default": 1,
                         "description": "Default is `1`.  The LDAP Binding Parameter Password Sensitive Variable Identifier.  i.e. `var.binding_parameters_password`.",
-                        "intersight_api": "not_applicable",
+                        "intersight_api": "Password",
                         "minimum": 1,
                         "maximum": 64,
                         "title": "password"
@@ -10222,6 +10230,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "DNS settings used to access LDAP Providers.\nRequired Attributes:\n  * search_domain\n\nOptional Attributes:\n  * search_forest\n  * source",
+                "intersight_api": "vnics",
                 "ObjectType": "iam.LdapDnsParameters",
                 "required": [
                     "search_domain",
@@ -10266,6 +10275,7 @@
             "ldap.ldap_groups": {
                 "type": "object",
                 "description": "Endpoint User or Local User.",
+                "intersight_api": "ldap_groups",
                 "intersight_uri": "iam/LdapGroups",
                 "ObjectType": "iam.LdapGroup",
                 "required": [
@@ -10301,6 +10311,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Endpoint User or Local User.",
+                "intersight_api": "ldap_servers",
                 "intersight_uri": "iam/LdapProviders",
                 "ObjectType": "iam.LdapProvider",
                 "required": [
@@ -10333,6 +10344,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Base settings of LDAP required while configuring LDAP policy.Required Attributes:\n  * attribute\n  * filter\n  * group_attribute",
+                "intersight_api": "BaseProperties",
                 "ObjectType": "iam.LdapBaseProperties",
                 "title": "search_parameters",
                 "properties": {
@@ -10434,7 +10446,7 @@
                                 "type": "string",
                                 "default": "Enabled",
                                 "description": "Default is `Enabled`.  Admin configured UDLD State for this port.\n  * `Disabled` - Admin configured Disabled State.\n  * `Enabled` - Admin configured Enabled State.",
-                                "intersight_api": "$ref:fabric.UdldSettings:AdminState",
+                                "intersight_api": "$ref:UdldSettings:fabric.UdldSettings:AdminState",
                                 "enum": [
                                     "Disabled",
                                     "Enabled"
@@ -10445,7 +10457,7 @@
                                 "type": "string",
                                 "default": "normal",
                                 "description": "Default is `normal`.  Admin configured UDLD Mode for this port.\n  * `normal` - Admin configured 'normal' UDLD mode.\n  * `aggressive` - Admin configured 'aggressive' UDLD mode.",
-                                "intersight_api": "$ref:fabric.UdldSettings:Mode",
+                                "intersight_api": "$ref:UdldSettings:fabric.UdldSettings:Mode",
                                 "enum": [
                                     "normal",
                                     "aggressive"
@@ -10501,6 +10513,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Set password properties for endpoint users.\n\nOptional Attributes:\n  * always_send_user_password\n  * enable_password_expiry\n  * enforce_strong_password\n  * grace_period\n  * notification_period\n  * password_expiry_duration\n  * password_history",
+                "intersight_api": "PasswordProperties",
                 "ObjectType": "iam.EndPointPasswordProperties",
                 "required": [
                     "always_send_user_password",
@@ -10563,7 +10576,7 @@
                     },
                     "password_history": {
                         "type": "integer",
-                        "default": 5,
+                        "default": 0,
                         "description": "Default is 5.  Tracks password change history. Specifies in number of instances, that the new password was already used.",
                         "intersight_api": "PasswordHistory",
                         "minimum": 0,
@@ -10576,6 +10589,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Endpoint User or Local User.",
+                "intersight_api": "users",
                 "intersight_uri": "iam/EndPointUsers",
                 "ObjectType": "iam.EndPointUser",
                 "required": [
@@ -13819,7 +13833,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "WWNN Pool to Assign to the Policy.",
-                                "intersight_api": "$ref:fcpool.Pool.Relationship:WwnnPool",
+                                "intersight_api": "$ref:WwnnPool:fcpool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -13840,7 +13854,9 @@
                 ]
             },
             "san_connectivity.vhbas": {
+                "type": "object",
                 "description": "Virtual Fibre Channel Interface.",
+                "intersight_api": "vhbas",
                 "intersight_uri": "vnic/FcIfs",
                 "ObjectType": "vnic.FcIf",
                 "title": "vhbas - Virtual Fibre Channel Interface - Intersight Uri: vnic/FcIfs",
@@ -13994,6 +14010,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Placement Settings for the virtual interface.\nRequired Attributes:\n  * pci_order\n\nOptional Attributes:\n  * pci_links\n  * slot_ids\n  * switch_ids\n  * uplink_ports",
+                "intersight_api": "Placement",
                 "ObjectType": "vnic.PlacementSettings",
                 "required": [
                     "pci_order"
@@ -14018,18 +14035,17 @@
                     "pci_order": {
                         "type": "array",
                         "description": "The order in which the virtual interface is brought up. The order assigned to an interface should be unique for all the Ethernet and Fibre-Channel interfaces on each PCI link on a VIC adapter. The order should start from zero with no overlaps. The maximum value of PCI order is limited by the number of virtual interfaces (Ethernet and Fibre-Channel) on each PCI link on a VIC adapter. All VIC adapters have a single PCI link except VIC 1340, VIC 1380 and VIC 1385 which have two.",
-                        "intersight_uri": "vnic/FcIfs",
                         "items": {
                             "type": "integer",
                             "default": 0,
                             "description": "PCI Order Assigned to the Interface. The order should start from zero with no overlaps, including LAN and SAN Policies.",
-                            "intersight_api": "$ref:vnic/FcIfs:Order",
+                            "intersight_api": "Order",
                             "minimum": 0,
                             "maximum": 20,
                             "title": "pci_order"
                         },
                         "ObjectType": "Order",
-                        "title": "pci_order - Pci Order - Intersight Uri: vnic/FcIfs"
+                        "title": "pci_order - Pci Order"
                     },
                     "slot_ids": {
                         "type": "array",
@@ -14986,7 +15002,7 @@
                         "type": "integer",
                         "default": 1,
                         "description": "Default is 0.  A number Between 1-5 to denote to use one of the variables snmp_auth_password_[1-5].  Any other number means no community string.",
-                        "intersight_api": "not_applicable",
+                        "intersight_api": "Community",
                         "minimum": 1,
                         "maximum": 64,
                         "title": "community_string"
@@ -15057,7 +15073,7 @@
                         "type": "integer",
                         "default": 1,
                         "description": "Default is `1`.  A number Between to denote to use one of the variables, i.e. `var.snmp_auth_password_[1-5]`.",
-                        "intersight_api": "not_applicable",
+                        "intersight_api": "AuthPassword",
                         "minimum": 1,
                         "maximum": 64,
                         "title": "auth_password"
@@ -15087,7 +15103,7 @@
                         "type": "integer",
                         "default": 1,
                         "description": "Default is `1`.  A number Between to denote to use one of the variables, i.e. `var.snmp_privacy_password_[1-5]`.",
-                        "intersight_api": "not_applicable",
+                        "intersight_api": "PrivacyPassword",
                         "minimum": 1,
                         "maximum": 64,
                         "title": "privacy_password"
@@ -15478,6 +15494,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "This models the options for creating a virtual drive on M.2 RAID controller.\nRequired Attributes\n  * slot",
+                "intersight_api": "M2VirtualDrive",
                 "ObjectType": "storage.M2VirtualDriveConfig",
                 "required": [
                     "slot"
@@ -15502,6 +15519,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "This models a Single Drive RAID Configuration for creation of on RAID0 virtual drive per physical drive and occupying the full disk space on the same.",
+                "intersight_api": "Raid0Drive",
                 "ObjectType": "storage.R0Drive",
                 "required": [
                     "drive_slots",
@@ -15528,6 +15546,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "This models the manual drive selection configuration.\n\nOptional Attributes:\n  * access_policy\n  * drive_cache\n  * read_policy\n  * strip_size\n  * write_policy",
+                "intersight_api": "VirtualDrivePolicy",
                 "ObjectType": "storage.VirtualDrivePolicy",
                 "required": [],
                 "title": "virtual_drive_poliy - Storage Virtual Drive Policy.",
@@ -15765,7 +15784,7 @@
                 "additionalProperties": false,
                 "description": "Set of local logging clients on the endpoint.\nRequired Attributes:\n  * minimum_severity",
                 "intersight_api": "LocalClients",
-                "ObjectType": "syslog.LocalClientBase",
+                "ObjectType": "syslog.LocalFileLoggingClient",
                 "required": [
                     "minimum_severity"
                 ],
@@ -15887,12 +15906,19 @@
                                 "ObjectType": "fabric.QosClass",
                                 "title": "classes - Classes"
                             },
-                            "configure_recommended_policy": {
+                            "configure_default_classes": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Flag to Configure the following class values:\nNote: MTU Will be configured based on the Jumbo MTU Flag\n\nclasses:\n  - bandwidth_percent: 50\n    cos: 255\n    packet_drop: true\n    priority: Best Effort\n    state: Enabled\n    weight: 10\n  - bandwidth_percent: 50\n    cos: 3\n    mtu: 2240\n    packet_drop: false\n    priority: FC\n    state: Enabled\n    weight: 10",
+                                "intersight_api": "configure_default_classes",
+                                "title": "configure_default_classes"
+                            },
+                            "configure_recommended_classes": {
                                 "type": "boolean",
                                 "default": false,
                                 "description": "Flag to Configure the following class values:\nNote: MTU Will be configured based on the Jumbo MTU Flag\n\nclasses:\n  - bandwidth_percent: 10\n    cos: 255\n    packet_drop: true\n    priority: Best Effort\n    state: Enabled\n    weight: 5\n  - bandwidth_percent: 14\n    cos: 1\n    packet_drop: true\n    priority: Bronze\n    state: Enabled\n    weight: 7\n  - bandwidth_percent: 18\n    cos: 4\n    packet_drop: true\n    priority: Gold\n    state: Enabled\n    weight: 9\n  - bandwidth_percent: 20\n    cos: 3\n    mtu: 2240\n    packet_drop: false\n    priority: FC\n    state: Enabled\n    weight: 10\n  - bandwidth_percent: 20\n    cos: 5\n    packet_drop: false\n    priority: Platinum\n    state: Enabled\n    weight: 10\n  - bandwidth_percent: 18\n    cos: 2\n    packet_drop: true\n    priority: Silver\n    state: Enabled\n    weight: 8",
-                                "intersight_api": "configure_recommended_policy",
-                                "title": "configure_recommended_policy"
+                                "intersight_api": "configure_recommended_classes",
+                                "title": "configure_recommended_classes"
                             },
                             "jumbo_mtu": {
                                 "type": "boolean",
@@ -15978,6 +16004,148 @@
                         "title": "weight"
                     }
                 }
+            },
+            "system_qos.classes_default": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "",
+                "intersight_api": "Classes",
+                "ObjectType": "fabric.QosClass",
+                "required": [],
+                "title": "Class",
+                "classes": [
+                    {
+                        "AdminState": "Enabled",
+                        "BandwitchPercent": 50,
+                        "Cos": 255,
+                        "Mtu": 9216,
+                        "Name": "Best Effort",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": true,
+                        "Weight": 10
+                    },
+                    {
+                        "AdminState": "Disabled",
+                        "BandwitchPercent": 0,
+                        "Cos": 1,
+                        "Mtu": 9216,
+                        "Name": "Bronze",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": true,
+                        "Weight": 0
+                    },
+                    {
+                        "AdminState": "Disabled",
+                        "BandwitchPercent": 0,
+                        "Cos": 4,
+                        "Mtu": 9216,
+                        "Name": "Gold",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": true,
+                        "Weight": 0
+                    },
+                    {
+                        "AdminState": "Enabled",
+                        "BandwitchPercent": 50,
+                        "Cos": 3,
+                        "Mtu": 2240,
+                        "Name": "FC",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": false,
+                        "Weight": 10
+                    },
+                    {
+                        "AdminState": "Disabled",
+                        "BandwitchPercent": 0,
+                        "Cos": 5,
+                        "Mtu": 9216,
+                        "Name": "Platinum",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": false,
+                        "Weight": 0
+                    },
+                    {
+                        "AdminState": "Disabled",
+                        "BandwitchPercent": 0,
+                        "Cos": 2,
+                        "Mtu": 9216,
+                        "Name": "Silver",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": true,
+                        "Weight": 0
+                    }
+                ]
+            },
+            "system_qos.classes_recommended": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "",
+                "intersight_api": "Classes",
+                "ObjectType": "fabric.QosClass",
+                "required": [],
+                "title": "Class",
+                "classes": [
+                    {
+                        "AdminState": "Enabled",
+                        "BandwitchPercent": 10,
+                        "Cos": 255,
+                        "Mtu": 9216,
+                        "Name": "Best Effort",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": true,
+                        "Weight": 5
+                    },
+                    {
+                        "AdminState": "Enabled",
+                        "BandwitchPercent": 14,
+                        "Cos": 1,
+                        "Mtu": 9216,
+                        "Name": "Bronze",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": true,
+                        "Weight": 7
+                    },
+                    {
+                        "AdminState": "Enabled",
+                        "BandwitchPercent": 18,
+                        "Cos": 4,
+                        "Mtu": 9216,
+                        "Name": "Gold",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": true,
+                        "Weight": 9
+                    },
+                    {
+                        "AdminState": "Enabled",
+                        "BandwitchPercent": 20,
+                        "Cos": 3,
+                        "Mtu": 2240,
+                        "Name": "FC",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": false,
+                        "Weight": 10
+                    },
+                    {
+                        "AdminState": "Enabled",
+                        "BandwitchPercent": 20,
+                        "Cos": 5,
+                        "Mtu": 9216,
+                        "Name": "Platinum",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": true,
+                        "Weight": 10
+                    },
+                    {
+                        "AdminState": "Enabled",
+                        "BandwitchPercent": 18,
+                        "Cos": 2,
+                        "Mtu": 9216,
+                        "Name": "Silver",
+                        "ObjectType": "fabric.QosClass",
+                        "PacketDrop": true,
+                        "Weight": 8
+                    }
+                ]
             },
             "tags": {
                 "type": "array",

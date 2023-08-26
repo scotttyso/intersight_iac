@@ -18,7 +18,6 @@ try:
     from dotmap import DotMap
     from git import cmd, Repo
     from openpyxl import load_workbook
-    from ordered_set import OrderedSet
     import ipaddress, itertools, jinja2, json, os, pexpect, pkg_resources, re, requests
     import shutil, subprocess, sys, stdiomask, string, textwrap, validators, yaml
 except ImportError as e:
@@ -368,10 +367,11 @@ def ez_remove_empty(polVars):
 # Function - find the Keys for each Section
 #======================================================
 def findKeys(ws, func_regex):
-    func_list = OrderedSet()
+    func_list = {}
     for i in ws.rows:
         if any(i):
             if re.search(func_regex, str(i[0].value)): func_list.add(str(i[0].value))
+    func_list = DotMap(dict(sorted(func_list.items())))
     return func_list
 
 #======================================================

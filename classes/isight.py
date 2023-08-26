@@ -27,8 +27,8 @@ except ImportError as e:
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 serial_regex = re.compile('^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\dA-Z]{4}$')
-part1 = 'bios|boot_order|(ethernet|fibre_channel)_adapter|firmware|imc_access|ipmi_over_lan|network_connectivity|snmp'
-part2 = 'system_qos'
+part1 = 'bios|boot_order|(ethernet|fibre_channel)_adapter|firmware|imc_access|ipmi_over_lan|iscsi_(boot|static_target)'
+part2 = '(l|s)an_connectivity|local_user|network_connectivity|snmp|storage|system_qos'
 policy_specific_regex = re.compile(f'^{part1}|{part2}$')
 
 #=======================================================
@@ -306,7 +306,7 @@ class imm(object):
     def bios(self, apiBody, item, kwargs):
         if apiBody.get('bios_template'):
             btemplate = kwargs.ezdata['bios.template'].properties
-            if '-tpm' in item.bios_template:
+            if '-tpm' in apiBody['bios_template']:
                 apiBody = dict(apiBody, **btemplate[item.bios_template.replace('-tpm', '')], **btemplate.tpm)
             else: apiBody = dict(apiBody, **btemplate[item.bios_template], **btemplate.tpm_disabled)
             apiBody.pop('bios_template')
@@ -415,6 +415,7 @@ class imm(object):
     # IMC Access Policy Modification
     #=======================================================
     def imc_access(self, apiBody, item, kwargs):
+        item = item
         if not apiBody.get('AddressType'): apiBody.update({ 'AddressType':{ 'EnableIpV4':False, 'EnableIpV6':False }})
         apiBody.update({ 'ConfigurationType':{ 'ConfigureInband': False, 'ConfigureOutOfBand': False }})
         #=====================================================
@@ -452,132 +453,64 @@ class imm(object):
     # iSCSI Adapter Policy Modification
     #=======================================================
     def iscsi_boot(self, apiBody, item, kwargs):
-        kwargs = kwargs
-        for k, v in item.items():
-            if 'ip_address' in k:
-                apiBody.update({
-                    'InitiatorStaticIpV4Address':v,
-                    'InitiatorStaticIpV4Config':[{
-                        'Gateway': item['gateway'],
-                        'Netmask': item['netmask'],
-                        'ObjectType': 'ippool.IpV4Config',
-                        'PrimaryDns': item['primary_dns'],
-                        'SecondaryDns': item['secondary_dns'],
-                    }]
-                })
-            elif 'authentication' in k:
-                if re.search('(mutual_)?chap', v):
-                    kwargs.sensitive_var = 'iscsi_boot_password'
-                    kwargs = ezfunctions.sensitive_var_value(kwargs)
-                    apiBody.update({v:{
-                        'ObjectType': "vnic.IscsiAuthProfile",
-                        'Password': kwargs.var_value,
-                        'UserId': item['username']
-                    }})
+        item = item
+        if apiBody.get('InitiatorStaticIpV4Config'):
+            apiBody['InitiatorStaticIpV4Address'] = apiBody['InitiatorStaticIpV4Config']['IpAddress']
+            apiBody['InitiatorStaticIpV4Config'].pop('IpAddress')
+        if apiBody.get('Chap'):
+            kwargs.sensitive_var = 'iscsi_boot_password'
+            kwargs = ezfunctions.sensitive_var_value(kwargs)
+            if apiBody['authentication'] == 'mutual_chap':
+                apiBody['MutualChap'] = apiBody['Chap']; apiBody.pop('Chap')
+                apiBody['MutualChap']['Password'] = kwargs.var_value
+            else: apiBody['Chap']['Password'] = kwargs.var_value
         #=====================================================
         # Attach Pools to the API Body
         #=====================================================
-        if item.get('initiator_ip_pool'):
-            ip_pool = item['initiator_ip_pool']
-            kwargs.method= 'get'
-            kwargs.qtype = 'ip'
-            kwargs.names = []
-            kwargs.names.append(ip_pool)
-            kwargs.uri   = 'ippool/Pools'
-            kwargs = api('ip').calls(kwargs)
-            if not kwargs.pmoids.get(ip_pool):
-                validating.error_policy_doesnt_exist('initiator_ip_pool', ip_pool, self.type, 'policy', apiBody['Name'])
-            apiBody.update({'InitiatorIpPool':{
-                'Moid':kwargs.pmoids[ip_pool].moid,'ObjectType':'ippool.Pool'
-            }})
-        plist = ['Primary', 'Secondary']
+        if apiBody.get('InitiatorIpPool'):
+            ip_pool = apiBody['InitiatorIpPool']['Moid']
+            kwargs = api_get(False, [ip_pool], 'ip', kwargs)
+            apiBody['InitiatorIpPool']['Moid'] = kwargs.pmoids[ip_pool].moid
+        plist = ['PrimaryTargetPolicy', 'SecondaryTargetPolicy']
+        names = []
         for p in plist:
-            if item.get(f'{p.lower()}_target_policy'):
-                target = f'{p}TargetPolicy'
-                kwargs.method= 'get'
-                kwargs.qtype = 'iscsi_static_target'
-                kwargs.names = [item[f'{p.lower()}_target_policy']]
-                kwargs.uri   = 'vnic/IscsiStaticTargetPolicies'
-                kwargs = api(kwargs.qtype).calls(kwargs)
-                if not kwargs.pmoids.get(item[f'{p.lower()}_target_policy']):
-                    validating.error_policy_doesnt_exist(
-                        f'{p}Target', item[f'{p.lower()}_target_policy'], self.type, 'policy', apiBody['Name']
-                    )
-                apiBody.update({target:{
-                    'Moid':kwargs.pmoids[item[f'{p.lower()}_target_policy']].moid,
-                    'ObjectType':'vnic.IscsiStaticTargetPolicy'
-                }})
+            if apiBody.get(p): names.append(apiBody[p]['Moid'])
+        if len(kwargs.names) > 0: kwargs = api_get(False, names, 'iscsi_static_target', kwargs)
+        for p in plist:
+            if apiBody.get(p): apiBody[p]['Moid'] = kwargs.pmoids[apiBody[p]['Moid']].moid
         return apiBody
 
     #=======================================================
     # iSCSI Adapter Policy Modification
     #=======================================================
     def iscsi_static_target(self, apiBody, item, kwargs):
-        apiBody['Lun'] = {
-            'Bootable':True,
-            'LunId': item.lun_id,
-            'ObjectType':'vnic.Lun'
-        }
+        item = item; kwargs = kwargs
+        apiBody['Lun'] = {'Bootable':True}
         return apiBody
 
     #=======================================================
     # LAN Connectivity Policy Modification
     #=======================================================
     def lan_connectivity(self, apiBody, item, kwargs):
-        item   = item
-        kwargs = kwargs
         if not apiBody.get('PlacementMode'): apiBody.update({'PlacementMode':'custom'})
         if not apiBody.get('TargetPlatform'): apiBody.update({'TargetPlatform': 'FIAttached'})
-        if item.get('iqn_pool'):
-            kwargs.method= 'get'
-            kwargs.names = [item['iqn_pool']]
-            kwargs.qtype = 'iqn'
-            kwargs.uri   = 'iqnpool/Pools'
-            kwargs = api('iqn_pool').calls(kwargs)
-            kwargs.moids['iqn_pool'] = kwargs.pmoids
-            pname = item['iqn_pool']
-            if not kwargs.moids['iqn_pool'].get(pname):
-                validating.error_policy_doesnt_exist('iqn_pool', pname, apiBody['Name'], self.type, 'Policy')
-            iqnpool = kwargs.moids['iqn_pool'][pname].moid
-            apiBody.update({
-                'IqnAllocationType':'Pool',
-                'IqnPool':{
-                    'Moid':iqnpool,'ObjectType':'iqnpool.Pool'
-                }
-            })
-        return apiBody
-
-    #=======================================================
-    # Link Control Policy Modification
-    #=======================================================
-    def link_control(self, apiBody, item, kwargs):
-        kwargs = kwargs
-        if item.get('admin_state'): apiBody['UdldSettings'] = {'AdminState':item['admin_state']}
-        if item.get('mode'):
-            if not apiBody.get('UdldSettings'): apiBody['UdldSettings']
-            apiBody['UdldSettings'].update({'Mode':item['mode']})
+        if item.get('IqnPool'):
+            apiBody['IqnAllocationType'] = 'Pool'
+            kwargs = api_get(False, [item.iqn_pool], 'iqn', kwargs)
+            apiBody['IqnPool']['Moid'] = kwargs.pmoids[item.iqn_pool].moid
         return apiBody
 
     #=======================================================
     # Local User Policy Modification
     #=======================================================
     def local_user(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties.local_user.key_map_password
-        apiBody['PasswordProperties'] = {
-            "EnablePasswordExpiry": False,
-            "EnforceStrongPassword": True,
-            "ForceSendPassword": False,
-            "GracePeriod": 0,
-            "NotificationPeriod": 15,
-            "ObjectType": "iam.EndPointPasswordProperties",
-            "PasswordExpiryDuration": 90,
-            "PasswordHistory": 0
-        }
-        for k, v in item.items():
-            if k in jsonVars:
-                apiBody['PasswordProperties'].update({jsonVars[k]:v})
-        if apiBody['PasswordProperties']['PasswordHistory'] != 0:
-            apiBody['PasswordProperties'].update({'PasswordHistory': 0})
+        if not apiBody.get('PasswordProperties'): apiBody['PasswordProperties'] = {}
+        for k, v in kwargs.ezdata['local_user.password_properties'].properties.items():
+            if item.get('password_properties'):
+                if item.password_properties.get(k):
+                    apiBody['PasswordProperties'][v.intersight_api] =  item.password_properties[k]
+                else: apiBody['PasswordProperties'][v.intersight_api] = v.default
+            else: apiBody['PasswordProperties'][v.intersight_api] = v.default
         return apiBody
 
     #=====================================================
@@ -732,36 +665,16 @@ class imm(object):
             #=====================================================
             # Loop Thru Sub-Items
             #=====================================================
-            #if 'lan_connectivity' == self.type:
-            #    if item.get('vnics'):
-            #        kwargs.item= item['vnics']
-            #        kwargs     = policies_class('vnics').vnics(kwargs)
-            #elif 'local_user' == self.type:
-            #    if item.get('users'):
-            #        kwargs.item= item['users']
-            #        kwargs     = policies_class('local_users').local_users(kwargs)
-            #elif 'port' == self.type:
-            #    if item.get('port_modes'):
-            #        kwargs.item= item
-            #        kwargs     = policies_class('port_mode').port_mode(kwargs)
-            #    kwargs.item= item
-            #    kwargs     = policies_class('ports').ports(kwargs)
-            #elif 'san_connectivity' == self.type:
-            #    if item.get('vhbas'):
-            #        kwargs.item= item['vhbas']
-            #        kwargs     = policies_class('vhbas').vhbas(kwargs)
-            #elif 'storage' == self.type:
-            #    if item.get('drive_groups'):
-            #        kwargs.item= item['drive_groups']
-            #        kwargs     = policies_class('storage_drive_group').storage_drive_group(kwargs)
-            #elif 'vlan' == self.type:
-            #    if item.get('vlans'):
-            #        kwargs.item= item['vlans']
-            #        kwargs     = policies_class('vlans').vlans(kwargs)
-            #elif 'vsan' == self.type:
-            #    if item.get('vsans'):
-            #        kwargs.item= item['vsans']
-            #        kwargs     = policies_class('vsans').vsans(kwargs)
+            sub_list = ['lan_connectivity:vnics', 'local_user:users', 'san_connectivity:vhbas',
+                         'storage:drive_groups', 'vlan:vlans', 'vsan:vsans']
+            for e in sub_list:
+                a = e.split(':')[0]; b = e.split(':')[1]
+                if a == self.type:
+                    if item.get(b): kwargs.item = item[b]; kwargs = eval(f'imm(b).{b}(kwargs)')
+            if 'port' == self.type:
+                if item.get('port_modes'): kwargs.item = item; kwargs     = imm('port_mode').port_mode(kwargs)
+                kwargs.item = item
+                kwargs = imm('ports').ports(kwargs)
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
@@ -1017,84 +930,56 @@ class imm(object):
     # SAN Connectivity Policy Modification
     #=======================================================
     def san_connectivity(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ezdata.pools.allOf[1].properties.fc
-        kwargs.names = []
-        if item.get('wwnn_pool'): kwargs.names.append(item['wwnn_pool'])
-        kwargs.method= 'get'
-        kwargs.qtype = 'wwnn'
-        kwargs.uri   = jsonVars.uri
-        kwargs       = api(kwargs.qtype).calls(kwargs)
-        kwargs.moids['wwnn_pool'] = kwargs.pmoids
-        if not apiBody.get('vhba_placement_modes'): apiBody.update({'PlacementMode':'custom'})
+        kwargs.uri = kwargs.ezdata.wwnn.intersight_uri
+        if not apiBody.get('PlacementMode'): apiBody.update({'PlacementMode':'custom'})
         if item.get('wwnn_pool'):
-            if not kwargs.moids['wwnn_pool'].get(item['wwnn_pool']):
-                        validating.error_policy_doesnt_exist(
-                            'wwnn_pool', item['wwnn_pool'], self.type, 'policy', apiBody['Name'])
-            wwnn_moid = kwargs.moids['wwnn_pool'][item['wwnn_pool']].moid
-            apiBody.update({'WwnnPool':{'Moid':wwnn_moid,'ObjectType':'fcpool.Pool'}})
+            kwargs = api_get(False, [item.wwnn_pool], 'wwnn', kwargs)
+            apiBody['WwnnPool']['Moid'] = kwargs.pmoids[item.wwnn_pool].moid
         return apiBody
 
     #=======================================================
     # SNMP Policy Modification
     #=======================================================
     def snmp(self, apiBody, item, kwargs):
-        #=====================================================
-        # Add SNMP Traps
-        #=====================================================
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type]
-        apiBody['SnmpTraps'] = []
-        jvars = jsonVars.trap_map
-        for e in item.snmp_trap_destinations:
-            idict = {}
-            for k, v in e.items():
-                if k in jvars: idict.update({jvars[k]:v})
-            idict.update({'ObjectType':'snmp.Trap'})
-            apiBody['SnmpTraps'].append(idict)
-
-        #=====================================================
-        # Add SNMP Users
-        #=====================================================
-        jvars = jsonVars.user_map
-        apiBody['SnmpUsers'] = []
-        for e in item.snmp_users:
-            idict = {}
-            for k, v in e.items():
-                if k in jvars: idict.update({jvars[k]:v})
-            if idict.get('AuthPassword'):
-                kwargs.sensitive_var = f"snmp_auth_password_{idict['AuthPassword']}"
-                kwargs = ezfunctions.sensitive_var_value(kwargs)
-                idict.update({'AuthPassword':kwargs.var_value})
-            if idict.get('PrivacyPassword'):
-                kwargs.sensitive_var = f"snmp_privacy_password_{idict['PrivacyPassword']}"
-                kwargs = ezfunctions.sensitive_var_value(kwargs)
-                idict.update({'PrivacyPassword':kwargs.var_value})
-            idict.update({'ObjectType':'snmp.User'})
-            apiBody['SnmpUsers'].append(idict)
-
+        item = item
+        if apiBody.get('SnmpTraps'):
+            for x in range(len(apiBody['SnmpTraps'])):
+                if apiBody['SnmpTraps'][x].get('Community'):
+                    kwargs.sensitive_var = f"snmp_trap_community_{apiBody['SnmpTraps'][x]['Community']}"
+                    kwargs = ezfunctions.sensitive_var_value(kwargs)
+                    apiBody['SnmpTraps'][x]['Community'] = kwargs.var_value
+        if apiBody.get('SnmpUsers'):
+            for x in range(len(apiBody['SnmpUsers'])):
+                if apiBody['SnmpUsers'][x].get('AuthPassword'):
+                    kwargs.sensitive_var = f"snmp_auth_password_{apiBody['SnmpUsers'][x]['AuthPassword']}"
+                    kwargs = ezfunctions.sensitive_var_value(kwargs)
+                    apiBody['SnmpUsers'][x]['AuthPassword'] = kwargs.var_value
+                if apiBody['SnmpUsers'][x].get('PrivacyPassword'):
+                    kwargs.sensitive_var = f"snmp_privacy_password_{apiBody['SnmpUsers'][x]['PrivacyPassword']}"
+                    kwargs = ezfunctions.sensitive_var_value(kwargs)
+                    apiBody['SnmpUsers'][x]['PrivacyPassword'] = kwargs.var_value
+        # Return apiBody
         return apiBody
 
     #=======================================================
     # Storage Policy Modification
     #=======================================================
     def storage(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties['bios'].template_tuning
-        for k, v in apiBody.items():
-            if type(v) == int or type(v) == float: apiBody[k] = str(v)
-        if item.get('bios_template'):
-            template = item['bios_template']
-            if '_tpm' in template:
-                btemplate = template.replace('_tpm', '')
-                apiBody = dict(apiBody, **jsonVars[btemplate])
-                apiBody = dict(apiBody, **jsonVars['tpm'])
-            else:
-                apiBody = dict(apiBody, **jsonVars[template])
-                apiBody = dict(apiBody, **jsonVars['tpm_disabled'])
+        item = item; kwargs = kwargs
+        if apiBody.get('M2VirtualDrive'): apiBody['M2VirtualDrive']['Enable'] = True
+        if apiBody.get('Raid0Drive'):
+            apiBody['Raid0Drive']['Enable'] = True
+            if not apiBody['Raid0Drive'].get('VirtualDrivePolicy'):
+                apiBody['Raid0Drive']['VirtualDrivePolicy'] = {'ObjectType':'storage.VirtualDrivePolicy'}
+                for k,v in kwargs.ezdata['storage.virtual_drive_policy'].properties.items():
+                    if item.get(k): apiBody['Raid0Drive']['VirtualDrivePolicy'][v.intersight_api] = item[k]
+                    else: apiBody['Raid0Drive']['VirtualDrivePolicy'][v.intersight_api] = v.default
         return apiBody
 
     #=====================================================
     # Assign Drive Groups to Storage Policies
     #=====================================================
-    def storage_drive_group(self, kwargs):
+    def storage_drive_groups(self, kwargs):
         jsonVars = kwargs.ezdata.policies.allOf[1].properties.storage.virtual_drive_map
         #=====================================================
         # Get Storage Policies
@@ -1154,61 +1039,24 @@ class imm(object):
         return kwargs
 
     #=======================================================
-    # Switch Control Policy Modification
-    #=======================================================
-    def switch_control(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties.switch_control.mac_and_udld
-        apiBody.update({
-            'MacAgingSettings':{
-                'MacAgingOption':'Default', 'MacAgingTime':14500, 'ObjectType':'fabric.MacAgingSettings'
-            },
-            'UdldSettings':{
-                'MessageInterval':15,'RecoveryAction':'reset','ObjectType':'fabric.UdldGlobalSettings'
-            }
-        })
-        for k, v in item.items():
-            if k in jsonVars:
-                if 'mac_' in k: apiBody['MacAgingSettings'].update({jsonVars[k]:v})
-                elif 'udld_' in k: apiBody['UdldSettings'].update({jsonVars[k]:v})
-        return apiBody
-
-    #=======================================================
-    # Syslog Policy Modification
-    #=======================================================
-    def syslog(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties.syslog.remote_logging
-        if 'local_logging' in item:
-            apiBody.update({'LocalClients':[{
-                'ObjectType':'syslog.LocalFileLoggingClient',
-                'MinSeverity':item['local_logging']['minimum_severity']
-            }]})
-        if item.get('remote_logging'):
-            apiBody['RemoteClients'] = []
-            for i in item.remote_logging:
-                rsyslog = {'ObjectType':'syslog.RemoteLoggingClient'}
-                for k, v in i.items():
-                    if k in jsonVars: rsyslog.update({jsonVars[k]:v})
-                if not '0.0.0.0' in rsyslog: apiBody['RemoteClients'].append(rsyslog)
-            if len(apiBody['RemoteClients']) == 0: apiBody.pop('RemoteClients')
-        return apiBody
-
-    #=======================================================
     # System QoS Policy Modification
     #=======================================================
     def system_qos(self, apiBody, item, kwargs):
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type].class_map
-        apiBody['Classes'] = []
-        for i in item['classes']:
-            idict = {}
-            for k, v in i.items():
-                if k in jsonVars: idict.update({jsonVars[k]:v})
-            idict.update({'ObjectType':'fabric.QosClass'})
-            if i.priority == 'FC': idict['Mtu'] = 2240
-            elif item.get('jumbo_mtu'):
-                if item.jumbo_mtu == True: idict['Mtu'] = 9216
-                else: idict['Mtu'] = 1500
-            else: idict['Mtu'] = 1500
-            apiBody['Classes'].append(idict)
+        item = item
+        if apiBody.get('configure_recommended_classes'):
+            if apiBody['configure_recommended_classes'] == True:
+                apiBody.pop('configure_recommended_classes')
+                apiBody['Classes'] = kwargs.ezdata['system_qos.classes_recommended'].classes
+        if apiBody.get('configure_default_policy'):
+            if apiBody['configure_default_policy'] == True:
+                apiBody.pop('configure_default_policy')
+                apiBody['Classes'] = kwargs.ezdata['system_qos.classes_default'].classes
+        elif apiBody.get('configure_recommended_classes') == None and len(apiBody.get('Classes')) == 0:
+            apiBody['Classes'] = kwargs.ezdata['system_qos.classes_default'].classes
+        if apiBody.get('jumbo_mtu'):
+            if apiBody['jumbo_mtu'] == False:
+                for x in range(apiBody['Classes']):
+                    if not apiBody['Classes'][x]['Name'] == 'FC': apiBody['Classes'][x]['Mtu'] = 1500
         return apiBody
 
     #=====================================================
@@ -1936,8 +1784,7 @@ def build_apiBody(apiBody, idata, item, ptype, kwargs):
                     idict = {'ObjectType':idata[k]['items'].ObjectType}
                     for a, b in idata[k]['items'].properties.items():
                         if re.search('boolean|string|integer', b.type):
-                            if a in e:
-                                idict.update({b.intersight_api:e[a]})
+                            if a in e: idict.update({b.intersight_api:e[a]})
                         elif b.type == 'object' and a in e:
                             idict.update({b.intersight_api:{'ObjectType':b.ObjectType}})
                             for c, d in b.properties.items():
@@ -1948,10 +1795,7 @@ def build_apiBody(apiBody, idata, item, ptype, kwargs):
                             print(e)
                             idict[b.intersight_api] = e[a]
                             print('not accounted for')
-                            print(a, e)
                     apiBody[idata[k]['items'].intersight_api].append(idict)
-                    #print(idict)
-                    #exit()
         elif idata[k].type == 'object':
             apiBody[idata[k].intersight_api] = {'ObjectType':idata[k].ObjectType}
             for a, b in idata[k].properties.items():
@@ -1974,7 +1818,7 @@ def build_apiBody(apiBody, idata, item, ptype, kwargs):
     plist1 = [
         'pc_appliances', 'pc_ethernet_uplinks', 'pc_fc_uplinks', 'pc_fcoe_uplinks', 'port_modes',
         'rl_appliances', 'rl_ethernet_uplinks', 'rl_fc_storage', 'rl_fc_uplinks', 'rl_fcoe_uplinks', 'rl_servers',
-        'drive_groups', 'ldap_groups', 'ldap_servers', 'vhbas', 'vlans', 'vnics', 'vsans', 'users']
+        'drive_groups', 'ldap_groups', 'ldap_servers', 'users', 'vhbas', 'vlans', 'vnics', 'vsans']
     pop_list = []
     for e in plist1: pop_list.append((e.replace('pc_', 'port_channel_')).replace('rl_', 'port_role_'))
     for e in pop_list:
