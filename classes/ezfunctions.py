@@ -1445,7 +1445,7 @@ def vlan_list_full(vlan_list):
                 for vl in vrange: full_vlan_list.append(int(vl))
             elif re.fullmatch('^\\d{1,4}$', v): full_vlan_list.append(int(v))
     elif re.search('\\-', str(vlan_list)):
-        a,b = v.split('-'); a = int(a); b = int(b); vrange = range(a,b+1)
+        a,b = vlan_list.split('-'); a = int(a); b = int(b); vrange = range(a,b+1)
         for v in vrange: full_vlan_list.append(int(v))
     else: full_vlan_list.append(vlan_list)
     return full_vlan_list

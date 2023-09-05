@@ -17,6 +17,7 @@ try:
     from intersight_auth import IntersightAuth
     from copy import deepcopy
     from dotmap import DotMap
+    from stringcase import pascalcase, snakecase
     import json, numpy, os, re, requests, sys, time, urllib3
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
@@ -78,7 +79,7 @@ class api(object):
         #=====================================================
         if 'get' == kwargs.method:
             if not kwargs.get('api_filter'):
-                if re.search('(vlans|vsans)', kwargs.qtype):
+                if re.search('(vlans|vsans|port.port_)', kwargs.qtype):
                     names = ", ".join(map(str, kwargs.names))
                 else: names = "', '".join(kwargs.names).strip("', '")
                 if re.search('(organization|resource_group)', kwargs.qtype):
@@ -88,6 +89,12 @@ class api(object):
                     api_filter = f"TargetId in ('{names}')"
                 elif 'wwnn_pool_leases' == kwargs.qtype:
                     api_filter = f"PoolPurpose eq 'WWNN' and AssignedToEntity.Moid in ('{names}')"
+                elif 'port.port_channel_' in kwargs.qtype:
+                    api_filter = f"PcId in ({names}) and PortPolicy.Moid eq '{kwargs.pmoid}'"
+                elif 'port.port_modes' == kwargs.qtype:
+                    api_filter = f"PortIdStart in ({names}) and PortPolicy.Moid eq '{kwargs.pmoid}'"
+                elif 'port.port_role_' == kwargs.qtype:
+                    api_filter = f"PortId in ({names}) and PortPolicy.Moid eq '{kwargs.pmoid}'"
                 elif 'hcl_status' == kwargs.qtype:
                     api_filter = f"ManagedObject.Moid in ('{names}')"
                 elif 'registered_device' == kwargs.qtype:
@@ -535,7 +542,7 @@ class imm(object):
         # Load Variables and Send Begin Notification
         #=====================================================
         idata = DotMap(dict(pair for d in kwargs.ezdata[self.type].allOf for pair in d.properties.items()))
-        pdict = kwargs.imm_dict.orgs[kwargs.org].policies[self.type]
+        pdict = deepcopy(kwargs.imm_dict.orgs[kwargs.org].policies[self.type])
         if self.type == 'port': policies = list({v['names'][0]:v for v in pdict}.values())
         else: policies = list({v['name']:v for v in pdict}.values())
         validating.begin_section(self.type, 'policies')
@@ -587,7 +594,9 @@ class imm(object):
         #=====================================================
         # Loop Thru Sub-Items
         #=====================================================
-        kwargs.policies     = policies
+        pdict = deepcopy(kwargs.imm_dict.orgs[kwargs.org].policies[self.type])
+        if self.type == 'port': kwargs.policies = list({v['names'][0]:v for v in pdict}.values())
+        else: kwargs.policies = list({v['name']:v for v in pdict}.values())
         kwargs.policy_moids = policy_moids
         sub_list = ['lan_connectivity.vnics', 'local_user.users', 'san_connectivity.vhbas',
                         'storage.drive_groups', 'vlan.vlans', 'vsan.vsans']
@@ -596,7 +605,7 @@ class imm(object):
             #a = e.split('.')[0]; b = e.split('.')[1]
             if a == self.type: kwargs = eval(f'imm(e).sub_policy(kwargs)')
         if 'port' == self.type:
-            kwargs = imm('port.port_modes').sub_policy(kwargs)
+            #kwargs = imm('port.port_modes').port_modes(kwargs)
             kwargs = imm('ports').ports(kwargs)
         #=====================================================
         # Send End Notification and return kwargs
@@ -672,35 +681,36 @@ class imm(object):
         #=====================================================
         # Loop Through Port Modes
         #=====================================================
-        for x in range(0,len(kwargs.item['names'])):
-            ezdata      = kwargs.ezdata[self.type]
-            i           = self.type.split('.')
-            parent_moid = kwargs.policy_moids[kwargs.item['names'][x]].moid
-            for e in kwargs.item[i[1]]:
-                kwargs.apiBody = {
-                    'CustomMode':e['custom_mode'],'ObjectType':ezdata.ObjectType,
-                    'PortIdStart':e.port_list[0],'PortIdEnd':e.port_list[1],
-                    ezdata.parent_policy:{'Moid':parent_moid,'ObjectType':ezdata.parent_object}}
-                if i.get('slot_id'): kwargs.apiBody.update({'SlotId':i.port_modes.slot_id})
-                else: kwargs.apiBody.update({'SlotId':1})
-                kwargs.api_filter= f"PortIdStart eq {e.port_list[0]} and PortPolicy.Moid eq '{parent_moid}'"
-                kwargs = api_get()
-                kwargs.method    = 'get'
-                kwargs.names     = []
-                kwargs.qtype     = i[1]
-                kwargs.uri       = ezdata.intersight_uri
-                kwargs           = api(kwargs.qtype).calls(kwargs)
-                #=====================================================
-                # Create or Patch the Policy via the Intersight API
-                #=====================================================
-                kwargs.port_policy_name= kwargs.item['names'][x]
-                if kwargs.pmoids.get(parent_moid):
-                    if kwargs.pmoids[parent_moid].get(e.port_list[0]):
-                        kwargs.method= 'patch'
-                        kwargs.pmoid = kwargs.pmoids[parent_moid][e.port_list[0]].moid
-                    else: kwargs.method= 'post'
-                else: kwargs.method= 'post'
-                kwargs = api(kwargs.qtype).calls(kwargs)
+        ezdata= kwargs.ezdata[self.type]
+        p     = self.type.split('.')
+        for item in kwargs.policies:
+            if item.get(p[1]):
+                for x in range(0,len(item['names'])):
+                    kwargs.port_policy[item['names'][x]].names = []
+                    for e in item[p[1]]: kwargs.port_policy[item['names'][x]].names.append(e.port_list[0])
+                for i in list(kwargs.port_policy.keys()):
+                    kwargs.pmoid = kwargs.policy_moids[i].moid
+                    kwargs = api_get(True, kwargs.port_policy[i].names, self.type, kwargs)
+                    kwargs.port_modes[i] = kwargs.pmoids
+                    parent_moid = kwargs.policy_moids[i].moid
+                    for e in item[p[1]]:
+                        kwargs.apiBody = {
+                            'CustomMode':e.custom_mode,'ObjectType':ezdata.ObjectType,
+                            'PortIdStart':e.port_list[0],'PortIdEnd':e.port_list[1],
+                            ezdata.parent_policy:{'Moid':parent_moid,'ObjectType':ezdata.parent_object}}
+                        if e.get('slot_id'): kwargs.apiBody.update({'SlotId':e.slot_id})
+                        else: kwargs.apiBody.update({'SlotId':1})
+                        #=====================================================
+                        # Create or Patch the Policy via the Intersight API
+                        #=====================================================
+                        kwargs.port_policy_name= kwargs.item['names'][x]
+                        if kwargs.pmoids.get(parent_moid):
+                            if kwargs.pmoids[parent_moid].get(e.port_list[0]):
+                                kwargs.method= 'patch'
+                                kwargs.pmoid = kwargs.pmoids[parent_moid][e.port_list[0]].moid
+                            else: kwargs.method= 'post'
+                        else: kwargs.method= 'post'
+                        kwargs = api(kwargs.qtype).calls(kwargs)
         return kwargs
 
     #=====================================================
@@ -710,131 +720,120 @@ class imm(object):
         #=====================================================
         # Create/Patch the Port Policy Port Types
         #=====================================================
-        def api_calls(apiBody, kwargs):
-            jsonVars = kwargs.ezdata.policies.allOf[1].properties.port.port_types[kwargs.type]
-            #=====================================================
-            # Check if the Port Policy Port Type Exists
-            #=====================================================
-            if re.search('port_channel', self.type):
-                policy_name = int(apiBody['PcId'])
-                kwargs.api_filter = f"PcId eq {int(apiBody['PcId'])} and PortPolicy.Moid eq '{kwargs.port_policy}'"
-            else:
-                policy_name = int(apiBody['PortId'])
-                kwargs.api_filter = f"PortId eq {int(apiBody['PortId'])} and PortPolicy.Moid eq '{kwargs.port_policy}'"
-            kwargs.method = 'get'
-            kwargs.qtype = kwargs.type
-            kwargs.uri = jsonVars.uri
-            kwargs = api(kwargs.qtype).calls(kwargs)
-            kwargs.moids[kwargs.type] = kwargs.pmoids
+        def api_calls(port_type, kwargs):
             #=====================================================
             # Create or Patch the Policy via the Intersight API
             #=====================================================
-            if kwargs.moids[kwargs.type].get(kwargs.port_policy):
-                if kwargs.moids[kwargs.type][kwargs.port_policy].get(policy_name):
+            if re.search('port_channel', port_type): name = int(kwargs.apiBody['PcId'])
+            else: name = int(kwargs.apiBody['PortId'])
+            if kwargs.port_moids[port_type].get(kwargs.parent_moid):
+                if kwargs.port_moids[kwargs.type][kwargs.parent_moid].get(name):
                     kwargs.method= 'patch'
-                    kwargs.pmoid = kwargs.moids[kwargs.type][kwargs.port_policy][policy_name].moid
+                    kwargs.pmoid = kwargs.moids[port_type][kwargs.parent_moid][name].moid
                 else: kwargs.method= 'post'
             else: kwargs.method= 'post'
-            kwargs.apiBody= apiBody
-            kwargs.qtype  = kwargs.type
+            kwargs.qtype  = f'port.{port_type}'
             kwargs        = api(kwargs.type).calls(kwargs)
             return kwargs
+        
+        #=====================================================
+        # Check if the Port Policy Port Type Exists
+        #=====================================================
+        def get_ports(port_type, item, x, kwargs):
+            names = []
+            for i in item[port_type]:
+                if re.search('port_channel', port_type):
+                    if len(i.pc_ids) == 2: names.append(int(i.pc_ids[x]))
+                    else: names.append(int(i.pc_ids[0]))
+                else:
+                    for e in ezfunctions.vlan_list_full(i.port_list): names.append(e)
+            kwargs.pmoid = kwargs.parent_moid
+            kwargs = api_get(True, names, f'port.{port_type}', kwargs)
+            kwargs.port_moids[port_type] = kwargs.pmoids
+            return kwargs
+
+        #=====================================================
+        # Attach Ethernet/Flow/Link Policies
+        #=====================================================
+        def policy_update(kwargs):
+            plist = ['EthNetworkControl', 'EthNetworkGroup', 'FlowControl', 'LinkAggregation', 'LinkControl']
+            for p in plist:
+                p = f'{p}Policy'
+                if kwargs.apiBody.get(p):
+                    kwargs.apiBody[p]['Moid'] = kwargs.cp[snakecase(p).replace('eth_', 'ethernet_')].moids[kwargs.apiBody[p]['Moid']].moid
+                    if 'Group' in p: kwargs.apiBody[p] = [kwargs.apiBody[p]]
+            return kwargs
+        
         #=====================================================
         # Create API Body for Port Policies
         #=====================================================
-        def port_type_call(item, x, kwargs):
-            kwargs.port_policy = kwargs.pmoid
-            for i in item[kwargs.type]:
-                apiBody = {'PortPolicy':{'Moid':kwargs.port_policy,'ObjectType':'fabric.PortPolicy'}}
-                for z in kwargs.policy_list:
-                    pshort = z.replace('_policy', '')
-                    jVars = kwargs.ezdata.policies.allOf[1].properties[pshort]
-                    if i.get(z):
-                        if kwargs.moids[pshort].get(i[z]): pmoid = kwargs.moids[pshort][i[z]].moid
-                        else:
-                            ppname = kwargs.port_policy_name
-                            validating.error_policy_doesnt_exist(z, i[z], kwargs.type, 'Port Policy', ppname)
-                        if 'network_group' in z:
-                            apiBody.update({jVars['object_name']:[{'Moid':pmoid,'ObjectType':jVars['object_type']}]})
-                        else: apiBody.update({jVars['object_name']:{'Moid':pmoid,'ObjectType':jVars['object_type']}})
-                if i.get('admin_speed'): apiBody.update({'AdminSpeed':i['admin_speed']})
-                if i.get('fec'): apiBody.update({'Fec':i['fec']})
-                if i.get('mode'): apiBody.update({'Mode':i['mode']})
-                if i.get('priority'): apiBody.update({'Priority':i['priority']})
-                if re.search('port_channel', kwargs.type):
-                    if len(i['pc_ids']) > 1: apiBody.update({'PcId':i['pc_ids'][x]})
-                    else: apiBody.update({'PcId':i['pc_id'][0]})
-                    if i.get('vsan_ids'):
-                        if len(i['vsan_ids']) > 1: apiBody.update({'VsanId':i['vsan_ids'][x]})
-                        else: apiBody.update({'VsanId':i['vsan_ids'][0]})
-                    apiBody['Ports'] = []
-                    for intf in i['interfaces']:
-                        intfBody = {'ObjectType':'fabric.PortIdentifier'}
-                        intfBody.update({'PortId':intf['port_id']})
-                        if intf.get('breakout_port_id'): intfBody.update({'AggregatePortId':intf['breakout_port_id']})
-                        else: intfBody.update({'AggregatePortId':0})
-                        if intf.get('slot_id'): intfBody.update({'SlotId':intf['slot_id']})
-                        else: intfBody.update({'SlotId':1})
-                        apiBody['Ports'].append(intfBody)
-                    kwargs = api_calls(apiBody, kwargs)
-                elif re.search('role', kwargs.type):
-                    interfaces = ezfunctions.vlan_list_full(i['port_list'])
-                    for intf in interfaces:
-                        intfBody = deepcopy(apiBody)
-                        if i.get('breakout_port_id'): intfBody.update({'AggregatePortId':intf['breakout_port_id']})
-                        else: intfBody.update({'AggregatePortId':0})
-                        intfBody.update({'PortId':int(intf)})
-                        if i.get('device_number'): intfBody.update({'PreferredDeviceId':i['device_number']})
-                        if i.get('connected_device_type'): intfBody.update({'PreferredDeviceType':i['connected_device_type']})
-                        if i.get('slot_id'): intfBody.update({'SlotId':intf['slot_id']})
-                        else: intfBody.update({'SlotId':1})
-                        if i.get('vsan_ids'):
-                            if len(i['vsan_ids']) > 1: intfBody.update({'VsanId':i['vsan_ids'][x]})
-                            else: intfBody.update({'VsanId':i['vsan_ids'][0]})
-                        kwargs = api_calls(intfBody, kwargs)
+        def port_type_call(port_type, item, x, kwargs):
+            idata = kwargs.ezdata[f'port.{port_type}'].properties
+            for i in item[port_type]:
+                apiBody = {'PortPolicy':{'Moid':kwargs.parent_moid,'ObjectType':'fabric.PortPolicy'}}
+                kwargs.apiBody = build_apiBody(apiBody, idata, i, f'port.{port_type}', kwargs)
+                if i.get('pc_ids'):
+                    if len(kwargs.apiBody['PcId']) == 2: kwargs.apiBody['PcId'] = i.pc_ids[x]
+                    else: kwargs.apiBody['PcId'] = i.pc_ids[x]
+                    if re.search('appliance|ethernet|fcoe', port_type): kwargs = policy_update(kwargs)
+                if i.get('vsan_ids'):
+                    if len(i['vsan_ids']) > 1: kwargs.apiBody['VsanId'] = i['vsan_ids'][x]
+                    else: kwargs.apiBody['VsanId'] = i['vsan_ids'][0]
+                kwargs.apiBody.pop('Organization')
+                kwargs.apiBody.pop('Tags')
+                if re.search('port_channel', port_type):
+                    print('hello')
+                    #kwargs = api_calls(port_type, kwargs)
+                elif re.search('role', port_type):
+                    for e in ezfunctions.vlan_list_full(i.port_list):
+                        kwargs.apiBody['PortId'] = e
+                        #kwargs = api_calls(port_type, kwargs)
             return kwargs
 
-        ezdata = kwargs.ezdata[self.type]
         #=====================================================
         # Get Policies
         #=====================================================
+        kwargs.port_types = []
+        kwargs.ports      = []
         for k,v in kwargs.ezdata.port.allOf[0].properties.items():
-            if re.search('^port_', k):
+            if re.search('^port_(cha|rol)', k):
+                kwargs.port_types.append(k)
                 for a,b in v['items'].properties.items():
                     if re.search('^(ethernet|flow|link)_', a):
-                        if not kwargs.child_policies.get(a): kwargs.child_policies[a].names = []
-        port_types = list(kwargs.ports.keys())
-        child_list = list(kwargs.child_poicies.keys())
-        for item in kwargs.policies:
-            for e in port_types:
+                        if not kwargs.cp.get(a): kwargs.cp[a].names = []
+        for e in kwargs.port_types:
+            kwargs.port_type[e].names = []
+            for item in kwargs.policies:
                 if item.get(e):
+                    kwargs.ports.append(e)
                     for i in item[e]:
-                        for c in child_list:
+                        if 'port_channel' in e: kwargs.port_type[e].names.extend(i.pc_ids)
+                        for c in list(kwargs.cp.keys()):
                             if i.get(c):
-                                if type(i[c]) == list: kwargs.child_policies[c].names.extend(i[c])
-                                else: kwargs.child_policies[c].names.append(i[c])
-        for k,v 
-        for i in kwargs.policy_list:
-            kwargs.names  = []
-            for z in jsonVars.port_type_list:
-                if item.get(z):
-                    for y in item[z]:
-                        if y.get(i): kwargs.names.append(y[i])
-            kwargs.names= numpy.unique(numpy.array(kwargs.names))
-            kwargs.qtype= i.replace('_policy', '')
-            kwargs.uri  = kwargs.ezdata.policies.allOf[1].properties[kwargs.qtype].uri
-            kwargs = api(kwargs.qtype).calls(kwargs)
-            kwargs.moids[kwargs.qtype] = kwargs.pmoids
+                                if type(i[c]) == list: kwargs.cp[c].names.extend(i[c])
+                                else: kwargs.cp[c].names.append(i[c])
+        kwargs.ports = list(numpy.unique(numpy.array(kwargs.ports)))
+        if kwargs.cp.get('ethernet_network_group_policies'):
+            if kwargs.cp.get('ethernet_network_group_policy'):
+                kwargs.cp.ethernet_network_group_policy.names.extend(kwargs.cp.ethernet_network_group_policies.names)
+            else: kwargs.cp.ethernet_network_group_policy.names = kwargs.cp.ethernet_network_group_policies.names
+            kwargs.cp.pop('ethernet_network_group_policies')
+        for e in list(kwargs.cp.keys()):
+            names  = list(numpy.unique(numpy.array(kwargs.cp[e].names)))
+            if len(names) > 0:
+                kwargs = api_get(False, names, e.replace('_policy', ''), kwargs)
+                kwargs.cp[e].moids = kwargs.pmoids
         #=====================================================
         # Create API Body for Port Types
         #=====================================================
-        for x in range(0,len(item['names'])):
-            for z in jsonVars.port_type_list:
-                if item.get(z):
-                    kwargs.port_policy_name= item['names'][x]
-                    kwargs.pmoid= kwargs.moids.port[item['names'][x]].moid
-                    kwargs.type = z
-                    port_type_call(item, x, kwargs)
+        for item in kwargs.policies:
+            for x in range(0,len(item['names'])):
+                for e in kwargs.ports:
+                    if item.get(e):
+                        kwargs.parent_name = item['names'][x]
+                        kwargs.parent_moid = kwargs.policy_moids[item['names'][x]].moid
+                        kwargs = get_ports(e, item, x, kwargs)
+                        port_type_call(e, item, x, kwargs)
         return kwargs
 
     #=======================================================
@@ -1796,7 +1795,7 @@ def build_apiBody(apiBody, idata, item, ptype, kwargs):
     #=====================================================
     # Add Policy Specific Settings
     #=====================================================
-    if re.search(policy_specific_regex, ptype): apiBody = eval(f'imm(ptype).{ptype}(apiBody, item, kwargs)')
+    if re.fullmatch(policy_specific_regex, ptype): apiBody = eval(f'imm(ptype).{ptype}(apiBody, item, kwargs)')
     plist1 = [
         'pc_appliances', 'pc_ethernet_uplinks', 'pc_fc_uplinks', 'pc_fcoe_uplinks', 'port_modes',
         'rl_appliances', 'rl_ethernet_uplinks', 'rl_fc_storage', 'rl_fc_uplinks', 'rl_fcoe_uplinks', 'rl_servers',

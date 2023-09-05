@@ -1824,7 +1824,7 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            configure_default_policy = True,
+            configure_default_classes = True,
             description = f'{kwargs.imm.policies.prefix}qos {descr} Policy',
             jumbo_mtu   = True,
             name        = f'{kwargs.imm.policies.prefix}qos')

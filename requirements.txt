@@ -19,5 +19,6 @@ pyvmomi
 simplejson
 six
 stdiomask
+stringcase
 tabulate
 validators
