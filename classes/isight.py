@@ -14,7 +14,6 @@ def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
 #=============================================================================
 try:
     from classes import ezfunctions, validating
-    from collections import ChainMap
     from intersight_auth import IntersightAuth
     from copy import deepcopy
     from dotmap import DotMap
@@ -513,83 +512,6 @@ class imm(object):
             else: apiBody['PasswordProperties'][v.intersight_api] = v.default
         return apiBody
 
-    #=====================================================
-    # Assign Users to Local User Policies
-    #=====================================================
-    def local_users(self, kwargs):
-        #=====================================================
-        # Get Existing Users
-        #=====================================================
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties.local_user
-        kwargs.method= 'get'
-        kwargs.names = []
-        kwargs.qtype = 'local_users'
-        kwargs.uri   = jsonVars.uri_users
-        for i in kwargs.item: kwargs.names.append(i['username'])
-        kwargs       = api('local_users').calls(kwargs)
-        user_moids   = kwargs.pmoids
-        kwargs.names = []
-        for i in kwargs.item: kwargs.names.append(i['role'])
-        rnames           = "', '".join(kwargs.names).strip("', '")
-        kwargs.api_filter= f"Name in ('{rnames}') and Type eq 'IMC'"
-        kwargs.qtype     = 'iam_role'
-        kwargs.uri       = jsonVars.uri_iam_role
-        kwargs = api(kwargs.qtype).calls(kwargs)
-        role_moids  = kwargs.pmoids
-        kwargs.names= []
-        umoids      = []
-        for k, v in user_moids.items(): umoids.append(v.moid)
-        umoids = "', '".join(umoids).strip("', '")
-        kwargs.api_filter= f"EndPointUser.Moid in ('{umoids}')"
-        kwargs.qtype     = 'user_role'
-        kwargs.uri       = jsonVars.uri_user_role
-        kwargs = api('user_role').calls(kwargs)
-        urole_moids    = kwargs.pmoids
-        local_user_moid= kwargs.pmoid
-        #=====================================================
-        # Construct API Body Users
-        #=====================================================
-        for i in kwargs.item:
-            apiBody = {'Name':i['username']}
-            apiBody = org_map(apiBody, kwargs.org_moid)
-            kwargs.sensitive_var = f"local_user_password_{i['password']}"
-            kwargs = ezfunctions.sensitive_var_value(kwargs)
-            kwargs.apiBody= apiBody
-            kwargs.qtype  = 'local_users'
-            kwargs.uri    = jsonVars.uri_users
-            if not user_moids.get(i['username']):
-                kwargs.method= 'post'
-                kwargs       = api(self.type).calls(kwargs)
-                user_moid    = kwargs.pmoid
-            else: user_moid = user_moids[i['username']].moid
-            #=====================================================
-            # Create API Body for User Role
-            #=====================================================
-            if i.get('enabled'): apiBody = {'Enabled':i['enabled']}
-            else: apiBody = {}
-            apiBody['Password'] = kwargs['var_value']
-            apiBody.update({'EndPointRole':[{
-                'Moid':role_moids[i['role']].moid,'ObjectType':'iam.EndPointRole'
-            }]})
-            apiBody.update({'EndPointUser':{
-                'Moid':user_moid,'ObjectType':'iam.EndPointUser'
-            }})
-            apiBody.update({'EndPointUserPolicy':{
-                'Moid':local_user_moid,'ObjectType':'iam.EndPointUserPolicy'
-            }})
-            #=====================================================
-            # Create or Patch the Policy via the Intersight API
-            #=====================================================
-            if not urole_moids.get(user_moid): kwargs.method = 'post'
-            else:
-                kwargs.method= 'patch'
-                kwargs.pmoid = urole_moids[user_moid].moid
-            kwargs.apiBody= apiBody
-            kwargs.qtype  = i['username']
-            kwargs.uri    = jsonVars.uri_user_role
-            kwargs = api('user_role').calls(kwargs)
-        return kwargs
-
     #=======================================================
     # Network Connectivity Policy Modification
     #=======================================================
@@ -631,7 +553,7 @@ class imm(object):
         # Create/Patch the Policy via the Intersight API
         #=====================================================
         def policies_to_api(apiBody, kwargs):
-            kwargs.apiBody= deepcopy(apiBody)
+            kwargs.apiBody= apiBody
             kwargs.qtype  = self.type
             kwargs.uri    = kwargs.ezdata[self.type].intersight_uri
             if policy_moids.get(apiBody['Name']):
@@ -662,19 +584,20 @@ class imm(object):
                 apiBody = {'ObjectType':kwargs.ezdata[self.type].ObjectType}
                 apiBody = build_apiBody(apiBody, idata, item, self.type, kwargs)
                 #kwargs = policies_to_api(apiBody, kwargs)
-            #=====================================================
-            # Loop Thru Sub-Items
-            #=====================================================
-            sub_list = ['lan_connectivity:vnics', 'local_user:users', 'san_connectivity:vhbas',
-                         'storage:drive_groups', 'vlan:vlans', 'vsan:vsans']
-            for e in sub_list:
-                a = e.split(':')[0]; b = e.split(':')[1]
-                if a == self.type:
-                    if item.get(b): kwargs.item = item[b]; kwargs = eval(f'imm(b).{b}(kwargs)')
-            if 'port' == self.type:
-                if item.get('port_modes'): kwargs.item = item; kwargs     = imm('port_mode').port_mode(kwargs)
-                kwargs.item = item
-                kwargs = imm('ports').ports(kwargs)
+        #=====================================================
+        # Loop Thru Sub-Items
+        #=====================================================
+        kwargs.policies     = policies
+        kwargs.policy_moids = policy_moids
+        sub_list = ['lan_connectivity.vnics', 'local_user.users', 'san_connectivity.vhbas',
+                        'storage.drive_groups', 'vlan.vlans', 'vsan.vsans']
+        for e in sub_list:
+            a, b = e.split('.')
+            #a = e.split('.')[0]; b = e.split('.')[1]
+            if a == self.type: kwargs = eval(f'imm(e).sub_policy(kwargs)')
+        if 'port' == self.type:
+            kwargs = imm('port.port_modes').sub_policy(kwargs)
+            kwargs = imm('ports').ports(kwargs)
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================
@@ -745,51 +668,39 @@ class imm(object):
     #=====================================================
     # Port Modes for Port Policies
     #=====================================================
-    def port_mode(self, kwargs):
+    def port_modes(self, kwargs):
         #=====================================================
-        # Get Port Policy
+        # Loop Through Port Modes
         #=====================================================
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties.port
-        kwargs.names  = []
-        kwargs.names.extend(kwargs.item['names'])
-        kwargs.method= 'get'
-        kwargs.qtype = 'port'
-        kwargs.uri   = jsonVars.uri
-        kwargs       = api('port').calls(kwargs)
-        port_moids   = kwargs.pmoids
         for x in range(0,len(kwargs.item['names'])):
-            #=====================================================
-            # Confirm if the vHBAs are already Attached
-            #=====================================================
-            port_moid= port_moids[kwargs.item['names'][x]].moid
-            for i in kwargs.item['port_modes']:
-                kwargs.method= 'get'
-                kwargs.qtype = 'port_mode'
-                kwargs.api_filter= f"PortIdStart eq {i.port_list[0]} and PortPolicy.Moid eq '{port_moid}'"
-                kwargs.uri       = jsonVars.port_types.port_mode.uri
-                kwargs           = api('port_mode').calls(kwargs)
-                pm_moids         = kwargs.pmoids
-                apiBody          = {'ObjectType':'fabric.PortMode'}
-                apiBody.update({
-                    'CustomMode':i['custom_mode'],'PortIdStart':i.port_list[0],'PortIdEnd':i.port_list[1]
-                })
-                apiBody.update({'PortPolicy':{
-                    'Moid':port_moid,'ObjectType':'fabric.PortPolicy'}})
-                if i.get('slot_id'): apiBody.update({'SlotId':i.port_modes.slot_id})
-                else: apiBody.update({'SlotId':1})
+            ezdata      = kwargs.ezdata[self.type]
+            i           = self.type.split('.')
+            parent_moid = kwargs.policy_moids[kwargs.item['names'][x]].moid
+            for e in kwargs.item[i[1]]:
+                kwargs.apiBody = {
+                    'CustomMode':e['custom_mode'],'ObjectType':ezdata.ObjectType,
+                    'PortIdStart':e.port_list[0],'PortIdEnd':e.port_list[1],
+                    ezdata.parent_policy:{'Moid':parent_moid,'ObjectType':ezdata.parent_object}}
+                if i.get('slot_id'): kwargs.apiBody.update({'SlotId':i.port_modes.slot_id})
+                else: kwargs.apiBody.update({'SlotId':1})
+                kwargs.api_filter= f"PortIdStart eq {e.port_list[0]} and PortPolicy.Moid eq '{parent_moid}'"
+                kwargs = api_get()
+                kwargs.method    = 'get'
+                kwargs.names     = []
+                kwargs.qtype     = i[1]
+                kwargs.uri       = ezdata.intersight_uri
+                kwargs           = api(kwargs.qtype).calls(kwargs)
                 #=====================================================
                 # Create or Patch the Policy via the Intersight API
                 #=====================================================
-                if pm_moids.get(port_moid):
-                    if pm_moids[port_moid].get(i.port_list[0]):
+                kwargs.port_policy_name= kwargs.item['names'][x]
+                if kwargs.pmoids.get(parent_moid):
+                    if kwargs.pmoids[parent_moid].get(e.port_list[0]):
                         kwargs.method= 'patch'
-                        kwargs.pmoid = pm_moids[port_moid][i.port_list[0]].moid
+                        kwargs.pmoid = kwargs.pmoids[parent_moid][e.port_list[0]].moid
                     else: kwargs.method= 'post'
                 else: kwargs.method= 'post'
-                kwargs.port_policy_name= kwargs.item['names'][x]
-                kwargs.apiBody= apiBody
-                kwargs.qtype  = 'port_mode'
-                kwargs        = api('port_mode').calls(kwargs)
+                kwargs = api(kwargs.qtype).calls(kwargs)
         return kwargs
 
     #=====================================================
@@ -804,7 +715,7 @@ class imm(object):
             #=====================================================
             # Check if the Port Policy Port Type Exists
             #=====================================================
-            if re.search('port_channel', kwargs.type):
+            if re.search('port_channel', self.type):
                 policy_name = int(apiBody['PcId'])
                 kwargs.api_filter = f"PcId eq {int(apiBody['PcId'])} and PortPolicy.Moid eq '{kwargs.port_policy}'"
             else:
@@ -834,22 +745,18 @@ class imm(object):
         def port_type_call(item, x, kwargs):
             kwargs.port_policy = kwargs.pmoid
             for i in item[kwargs.type]:
-                apiBody = {'PortPolicy':{
-                    'Moid':kwargs.port_policy,'ObjectType':'fabric.PortPolicy'}}
+                apiBody = {'PortPolicy':{'Moid':kwargs.port_policy,'ObjectType':'fabric.PortPolicy'}}
                 for z in kwargs.policy_list:
                     pshort = z.replace('_policy', '')
                     jVars = kwargs.ezdata.policies.allOf[1].properties[pshort]
                     if i.get(z):
-                        if kwargs.moids[pshort].get(i[z]):
-                            pmoid = kwargs.moids[pshort][i[z]].moid
+                        if kwargs.moids[pshort].get(i[z]): pmoid = kwargs.moids[pshort][i[z]].moid
                         else:
                             ppname = kwargs.port_policy_name
                             validating.error_policy_doesnt_exist(z, i[z], kwargs.type, 'Port Policy', ppname)
                         if 'network_group' in z:
-                            apiBody.update({jVars['object_name']:[{
-                                'Moid':pmoid,'ObjectType':jVars['object_type']}]})
-                        else: apiBody.update({jVars['object_name']:{
-                                'Moid':pmoid,'ObjectType':jVars['object_type']}})
+                            apiBody.update({jVars['object_name']:[{'Moid':pmoid,'ObjectType':jVars['object_type']}]})
+                        else: apiBody.update({jVars['object_name']:{'Moid':pmoid,'ObjectType':jVars['object_type']}})
                 if i.get('admin_speed'): apiBody.update({'AdminSpeed':i['admin_speed']})
                 if i.get('fec'): apiBody.update({'Fec':i['fec']})
                 if i.get('mode'): apiBody.update({'Mode':i['mode']})
@@ -864,8 +771,7 @@ class imm(object):
                     for intf in i['interfaces']:
                         intfBody = {'ObjectType':'fabric.PortIdentifier'}
                         intfBody.update({'PortId':intf['port_id']})
-                        if intf.get('breakout_port_id'): intfBody.update(
-                                {'AggregatePortId':intf['breakout_port_id']})
+                        if intf.get('breakout_port_id'): intfBody.update({'AggregatePortId':intf['breakout_port_id']})
                         else: intfBody.update({'AggregatePortId':0})
                         if intf.get('slot_id'): intfBody.update({'SlotId':intf['slot_id']})
                         else: intfBody.update({'SlotId':1})
@@ -875,13 +781,11 @@ class imm(object):
                     interfaces = ezfunctions.vlan_list_full(i['port_list'])
                     for intf in interfaces:
                         intfBody = deepcopy(apiBody)
-                        if i.get('breakout_port_id'): intfBody.update(
-                                {'AggregatePortId':intf['breakout_port_id']})
+                        if i.get('breakout_port_id'): intfBody.update({'AggregatePortId':intf['breakout_port_id']})
                         else: intfBody.update({'AggregatePortId':0})
                         intfBody.update({'PortId':int(intf)})
                         if i.get('device_number'): intfBody.update({'PreferredDeviceId':i['device_number']})
-                        if i.get('connected_device_type'): intfBody.update(
-                                {'PreferredDeviceType':i['connected_device_type']})
+                        if i.get('connected_device_type'): intfBody.update({'PreferredDeviceType':i['connected_device_type']})
                         if i.get('slot_id'): intfBody.update({'SlotId':intf['slot_id']})
                         else: intfBody.update({'SlotId':1})
                         if i.get('vsan_ids'):
@@ -890,19 +794,26 @@ class imm(object):
                         kwargs = api_calls(intfBody, kwargs)
             return kwargs
 
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties.port
+        ezdata = kwargs.ezdata[self.type]
         #=====================================================
         # Get Policies
         #=====================================================
-        kwargs.policy_list = jsonVars.policy_list
-        kwargs.jsonVars = jsonVars
-        item = kwargs.item
-        kwargs.method = 'get'
-        kwargs.names = kwargs.item['names']
-        kwargs.qtype = 'port'
-        kwargs.uri   = jsonVars.uri
-        kwargs = api('port').calls(kwargs)
-        kwargs.moids.port = kwargs.pmoids
+        for k,v in kwargs.ezdata.port.allOf[0].properties.items():
+            if re.search('^port_', k):
+                for a,b in v['items'].properties.items():
+                    if re.search('^(ethernet|flow|link)_', a):
+                        if not kwargs.child_policies.get(a): kwargs.child_policies[a].names = []
+        port_types = list(kwargs.ports.keys())
+        child_list = list(kwargs.child_poicies.keys())
+        for item in kwargs.policies:
+            for e in port_types:
+                if item.get(e):
+                    for i in item[e]:
+                        for c in child_list:
+                            if i.get(c):
+                                if type(i[c]) == list: kwargs.child_policies[c].names.extend(i[c])
+                                else: kwargs.child_policies[c].names.append(i[c])
+        for k,v 
         for i in kwargs.policy_list:
             kwargs.names  = []
             for z in jsonVars.port_type_list:
@@ -1058,6 +969,77 @@ class imm(object):
                 for x in range(apiBody['Classes']):
                     if not apiBody['Classes'][x]['Name'] == 'FC': apiBody['Classes'][x]['Mtu'] = 1500
         return apiBody
+
+    #=====================================================
+    # Assign Users to Local User Policies
+    #=====================================================
+    def users(self, kwargs):
+        #=====================================================
+        # Get Existing Users
+        #=====================================================
+        jsonVars = kwargs.ezdata.policies.allOf[1].properties.local_user
+        kwargs.method= 'get'
+        kwargs.names = []
+        kwargs.qtype = 'local_users'
+        kwargs.uri   = jsonVars.uri_users
+        for i in kwargs.item: kwargs.names.append(i['username'])
+        kwargs       = api('local_users').calls(kwargs)
+        user_moids   = kwargs.pmoids
+        kwargs.names = []
+        for i in kwargs.item: kwargs.names.append(i['role'])
+        rnames           = "', '".join(kwargs.names).strip("', '")
+        kwargs.api_filter= f"Name in ('{rnames}') and Type eq 'IMC'"
+        kwargs.qtype     = 'iam_role'
+        kwargs.uri       = jsonVars.uri_iam_role
+        kwargs = api(kwargs.qtype).calls(kwargs)
+        role_moids  = kwargs.pmoids
+        kwargs.names= []
+        umoids      = []
+        for k, v in user_moids.items(): umoids.append(v.moid)
+        umoids = "', '".join(umoids).strip("', '")
+        kwargs.api_filter= f"EndPointUser.Moid in ('{umoids}')"
+        kwargs.qtype     = 'user_role'
+        kwargs.uri       = jsonVars.uri_user_role
+        kwargs = api('user_role').calls(kwargs)
+        urole_moids    = kwargs.pmoids
+        local_user_moid= kwargs.pmoid
+        #=====================================================
+        # Construct API Body Users
+        #=====================================================
+        for i in kwargs.item:
+            apiBody = {'Name':i['username']}
+            apiBody = org_map(apiBody, kwargs.org_moid)
+            kwargs.sensitive_var = f"local_user_password_{i['password']}"
+            kwargs = ezfunctions.sensitive_var_value(kwargs)
+            kwargs.apiBody= apiBody
+            kwargs.qtype  = 'local_users'
+            kwargs.uri    = jsonVars.uri_users
+            if not user_moids.get(i['username']):
+                kwargs.method= 'post'
+                kwargs       = api(self.type).calls(kwargs)
+                user_moid    = kwargs.pmoid
+            else: user_moid = user_moids[i['username']].moid
+            #=====================================================
+            # Create API Body for User Role
+            #=====================================================
+            if i.get('enabled'): apiBody = {'Enabled':i['enabled']}
+            else: apiBody = {}
+            apiBody['Password'] = kwargs['var_value']
+            apiBody.update({'EndPointRole':[{'Moid':role_moids[i['role']].moid,'ObjectType':'iam.EndPointRole'}]})
+            apiBody.update({'EndPointUser':{'Moid':user_moid,'ObjectType':'iam.EndPointUser'}})
+            apiBody.update({'EndPointUserPolicy':{'Moid':local_user_moid,'ObjectType':'iam.EndPointUserPolicy'}})
+            #=====================================================
+            # Create or Patch the Policy via the Intersight API
+            #=====================================================
+            if not urole_moids.get(user_moid): kwargs.method = 'post'
+            else:
+                kwargs.method= 'patch'
+                kwargs.pmoid = urole_moids[user_moid].moid
+            kwargs.apiBody= apiBody
+            kwargs.qtype  = i['username']
+            kwargs.uri    = jsonVars.uri_user_role
+            kwargs = api('user_role').calls(kwargs)
+        return kwargs
 
     #=====================================================
     # Assign VNICs to LAN Connectivity Policies

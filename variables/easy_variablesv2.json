@@ -2088,9 +2088,9 @@
                                     "link_control_policy"
                                 ],
                                 "port_map": {
-                                    "admin_speed": "DriveType",
-                                    "mode": "MinimumDriveSize",
-                                    "priority": "NumDedicatedHotSpares"
+                                    "admin_speed": "AdminSpeed",
+                                    "mode": "Mode",
+                                    "priority": "Priority"
                                 },
                                 "port_type_list": [
                                     "port_channel_appliances",
