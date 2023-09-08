@@ -605,7 +605,7 @@ class imm(object):
             #a = e.split('.')[0]; b = e.split('.')[1]
             if a == self.type: kwargs = eval(f'imm(e).sub_policy(kwargs)')
         if 'port' == self.type:
-            #kwargs = imm('port.port_modes').port_modes(kwargs)
+            kwargs = imm('port.port_modes').port_modes(kwargs)
             kwargs = imm('ports').ports(kwargs)
         #=====================================================
         # Send End Notification and return kwargs
@@ -1166,197 +1166,144 @@ class imm(object):
     # Assign VLANs to VLAN Policies
     #=====================================================
     def vlans(self, kwargs):
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties['multicast']
         #=====================================================
-        # Get Policies and Pools
+        # Get Multicast Policies
         #=====================================================
-        kwargs.names  = []
-        for i in kwargs.item: kwargs.names.append(i['multicast_policy'])
-        kwargs.names = numpy.unique(numpy.array(kwargs.names))
-        kwargs.method= 'get'
-        kwargs.qtype = 'multicast'
-        kwargs.uri   = jsonVars.uri
-        kwargs       = api('multicast').calls(kwargs)
-        mcast_moids  = kwargs.pmoids
-        kwargs.names = []
-        for item in kwargs.item:
-            vlan_list = ezfunctions.vlan_list_full(item['vlan_list'])
-            for i in vlan_list: kwargs.names.append(i)
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type]
-        kwargs.qtype= 'vlans'
-        kwargs.uri  = jsonVars.uri
-        kwargs      = api('vlan').calls(kwargs)
-        vlans_moids = kwargs.pmoids
-        vlan_moid   = kwargs.pmoid
-        #=====================================================
-        # Create API Body for VNICs
-        #=====================================================
-        for i in kwargs.item:
-            vlan_list = ezfunctions.vlan_list_full(i['vlan_list'])
+        mcast_names  = []
+        for i in kwargs.policies:
+            mcast_names.append(i.multicast_policy)
+        mcast_names = numpy.unique(numpy.array(mcast_names))
+        kwargs      = api_get(False, mcast_names, 'multicast', kwargs)
+        mcast_moids = kwargs.pmoids
+        for i in kwargs.policies:
+            vnames = []; post_list = []
+            vlan_list = ezfunctions.vlan_list_full(i.vlan_list)
+            for i in vlan_list: vnames.append(i)
+            kwargs.pmoid = kwargs.policy_moids[i.name].moid
+            vlan_moid = kwargs.pmoid
+            kwargs = api_get(True, vnames, self.type, kwargs)
+            vlans_moid = kwargs.pmoids
+            vlans_results = kwargs.results
+            #=====================================================
+            # Create API Body for VLANs
+            #=====================================================
+            ezdata = kwargs.ezdata[self.type]
+            apiBody = {'EthNetworkPolicy':{'Moid':vlan_moid, 'ObjectType':'fabric.EthNetworkPolicy'},'ObjectType':ezdata.ObjectType}
+            apiBody = build_apiBody(apiBody, ezdata.properties, i, self.type, kwargs)
+            apiBody.pop('Organizations'); apiBody.pop('Tags')
+            if not apiBody.get('AutoAllowOnUplinks'): apiBody.update({'AutoAllowOnUplinks':False})
+            if not mcast_moids.get(i.multicast_policy):
+                validating.error_policy_doesnt_exist('multicast_policy', i.multicast_policy, self.type, 'Vlans', i.vlan_list)
+            apiBody['MulticastPolicy']['Moid'] = mcast_moids[i.multicast_policy].moid
+            if not apiBody.get('IsNative'): apiBody['IsNative'] = False
             for x in vlan_list:
                 if type(x) == str: x = int(x)
-                if len(vlan_list) == 1: apiBody = {'Name':i['name']}
-                else:
-                    if re.search('^[\d]$', str(x)): zeros = '000'
-                    elif re.search('^[\d]{2}$', str(x)): zeros = '00'
-                    elif re.search('^[\d]{3}$', str(x)): zeros = '0'
-                    elif re.search('^[\d]{4}$', str(x)): zeros = ''
-                    if i['name'] == 'vlan': apiBody = {'Name':f"{i['name']}{zeros}{x}"}
-                    else: apiBody = {'Name':f"{i['name']}-vl{zeros}{x}"}
-                for k, v in i.items():
-                    if k in jsonVars.key_map: apiBody.update({jsonVars.key_map[k]:v})
-                if not apiBody.get('AutoAllowOnUplinks'): apiBody.update({'AutoAllowOnUplinks':False})
-                apiBody.update({'VlanId':x})
-                apiBody.update({'EthNetworkPolicy':{
-                    'Moid':vlan_moid, 'ObjectType':'fabric.EthNetworkPolicy'
-                }})
-                if not mcast_moids.get(i['multicast_policy']):
-                    validating.error_policy_doesnt_exist(
-                        'multicast_policy', i['multicast_policy'], self.type, 'VlanId', apiBody['VlanId'])
-                mcast_moid = mcast_moids[i['multicast_policy']].moid
-                apiBody.update({'MulticastPolicy':{
-                    'Moid':mcast_moid, 'ObjectType':'fabric.MulticastPolicy'
-                }})
+                if not len(vlan_list) == 1:
+                    if i.name == 'vlan': apiBody['Name'] = f"{i.name}{'0'*(4 - len(str(x)))}{x}"
+                    else: apiBody['Name'] = f"{i.name}-vl{'0'*(4 - len(str(x)))}{x}"
+                apiBody['VlanId'] = x
                 #=====================================================
                 # Create or Patch the VLANs via the Intersight API
                 #=====================================================
-                if not vlans_moids.get(x):
-                    kwargs.apiBody= apiBody
-                    kwargs.method = 'post'
-                    kwargs.qtype  = 'vlans'
-                    kwargs        = api('vlans').calls(kwargs)
+                if not vlans_moid.get(x): post_list.append(apiBody)
                 else:
-                    kwargs.method = 'get_by_moid'
-                    kwargs.qtype  = 'vlans'
-                    kwargs.pmoid  = vlans_moids[x].moid
-                    kwargs = api('vlans').calls(kwargs)
-                    r = kwargs.results
-                    patchVlan = False
-                    if not apiBody.get('IsNative'): native = False
-                    else: native = apiBody['IsNative']
-                    if not r.AutoAllowOnUplinks == apiBody['AutoAllowOnUplinks']: patchVlan = True
-                    elif not r.IsNative == native: patchVlan = True
-                    elif not r.MulticastPolicy.Moid == apiBody['MulticastPolicy']['Moid']: patchVlan = True
-                    if patchVlan == True:
+                    indx = next((index for (index, d) in enumerate(vlans_results) if d['VlanId'] == x), None)
+                    patch_vlan = compare_body_result(apiBody, vlans_results[indx])
+                    #if not   vlans_results[indx].AutoAllowOnUplinks == apiBody['AutoAllowOnUplinks']: patchVlan = True
+                    #elif not vlans_results[indx].Name == apiBody['Name']: patchVlan = True
+                    #elif not vlans_results[indx].IsNative == native: patchVlan = True
+                    #elif not vlans_results[indx].MulticastPolicy.Moid == apiBody['MulticastPolicy']['Moid']: patchVlan = True
+                    if patch_vlan == True:
+                        kwargs.apiBody= apiBody
                         kwargs.method = 'patch'
-                        kwargs.qtype = 'vlans'
-                        kwargs.uri = jsonVars.uri
-                        kwargs.apiBody = apiBody
-                        kwargs = api('vlans').calls(kwargs)
+                        kwargs.qtype  = self.type
+                        kwargs.uri    = ezdata.intersight_uri
+                        kwargs        = api(kwargs.qtype).calls(kwargs)
                     else: prCyan(f"      * Skipping VLAN {x}.  Intersight Matches Configuration.")
+            if len(post_list) > 0:
+                kwargs.method = 'POST'
+                kwargs.uri    = ezdata.intersight_uri
+                kwargs = bulk_request(post_list, kwargs)
+                kwargs.method = 'post'
+                kwargs.qtype  = 'bulk_request'
+                kwargs.uri    = 'bulk/Requests'
+                kwargs = api(kwargs.qtype).calls(kwargs)
         return kwargs
 
     #=====================================================
     # Assign VNICs to LAN Connectivity Policies
     #=====================================================
     def vnics(self, kwargs):
-        jsonVars = kwargs.ezdata.policies.allOf[1].properties[self.type]
+        ezdata = kwargs.ezdata[self.type]
         #=====================================================
         # Get Policies and Pools
         #=====================================================
-        lcp_moid = kwargs.pmoid
-        kwargs.method = 'get'
-        for item in jsonVars.policy_list:
-            ptype = (item.replace('_policy', '')).replace('_policies', '')
-            kwargs.names = []
-            kwargs.qtype = ptype
-            if 'mac' in ptype: kwargs.uri = kwargs.ezdata.pools.allOf[1].properties[ptype].uri
-            else: kwargs.uri = kwargs.ezdata.policies.allOf[1].properties[ptype].uri
-            for i in kwargs.item:
-                if i.get('iscsi_boot_policies') and ptype == 'iscsi_boot': kwargs.names.extend(i[item])
-                elif i.get('ethernet_network_group_policies') and ptype == 'ethernet_network_group':
-                    kwargs.names.extend(i[item])
-                elif i.get(item): kwargs.names.append(i[item])
-                elif i.get('names') and item == 'vnics': kwargs.names.extend(i['names'])
-                elif i.get('mac_address_pools') and item == 'mac': kwargs.names.extend(i['mac_address_pools'])
-            kwargs.names = numpy.unique(numpy.array(kwargs.names))
-            kwargs = api(ptype).calls(kwargs)
-            kwargs.moids[item] = kwargs.pmoids
+        for item in kwargs.policies:
+            for i in item.vnics:
+                for k,v in i.items():
+                    if re.search('_polic(ies|y)|_pools$', k):
+                        ptype = (k.replace('cies', 'cy')).replace('_address_pools', '')
+                        if not kwargs.cp.get(ptype): kwargs.cp[ptype].names = []
+                        if type(v) == list: kwargs.cp[ptype].extend(v)
+                        else: kwargs.cp[ptype].append(v)
+        for e in list(kwargs.cp.keys()):
+            names = list(numpy.unique(numpy.array(kwargs.cp[e].names)))
+            kwargs = api_get(False, names, e.replace('_policy', ''), kwargs)
+            kwargs.cp[e].moids = kwargs.pmoids
         #=====================================================
         # Create API Body for vNICs
         #=====================================================
-        for i in kwargs.item:
-            vnic_count = len(i.names)
-            for x in range(0,vnic_count):
-                apiBody = {'Name':i.names[x],'Order':i.placement.pci_order[x]}
-                apiBody.update({'ObjectType':'vnic.EthIf'})
-                if not i.get('cdn_values'):
-                    apiBody.update({'Cdn':{
-                        'Value':i.names[x],'Source':'vnic','ObjectType':'vnic.Cdn'}})
-                else:
-                    apiBody.update({'Cdn':{
-                        'Value':i.cdn_values[x],'Source':i.cdn_source,'ObjectType':'vnic.Cdn'}
-                    })
-                for k, v in i.items():
-                    if k in jsonVars.key_map:
-                        apiBody.update({jsonVars.key_map[k]:v})
-                policy_list = deepcopy(jsonVars.policy_list)
-                policy_list.remove('mac')
-                policy_list.remove('vnics')
-                if not i.get('iscsi_boot_policies'): policy_list.remove('iscsi_boot_policies')
-                for p in policy_list:
-                    pshort = (p.replace('_policy', '')).replace('_policies', '')
-                    jVars = kwargs.ezdata.policies.allOf[1].properties[pshort]
-                    if 'iscsi_boot' in p:
-                        pname = i[p][x]
-                    elif 'network_group' in p:
-                        if len(i[p]) == 2: pname = i[p][x]
-                        else: pname = i[p][0]
-                    else: pname = i[p]
-                    if not kwargs.moids[p].get(pname):
-                        validating.error_policy_doesnt_exist(p, pname, self.type, 'policy', apiBody['Name'])
-                    pmoid = kwargs.moids[p][pname].moid
-                    if 'ethernet_network_group' in p:
-                        apiBody.update({jsonVars[p]:[{
-                                'Moid':pmoid,'ObjectType':jVars['object_type']
-                            }]})
-                    else:
-                        apiBody.update({jsonVars[p]:{
-                                'Moid':pmoid,'ObjectType':jVars['object_type']
-                            }})
-                apiBody.update({'LanConnectivityPolicy':{
-                    'Moid':lcp_moid,'ObjectType':'vnic.LanConnectivityPolicy'
-                }})
+        for item in kwargs.policies:
+            lcp_moid = kwargs.policy_moids[item.name].moid
+            names = []
+            for i in item.vnics: names.extend(i.names)
+            kwargs = api_get(True, names, self.type, kwargs)
+            vnic_moids = kwargs.pmoids
+            for i in item.vnics:
+                apiBody = {'LanConnectivityPolicy':{'Moid':lcp_moid,'ObjectType':'vnic.LanConnectivityPolicy'},
+                        'ObjectType':ezdata.ObjectType}
+                for x in range(len(i.names)):
+                    apiBody.update({'Name':i.names[x]})
+                    #apiBody.update({'Name':i.names[x],'Order':i.placement.pci_order[x]})
+                    apiBody = build_apiBody(ezdata.properties, i, self.type, kwargs)
+                    apiBody.pop('Organizations'); apiBody.pop('Tags')
+                    if not apiBody.get('Cdn'):
+                        apiBody.update({'Cdn':{'Value':i.names[x],'Source':'vnic','ObjectType':'vnic.Cdn'}})
+                    apiBody['Order'] = i.placement.pci_order[x]
+                    if apiBody['Placement'].get['Order']: apiBody['Placement'].pop('Order')
+                    for k, v in i.items():
+                        if re.search('_polic(ies|y)|_pools$', k):
+                            ptype = (k.replace('cies', 'cy')).replace('_address_pools', '')
+                            if type(v) == list:
+                                if len(v) == 2: pname = v[x]
+                                else: pname = v[0]
+                            else: pname = v
+                            if not kwargs.cp[ptype].moids.get(pname):
+                                validating.error_policy_doesnt_exist(ptype, pname, self.type, 'policy', i.names[x])
+                            apiBody[ezdata.properties[k].intersight_api.split(':')[1]]['Moid'
+                            ] = kwargs.cp[ptype].moids[pname].moid
+                    apiBody['FabricEthNetworkGroupPolicy'] = [apiBody['FabricEthNetworkGroupPolicy']]
                 if x == 0: side = 'A'
                 else: side = 'B'
                 apiBody.update({'Placement':{
-                    'Id':'MLOM','ObjectType':'vnic.PlacementSettings','PciLink':0,'SwitchId':side,'Uplink':0
-                }})
+                    'Id':'MLOM','ObjectType':'vnic.PlacementSettings','PciLink':0,'SwitchId':side,'Uplink':0}})
                 if i.get('placement'):
                     place_list = ['pci_links', 'slot_ids', 'switch_ids', 'uplink_ports']
                     for p in place_list:
-                        count = 0
-                        if i.get(p): count += 1
-                        if count == 1:
+                        if i.get(p):
                             if len(i[p]) == 2: pval = i[p][x]
                             else: pval = i[p][0]
-                            if 'uplink' in p: pvar = 'UplinkPort'
-                            elif 'slot' in p: pvar = 'Id'
-                            elif 'switch_id' in p: pvar = 'SwitchId'
-                            else: pvar = 'PciLink'
-                            apiBody['Placement'][pvar] = pval
-                if i.get('mac_address_pools'):
-                    pname = i['mac_address_pools'][x]
-                    ptype = 'mac_address_pool'
-                    if not kwargs.moids['mac'].get(pname):
-                        validating.error_policy_doesnt_exist(ptype, pname, apiBody['Name'], self.type, 'Policy')
-                    macpool = kwargs.moids['mac'][i['mac_address_pools'][x]].moid
-                    apiBody.update({
-                        'MacAddressType':'POOL',
-                        'MacPool':{
-                            'Moid':macpool,'ObjectType':'macpool.Pool'
-                        }
-                    })
+                            apiBody['Placement'][ezdata.properties.placement.properties[p].intersight_api] = pval
                 #=====================================================
                 # Create or Patch the VLANs via the Intersight API
                 #=====================================================
-                if kwargs.moids.vnics.get(i['names'][x]):
+                if vnic_moids.get(i['names'][x]):
                     kwargs.method = 'patch'
-                    kwargs.pmoid = kwargs.moids.vnics[i['names'][x]].moid
+                    kwargs.pmoid = vnic_moids[i['names'][x]].moid
                 else: kwargs.method = 'post'
                 kwargs.apiBody= apiBody
-                kwargs.qtype  = 'vnics'
-                kwargs.uri    = jsonVars.uri
+                kwargs.qtype  = self.type
+                kwargs.uri    = ezdata.intersight_uri
                 kwargs        = api(kwargs.qtype).calls(kwargs)
         return kwargs
 
@@ -1860,16 +1807,40 @@ def build_pmoid_dictionary(api_results, kwargs):
                     apiDict[iname].profiles.append(xdict)
     return apiDict
 
+#=====================================================
+# Bulk API Request Body
+#=====================================================
+def bulk_request(request_body, kwargs):
+    kwargs.apiBody = []
+    for e in request_body:
+        kwargs.apiBody.append({'Body':e, 'ClassId':'bulk.RestSubRequest', 'ObjectType':'bulk.RestSubRequest',
+                               'Verb':kwargs.method, 'Uri':f'/v1/{kwargs.uri}'})
+    return kwargs
+
+#=======================================================
+# Add Organization Key Map to Dictionaries
+#=======================================================
+def compare_body_result(apibody, result):
+    patch_return = False
+    for k, v in apibody.items():
+        if type(v) == dict:
+            for a,b in v.items():
+                if not result[k][a] == b: patch_return = True
+        elif type(v) == list:
+            count = 0
+            for e in v:
+                for a, b in e.items():
+                    if not result[k][count][a] == b: patch_return = True
+                count += 1
+        else:
+            if not result[k] == v: patch_return = True
+    return patch_return
+
 #=======================================================
 # Add Organization Key Map to Dictionaries
 #=======================================================
 def org_map(apiBody, org_moid):
-    apiBody.update({
-        'Organization':{
-            'Moid':org_moid,
-            'ObjectType':'organization.Organization'
-            }
-        })
+    apiBody.update({'Organization':{'Moid':org_moid, 'ObjectType':'organization.Organization'}})
     return apiBody
 
 #=======================================================
@@ -2099,5 +2070,4 @@ def profile_function(item, kwargs):
 # Function - Exit on Empty Results
 #======================================================
 def empty_results(kwargs):
-        prRed(f"The API Query Results were empty for {kwargs.uri}.  Exiting...")
-        sys.exit(1)
+        prRed(f"The API Query Results were empty for {kwargs.uri}.  Exiting..."); sys.exit(1)

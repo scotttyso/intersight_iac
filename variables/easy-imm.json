@@ -9648,200 +9648,191 @@
                 "intersight_uri": "vnic/EthIfs",
                 "ObjectType": "vnic.EthIf",
                 "title": "vnics - Virtual Ethernet Interface - Intersight Uri: vnic/EthIfs",
-                "x-allOf-name": "vnic.EthIf",
-                "allOf": [
-                    {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "description": "Virtual Ethernet Interface.",
-                        "required": [
-                            "names",
-                            "placement"
+                "required": [
+                    "names",
+                    "placement"
+                ],
+                "properties": {
+                    "cdn_source": {
+                        "type": "string",
+                        "default": "vnic",
+                        "description": "Default is `vnic`.  Source of the CDN. It can either be user specified or be the same as the vNIC name.\n  * `vnic` - Source of the CDN is the same as the vNIC name.\n  * `user` - Source of the CDN is specified by the user.",
+                        "intersight_api": "$ref:Cdn:vnic.Cdn:Source",
+                        "enum": [
+                            "vnic",
+                            "user"
                         ],
-                        "title": "vnics",
-                        "properties": {
-                            "cdn_source": {
-                                "type": "string",
-                                "default": "vnic",
-                                "description": "Default is `vnic`.  Source of the CDN. It can either be user specified or be the same as the vNIC name.\n  * `vnic` - Source of the CDN is the same as the vNIC name.\n  * `user` - Source of the CDN is specified by the user.",
-                                "intersight_api": "$ref:vnic.Cdn:Source",
-                                "enum": [
-                                    "vnic",
-                                    "user"
-                                ],
-                                "title": "cdn_source"
-                            },
-                            "cdn_values": {
-                                "type": "array",
-                                "description": "A List of The CDN value(s) entered in case of user defined mode for each vNIC.",
-                                "intersight_uri": "$ref:vnic.Cdn:Value",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "The CDN value entered in case of user defined mode.",
-                                    "intersight_api": "$ref:vnic.Cdn:Value",
-                                    "minLength": 1,
-                                    "maxLength": 31,
-                                    "pattern": "^[a-zA-Z0-9\\-\\._:]*$",
-                                    "title": "cdn_value"
-                                },
-                                "ObjectType": "$ref:vnic.Cdn:Value",
-                                "title": "cdn_values - Cdn Values"
-                            },
-                            "enable_failover": {
-                                "type": "boolean",
-                                "default": false,
-                                "description": "Default is `false`.  Enabling failover ensures that traffic from the vNIC automatically fails over to the secondary Fabric Interconnect, in case the specified Fabric Interconnect path goes down. Failover applies only to Cisco VICs that are connected to a Fabric Interconnect cluster.",
-                                "intersight_api": "FailoverEnabled",
-                                "title": "enable_failover"
-                            },
-                            "ethernet_adapter_policy": {
-                                "type": "string",
-                                "default": "default",
-                                "description": "The Name of the Ethernet Adapter Policy to Assign to the vNIC.",
-                                "intersight_api": "$ref:EthAdapterPolicy:vnic.EthAdapterPolicy:Moid",
-                                "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                "title": "ethernet_adapter_policy"
-                            },
-                            "ethernet_network_control_policy": {
-                                "type": "string",
-                                "default": "default",
-                                "description": "The Name of the Ethernet Network Control Policy to Assign to the vNIC.",
-                                "intersight_api": "$ref:FabricEthNetworkControlPolicy:fabric.EthNetworkControlPolicy:Moid",
-                                "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                "title": "ethernet_network_control_policy"
-                            },
-                            "ethernet_network_group_policies": {
-                                "type": "array",
-                                "description": "The Name(s) of the Ethernet Network Control Policy to Assign.  Can be a list of 1 or 2.",
-                                "intersight_api": "$ref:FabricEthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "The Name of the Ethernet Network Group Policy to Assign.",
-                                    "intersight_api": "$ref:FabricEthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
-                                    "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                    "title": "ethernet_network_group_policy"
-                                },
-                                "ObjectType": "fabric.EthNetworkGroupPolicy",
-                                "title": "ethernet_network_group_policies - Ethernet Network Group Policies"
-                            },
-                            "ethernet_network_policy": {
-                                "type": "string",
-                                "default": "default",
-                                "description": "The Name of the Ethernet Network Policy to Assign to the vNIC.  This is for Standalone Only.",
-                                "intersight_api": "$ref:EthNetworkPolicy:vnic.EthNetworkPolicy:Moid",
-                                "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                "title": "ethernet_network_policy"
-                            },
-                            "ethernet_qos_policy": {
-                                "type": "string",
-                                "default": "default",
-                                "description": "The Name of the Ethernet QoS Policy to Assign to the vNIC.",
-                                "intersight_api": "$ref:EthQosPolicy:vnic.EthQosPolicy:Moid",
-                                "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                "title": "ethernet_qos_policy"
-                            },
-                            "iscsi_boot_policies": {
-                                "type": "array",
-                                "description": "A List of iSCSI Boot Policies to Assign to the ",
-                                "intersight_uri": "vnic/IscsiBootPolicies",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "The Name of the iSCSI Boot Policy to Assign to the vNIC.",
-                                    "intersight_api": "$ref:IscsiBootPolicy:vnic.IscsiBootPolicy:Moid",
-                                    "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                    "title": "iscsi_boot_policy"
-                                },
-                                "ObjectType": "vnic.IscsiBootPolicy",
-                                "title": "iscsi_boot_policies - Iscsi Boot Policies - Intersight Uri: vnic/IscsiBootPolicies"
-                            },
-                            "mac_address_allocation_type": {
-                                "type": "string",
-                                "default": "POOL",
-                                "description": "Default is `POOL`.  Type of allocation selected to assign a MAC address for the vnic.\n  * `POOL` - The user selects a pool from which the mac/wwn address will be leased for the Virtual Interface.\n  * `STATIC` - The user assigns a static mac/wwn address for the Virtual Interface.",
-                                "intersight_api": "MacAddressType",
-                                "enum": [
-                                    "POOL",
-                                    "STATIC"
-                                ],
-                                "title": "mac_address_allocation_type"
-                            },
-                            "mac_address_pools": {
-                                "type": "array",
-                                "description": "A List of MAC Pools to Assign to each of the vNIC(s).",
-                                "intersight_api": "$ref:MacPool:macpool.Pool:Moid",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "Name of the MAC Pool.",
-                                    "intersight_api": "$ref:MacPool:macpool.Pool:Moid",
-                                    "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                    "title": "mac_pool"
-                                },
-                                "ObjectType": "macpool.Pool",
-                                "title": "mac_address_pools - Mac Address Pools - Intersight Uri: macpool/Pools"
-                            },
-                            "mac_addresses_static": {
-                                "type": "array",
-                                "description": "A List of Static MAC Addresses to Assign to the vNIC's if the Allocation Type is set to STATIC.  The WWPN address must be in hexadecimal format xx:xx:xx:xx:xx:xx:xx:xx.\nAllowed ranges are 20:00:00:00:00:00:00:00 to 20:FF:FF:FF:FF:FF:FF:FF or from 50:00:00:00:00:00:00:00 to 5F:FF:FF:FF:FF:FF:FF:FF.\nTo ensure uniqueness of WWN's in the SAN fabric, you are strongly encouraged to use the WWN prefix - 20:00:00:25:B5:xx:xx:xx.",
-                                "intersight_api": "StaticMacAddress",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "The MAC address must be in hexadecimal format xx:xx:xx:xx:xx:xx.\nTo ensure uniqueness of MACs in the LAN fabric, you are strongly encouraged to use the\nfollowing MAC prefix 00:25:B5:xx:xx:xx.",
-                                    "intersight_api": "StaticMacAddress",
-                                    "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^([\\da-fA-F]{2}:){5}[\\da-fA-F]{2}$",
-                                    "title": "mac_address"
-                                },
-                                "title": "mac_addresses_static - Mac Addresses Static"
-                            },
-                            "names": {
-                                "type": "array",
-                                "description": "List of two vNIC Names to Create.",
-                                "intersight_uri": "not_applicable",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "Name of the vVNIC.",
-                                    "intersight_api": "Name",
-                                    "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                    "title": "vnic_name"
-                                },
-                                "ObjectType": "Name",
-                                "title": "names - Names"
-                            },
-                            "placement": {
-                                "$ref": "#/components/schemas/lan_connectivity.vnics.placement"
-                            },
-                            "usnic_settings": {
-                                "$ref": "#/components/schemas/lan_connectivity.vnics.usnic_settings"
-                            },
-                            "vmq_settings": {
-                                "$ref": "#/components/schemas/lan_connectivity.vnics.vmq_settings"
-                            }
-                        }
+                        "title": "cdn_source"
+                    },
+                    "cdn_values": {
+                        "type": "array",
+                        "description": "A List of The CDN value(s) entered in case of user defined mode for each vNIC.",
+                        "intersight_uri": "$ref:Cdn:vnic.Cdn:Value",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "The CDN value entered in case of user defined mode.",
+                            "intersight_api": "$ref:vnic.Cdn:Value",
+                            "minLength": 1,
+                            "maxLength": 31,
+                            "pattern": "^[a-zA-Z0-9\\-\\._:]*$",
+                            "title": "cdn_value"
+                        },
+                        "ObjectType": "$ref:vnic.Cdn:Value",
+                        "title": "cdn_values - Cdn Values"
+                    },
+                    "enable_failover": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Default is `false`.  Enabling failover ensures that traffic from the vNIC automatically fails over to the secondary Fabric Interconnect, in case the specified Fabric Interconnect path goes down. Failover applies only to Cisco VICs that are connected to a Fabric Interconnect cluster.",
+                        "intersight_api": "FailoverEnabled",
+                        "title": "enable_failover"
+                    },
+                    "ethernet_adapter_policy": {
+                        "type": "string",
+                        "default": "default",
+                        "description": "The Name of the Ethernet Adapter Policy to Assign to the vNIC.",
+                        "intersight_api": "$ref:EthAdapterPolicy:vnic.EthAdapterPolicy:Moid",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "title": "ethernet_adapter_policy"
+                    },
+                    "ethernet_network_control_policy": {
+                        "type": "string",
+                        "default": "default",
+                        "description": "The Name of the Ethernet Network Control Policy to Assign to the vNIC.",
+                        "intersight_api": "$ref:FabricEthNetworkControlPolicy:fabric.EthNetworkControlPolicy:Moid",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "title": "ethernet_network_control_policy"
+                    },
+                    "ethernet_network_group_policies": {
+                        "type": "array",
+                        "description": "The Name(s) of the Ethernet Network Control Policy to Assign.  Can be a list of 1 or 2.",
+                        "intersight_api": "$ref:FabricEthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "The Name of the Ethernet Network Group Policy to Assign.",
+                            "intersight_api": "$ref:FabricEthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "title": "ethernet_network_group_policy"
+                        },
+                        "ObjectType": "fabric.EthNetworkGroupPolicy",
+                        "title": "ethernet_network_group_policies - Ethernet Network Group Policies"
+                    },
+                    "ethernet_network_policy": {
+                        "type": "string",
+                        "default": "default",
+                        "description": "The Name of the Ethernet Network Policy to Assign to the vNIC.  This is for Standalone Only.",
+                        "intersight_api": "$ref:EthNetworkPolicy:vnic.EthNetworkPolicy:Moid",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "title": "ethernet_network_policy"
+                    },
+                    "ethernet_qos_policy": {
+                        "type": "string",
+                        "default": "default",
+                        "description": "The Name of the Ethernet QoS Policy to Assign to the vNIC.",
+                        "intersight_api": "$ref:EthQosPolicy:vnic.EthQosPolicy:Moid",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "title": "ethernet_qos_policy"
+                    },
+                    "iscsi_boot_policies": {
+                        "type": "array",
+                        "description": "A List of iSCSI Boot Policies to Assign to the ",
+                        "intersight_uri": "vnic/IscsiBootPolicies",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "The Name of the iSCSI Boot Policy to Assign to the vNIC.",
+                            "intersight_api": "$ref:IscsiBootPolicy:vnic.IscsiBootPolicy:Moid",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "title": "iscsi_boot_policy"
+                        },
+                        "ObjectType": "vnic.IscsiBootPolicy",
+                        "title": "iscsi_boot_policies - Iscsi Boot Policies - Intersight Uri: vnic/IscsiBootPolicies"
+                    },
+                    "mac_address_allocation_type": {
+                        "type": "string",
+                        "default": "POOL",
+                        "description": "Default is `POOL`.  Type of allocation selected to assign a MAC address for the vnic.\n  * `POOL` - The user selects a pool from which the mac/wwn address will be leased for the Virtual Interface.\n  * `STATIC` - The user assigns a static mac/wwn address for the Virtual Interface.",
+                        "intersight_api": "MacAddressType",
+                        "enum": [
+                            "POOL",
+                            "STATIC"
+                        ],
+                        "title": "mac_address_allocation_type"
+                    },
+                    "mac_address_pools": {
+                        "type": "array",
+                        "description": "A List of MAC Pools to Assign to each of the vNIC(s).",
+                        "intersight_api": "$ref:MacPool:macpool.Pool:Moid",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "Name of the MAC Pool.",
+                            "intersight_api": "$ref:MacPool:macpool.Pool:Moid",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "title": "mac_pool"
+                        },
+                        "ObjectType": "macpool.Pool",
+                        "title": "mac_address_pools - Mac Address Pools - Intersight Uri: macpool/Pools"
+                    },
+                    "mac_addresses_static": {
+                        "type": "array",
+                        "description": "A List of Static MAC Addresses to Assign to the vNIC's if the Allocation Type is set to STATIC.  The WWPN address must be in hexadecimal format xx:xx:xx:xx:xx:xx:xx:xx.\nAllowed ranges are 20:00:00:00:00:00:00:00 to 20:FF:FF:FF:FF:FF:FF:FF or from 50:00:00:00:00:00:00:00 to 5F:FF:FF:FF:FF:FF:FF:FF.\nTo ensure uniqueness of WWN's in the SAN fabric, you are strongly encouraged to use the WWN prefix - 20:00:00:25:B5:xx:xx:xx.",
+                        "intersight_api": "StaticMacAddress",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "The MAC address must be in hexadecimal format xx:xx:xx:xx:xx:xx.\nTo ensure uniqueness of MACs in the LAN fabric, you are strongly encouraged to use the\nfollowing MAC prefix 00:25:B5:xx:xx:xx.",
+                            "intersight_api": "StaticMacAddress",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "^([\\da-fA-F]{2}:){5}[\\da-fA-F]{2}$",
+                            "title": "mac_address"
+                        },
+                        "title": "mac_addresses_static - Mac Addresses Static"
+                    },
+                    "names": {
+                        "type": "array",
+                        "description": "List of two vNIC Names to Create.",
+                        "intersight_uri": "not_applicable",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "Name of the vVNIC.",
+                            "intersight_api": "Name",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "title": "vnic_name"
+                        },
+                        "ObjectType": "Name",
+                        "title": "names - Names"
+                    },
+                    "placement": {
+                        "$ref": "#/components/schemas/lan_connectivity.vnics.placement"
+                    },
+                    "usnic_settings": {
+                        "$ref": "#/components/schemas/lan_connectivity.vnics.usnic_settings"
+                    },
+                    "vmq_settings": {
+                        "$ref": "#/components/schemas/lan_connectivity.vnics.vmq_settings"
                     }
-                ]
+                }
             },
             "lan_connectivity.vnics.placement": {
                 "type": "object",
@@ -9872,7 +9863,7 @@
                     "pci_order": {
                         "type": "array",
                         "description": "The order in which the virtual interface is brought up. The order assigned to an interface should be unique for all the Ethernet and Fibre-Channel interfaces on each PCI link on a VIC adapter. The order should start from zero with no overlaps. The maximum value of PCI order is limited by the number of virtual interfaces (Ethernet and Fibre-Channel) on each PCI link on a VIC adapter. All VIC adapters have a single PCI link except VIC 1340, VIC 1380 and VIC 1385 which have two.",
-                        "intersight_uri": "vnic/FcIfs",
+                        "intersight_api": "Order",
                         "items": {
                             "type": "integer",
                             "default": 0,
@@ -9904,6 +9895,7 @@
                     "switch_ids": {
                         "type": "array",
                         "description": "A List of the fabric port(s) to which the vNICs will be associated.\n  * `None` - Fabric Id is not set to either A or B for the standalone case where the server is not connected to Fabric Interconnects. The value 'None' should be used.\n  * `A` - Fabric A of the FI cluster.\n  * `B` - Fabric B of the FI cluster.",
+                        "intersight_api": "SwitchId",
                         "items": {
                             "type": "string",
                             "default": "None",
@@ -9922,6 +9914,7 @@
                     "uplink_ports": {
                         "type": "array",
                         "description": "Default is 0.  Adapter port on which the virtual interface will be created.  This attribute is for Standalone Servers Only.",
+                        "intersight_api": "Uplink",
                         "items": {
                             "type": "integer",
                             "default": 0,
@@ -9967,7 +9960,7 @@
                         "type": "string",
                         "default": "default",
                         "description": "Ethernet Adapter policy to be associated with the User Space vNICs. The Transmit Queue and Receive Queue resource value of VMMQ adapter policy should be greater than or equal to the configured number of sub vNICs.",
-                        "intersight_api": "$ref:UsnicAdapterPolicy:fabric.EthAdapterPolicy.Relationship:Moid",
+                        "intersight_api": "$ref:UsnicAdapterPolicy:fabric.EthAdapterPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 64,
                         "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -10029,7 +10022,7 @@
                         "type": "string",
                         "default": "default",
                         "description": "Ethernet Adapter policy to be associated with the VMQ vNICs. The Transmit Queue and Receive Queue resource value of VMMQ adapter policy should be greater than or equal to the configured number of sub vNICs.",
-                        "intersight_api": "$ref:VmmqAdapterPolicy:fabric.EthAdapterPolicy.Relationship:Moid",
+                        "intersight_api": "$ref:VmmqAdapterPolicy:fabric.EthAdapterPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 64,
                         "pattern": "^[a-zA-Z0-9_\\. :-]+$",
