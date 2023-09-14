@@ -21,4 +21,4 @@ six
 stdiomask
 stringcase
 tabulate
-validators
+validators==0.11.0
