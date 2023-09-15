@@ -680,8 +680,8 @@ class imm(object):
                         else: kwargs.method= 'post'
                         if kwargs.method == 'post': kwargs.post_list.append(kwargs.apiBody)
                         else:
-                            indx = next((
-                                index for (index, d) in enumerate(kwargs.port_results[i]) if d['PortIdStart'] == e.port_list[0]), None)
+                            indx = next((index for (index, d) in enumerate(kwargs.port_results[i]
+                                                                           ) if d['PortIdStart'] == e.port_list[0]), None)
                             patch_port = compare_body_result(kwargs.apiBody, kwargs.port_results[i][indx])
                             if patch_port == True: kwargs = api(kwargs.qtype).calls(kwargs)
                             else:
@@ -689,8 +689,6 @@ class imm(object):
                                 prCyan(f"      * Skipping Port Policy: `{kwargs.port_policy_name}`, CustomMode: `{e.custom_mode}`,"\
                                     f"  PortIdStart: `{ps}`/PortIdEnd: `{pe}`.\n"\
                                     f"        Intersight Matches Configuration.  Existing Moid: {kwargs.pmoid}")
-
-                        kwargs = api(kwargs.qtype).calls(kwargs)
         #=====================================================
         # POST List if Length > 0
         #=====================================================
@@ -768,8 +766,7 @@ class imm(object):
         def port_type_call(port_type, item, x, kwargs):
             ezdata = kwargs.ezdata[f'port.{port_type}']
             for i in item[port_type]:
-                apiBody = {'ObjectType':ezdata.ObjectType,
-                           'PortPolicy':{'Moid':kwargs.parent_moid,'ObjectType':'fabric.PortPolicy'}}
+                apiBody = {'ObjectType':ezdata.ObjectType, 'PortPolicy':{'Moid':kwargs.parent_moid,'ObjectType':'fabric.PortPolicy'}}
                 kwargs.apiBody = build_apiBody(apiBody, ezdata.properties, i, f'port.{port_type}', kwargs)
                 if i.get('pc_ids'):
                     if len(kwargs.apiBody['PcId']) == 2: kwargs.apiBody['PcId'] = i.pc_ids[x]
@@ -779,8 +776,7 @@ class imm(object):
                     if len(i['vsan_ids']) > 1: kwargs.apiBody['VsanId'] = i['vsan_ids'][x]
                     else: kwargs.apiBody['VsanId'] = i['vsan_ids'][0]
                 kwargs.apiBody.pop('Organization'); kwargs.apiBody.pop('Tags')
-                if re.search('port_channel', port_type):
-                    kwargs = api_calls(port_type, kwargs)
+                if re.search('port_channel', port_type): kwargs = api_calls(port_type, kwargs)
                 elif re.search('role', port_type):
                     for e in ezfunctions.vlan_list_full(i.port_list):
                         kwargs.apiBody['PortId'] = int(e)
@@ -1386,12 +1382,12 @@ class imm(object):
                 kwargs.vsans_moid   = kwargs.pmoids
                 kwargs.vsans_results= kwargs.results
                 #=====================================================
-                # Create API Body for VLANs
+                # Create API Body for VSANs
                 #=====================================================
                 for e in i.vsans: kwargs = configure_vsans(e, kwargs)
 
         #=====================================================
-        # POST VLAN List if Length > 0
+        # POST VSAN List if Length > 0
         #=====================================================
         if len(kwargs.post_list) > 0:
             kwargs.uri    = kwargs.ezdata[self.type].intersight_uri
