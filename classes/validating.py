@@ -1,52 +1,59 @@
-import ipaddress
-import json
-import re
-import string
-import sys
-import validators
+#=============================================================================
+# Print Color Functions
+#=============================================================================
+def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
+def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
+def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
+def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
+def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
+def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
+def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
+
+#=============================================================================
+# Source Modules
+#=============================================================================
+try:
+    import ipaddress, json, re, sys, validators
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 
 policy_regex = re.compile('(network_connectivity|ntp|port|snmp|switch_control|syslog|system_qos|vlan|vsan)')
 
-def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
-def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
-
 # Errors & Notifications
 def begin_loop(ptype1, ptype2):
-    print(f'\n-------------------------------------------------------------------------------------------\n')
+    prLightGray(f'\n-------------------------------------------------------------------------------------------\n')
     prLightPurple(f"   Beginning {' '.join(ptype1.split('_')).title()} {ptype2} Deployment.\n")
 
 def begin_section(ptype1, ptype2):
-    print(f'\n-------------------------------------------------------------------------------------------\n')
+    prLightGray(f'\n-------------------------------------------------------------------------------------------\n')
     prLightPurple(
         f"   Beginning {' '.join(ptype1.split('_')).title()} {' '.join(ptype2.split('_')).title()} Deployments.\n")
 
 def completed_item(ptype, kwargs):
+    iresults = kwargs.api_results
     method = kwargs.method
-    pmoid  = kwargs.pmoid
-    if 'vlans' == ptype: name = f"VLAN {kwargs.apiBody['VlanId']}"
+    pmoid  = iresults.Moid
+    if 'vlans' == ptype: name = f"VLAN {iresults['VlanId']}"
     elif 'autosupport' == ptype: name = "AutoSupport"
-    elif 'vsans' == ptype: name = f"VSAN {kwargs.apiBody['VsanId']}"
-    elif 'port_channel' in ptype: name = f"PC {kwargs.apiBody['PcId']}"
-    elif 'port_mode' in ptype: name = f"PortIdStart {kwargs.apiBody['PortIdStart']}"
-    elif 'port_role' in ptype: name = f"Port {kwargs.apiBody['PortId']}"
+    elif 'vsans' == ptype: name = f"VSAN {iresults['VsanId']}"
+    elif 'port_channel' in ptype: name = f"PC {iresults['PcId']}"
+    elif 'port_mode' in ptype: name = f"PortIdStart {iresults['PortIdStart']}"
+    elif 'port_role' in ptype: name = f"Port {iresults['PortId']}"
     elif 'user_role' in ptype: name = f"Role for {kwargs.qtype}"
     elif 'upgrade' in kwargs.qtype:
         name = f".  Performing Firmware Upgrade on {kwargs.serial} - {kwargs.server} Server Profile"
-    elif 'auth' in kwargs.qtype: name = f"{kwargs.apiBody['UserId']} CCO User Authentication"
+    elif 'auth' in kwargs.qtype: name = f"{iresults['UserId']} CCO User Authentication"
     elif 'eula' in kwargs.qtype: name = f"Account EULA Acceptance"
-    elif kwargs.apiBody.get('Action'):
-        if kwargs.apiBody['Action'] == 'Deploy': name = f"Deploy Profile {kwargs.pmoid}"
-    elif kwargs.apiBody.get('ScheduledActions'):
-        name = f"Activating Profile {kwargs.pmoid}"
-    elif kwargs.apiBody.get('Targets'):
-        name = kwargs.apiBody['Targets'][0]['Name']
+    elif iresults.get('Action'):
+        if iresults['Action'] == 'Deploy': name = f"Deploy Profile {pmoid}"
+        else: name = iresults['Name']
+    elif iresults.get('ScheduledActions'): name = f"Activating Profile {pmoid}"
+    elif iresults.get('Targets'): name = iresults['Targets'][0]['Name']
     elif 'update_tags' in kwargs.qtype: name = f"Tags updated for Physical Server attached to {kwargs.tag_server_profile}"
-    else: name = kwargs.apiBody['Name']
+    else: name = iresults['Name']
     if re.search('(storage_drive|user_role|v(l|s)ans|vhbas|vnics|port_(channel|mode|role))', ptype):
         if 'port' in ptype:
             if method == 'post':
