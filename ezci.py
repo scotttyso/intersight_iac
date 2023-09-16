@@ -256,6 +256,7 @@ def main():
                     if kwargs.imm_dict.orgs[org]['policies'].get(ptype):
                         dpolicies = eval(f"isight.imm(ptype).policies(kwargs)")
             exit()
+        for org in orgs:
             #==============================================
             # Deploy Domain
             #==============================================
@@ -284,9 +285,10 @@ def main():
             #==============================================
             # Pools
             #==============================================
-            #if kwargs.imm_dict.orgs[org].get('pools'):
-            #    for ptype in kwargs.imm_dict.orgs[org]['pools']:
-            #        kwargs = eval(f"isight.imm(ptype).pools(kwargs)")
+            if kwargs.imm_dict.orgs[org].get('pools'):
+                for ptype in kwargs.imm_dict.orgs[org]['pools']:
+                    kwargs = eval(f"isight.imm(ptype).pools(kwargs)")
+        for org in orgs:
             #==============================================
             # Policies
             #==============================================
@@ -294,18 +296,20 @@ def main():
                 for ptype in kwargs.policy_list:
                     dpolicies = eval(f"isight.imm(ptype).policies(kwargs)")
                     kwargs.deployed.update({ptype:dpolicies})
+        for org in orgs:
+            kwargs.isight[org].policy = DotMap(dict(sorted(kwargs.isight[org].policy.toDict().items())))
+        print(json.dumps(kwargs.isight, indent=4))
+        exit()
+        for org in orgs:
             #==============================================
             # Profiles
             #==============================================
-            api = 'isight.profiles_class'
-            ptype = 'templates'
-            if kwargs.imm_dict.orgs[org].get(ptype):
-                if kwargs.imm_dict.orgs[org][ptype].get('server'): kwargs = eval(f"{api}(ptype).profiles(kwargs)")
-            ptype = 'profiles'
-            if kwargs.imm_dict.orgs[org].get(ptype):
+            if kwargs.imm_dict.orgs[org].get('templates'):
+                if kwargs.imm_dict.orgs[org]['templates'].get('server'): kwargs = eval(f"isight.imm('server_template').profiles(kwargs)")
+            if kwargs.imm_dict.orgs[org].get('profiles'):
                 profile_list = ['chassis', 'server']
                 for i in profile_list:
-                    if kwargs.imm_dict.orgs[org][ptype].get(i): kwargs = eval(f"{api}(i).profiles(kwargs)")
+                    if kwargs.imm_dict.orgs[org]['profiles'].get(i): kwargs = eval(f"isight.imm(i).profiles(kwargs)")
             #==============================================
             # Configure Server Identities
             #==============================================

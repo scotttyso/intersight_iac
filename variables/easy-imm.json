@@ -8980,6 +8980,7 @@
                 "description": "The IP reservation object, used to hold reserved addresses.\nRequired Attributes:\n  * identities\n\nOptional Attributes:\n  * allocation_type\n  * ip_type",
                 "intersight_api": "reservations",
                 "intersight_uri": "ippool/Reservations",
+                "intersight_type": "pool",
                 "ObjectType": "ippool.Reservation",
                 "required": [
                     "identities"
@@ -9185,6 +9186,7 @@
                 "additionalProperties": false,
                 "description": "The IQN reservation object, used to hold reserved addresses.\nRequired Attributes:\n  * identities\n\nOptional Attributes:\n  * allocation_type",
                 "intersight_api": "reservations",
+                "intersight_type": "pool",
                 "intersight_uri": "iqnpool/Reservations",
                 "ObjectType": "iqnpool.Reservation",
                 "required": [
@@ -9645,6 +9647,7 @@
                 "type": "object",
                 "description": "Virtual Ethernet Interface.",
                 "intersight_api": "vnics",
+                "intersight_type": "policy",
                 "intersight_uri": "vnic/EthIfs",
                 "ObjectType": "vnic.EthIf",
                 "title": "vnics - Virtual Ethernet Interface - Intersight Uri: vnic/EthIfs",
@@ -9809,7 +9812,7 @@
                     "names": {
                         "type": "array",
                         "description": "List of two vNIC Names to Create.",
-                        "intersight_uri": "not_applicable",
+                        "intersight_api": "Name",
                         "items": {
                             "type": "string",
                             "default": "default",
@@ -9848,6 +9851,7 @@
                     "pci_links": {
                         "type": "array",
                         "description": "Default is 0.  The PCI Link used as transport for the virtual interface. All VIC adapters have a single PCI link except VIC 1385 which has two.",
+                        "intersight_api": "PciLink",
                         "items": {
                             "type": "integer",
                             "default": 0,
@@ -9879,6 +9883,7 @@
                     "slot_ids": {
                         "type": "array",
                         "description": "List of PCIe Slots where the VIC adapter is installed. Supported values are (1-15) and MLOM.",
+                        "intersight_api": "Id",
                         "items": {
                             "type": "string",
                             "default": "None",
@@ -10583,6 +10588,7 @@
                 "additionalProperties": false,
                 "description": "Endpoint User or Local User.",
                 "intersight_api": "users",
+                "intersight_type": "policy",
                 "intersight_uri": "iam/EndPointUsers",
                 "ObjectType": "iam.EndPointUser",
                 "required": [
@@ -10596,14 +10602,14 @@
                         "type": "boolean",
                         "default": true,
                         "description": "Default is `true`.  Enables the user account on the endpoint.",
-                        "intersight_api": "$ref:iam.EndPointUserRole:Enabled",
+                        "intersight_api": "Enabled",
                         "title": "enabled"
                     },
                     "password": {
                         "type": "integer",
                         "default": 1,
                         "description": "Default is `1`.  The Local User Authentication Password Sensitive Variable Identifier.  i.e. `var.local_user_password_1`.",
-                        "intersight_api": "$ref:iam.EndPointUserRole:Password",
+                        "intersight_api": "Password",
                         "minimum": 1,
                         "maximum": 64,
                         "title": "password"
@@ -10612,7 +10618,7 @@
                         "type": "string",
                         "default": "readonly",
                         "description": "Default is `readonly`.  The name of the end point role.\n  * admin\n  * readonly\n  * user",
-                        "intersight_api": "$ref:iam.EndPointRole:Name",
+                        "intersight_api": "Role",
                         "enum": [
                             "admin",
                             "readonly",
@@ -10716,6 +10722,7 @@
                 "additionalProperties": false,
                 "description": "The MAC reservation object, used to hold reserved addresses.\nRequired Attributes:\n  * identities\n\nOptional Attributes:\n  * allocation_type",
                 "intersight_api": "reservations",
+                "intersight_type": "pool",
                 "intersight_uri": "macpool/Reservations",
                 "ObjectType": "macpool.Reservation",
                 "required": [
@@ -13766,7 +13773,7 @@
                 "description": "SAN connectivity policy determines the network storage resources and the connections between the server and the SAN on the network. This policy enables configuration of vHBAs that the servers use to communicate with the storage network.",
                 "intersight_type": "policy",
                 "intersight_uri": "vnic/SanConnectivityPolicies",
-                "ObjectType": "vnic.policy",
+                "ObjectType": "vnic.SanConnectivityPolicy",
                 "target_platforms": [
                     "FIAttached",
                     "Standalone"
@@ -13858,154 +13865,156 @@
                 "type": "object",
                 "description": "Virtual Fibre Channel Interface.",
                 "intersight_api": "vhbas",
+                "intersight_type": "policy",
                 "intersight_uri": "vnic/FcIfs",
                 "ObjectType": "vnic.FcIf",
-                "title": "vhbas - Virtual Fibre Channel Interface - Intersight Uri: vnic/FcIfs",
-                "x-allOf-name": "vnic.FcIf",
-                "allOf": [
-                    {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "description": "Virtual Fibre Channel Interface.",
-                        "required": [
+                "required": [
                             "fibre_channel_adapter_policy",
                             "fibre_channel_network_policies",
                             "fibre_channel_qos_policy",
                             "names",
                             "placement"
                         ],
-                        "title": "vhbas - Virtual Fibre Channel Interface - Intersight Uri: vnic/FcIfs",
-                        "properties": {
-                            "fc_zone_policies": {
-                                "type": "array",
-                                "description": "List of FC Zone Policy Names to attach to the vHBA(s).  The List will be split in Half if there are two names in the object.",
-                                "intersight_api": "$ref:fabric.FcZonePolicy.Relationship",
-                                "items": {},
-                                "title": "fc_zone_policies - Fc Zone Policies - Intersight Uri: fabric/FcZonePoliy"
-                            },
-                            "fibre_channel_adapter_policy": {
-                                "type": "string",
-                                "default": "default",
-                                "description": "The Name of the Fibre Channel Adapter Policy to Assign to the vHBA(s).",
-                                "intersight_api": "$ref:fabric.EthNetworkGroupPolicy.Relationship:FcAdapterPolicy",
-                                "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                "title": "fibre_channel_adapter_policy"
-                            },
-                            "fibre_channel_network_policies": {
-                                "type": "array",
-                                "description": "List of Fibre Channel Network Policy Names.",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "The Name of the Fibre Channel Network Policy to Assign to the vHBA(s).  The Script will Assign them in Order.  Should be a List of two Names.",
-                                    "intersight_api": "$ref:fabric.EthNetworkGroupPolicy.Relationship:FcNetworkPolicy",
-                                    "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                    "title": "fibre_channel_network_policy"
-                                },
-                                "ObjectType": "fabric.EthNetworkGroupPolicy",
-                                "title": "fibre_channel_network_policies - Fibre Channel Network Policies"
-                            },
-                            "fibre_channel_qos_policy": {
-                                "type": "string",
-                                "default": "default",
-                                "description": "The Name of the Fibre Channel QoS Policy to Assign to the vHBA(s).",
-                                "intersight_api": "$ref:fabric.EthNetworkGroupPolicy.Relationship:FcQosPolicy",
-                                "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                "title": "fibre_channel_qos_policy"
-                            },
-                            "names": {
-                                "type": "array",
-                                "description": "List of two vHBA Names to Create.",
-                                "intersight_api": "Name",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "Name of the vHBA.",
-                                    "intersight_api": "Name",
-                                    "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                    "title": "name"
-                                },
-                                "ObjectType": "",
-                                "title": "names - Names"
-                            },
-                            "persistent_lun_bindings": {
-                                "type": "boolean",
-                                "default": false,
-                                "description": "Default is `false`.  Enables retention of LUN ID associations in memory until they are manually cleared.",
-                                "intersight_api": "PersistentBindings",
-                                "title": "persistent_lun_bindings"
-                            },
-                            "placement": {
-                                "$ref": "#/components/schemas/san_connectivity.vhbas.placement"
-                            },
-                            "vhba_type": {
-                                "type": "string",
-                                "default": "fc-initiator",
-                                "description": "Default is `fc-initiator`.  VHBA Type configuration for SAN Connectivity Policy. This configuration is supported only on Cisco VIC 14XX series and higher series of adapters.\n  * `fc-initiator` - The default value set for vHBA Type Configuration. Fc-initiator specifies vHBA as a consumer of storage. Enables SCSI commands to transfer data and status information between host and target storage systems.\n  * `fc-nvme-initiator` - Fc-nvme-initiator specifies vHBA as a consumer of storage. Enables NVMe-based message commands to transfer data and status information between host and target storage systems.\n  * `fc-nvme-target` - Fc-nvme-target specifies vHBA as a provider of storage volumes to initiators. Enables NVMe-based message commands to transfer data and status information between host and target storage systems. Currently tech-preview, only enabled with an asynchronous driver.\n  * `fc-target` - Fc-target specifies vHBA as a provider of storage volumes to initiators. Enables SCSI commands to transfer data and status information between host and target storage systems. fc-target is enabled only with an asynchronous driver.",
-                                "intersight_api": "Type",
-                                "enum": [
-                                    "fc-initiator",
-                                    "fc-nvme-initiator",
-                                    "fc-nvme-target",
-                                    "fc-target"
-                                ],
-                                "title": "vhba_type"
-                            },
-                            "wwpn_allocation_type": {
-                                "type": "string",
-                                "default": "POOL",
-                                "description": "Default is `POOL`.  Type of allocation selected to assign a WWPN address to the vhba.\n  * `POOL` - The user selects a pool from which the mac/wwn address will be leased for the Virtual Interface.\n  * `STATIC` - The user assigns a static mac/wwn address for the Virtual Interface.",
-                                "intersight_api": "WwpnAddressType",
-                                "enum": [
-                                    "POOL",
-                                    "STATIC"
-                                ],
-                                "title": "wwpn_allocation_type"
-                            },
-                            "wwpn_pools": {
-                                "type": "array",
-                                "description": "A List of WWPN Pools to Assign to each of the vHBA's.",
-                                "intersight_uri": "fcpool/Pools",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "Name of the WWPN Pool.",
-                                    "intersight_api": "Name",
-                                    "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
-                                    "title": "wwpn_pool"
-                                },
-                                "ObjectType": "fcpool.Pool",
-                                "title": "wwpn_pools - Wwpn Pools - Intersight Uri: fcpool/Pools"
-                            },
-                            "wwpn_static_addresses": {
-                                "type": "array",
-                                "description": "A List of Static WWPN Addresses to Assign to the vHBA's if the Allocation Type is set to STATIC.  The WWPN address must be in hexadecimal format xx:xx:xx:xx:xx:xx:xx:xx.\nAllowed ranges are 20:00:00:00:00:00:00:00 to 20:FF:FF:FF:FF:FF:FF:FF or from 50:00:00:00:00:00:00:00 to 5F:FF:FF:FF:FF:FF:FF:FF.\nTo ensure uniqueness of WWN's in the SAN fabric, you are strongly encouraged to use the WWN prefix - 20:00:00:25:B5:xx:xx:xx.",
-                                "intersight_api": "StaticWwpnAddress",
-                                "items": {
-                                    "type": "string",
-                                    "default": "default",
-                                    "description": "The WWPN address must be in hexadecimal format xx:xx:xx:xx:xx:xx:xx:xx.\nAllowed ranges are 20:00:00:00:00:00:00:00 to 20:FF:FF:FF:FF:FF:FF:FF or from 50:00:00:00:00:00:00:00 to 5F:FF:FF:FF:FF:FF:FF:FF.\nTo ensure uniqueness of WWN's in the SAN fabric, you are strongly encouraged to use the WWN prefix - 20:00:00:25:B5:xx:xx:xx.",
-                                    "intersight_api": "StaticWwpnAddress",
-                                    "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "((^20|5[0-9a-fA-F]{1}):([0-9a-fA-F]{2}:){6}([0-9a-fA-F]{2})$)",
-                                    "title": "wwpn_address"
-                                },
-                                "title": "wwpn_static_addresses - Wwpn Static Addresses"
-                            }
-                        }
+                "title": "vhbas - Virtual Fibre Channel Interface - Intersight Uri: vnic/FcIfs",
+                "properties": {
+                    "fc_zone_policies": {
+                        "type": "array",
+                        "description": "List of FC Zone Policy Names to attach to the vHBA(s).  The List will be split in Half if there are two names in the object.",
+                        "intersight_api": "$ref:FcZonePolicies:fabric.FcZonePolicy:Moid",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "The Name of the FC Zone Policy to Assign to the vHBA(s).  The Script will Split the List in Half and Assign each half to vHBA and Half to vHBA B.",
+                            "intersight_api": "$ref:FcZonePolicies:fabric.FcZonePolicy:Moid",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "title": "fc_zone_policy"
+                        },
+                        "title": "fc_zone_policies - Fc Zone Policies - Intersight Uri: fabric/FcZonePolicy"
+                    },
+                    "fibre_channel_adapter_policy": {
+                        "type": "string",
+                        "default": "default",
+                        "description": "The Name of the Fibre Channel Adapter Policy to Assign to the vHBA(s).",
+                        "intersight_api": "$ref:FcAdapterPolicy:vnic.FcAdapterPolicy:Moid",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "title": "fibre_channel_adapter_policy"
+                    },
+                    "fibre_channel_network_policies": {
+                        "type": "array",
+                        "description": "List of Fibre Channel Network Policy Names.",
+                        "intersight_api": "$ref:FcNetworkPolicy:vnic.FcNetworkPolicy:Moid",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "The Name of the Fibre Channel Network Policy to Assign to the vHBA(s).  The Script will Assign them in Order.  Should be a List of two Names.",
+                            "intersight_api": "$ref:FcNetworkPolicy:vnic.FcNetworkPolicy:Moid",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "title": "fibre_channel_network_policy"
+                        },
+                        "ObjectType": "fabric.EthNetworkGroupPolicy",
+                        "title": "fibre_channel_network_policies - Fibre Channel Network Policies"
+                    },
+                    "fibre_channel_qos_policy": {
+                        "type": "string",
+                        "default": "default",
+                        "description": "The Name of the Fibre Channel QoS Policy to Assign to the vHBA(s).",
+                        "intersight_api": "$ref:FcQosPolicy:vnic.FcQosPolicy:Moid",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "title": "fibre_channel_qos_policy"
+                    },
+                    "names": {
+                        "type": "array",
+                        "description": "List of two vHBA Names to Create.",
+                        "intersight_api": "Name",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "Name of the vHBA.",
+                            "intersight_api": "Name",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "title": "name"
+                        },
+                        "ObjectType": "",
+                        "title": "names - Names"
+                    },
+                    "persistent_lun_bindings": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Default is `false`.  Enables retention of LUN ID associations in memory until they are manually cleared.",
+                        "intersight_api": "PersistentBindings",
+                        "title": "persistent_lun_bindings"
+                    },
+                    "placement": {
+                        "$ref": "#/components/schemas/san_connectivity.vhbas.placement"
+                    },
+                    "vhba_type": {
+                        "type": "string",
+                        "default": "fc-initiator",
+                        "description": "Default is `fc-initiator`.  VHBA Type configuration for SAN Connectivity Policy. This configuration is supported only on Cisco VIC 14XX series and higher series of adapters.\n  * `fc-initiator` - The default value set for vHBA Type Configuration. Fc-initiator specifies vHBA as a consumer of storage. Enables SCSI commands to transfer data and status information between host and target storage systems.\n  * `fc-nvme-initiator` - Fc-nvme-initiator specifies vHBA as a consumer of storage. Enables NVMe-based message commands to transfer data and status information between host and target storage systems.\n  * `fc-nvme-target` - Fc-nvme-target specifies vHBA as a provider of storage volumes to initiators. Enables NVMe-based message commands to transfer data and status information between host and target storage systems. Currently tech-preview, only enabled with an asynchronous driver.\n  * `fc-target` - Fc-target specifies vHBA as a provider of storage volumes to initiators. Enables SCSI commands to transfer data and status information between host and target storage systems. fc-target is enabled only with an asynchronous driver.",
+                        "intersight_api": "Type",
+                        "enum": [
+                            "fc-initiator",
+                            "fc-nvme-initiator",
+                            "fc-nvme-target",
+                            "fc-target"
+                        ],
+                        "title": "vhba_type"
+                    },
+                    "wwpn_allocation_type": {
+                        "type": "string",
+                        "default": "POOL",
+                        "description": "Default is `POOL`.  Type of allocation selected to assign a WWPN address to the vhba.\n  * `POOL` - The user selects a pool from which the mac/wwn address will be leased for the Virtual Interface.\n  * `STATIC` - The user assigns a static mac/wwn address for the Virtual Interface.",
+                        "intersight_api": "WwpnAddressType",
+                        "enum": [
+                            "POOL",
+                            "STATIC"
+                        ],
+                        "title": "wwpn_allocation_type"
+                    },
+                    "wwpn_pools": {
+                        "type": "array",
+                        "description": "A List of WWPN Pools to Assign to each of the vHBA's.",
+                        "intersight_api": "$ref:WwpnPool:fcpool.Pool:Moid",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "Name of the WWPN Pool.",
+                            "intersight_api": "$ref:WwpnPool:fcpool.Pool:Moid",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "title": "wwpn_pool"
+                        },
+                        "ObjectType": "fcpool.Pool",
+                        "title": "wwpn_pools - Wwpn Pools - Intersight Uri: fcpool/Pools"
+                    },
+                    "wwpn_static_addresses": {
+                        "type": "array",
+                        "description": "A List of Static WWPN Addresses to Assign to the vHBA's if the Allocation Type is set to STATIC.  The WWPN address must be in hexadecimal format xx:xx:xx:xx:xx:xx:xx:xx.\nAllowed ranges are 20:00:00:00:00:00:00:00 to 20:FF:FF:FF:FF:FF:FF:FF or from 50:00:00:00:00:00:00:00 to 5F:FF:FF:FF:FF:FF:FF:FF.\nTo ensure uniqueness of WWN's in the SAN fabric, you are strongly encouraged to use the WWN prefix - 20:00:00:25:B5:xx:xx:xx.",
+                        "intersight_api": "StaticWwpnAddress",
+                        "items": {
+                            "type": "string",
+                            "default": "default",
+                            "description": "The WWPN address must be in hexadecimal format xx:xx:xx:xx:xx:xx:xx:xx.\nAllowed ranges are 20:00:00:00:00:00:00:00 to 20:FF:FF:FF:FF:FF:FF:FF or from 50:00:00:00:00:00:00:00 to 5F:FF:FF:FF:FF:FF:FF:FF.\nTo ensure uniqueness of WWN's in the SAN fabric, you are strongly encouraged to use the WWN prefix - 20:00:00:25:B5:xx:xx:xx.",
+                            "intersight_api": "StaticWwpnAddress",
+                            "minLength": 1,
+                            "maxLength": 64,
+                            "pattern": "((^20|5[0-9a-fA-F]{1}):([0-9a-fA-F]{2}:){6}([0-9a-fA-F]{2})$)",
+                            "title": "wwpn_address"
+                        },
+                        "title": "wwpn_static_addresses - Wwpn Static Addresses"
                     }
-                ]
+                }
             },
             "san_connectivity.vhbas.placement": {
                 "type": "object",
@@ -14021,6 +14030,7 @@
                     "pci_links": {
                         "type": "array",
                         "description": "Default is 0.  The PCI Link used as transport for the virtual interface. All VIC adapters have a single PCI link except VIC 1385 which has two.",
+                        "intersight_api": "PciLink",
                         "items": {
                             "type": "integer",
                             "default": 0,
@@ -14036,6 +14046,7 @@
                     "pci_order": {
                         "type": "array",
                         "description": "The order in which the virtual interface is brought up. The order assigned to an interface should be unique for all the Ethernet and Fibre-Channel interfaces on each PCI link on a VIC adapter. The order should start from zero with no overlaps. The maximum value of PCI order is limited by the number of virtual interfaces (Ethernet and Fibre-Channel) on each PCI link on a VIC adapter. All VIC adapters have a single PCI link except VIC 1340, VIC 1380 and VIC 1385 which have two.",
+                        "intersight_api": "Order",
                         "items": {
                             "type": "integer",
                             "default": 0,
@@ -14051,6 +14062,7 @@
                     "slot_ids": {
                         "type": "array",
                         "description": "List of PCIe Slots where the VIC adapter is installed. Supported values are (1-15) and MLOM.",
+                        "intersight_api": "Id",
                         "items": {
                             "type": "string",
                             "default": "None",
@@ -14067,6 +14079,7 @@
                     "switch_ids": {
                         "type": "array",
                         "description": "A List of the fabric port(s) to which the vNICs will be associated.\n  * `None` - Fabric Id is not set to either A or B for the standalone case where the server is not connected to Fabric Interconnects. The value 'None' should be used.\n  * `A` - Fabric A of the FI cluster.\n  * `B` - Fabric B of the FI cluster.",
+                        "intersight_api": "SwitchId",
                         "items": {
                             "type": "string",
                             "default": "None",
@@ -14085,6 +14098,7 @@
                     "uplink_ports": {
                         "type": "array",
                         "description": "Default is 0.  Adapter port on which the virtual interface will be created.  This attribute is for Standalone Servers Only.",
+                        "intersight_api": "Uplink",
                         "items": {
                             "type": "integer",
                             "default": 0,
@@ -15269,6 +15283,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "A reusable RAID drive group configuration that specifies a pool of drives and a set of virtual drives that are to be created using this pool of drives.",
+                "intersight_type": "policy",
                 "intersight_uri": "storage/DriveGroups",
                 "ObjectType": "storage.DriveGroup",
                 "required": [
@@ -15770,8 +15785,8 @@
                                 "type": "array",
                                 "description": "Set of remote logging clients on the endpoint.\nRequired Attributes:\n  * hostname\n\nOptional Attributes:\n  * enable\n  * minimum_severity\n  * port\n  * protocol",
                                 "intersight_api": "ObjectType",
-                                "ObjectType": "syslog/RemoteClientBases",
-                                "title": "remote_logging - Remote Logging - object_type: syslog.RemoteClientBases",
+                                "ObjectType": "syslog.RemoteLoggingClient",
+                                "title": "remote_logging - Remote Logging - object_type: syslog.RemoteLoggingClient",
                                 "items": {
                                     "$ref": "#/components/schemas/syslog.remote_logging"
                                 }
@@ -15815,7 +15830,7 @@
                 "additionalProperties": false,
                 "description": "Lists properties that are common to all remote logging clients. It serves as a base class for all remote logging clients.",
                 "intersight_api": "RemoteClients",
-                "ObjectType": "syslog.RemoteClientBase",
+                "ObjectType": "syslog.RemoteLoggingClient",
                 "required": [
                     "hostname"
                 ],
@@ -16017,7 +16032,7 @@
                 "classes": [
                     {
                         "AdminState": "Enabled",
-                        "BandwitchPercent": 50,
+                        "BandwidthPercent": 50,
                         "Cos": 255,
                         "Mtu": 9216,
                         "Name": "Best Effort",
@@ -16027,7 +16042,7 @@
                     },
                     {
                         "AdminState": "Disabled",
-                        "BandwitchPercent": 0,
+                        "BandwidthPercent": 0,
                         "Cos": 1,
                         "Mtu": 9216,
                         "Name": "Bronze",
@@ -16037,7 +16052,7 @@
                     },
                     {
                         "AdminState": "Disabled",
-                        "BandwitchPercent": 0,
+                        "BandwidthPercent": 0,
                         "Cos": 4,
                         "Mtu": 9216,
                         "Name": "Gold",
@@ -16047,7 +16062,7 @@
                     },
                     {
                         "AdminState": "Enabled",
-                        "BandwitchPercent": 50,
+                        "BandwidthPercent": 50,
                         "Cos": 3,
                         "Mtu": 2240,
                         "Name": "FC",
@@ -16057,7 +16072,7 @@
                     },
                     {
                         "AdminState": "Disabled",
-                        "BandwitchPercent": 0,
+                        "BandwidthPercent": 0,
                         "Cos": 5,
                         "Mtu": 9216,
                         "Name": "Platinum",
@@ -16067,7 +16082,7 @@
                     },
                     {
                         "AdminState": "Disabled",
-                        "BandwitchPercent": 0,
+                        "BandwidthPercent": 0,
                         "Cos": 2,
                         "Mtu": 9216,
                         "Name": "Silver",
@@ -16088,7 +16103,7 @@
                 "classes": [
                     {
                         "AdminState": "Enabled",
-                        "BandwitchPercent": 10,
+                        "BandwidthPercent": 10,
                         "Cos": 255,
                         "Mtu": 9216,
                         "Name": "Best Effort",
@@ -16098,7 +16113,7 @@
                     },
                     {
                         "AdminState": "Enabled",
-                        "BandwitchPercent": 14,
+                        "BandwidthPercent": 14,
                         "Cos": 1,
                         "Mtu": 9216,
                         "Name": "Bronze",
@@ -16108,7 +16123,7 @@
                     },
                     {
                         "AdminState": "Enabled",
-                        "BandwitchPercent": 18,
+                        "BandwidthPercent": 18,
                         "Cos": 4,
                         "Mtu": 9216,
                         "Name": "Gold",
@@ -16118,7 +16133,7 @@
                     },
                     {
                         "AdminState": "Enabled",
-                        "BandwitchPercent": 20,
+                        "BandwidthPercent": 20,
                         "Cos": 3,
                         "Mtu": 2240,
                         "Name": "FC",
@@ -16128,7 +16143,7 @@
                     },
                     {
                         "AdminState": "Enabled",
-                        "BandwitchPercent": 20,
+                        "BandwidthPercent": 20,
                         "Cos": 5,
                         "Mtu": 9216,
                         "Name": "Platinum",
@@ -16138,7 +16153,7 @@
                     },
                     {
                         "AdminState": "Enabled",
-                        "BandwitchPercent": 18,
+                        "BandwidthPercent": 18,
                         "Cos": 2,
                         "Mtu": 9216,
                         "Name": "Silver",
@@ -16180,7 +16195,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Adapter Configuration Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
-                                "intersight_api": "$ref:adapter.ConfigPolicy.Relationship:adapter.ConfigPolicy",
+                                "intersight_api": "$pbucket:adapter_configuration_policy:adapter.ConfigPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16190,7 +16205,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the BIOS Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:bios.Policy.Relationship:bios.Policy",
+                                "intersight_api": "$pbucket:bios_policy:bios.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16200,7 +16215,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Boot Order Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:boot.PrecisionPolicy.Relationship:boot.PrecisionPolicy",
+                                "intersight_api": "$pbucket:boot_order_policy:boot.PrecisionPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16210,7 +16225,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Certificate Management Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
-                                "intersight_api": "$ref:certificatemanagement.Policy.Relationship:certificatemanagement.Policy",
+                                "intersight_api": "$pbucket:certificate_management_policy:certificatemanagement.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16227,7 +16242,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Device Connector Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
-                                "intersight_api": "$ref:deviceconnector.Policy.Relationship:deviceconnector.Policy",
+                                "intersight_api": "$pbucket:device_connector_policy:deviceconnector.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16237,7 +16252,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Drive Security Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:storage.DriveSecurityPolicy.Relationship:storage.DriveSecurityPolicy",
+                                "intersight_api": "$pbucket:drive_security_policy:storage.DriveSecurityPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16247,7 +16262,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Firmware Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:firmware.Policy.Relationship:firmware.Policy",
+                                "intersight_api": "$pbucket:firmware_policy:firmware.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16257,7 +16272,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the IMC Access Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
-                                "intersight_api": "$ref:access.Policy.Relationship:access.Policy",
+                                "intersight_api": "$pbucket:imc_access_policy:access.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16267,7 +16282,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the IPMI over LAN Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:ipmioverlan.Policy.Relationship:ipmioverlan.Policy",
+                                "intersight_api": "$pbucket:ipmi_over_lan_policy:ipmioverlan.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16277,7 +16292,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the LAN Connectivity Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:vnic.EthNetworkPolicy.Relationship:vnic.EthNetworkPolicy",
+                                "intersight_api": "$pbucket:lan_connectivity_policy:vnic.EthNetworkPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16287,7 +16302,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the LDAP Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
-                                "intersight_api": "$ref:iam.LdapPolicy.Relationship:iam.LdapPolicy",
+                                "intersight_api": "$pbucket:ldap_policy:iam.LdapPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16297,7 +16312,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Local User Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:iam.EndPointUserPolicy.Relationship:iam.EndPointUserPolicy",
+                                "intersight_api": "$pbucket:local_user_policy:iam.EndPointUserPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16307,7 +16322,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Network Connectivity Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
-                                "intersight_api": "$ref:networkconfig.Policy.Relationship:networkconfig.Policy",
+                                "intersight_api": "$pbucket:network_connectivity_policy:networkconfig.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16317,7 +16332,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the NTP Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
-                                "intersight_api": "$ref:ntp.Policy.Relationship:ntp.Policy",
+                                "intersight_api": "$pbucket:ntp_policy:ntp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16327,7 +16342,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Persistent Memory Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
-                                "intersight_api": "$ref:memory.PersistentMemoryPolicy.Relationship:memory.PersistentMemoryPolicy",
+                                "intersight_api": "$pbucket:persistent_memory_policy:memory.PersistentMemoryPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16337,7 +16352,7 @@
                                 "type": "string",
                                 "default": "",
                                 "description": "The Name of the Power Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
-                                "intersight_api": "$ref:power.Policy.Relationship:power.Policy",
+                                "intersight_api": "$pbucket:power_policy:power.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16347,7 +16362,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the SAN Connectivity Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:vnic.SanConnectivityPolicy.Relationship:vnic.SanConnectivityPolicy",
+                                "intersight_api": "$pbucket:san_connectivity_policy:vnic.SanConnectivityPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16357,7 +16372,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Serial over LAN Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:sol.Policy.Relationship:sol.Policy",
+                                "intersight_api": "$pbucket:serial_over_lan_policy:sol.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16367,7 +16382,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the SD Card Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:sdcard.Policy.Relationship:sdcard.Policy",
+                                "intersight_api": "$pbucket:sd_card_policy:sdcard.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16377,7 +16392,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the SMTP Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
-                                "intersight_api": "$ref:smtp.Policy.Relationship:smtp.Policy",
+                                "intersight_api": "$pbucket:smtp_policy:smtp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16387,7 +16402,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the SNMP Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:snmp.Policy.Relationship:snmp.Policy",
+                                "intersight_api": "$pbucket:snmp_policy:snmp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16397,7 +16412,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the SSH Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
-                                "intersight_api": "$ref:ssh.Policy.Relationship:ssh.Policy",
+                                "intersight_api": "$pbucket:ssh_policy:ssh.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16407,7 +16422,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Storage Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:storage.StoragePolicy.Relationship:storage.StoragePolicy",
+                                "intersight_api": "$pbucket:storage_policy:storage.StoragePolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16417,7 +16432,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Syslog Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:syslog.Policy.Relationship:syslog.Policy",
+                                "intersight_api": "$pbucket:syslog_policy:syslog.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16438,7 +16453,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the UUID Pool to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
-                                "intersight_api": "$ref:uuidpool.Pool.Relationship:uuidpool.Pool",
+                                "intersight_api": "$ref:uuidpool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16448,7 +16463,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the KVM Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:kvm.Policy.Relationship:kvm.Policy",
+                                "intersight_api": "$pbucket:virtual_kvm_policy:kvm.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16458,7 +16473,7 @@
                                 "type": "string",
                                 "default": "default",
                                 "description": "The Name of the Virtual Media Policy to Assign to the Profile(s).",
-                                "intersight_api": "$ref:vmedia.Policy.Relationship:vmedia.Policy",
+                                "intersight_api": "$pbucket:virtual_media_policy:vmedia.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 64,
                                 "pattern": "^[a-zA-Z0-9_\\. :-]+$",
@@ -16560,6 +16575,7 @@
                 "additionalProperties": false,
                 "description": "The UUID reservation object, used to hold reserved addresses.\nRequired Attributes:\n  * identities\n\nOptional Attributes:\n  * allocation_type",
                 "intersight_api": "reservations",
+                "intersight_type": "pool",
                 "intersight_uri": "uuidpool/Reservations",
                 "ObjectType": "uuidpool.Reservation",
                 "required": [
@@ -16912,6 +16928,7 @@
                 "type": "object",
                 "description": "Configuration object for Virtual LAN.",
                 "intersight_api": "vlans",
+                "intersight_type": "policy",
                 "intersight_uri": "fabric/Vlans",
                 "ObjectType": "fabric.Vlan",
                 "required": [
@@ -17032,6 +17049,7 @@
                 "additionalProperties": false,
                 "description": "Configuration object sent by user to create VSAN configurations.",
                 "intersight_api": "vsans",
+                "intersight_type": "policy",
                 "intersight_uri": "fabric/Vsans",
                 "ObjectType": "fabric.Vsan",
                 "required": [
@@ -17168,6 +17186,7 @@
                 "additionalProperties": false,
                 "description": "The WWxN reservation object, used to hold reserved addresses.\nRequired Attributes:\n  * identities\n\nOptional Attributes:\n  * allocation_type",
                 "intersight_api": "reservations",
+                "intersight_type": "pool",
                 "intersight_uri": "fcpool/Reservations",
                 "ObjectType": "fcpool.Reservation",
                 "required": [
@@ -17288,6 +17307,7 @@
                 "additionalProperties": false,
                 "description": "The WWxN reservation object, used to hold reserved addresses.\nRequired Attributes:\n  * identities\n\nOptional Attributes:\n  * allocation_type",
                 "intersight_api": "reservations",
+                "intersight_type": "pool",
                 "intersight_uri": "fcpool/Reservations",
                 "ObjectType": "fcpool.Reservation",
                 "required": [
