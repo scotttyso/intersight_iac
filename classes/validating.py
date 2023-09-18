@@ -36,16 +36,16 @@ def completed_item(ptype, kwargs):
     iresults = kwargs.api_results
     method = kwargs.method
     pmoid  = iresults.Moid
-    if 'vlans' == ptype: name = f"VLAN {iresults['VlanId']}"
-    elif 'autosupport' == ptype: name = "AutoSupport"
-    elif 'vsans' == ptype: name = f"VSAN {iresults['VsanId']}"
-    elif 'port_channel' in ptype: name = f"PC {iresults['PcId']}"
-    elif 'port_mode' in ptype: name = f"PortIdStart {iresults['PortIdStart']}"
-    elif 'port_role' in ptype: name = f"Port {iresults['PortId']}"
+    if 'autosupport' == ptype: name = "AutoSupport"
+    elif iresults.get('PcId'): name = f"PC {iresults['PcId']}"
+    elif iresults.get('PortId'): name = f"Port {iresults['PortId']}"
+    elif iresults.get('PortIdStart'): name = f"PortIdStart {iresults['PortIdStart']}"
+    elif iresults.get('VlanId'): name = f"VLAN {iresults['VlanId']}"
+    elif iresults.get('VsanId'): name = f"VSAN {iresults['VsanId']}"
     elif 'user_role' in ptype: name = f"Role for {kwargs.qtype}"
     elif 'upgrade' in kwargs.qtype:
         name = f".  Performing Firmware Upgrade on {kwargs.serial} - {kwargs.server} Server Profile"
-    elif 'auth' in kwargs.qtype: name = f"{iresults['UserId']} CCO User Authentication"
+    elif iresults.get('UserId'): name = f"{iresults['UserId']} CCO User Authentication"
     elif 'eula' in kwargs.qtype: name = f"Account EULA Acceptance"
     elif iresults.get('Action'):
         if iresults['Action'] == 'Deploy': name = f"Deploy Profile {pmoid}"
@@ -54,42 +54,31 @@ def completed_item(ptype, kwargs):
     elif iresults.get('Targets'): name = iresults['Targets'][0]['Name']
     elif 'update_tags' in kwargs.qtype: name = f"Tags updated for Physical Server attached to {kwargs.tag_server_profile}"
     else: name = iresults['Name']
-    if re.search('(storage_drive|user_role|v(l|s)ans|vhbas|vnics|port_(channel|mode|role))', ptype):
-        if 'port' in ptype:
+    oregex = re.compile('fabric.([a-zA-z]+(Mode|Role)|(Eth|Fc)NetworkP)|vnic.(Eth|Fc)If|iam.EndPointUserRole|DriveGroup')
+    if re.search(oregex, iresults.get('ObjectType')):
+        if re.search('fabric.[a-zA-z]+(Mode|Role)', iresults.get('ObjectType')):
             if method == 'post':
                 prGreen(f'      * Completed {method} for port_policy {kwargs.parent_name}: {name} - Moid: {pmoid}')
-            else:
-                prLightPurple(f'      * Completed {method} for port_policy {kwargs.parent_name}: {name} - Moid: {pmoid}')
+            else: prLightPurple(f'      * Completed {method} for port_policy {kwargs.parent_name}: {name} - Moid: {pmoid}')
         else:
-            if method == 'post':
-                prGreen(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
-            else:
-                prLightPurple(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
+            if method == 'post': prGreen(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
+            else: prLightPurple(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
     elif re.search('^(Activating|Deploy)', name): prCyan(f'      * {name}.')
     elif re.search(policy_regex, kwargs.qtype) and 'switch ' in kwargs.qtype:
         pname = kwargs.qtype.split(' ')[1]
         name = kwargs.apiBody['Name']
         if method == 'post':
-            prGreen(
-                f'      * Completed {method} to attach profile(s) to {pname} policy name: {name} - Moid: {pmoid}. Updated Profiles.')
-        else:
-            prLightPurple(
-                f'      * Completed {method} to attach profile(s) to {pname} policy name: {name} - Moid: {pmoid}. Updated Profiles.')
+            prGreen(f'      * Completed {method} to attach profile(s) to {pname} policy name: {name} - Moid: {pmoid}. Updated Profiles.')
+        else: prLightPurple(f'      * Completed {method} to attach profile(s) to {pname} policy name: {name} - Moid: {pmoid}. Updated Profiles.')
     elif re.search('(eula|upgrade)', kwargs.qtype) and kwargs.qtype == 'firmware':
-        if method == 'post':
-            prGreen(f'      * Completed {method} for {kwargs.qtype} {name}.')
-        else:
-            prLightPurple(f'      * Completed {method} for {kwargs.qtype} {name}.')
+        if method == 'post': prGreen(f'      * Completed {method} for {kwargs.qtype} {name}.')
+        else: prLightPurple(f'      * Completed {method} for {kwargs.qtype} {name}.')
     elif kwargs.apiBody.get('Targets'):
-        if method == 'post':
-            prGreen(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
-        else:
-            prLightPurple(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
+        if method == 'post': prGreen(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
+        else: prLightPurple(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
     else:
-        if method == 'post':
-            prGreen(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
-        else:
-            prLightPurple(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
+        if method == 'post': prGreen(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
+        else: prLightPurple(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
 
 def deploy_notification(profile, profile_type):
     print(f'\n-------------------------------------------------------------------------------------------\n')

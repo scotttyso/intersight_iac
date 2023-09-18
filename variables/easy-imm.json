@@ -167,6 +167,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "",
+                "intersight_api": "SerialNumber",
                 "ObjectType": "not_applicable",
                 "required": [
                     "serial_number"

@@ -8,13 +8,13 @@ The Script uses argparse to take in the following CLI arguments:
     i or ignore-tls:            Ignore TLS server-side certificate verification.  Default is False.
     k or intersight-secret-key: Name of the file containing The Intersight secret key for the HTTP signature scheme.
     l or debug-level:           The Debug Level to Run for Script Output
-    s or deployment-step:       The steps in the proceedure to run. Options Are:
+    s or deployment-step:       The steps in the proceedure to run. Options Are: 
                                   1. initial
                                   2. servers
                                   3. luns
                                   4. operating_system
                                   5. os_configuration
-    t or deployment-type:       Infrastructure Deployment Type. Options Are:
+    t or deployment-type:       Infrastructure Deployment Type. Options Are: 
                                   1. azurestack
                                   2. flashstack
                                   3. flexpod
@@ -88,7 +88,7 @@ def cli_arguments():
     Parser.add_argument( '-nxp', '--nexus-password', help='Nexus Login Password.' )
     Parser.add_argument(
         '-s', '--deployment-step', default ='flexpod', required=True,
-        help ='The steps in the proceedure to run. Options Are:'\
+        help ='The steps in the proceedure to run. Options Are: '\
             '1. initial '
             '2. servers '\
             '3. luns '\
@@ -96,7 +96,7 @@ def cli_arguments():
             '5. os_configuration ')
     Parser.add_argument(
         '-t', '--deployment-type', default ='flexpod', required=True,
-        help ='Infrastructure Deployment Type. Options Are:'\
+        help ='Infrastructure Deployment Type. Options Are: '\
             '1. azurestack '
             '2. flashstack '\
             '3. flexpod '\
@@ -254,14 +254,13 @@ def main():
             if kwargs.imm_dict.orgs[org].get('policies'):
                 for ptype in kwargs.policy_list:
                     if kwargs.imm_dict.orgs[org]['policies'].get(ptype):
-                        dpolicies = eval(f"isight.imm(ptype).policies(kwargs)")
-            exit()
+                        kwargs = eval(f"isight.imm(ptype).policies(kwargs)")
         for org in orgs:
             #==============================================
             # Deploy Domain
             #==============================================
             if re.search('(flashstack|flexpod|imm_domain)', kwargs.args.deployment_type):
-                kwargs = eval(f"isight.profiles_class('domain').profiles(kwargs)")
+                kwargs = eval(f"isight.imm('domain').profiles(kwargs)")
     #=================================================================
     # Deploy Chassis/Server Pools/Policies/Profiles
     #=================================================================
@@ -284,31 +283,28 @@ def main():
         #==============================================
         # Pools
         #==============================================
-        #for org in orgs:
-        #    if kwargs.imm_dict.orgs[org].get('pools'):
-        #        for ptype in kwargs.imm_dict.orgs[org]['pools']:
-        #            kwargs = eval(f"isight.imm(ptype).pools(kwargs)")
+        for org in orgs:
+            if kwargs.imm_dict.orgs[org].get('pools'):
+                for ptype in kwargs.imm_dict.orgs[org]['pools']:
+                    kwargs = eval(f"isight.imm(ptype).pools(kwargs)")
         #==============================================
         # Policies
         #==============================================
-        #for org in orgs:
-        #    if kwargs.imm_dict.orgs[org].get('policies'):
-        #        for ptype in kwargs.policy_list:
-        #            dpolicies = eval(f"isight.imm(ptype).policies(kwargs)")
-        #            kwargs.deployed.update({ptype:dpolicies})
-        #for org in orgs:
-        #    kwargs.isight[org].policy = DotMap(dict(sorted(kwargs.isight[org].policy.toDict().items())))
+        for org in orgs:
+            if kwargs.imm_dict.orgs[org].get('policies'):
+                for ptype in kwargs.policy_list:
+                    kwargs = eval(f"isight.imm(ptype).policies(kwargs)")
+        for org in orgs:
+            kwargs.isight[org].policy = DotMap(dict(sorted(kwargs.isight[org].policy.toDict().items())))
         #print(json.dumps(kwargs.isight, indent=4))
-        #exit()
         #==============================================
         # Profiles
         #==============================================
         for org in orgs:
-            #if kwargs.imm_dict.orgs[org].get('templates'):
-            #    if kwargs.imm_dict.orgs[org]['templates'].get('server'): kwargs = eval(f"isight.imm('server_template').profiles(kwargs)")
+            if kwargs.imm_dict.orgs[org].get('templates'):
+                if kwargs.imm_dict.orgs[org]['templates'].get('server'): kwargs = eval(f"isight.imm('server_template').profiles(kwargs)")
             if kwargs.imm_dict.orgs[org].get('profiles'):
                 profile_list = ['chassis', 'server']
-                profile_list = ['server']
                 for i in profile_list:
                     if kwargs.imm_dict.orgs[org]['profiles'].get(i): kwargs = eval(f"isight.imm(i).profiles(kwargs)")
             #==============================================
