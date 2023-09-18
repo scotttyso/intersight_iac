@@ -30,7 +30,7 @@ def begin_loop(ptype1, ptype2):
 def begin_section(ptype1, ptype2):
     prLightGray(f'\n-------------------------------------------------------------------------------------------\n')
     prLightPurple(
-        f"   Beginning {' '.join(ptype1.split('_')).title()} {' '.join(ptype2.split('_')).title()} Deployments.\n")
+        f"   Beginning {ptype1} {' '.join(ptype2.split('_')).title()} Deployments.\n")
 
 def completed_item(ptype, kwargs):
     iresults = kwargs.api_results
@@ -57,9 +57,9 @@ def completed_item(ptype, kwargs):
     if re.search('(storage_drive|user_role|v(l|s)ans|vhbas|vnics|port_(channel|mode|role))', ptype):
         if 'port' in ptype:
             if method == 'post':
-                prGreen(f'      * Completed {method} for port_policy {kwargs.port_policy_name}: {name} - Moid: {pmoid}')
+                prGreen(f'      * Completed {method} for port_policy {kwargs.parent_name}: {name} - Moid: {pmoid}')
             else:
-                prLightPurple(f'      * Completed {method} for port_policy {kwargs.port_policy_name}: {name} - Moid: {pmoid}')
+                prLightPurple(f'      * Completed {method} for port_policy {kwargs.parent_name}: {name} - Moid: {pmoid}')
         else:
             if method == 'post':
                 prGreen(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
@@ -106,7 +106,7 @@ def end_loop(ptype1, ptype2):
     prLightPurple(f"\n   Completed {' '.join(ptype1.split('_')).title()} {ptype2} Deployment.")
 
 def end_section(ptype1, ptype2):
-    prLightPurple(f"\n   Completed {' '.join(ptype1.split('_')).title()} {' '.join(ptype2.split('_')).title()} Deployments.")
+    prLightPurple(f"\n   Completed {ptype1} {' '.join(ptype2.split('_')).title()} Deployments.")
 
 def error_policy_doesnt_exist(policy_type, policy_name, profile, profile_type, ptype):
     print(f'\n-------------------------------------------------------------------------------------------\n')
