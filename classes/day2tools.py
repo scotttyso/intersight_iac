@@ -1,25 +1,16 @@
 #=============================================================================
-# Print Color Functions
-#=============================================================================
-def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
-def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
-
-#=============================================================================
 # Source Modules
 #=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
 try:
-    from classes import ezfunctions as ezfunctions
+    from classes import ezfunctions, isight, pcolor
     from classes import isight
     from copy import deepcopy
     from datetime import datetime
     from dotmap import DotMap
     from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
-    import numpy, pytz, openpyxl, re, sys, urllib3, yaml
+    import numpy, pytz, openpyxl, re, urllib3, yaml
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -39,7 +30,7 @@ class intersight_api(object):
         #======================================================
         # Check for YAML File Definition
         #======================================================
-        prCyan(f'\n{"-"*91}\n  Beginning Policy Append to Profiles...\n{"-"*91}\n')
+        pcolor.Cyan(f'\n{"-"*91}\n  Beginning Policy Append to Profiles...\n{"-"*91}\n')
         if kwargs.args.yaml_file != None:
             yaml_arg = True
             ydata = DotMap(yaml.safe_load(open(kwargs.args.yaml_file, 'r')))
@@ -100,10 +91,10 @@ class intersight_api(object):
         else: kwargs.organizations = ydata.organizations
         for target_platform in profile_types:
             for org in kwargs.organizations:
-                prCyan(f'\n{"-"*91}\n  Starting `{target_platform}` Loop in Organization `{org}`.\n{"-"*91}\n')
+                pcolor.Cyan(f'\n{"-"*91}\n  Starting `{target_platform}` Loop in Organization `{org}`.\n{"-"*91}\n')
                 update_profile(org, target, target_platform, yaml_arg, ydata, kwargs)
-                prCyan(f'\n{"-"*91}\n  Finished `{target_platform}` Loop in Organization `{org}`.\n{"-"*91}\n')
-            prPurple(f'\n{"-"*91}\n  Finished Updating `{target_platform}` Profiles...\n{"-"*91}\n')
+                pcolor.Cyan(f'\n{"-"*91}\n  Finished `{target_platform}` Loop in Organization `{org}`.\n{"-"*91}\n')
+            pcolor.Purple(f'\n{"-"*91}\n  Finished Updating `{target_platform}` Profiles...\n{"-"*91}\n')
 
 
     #======================================================
@@ -127,7 +118,7 @@ class intersight_api(object):
         kwargs.organizations = ydata.organizations
         for org in kwargs.organizations:
             kwargs.org = org
-            prCyan(f'\n{"-"*91}\n\n  Starting Loop on Organization {org}.\n\n{"-"*91}\n')
+            pcolor.Cyan(f'\n{"-"*91}\n\n  Starting Loop on Organization {org}.\n\n{"-"*91}\n')
             #======================================================
             # Query the API for the VLAN Policies
             #======================================================
@@ -137,7 +128,7 @@ class intersight_api(object):
             #======================================================
             # Query the API for the VLANs Attached to the VLAN Policy
             #======================================================
-            prCyan(f'\n{"-"*91}\n\n  Checking VLAN Policy `{vpolicy}` for VLANs.\n\n{"-"*91}\n')
+            pcolor.Cyan(f'\n{"-"*91}\n\n  Checking VLAN Policy `{vpolicy}` for VLANs.\n\n{"-"*91}\n')
             kwargs.pmoid = kwargs.vlans[vpolicy].moid
             kwargs = isight.api_get(True, [e.vlan_id for e in vlans], 'vlan.vlans', kwargs)
             mcast_moid   = kwargs.results[0].MulticastPolicy.Moid
@@ -146,12 +137,12 @@ class intersight_api(object):
             for e in vlans:
                 if not e.vlan_id in policy_vlans: add_vlans.append(e)
                 else:
-                    prCyan(f'\n{"-"*91}\n')
-                    prCyan(f'  VLAN `{e.vlan_id}` is already in VLAN Policy `{vpolicy}` in Organization `{org}`.\n\n{"-"*91}\n')
+                    pcolor.Cyan(f'\n{"-"*91}\n')
+                    pcolor.Cyan(f'  VLAN `{e.vlan_id}` is already in VLAN Policy `{vpolicy}` in Organization `{org}`.\n\n{"-"*91}\n')
             for e in add_vlans:
-                prCyan(f'\n{"-"*91}\n')
-                prCyan(f'  VLAN `{e.vlan_id}` is not in VLAN Policy: `{vpolicy}` in Organization: `{org}`.  Adding VLAN...')
-                prCyan(f'\n{"-"*91}\n')
+                pcolor.Cyan(f'\n{"-"*91}\n')
+                pcolor.Cyan(f'  VLAN `{e.vlan_id}` is not in VLAN Policy: `{vpolicy}` in Organization: `{org}`.  Adding VLAN...')
+                pcolor.Cyan(f'\n{"-"*91}\n')
                 kwargs.apiBody = {
                     'EthNetworkPolicy':{'Moid':kwargs.vlans[vpolicy].moid,'ObjectType':'fabric.EthNetworkPolicy'},
                     'MulticastPolicy':{'Moid':mcast_moid,'ObjectType':'fabric.MulticastPolicy'},
@@ -200,11 +191,11 @@ class intersight_api(object):
                 eng_keys = list(eth_eng.keys())
                 for e in idata.ethernet_network_group:
                     if e.name in eng_keys:
-                        prCyan(f'\n{"-"*91}')
-                        prCyan(f'Ethernet Network Group `{e.name}` Exists.  Moid is: {eth_eng[e.name].moid}')
-                        prCyan(f'\n{"-"*91}')
+                        pcolor.Cyan(f'\n{"-"*91}')
+                        pcolor.Cyan(f'Ethernet Network Group `{e.name}` Exists.  Moid is: {eth_eng[e.name].moid}')
+                        pcolor.Cyan(f'\n{"-"*91}')
                     else:
-                        prCyan(f'\n{"-"*91}\n  Ethernet Network Group `{e.name}` does not exist.  Creating...\n{"-"*91}\n')
+                        pcolor.Cyan(f'\n{"-"*91}\n  Ethernet Network Group `{e.name}` does not exist.  Creating...\n{"-"*91}\n')
                         kwargs.apiBody = {
                             'Description': f'{e.name} Ethernet Network Group', 'Name': e.name,
                             'ObjectType':'fabric.EthNetworkGroupPolicy', 'Tags':tags,
@@ -232,10 +223,10 @@ class intersight_api(object):
                 # Configure LAN Connectivity Policies
                 #======================================================
                 if e.name in list(lan_policies.keys()):
-                    prCyan(f'\n{"-"*91}\n  LAN Policy `{e.name}` exists.  Moid is: {lan_policies[e.name].moid}\n{"-"*91}\n')
+                    pcolor.Cyan(f'\n{"-"*91}\n  LAN Policy `{e.name}` exists.  Moid is: {lan_policies[e.name].moid}\n{"-"*91}\n')
                     lan_moid = lan_policies[e.name].moid
                 else:
-                    prCyan(f'\n{"-"*91}\n\n  LAN Policy `{e.name}` does not exist.  Creating...\n\n{"-"*91}\n')
+                    pcolor.Cyan(f'\n{"-"*91}\n\n  LAN Policy `{e.name}` does not exist.  Creating...\n\n{"-"*91}\n')
                     kwargs.apiBody = {
                         'Name': str(e.name),
                         'ObjectType': 'vnic.LanConnectivityPolicy',
@@ -254,13 +245,13 @@ class intersight_api(object):
                 vnic_results = kwargs.pmoids
                 for i in ydata.post.lan_connectivity.vnics:
                     if i.name in list(vnic_results.keys()):
-                        prCyan(f'\n{"-"*91}\n')
-                        prCyan(f'  LAN Connectivity `{e.name}` vNIC `{i.name}` exists.  Moid is: {vnic_results[i.name].moid}')
-                        prCyan(f'\n{"-"*91}\n')
+                        pcolor.Cyan(f'\n{"-"*91}\n')
+                        pcolor.Cyan(f'  LAN Connectivity `{e.name}` vNIC `{i.name}` exists.  Moid is: {vnic_results[i.name].moid}')
+                        pcolor.Cyan(f'\n{"-"*91}\n')
                     else:
-                        prCyan(f'\n{"-"*91}\n')
-                        prCyan(f'  vNIC `{i.name}` was not attached to LAN Policy `{e.name}`.  Creating...')
-                        prCyan(f'\n{"-"*91}\n')
+                        pcolor.Cyan(f'\n{"-"*91}\n')
+                        pcolor.Cyan(f'  vNIC `{i.name}` was not attached to LAN Policy `{e.name}`.  Creating...')
+                        pcolor.Cyan(f'\n{"-"*91}\n')
                         if len(ydata.post.lan_connectivity.vnics) > 1: failover = False
                         else: failover = True
                         eng = i.ethernet_network_group.replace('{{vlan_id}}', str(e.vlan_id))
@@ -289,7 +280,7 @@ class intersight_api(object):
                         kwargs.method = 'post'
                         kwargs.uri    = kwargs.ezdata['lan_connectivity.vnics'].intersight_uri
                         kwargs        = isight.api('vnics').calls(kwargs)
-        prCyan(f'\n{"-"*91}\n\n  Finished Loop on Organization `{org}`.\n\n{"-"*91}\n')
+        pcolor.Cyan(f'\n{"-"*91}\n\n  Finished Loop on Organization `{org}`.\n\n{"-"*91}\n')
         
 
     #======================================================
@@ -755,7 +746,7 @@ def update_profile(org, target, target_platform, yaml_arg, ydata, kwargs):
     # Attach the Policy to the Selected Server Profiles.
     #======================================================
     for i in profile_names:
-        prPurple(f'\n{"-"*91}\n  Starting on Server Profile `{i}`.\n{"-"*91}\n')
+        pcolor.Purple(f'\n{"-"*91}\n  Starting on Server Profile `{i}`.\n{"-"*91}\n')
         policy_bucket = profiles[i].policy_bucket
         object_index  = dict((d.ObjectType, s) for s, d in enumerate(policy_bucket))
         for e in policies.keys():

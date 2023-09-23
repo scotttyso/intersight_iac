@@ -7869,6 +7869,7 @@
                         "title": "wizard",
                         "enum": [
                             "server_profiles",
+                            "setup",
                             "os_configuration"
                         ]
                     }
@@ -10300,7 +10301,7 @@
                         "type": "string",
                         "default": "readonly",
                         "description": "Default is readonly.  The name of the end point role.\n  * admin\n  * readonly\n  * user",
-                        "intersight_api": "$ref:iam.EndPointRole:Name",
+                        "intersight_api": "$ref:EndPointRole:iam.EndPointRole:Moid",
                         "enum": [
                             "admin",
                             "readonly",
@@ -15209,13 +15210,13 @@
                 "description": "The storage policy models the reusable storage related configuration that can be applied on many servers. This policy allows creation of RAID groups using existing disk group policies and virtual drives on the drive groups. The user has options to move all unused disks to JBOD or Unconfigured good state. The encryption of drives can be enabled through this policy using remote keys from a KMIP server.",
                 "intersight_type": "policy",
                 "intersight_uri": "storage/StoragePolicies",
-                "ObjectType": "storage.Policy",
+                "ObjectType": "storage.StoragePolicy",
                 "target_platforms": [
                     "FIAttached",
                     "Standalone"
                 ],
                 "title": "storage - Storage - Intersight Uri: storage/StoragePolicies",
-                "x-allOf-name": "storage.Policy",
+                "x-allOf-name": "storage.StoragePolicy",
                 "allOf": [
                     {
                         "$ref": "#/components/schemas/abstract_policy"
@@ -15240,7 +15241,9 @@
                                 "title": "default_drive_state"
                             },
                             "drive_groups": {
+                                "type": "array",
                                 "description": "A reusable RAID drive group configuration that specifies a pool of drives and a set of virtual drives that are to be created using this pool of drives.\n\n  * name\nOptional Attributes are:\n  * automatic_drive_group\n  * manual_drive_group\n  * raid_level\n  * virtual_drives",
+                                "intersight_api": "drive_groups",
                                 "items": {
                                     "$ref": "#/components/schemas/storage.drive_groups"
                                 },
@@ -15289,6 +15292,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "A reusable RAID drive group configuration that specifies a pool of drives and a set of virtual drives that are to be created using this pool of drives.",
+                "intersight_api": "drive_groups",
                 "intersight_type": "policy",
                 "intersight_uri": "storage/DriveGroups",
                 "ObjectType": "storage.DriveGroup",
@@ -15345,6 +15349,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Pool represents a collection of IPv4 and/or IPv6 addresses that can be allocated to other configuration entities like server profiles.",
+                "intersight_api": "AutomaticDriveGroup",
                 "ObjectType": "storage.AutomaticDriveGroup",
                 "required": [
                     "drives_per_span",
@@ -15414,6 +15419,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "This drive group is created by specifying the drive slots to be used.\nRequired Attributes:\n  * drive_array_spans\n\nOptional Attributes:\n  * dedicated_hot_spares",
+                "intersight_api": "ManualDriveGroup",
                 "ObjectType": "storage.ManualDriveGroup",
                 "required": [
                     "drive_array_spans"
@@ -15433,7 +15439,7 @@
                     "drive_array_spans": {
                         "type": "array",
                         "description": "Enter list of Disk IDs separated by comma or hypen. Sample format is 1, 3 or 4-6, 8. Non spanned RAID levels like RAID0, RAID1, RAID5 and RAID6 expect a single group of disks whereas spanned RAID levels need multiple groups of disks with each group representing a span group. Non spanned RAID levels expect one span group and spanned RAID levels accept minimum 2 span groups and up to 8.\nRequired Attributes:\n  * slots",
-                        "intersight_api": "ObjectType",
+                        "intersight_api": "SpanGroups",
                         "items": {
                             "$ref": "#/components/schemas/storage.drive_groups.manual_drive_group.drive_array_spans"
                         },
@@ -15444,8 +15450,8 @@
             },
             "storage.drive_groups.manual_drive_group.drive_array_spans": {
                 "type": "object",
-                "additionalProperties": false,
                 "description": "This models a single span group of disks in a RAID group.",
+                "intersight_api": "SpanGroups",
                 "ObjectType": "storage.SpanDrives",
                 "required": [
                     "slots"
@@ -15468,6 +15474,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "description": "Definition of the list of properties defined in 'storage.VirtualDriveConfiguration', excluding properties defined in parent classes.",
+                "intersight_api": "VirtualDrives",
                 "ObjectType": "storage.VirtualDriveConfiguration",
                 "required": [
                     "name"

@@ -1,8 +1,18 @@
-from copy import deepcopy
-import ezfunctions
-import ipaddress
-import json
-import re
+#=============================================================================
+# Source Modules
+#=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
+try:
+    from classes import ezfunctions, pcolor
+    from copy import deepcopy
+    from dotmap import DotMap
+    import ipaddress, json, re
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 
 class transition(object):
     def __init__(self, type):

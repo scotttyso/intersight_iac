@@ -65,7 +65,7 @@ class quick_start(object):
             polVars.serial_port_aenable = 'enabled'
             polVars.terminal_type = 'vt100'
             #==============================================
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             #==============================================
             kwargs.class_path = 'policies,bios'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -123,7 +123,7 @@ class quick_start(object):
             polVars.boot_devices.append({
                 'enabled':True, 'name':'uefishell', 'object_type':'boot.UefiShell'
             })
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = 'policies,boot_order'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
         #==============================================
@@ -149,7 +149,7 @@ class quick_start(object):
             polVars.unused_disks_state = 'No Change'
             polVars.use_jbod_for_vd_creation = True
         if re.search('(m2|raid1)', boot_type):
-            # Add Policy Variables to immDict
+            # Add Policy Variables to imm_dict
             kwargs.class_path = 'policies,storage'
             kwargs = ezfunctions.ez_append(polVars, **kwargs)
         # Return kwargs
@@ -342,7 +342,7 @@ class quick_start(object):
                                 'vsan_id':kwargs[f"vsan_id_{x}"]
                             }]
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,vsan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -498,7 +498,7 @@ class quick_start(object):
                             for priority in priorities:
                                 polVars.classes.append(kwargs[priority])
 
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             kwargs.class_path = 'policies,system_qos'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
@@ -568,7 +568,7 @@ class quick_start(object):
                                     'name':f'{domain_name}-{x}','serial_number':serial_number
                                 })
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             for i in chassis_models:
                                 if len(chassis_dict[i].targets) > 0:
@@ -590,7 +590,7 @@ class quick_start(object):
                                 polVars.vsan_policies.append(f"vsan-{kwargs.vsan_id_a}")
                                 polVars.vsan_policies.append(f"vsan-{kwargs.vsan_id_b}")
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'profiles,domain'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -769,7 +769,7 @@ class quick_start(object):
                                 if not native_vlan == '': polVars.native_vlan = native_vlan
                                 else:
                                     if not polVars.get('native_vlan') == None: polVars.pop('native_vlan')
-                                # Add Policy Variables to immDict
+                                # Add Policy Variables to imm_dict
                                 kwargs.class_path = 'policies,ethernet_network_group'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
@@ -786,7 +786,7 @@ class quick_start(object):
                                 polVars.mtu = mtu
                                 polVars.rate_limit = 0
 
-                                # Add Policy Variables to immDict
+                                # Add Policy Variables to imm_dict
                                 kwargs.class_path = 'policies,ethernet_qos'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             if len(fc_ports_in_use) > 0:
@@ -865,7 +865,7 @@ class quick_start(object):
                                 polVars.vnics.append(vnic)
                                 Order += 2
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,lan_connectivity'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1301,7 +1301,7 @@ class quick_start(object):
                                 # Configure IMC Access Policy
                                 #==============================================
                                 polVars = {}
-                                ip_pool = kwargs.immDict.orgs[org].pools.ip[0].name
+                                ip_pool = kwargs.imm_dict.orgs[org].pools.ip[0].name
                                 polVars.name = 'kvm'
                                 if inband_pool == True:
                                     polVars.inband_ip_pool = 'kvm-inband'
@@ -1373,7 +1373,7 @@ class quick_start(object):
                                 polVars.local_logging  = {'minimum_severity':min_severity}
                                 polVars.remote_logging = kwargs.remote_logging
 
-                                # Add Policy Variables to immDict
+                                # Add Policy Variables to imm_dict
                                 kwargs.class_path = 'policies,syslog'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
@@ -1385,7 +1385,7 @@ class quick_start(object):
                                 polVars.name = name
                                 polVars.fan_control_mode = 'Balanced'
 
-                                # Add Policy Variables to immDict
+                                # Add Policy Variables to imm_dict
                                 kwargs.class_path = 'policies,thermal'
                                 kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             #==============================================
@@ -1574,7 +1574,7 @@ class quick_start(object):
                         polVars.ssh_policy = f'ssh'
                         polVars.target_platform = 'Standalone'
                     #==============================================
-                    # Add Policy Variables to immDict
+                    # Add Policy Variables to imm_dict
                     #==============================================
                     kwargs.class_path = 'templates,server'
                     kwargs = ezfunctions.ez_append(polVars, **kwargs)

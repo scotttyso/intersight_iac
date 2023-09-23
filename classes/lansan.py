@@ -75,7 +75,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,ethernet_adapter'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -175,7 +175,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,ethernet_network_control'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -248,7 +248,7 @@ class policies(object):
                 # Get VLAN Policy VLAN(s) and Compare
                 #==============================================
                 vlan_list = []
-                for item in kwargs.immDict.orgs[org].policies.vlan:
+                for item in kwargs.imm_dict.orgs[org].policies.vlan:
                     if item.name == kwargs.vlan_policy:
                         for i in item.vlans:
                             vlan_list.append(i.vlan_list)
@@ -306,7 +306,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,ethernet_network_group'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -387,7 +387,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,ethernet_network'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -513,7 +513,7 @@ class policies(object):
                     kwargs.jData.varType = f"{polVars.name} QoS Priority"
                     polVars.priority = ezfunctions.variablesFromAPI(**kwargs)
                     mtu = 1500
-                    for i in kwargs.immDict.orgs[org].policies.system_qos:
+                    for i in kwargs.imm_dict.orgs[org].policies.system_qos:
                         if i.name == kwargs.system_qos_policy:
                             for k in i.classes:
                                 if k.priority == polVars.priority:
@@ -531,7 +531,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,ethernet_qos'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -649,7 +649,7 @@ class policies(object):
                             kwargs.policy = 'policies.vsan.vsan_policy'
                             kwargs = policy_select_loop(self, **kwargs)
                             vsan_list = []
-                            for item in kwargs.immDict.orgs[org].policies.vsan:
+                            for item in kwargs.imm_dict.orgs[org].policies.vsan:
                                 if item.name == kwargs.vsan_policy:
                                     for i in item.vsans: vsan_list.append(i.vsan_id)
                             if len(vsan_list) > 1: vsan_string = ','.join(str(vsan_list))
@@ -698,7 +698,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,fc_zone'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -773,7 +773,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,fibre_channel_adapter'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -856,7 +856,7 @@ class policies(object):
                             kwargs.policy = 'policies.vsan.vsan_policy'
                             kwargs = policy_select_loop(self, **kwargs)
                             vsan_list = []
-                            for item in kwargs.immDict.orgs[org].policies.vsan:
+                            for item in kwargs.imm_dict.orgs[org].policies.vsan:
                                 if item.name == kwargs.vsan_policy:
                                     for i in item.vsans: vsan_list.append(i.vsan_id)
                             print(f'vsan list is {vsan_list}')
@@ -882,7 +882,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,fibre_channel_network'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -944,7 +944,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,fibre_channel_qos'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1004,7 +1004,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,flow_control'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1091,7 +1091,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             confirm_policy = 'Y'
                             kwargs.class_path = 'policies,iscsi_adapter'
@@ -1297,7 +1297,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,iscsi_boot'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1406,7 +1406,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,iscsi_static_target'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1548,7 +1548,7 @@ class policies(object):
                     # Pull PCI Order Consumed from SAN Policy
                     #================================================
                     if not san_connectivity_policy == '':
-                        for item in kwargs.immDict.orgs[org].policies.san_connectivity:
+                        for item in kwargs.imm_dict.orgs[org].policies.san_connectivity:
                             if item.name == san_connectivity_policy:
                                 for i in item.vhbas:
                                     if i.get('placement_pci_link') == None: placement_pci_link = 0
@@ -1767,7 +1767,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,lan_connectivity'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1826,7 +1826,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,link_aggregation'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1884,7 +1884,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,link_control'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -1961,7 +1961,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,multicast'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -2210,7 +2210,7 @@ class policies(object):
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             kwargs.class_path = 'policies,san_connectivity'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
@@ -2286,7 +2286,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,switch_control'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -2388,7 +2388,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,system_qos'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -2490,7 +2490,7 @@ class policies(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'policies,vlan'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -2590,7 +2590,7 @@ class policies(object):
                                     kwargs.allow_opt_out = False
                                     kwargs = policy_select_loop(self, **kwargs)
                                     vlan_list = []
-                                    for item in kwargs.immDict.orgs[org].policies.vlan:
+                                    for item in kwargs.imm_dict.orgs[org].policies.vlan:
                                         if item.name == kwargs.vlan_policy:
                                             for i in item.vlans:
                                                 vlan_list.append(i.vlan_list)
@@ -2659,7 +2659,7 @@ class policies(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'policies,vsan'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)

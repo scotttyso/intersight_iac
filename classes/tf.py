@@ -1,15 +1,18 @@
-from copy import deepcopy
-from requests.api import delete
-import ezfunctions
-import jinja2
-import json
-import os
-import pkg_resources
-import requests
-import stdiomask
+#=============================================================================
+# Source Modules
+#=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
 import sys
-import time
-import validating
+try:
+    from classes import ezfunctions, pcolor, validating
+    from copy import deepcopy
+    from requests.api import delete
+    import jinja2, json, os, pkg_resources, requests, stdiomask, time
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 
 # Global options for debugging
 print_payload = False

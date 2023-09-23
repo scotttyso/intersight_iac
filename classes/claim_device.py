@@ -1,22 +1,13 @@
 #=============================================================================
-# Print Color Functions
-#=============================================================================
-def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
-def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
-
-#=============================================================================
 # Source Modules
 #=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
 try:
-    from classes import device_connector, isight
+    from classes import device_connector, isight, pcolor
     from dotmap import DotMap
     from time import sleep
-    import json, numpy, re, sys
+    import json, numpy, re
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -66,13 +57,13 @@ def claim_targets(kwargs):
             else:
                 result[device.hostname].msg += "  Unknown device_type %s" % device.device_type
                 return_code = 1
-                prCyan(json.dumps(result[device.hostname]))
+                pcolor.Cyan(json.dumps(result[device.hostname]))
                 continue
             
             if not dc_obj.logged_in:
                 result[device.hostname].msg += "  Login error"
                 return_code = 1
-                prCyan(json.dumps(result[device.hostname]))
+                pcolor.Cyan(json.dumps(result[device.hostname]))
                 continue
 
             ro_json = DotMap(dc_obj.configure_connector())
@@ -81,7 +72,7 @@ def claim_targets(kwargs):
                 return_code = 1
                 if ro_json.get('ApiError'):
                     result[device.hostname].msg += ro_json.ApiError
-                prCyan(json.dumps(result[device.hostname]))
+                pcolor.Cyan(json.dumps(result[device.hostname]))
                 continue
 
             # set access mode (ReadOnlyMode True/False) to desired state
@@ -90,7 +81,7 @@ def claim_targets(kwargs):
                 if ro_json.get('ApiError'):
                     result[device.hostname].msg += ro_json.ApiError
                     return_code = 1
-                    prCyan(json.dumps(result[device.hostname]))
+                    pcolor.Cyan(json.dumps(result[device.hostname]))
                     continue
                 result[device.hostname].changed = True
 
@@ -99,7 +90,7 @@ def claim_targets(kwargs):
             if ro_json.get('ApiError'):
                 result[device.hostname].msg += ro_json.ApiError
                 return_code = 1
-                prCyan(json.dumps(result[device.hostname]))
+                pcolor.Cyan(json.dumps(result[device.hostname]))
                 continue
 
             # wait for a connection to establish before checking claim state
@@ -113,7 +104,7 @@ def claim_targets(kwargs):
 
             if ro_json.ConnectionState != 'Connected': return_code = 1; continue
             else:
-                prCyan(ro_json.ConnectionState)
+                pcolor.Cyan(ro_json.ConnectionState)
                 (claim_resp, device_id, claim_code) = dc_obj.get_claim_info(ro_json)
                 result[device.hostname].msg += f"  Id : {device_id}"
 
@@ -173,16 +164,16 @@ def claim_targets(kwargs):
         kwargs.uri   = 'resource/Groups'
         kwargs       = isight.api(kwargs.qtype).calls(kwargs)
 
-    prCyan(f'\n{"-" * 60}')
+    pcolor.Cyan(f'\n{"-" * 60}')
     for key, value in result.items():
         for k, v in value.items():
             if key == 'msg':
                 msg_split = value.split('  ')
                 msg_split.sort()
                 for msg in msg_split:
-                    if not msg == '': prCyan(msg)
-            else: prCyan(k, ':', v)
-    prCyan(f'\n{"-" * 60}')
+                    if not msg == '': pcolor.Cyan(msg)
+            else: pcolor.Cyan(k, ':', v)
+    pcolor.Cyan(f'\n{"-" * 60}')
 
     # logout of any sessions active after exception handling
     if ('dc_obj' in locals() or 'dc_obj' in globals()): dc_obj.logout()

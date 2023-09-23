@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Infrastructure Deployment - 
+""" Infrastructure Deployment - 
 This Script is built to Deploy Infrastructure from a YAML Configuration File.
 The Script uses argparse to take in the following CLI arguments:
     a or intersight-api-key-id: The Intersight API key id for HTTP signature scheme.
     d or dir:                   Base Directory to use for creation of the YAML Configuration Files.
+    dl or debug-level:          The Debug Level to Run for Script Output
     e or intersight-fqdn:       The Intersight hostname for the API endpoint. The default is intersight.com.
     i or ignore-tls:            Ignore TLS server-side certificate verification.  Default is False.
     k or intersight-secret-key: Name of the file containing The Intersight secret key for the HTTP signature scheme.
-    l or debug-level:           The Debug Level to Run for Script Output
     s or deployment-step:       The steps in the proceedure to run. Options Are: 
                                   1. initial
                                   2. servers
@@ -23,23 +23,15 @@ The Script uses argparse to take in the following CLI arguments:
     v or api-key-v3:            Flag for API Key Version 3.
     y or yaml-file:             The input YAML File.
 """
-#=====================================================
-# Print Color Functions
-#=====================================================
-def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
-def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
-#======================================================
+#=============================================================================
 # Source Modules
-#======================================================
+#=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import os, sys
+script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
+sys.path.insert(0, f'{script_path}{os.sep}classes')
 try:
-    import sys
-    sys.path.insert(0, './classes')
-    from classes import ci, ezfunctions, isight, netapp, network, vsphere
+    from classes import ci, ezfunctions, isight, netapp, network, pcolor, vsphere
     from copy import deepcopy
     from dotmap import DotMap
     from json_ref_dict import materialize, RefDict
@@ -51,7 +43,7 @@ except ImportError as e:
     prRed(f" Install the module using the following: `pip install {e.name}`")
     sys.exit(1)
 #=================================================================
-# Parse Arguments
+# Function: Parse Arguments
 #=================================================================
 def cli_arguments():
     Parser = argparse.ArgumentParser(description='Intersight Converged Infrastructure Deployment Module')
@@ -60,32 +52,32 @@ def cli_arguments():
         help='The Intersight API key id for HTTP signature scheme.')
     Parser.add_argument(
         '-d', '--dir', default = 'Intersight',
-        help = 'The Directory to use for the Creation of the Terraform Files.')
+        help = 'The Directory to use for the Creation of the YAML Configuration Files.')
+    Parser.add_argument(
+        '-dl', '--debug-level', default =0,
+        help ='The Amount of Debug output to Show: '\
+            '1. Shows the api request response status code '\
+            '5. Show URL String + Lower Options '\
+            '6. Adds Results + Lower Options '\
+            '7. Adds json payload + Lower Options '\
+            'Note: payload shows as pretty and straight to check for stray object types like Dotmap and numpy')
     Parser.add_argument(
         '-f', '--intersight-fqdn', default='intersight.com',
         help='The Intersight hostname for the API endpoint. The default is intersight.com.')
     Parser.add_argument(
         '-i', '--ignore-tls', action='store_false',
         help='Ignore TLS server-side certificate verification.  Default is False.')
-    Parser.add_argument( '-ilp', '--local-user-password-1', help='Intersight Managed Mode Local User Password 1.' )
-    Parser.add_argument( '-ilp2', '--local-user-password-2', help='Intersight Managed Mode Local User Password 2.' )
-    Parser.add_argument( '-isa', '--snmp-auth-password-1', help='Intersight Managed Mode SNMP Auth Password.' )
+    Parser.add_argument( '-ilp', '--local-user-password-1',   help='Intersight Managed Mode Local User Password 1.' )
+    Parser.add_argument( '-ilp2', '--local-user-password-2',  help='Intersight Managed Mode Local User Password 2.' )
+    Parser.add_argument( '-isa', '--snmp-auth-password-1',    help='Intersight Managed Mode SNMP Auth Password.' )
     Parser.add_argument( '-isp', '--snmp-privacy-password-1', help='Intersight Managed Mode SNMP Privilege Password.' )
     Parser.add_argument(
         '-k', '--intersight-secret-key', default='~/Downloads/SecretKey.txt',
         help='Name of the file containing The Intersight secret key or contents of the secret key in environment.')
-    Parser.add_argument(
-        '-l', '--debug-level', default =0,
-        help ='The Amount of Debug output to Show:'\
-            '1. Shows the api request response status code'
-            '5. Show URL String + Lower Options'\
-            '6. Adds Results + Lower Options'\
-            '7. Adds json payload + Lower Options'\
-            'Note: payload shows as pretty and straight to check for stray object types like Dotmap and numpy')
-    Parser.add_argument( '-np', '--netapp-password', help='NetApp Login Password.' )
+    Parser.add_argument( '-np', '--netapp-password',   help='NetApp Login Password.' )
     Parser.add_argument( '-nsa', '--netapp-snmp-auth', help='NetApp SNMP Auth Password.' )
     Parser.add_argument( '-nsp', '--netapp-snmp-priv', help='NetApp SNMP Privilege Password.' )
-    Parser.add_argument( '-nxp', '--nexus-password', help='Nexus Login Password.' )
+    Parser.add_argument( '-nxp', '--nexus-password',   help='Nexus Login Password.' )
     Parser.add_argument(
         '-s', '--deployment-step', default ='flexpod', required=True,
         help ='The steps in the proceedure to run. Options Are: '\
@@ -103,9 +95,9 @@ def cli_arguments():
             '3. imm_domain '\
             '4. imm_standalone ')
     Parser.add_argument( '-v', '--api-key-v3', action='store_true', help='Flag for API Key Version 3.' )
-    Parser.add_argument( '-vep', '--vmware-esxi-password', help='VMware ESXi Root Login Password.' )
-    Parser.add_argument( '-vvp', '--vmware-vcenter-password', help='VMware vCenter Admin Login Password.' )
-    Parser.add_argument( '-y', '--yaml-file', help = 'The input YAML File.' )
+    Parser.add_argument( '-vep', '--vmware-esxi-password',          help='VMware ESXi Root Login Password.' )
+    Parser.add_argument( '-vvp', '--vmware-vcenter-password',       help='VMware vCenter Admin Login Password.' )
+    Parser.add_argument( '-y', '--yaml-file',                       help = 'The input YAML File.' )
     kwargs = DotMap()
     kwargs.args = Parser.parse_args()
     return kwargs
@@ -127,6 +119,7 @@ def main():
     logging.basicConfig( filename=f"{dest_dir}{os.sep}{script_name}.log", filemode='a', format=FORMAT, level=logging.DEBUG )
     logger = logging.getLogger('openapi')
     kwargs = cli_arguments()
+    if os.getenv('intersight_fqdn'): kwargs.args.intersight_fqdn = os.getenv('intersight_fqdn')
     #==============================================
     # Determine the Script Path
     #==============================================
@@ -148,16 +141,14 @@ def main():
     #==============================================
     # Send Notification Message
     #==============================================
-    prLightGray(f'\n{"-"*91}\n\n  Begin Deployment for {kwargs.deployment_type}.')
-    prLightGray(f'  * Deployment Step is {kwargs.args.deployment_step}.\n\n{"-"*91}\n')
+    pcolor.LightGray(f'\n{"-"*91}\n\n  Begin Deployment for {kwargs.deployment_type}.')
+    pcolor.LightGray(f'  * Deployment Step is {kwargs.args.deployment_step}.\n\n{"-"*91}\n')
     #================================================
     # Import Stored Parameters and Add to kwargs
     #================================================
     ezdata = materialize(RefDict(f'{script_path}{os.sep}variables{os.sep}easy-imm.json', 'r', encoding="utf8"))
-    ezvars = json.load(open(f'{script_path}{os.sep}variables{os.sep}easy_variablesv2.json', 'r', encoding="utf8"))
     kwargs.ez_tags = {'Key':'ezci','Value':ezdata['info']['version']}
     kwargs.ezdata  = DotMap(ezdata['components']['schemas'])
-    kwargs.ezvars  = DotMap(ezvars['components']['schemas'])
     #==============================================
     # Add Sensitive Variables to Environment
     #==============================================
@@ -177,18 +168,13 @@ def main():
     #==============================================
     # Check Folder Path Naming for Bad Characters
     #==============================================
-    destdirCheck = False
-    while destdirCheck == False:
-        path_sep = os.sep
-        splitDir = kwargs.args.dir.split(path_sep)
-        splitDir = [i for i in splitDir if i]
-        for folder in splitDir:
-            if not re.search(r'^[\w\-\.\:\/\\]+$', folder):
-                prRed(f'\n{"-"*91}\n\n  !! ERROR !!\n  The Directory structure can only contain the following characters:')
-                prRed(f'  letters(a-z, A-Z), numbers(0-9), hyphen(-), period(.), colon(:), or and underscore(_).')
-                prRed(f'  It can be a short path or a fully qualified path. {folder} failed this check.\n\n{"-"*91}\n')
-                sys.exit(1)
-        destdirCheck = True
+    for folder in kwargs.args.dir.split(os.sep):
+        if folder == '': fcount = 0
+        elif not re.search(r'^[\w\-\.\:\/\\]+$', folder):
+            prRed(f'\n{"-"*91}\n\n  !! ERROR !!\n  The Directory structure can only contain the following characters:')
+            prRed(f'  letters(a-z, A-Z), numbers(0-9), hyphen(-), period(.), colon(:), or and underscore(_).')
+            prRed(f'  It can be a short path or a fully qualified path. {folder} failed this check.\n\n{"-"*91}\n')
+            sys.exit(1)
     #==============================================
     # Load Previous Configurations
     #==============================================
@@ -224,19 +210,19 @@ def main():
         #==============================================
         # Configure Switches if configure Set to True
         #==============================================
-        #if kwargs.imm_dict.wizard.nxos_config == True:
-        #    if kwargs.imm_dict.wizard.get('nxos'):
-        #        network_config = DotMap(deepcopy(kwargs.imm_dict.wizard.nxos[0]))
-        #        network_types = ['network', 'ooband']
-        #        for network_type in network_types:
-        #            config_count = 0
-        #            for i in network_config.switches:
-        #                if i.switch_type == network_type: config_count += 1
-        #            if config_count == 2: kwargs = network.nxos('nxos').config(network_config, network_type, kwargs)
+        if kwargs.imm_dict.wizard.nxos_config == True:
+            if kwargs.imm_dict.wizard.get('nxos'):
+                network_config = DotMap(deepcopy(kwargs.imm_dict.wizard.nxos[0]))
+                network_types = ['network', 'ooband']
+                for network_type in network_types:
+                    config_count = 0
+                    for i in network_config.switches:
+                        if i.switch_type == network_type: config_count += 1
+                    if config_count == 2: kwargs = network.nxos('nxos').config(network_config, network_type, kwargs)
         #==============================================
         # Configure Storage Appliances
         #==============================================
-        #if kwargs.args.deployment_type == 'flexpod': kwargs = ci.wizard('build').build_netapp(kwargs)
+        if kwargs.args.deployment_type == 'flexpod': kwargs = ci.wizard('build').build_netapp(kwargs)
         #==============================================
         # Configure Domain
         #==============================================
@@ -267,18 +253,13 @@ def main():
     elif kwargs.args.deployment_step == 'servers':
         kwargs.deployed = {}
         #==============================================
-        # Configure and Deploy Server Profiles
+        # Configure IMM Pools/Policies/Profiles
         #==============================================
-        #kwargs = ci.wizard('build').build_imm_servers(kwargs)
-        kwargs.policy_list = [
-            'bios', 'boot_order', 'ethernet_adapter', 'ethernet_network_control', 'ethernet_qos', 'fc_zone',
-            'fibre_channel_adapter', 'fibre_channel_network', 'fibre_channel_qos', 'firmware', 'imc_access',
-            'ipmi_over_lan', 'lan_connectivity', 'local_user', 'power', 'san_connectivity', 'serial_over_lan',
-            'snmp', 'syslog', 'thermal', 'virtual_kvm', 'virtual_media']
+        kwargs = ci.wizard('build').build_imm_servers(kwargs)
+        orgs   = list(kwargs.imm_dict.orgs.keys())
         #==============================================
         # Create YAML Files
         #==============================================
-        orgs = list(kwargs.imm_dict.orgs.keys())
         ezfunctions.create_yaml(orgs, kwargs)
         #==============================================
         # Pools
@@ -298,7 +279,7 @@ def main():
             kwargs.isight[org].policy = DotMap(dict(sorted(kwargs.isight[org].policy.toDict().items())))
         #print(json.dumps(kwargs.isight, indent=4))
         #==============================================
-        # Profiles
+        # Profiles and Server Identities
         #==============================================
         for org in orgs:
             if kwargs.imm_dict.orgs[org].get('templates'):
@@ -307,9 +288,6 @@ def main():
                 profile_list = ['chassis', 'server']
                 for i in profile_list:
                     if kwargs.imm_dict.orgs[org]['profiles'].get(i): kwargs = eval(f"isight.imm(i).profiles(kwargs)")
-            #==============================================
-            # Configure Server Identities
-            #==============================================
             kwargs = ci.wizard('wizard').server_identities(kwargs)
         #==============================================
         # Create YAML Files
@@ -356,7 +334,7 @@ def main():
             if vmware == True:
                 kwargs = vsphere.api('esx').esx(kwargs)
                 kwargs = vsphere.api('powercli').powercli(kwargs)
-    prLightGray(f'\n{"-"*91}\n\n  Proceedures Complete!!! Closing Environment and Exiting Script.\n\n{"-"*91}\n')
+    pcolor.LightGray(f'\n{"-"*91}\n\n  !!! Proceedures Complete !!!\n  Closing Environment and Exiting Script...\n\n{"-"*91}\n')
     sys.exit(0)
 
 if __name__ == '__main__':

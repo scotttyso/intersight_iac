@@ -24,45 +24,25 @@ The Script uses argparse to take in the following CLI arguments:
     -wb or --workbook:             The Source Workbook for hcl_inventory
     -y or --yaml-file:             The input YAML File.
 """
-
-#=====================================================
-# Print Color Functions
-#=====================================================
-def prCyan(skk):      print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk):     print("\033[92m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
-def prPurple(skk):    print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk):       print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk):    print("\033[93m {}\033[00m" .format(skk))
-
-#======================================================
+#=============================================================================
 # Source Modules
-#======================================================
+#=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+excel_workbook = None
+import os, sys
+script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
+sys.path.insert(0, f'{script_path}{os.sep}classes')
 try:
-    import sys
-    sys.path.insert(0, './classes')
-    from classes import day2tools
-    from classes import isight
-    from classes import ezfunctions as ezfunctions
+    from classes import day2tools, ezfunctions, isight, pcolor
     from dotmap import DotMap
     from json_ref_dict import materialize, RefDict
     from pathlib import Path
-    import argparse
-    import codecs
-    import json
-    import logging
-    import os
-    import platform
+    import argparse, codecs, json, logging, os, platform
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
     prRed(f" Install the module using the following: `pip install {e.name}`")
     sys.exit(1)
-
-
-# Global Variables
-excel_workbook = None
 
 #=================================================================
 # Parse Arguments
@@ -124,7 +104,6 @@ def main():
     if not os.path.exists(os.path.join(dest_dir, dest_file)): 
         create_file = f'type nul >> {os.path.join(dest_dir, dest_file)}'
         os.system(create_file)
-
     FORMAT = '%(asctime)-15s [%(levelname)s] [%(filename)s:%(lineno)s] %(message)s'
     logging.basicConfig(
         filename=f"{dest_dir}{os.sep}{script_name}.log",
@@ -132,23 +111,19 @@ def main():
         format=FORMAT,
         level=logging.DEBUG)
     logger = logging.getLogger('openapi')
-
     #==============================================
     # Build kwargs
     #==============================================
     kwargs   = cli_arguments()
-
     #==============================================
     # Determine the Script Path
     #==============================================
     kwargs.script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
     script_path= kwargs.script_path
     #kwargs.args.dir = os.path.join(Path.home(), kwargs.args.yaml_file.split('/')[0])
-
     args_dict = vars(kwargs.args)
     for k,v in args_dict.items():
         if type(v) == str: os.environ[k] = v
-
     if kwargs.args.intersight_secret_key:
         if '~' in kwargs.args.intersight_secret_key:
             kwargs.args.intersight_secret_key = os.path.expanduser(kwargs.args.intersight_secret_key)
@@ -160,9 +135,9 @@ def main():
     #==============================================
     # Send Notification Message
     #==============================================
-    prLightGray(f'\n{"-"*91}\n')
-    prLightGray(f'  Begin Function: {kwargs.args.process}.')
-    prLightGray(f'\n{"-"*91}\n')
+    pcolor.LightGray(f'\n{"-"*91}\n')
+    pcolor.LightGray(f'  Begin Function: {kwargs.args.process}.')
+    pcolor.LightGray(f'\n{"-"*91}\n')
     #================================================
     # Import Stored Parameters
     #================================================
@@ -193,10 +168,10 @@ def main():
                 try:
                     f = codecs.open(json_file, encoding='utf-8', errors='strict')
                     for line in f: pass
-                    prGreen("Valid utf-8")
+                    pcolor.Green("Valid utf-8")
                     return 'Good'
                 except UnicodeDecodeError:
-                    prGreen("invalid utf-8")
+                    pcolor.Green("invalid utf-8")
                     return None
             if 'hcl_inventory' in kwargs.args.process:
                 if try_utf8(kwargs.args.json_file) is None: json_open = open(kwargs.args.json_file, 'r', encoding='utf-16')

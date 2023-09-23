@@ -1,88 +1,74 @@
 #=============================================================================
-# Print Color Functions
-#=============================================================================
-def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
-def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
-
-#=============================================================================
 # Source Modules
 #=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
 try:
-    import ipaddress, json, re, sys, validators
+    from classes import pcolor
+    import ipaddress, json, re, validators
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
     prRed(f" Install the module using the following: `pip install {e.name}`")
     sys.exit(1)
 
+oregex = re.compile(
+    'fabric.([a-zA-z]+(Mode|Role)|(Eth|Fc)NetworkP)|vnic.(Eth|Fc)If|iam.EndPointUserRole|DriveGroup|Ldap(Group|Provider)')
 policy_regex = re.compile('(network_connectivity|ntp|port|snmp|switch_control|syslog|system_qos|vlan|vsan)')
 
 # Errors & Notifications
 def begin_loop(ptype1, ptype2):
-    prLightGray(f'\n-------------------------------------------------------------------------------------------\n')
-    prLightPurple(f"   Beginning {' '.join(ptype1.split('_')).title()} {ptype2} Deployment.\n")
+    pcolor.LightGray(f'\n-------------------------------------------------------------------------------------------\n')
+    pcolor.LightPurple(f"  Beginning {' '.join(ptype1.split('_')).title()} {ptype2} Deployment.\n")
 
 def begin_section(ptype1, ptype2):
-    prLightGray(f'\n-------------------------------------------------------------------------------------------\n')
-    prLightPurple(
-        f"   Beginning {ptype1} {' '.join(ptype2.split('_')).title()} Deployments.\n")
+    pcolor.LightGray(f'\n-------------------------------------------------------------------------------------------\n')
+    pcolor.LightPurple(
+        f"  Beginning {ptype1} {' '.join(ptype2.split('_')).title()} Deployments.\n")
 
 def completed_item(ptype, kwargs):
     iresults = kwargs.api_results
     method = kwargs.method
     pmoid  = iresults.Moid
-    if 'autosupport' == ptype: name = "AutoSupport"
-    elif iresults.get('PcId'): name = f"PC {iresults['PcId']}"
-    elif iresults.get('PortId'): name = f"Port {iresults['PortId']}"
-    elif iresults.get('PortIdStart'): name = f"PortIdStart {iresults['PortIdStart']}"
-    elif iresults.get('VlanId'): name = f"VLAN {iresults['VlanId']}"
-    elif iresults.get('VsanId'): name = f"VSAN {iresults['VsanId']}"
-    elif 'user_role' in ptype: name = f"Role for {kwargs.qtype}"
-    elif 'upgrade' in kwargs.qtype:
-        name = f".  Performing Firmware Upgrade on {kwargs.serial} - {kwargs.server} Server Profile"
-    elif iresults.get('UserId'): name = f"{iresults['UserId']} CCO User Authentication"
-    elif 'eula' in kwargs.qtype: name = f"Account EULA Acceptance"
+    if   'vnic.EthIf' == iresults['ObjectType']: name = f"vNIC {iresults['Name']}"
+    elif 'vnic.FcIf' == iresults['ObjectType']:  name = f"vHBA {iresults['Name']}"
+    elif 'autosupport' == ptype:        name = "AutoSupport"
+    elif iresults.get('PcId'):          name = f"PC {iresults['PcId']}"
+    elif iresults.get('PortId'):        name = f"Port {iresults['PortId']}"
+    elif iresults.get('PortIdStart'):   name = f"PortIdStart {iresults['PortIdStart']}"
+    elif iresults.get('VirtualDrives'): name = f"DriveGroup {iresults['Name']}"
+    elif iresults.get('VlanId'):        name = f"VLAN {iresults['VlanId']}"
+    elif iresults.get('VsanId'):        name = f"VSAN {iresults['VsanId']}"
+    elif 'user_role' in ptype:          name = f"Role for {kwargs.qtype}"
+    elif 'upgrade' in kwargs.qtype:     name = f".  Performing Firmware Upgrade on {kwargs.serial} - {kwargs.server} Server Profile"
+    elif iresults.get('UserId'):        name = f"{iresults['UserId']} CCO User Authentication"
+    elif 'eula' in kwargs.qtype:        name = f"Account EULA Acceptance"
     elif iresults.get('Action'):
         if iresults['Action'] == 'Deploy': name = f"Deploy Profile {pmoid}"
         else: name = iresults['Name']
     elif iresults.get('ScheduledActions'): name = f"Activating Profile {pmoid}"
-    elif iresults.get('Targets'): name = iresults['Targets'][0]['Name']
-    elif 'update_tags' in kwargs.qtype: name = f"Tags updated for Physical Server attached to {kwargs.tag_server_profile}"
+    elif iresults.get('Targets'):          name = iresults['Targets'][0]['Name']
+    elif 'update_tags' in kwargs.qtype:    name = f"Tags updated for Physical Server attached to {kwargs.tag_server_profile}"
     else: name = iresults['Name']
-    oregex = re.compile('fabric.([a-zA-z]+(Mode|Role)|(Eth|Fc)NetworkP)|vnic.(Eth|Fc)If|iam.EndPointUserRole|DriveGroup')
     if re.search(oregex, iresults.get('ObjectType')):
-        if re.search('fabric.[a-zA-z]+(Mode|Role)', iresults.get('ObjectType')):
-            if method == 'post':
-                prGreen(f'      * Completed {method} for port_policy {kwargs.parent_name}: {name} - Moid: {pmoid}')
-            else: prLightPurple(f'      * Completed {method} for port_policy {kwargs.parent_name}: {name} - Moid: {pmoid}')
-        else:
-            if method == 'post': prGreen(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
-            else: prLightPurple(f'      * Completed {method} for name: {name} - Moid: {pmoid}')
-    elif re.search('^(Activating|Deploy)', name): prCyan(f'      * {name}.')
-    elif re.search(policy_regex, kwargs.qtype) and 'switch ' in kwargs.qtype:
-        pname = kwargs.qtype.split(' ')[1]
-        name = kwargs.apiBody['Name']
+        parent_type = iresults['ObjectType'].split('.')[1]
         if method == 'post':
-            prGreen(f'      * Completed {method} to attach profile(s) to {pname} policy name: {name} - Moid: {pmoid}. Updated Profiles.')
-        else: prLightPurple(f'      * Completed {method} to attach profile(s) to {pname} policy name: {name} - Moid: {pmoid}. Updated Profiles.')
+            pcolor.Green(f'      * Completed {method} for {kwargs.parent_type} `{kwargs.parent_name}`: {name} - Moid: {pmoid}')
+        else: pcolor.LightPurple(f'      * Completed {method} for {kwargs.parent_type} `{kwargs.parent_name}`: {name} - Moid: {pmoid}')
+    elif re.search('^(Activating|Deploy)', name): pcolor.Cyan(f'      * {name}.')
     elif re.search('(eula|upgrade)', kwargs.qtype) and kwargs.qtype == 'firmware':
-        if method == 'post': prGreen(f'      * Completed {method} for {kwargs.qtype} {name}.')
-        else: prLightPurple(f'      * Completed {method} for {kwargs.qtype} {name}.')
-    elif kwargs.apiBody.get('Targets'):
-        if method == 'post': prGreen(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
-        else: prLightPurple(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
+        if method == 'post': pcolor.Green(f'      * Completed {method} for {kwargs.qtype} {name}.')
+        else: pcolor.LightPurple(f'      * Completed {method} for {kwargs.qtype} {name}.')
+    elif iresults.get('Targets'):
+        if method == 'post': pcolor.Green(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
+        else: pcolor.LightPurple(f'    - Completed Bulk Clone {method} for name: {name} - Moid: {pmoid}')
     else:
-        if method == 'post': prGreen(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
-        else: prLightPurple(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
+        if method == 'post': pcolor.Green(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
+        else: pcolor.LightPurple(f'    - Completed {method} for name: {name} - Moid: {pmoid}')
 
 def deploy_notification(profile, profile_type):
     print(f'\n-------------------------------------------------------------------------------------------\n')
-    prLightPurple(f'   Deploy Action Still ongoing for {profile_type} Profile {profile}')
+    pcolor.LightPurple(f'   Deploy Action Still ongoing for {profile_type} Profile {profile}')
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def error_file_location(varName, varValue):
@@ -92,10 +78,10 @@ def error_file_location(varName, varValue):
     print(f'\n-------------------------------------------------------------------------------------------\n')
 
 def end_loop(ptype1, ptype2):
-    prLightPurple(f"\n   Completed {' '.join(ptype1.split('_')).title()} {ptype2} Deployment.")
+    pcolor.LightPurple(f"\n   Completed {' '.join(ptype1.split('_')).title()} {ptype2} Deployment.")
 
 def end_section(ptype1, ptype2):
-    prLightPurple(f"\n   Completed {ptype1} {' '.join(ptype2.split('_')).title()} Deployments.")
+    pcolor.LightPurple(f"\n   Completed {ptype1} {' '.join(ptype2.split('_')).title()} Deployments.")
 
 def error_policy_doesnt_exist(policy_type, policy_name, profile, profile_type, ptype):
     print(f'\n-------------------------------------------------------------------------------------------\n')

@@ -1,25 +1,16 @@
 #=============================================================================
-# Print Color Functions
-#=============================================================================
-def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
-def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
-
-#=============================================================================
 # Source Modules
 #=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
 try:
-    from classes import validating
+    from classes import pcolor, validating
     from copy import deepcopy
     from dotmap import DotMap
     from git import cmd, Repo
     from openpyxl import load_workbook
     import ipaddress, itertools, jinja2, json, os, pexpect, pkg_resources, re, requests
-    import shutil, subprocess, sys, stdiomask, string, textwrap, validators, yaml
+    import shutil, subprocess, stdiomask, string, textwrap, validators, yaml
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -90,16 +81,16 @@ def choose_policy(policy_type, kwargs):
     for i in kwargs['policies'][policy_type]: policy_list.append(i['name'])
     valid = False
     while valid == False:
-        prCyan(f'\n{"-"*91}\n')
-        if kwargs.get('optional_message'): prCyan(kwargs['optional_message'])
-        prCyan(f'  {policy_descr} Policy Options:')
+        pcolor.Cyan(f'\n{"-"*91}\n')
+        if kwargs.get('optional_message'): pcolor.Cyan(kwargs['optional_message'])
+        pcolor.Cyan(f'  {policy_descr} Policy Options:')
         for i, v in enumerate(policy_list):
             i += 1
-            if i < 10: prCyan(f'     {i}. {v}')
-            else: prCyan(f'    {i}. {v}')
-        if kwargs['allow_opt_out'] == True: prCyan(f'     99. Do not assign a(n) {policy_descr}.')
-        prCyan(f'     100. Create a New {policy_descr}.')
-        prCyan(f'\n{"-"*91}\n')
+            if i < 10: pcolor.Cyan(f'     {i}. {v}')
+            else: pcolor.Cyan(f'    {i}. {v}')
+        if kwargs['allow_opt_out'] == True: pcolor.Cyan(f'     99. Do not assign a(n) {policy_descr}.')
+        pcolor.Cyan(f'     100. Create a New {policy_descr}.')
+        pcolor.Cyan(f'\n{"-"*91}\n')
         policyOption = input(f"Select the Option Number for the {policy_descr} Policy to Assign to {kwargs['name']} Policy: ")
         if re.search(r'^[0-9]{1,3}$', policyOption):
             for i, v in enumerate(policy_list):
@@ -125,10 +116,8 @@ def countKeys(ws, func):
 # Function for Processing easyDict and Creating YAML Files
 #==========================================================
 def create_yaml(orgs, kwargs):
-    baseRepo= kwargs.args.dir
     ezdata  = kwargs.ezdata.ezimm_class.properties
     classes = kwargs.ezdata.ezimm_class.properties.classes.enum
-
     def write_file(dest_dir, dest_file, dict, title1):
         if not os.path.exists(os.path.join(dest_dir, dest_file)):
             create_file = f'type nul >> {os.path.join(dest_dir, dest_file)}'
@@ -143,7 +132,7 @@ def create_yaml(orgs, kwargs):
         wr_file.write(yaml.dump(dict, Dumper=MyDumper, default_flow_style=False))
         wr_file.close()
     for item in classes:
-        dest_dir = os.path.join(baseRepo, ezdata[item].directory)
+        dest_dir = os.path.join(kwargs.args.dir, ezdata[item].directory)
         if item == 'policies':
             if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
             for i in ezdata[item].enum:
@@ -165,7 +154,8 @@ def create_yaml(orgs, kwargs):
                                     idict[org][item][x] = list({v['name']:v for v in idict[org][item][x]}.values())
                                 elif idict[org][item][x][0].get('names'):
                                     idict[org][item][x] = list({v['names'][0]:v for v in idict[org][item][x]}.values())
-                    dest_file = f"{i}.ezi.yaml"
+                    if re.search('policies|pools|profiles|templates', dest_dir): dest_file = f"{i}.ezi.yaml"
+                    else: dest_file = f"{i}.yaml"
                     title1 = f"{str.title(item)} -> {i}"
                     write_file(dest_dir, dest_file, idict, title1)
         else:
@@ -189,7 +179,8 @@ def create_yaml(orgs, kwargs):
                                     else:
                                         for key, value in newdict[org][item].items():
                                             idict[org][item][key] = list({v['name']:v for v in value}.values())
-                                dest_file = f'{i}.yaml'
+                                if re.search('policies|pools|profiles|templates', dest_dir): dest_file = f"{i}.ezi.yaml"
+                                else: dest_file = f"{i}.yaml"
                                 title1 = str.title(item.replace('_', ' '))
                                 write_file(dest_dir, dest_file, idict, title1)
                 else:
@@ -206,7 +197,8 @@ def create_yaml(orgs, kwargs):
                                         else: idict[org][item][i] = list({v['name']:v for v in idict[org][item][i]}.values())
                                     else:
                                         for a, b in idict[org][item][i].items(): b = list({v['name']:v for v in b}.values())
-                                    dest_file = f'{i}.yaml'
+                                    if re.search('policies|pools|profiles|templates', dest_dir): dest_file = f"{i}.ezi.yaml"
+                                    else: dest_file = f"{i}.yaml"
                                     title1 = f"{str.title(item.replace('_', ' '))} -> {str.title(i.replace('_', ' '))}"
                                     write_file(dest_dir, dest_file, idict, title1)
                         
@@ -416,10 +408,10 @@ def intersight_config(kwargs):
         valid = False
         if secret_path == None:
             varName = 'intersight_secret_key'
-            prCyan(f'\n{"-"*91}\n\n  The Script did not find {varName} as an `environment` variable.')
-            prCyan(f'  To not be prompted for the value of {varName} each time\n  add the following to your local environemnt:')
-            prCyan(f"    - Linux: export {varName}='{varName}_value'")
-            prCyan(f"    - Windows: $env:{varName}='{varName}_value'")
+            pcolor.Cyan(f'\n{"-"*91}\n\n  The Script did not find {varName} as an `environment` variable.')
+            pcolor.Cyan(f'  To not be prompted for the value of {varName} each time\n  add the following to your local environemnt:')
+            pcolor.Cyan(f"    - Linux: export {varName}='{varName}_value'")
+            pcolor.Cyan(f"    - Windows: $env:{varName}='{varName}_value'")
             secret_path = ''
         if '~' in secret_path: secret_path = os.path.expanduser(secret_path)
         if not secret_path == '':
@@ -462,7 +454,7 @@ def intersight_config(kwargs):
 #======================================================
 # Function - Print with json dumps
 #======================================================
-def jprint(jDict): prLightGray(json.dumps(jDict, indent=4))
+def jprint(jDict): pcolor.LightGray(json.dumps(jDict, indent=4))
 
 #======================================================
 # Function - Load Previous YAML Files
@@ -522,9 +514,9 @@ def local_users_function(kwargs):
         #==============================================
         # Show User Configuration
         #==============================================
-        prGreen(f'\n{"-"*91}\n')
-        prGreen(textwrap.indent(yaml.dump(attributes, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
-        prGreen(f'\n{"-"*91}\n')
+        pcolor.Green(f'\n{"-"*91}\n')
+        pcolor.Green(textwrap.indent(yaml.dump(attributes, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
+        pcolor.Green(f'\n{"-"*91}\n')
         #======================================================================
         # * Prompt User to Accept Configuration, If Accepted add to Dictionary
         # * If User Selects to, Configure Additional
@@ -603,7 +595,7 @@ def message_invalid_vsan_id(vsan_policy, vsan_id, vsan_list):
 #======================================================
 # Function - Message Starting Over
 #======================================================
-def message_starting_over(policy_type):  prCyan(f'\n{"-"*54}\n\n  Starting `{policy_type}` Section over.\n\n{"-"*54}\n')
+def message_starting_over(policy_type):  pcolor.Cyan(f'\n{"-"*54}\n\n  Starting `{policy_type}` Section over.\n\n{"-"*54}\n')
 
 #======================================================
 # Function - Change Policy Description to Sentence
@@ -650,15 +642,15 @@ def policies_parse(ptype, policy_type, kwargs):
 # Function - Print with Textwrap
 #======================================================
 def print_with_textwrap(description):
-    prPurple(f'{"-"*91}')
+    pcolor.LightPurple(f'\n{"-"*108}\n')
     if '\n' in description:
         new_descr = description.split('\n')
         for line in new_descr:
-            if '* ' in line: prPurple(textwrap.fill(f'{line}',width=88, subsequent_indent='    '))
-            elif '  - ' in line: prPurple(textwrap.fill(f'{line}',width=88, subsequent_indent='      '))
-            else: prPurple(textwrap.fill(f'{line}',88))
-    else: prPurple(textwrap.fill(f'{description}',88))
-    prPurple(f'{"-"*91}')
+            if '* ' in line: pcolor.LightGray(textwrap.fill(f'{line}',width=98, subsequent_indent='    '))
+            elif '  - ' in line: pcolor.LightGray(textwrap.fill(f'{line}',width=98, subsequent_indent='      '))
+            else: pcolor.LightGray(textwrap.fill(f'{line}',98))
+    else: pcolor.LightGray(textwrap.fill(f'{description}',98))
+    pcolor.LightPurple(f'\n{"-"*108}\n')
 
 #======================================================
 # Function - Validate input for each method
@@ -719,7 +711,7 @@ def process_kwargs(kwargs):
 def read_in(excel_workbook, kwargs):
     try:
         kwargs['wb'] = load_workbook(excel_workbook)
-        prCyan("Workbook Loaded.")
+        pcolor.Cyan("Workbook Loaded.")
     except Exception as e:
         prRed(f'\n{"-"*91}\n\n  Something went wrong while opening the workbook - {excel_workbook}... ABORT!\n\n{"-"*91}\n')
         sys.exit(e)
@@ -746,16 +738,16 @@ def sensitive_var_value(kwargs):
     # Check to see if the Variable is already set in the Environment, and if not prompt the user for Input.
     #=======================================================================================================
     if os.environ.get(sensitive_var) is None:
-        prCyan(f'\n{"-"*91}\n')
-        prCyan(f'  The Script did not find {sensitive_var} as an `environment` variable.')
-        prCyan(f'  To not be prompted for the value of `{kwargs.sensitive_var}` each time')
-        prCyan(f'  add the following to your local environemnt:\n')
-        prCyan(f"    - Linux: export {sensitive_var}='{kwargs.sensitive_var}_value'")
-        prCyan(f"    - Windows: $env:{sensitive_var}='{kwargs.sensitive_var}_value'")
-        prCyan(f'\n{"-"*91}\n')
+        pcolor.Cyan(f'\n{"-"*91}\n')
+        pcolor.Cyan(f'  The Script did not find {sensitive_var} as an `environment` variable.')
+        pcolor.Cyan(f'  To not be prompted for the value of `{kwargs.sensitive_var}` each time')
+        pcolor.Cyan(f'  add the following to your local environemnt:\n')
+        pcolor.Cyan(f"    - Linux: export {sensitive_var}='{kwargs.sensitive_var}_value'")
+        pcolor.Cyan(f"    - Windows: $env:{sensitive_var}='{kwargs.sensitive_var}_value'")
+        pcolor.Cyan(f'\n{"-"*91}\n')
     if os.environ.get(sensitive_var) is None and kwargs.sensitive_var == 'ipmi_key':
-        prCyan(f'\n{"-"*91}\n\n  The ipmi_key Must be in Hexidecimal Format [a-fA-F0-9]')
-        prCyan(f'  and no longer than 40 characters.\n\n{"-"*91}\n')
+        pcolor.Cyan(f'\n{"-"*91}\n\n  The ipmi_key Must be in Hexidecimal Format [a-fA-F0-9]')
+        pcolor.Cyan(f'  and no longer than 40 characters.\n\n{"-"*91}\n')
     if os.environ.get(sensitive_var) is None:
         valid = False
         while valid == False:
@@ -764,7 +756,7 @@ def sensitive_var_value(kwargs):
         valid = False
         while valid == False:
             if kwargs.get('multi_line_input'):
-                prLightGray(f"Enter the value for {kwargs.sensitive_var}:")
+                pcolor.LightGray(f"Enter the value for {kwargs.sensitive_var}:")
                 lines = []
                 while True:
                     line = stdiomask.getpass(prompt='')
@@ -872,9 +864,9 @@ def snmp_trap_servers(kwargs):
         #==============================================
         # Show User Configuration
         #==============================================
-        prGreen(f'\n{"-"*91}\n')
-        prGreen(textwrap.indent(yaml.dump(attributes, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
-        prGreen(f'\n{"-"*91}\n')
+        pcolor.Green(f'\n{"-"*91}\n')
+        pcolor.Green(textwrap.indent(yaml.dump(attributes, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
+        pcolor.Green(f'\n{"-"*91}\n')
         #======================================================================
         # * Prompt User to Accept Configuration, If Accepted add to Dictionary
         # * If User Selects to, Configure Additional
@@ -919,9 +911,9 @@ def snmp_users(kwargs):
         #==============================================
         # Show User Configuration
         #==============================================
-        prGreen(f'\n{"-"*91}\n')
-        prGreen(textwrap.indent(yaml.dump(attributes, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
-        prGreen(f'\n{"-"*91}\n')
+        pcolor.Green(f'\n{"-"*91}\n')
+        pcolor.Green(textwrap.indent(yaml.dump(attributes, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
+        pcolor.Green(f'\n{"-"*91}\n')
         #======================================================================
         # * Prompt User to Accept Configuration, If Accepted add to Dictionary
         # * If User Selects to, Configure Additional
@@ -940,11 +932,11 @@ def snmp_users(kwargs):
 def stdout_log(ws, row_num):
     if log_level == 0: return
     elif ((log_level == (1) or log_level == (2)) and (ws) and (row_num is None)) and row_num == 'begin':
-        prCyan(f'\n{"-"*91}\n\n   Begin Worksheet "{ws.title}" evaluation...\n\n{"-"*91}\n')
+        pcolor.Cyan(f'\n{"-"*91}\n\n   Begin Worksheet "{ws.title}" evaluation...\n\n{"-"*91}\n')
     elif (log_level == (1) or log_level == (2)) and row_num == 'end':
-        prCyan(f'\n{"-"*91}\n\n   Completed Worksheet "{ws.title}" evaluation...\n\n{"-"*91}\n')
+        pcolor.Cyan(f'\n{"-"*91}\n\n   Completed Worksheet "{ws.title}" evaluation...\n\n{"-"*91}\n')
     elif log_level == (2) and (ws) and (row_num is not None):
-        prCyan(f'    - Evaluating Row{" "*(4-len(row_num))}{row_num}...')
+        pcolor.Cyan(f'    - Evaluating Row{" "*(4-len(row_num))}{row_num}...')
     else: return
 
 #======================================================
@@ -968,9 +960,9 @@ def syslog_servers(kwargs):
             #==============================================
             # Show User Configuration
             #==============================================
-            prGreen(f'\n{"-"*91}\n')
-            prGreen(textwrap.indent(yaml.dump(attributes, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
-            prGreen(f'\n{"-"*91}\n')
+            pcolor.Green(f'\n{"-"*91}\n')
+            pcolor.Green(textwrap.indent(yaml.dump(attributes, Dumper=MyDumper, default_flow_style=False), " "*3, predicate=None))
+            pcolor.Green(f'\n{"-"*91}\n')
             #======================================================================
             # * Prompt User to Accept Configuration, If Accepted add to Dictionary
             # * If User Selects to, Configure Additional
@@ -992,24 +984,23 @@ def subnet_list(kwargs):
     if kwargs.ip_version == 'v4': prefix = kwargs.subnetMask
     else: prefix = kwargs.prefix
     gateway = kwargs.defaultGateway
-    subnetList = list(ipaddress.ip_network(f"{gateway}/{prefix}", strict=False).hosts())
-    return subnetList
+    return list(ipaddress.ip_network(f"{gateway}/{prefix}", strict=False).hosts())
 
 #======================================================
 # Function - Format Terraform Files
 #======================================================
 def terraform_fmt(folder):
     # Run terraform fmt to cleanup the formating for all of the auto.tfvar files and tf files if needed
-    prCyan(f'\n-----------------------------------------------------------------------------\n')
-    prCyan(f'  Running "terraform fmt" in folder "{folder}",')
-    prCyan(f'  to correct variable formatting!')
-    prCyan(f'\n-----------------------------------------------------------------------------\n')
+    pcolor.Cyan(f'\n-----------------------------------------------------------------------------\n')
+    pcolor.Cyan(f'  Running "terraform fmt" in folder "{folder}",')
+    pcolor.Cyan(f'  to correct variable formatting!')
+    pcolor.Cyan(f'\n-----------------------------------------------------------------------------\n')
     p = subprocess.Popen(['terraform', 'fmt', folder], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-    prCyan('Format updated for the following Files:')
+    pcolor.Cyan('Format updated for the following Files:')
     for line in iter(p.stdout.readline, b''):
         line = line.decode("utf-8")
         line = line.strip()
-        prCyan(f'- {line}')
+        pcolor.Cyan(f'- {line}')
 
 #========================================================
 # Function to Pull Latest Versions of Providers
@@ -1052,7 +1043,7 @@ def tfc_sensitive_variables(var_value, kwargs):
     polVars.varId = var_value
     polVars.varKey = var_value
     polVars.Sensitive = True
-    prCyan('* Adding "{}" to "{}"').format(polVars.description, kwargs.workspaceName)
+    pcolor.Cyan('* Adding "{}" to "{}"').format(polVars.description, kwargs.workspaceName)
     return polVars
 
 #==========================================================
@@ -1065,11 +1056,11 @@ def ucs_serial(kwargs):
     yaml_file   = kwargs.yaml_file
     valid = False
     while valid == False:
-        prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-        prCyan(f'  Note: If you do not have the Serial Number(s) at this time you can manually add it to:')
-        prCyan(f'    - {baseRepo}{os.sep}{org}{os.sep}profiles{os.sep}{yaml_file}.yaml')
-        prCyan(f'      file later.')
-        prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+        pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+        pcolor.Cyan(f'  Note: If you do not have the Serial Number(s) at this time you can manually add it to:')
+        pcolor.Cyan(f'    - {baseRepo}{os.sep}{org}{os.sep}profiles{os.sep}{yaml_file}.yaml')
+        pcolor.Cyan(f'      file later.')
+        pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
         serial = input(f'What is the Serial Number of the {device_type}? [press enter to skip]: ')
         if serial == '': serial = 'unknown'; valid = True
         elif re.fullmatch(r'^[A-Z]{3}[2-3][\d]([0][1-9]|[1-4][0-9]|[5][1-3])[\dA-Z]{4}$', serial): valid = True
@@ -1085,11 +1076,11 @@ def ucs_serial(kwargs):
 def ucs_domain_serials(kwargs):
     baseRepo = kwargs['args'].dir
     org = kwargs['org']
-    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-    prCyan(f'  Note: If you do not have the Serial Numbers at this time you can manually add them here:\n')
-    prCyan(f'    * {baseRepo}{os.sep}{org}{os.sep}profiles{os.sep}domain.yaml\n')
-    prCyan(f'  After the Wizard has completed.')
-    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+    pcolor.Cyan(f'  Note: If you do not have the Serial Numbers at this time you can manually add them here:\n')
+    pcolor.Cyan(f'    * {baseRepo}{os.sep}{org}{os.sep}profiles{os.sep}domain.yaml\n')
+    pcolor.Cyan(f'  After the Wizard has completed.')
+    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
     valid = False
     while valid == False:
         polVars = {}
@@ -1302,24 +1293,27 @@ def variableFromList(kwargs):
     # Sort the Variables
     #==============================================
     if kwargs.jdata.get('sort') == False: vars = kwargs.jdata.enum
-    else: vars = sorted(kwargs.jdata.enum)
+    else: vars = sorted(kwargs.jdata.enum, key=str.casefold)
     valid = False
     while valid == False:
-        prPurple(f'\n{"-"*91}\n')
+        pcolor.LightPurple(f'\n{"-"*108}\n')
         if '\n' in description:
             description = description.split('\n')
             for line in description:
-                if '*' in line: prPurple(textwrap.fill(f'{line}',width=88, subsequent_indent='    '))
-                else: prPurple(textwrap.fill(f'{line}',88))
-        else: prPurple(textwrap.fill(f'{description}',88))
-        if kwargs.jdata.get('multi_select') == True: prGreen(f'\n    Select Options Below:')
-        else: prGreen(f'\n    Select an Option Below:')
+                if '*' in line: pcolor.LightGray(textwrap.fill(f'{line}',width=108, subsequent_indent='   '))
+                else: pcolor.LightGray(textwrap.fill(f'{line}',88))
+        else: pcolor.LightGray(textwrap.fill(f'{description}',88))
+        if kwargs.jdata.get('multi_select') == True:
+            pcolor.Yellow(
+                '\n     Note: Answer can be:\n       * Single: 1 or 5\n       * Multiple: `1,2,3` or `1-3,5-6` in example')
+        if kwargs.jdata.get('multi_select') == True: pcolor.Yellow(f'    Select Option(s) Below:')
+        else: pcolor.Yellow(f'\n    Select an Option Below:')
         for index, value in enumerate(vars):
             index += 1
             if value == default: default_index = index
-            if index < 10: prCyan(f'     {index}. {value}')
-            else: prCyan(f'    {index}. {value}')
-        prPurple(f'\n{"-"*91}\n')
+            if index < 10: pcolor.Cyan(f'     {index}. {value}')
+            else: pcolor.Cyan(f'    {index}. {value}')
+        pcolor.LightPurple(f'\n{"-"*108}\n')
         if kwargs.jdata.get('multi_select') == True:
             if not default == '':
                 var_selection   = input(f'Please Enter the Option Number(s) to select for {title}.  [{default_index}]: ')
@@ -1346,7 +1340,6 @@ def variableFromList(kwargs):
             if var_count == var_length: valid = True
             else: prRed(f'\n{"-"*91}\n\n  The list of Vars {var_list} did not match the available list.\n\n{"-"*91}\n')
         if valid == False: message_invalid_selection()
-    if kwargs.jdata.get('multi_select'): kwargs.jdata.pop('multi_select')
     return selection, valid
 
 #======================================================
@@ -1419,6 +1412,8 @@ def variablePrompt(kwargs):
                 pattern   = kwargs.jdata.pattern
                 valid = validating.length_and_regex(answer, minLength, maxLength, pattern, title)
         else: invalid_string(title, answer)
+    if kwargs.jdata.get('optional'): kwargs.jdata.pop('optional')
+    if kwargs.jdata.get('multi_select'): kwargs.jdata.pop('multi_select')
     return answer
 
 #======================================================
@@ -1473,10 +1468,10 @@ def vlan_native_function(vlan_policy_list, vlan_list):
 def vlan_pool(name):
     valid = False
     while valid == False:
-        prCyan(f'\n{"-"*91}\n')
-        prCyan(f'  The allowed vlan list can be in the format of:')
-        prCyan(f'     5 - Single VLAN\n     1-10 - Range of VLANs\n     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
-        prCyan(f'     1-10,20-30 - Ranges and Lists of VLANs\n\n{"-"*91}\n')
+        pcolor.Cyan(f'\n{"-"*91}\n')
+        pcolor.Cyan(f'  The allowed vlan list can be in the format of:')
+        pcolor.Cyan(f'     5 - Single VLAN\n     1-10 - Range of VLANs\n     1,2,3,4,5,11,12,13,14,15 - List of VLANs')
+        pcolor.Cyan(f'     1-10,20-30 - Ranges and Lists of VLANs\n\n{"-"*91}\n')
         VlanList = input(f'Enter the VLAN or List of VLANs to assign to the Domain VLAN Pool {name}: ')
         if not VlanList == '':
             vlanListExpanded = vlan_list_full(VlanList)

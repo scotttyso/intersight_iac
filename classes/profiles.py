@@ -138,7 +138,7 @@ class profiles(object):
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'profiles,chassis'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -241,7 +241,7 @@ class profiles(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'profiles,domain'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -479,7 +479,7 @@ class profiles(object):
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
                         #==============================================
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         #==============================================
                         kwargs.class_path = 'profiles,server'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
@@ -606,7 +606,7 @@ class profiles(object):
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
                             #==============================================
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             #==============================================
                             kwargs.class_path = 'templates,server'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)

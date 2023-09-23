@@ -1,18 +1,18 @@
-from classes import ezfunctions as ezfunctions
-from classes import validating as validating
-from copy import deepcopy
-from dotmap import DotMap
-import json
-import numpy
-import os
-import pexpect
-import platform
-import re
-import requests
-import socket
-import subprocess
+#=============================================================================
+# Source Modules
+#=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
 import sys
-import time
+try:
+    from classes import ezfunctions, pcolor, validating
+    from copy import deepcopy
+    from dotmap import DotMap
+    import json, numpy, os, pexpect, platform, re, requests, socket, subprocess, time
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 
 # Class must be instantiated with Variables
 class api(object):

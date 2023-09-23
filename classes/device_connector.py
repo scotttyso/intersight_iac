@@ -2,23 +2,15 @@
 """Intersight Device Connector API access classes."""
 
 #=============================================================================
-# Print Color Functions
-#=============================================================================
-def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
-def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
-
-#=============================================================================
 # Source Modules
 #=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
 try:
+    from classes import pcolor
     from time import sleep
     from xml.etree import ElementTree
-    import re, requests, subprocess, sys, urllib3
+    import re, requests, subprocess, urllib3
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -259,9 +251,9 @@ class imc_device_connector(device_connector, object):
                         'Referer': referer
                     }
                     self.logged_in = True
-                else: prCyan("Unable to login: ", imc_login_uri)
+                else: pcolor.Cyan("Unable to login: ", imc_login_uri)
         except subprocess.CalledProcessError as sub_ret:
-            prCyan("Utils executable returns ", sub_ret.returncode, sub_ret.output)
+            pcolor.Cyan("Utils executable returns ", sub_ret.returncode, sub_ret.output)
 
     def logout(self):
         """Logout of IMC webgui session if currently logged in."""

@@ -1,28 +1,18 @@
 #=============================================================================
-# Print Color Functions
-#=============================================================================
-def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
-def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
-
-#=============================================================================
 # Source Modules
 #=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
 try:
-    from classes import claim_device, ezfunctions, isight, netapp, validating
+    from classes import claim_device, ezfunctions, isight, netapp, pcolor, validating
     from copy import deepcopy
     from dotmap import DotMap
-    import ipaddress, json, numpy, os, re, requests, sys, time, urllib3
+    import ipaddress, json, numpy, os, re, requests, time, urllib3
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
     prRed(f" Install the module using the following: `pip install {e.name}`")
     sys.exit(1)
-
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #=============================================================================
@@ -306,12 +296,12 @@ class imm(object):
             kwargs.method='get'
             kwargs.uri   = 'compute/PhysicalSummaries'
             kwargs       = isight.api(kwargs.qtype).calls(kwargs)
-            prCyan('')
+            pcolor.Cyan('')
             for i in kwargs.results:
-                prCyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
+                pcolor.Cyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
                 kwargs = server_dictionary(i, kwargs)
-                prCyan(f'     Completed Server Inventory for Server: {i.Serial}')
-            prCyan('')
+                pcolor.Cyan(f'     Completed Server Inventory for Server: {i.Serial}')
+            pcolor.Cyan('')
 
         else:
             #=====================================================
@@ -335,12 +325,12 @@ class imm(object):
             kwargs.qtype = 'serial_number'
             kwargs.uri   = 'compute/PhysicalSummaries'
             kwargs = isight.api(kwargs.qtype).calls(kwargs)
-            prCyan('')
+            pcolor.Cyan('')
             for i in kwargs.results:
-                prCyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
+                pcolor.Cyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
                 kwargs = server_dictionary(i, kwargs)
-                prCyan(f'     Completed Server Inventory for Server: {i.Serial}')
-            prCyan('')
+                pcolor.Cyan(f'     Completed Server Inventory for Server: {i.Serial}')
+            pcolor.Cyan('')
 
         #=====================================================
         # Return kwargs and kwargs
@@ -2135,25 +2125,25 @@ class wizard(object):
             # Configure IMM Pools
             #==================================
             for k, v in kwargs.ezdata.items():
-                if v.intersight_type == 'pool': pool_list.append(k)
+                if v.intersight_type == 'pool' and not '.' in k: pool_list.append(k)
             pool_list.remove('resource')
             for k, v in kwargs.imm.domain.items():
                 kwargs.domain = v; kwargs.domain.name = k
-                for i in pool_list: kwargs = eval(f'imm(i).{i}(kwargs)')
+                for i in pool_list: kwargs = eval(f'isight.imm(i).pools(kwargs)')
         #==================================
         # Modify the Policy List
         #==================================
         if kwargs.args.deployment_type == 'azurestack':
             for k, v in kwargs.ezdata.items():
-                if v.intersight_type == 'policy' and 'Standalone' in v.target_platforms: policy_list.append(k)
+                if v.intersight_type == 'policy' and 'Standalone' in v.target_platforms and not '.' in k: policy_list.append(k)
             pop_list = kwargs.ezdata.converged_pop_list.properties.azurestack.enum
             for i in pop_list: policy_list.remove(i)
             kwargs = imm('compute_environment').compute_environment(kwargs)
             for i in policy_list: kwargs = eval(f'imm(i).{i}(kwargs)')
         else:
             for k, v in kwargs.ezdata.items():
-                if v.intersight_type == 'policy' and ('chassis' in v.target_platforms or 'FIAttached' in v.target_platforms):
-                    policy_list.append(k)
+                if v.intersight_type == 'policy' and ('chassis' in v.target_platforms or 'FIAttached' in v.target_platforms
+                                                      ) and not '.' in k:  policy_list.append(k)
             policy_list.remove('iscsi_static_target')
             policy_list.insert((policy_list.index('iscsi_boot')), 'iscsi_static_target')
             pop_list = kwargs.ezdata.converged_pop_list.properties.domain.enum
@@ -2638,13 +2628,13 @@ class wizard(object):
                 kwargs.qtype   = self.type
                 kwargs.uri     = 'os/Installs'
                 if v.boot_volume == 'san':
-                    prGreen(f"{'-'*91}\n"\
+                    pcolor.Green(f"{'-'*91}\n"\
                             f"      * host {k}: initiator: {v.wwpns[kwargs.wwpn].wwpn}\n"\
                             f"         target: {kwargs.san_target}\n"\
                             f"         mac: {kwargs.mgmt_mac}\n"\
                             f"{'-'*91}\n")
                 else:
-                    prGreen(f"{'-'*91}\n"\
+                    pcolor.Green(f"{'-'*91}\n"\
                             f"      * host {k}:\n"\
                             f"         target: {v.boot_volume}\n"\
                             f"         mac: {kwargs.mgmt_mac}\n"\
@@ -2675,7 +2665,7 @@ class wizard(object):
                     if kwargs.results.Status == 'COMPLETED':
                         install_complete= True
                         install_success = True
-                        prGreen(f'    - Completed Operating System Installation for {k}.')
+                        pcolor.Green(f'    - Completed Operating System Installation for {k}.')
                     elif re.search('(FAILED|TERMINATED|TIME_OUT)', kwargs.results.Status):
                         kwargs.upgrade.failed.update({k:v.moid})
                         prRed(f'!!! FAILED !!! Operating System Installation for Server Profile {k} failed.')
@@ -2684,8 +2674,8 @@ class wizard(object):
                     else:
                         progress= kwargs.results.Progress
                         status  = kwargs.results.Status
-                        prCyan(f'      * Operating System Installation for {k}.')
-                        prCyan(f'        Status is {status} Progress is {progress}, Waiting 120 seconds.')
+                        pcolor.Cyan(f'      * Operating System Installation for {k}.')
+                        pcolor.Cyan(f'        Status is {status} Progress is {progress}, Waiting 120 seconds.')
                         time.sleep(120)
 
                 #=================================================
@@ -2711,7 +2701,7 @@ class wizard(object):
                     if v.object_type == 'compute.Blade': kwargs.uri = 'compute/Blades'
                     else: kwargs.uri = 'compute/RackUnits'
                     kwargs        = isight.api(kwargs.qtype).calls(kwargs)
-            else: prCyan(f'      * Skipping Operating System Install for {k}. OS Already Installed.')
+            else: pcolor.Cyan(f'      * Skipping Operating System Install for {k}. OS Already Installed.')
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================

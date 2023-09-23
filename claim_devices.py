@@ -2,31 +2,18 @@
 
 """Intersight Device Connector API configuration and device claim via the Intersight API."""
 
-#=====================================================
-# Print Color Functions
-#=====================================================
-def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
-def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
+#=============================================================================
+# Source Modules
+#=============================================================================
 def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
-
+import os, sys
+script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
+sys.path.insert(0, f'{script_path}{os.sep}classes')
 try:
-    import sys
-    sys.path.insert(0, './classes')
-    from classes import claim_device
-    from classes import ezfunctions as ezfunctions
+    from classes import claim_device, ezfunctions, pcolor
     from dotmap import DotMap
     from pathlib import Path
-    import argparse
-    import json
-    import logging
-    import os
-    import platform
-    import traceback
-    import yaml
+    import argparse, json, logging, os, platform, traceback, yaml
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -43,29 +30,23 @@ def cli_arguments():
     Parser = argparse.ArgumentParser(description='Intersight Converged Infrastructure Deployment Module')
     Parser.add_argument(
         '-a', '--api-key-id', default=os.getenv('intersight_apikey'),
-        help='The Intersight API key id for HTTP signature scheme.'
-    )
+        help='The Intersight API key id for HTTP signature scheme.')
     Parser.add_argument(
         '-e', '--endpoint', default='intersight.com',
-        help='The Intersight hostname for the API endpoint. The default is intersight.com.'
-    )
+        help='The Intersight hostname for the API endpoint. The default is intersight.com.')
     Parser.add_argument(
         '-i', '--ignore-tls', action='store_false',
-        help='Ignore TLS server-side certificate verification.  Default is False.'
-    )
+        help='Ignore TLS server-side certificate verification.  Default is False.')
     Parser.add_argument(
         '-k', '--api-key-file', default=os.getenv('intersight_keyfile'),
-        help='Name of the file containing The Intersight secret key for the HTTP signature scheme.'
-    )
+        help='Name of the file containing The Intersight secret key for the HTTP signature scheme.')
     Parser.add_argument(
         '-u', '--username', default='admin',
-        help    ='Name of the file containing The Intersight secret key for the HTTP signature scheme.'
-    )
+        help    ='Name of the file containing The Intersight secret key for the HTTP signature scheme.')
     Parser.add_argument(
         '-y', '--yaml-file',
         help = 'The input YAML File.',
-        required= True
-    )
+        required= True)
     kwargs = DotMap()
     kwargs.args = Parser.parse_args()
     return kwargs
@@ -110,9 +91,9 @@ def main():
     kwargs.ez_data  = DotMap(ez_data['components']['schemas'])
     kwargs.json_data= DotMap(json_data['components']['schemas'])
 
-    prLightGray(f'\n{"-"*91}\n')
-    prLightGray(f'  * Begin Device Claims.')
-    prLightGray(f'\n{"-"*91}\n')
+    pcolor.LightGray(f'\n{"-"*91}\n')
+    pcolor.LightGray(f'  * Begin Device Claims.')
+    pcolor.LightGray(f'\n{"-"*91}\n')
     yfile = open(os.path.join(kwargs.args.yaml_file), 'r')
     kwargs.yaml = DotMap(yaml.safe_load(yfile))
 
@@ -134,9 +115,9 @@ def main():
             sys.exit(kwargs.return_code)
         else: sys.exit(return_code)
 
-    prLightGray(f'\n{"-"*91}\n')
-    prLightGray(f'  * Completed Device Claims.')
-    prLightGray(f'\n{"-"*91}\n')
+    pcolor.LightGray(f'\n{"-"*91}\n')
+    pcolor.LightGray(f'  * Completed Device Claims.')
+    pcolor.LightGray(f'\n{"-"*91}\n')
     sys.exit(1)
 if __name__ == '__main__':
     main()

@@ -1,21 +1,13 @@
 #=============================================================================
-# Print Color Functions
-#=============================================================================
-def prCyan(skk):        print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk):       print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk):   print("\033[94m {}\033[00m" .format(skk))
-def prPurple(skk):      print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk):         print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk):      print("\033[93m {}\033[00m" .format(skk))
-
-#=============================================================================
 # Source Modules
 #=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
 try:
+    from classes import pcolor
     from copy import deepcopy
     from dotmap import DotMap
-    import ezfunctions, ipaddress, os, re, sys, textwrap, validating, yaml
+    import ezfunctions, ipaddress, os, re, textwrap, validating, yaml
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -45,13 +37,13 @@ class pools(object):
         policy_type    = 'IP Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-            prCyan(f'  At a minimum you will need one IP Pool for KVM Access to Servers.  Currently out-of-band')
-            prCyan(f'  management is not supported for KVM vMedia access.  This IP Pool will need to be associated ')
-            prCyan(f'  to a VLAN assigned to the VLAN Pool of the Domain.\n')
-            prCyan(f'  This wizard will save the configuration for this section to the following file:')
-            prCyan(f'  - {baseRepo}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'  At a minimum you will need one IP Pool for KVM Access to Servers.  Currently out-of-band')
+            pcolor.Cyan(f'  management is not supported for KVM vMedia access.  This IP Pool will need to be associated ')
+            pcolor.Cyan(f'  to a VLAN assigned to the VLAN Pool of the Domain.\n')
+            pcolor.Cyan(f'  This wizard will save the configuration for this section to the following file:')
+            pcolor.Cyan(f'  - {baseRepo}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure an {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
@@ -151,9 +143,9 @@ class pools(object):
                             kwargs.pool_to = str(ipaddress.IPv4Address(add_dec))
                             valid = validating.error_subnet_check(**kwargs)
                             ipv4_block = {'from':str(kwargs.pool_from), 'size':pool_size}
-                            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                            prCyan(textwrap.indent(yaml.dump(ipv4_block, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                            prCyan(f'-------------------------------------------------------------------------------------------\n')
+                            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                            pcolor.Cyan(textwrap.indent(yaml.dump(ipv4_block, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                            pcolor.Cyan(f'-------------------------------------------------------------------------------------------\n')
                             valid_confirm = False
                             while valid_confirm == False:
                                 confirm_conf = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
@@ -253,9 +245,9 @@ class pools(object):
                             kwargs.pool_to = str(ipaddress.IPv6Address(add_dec))
                             valid = validating.error_subnet_check(**kwargs)
                             ipv6_block = {'from':str(kwargs.pool_from), 'size':pool_size}
-                            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                            prCyan(textwrap.indent(yaml.dump(ipv6_block, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                            prCyan(f'-------------------------------------------------------------------------------------------\n')
+                            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                            pcolor.Cyan(textwrap.indent(yaml.dump(ipv6_block, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                            pcolor.Cyan(f'-------------------------------------------------------------------------------------------\n')
                             valid_confirm = False
                             while valid_confirm == False:
                                 confirm_conf = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
@@ -274,14 +266,14 @@ class pools(object):
                                     ezfunctions.message_starting_over(pol_type)
                                     valid_confirm = True
                                 else: ezfunctions.message_invalid_y_or_n('short')
-                    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                    prCyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                    prCyan(f'-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    pcolor.Cyan(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             kwargs.class_path = 'pools,ip'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
@@ -310,7 +302,7 @@ class pools(object):
         policy_type    = 'IQN Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}.  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
@@ -325,17 +317,17 @@ class pools(object):
                     kwargs.jData = deepcopy(jsonVars.AssignmentOrder)
                     kwargs.jData.varType = 'Assignment Order'
                     polVars.assignment_order = ezfunctions.variablesFromAPI(**kwargs)
-                    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                    prCyan(f'  The iSCSI Qualified Name (IQN) format is: iqn.yyyy-mm.naming-authority:unique name, where:')
-                    prCyan(f'    - literal iqn (iSCSI Qualified Name) - always iqn')
-                    prCyan(f'    - date (yyyy-mm) that the naming authority took ownership of the domain')
-                    prCyan(f'    - reversed domain name of the authority (e.g. org.linux, com.example, com.cisco)')
-                    prCyan(f'    - unique name is any name you want to use, for example, the name of your host. The naming')
-                    prCyan(f'      authority must make sure that any names assigned following the colon are unique, such as:')
-                    prCyan(f'        * iqn.1984-12.com.cisco:lnx1')
-                    prCyan(f'        * iqn.1984-12.com.cisco:win-server1')
-                    prCyan(f'        * iqn.1984-12.com.cisco:win-server1')
-                    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(f'  The iSCSI Qualified Name (IQN) format is: iqn.yyyy-mm.naming-authority:unique name, where:')
+                    pcolor.Cyan(f'    - literal iqn (iSCSI Qualified Name) - always iqn')
+                    pcolor.Cyan(f'    - date (yyyy-mm) that the naming authority took ownership of the domain')
+                    pcolor.Cyan(f'    - reversed domain name of the authority (e.g. org.linux, com.example, com.cisco)')
+                    pcolor.Cyan(f'    - unique name is any name you want to use, for example, the name of your host. The naming')
+                    pcolor.Cyan(f'      authority must make sure that any names assigned following the colon are unique, such as:')
+                    pcolor.Cyan(f'        * iqn.1984-12.com.cisco:lnx1')
+                    pcolor.Cyan(f'        * iqn.1984-12.com.cisco:win-server1')
+                    pcolor.Cyan(f'        * iqn.1984-12.com.cisco:win-server1')
+                    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
                     valid = False
                     while valid == False:
                         jsonVars = jsonData.iqnpool.Pool.allOf[1].properties
@@ -388,14 +380,14 @@ class pools(object):
                         valid_ending_iqn = validating.iqn_address('IQN Ending Address', to_iqn)
                         if valid_starting_iqn == True and valid_ending_iqn == True: valid = True
                     polVars.iqn_blocks = [{'from':pool_from, 'size':pool_size, 'suffix':suffix}]
-                    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                    prCyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                    prCyan(f'-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    pcolor.Cyan(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             kwargs.class_path = 'pools,iqn'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             configure_loop, policy_loop = ezfunctions.exit_default(policy_type, 'N')
@@ -421,15 +413,15 @@ class pools(object):
         policy_type    = 'MAC Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-            prCyan(f'  MAC Pool Convention Recommendations:')
-            prCyan(f'  - Leverage the Cisco UCS OUI of 00:25:B5 for the MAC Pool Prefix.')
-            prCyan(f'  - For MAC Pools; create a pool for each Fabric.')
-            prCyan(f'  - Pool Size can be between 1 and 1024 addresses.')
-            prCyan(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
-            prCyan(f'  This wizard will save the configuration for this section to the following file:')
-            prCyan(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'  MAC Pool Convention Recommendations:')
+            pcolor.Cyan(f'  - Leverage the Cisco UCS OUI of 00:25:B5 for the MAC Pool Prefix.')
+            pcolor.Cyan(f'  - For MAC Pools; create a pool for each Fabric.')
+            pcolor.Cyan(f'  - Pool Size can be between 1 and 1024 addresses.')
+            pcolor.Cyan(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
+            pcolor.Cyan(f'  This wizard will save the configuration for this section to the following file:')
+            pcolor.Cyan(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
             loop_count = 0
             policy_loop = False
             while policy_loop == False:
@@ -485,14 +477,14 @@ class pools(object):
                     for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                 pool_to = pool_to.upper()
                 polVars.mac_blocks = [{'from':pool_from, 'size':pool_size}]
-                prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                prCyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                prCyan(f'-------------------------------------------------------------------------------------------\n')
+                pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                pcolor.Cyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                pcolor.Cyan(f'-------------------------------------------------------------------------------------------\n')
                 valid_confirm = False
                 while valid_confirm == False:
                     confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                     if confirm_policy == 'Y' or confirm_policy == '':
-                        # Add Policy Variables to immDict
+                        # Add Policy Variables to imm_dict
                         kwargs.class_path = 'pools,mac'
                         kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
@@ -518,12 +510,12 @@ class pools(object):
         policy_type    = 'Resource Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-            prCyan(f'  The {policy_type} represents a collection of resources that can be associated to ')
-            prCyan(f'  the configuration entities such as server profiles.\n')
-            prCyan(f'  This wizard will save the configuration for this section to the following file:')
-            prCyan(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'  The {policy_type} represents a collection of resources that can be associated to ')
+            pcolor.Cyan(f'  the configuration entities such as server profiles.\n')
+            pcolor.Cyan(f'  This wizard will save the configuration for this section to the following file:')
+            pcolor.Cyan(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
@@ -572,14 +564,14 @@ class pools(object):
                     kwargs.jData.defaultVar = jsonVars.server_type.default
                     kwargs.jData.varType = 'Server Type'
                     polVars.server_type = ezfunctions.variablesFromAPI(**kwargs)
-                    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                    prCyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                    prCyan(f'-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    pcolor.Cyan(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             kwargs.class_path = 'pools,resource'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
@@ -608,10 +600,10 @@ class pools(object):
         policy_type    = 'UUID Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-            prCyan(f'  The Universally Unique Identifier (UUID) are written in 5 groups of hexadecimal digits')
-            prCyan(f'  separated by hyphens.  The length of each group is: 8-4-4-4-12. UUIDs are fixed length.')
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'  The Universally Unique Identifier (UUID) are written in 5 groups of hexadecimal digits')
+            pcolor.Cyan(f'  separated by hyphens.  The length of each group is: 8-4-4-4-12. UUIDs are fixed length.')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}.  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
@@ -670,14 +662,14 @@ class pools(object):
                         pool_to = str(from_split[0]) + '-' + ('0' * add_zeros) + pool_to
                     pool_to = pool_to.upper()
                     polVars.uuid_blocks = [{'from':pool_from, 'size':pool_size}]
-                    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                    prCyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                    prCyan(f'-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    pcolor.Cyan(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the above configuration?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             kwargs.class_path = 'pools,uuid'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
@@ -705,14 +697,14 @@ class pools(object):
         policy_type    = 'WWNN Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-            prCyan(f'  WWNN Pool Convention Recommendations:')
-            prCyan(f'  - Leverage the Cisco UCS OUI of 20:00:00:25:B5 for the WWNN Pool Prefix.')
-            prCyan(f'  - Pool Size can be between 1 and 1024 addresses.')
-            prCyan(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
-            prCyan(f'  This wizard will save the configuration for this section to the following file:')
-            prCyan(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'  WWNN Pool Convention Recommendations:')
+            pcolor.Cyan(f'  - Leverage the Cisco UCS OUI of 20:00:00:25:B5 for the WWNN Pool Prefix.')
+            pcolor.Cyan(f'  - Pool Size can be between 1 and 1024 addresses.')
+            pcolor.Cyan(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
+            pcolor.Cyan(f'  This wizard will save the configuration for this section to the following file:')
+            pcolor.Cyan(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 policy_loop = False
@@ -758,14 +750,14 @@ class pools(object):
                     for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                     pool_to = pool_to.upper()
                     polVars.id_blocks = [{'from':pool_from, 'size':pool_size}]
-                    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                    prCyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                    prCyan(f'-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    pcolor.Cyan(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             kwargs.class_path = 'pools,wwnn'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
 
@@ -792,15 +784,15 @@ class pools(object):
         policy_type    = 'WWPN Pool'
         yaml_file      = 'pools'
         while configure_loop == False:
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-            prCyan(f'  WWPN Pool Convention Recommendations:')
-            prCyan(f'  - Leverage the Cisco UCS OUI of 20:00:00:25:B5 for the WWPN Pool Prefix.')
-            prCyan(f'  - For WWPN Pools; create a pool for each Fabric.')
-            prCyan(f'  - Pool Size can be between 1 and 1024 addresses.')
-            prCyan(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
-            prCyan(f'  This wizard will save the configuration for this section to the following file:')
-            prCyan(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
-            prCyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+            pcolor.Cyan(f'  WWPN Pool Convention Recommendations:')
+            pcolor.Cyan(f'  - Leverage the Cisco UCS OUI of 20:00:00:25:B5 for the WWPN Pool Prefix.')
+            pcolor.Cyan(f'  - For WWPN Pools; create a pool for each Fabric.')
+            pcolor.Cyan(f'  - Pool Size can be between 1 and 1024 addresses.')
+            pcolor.Cyan(f'  - Refer to "UCS Naming Conventions 0.5.ppsx" in the Repository for further guidance.\n')
+            pcolor.Cyan(f'  This wizard will save the configuration for this section to the following file:')
+            pcolor.Cyan(f'  - {baseRepo}{os.sep}{org}{os.sep}{self.type}{os.sep}{yaml_file}.yaml')
+            pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
             configure = input(f'Do You Want to Configure a {policy_type}?  Enter "Y" or "N" [Y]: ')
             if configure == 'Y' or configure == '':
                 loop_count = 0
@@ -851,14 +843,14 @@ class pools(object):
                     for a, b in zip(*[iter('{:012x}'.format(add_dec))]*2)])
                     pool_to = pool_to.upper()
                     polVars.id_blocks = [{'from':pool_from, 'size':pool_size}]
-                    prCyan(f'\n-------------------------------------------------------------------------------------------\n')
-                    prCyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
-                    prCyan(f'-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(f'\n-------------------------------------------------------------------------------------------\n')
+                    pcolor.Cyan(textwrap.indent(yaml.dump(polVars, Dumper=MyDumper, default_flow_style=False), ' '*4, predicate=None))
+                    pcolor.Cyan(f'-------------------------------------------------------------------------------------------\n')
                     valid_confirm = False
                     while valid_confirm == False:
                         confirm_policy = input('Do you want to accept the configuration above?  Enter "Y" or "N" [Y]: ')
                         if confirm_policy == 'Y' or confirm_policy == '':
-                            # Add Policy Variables to immDict
+                            # Add Policy Variables to imm_dict
                             kwargs.class_path = 'pools,wwpn'
                             kwargs = ezfunctions.ez_append(polVars, **kwargs)
                             configure_loop, loop_count, policy_loop = ezfunctions.exit_loop_default_yes(loop_count, policy_type)

@@ -1,6 +1,16 @@
 #!/usr/bin/python3
-import crypt
-import stdiomask
+#=============================================================================
+# Source Modules
+#=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
+try:
+    import crypt, stdiomask
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 
 valid = False
 while valid == False:

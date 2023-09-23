@@ -1,13 +1,18 @@
-from classes import ezfunctions as ezfunctions
-from classes import validating as validating
-from copy import deepcopy
-from dotmap import DotMap
-import datetime
-import ipaddress
-import os
-import pytz
-import re
-import time
+#=============================================================================
+# Source Modules
+#=============================================================================
+def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
+import sys
+try:
+    from classes import ezfunctions, pcolor, validating
+    from copy import deepcopy
+    from dotmap import DotMap
+    import datetime, ipaddress, pytz, re, time
+except ImportError as e:
+    prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
+    prRed(f" Module {e.name} is required to run this script")
+    prRed(f" Install the module using the following: `pip install {e.name}`")
+    sys.exit(1)
 
 class nxos(object):
     def __init__(self, type):
@@ -106,7 +111,7 @@ class nxos(object):
             #=====================================================
             # Send Configuration to Switch
             #=====================================================
-            prLightPurple(f'\n\n!!! Starting Configuration on {kwargs.hostname} !!!\n\n')
+            pcolor.LightPurple(f'\n\n!!! Starting Configuration on {kwargs.hostname} !!!\n\n')
             time.sleep(2)
             for cmd in cmds:
                 child.sendline(cmd)
@@ -117,7 +122,7 @@ class nxos(object):
             child.sendline('exit')
             child.expect('closed')
             child.close()
-            prLightPurple(f'\n\n!!! Completed Configuration on {kwargs.hostname} !!!\n\n')
+            pcolor.LightPurple(f'\n\n!!! Completed Configuration on {kwargs.hostname} !!!\n\n')
 
         #=====================================================
         # Send End Notification and return kwargs
@@ -153,8 +158,7 @@ def add_interfaces(x, nxmap, kwargs):
                     f"  description {descr}",
                     f"  switchport",
                     f"  switchport host",
-                    f"  switchport access vlan {kwargs.ooband.vlan_id}",
-                ])
+                    f"  switchport access vlan {kwargs.ooband.vlan_id}"])
             #===============================================
             # Configure Network Ports and VPC Port-Channels
             #===============================================
@@ -187,8 +191,7 @@ def add_interfaces(x, nxmap, kwargs):
                     f"  no shutdown",
                     f"  switchport",
                     f"  channel-group {vpc} mode active",
-                    f"!",
-                ])
+                    f"!"])
                 if v.port_channel == True:
                     cmds.extend([
                         f"interface port-channel {vpc}",
@@ -200,8 +203,7 @@ def add_interfaces(x, nxmap, kwargs):
                         f"  switchport mode trunk",
                         f"  switchport trunk allowed vlan {allowed_vlans}",
                         f"  vpc {vpc}",
-                        f"!",
-                    ])
+                        f"!"])
     #=====================================================
     # Return Commands
     #=====================================================
@@ -231,8 +233,7 @@ def add_interfaces_standalone(x, nxmap, kwargs):
                 f"  description {descr}",
                 f"  switchport",
                 f"  switchport host",
-                f"  switchport access vlan {kwargs.ooband.vlan_id}",
-            ])
+                f"  switchport access vlan {kwargs.ooband.vlan_id}"])
         #===============================================
         # Configure Network Ports and VPC Port-Channels
         #===============================================
@@ -261,14 +262,11 @@ def add_interfaces_standalone(x, nxmap, kwargs):
                 f"  switchport trunk allowed vlan {allowed_vlans}",
                 f"  priority-flow-control mode on",
                 f"  no shutdown",
-                f"!",
-            ])
+                f"!"])
             if kwargs.deployment_type == 'azure_hci':
                 cmds.extend([
                     f"  service-policy type qos input AzS_HCI_QoS",
-                    f"  service-policy type queueing output QoS_Egress_Port",
-                ])
-
+                    f"  service-policy type queueing output QoS_Egress_Port"])
     #=====================================================
     # Return Commands
     #=====================================================
@@ -295,13 +293,11 @@ def base_configuration(kwargs):
         f"ip name-server {' '.join(kwargs.dns_servers)}",
         f"ip domain-name {kwargs.dns_domains[0]}",
         f"ip domain-lookup",
-        f"ntp master 3",
-    ]
+        f"ntp master 3"]
     if kwargs.deployment_type == 'azure_hci':
         cmds.extend([
             "feature bgp",
-            "feature dhcp"
-        ])
+            "feature dhcp"])
     return cmds
 
 #=====================================================
@@ -344,20 +340,8 @@ def bgp_configuration(x, nxmap, kwargs):
         f"  neighbor 192.168.101.0/24",
         f"    inherit peer iBGP",
         f"  neighbor 192.168.126.0/26",
-        f"    inherit peer iBGP",
-    ]
+        f"    inherit peer iBGP",]
     return cmds
-
-#=====================================================
-# Print Color Functions
-#=====================================================
-def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
-def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))
 
 #=====================================================
 # QoS Configuration
@@ -412,8 +396,7 @@ def qos_configuration():
         f"!",
         f"system qos",
         f"  service-policy type queuing output QoS_Egress_Port",
-        f"  service-policy type network-qos QoS_Network",
-    ]
+        f"  service-policy type network-qos QoS_Network",]
     return cmds
 
 #======================================================
@@ -427,8 +410,7 @@ def timezone_conversion(kwargs):
     tzr = tz.split('/')[0]
     timezone_countries = {timezone: country 
         for country, timezones in pytz.country_timezones.items()
-        for timezone in timezones
-    }
+        for timezone in timezones}
     country = timezone_countries[tz]
     if tzr == 'Etc': cmds.append('clock timezone GMT 0 0')
     elif tzr == 'America':
@@ -470,12 +452,7 @@ def vlan_config(x, nxmap, kwargs):
                 elif re.search(r'^[\d]{3}$', str(v)): vname = f"{i.name}-vl0{v}"
                 elif re.search(r'^[\d]{2}$', str(v)): vname = f"{i.name}-vl00{v}"
                 elif    re.search(r'^[\d]$', str(v)): vname = f"{i.name}-vl000{v}"
-                cmds.extend([
-                    f"vlan {v}",
-                    f"  name {vname}",
-                    f"!"
-                ])
-
+                cmds.extend([f"vlan {v}", f"  name {vname}", f"!"])
     #=====================================================
     # Add VLANs to the Appropriate Switch Types
     #=====================================================
@@ -493,11 +470,7 @@ def vlan_config(x, nxmap, kwargs):
                 vlan_ip = ipaddress.IPv4Address(int(ip_gateway) +1 + x)
             else: vlan_ip = ipaddress.IPv4Address(int(ip_gateway) -2 + x)
         if i.switch_type == nxmap[x].sw_type and i.configure_l2 == True:
-            cmds.extend([
-                f"vlan {i.vlan_id}",
-                f"  name {i.name}",
-                f"!"
-            ])
+            cmds.extend([f"vlan {i.vlan_id}", f"  name {i.name}", f"!"])
             if i.configure_l3 == True:
                 if x == 0 and int(i.vlan_id) % 2 != 0: p = 40
                 elif x == 1 and int(i.vlan_id) % 2 == 0: p = 40
@@ -511,8 +484,7 @@ def vlan_config(x, nxmap, kwargs):
                         f'  no ip redirects',
                         f'  ip address {i.gateway}/{i.prefix}',
                         f'  no ipv6 redirects',
-                        f'!'
-                    ])
+                        f'!'])
                 else:
                     cmds.extend([
                         f'interface Vlan{i.vlan_id}',
@@ -527,10 +499,8 @@ def vlan_config(x, nxmap, kwargs):
                         f'    preempt delay minimum 30 reload 120',
                         f'    priority 1{p} forwarding-threshold lower 1 upper 1{p}',
                         f'    timers msec 250 msec 1000',
-                        f'    ip {i.gateway}',
-                    ])
-                    for d in kwargs.dhcp_servers:
-                        cmds.append(f'  ip dhcp relay address {d}')
+                        f'    ip {i.gateway}'])
+                    for d in kwargs.dhcp_servers: cmds.append(f'  ip dhcp relay address {d}')
                     cmds.append(f'!')
     #================================
     # Return cmds
@@ -552,11 +522,9 @@ def vpc_config(x, nxmap, kwargs):
         f"  layer3 peer-router",
         f"  peer-gateway",
         f"  peer-switch",
-        f"  role priority { x+1 }",
-    ]
+        f"  role priority { x+1 }"]
     if x == 0: a = 1; b = 0
     else: a = 0; b = 1
-
     #================================
     # Add Keepalive Peers
     #================================
@@ -570,7 +538,6 @@ def vpc_config(x, nxmap, kwargs):
         cmds.append(cmd)
     cmds.append('!')
     descr = nxmap[a].hostname
-
     #================================
     # Add Breakout Config if Used
     #================================
@@ -584,12 +551,10 @@ def vpc_config(x, nxmap, kwargs):
             cmds.append(f"interface breakout module 1 port {breakout} map {speed.lower()}-4x")
             cmds.append('!')
         return cmds
-
     for port in nxmap[x].vpc.keepalive_ports:
         if len(port.split("/")) == 3: cmds = breakout_config(x, cmds, nxmap, port)
     for port in nxmap[x].vpc.peer_ports:
         if len(port.split("/")) == 3: cmds = breakout_config(x, cmds, nxmap, port)
-
     #=============================================
     # Configure VPC keepalive if not mgmt0
     #=============================================
@@ -605,15 +570,12 @@ def vpc_config(x, nxmap, kwargs):
                 f"  description {descr}-{port} peer-port",
                 f"  no switchport",
                 f"  channel-group {pc_id} mode active",
-                f"!",
-            ])
+                f"!"])
         cmds.extend([
             f"interface port-channel{pc_id}",
             f"  description {descr} keepalive",
             f"  ip address {nxmap[x].vpc.keepalive_ip}",
-            f"!",
-        ])
-
+            f"!"])
     #================================
     # Configure VPC Peer-Links
     #================================
@@ -628,16 +590,14 @@ def vpc_config(x, nxmap, kwargs):
             f"  description {descr}-{port} peer-port",
             f"  switchport",
             f"  channel-group {pc_id} mode active",
-            f"!",
-        ])
+            f"!"])
     cmds.extend([
         f"interface port-channel{pc_id}",
         f"  description {descr} peer-link",
         f"  switchport",
         f"  switchport mode trunk",
         f"  vpc peer-link",
-        f"!",
-    ])
+        f"!"])
     if kwargs.deployment_type == 'azure_hci':
         cmds.append(f" service-policy type qos input AzS_HCI_QoS")
 
