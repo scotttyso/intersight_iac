@@ -4,10 +4,10 @@
 def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
 import sys
 try:
-    from classes import claim_device, ezfunctions, isight, netapp, pcolor, validating
+    from classes import claim_device, ezfunctions, isight, netapp, pcolor, pure_storage, validating
     from copy import deepcopy
     from dotmap import DotMap
-    import ipaddress, json, numpy, os, re, requests, time, urllib3
+    import ipaddress, json, numpy, re, requests, time, urllib3
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -16,7 +16,7 @@ except ImportError as e:
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #=============================================================================
-# IMM Class
+# Intersight Managed Mode Class
 #=============================================================================
 class imm(object):
     def __init__(self, type):
@@ -35,7 +35,7 @@ class imm(object):
         models = numpy.unique(numpy.array(dataset))
         for i in models:
             gen, cpu, tpm = i.split('-')
-            if kwargs.args.deployment_type == 'azure_hci':
+            if kwargs.args.deployment_type == 'azurestack':
                 if len(tpm) > 0: btemplates.append(f'{gen}-azure-{cpu}-tpm')
                 else: btemplates.append(f'{gen}-azure-{cpu}')
             else:
@@ -1189,7 +1189,7 @@ class imm(object):
     def network_connectivity(self, kwargs):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
-        if kwargs.args.deployment_type == 'azure_hci':
+        if kwargs.args.deployment_type == 'azurestack':
             polVars = dict(
                 description              = f'{kwargs.imm.policies.prefix}dns {descr} Policy',
                 dns_servers_v4           = [],
@@ -1873,7 +1873,7 @@ class imm(object):
                 if 'M5' in p: polVars.pop('power_policy')
                 if 'fcp' in t: polVars.update({'san_connectivity_policy': f'{kwargs.imm.policies.prefix}{scp}'})
                 else: polVars.pop('san_connectivity_policy')
-                if kwargs.args.deployment_type == 'azure_hci':
+                if kwargs.args.deployment_type == 'azurestack':
                     pop_list = ['imc_access_policy', 'lan_connectivity_policy']
                     for e in pop_list: polVars.pop(e)
                     polVars.extend(dict(
@@ -2088,7 +2088,7 @@ class wizard(object):
         self.type = type
 
     #=============================================================================
-    # Function - Converged Stack - Build IMM Domain Dictionaries
+    # Function - Build Intersight Managed Mode Domain Dictionaries
     #=============================================================================
     def build_imm_domain(self, kwargs):
         #==================================
@@ -2115,7 +2115,7 @@ class wizard(object):
         return kwargs
 
     #=============================================================================
-    # Function - Converged Stack - Build IMM Dictionaries
+    # Function - Build Intersight Managed Mode Server Dictionaries
     #=============================================================================
     def build_imm_servers(self, kwargs):
         if kwargs.imm.policies.prefix == None: kwargs.imm.policies.prefix = ''
@@ -2135,7 +2135,8 @@ class wizard(object):
         #==================================
         if kwargs.args.deployment_type == 'azurestack':
             for k, v in kwargs.ezdata.items():
-                if v.intersight_type == 'policy' and 'Standalone' in v.target_platforms and not '.' in k: policy_list.append(k)
+                if v.intersight_type == 'policy' and 'Standalone' in v.target_platforms and not '.' in k:
+                    policy_list.append(k)
             pop_list = kwargs.ezdata.converged_pop_list.properties.azurestack.enum
             for i in pop_list: policy_list.remove(i)
             kwargs = imm('compute_environment').compute_environment(kwargs)
@@ -2172,7 +2173,7 @@ class wizard(object):
         #=====================================================
         kwargs.policy_list = policy_list
         profiles_list = ['templates', 'chassis', 'server']
-        if kwargs.args.deployment_type == 'azure_hci': profiles_list.remove('chassis')
+        if kwargs.args.deployment_type == 'azurestack': profiles_list.remove('chassis')
         for p in profiles_list: kwargs = eval(f'imm(p).{p}(kwargs)')
         #=====================================================
         # Return kwargs and kwargs
@@ -2180,78 +2181,94 @@ class wizard(object):
         return kwargs
 
     #=============================================================================
-    # Function - Converged Stack - Build Storage Dictionaries
+    # Function - FlexPod Converged Stack - Build Storage Dictionaries
     #=============================================================================
     def build_netapp(self, kwargs):
         #=====================================================
-        # Build NetApp Dictionaries
+        # Build Dictionaries
         #=====================================================
-        plist = ['cluster']
         for name,items in kwargs.netapp.cluster.items():
-            for i in plist:
-                kwargs = eval(f'netapp.build(i).{i}(items, name, kwargs)')
+            kwargs = netapp.build('cluster').cluster(items, name, kwargs)
         #==================================
         # Configure NetApp
         #==================================
-        plist= ['cluster']
-        for i in plist:
-            kwargs = eval(f'netapp.api(i).{i}(kwargs)')
-
+        kwargs = netapp.api('cluster').cluster(kwargs)
+        #==================================
         # Add Policy Variables to imm_dict
+        #==================================
         idict = kwargs.storage.toDict()
         for k, v in idict.items():
             for a, b in v.items():
                 kwargs.class_path = f'storage,appliances'
                 kwargs = ezfunctions.ez_append(b, kwargs)
-
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
         return kwargs
 
     #=============================================================================
-    # Function - Converged Stack - Credentials - DHCP - DNS - NTP Attributes
+    # Function - FlashStack Converged Stack - Build Storage Dictionaries
     #=============================================================================
-    def dns_ntp(self, kwargs):
+    def build_pure_storage(self, kwargs):
         #=====================================================
-        # DHCP, DNS, NTP, Organization & Return kwargs
+        # Build Pure Storage Dictionaries
         #=====================================================
-        i = kwargs.imm_dict.wizard.protocols
-        kwargs.dhcp_servers= i.dhcp_servers
-        kwargs.dns_servers = i.dns_servers
-        kwargs.dns_domains = i.dns_domains
-        kwargs.ntp_servers = i.ntp_servers
-        kwargs.timezone    = i.timezone
+        for name,items in kwargs.pure_storage.cluster.items():
+            kwargs = pure_storage.build('cluster').cluster(items, name, kwargs)
+        #==================================
+        # Configure Pure Storage
+        #==================================
+        kwargs = pure_storage.api('cluster').cluster(kwargs)
+        #==================================
+        # Add Policy Variables to imm_dict
+        #==================================
+        idict = kwargs.storage.toDict()
+        for k, v in idict.items():
+            for a, b in v.items():
+                kwargs.class_path = f'storage,appliances'
+                kwargs = ezfunctions.ez_append(b, kwargs)
+        #=====================================================
+        # Return kwargs and kwargs
+        #=====================================================
         return kwargs
 
     #=============================================================================
-    # Function - Converged Stack - IMM Attributes
+    # Function - DHCP - DNS - NTP Attributes
+    #=============================================================================
+    def dns_ntp(self, kwargs):
+        i = kwargs.imm_dict.wizard.protocols
+        kwargs.dhcp_servers = i.dhcp_servers
+        kwargs.dns_servers  = i.dns_servers
+        kwargs.dns_domains  = i.dns_domains
+        kwargs.ntp_servers  = i.ntp_servers
+        kwargs.timezone     = i.timezone
+        return kwargs
+
+    #=============================================================================
+    # Function - Intersight Managed Mode Attributes
     #=============================================================================
     def imm(self, kwargs):
-        #=====================================================
-        # Intersight Attributes
-        #=====================================================
         kwargs.orgs = []
         for item in kwargs.imm_dict.wizard.intersight:
             item = DotMap(item)
             kwargs.orgs.append(item.organization)
-            kwargs.org           = item.organization
-            kwargs.virtualization= item.virtualization
+            kwargs.org            = item.organization
+            kwargs.virtualization = item.virtualization
             ecount = 0
             for e in kwargs.virtualization:
                 kwargs.virtualization[ecount].syslog_server = item.policies.syslog.servers[0]
                 ecount += 1
-            if kwargs.args.deployment_type == 'azure_hci':
-                kwargs.imm.cimc          = item.cimc
-                kwargs.imm.firmware      = item.firmware
-                kwargs.imm.policies      = item.policies
-                kwargs.imm.profiles      = item.profiles
-                kwargs.imm.tags          = kwargs.ezdata.tags
-                kwargs.imm.username      = item.username
+            if kwargs.args.deployment_type == 'azurestack':
+                kwargs.imm.cimc     = item.cimc
+                kwargs.imm.firmware = item.firmware
+                kwargs.imm.policies = item.policies
+                kwargs.imm.profiles = item.profiles
+                kwargs.imm.tags     = kwargs.ezdata.tags
+                kwargs.imm.username = item.username
                 for p in item.profiles:
-                    dlength= len(p.network.data.split('/'))
-                    dsplit = p.network.data.split('/')
-                    msplit = p.network.management.split('/')
+                    dlength = len(p.network.data.split('/'))
+                    dsplit  = p.network.data.split('/')
+                    msplit  = p.network.management.split('/')
                     if dlength == 3:
                         bk    = int((item.breakout.split('-')[1]).replace('x', ''))
                         sport = int(dsplit[1])
@@ -2265,7 +2282,6 @@ class wizard(object):
                     #==================================
                     # Build Profile Network Dictionary
                     #==================================
-                    fabrics= ['A', 'B']
                     suffix = int(p.suffix_digits)
                     pprefix= p.profile_start[:-(suffix)]
                     pstart = int(p.profile_start[-(suffix):])
@@ -2277,10 +2293,9 @@ class wizard(object):
                             if bport == bk: bport=1; sport = sport+1; zcount = zcount+1
                         else: nport = f"{dsplit[0]}/{int(dsplit[1]+z)}"
                         kwargs.network.imm[name] = DotMap(
-                            data_port   = fabrics,
-                            mgmt_port   = f"{msplit[0]}/{int(msplit[1]+z)}",
-                            network_port= nport
-                        )
+                            data_port    = ['A', 'B'],
+                            mgmt_port    = f"{msplit[0]}/{int(msplit[1]+z)}",
+                            network_port = nport)
             else:
                 if len(str(item.pools.prefix)) == 1: item.pools.prefix = f'0{item.pools.prefix}'
                 for i in item.domains:
@@ -2321,8 +2336,7 @@ class wizard(object):
                         profiles           = i.profiles,
                         registered_device  = serial_moids[serial]['registered_device'],
                         serial_numbers     = list(serial_moids.keys()),
-                        tags               = kwargs.ezdata.tags
-                    )
+                        tags               = kwargs.ezdata.tags)
                     #==================================
                     # Build Domain Network Dictionary
                     #==================================
@@ -2333,9 +2347,7 @@ class wizard(object):
                             data_speed  = i.eth_uplink_speed,
                             mgmt_port   = i.network.management,
                             network_port= i.network.data[x],
-                            port_channel=True
-                        )
-
+                            port_channel=True)
                     #=====================================================
                     # Confirm if Fibre-Channel is in Use
                     #=====================================================
@@ -2376,34 +2388,30 @@ class wizard(object):
                 protocols = list(numpy.unique(numpy.array(protocols)))
                 kwargs.protocols = protocols
                 kwargs.storage[i.name][i.svm.name] = DotMap(
-                    cluster= i.name,
-                    name   = f"{i.name}:{i.svm.name}",
-                    svm    = i.svm.name,
-                    vendor = 'netapp'
-                )
+                    cluster = i.name,
+                    name    = f"{i.name}:{i.svm.name}",
+                    svm     = i.svm.name,
+                    vendor  = 'netapp')
                 cname = i.name
-                sname = i.svm.name
                 rootv = (i.svm.name).replace('-', '_').lower() + '_root'
                 kwargs.netapp.cluster[cname] = DotMap(
-                    autosupport= item.autosupport,
-                    banner     = i.login_banner,
-                    host_prompt= r'[\w]+::>',
-                    nodes      = i.nodes,
-                    protocols  = protocols,
-                    snmp       = item.snmp,
-                    svm        = DotMap(
-                        agg1     = i.nodes.node01.replace('-', '_').lower() + '_1',
-                        agg2     = i.nodes.node02.replace('-', '_').lower() + '_1',
-                        banner   = i.svm.login_banner,
-                        name     = i.svm.name,
-                        m01      = rootv + '_m01',
-                        m02      = rootv + '_m02',
-                        protocols= protocols,
-                        rootv    = rootv,
-                        volumes  = i.svm.volumes
-                    ),
-                    username = item.username
-                )
+                    autosupport = item.autosupport,
+                    banner      = i.login_banner,
+                    host_prompt = r'[\w]+::>',
+                    nodes       = i.nodes,
+                    protocols   = protocols,
+                    snmp        = item.snmp,
+                    svm         = DotMap(
+                        agg1      = i.nodes.node01.replace('-', '_').lower() + '_1',
+                        agg2      = i.nodes.node02.replace('-', '_').lower() + '_1',
+                        banner    = i.svm.login_banner,
+                        name      = i.svm.name,
+                        m01       = rootv + '_m01',
+                        m02       = rootv + '_m02',
+                        protocols = protocols,
+                        rootv     = rootv,
+                        volumes   = i.svm.volumes),
+                    username = item.username)
                 kwargs.netapp.cluster[cname].nodes.node_list = [i.nodes.node01, i.nodes.node02]
                 #==================================
                 # Build Cluster Network Dictionary
@@ -2411,13 +2419,70 @@ class wizard(object):
                 nodes = kwargs.netapp.cluster[cname].nodes.node_list
                 for x in range(0,len(nodes)):
                     kwargs.network.storage[nodes[x]] = DotMap(
-                        data_ports  = i.nodes.data_ports,
-                        data_speed  = i.nodes.data_speed,
-                        mgmt_port   = i.nodes.network.management,
-                        network_port= i.nodes.network.data[x],
-                        port_channel=True
-                    )
+                        data_ports   = i.nodes.data_ports,
+                        data_speed   = i.nodes.data_speed,
+                        mgmt_port    = i.nodes.network.management,
+                        network_port = i.nodes.network.data[x],
+                        port_channel =True)
+        #=====================================================
+        # Return kwargs and kwargs
+        #=====================================================
+        return kwargs
 
+    #=============================================================================
+    # Function - FlexPod Converged Stack Attributes
+    #=============================================================================
+    def pure_storage(self, kwargs):
+        #==================================
+        # Build Cluster Dictionary
+        #==================================
+        kwargs.pure_storage.cluster = DotMap()
+        kwargs.storage = DotMap()
+        for item in kwargs.imm_dict.wizard.pure_storage:
+            for i in item.clusters:
+                protocols = []
+                for e in i.svm.volumes: protocols.append(e.protocol)
+                if 'local' in protocols: protocols.remove('local')
+                if 'nvme-fc' in protocols or 'nvme-tcp' in protocols: protocols.append('nvme_of')
+                protocols = list(numpy.unique(numpy.array(protocols)))
+                kwargs.protocols = protocols
+                kwargs.storage[i.name][i.svm.name] = DotMap(
+                    cluster = i.name,
+                    name    = f"{i.name}:{i.svm.name}",
+                    svm     = i.svm.name,
+                    vendor  = 'pure_storage')
+                cname = i.name
+                rootv = (i.svm.name).replace('-', '_').lower() + '_root'
+                kwargs.pure_storage.cluster[cname] = DotMap(
+                    autosupport= item.autosupport,
+                    banner     = i.login_banner,
+                    host_prompt= r'[\w]+::>',
+                    nodes      = i.nodes,
+                    protocols  = protocols,
+                    snmp       = item.snmp,
+                    svm        = DotMap(
+                        agg1      = i.nodes.node01.replace('-', '_').lower() + '_1',
+                        agg2      = i.nodes.node02.replace('-', '_').lower() + '_1',
+                        banner    = i.svm.login_banner,
+                        name      = i.svm.name,
+                        m01       = rootv + '_m01',
+                        m02       = rootv + '_m02',
+                        protocols = protocols,
+                        rootv     = rootv,
+                        volumes   = i.svm.volumes),
+                    username = item.username)
+                kwargs.pure_storage.cluster[cname].nodes.node_list = [i.nodes.node01, i.nodes.node02]
+                #==================================
+                # Build Cluster Network Dictionary
+                #==================================
+                nodes = kwargs.pure_storage.cluster[cname].nodes.node_list
+                for x in range(0,len(nodes)):
+                    kwargs.network.storage[nodes[x]] = DotMap(
+                        data_ports   = i.nodes.data_ports,
+                        data_speed   = i.nodes.data_speed,
+                        mgmt_port    = i.nodes.network.management,
+                        network_port = i.nodes.network.data[x],
+                        port_channel =True)
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -2433,21 +2498,15 @@ class wizard(object):
         validating.begin_section(self.type, 'Install')
         kwargs.org_moid= kwargs.org_moids[kwargs.org].moid
         kwargs.models  = []
-        for i in  kwargs.imm_dict.orgs[kwargs.org].wizard.os_configuration:
-            kwargs.models.append(i.model)
+        for i in  kwargs.imm_dict.orgs[kwargs.org].wizard.os_configuration: kwargs.models.append(i.model)
         kwargs.models   = list(numpy.unique(numpy.array(kwargs.models)))
-
         #==========================================
         # Get Physical Server Tags to Check for
         # Existing OS Install
         #==========================================
-        AzureStack= False
         names     = []
-        OpenShift = False
-        san_boot  = False
-        VMware    = False
-        for k,v in kwargs.server_profiles.items():
-            names.append(v.serial)
+        os_install= False
+        for k,v in kwargs.server_profiles.items(): names.append(v.serial)
         kwargs.method = 'get'
         kwargs.names = names
         kwargs.pmoid = v.moid
@@ -2462,151 +2521,94 @@ class wizard(object):
             for e in kwargs.pmoids[v.serial].tags:
                 if e.Key == 'os_installed' and e.Value == v.os_type:
                     kwargs.server_profiles[k].os_installed = True
-            if v.os_type == 'AzureStack': AzureStack = True
-            elif v.os_type == 'OpenShift': OpenShift = True
-            elif v.os_type == 'VMware': VMware = True
+                else:  os_install = True
+            #==================================
+            # Get ESXi Root Password
+            #==================================
+            if v.os_type == 'AzureStack':
+                kwargs.sensitive_var = 'windows_admin_password'
+                kwargs = ezfunctions.sensitive_var_value(kwargs)
+                kwargs.windows_admin_password = kwargs.var_value
+            elif v.os_type == 'VMware':
+                kwargs.sensitive_var = 'vmware_esxi_password'
+                kwargs = ezfunctions.sensitive_var_value(kwargs)
+                kwargs.vmware_esxi_password = kwargs.var_value
             if v.boot_volume == 'm2':
                 if not v.storage_controllers.get('UCS-M2-HWRAID'):
                     prRed(f"!!! ERROR !!!\n  Could not determine the Controller Slot for:")
                     prRed(f"  * Profile: {kwargs.server_profiles[k].name}")
                     prRed(f"  * Serial:  {kwargs.server_profiles[k].serial}\n")
                     sys.exit(1)
-            elif v.boot_volume == 'san':
-                san_boot = True
-
-        #==========================================
-        # Deploy Operating System for each Profile
-        #==========================================
-        if san_boot == True:
-            san_target_a = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.a[0].wwpn
-            san_target_b = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.b[0].wwpn
-
-        #==================================
-        # Get ESXi Root Password
-        #==================================
-        if AzureStack == True:
-            kwargs.sensitive_var = 'windows_admin_password'
-            kwargs = ezfunctions.sensitive_var_value(kwargs)
-            kwargs.windows_admin_password = kwargs.var_value
-        elif VMware == True:
-            kwargs.sensitive_var = 'vmware_esxi_password'
-            kwargs = ezfunctions.sensitive_var_value(kwargs)
-            kwargs.vmware_esxi_password = kwargs.var_value
-
-        #==================================
-        # Get Repository Files for Wizard
-        #==================================
-        dir_files = os.listdir(kwargs.files_dir)
-        dir_files.sort()
-        if kwargs.deployment_type == 'azure_hci':
-            file_types = ['AzureStack', 'ucs-scu']
-            os_type    = 'AzureStack'
-        else:
-            file_types = ['Custom-Cisco', 'ucs-scu']
-            os_type    = 'Custom-Cisco'
-        for ftype in file_types:
-            for f in dir_files:
-                if os.path.isfile(os.path.join(kwargs.files_dir , f)):
-                    if ftype in f: kwargs.files[ftype] = f
-
-        #==================================
-        # Setup Repository Files for Wizard
-        #==================================
-        kwargs.scu_iso    = kwargs.files['ucs-scu']
-        kwargs.scu_version= (kwargs.files['ucs-scu'].split('.iso')[0]).split('-')[2]
-        kwargs.os_iso     = kwargs.files[os_type]
-        if kwargs.deployment_type == 'azure_hci':
-            kwargs.os_name   = re.search('(AzureStackHCI_\\d+.\\d+)', kwargs.files[os_type]).group(1)
-        else:  kwargs.os_name= re.search('(ESXi-\\d.\\d(\\.\\d)?)', kwargs.files[os_type]).group(1)
-        jvars = kwargs.ezdata.operatingSystem.allOf[1].properties[kwargs.os_name]
-        kwargs.os_config  = jvars.config
-        kwargs.os_vendor  = jvars.vendor
-        kwargs.os_version = jvars.version
-
-
-        #==================================
-        # Get Org Software Repo
-        #==================================
-        kwargs.method    = 'get'
-        kwargs.names     = ['user-catalog']
-        kwargs.qtype     = 'org_repository'
-        kwargs.uri       = 'softwarerepository/Catalogs'
-        kwargs           = isight.api(kwargs.qtype).calls(kwargs)
-        kwargs.repository= kwargs.pmoids['user-catalog'].moid
-
-        #==================================
-        # Get OS Catalogs and OS Config
-        #==================================
-        kwargs.api_filter= f"Name in  ('shared')"
-        kwargs.qtype     = 'os_catalog'
-        kwargs.uri       = 'os/Catalogs'
-        kwargs           = isight.api(kwargs.qtype).calls(kwargs)
-        kwargs.os_catalog= kwargs.pmoids['shared'].moid
-
-        kwargs.api_filter= f"Catalog.Moid eq '{kwargs.os_catalog}'"
-        kwargs.qtype     = 'os_configuration'
-        kwargs.uri       = 'os/ConfigurationFiles'
-        kwargs           = isight.api(kwargs.qtype).calls(kwargs)
-        kwargs.os_config = kwargs.pmoids[kwargs.os_config].moid
-
-        #==================================
-        # Get Existing SCU Repositories
-        #==================================
-        kwargs.api_filter= f"Catalog.Moid eq '{kwargs.repository}'"
-        kwargs.names     = [f'scu-{kwargs.scu_version}']
-        kwargs.qtype     = 'server_configuration_utility'
-        kwargs.uri       = 'firmware/ServerConfigurationUtilityDistributables'
-        kwargs           = isight.api(kwargs.qtype).calls(kwargs)
-
-        #==================================
-        # Create/Patch SCU Repo apiBody
-        #==================================
-        kwargs.apiBody = server_config_utility_repo(kwargs)
-        if kwargs.pmoids.get(kwargs.apiBody['Name']):
-            kwargs.method= 'patch'
-            kwargs.pmoid = kwargs.pmoids[kwargs.apiBody['Name']].moid
-        else: kwargs.method = 'post'
-        kwargs         = isight.api(self.type).calls(kwargs)
-        kwargs.scu_moid= kwargs.pmoid
-
         #==================================
         # Test Repo URL for File
         #==================================
-        repo_url = f'https://{kwargs.repo_server}{kwargs.repo_path}{kwargs.scu_iso}'
-        try: requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
-        except requests.RequestException as e:
-            prRed(f"!!! ERROR !!!\n  Exception when calling {repo_url}:\n {e}\n")
-            sys.exit(1)
-
-        kwargs.api_filter= f"Name eq '{kwargs.os_name}'"
-        kwargs.method    = 'get'
-        kwargs.names     = [kwargs.os_name]
-        kwargs.qtype     = 'operating_system'
-        kwargs.uri       = 'softwarerepository/OperatingSystemFiles'
-        kwargs           = isight.api(kwargs.qtype).calls(kwargs)
-        kwargs.os_repos  = kwargs.pmoids
-
-        #==================================
-        # Create/Patch OS Repo apiBody
-        #==================================
-        kwargs.apiBody = os_software_repo(kwargs)
-        kwargs.uri     = 'softwarerepository/OperatingSystemFiles'
-        if kwargs.os_repos.get(kwargs.apiBody['Name']):
-            kwargs.method= 'patch'
-            kwargs.pmoid = kwargs.os_repos[kwargs.apiBody['Name']].moid
-        else: kwargs.method= 'post'
-        kwargs        = isight.api(self.type).calls(kwargs)
-        kwargs.os_moid= kwargs.pmoid
-
-        #==================================
-        # Test Repo URL for File
-        #==================================
-        repo_url = f'https://{kwargs.repo_server}{kwargs.repo_path}{kwargs.os_iso}'
-        try: requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
-        except requests.RequestException as e:
-            prRed(f"!!! ERROR !!!\n  Exception when calling {repo_url}:\n {e}\n")
-            sys.exit(1)
-
+        def test_repo_url(repo_url):
+            try: requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
+            except requests.RequestException as e:
+                prRed(f"!!! ERROR !!!\n  Exception when calling {repo_url}:\n {e}\n")
+                prRed(f"Please Validate the Software Repository is setup properly.  Exiting...")
+                sys.exit(1)
+        #==========================================
+        # Cfg Repositories if os_install is True
+        #==========================================
+        if os_install == True:
+            #==================================
+            # Get OS Config Files
+            #==================================
+            kwargs.api_filter= f"Name in  ('shared')"
+            kwargs.method    = 'get'
+            kwargs.qtype     = 'os_catalog'
+            kwargs.uri       = 'os/Catalogs'
+            kwargs           = isight.api(kwargs.qtype).calls(kwargs)
+            kwargs.api_filter= f"Catalog.Moid eq '{kwargs.pmoids['shared'].moid}'"
+            kwargs.qtype     = 'os_configuration'
+            kwargs.uri       = 'os/ConfigurationFiles'
+            kwargs           = isight.api(kwargs.qtype).calls(kwargs)
+            kwargs.os_cfg_moids  = kwargs.pmoids
+            kwargs.os_cfg_results= kwargs.results
+            #==================================
+            # Get SCU Repositories
+            #==================================
+            kwargs.method     = 'get'
+            kwargs.names      = ['user-catalog']
+            kwargs.qtype      = 'org_repository'
+            kwargs.uri        = 'softwarerepository/Catalogs'
+            kwargs            = isight.api(kwargs.qtype).calls(kwargs)
+            catalog_moid      = kwargs.pmoids['user-catalog'].moid
+            kwargs.api_filter = f"Catalog.Moid eq '{catalog_moid}'"
+            kwargs.names      = []
+            kwargs.qtype      = 'server_configuration_utility'
+            kwargs.uri        = 'firmware/ServerConfigurationUtilityDistributables'
+            kwargs            = isight.api(kwargs.qtype).calls(kwargs)
+            for e in kwargs.results:
+                moid = e.Moid; url = e.Source.LocationLink
+                version = url.split('scu-')[1].replace('.iso', '')
+                kwargs.scu_list[version] = DotMap(moid = moid, url=url)
+            vlist = sorted(list(kwargs.scu_list.keys()), reverse=True)
+            kwargs.scu_moid = kwargs.scu_list[vlist[0]].moid
+            test_repo_url(kwargs.scu_list[vlist[0]].url)
+            kwargs.scu_list[vlist[0]].url.split('/')[2]
+            repo_url = f"https://{kwargs.scu_list[vlist[0]].url.split('/')[2]}/repo/"
+            kwargs.imm_dict.orgs[kwargs.org].wizard.repository_server = repo_url
+            #==================================
+            # Get OS Install Repositories
+            #==================================
+            kwargs.api_filter= f"Catalog.Moid eq '{catalog_moid}'"
+            kwargs.qtype     = 'operating_system'
+            kwargs.uri       = 'softwarerepository/OperatingSystemFiles'
+            kwargs           = isight.api(kwargs.qtype).calls(kwargs)
+            for e in kwargs.results:
+                version = ''
+                moid = e.Moid; url = e.Source.LocationLink
+                if 'Azure' in url and v.os_type == 'AzureStack':
+                    x = (e.Version).split(' '); version = f'{x[0]}{x[2]}ConfigFile'
+                elif e.Vendor == v.os_type:
+                    x = (e.Version).split(' '); version = f'{x[0]}{x[1]}ConfigFile'
+                if not version == '': kwargs.os_list[version] = deepcopy(DotMap(moid = moid, url=url))
+            vlist = sorted(list(kwargs.os_list.keys()), reverse=True)
+            kwargs.os_sw_moid = kwargs.os_list[vlist[0]].moid
+            kwargs.os_cfg_moid= kwargs.os_cfg_moids[vlist[0]].moid
+            test_repo_url(kwargs.os_list[vlist[0]].url)
         #==========================================
         # Install Operating System on Servers
         #==========================================
@@ -2614,10 +2616,10 @@ class wizard(object):
         for k,v in kwargs.server_profiles.items():
             if v.boot_volume == 'san':
                 if count % 2 == 0:
-                    kwargs.san_target = san_target_a
+                    kwargs.san_target = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.a[0].wwpn
                     kwargs.wwpn = 0
                 else:
-                    kwargs.san_target = san_target_b
+                    kwargs.san_target = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.b[0].wwpn
                     kwargs.wwpn = 1
             if v.os_installed == False:
                 indx           = [e for e, d in enumerate(v.macs) if 'mgmt-a' in d.values()][0]
@@ -2641,43 +2643,39 @@ class wizard(object):
                             f"{'-'*91}\n")
                 kwargs = isight.api(self.type).calls(kwargs)
                 kwargs.server_profiles[k].os_install = DotMap(moid=kwargs.pmoid,workflow='')
-        
         time.sleep(120)
         #=================================================
         # Monitor OS Installation until Complete
         #=================================================
         for k,v in  kwargs.server_profiles.items():
             if v.os_installed == False:
-                kwargs.fqdn      = k + '.' + kwargs.dns_domains[0]
-                kwargs.api_filter= f"Input.OSInstallInputs.Answers.Hostname eq '{kwargs.fqdn}'"
-                kwargs.method    = 'get'
-                kwargs.qtype     = self.type
-                kwargs.uri       = 'workflow/WorkflowInfos'
-                kwargs           = isight.api(self.type).calls(kwargs)
+                kwargs.fqdn       = k + '.' + kwargs.dns_domains[0]
+                kwargs.api_filter = f"Input.OSInstallInputs.Answers.Hostname eq '{kwargs.fqdn}'"
+                kwargs.method     = 'get'
+                kwargs.qtype      = self.type
+                kwargs.uri        = 'workflow/WorkflowInfos'
+                kwargs            = isight.api(self.type).calls(kwargs)
                 v.os_install.workflow = kwargs.results[len(kwargs.results)-1].Moid
                 install_complete = False
                 while install_complete == False:
-                    kwargs.method= 'get_by_moid'
-                    kwargs.pmoid = v.os_install.workflow
-                    kwargs.qtype = 'workflow_info'
-                    kwargs.uri   = 'workflow/WorkflowInfos'
+                    kwargs.method = 'get_by_moid'
+                    kwargs.pmoid  = v.os_install.workflow
+                    kwargs.qtype  = 'workflow_info'
+                    kwargs.uri    = 'workflow/WorkflowInfos'
                     kwargs = isight.api(self.type).calls(kwargs)
                     if kwargs.results.Status == 'COMPLETED':
-                        install_complete= True
-                        install_success = True
+                        install_complete = True; install_success  = True
                         pcolor.Green(f'    - Completed Operating System Installation for {k}.')
                     elif re.search('(FAILED|TERMINATED|TIME_OUT)', kwargs.results.Status):
                         kwargs.upgrade.failed.update({k:v.moid})
                         prRed(f'!!! FAILED !!! Operating System Installation for Server Profile {k} failed.')
-                        install_complete= True
-                        install_success = False
+                        install_complete= True; install_success = False
                     else:
                         progress= kwargs.results.Progress
                         status  = kwargs.results.Status
                         pcolor.Cyan(f'      * Operating System Installation for {k}.')
                         pcolor.Cyan(f'        Status is {status} Progress is {progress}, Waiting 120 seconds.')
                         time.sleep(120)
-
                 #=================================================
                 # Add os_installed Tag to Physical Server
                 #=================================================
@@ -2732,10 +2730,10 @@ class wizard(object):
         for k, v in kwargs.pmoids.items(): kwargs.server_profiles[k].moid = v.moid
         
         for k, v in kwargs.server_profiles.items():
-            kwargs.api_filter= f"Profile.Moid eq '{v.moid}'"
-            kwargs.method    = 'get'
-            kwargs.qtype     = 'vnics'
-            kwargs.uri       = 'vnic/EthIfs'
+            kwargs.api_filter = f"Profile.Moid eq '{v.moid}'"
+            kwargs.method     = 'get'
+            kwargs.qtype      = 'vnics'
+            kwargs.uri        = 'vnic/EthIfs'
             kwargs = isight.api(kwargs.qtype).calls(kwargs)
             r = kwargs.results
             mac_list = []
@@ -2745,31 +2743,29 @@ class wizard(object):
                 s = DotMap(s)
                 kwargs.eth_moids.append(s.FabricEthNetworkGroupPolicy[0].Moid)
                 mac_list.append(dict(
-                    mac   = s.MacAddress,
-                    name  = s.Name,
-                    order = s.Order,
-                    switch= s.Placement.SwitchId,
-                    vgroup= s.FabricEthNetworkGroupPolicy[0].Moid
-            ))
+                    mac    = s.MacAddress,
+                    name   = s.Name,
+                    order  = s.Order,
+                    switch = s.Placement.SwitchId,
+                    vgroup = s.FabricEthNetworkGroupPolicy[0].Moid))
             kwargs.server_profiles[k].macs = sorted(mac_list, key=lambda k: (k['order']))
         
             #=====================================================
             # Get WWPN's for vHBAs and Add to Profile Map
             #=====================================================
-            kwargs.api_filter= f"Profile.Moid eq '{v.moid}'"
-            kwargs.qtype     = 'vhbas'
-            kwargs.uri       = 'vnic/FcIfs'
+            kwargs.api_filter = f"Profile.Moid eq '{v.moid}'"
+            kwargs.qtype      = 'vhbas'
+            kwargs.uri        = 'vnic/FcIfs'
             kwargs = isight.api(kwargs.qtype).calls(kwargs)
             r = kwargs.results
             wwpn_list = []
             for s in r:
                 s = DotMap(s)
                 wwpn_list.append(dict(
-                    switch= s.Placement.SwitchId,
-                    name  = s.Name,
-                    order = s.Order,
-                    wwpn  = s.Wwpn
-            ))
+                    switch = s.Placement.SwitchId,
+                    name   = s.Name,
+                    order  = s.Order,
+                    wwpn   = s.Wwpn))
             kwargs.server_profiles[k].wwpns = (sorted(wwpn_list, key=lambda k: (k['order'])))
         
             #=====================================================
@@ -2787,12 +2783,13 @@ class wizard(object):
                 r = DotMap(kwargs.results)
                 kwargs.server_profiles[k].iqn = r.IqnId
         kwargs.server_profile = DotMap(kwargs.server_profiles)
-        
+        #=====================================================
         # Query API for Ethernet Network Policies and Add to Server Profile Dictionaries
+        #=====================================================
         kwargs.eth_moids = numpy.unique(numpy.array(kwargs.eth_moids))
-        kwargs.method= 'get_by_moid'
-        kwargs.qtype = 'ethernet_network_group'
-        kwargs.uri   = 'fabric/EthNetworkGroupPolicies'
+        kwargs.method    = 'get_by_moid'
+        kwargs.qtype     = 'ethernet_network_group'
+        kwargs.uri       = 'fabric/EthNetworkGroupPolicies'
         server_settings = deepcopy(kwargs.server_profiles)
         for i in kwargs.eth_moids:
             kwargs.pmoid = i
@@ -2807,20 +2804,15 @@ class wizard(object):
                             kwargs.server_profiles[k].macs[ix]['vlan_group']= results.Name
                             kwargs.server_profiles[k].macs[ix]['allowed']   = results.VlanSettings.AllowedVlans
                             kwargs.server_profiles[k].macs[ix]['native']    = results.VlanSettings.NativeVlan
-
         #=====================================================
         # Run Lun Creation Class
         #=====================================================
-        if kwargs.args.deployment_type == 'flexpod':
-            kwargs = netapp.build('lun').lun(kwargs)
-
+        if kwargs.args.deployment_type == 'flexpod': kwargs = netapp.build('lun').lun(kwargs)
         for k, v in kwargs.server_profiles.items():
             polVars = v.toDict()
-
             # Add Policy Variables to imm_dict
             kwargs.class_path = f'wizard,os_configuration'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
-
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
@@ -2837,19 +2829,18 @@ class wizard(object):
             #==================================
             netwk = '%s' % ipaddress.IPv4Network(i.network, strict=False)
             vDict = DotMap(
-                configure_l2= i.configure_l2,
-                configure_l3= i.configure_l3,
-                disjoint    = i.disjoint,
-                gateway     = i.network.split('/')[0],
-                name        = i.name,
-                native_vlan = i.native_vlan,
-                netmask     = ((ipaddress.IPv4Network(netwk)).with_netmask).split('/')[1],
-                network     = netwk,
-                prefix      = i.network.split('/')[1],
-                switch_type = i.switch_type,
-                vlan_id     = i.vlan_id,
-                vlan_type   = i.vlan_type,
-            )
+                configure_l2 = i.configure_l2,
+                configure_l3 = i.configure_l3,
+                disjoint     = i.disjoint,
+                gateway      = i.network.split('/')[0],
+                name         = i.name,
+                native_vlan  = i.native_vlan,
+                netmask      = ((ipaddress.IPv4Network(netwk)).with_netmask).split('/')[1],
+                network      = netwk,
+                prefix       = i.network.split('/')[1],
+                switch_type  = i.switch_type,
+                vlan_id      = i.vlan_id,
+                vlan_type    = i.vlan_type)
             def iprange(xrange):
                 ipsplit = xrange.split('-')
                 ip1 = ipsplit[0]
@@ -2860,11 +2851,9 @@ class wizard(object):
                     ips.append(ipaddress)
                 return ips
             if i.ranges.get('controller'): vDict.controller = iprange(i.ranges.controller)
-            if i.ranges.get('pool') and re.search('(inband|ooband)', i.vlan_type):
-                vDict.pool = iprange(i.ranges.pool)
+            if i.ranges.get('pool') and re.search('(inband|ooband)', i.vlan_type): vDict.pool = iprange(i.ranges.pool)
             if i.ranges.get('server'): vDict.server = iprange(i.ranges.server)
             kwargs.vlans.append(vDict)
-
         #==================================
         # Build VLAN Ranges Dictionary
         #==================================
@@ -2874,18 +2863,14 @@ class wizard(object):
                 configure_l2= i.configure_l2,
                 disjoint    = i.disjoint,
                 name        = i.name_prefix,
-                vlan_list   = i.vlan_range
-            ))
-
+                vlan_list   = i.vlan_range))
         #==================================
         # Build inband|nfs|ooband Dict
         #==================================
         for i in kwargs.vlans:
-            if re.search('(inband|nfs|ooband|migration)', i.vlan_type):
-                kwargs[i.vlan_type] = i
-
+            if re.search('(inband|nfs|ooband|migration)', i.vlan_type): kwargs[i.vlan_type] = i
         #=====================================================
-        # Return kwargs and kwargs
+        # Return kwargs
         #=====================================================
         return kwargs
 
@@ -2902,86 +2887,34 @@ def os_installation_body(k, v, kwargs):
                     'Gateway': v.inband.gateway,
                     'IpAddress': v.inband.ip,
                     'Netmask': v.inband.netmask,
-                    'ObjectType': 'comm.IpV4Interface'
-                }, 'ObjectType': 'os.Ipv4Configuration',
-            },
+                    'ObjectType': 'comm.IpV4Interface'},
+                'ObjectType': 'os.Ipv4Configuration'},
             "IsRootPasswordCrypted": False,
             'Nameserver': kwargs.dns_servers[0],
             'NetworkDevice': kwargs.mgmt_mac,
             'ObjectType': 'os.Answers',
             'RootPassword': kwargs.vmware_esxi_password,
-            'Source': 'Template'
-        },
-        'ConfigurationFile': { 'Moid': kwargs.os_config,
-            'ObjectType': 'os.ConfigurationFile',
-        },
-        'Image': { 'Moid': kwargs.os_moid,
-            'ObjectType': 'softwarerepository.OperatingSystemFile',
-        },
+            'Source': 'Template'},
+        'ConfigurationFile': {'Moid': kwargs.os_cfg_moid, 'ObjectType': 'os.ConfigurationFile'},
+        'Image': {'Moid': kwargs.os_sw_moid, 'ObjectType': 'softwarerepository.OperatingSystemFile'},
         'InstallMethod': 'vMedia',
         'InstallTarget': {},
         'Name': f'{k}-osinstall',
         'ObjectType': 'os.Install',
-        'Organization': { 'Moid': kwargs.org_moid,
-            'ObjectType': 'organization.Organization',
-        },
-        'OsduImage': {
-            'Moid': kwargs.scu_moid,
-            'ObjectType': 'firmware.ServerConfigurationUtilityDistributable',
-        },
+        'Organization': {'Moid': kwargs.org_moid, 'ObjectType': 'organization.Organization'},
+        'OsduImage': {'Moid': kwargs.scu_moid, 'ObjectType': 'firmware.ServerConfigurationUtilityDistributable'},
         'OverrideSecureBoot': True,
-        'Server': { 'Moid': v.hardware_moid, 'ObjectType': v.object_type}
-    }
+        'Server': {'Moid': v.hardware_moid, 'ObjectType': v.object_type}}
     if v.boot_volume == 'san':
         apiBody['InstallTarget'] = {
             'InitiatorWwpn': v.wwpns[kwargs.wwpn].wwpn,
             'LunId': 0,
             'ObjectType': 'os.FibreChannelTarget',
-            'TargetWwpn': kwargs.san_target
-        }
+            'TargetWwpn': kwargs.san_target}
     elif v.boot_volume == 'm2':
         apiBody['InstallTarget'] = {
             "Id": 0,
             "Name": "MStorBootVd",
             "ObjectType": "os.VirtualDrive",
-            "StorageControllerSlotId": int(v.storage_controllers['UCS-M2-HWRAID'])
-        }
-    return apiBody
-
-#=============================================================================
-# Function - Build apiBody for Operating System Software Repository
-#=============================================================================
-def os_software_repo(kwargs):
-    apiBody = { 'Catalog': { 'Moid': kwargs.repository,
-            'ObjectType': 'softwarerepository.Catalog'
-        },
-        'Description': f'{kwargs.os_name} Server Configuration Utility',
-        'Name': kwargs.os_name,
-        'ObjectType': 'softwarerepository.OperatingSystemFile',
-        'Source': {
-            'LocationLink': f'https://{kwargs.repo_server}{kwargs.repo_path}{kwargs.os_iso}',
-            'ObjectType': 'softwarerepository.HttpServer',
-        },
-        'Vendor': kwargs.os_vendor, 'Version': kwargs.os_version
-    }
-    return apiBody
-
-#=============================================================================
-# Function - Build apiBody for Server Configuration Utility Repository
-#=============================================================================
-def server_config_utility_repo(kwargs):
-    apiBody = {
-        'Catalog': { 'Moid': kwargs.repository,
-            'ObjectType': 'softwarerepository.Catalog'
-        },
-        'Description': f'scu-{kwargs.scu_version} Server Configuration Utility',
-        'Name': f'scu-{kwargs.scu_version}',
-        'ObjectType': 'firmware.ServerConfigurationUtilityDistributable',
-        'Source': {
-            'LocationLink': f'https://{kwargs.repo_server}{kwargs.repo_path}{kwargs.scu_iso}',
-            'ObjectType': 'softwarerepository.HttpServer',
-        },
-        'SupportedModels': kwargs.models,
-        'Vendor': 'Cisco', 'Version': kwargs.scu_version
-    }
+            "StorageControllerSlotId": int(v.storage_controllers['UCS-M2-HWRAID'])}
     return apiBody

@@ -7,17 +7,19 @@ try:
     from classes import ezfunctions, pcolor, validating
     from copy import deepcopy
     from dotmap import DotMap
-    import json, numpy, os, pexpect, platform, re, requests, socket, subprocess, time
+    import json, numpy, os, pexpect, platform, re, requests, socket, subprocess, time, urllib3
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
     prRed(f" Install the module using the following: `pip install {e.name}`")
     sys.exit(1)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Class must be instantiated with Variables
 class api(object):
     def __init__(self, type):
         self.type = type
+
     #=====================================================
     # ESX Host Initialization
     #=====================================================
@@ -27,27 +29,33 @@ class api(object):
         #=====================================================
         validating.begin_section('vCenter', self.type.capitalize())
         time.sleep(2)
-        #=====================================================
-        # Get VIBs from Files Directory
-        #=====================================================
-        dir_files = os.listdir(kwargs.files_dir)
-        dir_files.sort()
-        file_types = ['Broadcom', 'NetAppNas', 'nenic', 'nfnic']
-        for ftype in file_types:
-            for f in dir_files:
-                if os.path.isfile(os.path.join(kwargs.files_dir, f)):
-                    if ftype in f: kwargs.files[ftype] = f
-        
-        #==================================
-        # Test Repo URL for File
-        #==================================
-        for k, v in kwargs.files.items():
-            repo_url = f'https://{kwargs.repo_server}{kwargs.repo_path}{v}'
-            try:
-                r = requests.head(repo_url, allow_redirects=True, verify=False, timeout=10)
-            except requests.RequestException as e:
-                prRed(f"!!! ERROR !!!\n  Exception when calling {repo_url}:\n {e}\n")
-                sys.exit(1)
+        if kwargs.args.deployment_type == 'flexpod':
+            #=====================================================
+            # Test Repo URL for NetAppNasPlugin
+            #=====================================================
+            kwargs.sensitive_var = 'imm_transition_password'
+            kwargs  = ezfunctions.sensitive_var_value(kwargs)
+            imm_transition_password=kwargs.var_value
+            s = requests.Session()
+            data = json.dumps({'username':'admin','password':{imm_transition_password}})
+            url = f'https://{kwargs.repo_server}/api/v1/'
+            try: r = s.post(data = data, headers= {'Content-Type': 'application/json'}, url = f'{url}login', verify = False)
+            except requests.exceptions.ConnectionError as e: pcolor.Red(f'!!! ERROR !!!\n{e}\n'); sys.exit(1)
+            if not r.status_code == 200: prRed(r.text); sys.exit(1)
+            jdata = json.loads(r.text)
+            token = jdata['token']
+            for uri in ['repo/files', 'logout']:
+                try: r = s.get(url = f'{url}{uri}', headers={'x-access-token': token}, verify=False)
+                except requests.exceptions.ConnectionError as e: pcolor.Red(f'!!! ERROR !!!\n{e}'); sys.exit(1)
+                if 'repo' in uri: jdata = json.loads(r.text)
+                if not r.status_code == 200: prRed(r.text); sys.exit(1)
+            netapp_plugin = ''
+            for e in jdata['repofiles']:
+                if 'NetAppNasPlugin' in e['file_path']: netapp_plugin = e['file_path'].split('/')[2]
+            if netapp_plugin == '':
+                pcolor.Red('!!! ERROR !!!\nCould not determine the file location for the NetAppNasPlugin.')
+                pcolor.Red('Validate that you have uploaded NetAppNasPlugin2.0.1.zip or newer to the IMM Transition Tool Software Repository.')
+                pcolor.Red('Exiting...')
 
         #=====================================================
         # Load Variables and Login to ESXi Hosts
@@ -56,9 +64,9 @@ class api(object):
         server_profiles = deepcopy(kwargs.server_profiles)
         for k, v in server_profiles.items():
             esx_host = k + '.' + kwargs.dns_domains[0]
-            prGreen(f"\n{'-'*91}\n")
-            prGreen(f"   Beginning VIB Installs for {esx_host}.")
-            prGreen(f"\n{'-'*91}\n")
+            pcolor.Green(f"\n{'-'*91}\n")
+            pcolor.Green(f"   Beginning Host Customization for {esx_host}.")
+            pcolor.Green(f"\n{'-'*91}\n")
             time.sleep(2)
             kwargs.hostname   = esx_host
             kwargs.password   = 'vmware_esxi_password'
@@ -82,7 +90,7 @@ class api(object):
                 'vim-cmd hostsvc/advopt/update UserVars.SuppressShellWarning long 1',
                 ntp_cfg,
                 'cd /tmp',
-                f'ping {kwargs.repo_server}'
+                f'ping {kwargs.repo_server.split("/")[2]}'
             ]
             for cmd in cmds:
                 cmds = cmd.split(' ')
@@ -91,21 +99,23 @@ class api(object):
                 child.expect(kwargs.host_prompt)
 
             reboot_required = False
-            for key, value in kwargs.files.items():
-                vib     = value
-                repo_url= f'http://{kwargs.repo_server}{kwargs.repo_path}{vib}'
+            if kwargs.args.deployment_type == 'flexpod':
+                vib = netapp_plugin
+                repo_url = f'https://{kwargs.repo_server}/repo/{vib}'
                 child.sendline(f'rm -f {vib}')
                 child.expect(f'rm -f')
                 child.expect(kwargs.host_prompt)
-                child.sendline(f'wget {repo_url}')
+                if 'https' in repo_url:
+                    child.sendline(f'wget --no-checkcertificate {repo_url}')
+                else: child.sendline(f'wget {repo_url}')
                 attempt_count = 0
                 download_success = False
                 while download_success == False:
                     i = child.expect(['error getting response', 'saved', kwargs.host_prompt, pexpect.TIMEOUT])
                     if i == 3 or attempt_count == 3:
-                        prRed(f"\n{'-'*91}\n")
-                        prRed(f'!!! FAILED !!!\n Failed to Download {vib} via {kwargs.repo_server}')
-                        prRed(f"\n{'-'*91}\n")
+                        pcolor.Red(f"\n{'-'*91}\n")
+                        pcolor.Red(f'!!! FAILED !!!\n Failed to Download {vib} via {kwargs.repo_server}')
+                        pcolor.Red(f"\n{'-'*91}\n")
                         sys.exit(1)
                     elif i == 0:
                         child.sendline(f'wget {repo_url}')
@@ -116,13 +126,8 @@ class api(object):
                         child.sendline(f'wget {repo_url}')
                         attempt_count += 1
                         time.sleep(5)
-
-                if re.search('(Broadcom|Cisco)', vib):
-                    child.sendline(f'esxcli software component apply -d /tmp/{vib}')
-                    child.expect(f'esxcli software component apply')
-                else:
-                    child.sendline(f'esxcli software vib install -d /tmp/{vib}')
-                    child.expect(f'esxcli software vib install')
+                child.sendline(f'esxcli software vib install -d /tmp/{vib}')
+                child.expect(f'esxcli software vib install')
                 cmd_check = False
                 while cmd_check == False:
                     regex1 = re.compile(f"(Components Installed: [a-zA-Z\\-\\_\\.]+)\r")
@@ -130,26 +135,26 @@ class api(object):
                     regex3 = re.compile('Reboot Required: true')
                     regex4 = re.compile('Reboot Required: false')
                     i = child.expect([regex1, regex2, regex3, regex4])
-                    if   i == 0: prGreen(f'\n\n    {(child.match).group(1)}\n\n')
-                    elif i == 1: prGreen(f'\n\n    VIB {vib} install message is {(child.match).group(1)}\n\n')
+                    if   i == 0: pcolor.Green(f'\n\n    {(child.match).group(1)}\n\n')
+                    elif i == 1: pcolor.Green(f'\n\n    VIB {vib} install message is {(child.match).group(1)}\n\n')
                     elif i == 2: reboot_required = True; cmd_check = True
                     elif i == 3: reboot_required = False; cmd_check = True
             child.sendline('esxcfg-advcfg -s 0 /Misc/HppManageDegradedPaths')
             child.expect(kwargs.host_prompt)
             if reboot_required == True:
-                prGreen(f'\n\nNeed to reboot {esx_host}\n\n')
+                pcolor.Green(f'\n\nNeed to reboot {esx_host}\n\n')
                 child.sendline('reboot')
                 child.expect('closed')
                 reboot_count += 1
                 kwargs.server_profiles[k].rebooted = True
             else:
-                prGreen(f'\n\nno reboot required for {esx_host}\n\n')
+                pcolor.Green(f'\n\nno reboot required for {esx_host}\n\n')
                 kwargs.server_profiles[k].rebooted = False
                 child.sendline('exit')
                 child.expect('closed')
-            prGreen(f"\n{'-'*91}\n")
-            prGreen(f"   Completed Base Configuration for {esx_host}")
-            prGreen(f"\n{'-'*91}\n")
+            pcolor.Green(f"\n{'-'*91}\n")
+            pcolor.Green(f"   Completed Base Configuration for {esx_host}")
+            pcolor.Green(f"\n{'-'*91}\n")
             time.sleep(2)
         child.close()
 
@@ -169,28 +174,28 @@ class api(object):
             for k, v in server_profiles.items():
                 if v.rebooted == True:
                     esx_host = k + '.' + kwargs.dns_domains[0]
-                    prGreen(f"   Checking Host {esx_host} Reachability after reboot.")
+                    pcolor.Green(f"   Checking Host {esx_host} Reachability after reboot.")
                     reach_count = 0
                     reachable = False
                     while reachable == False:
                         connected = isReachable(esx_host, '443')
                         if connected == True:
-                            prGreen(f"   Connection to {esx_host} Succeeded..")
+                            pcolor.Green(f"   Connection to {esx_host} Succeeded..")
                             reachable = True
                         else:
                             if reach_count == 5:
-                                prCyan(f"   Connection to {esx_host} Failed.  Skipping Host.")
+                                pcolor.Cyan(f"   Connection to {esx_host} Failed.  Skipping Host.")
                                 kwargs.server_profiles[k].failed_host = True
                                 failed_hosts += 1
                                 reachable = True
                             else:
                                 reach_count += 1
-                                prCyan(f"   Connection to {esx_host} Failed.  Sleeping for 2 minutes.")
+                                pcolor.Cyan(f"   Connection to {esx_host} Failed.  Sleeping for 2 minutes.")
                                 time.sleep(120)
             if failed_hosts > 0:
                 for k, v in kwargs.server_profiles.items():
                     esx_host = k + '.' + kwargs.dns_domains[0]
-                    if v.get('failed_host'): prCyan(f"   Connection to {esx_host} Failed.  Host Failed.")
+                    if v.get('failed_host'): pcolor.Cyan(f"   Connection to {esx_host} Failed.  Host Failed.")
                 sys.exit(1)
 
         #=====================================================
@@ -232,7 +237,7 @@ class api(object):
             # Add Servers
             #=====================================================
             for k, v in kwargs.server_profiles.items():
-                idict = (DotMap(
+                idict = DotMap(
                     iscsi        = [],
                     license_type = item.license_type,
                     name         = v.name + '.' + kwargs.dns_domains[0],
@@ -240,10 +245,8 @@ class api(object):
                     serial       = v.serial,
                     server_dn    = '',
                     syslog_server= item.syslog_server,
-                    vswitches    = []
-                ))
-                if len(v.domain) == 0:
-                    idict.server_dn = v.server_id
+                    vswitches    = [])
+                if len(v.domain) == 0: idict.server_dn = v.server_id
                 else:
                     if v.object_type == 'compute.RackUnit':
                         idict.server_dn  = f"{v.domain}-{v.server_id}"
@@ -276,13 +279,11 @@ class api(object):
                 for vv in item.virtual_switches:
                     indx = [e for e, d in enumerate(item.virtual_switches) if vv.name in d.values()][0]
                     indx = indx*2
-                    if re.search('vswitch0', vv.name, re.IGNORECASE):
-                        vv.name = 'vSwitch0'
+                    if re.search('vswitch0', vv.name, re.IGNORECASE): vv.name = 'vSwitch0'
                     vdict = DotMap(name=vv.name,
                         maca=v.macs[indx].mac,
                         macb=v.macs[indx+1].mac,
-                        mtu=9000, type=vv.type, vmks=[]
-                    )
+                        mtu=9000, type=vv.type, vmks=[])
                     def create_vmk_dictionary(vmk, values, kwargs):
                         kdict = DotMap(
                             ip        = values.ip,
@@ -331,17 +332,14 @@ class api(object):
                                 vdict.vmks.append(deepcopy(kdict))
                                 kwargs.nvme= False
                                 vmk+=1
-
                     # Append Virtual Switches to Dictionary
                     idict.vswitches.append(vdict)
-
                 kwargs.vmware.servers.append(idict)
             #=====================================================
             # Add Virtual Switches
             #=====================================================
             for i in item.virtual_switches:
-                if re.search('vswitch0', i.name, re.IGNORECASE):
-                    i.name = 'vSwitch0'
+                if re.search('vswitch0', i.name, re.IGNORECASE): i.name = 'vSwitch0'
                 kwargs.vmware.vswitches[i.name] = DotMap(
                     data_types = i.data_types,
                     mtu        = 9000,
@@ -405,34 +403,18 @@ class api(object):
         # Run the PowerShell Script
         #=====================================================
         commandline_options = [pwsh, '-ExecutionPolicy', 'Unrestricted', '-File', '/usr/bin/ezvcenter.ps1', '-j', json_file]
-        #for param in params:
-        #    commandline_options.append("'" + param + "'")
-
         results = subprocess.run(
             commandline_options, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
-
-        prLightPurple(results.returncode)  # 0 = SUCCESS, NON-ZERO = FAIL  
-        prLightPurple(results.stdout)      # Print Output
-        prLightPurple(results.stderr)      # Print any Error Output
+        pcolor.LightPurple(results.returncode)  # 0 = SUCCESS, NON-ZERO = FAIL  
+        pcolor.LightPurple(results.stdout)      # Print Output
+        pcolor.LightPurple(results.stderr)      # Print any Error Output
 
         if results.returncode == 0:  # COMPARING RESULT
-            prGreen(f"\n{'-'*91}\n")
-            prGreen(f"  Completed Configuring the Virtualization Environment Successfully.")
-            prGreen(f"\n{'-'*91}\n")
+            pcolor.Green(f"\n{'-'*91}\n")
+            pcolor.Green(f"  Completed Configuring the Virtualization Environment Successfully.")
+            pcolor.Green(f"\n{'-'*91}\n")
         else:
-            prGreen(f"\n{'-'*91}\n")
-            prGreen(f"  !!! ERROR !!!\n Something went wrong with the Configuration of the Virtualization Environment")
-            prGreen(f"\n{'-'*91}\n")
-
+            pcolor.Green(f"\n{'-'*91}\n")
+            pcolor.Green(f"  !!! ERROR !!!\n Something went wrong with the Configuration of the Virtualization Environment")
+            pcolor.Green(f"\n{'-'*91}\n")
         return kwargs
-
-#=====================================================
-# Print Color Functions
-#=====================================================
-def prCyan(skk): print("\033[96m {}\033[00m" .format(skk))
-def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
-def prLightPurple(skk): print("\033[94m {}\033[00m" .format(skk))
-def prLightGray(skk): print("\033[97m {}\033[00m" .format(skk))
-def prPurple(skk): print("\033[95m {}\033[00m" .format(skk))
-def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
-def prYellow(skk): print("\033[93m {}\033[00m" .format(skk))

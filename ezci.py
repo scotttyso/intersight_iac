@@ -31,12 +31,12 @@ import os, sys
 script_path= os.path.dirname(os.path.realpath(sys.argv[0]))
 sys.path.insert(0, f'{script_path}{os.sep}classes')
 try:
-    from classes import ci, ezfunctions, isight, netapp, network, pcolor, vsphere
+    from classes import ci, ezfunctions, isight, network, pcolor, vsphere
     from copy import deepcopy
     from dotmap import DotMap
     from json_ref_dict import materialize, RefDict
     from pathlib import Path
-    import argparse, json, logging, os, platform, re, socket, yaml
+    import argparse, json, logging, os, platform, re, yaml
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -68,13 +68,14 @@ def cli_arguments():
         '-i', '--ignore-tls', action='store_false',
         help='Ignore TLS server-side certificate verification.  Default is False.')
     Parser.add_argument( '-ilp', '--local-user-password-1',   help='Intersight Managed Mode Local User Password 1.' )
-    Parser.add_argument( '-ilp2', '--local-user-password-2',  help='Intersight Managed Mode Local User Password 2.' )
+    Parser.add_argument( '-ilp2','--local-user-password-2',   help='Intersight Managed Mode Local User Password 2.' )
+    Parser.add_argument( '-imm', '--imm-transition-password', help='IMM Transition Tool Password.' )
     Parser.add_argument( '-isa', '--snmp-auth-password-1',    help='Intersight Managed Mode SNMP Auth Password.' )
     Parser.add_argument( '-isp', '--snmp-privacy-password-1', help='Intersight Managed Mode SNMP Privilege Password.' )
     Parser.add_argument(
         '-k', '--intersight-secret-key', default='~/Downloads/SecretKey.txt',
         help='Name of the file containing The Intersight secret key or contents of the secret key in environment.')
-    Parser.add_argument( '-np', '--netapp-password',   help='NetApp Login Password.' )
+    Parser.add_argument( '-np',  '--netapp-password',  help='NetApp Login Password.' )
     Parser.add_argument( '-nsa', '--netapp-snmp-auth', help='NetApp SNMP Auth Password.' )
     Parser.add_argument( '-nsp', '--netapp-snmp-priv', help='NetApp SNMP Privilege Password.' )
     Parser.add_argument( '-nxp', '--nexus-password',   help='Nexus Login Password.' )
@@ -97,6 +98,8 @@ def cli_arguments():
     Parser.add_argument( '-v', '--api-key-v3', action='store_true', help='Flag for API Key Version 3.' )
     Parser.add_argument( '-vep', '--vmware-esxi-password',          help='VMware ESXi Root Login Password.' )
     Parser.add_argument( '-vvp', '--vmware-vcenter-password',       help='VMware vCenter Admin Login Password.' )
+    Parser.add_argument( '-wap', '--windows-admin-password',        help='Windows Administrator Login Password.' )
+    Parser.add_argument( '-wdp', '--windows-domain-password',       help='Windows Domain Registration Login Password.' )
     Parser.add_argument( '-y', '--yaml-file',                       help = 'The input YAML File.' )
     kwargs = DotMap()
     kwargs.args = Parser.parse_args()
@@ -154,7 +157,8 @@ def main():
     #==============================================
     sensitive_list = [
         'local_user_password_1', 'local_user_password_2', 'snmp_auth_password_1', 'snmp_privacy_password_1',
-        'netapp_password', 'nexus_password', 'vmware_esxi_password', 'vmware_vcenter_password']
+        'netapp_password', 'nexus_password', 'vmware_esxi_password', 'vmware_vcenter_password',
+        'windows_admin_password', 'windows_domain_password']
     for e in sensitive_list:
         if vars(kwargs.args)[e]: os.environ[e] = vars(kwargs.args)[e]
     #==============================================
@@ -196,16 +200,13 @@ def main():
         if kwargs.args.deployment_type == 'flexpod':  run_type = 'netapp'
         elif kwargs.args.deployment_type == 'flashstack': run_type = 'pure'
         kwargs = eval(f"ci.wizard(run_type).{run_type}(kwargs)")
-    #==============================================
-    # Installation Files Location
-    #==============================================
-    kwargs.files_dir  = '/var/www/upload'
-    kwargs.repo_server= socket.getfqdn()
-    kwargs.repo_path  = '/'
+
     #=================================================================
     # When Deployment Step is initial - Deploy NXOS|Storage|Domain
     #=================================================================
-    kwargs.protocols = ['fcp', 'iscsi', 'nfs', 'nvme-tcp']
+    if 'flashstack' in kwargs.args.deployment_type: kwargs.protocols = ['fcp', 'iscsi', 'nvme-tcp']
+    elif 'flexpod' in kwargs.args.deployment_type: kwargs.protocols = ['fcp', 'iscsi', 'nfs', 'nvme-tcp']
+
     if kwargs.args.deployment_step == 'initial':
         #==============================================
         # Configure Switches if configure Set to True
@@ -222,7 +223,8 @@ def main():
         #==============================================
         # Configure Storage Appliances
         #==============================================
-        if kwargs.args.deployment_type == 'flexpod': kwargs = ci.wizard('build').build_netapp(kwargs)
+        if kwargs.args.deployment_type == 'flashstack': kwargs = ci.wizard('build').build_pure(kwargs)
+        elif kwargs.args.deployment_type == 'flexpod':  kwargs = ci.wizard('build').build_netapp(kwargs)
         #==============================================
         # Configure Domain
         #==============================================
@@ -311,6 +313,10 @@ def main():
             # Install OS
             #==============================================
             kwargs = ci.wizard('os_install').os_install(kwargs)
+        #==============================================
+        # Create YAML Files
+        #==============================================
+        ezfunctions.create_yaml(orgs, kwargs)
     #=================================================================
     # Configure the Operating System
     #=================================================================
@@ -325,6 +331,7 @@ def main():
             #=====================================================
             for i in kwargs.imm_dict.orgs[kwargs.org].wizard.os_configuration:
                 for k, v in i.items(): kwargs.server_profiles[i.name][k] = v
+            kwargs.repo_server = kwargs.imm_dict.orgs[kwargs.org].wizard.repository_server
             #==============================================
             # Configure Virtualization Environment
             #==============================================
