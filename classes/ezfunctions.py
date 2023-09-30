@@ -57,15 +57,17 @@ def child_login(kwargs):
         child.expect(f'tee Logs/{kwargs.hostname}.txt')
     logged_in = False
     while logged_in == False:
-        i = child.expect(['Are you sure you want to continue', 'closed', 'Password:', kwargs.host_prompt, pexpect.TIMEOUT])
+        i = child.expect(
+            ['Are you sure you want to continue', 'closed', 'password:', 'Password:', kwargs.host_prompt, pexpect.TIMEOUT])
         if i == 0: child.sendline('yes')
         elif i == 1:
             prRed(f'\n!!! FAILED !!! to connect.  '\
                 f'Please Validate {kwargs.hostname} is correct and username {kwargs.username} is correct.')
             sys.exit(1)
         elif i == 2: child.sendline(password)
-        elif i == 3: logged_in = True
-        elif i == 4:
+        elif i == 3: child.sendline(password)
+        elif i == 4: logged_in = True
+        elif i == 5:
             prRed(f"\n{'-'*91}\n")
             prRed(f'!!! FAILED !!!\n Could not open SSH Connection to {kwargs.hostname}')
             prRed(f"\n{'-'*91}\n")

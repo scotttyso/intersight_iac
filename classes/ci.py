@@ -2213,12 +2213,12 @@ class wizard(object):
         #=====================================================
         # Build Pure Storage Dictionaries
         #=====================================================
-        for name,items in kwargs.pure_storage.cluster.items():
-            kwargs = pure_storage.build('cluster').cluster(items, name, kwargs)
+        for name,items in kwargs.pure_storage.items():
+            kwargs = pure_storage.build('array').array(items, name, kwargs)
         #==================================
         # Configure Pure Storage
         #==================================
-        kwargs = pure_storage.api('cluster').cluster(kwargs)
+        kwargs = pure_storage.api('array').array(kwargs)
         #==================================
         # Add Policy Variables to imm_dict
         #==================================
@@ -2436,53 +2436,25 @@ class wizard(object):
         #==================================
         # Build Cluster Dictionary
         #==================================
-        kwargs.pure_storage.cluster = DotMap()
+        kwargs.pure_storage = DotMap()
         kwargs.storage = DotMap()
-        for item in kwargs.imm_dict.wizard.pure_storage:
-            for i in item.clusters:
-                protocols = []
-                for e in i.svm.volumes: protocols.append(e.protocol)
-                if 'local' in protocols: protocols.remove('local')
-                if 'nvme-fc' in protocols or 'nvme-tcp' in protocols: protocols.append('nvme_of')
-                protocols = list(numpy.unique(numpy.array(protocols)))
-                kwargs.protocols = protocols
-                kwargs.storage[i.name][i.svm.name] = DotMap(
-                    cluster = i.name,
-                    name    = f"{i.name}:{i.svm.name}",
-                    svm     = i.svm.name,
-                    vendor  = 'pure_storage')
-                cname = i.name
-                rootv = (i.svm.name).replace('-', '_').lower() + '_root'
-                kwargs.pure_storage.cluster[cname] = DotMap(
-                    autosupport= item.autosupport,
-                    banner     = i.login_banner,
-                    host_prompt= r'[\w]+::>',
-                    nodes      = i.nodes,
-                    protocols  = protocols,
-                    snmp       = item.snmp,
-                    svm        = DotMap(
-                        agg1      = i.nodes.node01.replace('-', '_').lower() + '_1',
-                        agg2      = i.nodes.node02.replace('-', '_').lower() + '_1',
-                        banner    = i.svm.login_banner,
-                        name      = i.svm.name,
-                        m01       = rootv + '_m01',
-                        m02       = rootv + '_m02',
-                        protocols = protocols,
-                        rootv     = rootv,
-                        volumes   = i.svm.volumes),
-                    username = item.username)
-                kwargs.pure_storage.cluster[cname].nodes.node_list = [i.nodes.node01, i.nodes.node02]
-                #==================================
-                # Build Cluster Network Dictionary
-                #==================================
-                nodes = kwargs.pure_storage.cluster[cname].nodes.node_list
-                for x in range(0,len(nodes)):
-                    kwargs.network.storage[nodes[x]] = DotMap(
-                        data_ports   = i.nodes.data_ports,
-                        data_speed   = i.nodes.data_speed,
-                        mgmt_port    = i.nodes.network.management,
-                        network_port = i.nodes.network.data[x],
-                        port_channel =True)
+        for i in kwargs.imm_dict.wizard.pure_storage:
+            protocols = []
+            for e in i.volumes: protocols.append(e.protocol)
+            if 'local' in protocols: protocols.remove('local')
+            if 'nvme-fcp' in protocols or 'nvme-roce' in protocols: protocols.append('nvme_of')
+            protocols = list(numpy.unique(numpy.array(protocols)))
+            kwargs.protocols = protocols
+            kwargs.storage[i.name] = DotMap(
+                name    = i.name,
+                vendor  = 'pure_storage')
+            kwargs.pure_storage[i.name] = DotMap(
+                host_prompt= f'\\@[\\w-]+>',
+                network    = i.network,
+                system     = i.system,
+                protocols  = protocols,
+                volumes    = i.volumes,
+                username   = i.username)
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================

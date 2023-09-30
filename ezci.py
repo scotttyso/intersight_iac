@@ -79,8 +79,11 @@ def cli_arguments():
     Parser.add_argument( '-nsa', '--netapp-snmp-auth', help='NetApp SNMP Auth Password.' )
     Parser.add_argument( '-nsp', '--netapp-snmp-priv', help='NetApp SNMP Privilege Password.' )
     Parser.add_argument( '-nxp', '--nexus-password',   help='Nexus Login Password.' )
+    Parser.add_argument( '-p', '--pure-storage-password',   help='Pure Storage Login Password.' )
+    Parser.add_argument( '-psa', '--pure-storage-snmp-auth', help='Pure Storage SNMP Auth Password.' )
+    Parser.add_argument( '-psp', '--pure-storage-snmp-priv', help='Pure Storage SNMP Privilege Password.' )
     Parser.add_argument(
-        '-s', '--deployment-step', default ='flexpod', required=True,
+        '-s', '--deployment-step', default ='initial', required=True,
         help ='The steps in the proceedure to run. Options Are: '\
             '1. initial '
             '2. servers '\
@@ -88,7 +91,7 @@ def cli_arguments():
             '4. operating_system '\
             '5. os_configuration ')
     Parser.add_argument(
-        '-t', '--deployment-type', default ='flexpod', required=True,
+        '-t', '--deployment-type', default ='imm_domain', required=True,
         help ='Infrastructure Deployment Type. Options Are: '\
             '1. azurestack '
             '2. flashstack '\
@@ -157,7 +160,7 @@ def main():
     #==============================================
     sensitive_list = [
         'local_user_password_1', 'local_user_password_2', 'snmp_auth_password_1', 'snmp_privacy_password_1',
-        'netapp_password', 'nexus_password', 'vmware_esxi_password', 'vmware_vcenter_password',
+        'netapp_password', 'nexus_password', 'pure_storage_password', 'vmware_esxi_password', 'vmware_vcenter_password',
         'windows_admin_password', 'windows_domain_password']
     for e in sensitive_list:
         if vars(kwargs.args)[e]: os.environ[e] = vars(kwargs.args)[e]
@@ -198,13 +201,13 @@ def main():
     kwargs = ci.wizard('vlans').vlans(kwargs)
     if re.search('(flashstack|flexpod)', kwargs.args.deployment_type):
         if kwargs.args.deployment_type == 'flexpod':  run_type = 'netapp'
-        elif kwargs.args.deployment_type == 'flashstack': run_type = 'pure'
+        elif kwargs.args.deployment_type == 'flashstack': run_type = 'pure_storage'
         kwargs = eval(f"ci.wizard(run_type).{run_type}(kwargs)")
 
     #=================================================================
     # When Deployment Step is initial - Deploy NXOS|Storage|Domain
     #=================================================================
-    if 'flashstack' in kwargs.args.deployment_type: kwargs.protocols = ['fcp', 'iscsi', 'nvme-tcp']
+    if 'flashstack' in kwargs.args.deployment_type: kwargs.protocols = ['fcp', 'iscsi', 'nvme-roce']
     elif 'flexpod' in kwargs.args.deployment_type: kwargs.protocols = ['fcp', 'iscsi', 'nfs', 'nvme-tcp']
 
     if kwargs.args.deployment_step == 'initial':
@@ -223,7 +226,7 @@ def main():
         #==============================================
         # Configure Storage Appliances
         #==============================================
-        if kwargs.args.deployment_type == 'flashstack': kwargs = ci.wizard('build').build_pure(kwargs)
+        if kwargs.args.deployment_type == 'flashstack': kwargs = ci.wizard('build').build_pure_storage(kwargs)
         elif kwargs.args.deployment_type == 'flexpod':  kwargs = ci.wizard('build').build_netapp(kwargs)
         #==============================================
         # Configure Domain

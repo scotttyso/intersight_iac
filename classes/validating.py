@@ -108,6 +108,14 @@ def error_request_netapp(method, status, text, uri):
     print(f'\n-------------------------------------------------------------------------------------------\n')
     sys.exit(1)
 
+def error_request_pure_storage(method, status, text, uri):
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    print(f'   !!! ERROR !!! when attempting {method} to {uri}')
+    print(f'   Exiting on Error {status} with the following output:')
+    print(f'   {text}')
+    print(f'\n-------------------------------------------------------------------------------------------\n')
+    sys.exit(1)
+
 def error_serial_number(name, serial):
     print(f'\n-------------------------------------------------------------------------------------------\n')
     print(f'  !!! ERROR !!! The Serial Number "{serial}" for "{name}" was not found in inventory.')
