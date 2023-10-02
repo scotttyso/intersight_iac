@@ -5938,7 +5938,6 @@
                         "X2apicOptOut": "disabled",
                         "XptPrefetch": "enabled",
 
-
                         "CpuPaLimit": "enabled",
                         "DmaCtrlOptIn": "enabled",
                         "EnableMktme": "disabled",
