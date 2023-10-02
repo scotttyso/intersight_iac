@@ -3,9 +3,8 @@
 #"""
 #Script will complete host configuration after OS Installation.
 #Includes All OS Customization of the AzureStack HCI Cisco Validated Design
-#  * Bogna Trimouillat - 
+#  * Bogna Trimouillat - btrimoui@cisco.com
 #  * Tyson Scott 10/1/2023 - tyscott@cisco.com
-#  * Tyson Scott 4/14/2023 - tyscott@cisco.com
 #"""
 
 #=============================================================================
@@ -16,6 +15,9 @@ param (
     [switch]$force,
     [string]$j=$(throw "-j <json_file> is required.")
 )
+$feature_list = ("Hyper-V", "Failover-Clustering", "Data-Center-Bridging", "Bitlocker" , "FS-FileServer",
+    "FS-SMBBW", "Hyper-V-PowerShell", "RSAT-AD-Powershell", "RSAT-Clustering-PowerShell", "NetworkATC",
+    "NetworkHUD", "FS-DATA-Deduplication")
 $jdata = Get-Content -Path $j | ConvertFrom-Json
 $username = $jdata.username
 #=====================================================
@@ -24,16 +26,14 @@ $username = $jdata.username
 #Start-Transcript -Path ".\Logs\$(get-date -f "yyyy-MM-dd_HH-mm-ss")_$($env:USER).log" -Append -Confirm:$false
 
 #=====================================================
-# Setup Credentials
+# Setup Credentials and Login to Hosts
 #=====================================================
 $password = ConvertTo-SecureString $env:windows_administrator_password -AsPlainText -Force;
 $credential = New-Object System.Management.Automation.PSCredential ($username,$password);
-
-$original_nodes = $jdata.node_list
 Get-PSSession | Remove-PSSession | Out-Null
 foreach ($node in $jdata.node_list) {
     Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
-    New-PSSession -HostName $node -Credential $credential
+    New-PSSession -ComputerName $node -Credential $credential
     #New-PSSession -HostName $node -UserName $username
     #New-PSSession -HostName $node -UserName $username -KeyFilePath $env:HOME/.ssh/id_ed25519
 }
@@ -111,18 +111,18 @@ if ($reboot_count -gt 0) {
 }
 foreach ($node in $nodes) {
     Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
-    New-PSSession -HostName $node -UserName RICH\tyscott -KeyFilePath $env:HOME/.ssh/id_ed25519
+    New-PSSession -HostName $node -Credential $credential
 }
 $sessions = Get-PSSession
 $sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
 $session_results = Invoke-WUJob -ComputerName $sessions -Script {
     Import-Module PSWindowsUpdate;
     Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -AutoReboot
+    Return New-Object PsObject -property @{Completed=$True;Reboot=$reboot}
 } -RunNow -Confirm:$false | Out-File "\server\share\logs\$computer-$(Get-Date -f yyyy-MM-dd)-MSUpdates.log" -Force
 #==============================================
 # Setup Environment for Next Loop
 #==============================================
-#$session_results | Format-Table | Out-String|ForEach-Object {Write-Host $_}
 $nodes = [System.Collections.ArrayList]@()
 $reboot_count = 0
 foreach ($result in $session_results) {
@@ -133,7 +133,7 @@ Get-PSSession | Remove-PSSession | Out-Null
 #==============================================
 # Confirm All Nodes Completed
 #==============================================
-if (!$nodes.Length -eq $original_nodes.Length) { Exit 1 }
+if (!$nodes.Length -eq $jdata.node_list.Length) { Exit 1 }
 #==============================================
 # Sleep 10 Minutes if reboot_count gt 0
 #==============================================
@@ -141,9 +141,9 @@ if ($reboot_count -gt 0) {
     Write-Host "Sleeping for 10 Minutes to Wait for Server Reboots." -ForegroundColor Yellow
     Start-Sleep -Seconds 600
 }
-foreach ($node in $nodes) {
+foreach ($node in $jdata.node_list) {
     Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
-    New-PSSession -HostName $node -UserName RICH\tyscott -KeyFilePath $env:HOME/.ssh/id_ed25519
+    New-PSSession -ComputerName $node -Credential $credential
 }
 $sessions = Get-PSSession
 $sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
@@ -218,58 +218,202 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     $gna = Get-NetAdapter
     foreach ($adapter in $adapter_list) {
         if ($gna | Where-Object {$_.Name -eq $adapter -and $_.Status -eq "Up" -and $_.LinkSpeed -eq "100 Gbps"}) {
-            Write-Host " * $($env:COMPUTERNAME) Matched NetAdapter $adapter" -ForegroundColor Green
+            Write-Host " * $($env:COMPUTERNAME) Matched NetAdapter $adapter." -ForegroundColor Green
         } else {
-            Write-Host " * $($env:COMPUTERNAME) Failed to match NetAdapter '$adapter' with Status: 'Up', LinkSpeed: '100 Gbps'.  Exiting..." -ForegroundColor Red
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match NetAdapter '$adapter' with Status: 'Up', LinkSpeed: '100 Gbps'.  Exiting..." -ForegroundColor Red
             Get-NetAdapter | Format-Table Name, InterfaceDescription, Status, MacAddress, LinkSpeed
             Return New-Object PsObject -property @{Completed=$False}
         }
     }
     Write-Host "$($env:COMPUTERNAME) Completed Retrieval of physical NIC port names." -ForegroundColor Yellow
     Write-Host "$($env:COMPUTERNAME) Beginning Create and Deploy Standalone Network ATC Intent." -ForegroundColor Yellow
-    $AdapterOverride = New-NetIntentAdapterPropertyOverrides
-    $AdapterOverride.NetworkDirectTechnology = 4
-    $AdapterOverride
-    $QoSOverride = New-NetIntentQoSPolicyOverRides
-    $QoSOverride.PriorityValue8021Action_SMB = 4
-    $QoSOverride.PriorityValue8021Action_Cluster = 5
-    $QoSOverride
-    $StorageOverride = new-NetIntentStorageOverrides
-    $StorageOverride.EnableAutomaticIPGeneration = $false
-    $StorageOverride
+    # CONFIRM ITEMS
     # Variables for Storage VLANs
-    $gni = Get-NetIntentStatus
-    Add-NetIntent -AdapterName $adapter_list -Management -Compute -Storage -StorageVlans 107, 207 -QoSPolicyOverrides $QoSOverride -AdapterPropertyOverrides $AdapterOverride -StorageOverrides $Storageoverride -Name mgmt_compute_storage
-    Write-Host " Checking Network ATC Intent Status" -ForegroundColor Yellow
-    Get-netIntentStatus -ComputerName $node | Format-Table Host,IntentName,ConfigurationStatus,ProvisioningStatus,IsComputeIntentSet,IsManagementIntentSet,IsStorageIntentset,IsStretchIntentSet
-    Write-Host " Verifying Virtual Switch " -ForegroundColor Yellow
-    Get-VMSwitch | Format-Table Name, SwitchType, NetAdapterInterfaceDescription, NetAdapterInterfaceDescriptions
-    Write-Host " Verifying Management vNIC in parent partition " -ForegroundColor Yellow
-    Get-netadapter | Format-Table Name, InterfaceDescription, Status, MacAddress, LinkSpeed
-    Write-Host " Verifying SET Switch Load Balancing Algorithm " -ForegroundColor Yellow
-    Get-VMSwitch | Get-VMSwitchTeam | Format-List
-    Write-Host "Configuring default route metric for Management NIC " -ForegroundColor Yellow
-    New-NetRoute -DestinationPrefix 0.0.0.0/0 -InterfaceAlias "vManagement(mgmt_compute_storage)” -NextHop 10.23.0.1 -RouteMetric 10
-    netsh in ipv4 set ro 0.0.0.0/0 "vManagement(mgmt_compute_storage)” met=10
-    route print -4
-    $IPStorageNetA = "192.168.107." #vSMB(mgmt_compute_storage#SlotID 2 Port 1)networkaddress
-    $IPStorageNetB = "192.168.207." #vSMB(mgmt_compute_storage#SlotID 2 Port 2)networkaddress
-    $IPHostAddr = 21 #Starting host address
-    foreach ($node in $nodes) {
-        $session = New-CimSession -ComputerName $node
-        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -IPAddress ($IPStorageNetA+$IPHostAddr.ToString()) -PrefixLength 24
-        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -IPAddress ($IPStorageNetB+$IPHostAddr.ToString()) -PrefixLength 24
-        $IPHostAddr++
+    # $jdata.storage_vlans[0].vlan_id
+    # $jdata.storage_vlans[1].vlan_id
+    $gnis = Get-NetIntentStatus
+    Write-Host "$($env:COMPUTERNAME) Beginning Network ATC Intent Status Configuration." -ForegroundColor Yellow
+    if (!($gnis | Where-Object {$_.IntentName -eq "mgmt_compute_storage" -and $_.ConfigurationStatus -eq "Success" -and $_.ProvisioningStatus -eq "Completed" -and $_.IsComputeIntentSet -eq $True -and $_.IsManagementIntentSet -eq $True -and $_.IsStorageIntentset -eq $True -and $_.IsStretchIntentSet -eq $True})) {
+        $AdapterOverride = New-NetIntentAdapterPropertyOverrides
+        $AdapterOverride.NetworkDirectTechnology = 4
+        $AdapterOverride
+        $QoSOverride = New-NetIntentQoSPolicyOverRides
+        $QoSOverride.PriorityValue8021Action_SMB = 4
+        $QoSOverride.PriorityValue8021Action_Cluster = 5
+        $QoSOverride
+        $StorageOverride = new-NetIntentStorageOverrides
+        $StorageOverride.EnableAutomaticIPGeneration = $false
+        $StorageOverride
+        $null = Add-NetIntent -AdapterName $adapter_list -Management -Compute -Storage -StorageVlans $jdata.storage_vlans[0].vlan_id, $jdata.storage_vlans[1].vlan_id -QoSPolicyOverrides $QoSOverride -AdapterPropertyOverrides $AdapterOverride -StorageOverrides $Storageoverride -Name mgmt_compute_storage
     }
-    Get-CimSession | Remove-CimSession
-    Remove-Variable session
-
+    $gnis = Get-NetIntentStatus
+    if ($gnis | Where-Object {$_.IntentName -eq "mgmt_compute_storage" -and $_.ConfigurationStatus -eq "Success" -and $_.ProvisioningStatus -eq "Completed" -and $_.IsComputeIntentSet -eq $True -and $_.IsManagementIntentSet -eq $True -and $_.IsStorageIntentset -eq $True -and $_.IsStretchIntentSet -eq $True}) {
+        Write-Host " * $($env:COMPUTERNAME) Matched Network ATC mgmt_compute_storage Settings." -ForegroundColor Green
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Failed to match NetAdapter '$adapter' with: `ConfigurationStatus: 'Success', `ProvisioningStatus: 'Completed', `IsComputeIntentSet: 'True', `IsManagementIntentSet: 'True', `IsStorageIntentset: 'True', `IsStretchIntentSet: 'True'.  `Exiting..." -ForegroundColor Red
+        Get-netIntentStatus -ComputerName $node | Format-Table Host,IntentName,ConfigurationStatus,ProvisioningStatus,IsComputeIntentSet,IsManagementIntentSet,IsStorageIntentset,IsStretchIntentSet
+        Return New-Object PsObject -property @{Completed=$False}
+    }
+    Write-Host "$($env:COMPUTERNAME) Verifying Management vNIC in parent partition." -ForegroundColor Yellow
+    $gna = Get-netadapter
+    $gna_count = 0
+    if ($gna | Where-Object {$_.Name -eq "vManagement(mgmt_compute_storage)" -and $_.Status -eq "Up" -and $_.LinkSpeed -eq "100 Gbps"}) {
+        $gna_count++ | Out-Null
+    }
+    if ($gna | Where-Object {$_.Name -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.Status -eq "Up" -and $_.LinkSpeed -eq "100 Gbps"}) {
+        $gna_count++ | Out-Null
+    }
+    if ($gna | Where-Object {$_.Name -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.Status -eq "Up" -and $_.LinkSpeed -eq "100 Gbps"}) {
+        $gna_count++ | Out-Null
+    }
+    if ($gna_count -eq 3) {
+        Write-Host " * $($env:COMPUTERNAME) Verified Virtual NIC Creation." -ForegroundColor Green
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Failed to Match Virtual NIC Creation.  Expected:" -ForegroundColor Red
+        Write-Host "   Name: vManagement(mgmt_compute_storage), with Status: 'Up', LinkSpeed: '100 Gbps'" -ForegroundColor Red
+        Write-Host "   Name: vSMB(mgmt_compute_storage#SlotID 2 Port 1), with Status: 'Up', LinkSpeed: '100 Gbps'" -ForegroundColor Red
+        Write-Host "   Name: vSMB(mgmt_compute_storage#SlotID 2 Port 2), with Status: 'Up', LinkSpeed: '100 Gbps'`Exiting..." -ForegroundColor Red
+        Get-netadapter | Format-Table Name, InterfaceDescription, Status, MacAddress, LinkSpeed
+        Return New-Object PsObject -property @{Completed=$False}
+    }
+    Write-Host "$($env:COMPUTERNAME) Verifying Virtual Switch." -ForegroundColor Yellow
+    $gvsw = Get-VMSwitch
+    if ($gvsw | Where-Object {$_.Name -eq "ConvergedSwitch(mgmt_compute_storage)" -and $_.SwitchType -eq "External" -and $_.NetAdapterInterfaceDescription -eq "Teamed-Interface"}) {
+        Write-Host " * $($env:COMPUTERNAME) Matched Virtual Switch Settings." -ForegroundColor Green
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Failed to Match Virtual Switch Settings.  Expected:" -ForegroundColor Red
+        Write-Host "   Name: 'ConvergedSwitch(mgmt_compute_storage)', `SwitchType: 'External', `NetAdapterInterfaceDescription: 'Teamed-Interface'.  `Exiting..." -ForegroundColor Red
+        Get-VMSwitch | Format-Table Name, SwitchType, NetAdapterInterfaceDescription, NetAdapterInterfaceDescriptions
+        Return New-Object PsObject -property @{Completed=$False}
+    }
+    Write-Host "$($env:COMPUTERNAME) Verifying SET Switch Load Balancing Algorithm." -ForegroundColor Yellow
+    $gvsw = Get-VMSwitch | Get-VMSwitchTeam
+    if ($gvsw | Where-Object {$_.Name -eq "ConvergedSwitch(mgmt_compute_storage)" -and $_.LoadBalancingAlgorithm -eq "HyperVPort"}) {
+        Write-Host " * $($env:COMPUTERNAME) Matched SET Switch Load Balancing Algorithm." -ForegroundColor Green
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Failed to Match SET Switch Load Balancing Algorithm.  Expected: `Name: 'ConvergedSwitch(mgmt_compute_storage)', `LoadBalancingAlgorithm: 'HyperVPort'.  `Exiting..." -ForegroundColor Red
+        Get-VMSwitch | Get-VMSwitchTeam | Format-List
+        Return New-Object PsObject -property @{Completed=$False}
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Network ATC Intent Status Configuration." -ForegroundColor Yellow
+    # CONFIRM ITEMS
+    # Variables for Storage VLANs
+    # $jdata.storage_vlans[0].gateway
+    # $jdata.storage_vlans[1].gateway
+    # Two Default Routes or One
+    Write-Host "$($env:COMPUTERNAME) Beginning Configuring default route for Management NIC " -ForegroundColor Yellow
+    $mgmt_route_count = 0
+    $g_mgmt_route = Get-NetRoute | Where-Object {$_.-DestinationPrefix -eq "0.0.0.0/0"}
+    if ($g_mgmt_route | Where-Object {$_.-DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $jdata.storage_vlans[0].gateway -and $_.Metric -eq 10}) {
+        $mgmt_route_count++ | Out-Null
+    }
+    if ($g_mgmt_route | Where-Object {$_.-DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $jdata.storage_vlans[1].gateway -and $_.Metric -eq 10}) {
+        $mgmt_route_count++ | Out-Null
+    }
+    if (!($mgmt_route_count -eq 2)) {
+        $null = New-NetRoute -DestinationPrefix 0.0.0.0/0 -InterfaceAlias "vManagement(mgmt_compute_storage)” -NextHop $jdata.storage_vlans[0].gateway -RouteMetric 10
+        $null = New-NetRoute -DestinationPrefix 0.0.0.0/0 -InterfaceAlias "vManagement(mgmt_compute_storage)” -NextHop $jdata.storage_vlans[1].gateway -RouteMetric 10
+    }
+    $mgmt_route_count = 0
+    $g_mgmt_route = Get-NetRoute | Where-Object {$_.-DestinationPrefix -eq "0.0.0.0/0"}
+    if ($g_mgmt_route | Where-Object {$_.-DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $jdata.storage_vlans[0].gateway -and $_.Metric -eq 10}) {
+        $mgmt_route_count++ | Out-Null
+    }
+    if ($g_mgmt_route | Where-Object {$_.-DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $jdata.storage_vlans[1].gateway -and $_.Metric -eq 10}) {
+        $mgmt_route_count++ | Out-Null
+    }
+    if ($mgmt_route_count -eq 2) {
+        Write-Host " * $($env:COMPUTERNAME) Verified Default Route for Management NIC." -ForegroundColor Green
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Failed to Match Default Route for Management NIC.  Expected:" -ForegroundColor Red
+        Write-Host "   -DestinationPrefix: 0.0.0.0/0, with Gateway: $($jdata.storage_vlans[0].gateway), Metric: '10'" -ForegroundColor Red
+        Write-Host "   -DestinationPrefix: 0.0.0.0/0, with Gateway: $($jdata.storage_vlans[1].gateway), Metric: '10'" -ForegroundColor Red
+        Get-NetRoute | Where-Object {$_.-DestinationPrefix -eq "0.0.0.0/0"}
+        Return New-Object PsObject -property @{Completed=$False}
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Configuring default route for Management NIC " -ForegroundColor Yellow
+    Return New-Object PsObject -property @{Completed=$True}
+}
+#==============================================
+# Setup Environment for Next Loop
+#==============================================
+#$session_results | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+$nodes = [System.Collections.ArrayList]@()
+foreach ($result in $session_results) {
+    if ($result.Completed -eq $True) { $nodes.Add($result.PSComputerName)}
+}
+Get-PSSession | Remove-PSSession | Out-Null
+#==============================================
+# Confirm All Nodes Completed
+#==============================================
+if (!$nodes.Length -eq $original_nodes.Length) { Exit 1 }
+$x = $jdata.storage_vlans[0] -split "/"
+$y = $x -split "."
+$PrefixLengthA = $x[1]
+$IPStorageNetA = "$($y[0]).$($y[1]).$($y[2])"
+$IPHostAddrA = $y[3]
+$x = $jdata.storage_vlans[1] -split "/"
+$y = $x -split "."
+$PrefixLengthB = $x[1]
+$IPStorageNetB = "$($y[0]).$($y[1]).$($y[2])"
+$IPHostAddrB = $y[3]
+$sessions = Get-PSSession
+$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+foreach ($node in $jdata.node_list) {
+    $session = New-CimSession -ComputerName $node -Credential $credential
+    $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias vSMB*
+    if (!($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.IPAddress -eq ($IPStorageNetA+$IPHostAddrA.ToString()) -and $_.PrefixLength -eq $PrefixLengthA})) {
+        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -IPAddress ($IPStorageNetA+$IPHostAddrA.ToString()) -PrefixLength $PrefixLengthA
+    }
+    if (!($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.IPAddress -eq ($IPStorageNetB+$IPHostAddrB.ToString()) -and $_.PrefixLength -eq $PrefixLengthB})) {
+        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -IPAddress ($IPStorageNetB+$IPHostAddrB.ToString()) -PrefixLength $PrefixLengthB
+    }
+    $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias vSMB*
+    if ($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.IPAddress -eq ($IPStorageNetA+$IPHostAddrA.ToString()) -and $_.PrefixLength -eq $PrefixLengthA}) {
+        Write-Host " * $($env:COMPUTERNAME) Matched vSMB(mgmt_compute_storage#SlotID 2 Port 1)." -ForegroundColor Green
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Failed to Match vSMB(mgmt_compute_storage#SlotID 2 Port 1).  Expected: `Name: 'ConvergedSwitch(mgmt_compute_storage)', `LoadBalancingAlgorithm: 'HyperVPort'.  `Exiting..." -ForegroundColor Red
+        Get-VMSwitch | Get-VMSwitchTeam | Format-List
+        Return New-Object PsObject -property @{Completed=$False}
+    }
+    if ($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.IPAddress -eq ($IPStorageNetB+$IPHostAddrB.ToString()) -and $_.PrefixLength -eq $PrefixLengthB}) {
+        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -IPAddress ($IPStorageNetB+$IPHostAddrB.ToString()) -PrefixLength $PrefixLengthB
+    }
+    $IPHostAddrA++
+    $IPHostAddrB++
+    New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -IPAddress ($IPStorageNetB+$IPHostAddr.ToString()) -PrefixLength 24
+    Return New-Object PsObject -property @{Completed=$True}
+}
+Get-CimSession | Remove-CimSession
+Remove-Variable session
+#==============================================
+# Setup Environment for Next Loop
+#==============================================
+$nodes = [System.Collections.ArrayList]@()
+foreach ($result in $session_results) {
+    if ($result.Completed -eq $True) { $nodes.Add($result.PSComputerName)}
+}
+#==============================================
+# Confirm All Nodes Completed
+#==============================================
+if (!$nodes.Length -eq $jdata.node_list.Length) { Exit 1 }
+#==============================================
+# Log Into Nodes and Run Next Section
+#==============================================
+foreach ($node in $jdata.node_list) {
+    Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
+    New-PSSession -ComputerName $node -Credential $credential
+}
+$sessions = Get-PSSession
+$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+$session_results = Invoke-Command $sessions -ScriptBlock {
     Write-Host "Verifying Storage NIC IP Address " -ForegroundColor Yellow
     Get-NetIPConfiguration -InterfaceAlias vSMB* | Format-List InterfaceAlias, IPv4Address, IPv4DefaultGateway
-
     Write-Host "Removing DNS Restistration from Storage NICs " -ForegroundColor Yellow
-    Set-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -RegisterThisConnectionsAddress:$false
-    Set-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -RegisterThisConnectionsAddress:$false
+    Set-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -RegisterThisConnectionsAddress:$False
+    Set-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -RegisterThisConnectionsAddress:$False
+    $g_dnsclient = Get-DnsClient -InterfaceAlias vSMB*
+    
     Get-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)"| Format-Table InterfaceAlias,RegisterThisConnectionsAddress
     Get-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)"| Format-Table InterfaceAlias,RegisterThisConnectionsAddress
     Write-Host "Configure vSwitch to pass 802.1p priority marking " -ForegroundColor Yellow
@@ -293,19 +437,19 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     Get-netadapter | Get-NetQosDcbxSetting | Format-Table InterfaceAlias, PolicySet, Willing
     ### Storage Spaces Direct
     Write-Host "Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
-    Write-Host Cleaning Storage Drives....
+    Write-Host "Cleaning Storage Drives...."
     #Remove Exisiting virtual disks and storage pools
     Update-StorageProviderCache
-    Get-StoragePool | Where-Object IsPrimordial -eq $false | Set-StoragePool -IsReadOnly:$false -ErrorAction SilentlyContinue
-    Get-StoragePool | Where-Object IsPrimordial -eq $false | Get-VirtualDisk | Remove-VirtualDisk -Confirm:$false -ErrorAction SilentlyContinue
-    Get-StoragePool | Where-Object IsPrimordial -eq $false | Remove-StoragePool -Confirm:$false -ErrorAction SilentlyContinue
+    Get-StoragePool | Where-Object IsPrimordial -eq $False | Set-StoragePool -IsReadOnly:$False -ErrorAction SilentlyContinue
+    Get-StoragePool | Where-Object IsPrimordial -eq $False | Get-VirtualDisk | Remove-VirtualDisk -Confirm:$False -ErrorAction SilentlyContinue
+    Get-StoragePool | Where-Object IsPrimordial -eq $False | Remove-StoragePool -Confirm:$False -ErrorAction SilentlyContinue
     Get-PhysicalDisk | Reset-PhysicalDisk -ErrorAction SilentlyContinue
-    Get-Disk | Where-Object Number -ne $null | Where-Object IsBoot -ne $true | Where-Object IsSystem -ne $true | Where-Object PartitionStyle -ne RAW | ForEach-Object {
-        $_ | Set-Disk -isoffline:$false
-        $_ | Set-Disk -isreadonly:$false
-        $_ | Clear-Disk -RemoveData -RemoveOEM -Confirm:$false
-        $_ | Set-Disk -isreadonly:$true
-        $_ | Set-Disk -isoffline:$true
+    Get-Disk | Where-Object Number -ne $null | Where-Object IsBoot -ne $True | Where-Object IsSystem -ne $True | Where-Object PartitionStyle -ne RAW | ForEach-Object {
+        $_ | Set-Disk -isoffline:$False
+        $_ | Set-Disk -isreadonly:$False
+        $_ | Clear-Disk -RemoveData -RemoveOEM -Confirm:$False
+        $_ | Set-Disk -isreadonly:$True
+        $_ | Set-Disk -isoffline:$True
     }
     #Inventory Storage Disks
     Get-Disk | Where-Object {Number -Ne $Null -and IsBoot -Ne $True -and IsSystem -Ne $True -and PartitionStyle -Eq RAW} | Group-Object -NoElement -Property FriendlyName | Format-Table
