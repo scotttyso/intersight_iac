@@ -16,7 +16,6 @@ param (
 # Start Log, Configure PowerCLI, Setup Variables
 #=============================================================================
 Start-Transcript -Path ".\Logs\$(get-date -f "yyyy-MM-dd_HH-mm-ss")_$($env:USER).log" -Append -Confirm:$false
-Get-PSSession | Remove-PSSession | Out-Null
 $jdata = Get-Content -Path $j | ConvertFrom-Json
 #=============================================================================
 # Obtain Username and Password
