@@ -1,0 +1,19 @@
+{
+    "cluster": "AzS-HCI-M6-C1",
+    "link_speed": "10 Gpbs",
+    "node_list": ["azurehci-01.rich.ciscolabs.com", "azurehci-02.rich.ciscolabs.com"],
+    "storage_vlans": [
+        {
+            "gateway": "198.18.107.254",
+            "ip_address": "198.18.107.21/24",
+            "vlan_id": 107
+        },
+        {
+            "gateway": "198.18.207.254",
+            "ip_address": "198.18.207.21/24",
+            "vlan_id": 207
+        }
+    ],
+    "timezone": "Eastern Standard Time",
+    "username": "RICH\\tyscott"
+}

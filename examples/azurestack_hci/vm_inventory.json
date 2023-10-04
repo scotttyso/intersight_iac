@@ -1,0 +1,16 @@
+{
+    "cluster": "AzS-HCI-M6-C1",
+    "storage_qos_policy": "Silver",
+    "virtual_machines": [
+        {
+            "disk_size": 100,
+            "memory": 8,
+            "name": "VM1"
+        },
+        {
+            "disk_size": 100,
+            "memory": 16,
+            "name": "VM2"
+        }
+    ]
+}
