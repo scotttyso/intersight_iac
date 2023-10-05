@@ -30,162 +30,173 @@ Get-PSSession | Remove-PSSession | Out-Null
 $feature_list = ("Hyper-V", "Failover-Clustering", "Data-Center-Bridging", "Bitlocker" , "FS-FileServer",
     "FS-SMBBW", "Hyper-V-PowerShell", "RSAT-AD-Powershell", "RSAT-Clustering-PowerShell", "NetworkATC",
     "NetworkHUD", "FS-DATA-Deduplication")
-$jdata = Get-Content -Path $j | ConvertFrom-Json
-$cluster = $jdata.cluster
-$username = $jdata.username
-$password = ConvertTo-SecureString $env:windows_administrator_password -AsPlainText -Force;
+$jdata      = Get-Content -Path $j | ConvertFrom-Json
+$cluster    = $jdata.cluster
+$link_speed = $jdata.link_speed
+$username   = $jdata.username
+$password   = ConvertTo-SecureString $env:windows_administrator_password -AsPlainText -Force;
 $credential = New-Object System.Management.Automation.PSCredential ($username,$password);
-$LinkSpeed = $jdata.link_speed
 Enable-WSManCredSSP -Role "Client" -DelegateComputer $jdata.node_list -Force | Out-Null
 
 #=============================================================================
 # Configure Time Zone, Firewall Rules, and Installed Features
 #=============================================================================
-# LOOP 1
-    #foreach ($node in $jdata.node_list) {
-    #    Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
-    #    New-PSSession -ComputerName $node -Credential $credential | Out-Null
-    #}
-    #$sessions = Get-PSSession
-    #$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
-    #$session_results = Invoke-Command $sessions -ScriptBlock {
-    #    $jdata = $Using:jdata
-    #    ##########
-    #    Write-Host "$($env:COMPUTERNAME) Beginning time zone '$($jdata.timezone)' Configuration." -ForegroundColor Yellow
-    #    $tz = Get-TimeZone
-    #    if (!($tz.Id -eq $jdata.timezone)) {Set-Timezone $jdata.timezone}
-    #    $tz = Get-TimeZone
-    #    if ($tz.Id -eq $jdata.timezone) {
-    #        Write-Host " * $($env:COMPUTERNAME) Successfully Set Timezone to '$($jdata.timezone)'." -ForegroundColor Green
-    #    } else {
-    #        Write-Host " * $($env:COMPUTERNAME) Failed to Set Timezone to '$($jdata.timezone)'.  Exiting..." -ForegroundColor Red
-    #        Return New-Object PsObject -property @{Completed=$False}
-    #    }
-    #    Write-Host "$($env:COMPUTERNAME) Compeleted time zone '$($jdata.timezone)' Configuration." -ForegroundColor Yellow
-    #    ##########
-    #    Write-Host "$($env:COMPUTERNAME) Beginning Remote Desktop Network Firewall Rule(s) Configuration." -ForegroundColor Yellow
-    #    $network_firewall = Get-NetFirewallRule -DisplayGroup "Remote Desktop"
-    #    foreach ($item in $network_firewall) {
-    #        if (!($item.Enabled -eq $true)) { Enable-NetFirewallRule -Name $item.Name }
-    #    }
-    #    $network_firewall = Get-NetFirewallRule -DisplayGroup "Remote Desktop"
-    #    foreach ($item in $network_firewall) {
-    #        if ($item.Enabled -eq $true) {
-    #            Write-Host " * $($env:COMPUTERNAME) Successfully Configured Remote Desktop Network Firewall Rule $($item.Name)." -ForegroundColor Green
-    #        } else {
-    #            Write-Host " * $($env:COMPUTERNAME) Failed on Enabling Remote Desktop Network Firewall Rule $($item.Name).  Exiting..." -ForegroundColor Red
-    #            Return New-Object PsObject -property @{Completed=$False}
-    #        }
-    #    }
-    #    Write-Host "$($env:COMPUTERNAME) Completed Remote Desktop Network Firewall Rule(s) Configuration." -ForegroundColor Yellow
-    #    ##########
-    #    Write-Host "$($env:COMPUTERNAME) Beginning Check for Required Windows Features and Restarting Host." -ForegroundColor Yellow
-    #    $new_list = [System.Collections.ArrayList]@()
-    #    $reboot = $False
-    #    $wf = Get-WindowsFeature | Select-Object *
-    #    foreach ($item in $Using:feature_list) {
-    #        if ($wf | Where-Object {$_.Name -eq $item}) {
-    #            if (!(($wf | Where-Object {$_.Name -eq $item}).Installed -eq $true)) { $new_list.Add($item) }
-    #        } else { Write-Host "$($env:COMPUTERNAME) Unknown Feature '$($item)'" -ForegroundColor Red
-    #        }
-    #    }
-    #    if ($new_list.Length -gt 0) {
-    #        Add-WindowsFeature -Name $new_list -IncludeAllSubFeature -IncludeManagementTools -Restart
-    #        $reboot = $True
-    #    }
-    #    Write-Host "$($env:COMPUTERNAME) Completed Check for Required Windows Features and Restarted Host." -ForegroundColor Yellow
-    #    $gva = Get-PSSessionConfiguration -Name 'VirtualAccount'
-    #    if (!($gva)) {
-    #        Write-Host "$($env:COMPUTERNAME) Failed on VirtualAccount Check.  Please Run the Following PowerShell Command On Each Host." -ForegroundColor Red
-    #        Write-Host " * Run: New-PSSessionConfigurationFile -RunAsVirtualAccount -Path .\VirtualAccount.pssc" -ForegroundColor Red
-    #        Write-Host " * Run: Register-PSSessionConfiguration -Name 'VirtualAccount' -Path .\VirtualAccount.pssc -Force" -ForegroundColor Red
-    #        Write-Host " * Validate with: Get-PSSessionConfiguration -Name 'VirtualAccount'" -ForegroundColor Red
-    #        Return New-Object PsObject -property @{Completed=$False}
-    #    }
-    #    Return New-Object PsObject -property @{Completed=$True;Reboot=$reboot}
-    #}
-    ##==============================================
-    ## Setup Environment for Next Loop
-    ##==============================================
-    ##$session_results | Format-Table | Out-String|ForEach-Object {Write-Host $_}
-    #$nodes = [object[]] @()
-    #$reboot_count = 0
-    #foreach ($result in $session_results) {
-    #    if ($result.Completed -eq $True) { $nodes += $result.PSComputerName}
-    #    if ($result.Reboot -eq $True) { $reboot_count++ | Out-Null }
-    #}
-    #Get-PSSession | Remove-PSSession | Out-Null
-    ##==============================================
-    ## Confirm All Nodes Completed
-    ##==============================================
-    #if (!$nodes.Length -eq $jdata.node_list.Length) { Exit 1 }
-    ##==============================================
-    ## Sleep 10 Minutes if reboot_count gt 0
-    ##==============================================
-    #if ($reboot_count -gt 0) {
-    #    Write-Host "Sleeping for 10 Minutes to Wait for Server Reboots." -ForegroundColor Yellow
-    #    Start-Sleep -Seconds 600
-    #}
-# LOOP 2
-    #foreach ($node in $jdata.node_list) {
-    #    Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
-    #    New-PSSession -ComputerName $node -ConfigurationName "VirtualAccount" -Credential $credential
-    #}
-    #$sessions = Get-PSSession
-    #$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
-    #$session_results = Invoke-Command $sessions -Script {
-    #    Write-Host "$($env:COMPUTERNAME) Beginning Check for NuGet and PSWindowsUpdate." -ForegroundColor Yellow
-    #    $fng = Find-Package -Name NuGet
-    #    if (!($fng | Where-Object {$_.Version -gt 2.8.5.200})) {
-    #        Write-Host " * $($env:COMPUTERNAME) Installing NuGet Version 2.8.5.201." -ForegroundColor Green
-    #        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
-    #    } else {
-    #        Write-Host " * $($env:COMPUTERNAME) NuGet Version 2.8.5.201+ Already Installed." -ForegroundColor Cyan
-    #    }
-    #    Write-Host "$($env:COMPUTERNAME) Completed Check for NuGet and PSWindowsUpdate." -ForegroundColor Yellow
-    #    if (!(Get-Module -ListAvailable -Name PSWindowsUpdate)) {
-    #        Write-Host " * $($env:COMPUTERNAME) Installing PSWindowsUpdate." -ForegroundColor Green
-    #        Install-Module PSWindowsUpdate -Confirm:$False -Force
-    #    } else {
-    #        Write-Host " * $($env:COMPUTERNAME) PSWindowsUpdate Already Installed." -ForegroundColor Cyan
-    #    }
-    #    Import-Module PSWindowsUpdate
-    #    $reboot = $False
-    #    Write-Host "$($env:COMPUTERNAME) Beginning Check for Windows Updates." -ForegroundColor Yellow
-    #    $gwu = Get-WUList -MicrosoftUpdate
-    #    $gwu | Format-Table | Out-String|ForEach-Object {Write-Host $_}
-    #    if ($gwu) {
-    #        Write-Host " * $($env:COMPUTERNAME) Installing Windows Updates and Rebooting Host if Required." -ForegroundColor Green
-    #        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -AutoReboot
-    #        $reboot = $True
-    #    } else {
-    #        Write-Host " * $($env:COMPUTERNAME) Windows already up to date." -ForegroundColor Cyan
-    #    }
-    #    Write-Host "$($env:COMPUTERNAME) Completed Check for Windows Updates." -ForegroundColor Yellow
-    #    Return New-Object PsObject -property @{Completed=$True;Reboot=$reboot}
-    #}
-    ##==============================================
-    ## Setup Environment for Next Loop
-    ##==============================================
-    #$nodes = [System.Collections.ArrayList]@()
-    #$reboot_count = 0
-    #foreach ($result in $session_results) {
-    #    if ($result.Completed -eq $True) { $nodes.Add($result.PSComputerName)}
-    #    if ($result.Reboot -eq $True) { $reboot_count++ | Out-Null }
-    #}
-    #Get-PSSession | Remove-PSSession | Out-Null
-    ##==============================================
-    ## Confirm All Nodes Completed
-    ##==============================================
-    #if (!$nodes.Length -eq $jdata.node_list.Length) { Exit 1 }
-    ##==============================================
-    ## Sleep 10 Minutes if reboot_count gt 0
-    ##==============================================
-    #if ($reboot_count -gt 0) {
-    #    Write-Host "Sleeping for 10 Minutes to Wait for Server Reboots." -ForegroundColor Yellow
-    #    Start-Sleep -Seconds 600
-    #}
-#### BREAK HERE
+foreach ($node in $jdata.node_list) {
+    Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
+    New-PSSession -ComputerName $node -Credential $credential | Out-Null
+}
+$sessions = Get-PSSession
+$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+$session_results = Invoke-Command $sessions -ScriptBlock {
+    $jdata = $Using:jdata
+    ##########
+    Write-Host "$($env:COMPUTERNAME) Beginning time zone '$($jdata.timezone)' Configuration." -ForegroundColor Yellow
+    $tz = Get-TimeZone
+    if (!($tz.Id -eq $jdata.timezone)) {Set-Timezone $jdata.timezone}
+    $tz = Get-TimeZone
+    if ($tz.Id -eq $jdata.timezone) {
+        Write-Host " * $($env:COMPUTERNAME) Successfully Set Timezone to '$($jdata.timezone)'." -ForegroundColor Green
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Failed to Set Timezone to '$($jdata.timezone)'.  Exiting..." -ForegroundColor Red
+        Return New-Object PsObject -property @{completed=$False}
+    }
+    Write-Host "$($env:COMPUTERNAME) Compeleted time zone '$($jdata.timezone)' Configuration." -ForegroundColor Yellow
+    ##########
+    Write-Host "$($env:COMPUTERNAME) Beginning Remote Desktop Network Firewall Rule(s) Configuration." -ForegroundColor Yellow
+    $network_firewall = Get-NetFirewallRule -DisplayGroup "Remote Desktop"
+    foreach ($item in $network_firewall) {
+        if (!($item.Enabled -eq $true)) { Enable-NetFirewallRule -Name $item.Name }
+    }
+    $network_firewall = Get-NetFirewallRule -DisplayGroup "Remote Desktop"
+    foreach ($item in $network_firewall) {
+        if ($item.Enabled -eq $true) {
+            Write-Host " * $($env:COMPUTERNAME) Successfully Configured Remote Desktop Network Firewall Rule $($item.Name)." -ForegroundColor Green
+        } else {
+            Write-Host " * $($env:COMPUTERNAME) Failed on Enabling Remote Desktop Network Firewall Rule $($item.Name).  Exiting..." -ForegroundColor Red
+            Return New-Object PsObject -property @{completed=$False}
+        }
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Remote Desktop Network Firewall Rule(s) Configuration." -ForegroundColor Yellow
+    ##########
+    Write-Host "$($env:COMPUTERNAME) Beginning Check for Required Windows Features and Restarting Host." -ForegroundColor Yellow
+    $new_list = [System.Collections.ArrayList]@()
+    $reboot = $False
+    $wf = Get-WindowsFeature | Select-Object *
+    foreach ($item in $Using:feature_list) {
+        if ($wf | Where-Object {$_.Name -eq $item}) {
+            if (!(($wf | Where-Object {$_.Name -eq $item}).Installed -eq $true)) { $new_list.Add($item) }
+        } else { Write-Host "$($env:COMPUTERNAME) Unknown Feature '$($item)'" -ForegroundColor Red
+        }
+    }
+    if ($new_list.Length -gt 0) {
+        Add-WindowsFeature -Name $new_list -IncludeAllSubFeature -IncludeManagementTools -Restart
+        $reboot = $True
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Check for Required Windows Features and Restarted Host." -ForegroundColor Yellow
+    $gva = Get-PSSessionConfiguration -Name 'VirtualAccount'
+    if (!($gva)) {
+        Write-Host "$($env:COMPUTERNAME) Failed on VirtualAccount Check.  Please Run the Following PowerShell Command On Each Host." -ForegroundColor Red
+        Write-Host " * Run: New-PSSessionConfigurationFile -RunAsVirtualAccount -Path .\VirtualAccount.pssc" -ForegroundColor Red
+        Write-Host " * Run: Register-PSSessionConfiguration -Name 'VirtualAccount' -Path .\VirtualAccount.pssc -Force" -ForegroundColor Red
+        Write-Host " * Validate with: Get-PSSessionConfiguration -Name 'VirtualAccount'" -ForegroundColor Red
+        Return New-Object PsObject -property @{completed=$False}
+    }
+    Return New-Object PsObject -property @{completed=$True;reboot=$reboot}
+}
+#==============================================
+# Setup Environment for Next Loop
+#==============================================
+#$session_results | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+$nodes = [object[]] @()
+$reboot_count = 0
+foreach ($result in $session_results) {
+    if ($result.completed -eq $True) { $nodes += $result.PSComputerName}
+    if ($result.reboot -eq $True) { $reboot_count++ | Out-Null }
+}
+Get-PSSession | Remove-PSSession | Out-Null
+#==============================================
+# Confirm All Nodes Completed
+#==============================================
+if (!$nodes.Length -eq $jdata.node_list.Length) {
+    Write-Host "One or More Nodes Failed on Previous Task." -ForegroundColor Red
+    Write-Host " * Original Node List: $($jdata.node_list)" -ForegroundColor Red
+    Write-Host " * Completed Node List: $nodes" -ForegroundColor Red
+    Write-Host "Please Review the Log Data.  Exiting..." -ForegroundColor Red
+    Stop-Transcript
+    Exit 1
+}
+#==============================================
+# Sleep 10 Minutes if reboot_count gt 0
+#==============================================
+if ($reboot_count -gt 0) {
+    Write-Host "Sleeping for 10 Minutes to Wait for Server Reboots." -ForegroundColor Yellow
+    Start-Sleep -Seconds 600
+}
+foreach ($node in $jdata.node_list) {
+    Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
+    New-PSSession -ComputerName $node -ConfigurationName "VirtualAccount" -Credential $credential
+}
+$sessions = Get-PSSession
+$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+$session_results = Invoke-Command $sessions -Script {
+    Write-Host "$($env:COMPUTERNAME) Beginning Check for NuGet and PSWindowsUpdate." -ForegroundColor Yellow
+    $fng = Find-Package -Name NuGet
+    if (!($fng | Where-Object {$_.Version -gt 2.8.5.200})) {
+        Write-Host " * $($env:COMPUTERNAME) Installing NuGet Version 2.8.5.201." -ForegroundColor Green
+        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) NuGet Version 2.8.5.201+ Already Installed." -ForegroundColor Cyan
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Check for NuGet and PSWindowsUpdate." -ForegroundColor Yellow
+    if (!(Get-Module -ListAvailable -Name PSWindowsUpdate)) {
+        Write-Host " * $($env:COMPUTERNAME) Installing PSWindowsUpdate." -ForegroundColor Green
+        Install-Module PSWindowsUpdate -Confirm:$False -Force
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) PSWindowsUpdate Already Installed." -ForegroundColor Cyan
+    }
+    Import-Module PSWindowsUpdate
+    $reboot = $False
+    Write-Host "$($env:COMPUTERNAME) Beginning Check for Windows Updates." -ForegroundColor Yellow
+    $gwu = Get-WUList -MicrosoftUpdate
+    $gwu | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+    if ($gwu) {
+        Write-Host " * $($env:COMPUTERNAME) Installing Windows Updates and Rebooting Host if Required." -ForegroundColor Green
+        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -AutoReboot
+        $reboot = $True
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Windows already up to date." -ForegroundColor Cyan
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Check for Windows Updates." -ForegroundColor Yellow
+    Return New-Object PsObject -property @{completed=$True;reboot=$reboot}
+}
+#==============================================
+# Setup Environment for Next Loop
+#==============================================
+$nodes = [System.Collections.ArrayList]@()
+$reboot_count = 0
+foreach ($result in $session_results) {
+    if ($result.completed -eq $True) { $nodes.Add($result.PSComputerName)}
+    if ($result.reboot -eq $True) { $reboot_count++ | Out-Null }
+}
+Get-PSSession | Remove-PSSession | Out-Null
+#==============================================
+# Confirm All Nodes Completed
+#==============================================
+if (!$nodes.Length -eq $jdata.node_list.Length) {
+    Write-Host "One or More Nodes Failed on Previous Task." -ForegroundColor Red
+    Write-Host " * Original Node List: $($jdata.node_list)" -ForegroundColor Red
+    Write-Host " * Completed Node List: $nodes" -ForegroundColor Red
+    Write-Host "Please Review the Log Data.  Exiting..." -ForegroundColor Red
+    Stop-Transcript
+    Exit 1
+}
+#==============================================
+# Sleep 10 Minutes if reboot_count gt 0
+#==============================================
+if ($reboot_count -gt 0) {
+    Write-Host "Sleeping for 10 Minutes to Wait for Server Reboots." -ForegroundColor Yellow
+    Start-Sleep -Seconds 600
+}
 
 foreach ($node in $jdata.node_list) {
     Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
@@ -210,11 +221,11 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         $reg = Get-ItemProperty -Path $registry_path
         if ($reg.($key.name) -eq $key.value) {
             Write-Host " * $($env:COMPUTERNAME) Successfully Set '$registry_path\$($key.name)' to '$($key.value)'." -ForegroundColor Green
-            Return New-Object PsObject -property @{Completed=$True}
+            Return New-Object PsObject -property @{completed=$True}
         } else {
             Write-Host " * $($env:COMPUTERNAME) Failed to Set '$registry_path\$($key.name)' to '$($key.value)'." -ForegroundColor Red
             $reg | Format-Table | Out-String|ForEach-Object {Write-Host $_}
-            Return New-Object PsObject -property @{Completed=$False}
+            Return New-Object PsObject -property @{completed=$False}
         }
     }
     $jdata = $Using:jdata
@@ -224,7 +235,7 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     foreach ($item in $Using:feature_list) {
         if (!(($wf | Where-Object {$_.Name -eq $item}).Installed -eq $true)) {
             Write-Host "Failed on Enabling Windows Feature $item.  Exiting..." -ForegroundColor Red
-            Return New-Object PsObject -property @{Completed=$False}
+            Return New-Object PsObject -property @{completed=$False}
         }
     }
     Write-Host "$($env:COMPUTERNAME) Completed Check for Windows Features..." -ForegroundColor Yellow
@@ -233,7 +244,7 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     $sb = Confirm-SecureBootUEFI
     if (!($sb -eq $true)) {
         Write-Host "$($env:COMPUTERNAME) Secure Boot State is not Enabled.  Exiting..." -ForegroundColor Red
-        Return New-Object PsObject -property @{Completed=$False}
+        Return New-Object PsObject -property @{completed=$False}
     }
     Write-Host "$($env:COMPUTERNAME) Completed Secure Boot State Check." -ForegroundColor Yellow
     ##########
@@ -241,7 +252,7 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     $registry_path = "HKLM:\System\CurrentControlSet\Control\Terminal Server"
     $key = New-Object PsObject -property @{name="fDenyTSConnections"; value=0; type="Dword" }
     $regkey = RegistryKey $registry_path $key
-    if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{Completed=$False} }
+    if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{completed=$False} }
     Write-Host "$($env:COMPUTERNAME) Completed Remote Desktop Access Configuration." -ForegroundColor Yellow
     ##########
     Write-Host "$($env:COMPUTERNAME) Beginning Memory Crashdump Registry settings Configuring." -ForegroundColor Yellow
@@ -250,7 +261,7 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     foreach ($item in $keys) {
         $key = New-Object PsObject -property @{name=$item; value=1; type="Dword" }
         $regkey = RegistryKey $registry_path $key
-        if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{Completed=$False} }
+        if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{completed=$False} }
     }
     Write-Host "$($env:COMPUTERNAME) Completed Memory Crashdump Registry settings Configuring." -ForegroundColor Yellow
     ##########
@@ -258,14 +269,14 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     $registry_path = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
     $key = New-Object PsObject -property @{name="Enabled"; value=1; type="Dword" }
     $regkey = RegistryKey $registry_path $key
-    if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{Completed=$False} }
+    if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{completed=$False} }
     $key = New-Object PsObject -property @{name="WasEnabledBy"; value=0; type="Dword" }
     $regkey = RegistryKey $registry_path $key
-    if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{Completed=$False} }
+    if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{completed=$False} }
     $registry_path = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\SystemGuard"
     $key = New-Object PsObject -property @{name="Enabled"; value=1; type="Dword" }
     $regkey = RegistryKey $registry_path $key
-    if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{Completed=$False} }
+    if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{completed=$False} }
     Write-Host "$($env:COMPUTERNAME) Completed Windows Secure Core Configuration." -ForegroundColor Yellow
     ###
     # MSINFo32.EXE on page 78
@@ -273,62 +284,66 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     $adapter_list = [System.Collections.ArrayList]@("SlotID 2 Port 1", "SlotID 2 Port 2")
     $gna = Get-NetAdapter
     foreach ($adapter in $adapter_list) {
-        if ($gna | Where-Object {$_.Name -eq $adapter -and $_.Status -eq "Up" -and $_.LinkSpeed -eq $Using:LinkSpeed}) {
+        if ($gna | Where-Object {$_.Name -eq $adapter -and $_.Status -eq "Up" -and $_.LinkSpeed -eq $Using:link_speed}) {
             Write-Host " * $($env:COMPUTERNAME) Matched NetAdapter $adapter." -ForegroundColor Green
         } else {
-            Write-Host " * $($env:COMPUTERNAME) Failed to Match NetAdapter '$adapter' with Status: 'Up', LinkSpeed: '$($Using:LinkSpeed)'.  Exiting..." -ForegroundColor Red
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match NetAdapter '$adapter' with Status: 'Up', LinkSpeed: '$($Using:link_speed)'.  Exiting..." -ForegroundColor Red
             $gna | Format-Table Name, InterfaceDescription, Status, MacAddress, LinkSpeed | Out-String|ForEach-Object {Write-Host $_}
-            Return New-Object PsObject -property @{Completed=$False}
+            Return New-Object PsObject -property @{completed=$False}
         }
     }
     Write-Host "$($env:COMPUTERNAME) Completed Retrieval of physical NIC port names." -ForegroundColor Yellow
     Write-Host "$($env:COMPUTERNAME) Beginning Create and Deploy Standalone Network ATC Intent." -ForegroundColor Yellow
     $gnis = Get-NetIntentStatus
-    Write-Host "$($env:COMPUTERNAME) Beginning Network ATC Intent Status Configuration." -ForegroundColor Yellow
     if (!($gnis | Where-Object {$_.IntentName -eq "mgmt_compute_storage" -and $_.ConfigurationStatus -eq "Success" -and $_.ProvisioningStatus -eq "Completed" -and $_.IsComputeIntentSet -eq $True -and $_.IsManagementIntentSet -eq $True -and $_.IsStorageIntentset -eq $True -and $_.IsStretchIntentSet -eq $True})) {
-        $AdapterOverride = New-NetIntentAdapterPropertyOverrides
-        $AdapterOverride.NetworkDirectTechnology = 4
-        $AdapterOverride
-        $QoSOverride = New-NetIntentQoSPolicyOverRides
-        $QoSOverride.PriorityValue8021Action_SMB = 4
-        $QoSOverride.PriorityValue8021Action_Cluster = 5
-        $QoSOverride
-        $StorageOverride = new-NetIntentStorageOverrides
-        $StorageOverride.EnableAutomaticIPGeneration = $false
-        $StorageOverride
-        $null = Add-NetIntent -AdapterName $adapter_list -Management -Compute -Storage -StorageVlans $jdata.storage_vlans[0].vlan_id, $jdata.storage_vlans[1].vlan_id -QoSPolicyOverrides $QoSOverride -AdapterPropertyOverrides $AdapterOverride -StorageOverrides $Storageoverride -Name mgmt_compute_storage
+        if ($gnis | Where-Object {$_.IntentName -eq "mgmt_compute_storage"}) {
+            Write-Host " * $($env:COMPUTERNAME) Failed to match NetIntent 'mgmt_compute_storage' with:" -ForegroundColor Red
+            Write-Host "   ConfigurationStatus: 'Success'`   ProvisioningStatus: 'Completed'`   IsComputeIntentSet: 'True'" -ForegroundColor Red
+            Write-Host "   IsManagementIntentSet: 'True'`   IsStorageIntentset: 'True'`   IsStretchIntentSet: 'True'.  `Exiting..." -ForegroundColor Red
+            $gnis | Format-Table Host,IntentName,ConfigurationStatus,Error,ProvisioningStatus,IsComputeIntentSet,IsManagementIntentSet,IsStorageIntentset,IsStretchIntentSet | Out-String|ForEach-Object {Write-Host $_}
+            Return New-Object PsObject -property @{completed=$False}
+        } else {
+            $AdapterOverride = New-NetIntentAdapterPropertyOverrides
+            $AdapterOverride.NetworkDirectTechnology = 4
+            $AdapterOverride
+            $QoSOverride = New-NetIntentQoSPolicyOverRides
+            $QoSOverride.PriorityValue8021Action_SMB = 4
+            $QoSOverride.PriorityValue8021Action_Cluster = 5
+            $QoSOverride
+            $StorageOverride = new-NetIntentStorageOverrides
+            $StorageOverride.EnableAutomaticIPGeneration = $false
+            $StorageOverride
+            $null = Add-NetIntent -AdapterName $adapter_list -Management -Compute -Storage -StorageVlans $jdata.storage_vlans[0].vlan_id, $jdata.storage_vlans[1].vlan_id -QoSPolicyOverrides $QoSOverride -AdapterPropertyOverrides $AdapterOverride -StorageOverrides $Storageoverride -Name mgmt_compute_storage
+        }
     }
     $gnis = Get-NetIntentStatus
     if ($gnis | Where-Object {$_.IntentName -eq "mgmt_compute_storage" -and $_.ConfigurationStatus -eq "Success" -and $_.ProvisioningStatus -eq "Completed" -and $_.IsComputeIntentSet -eq $True -and $_.IsManagementIntentSet -eq $True -and $_.IsStorageIntentset -eq $True -and $_.IsStretchIntentSet -eq $True}) {
-        Write-Host " * $($env:COMPUTERNAME) Matched Network ATC mgmt_compute_storage Settings." -ForegroundColor Green
+        Write-Host " * $($env:COMPUTERNAME) Matched NetIntent Network 'mgmt_compute_storage' Settings." -ForegroundColor Green
     } else {
-        Write-Host " * $($env:COMPUTERNAME) Failed to match NetAdapter '$adapter' with: `ConfigurationStatus: 'Success', `ProvisioningStatus: 'Completed', `IsComputeIntentSet: 'True', `IsManagementIntentSet: 'True', `IsStorageIntentset: 'True', `IsStretchIntentSet: 'True'.  `Exiting..." -ForegroundColor Red
-        $gnis | Format-Table Host,IntentName,ConfigurationStatus,ProvisioningStatus,IsComputeIntentSet,IsManagementIntentSet,IsStorageIntentset,IsStretchIntentSet | Out-String|ForEach-Object {Write-Host $_}
-        Return New-Object PsObject -property @{Completed=$False}
+        Write-Host " * $($env:COMPUTERNAME) Failed to match NetIntent 'mgmt_compute_storage' with:" -ForegroundColor Red
+        Write-Host "   ConfigurationStatus: 'Success'`   ProvisioningStatus: 'Completed'`   IsComputeIntentSet: 'True'" -ForegroundColor Red
+        Write-Host "   IsManagementIntentSet: 'True'`   IsStorageIntentset: 'True'`   IsStretchIntentSet: 'True'.  `Exiting..." -ForegroundColor Red
+        $gnis | Format-Table Host,IntentName,ConfigurationStatus,Error,ProvisioningStatus,IsComputeIntentSet,IsManagementIntentSet,IsStorageIntentset,IsStretchIntentSet | Out-String|ForEach-Object {Write-Host $_}
+        Return New-Object PsObject -property @{completed=$False}
     }
     Write-Host "$($env:COMPUTERNAME) Verifying Management vNIC in parent partition." -ForegroundColor Yellow
     $gna = Get-NetAdapter
     $gna_count = 0
-    if ($gna | Where-Object {$_.Name -eq "vManagement(mgmt_compute_storage)" -and $_.Status -eq "Up" -and $_.LinkSpeed -eq $Using:LinkSpeed}) {
-        $gna_count++ | Out-Null
-    }
-    if ($gna | Where-Object {$_.Name -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.Status -eq "Up" -and $_.LinkSpeed -eq $Using:LinkSpeed}) {
-        $gna_count++ | Out-Null
-    }
-    if ($gna | Where-Object {$_.Name -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.Status -eq "Up" -and $_.LinkSpeed -eq $Using:LinkSpeed}) {
-        $gna_count++ | Out-Null
+    $vnames = @("vManagement(mgmt_compute_storage)", "vSMB(mgmt_compute_storage#SlotID 2 Port 1)", "vSMB(mgmt_compute_storage#SlotID 2 Port 2)")
+    foreach ($vname in $vnames) {
+        if ($gna | Where-Object {$_.Name -eq $vname -and $_.Status -eq "Up" -and $_.LinkSpeed -eq $Using:link_speed}) { $gna_count++ | Out-Null }
     }
     if ($gna_count -eq 3) {
         Write-Host " * $($env:COMPUTERNAME) Verified Virtual NIC Creation." -ForegroundColor Green
     } else {
         Write-Host " * $($env:COMPUTERNAME) Failed to Match Virtual NIC Creation.  Expected:" -ForegroundColor Red
-        Write-Host "   Name: vManagement(mgmt_compute_storage), with Status: 'Up', LinkSpeed: '$($Using:LinkSpeed)'" -ForegroundColor Red
-        Write-Host "   Name: vSMB(mgmt_compute_storage#SlotID 2 Port 1), with Status: 'Up', LinkSpeed: '$($Using:LinkSpeed)'" -ForegroundColor Red
-        Write-Host "   Name: vSMB(mgmt_compute_storage#SlotID 2 Port 2), with Status: 'Up', LinkSpeed: '$($Using:LinkSpeed)'`Exiting..." -ForegroundColor Red
+        foreach ($vname in $vnames) {
+            Write-Host "   Name: $vname, with Status: 'Up', LinkSpeed: '$($Using:link_speed)'" -ForegroundColor Red
+        }
         $gna | Format-Table Name, InterfaceDescription, Status, MacAddress, LinkSpeed | Out-String|ForEach-Object {Write-Host $_}
-        Return New-Object PsObject -property @{Completed=$False}
+        Return New-Object PsObject -property @{completed=$False}
     }
-    Write-Host "$($env:COMPUTERNAME) Verifying Virtual Switch." -ForegroundColor Yellow
+    Write-Host "  * $($env:COMPUTERNAME) Verifying Virtual Switch." -ForegroundColor Cyan
     $gvsw = Get-VMSwitch
     if ($gvsw | Where-Object {$_.Name -eq "ConvergedSwitch(mgmt_compute_storage)" -and $_.SwitchType -eq "External" -and $_.NetAdapterInterfaceDescription -eq "Teamed-Interface"}) {
         Write-Host " * $($env:COMPUTERNAME) Matched Virtual Switch Settings." -ForegroundColor Green
@@ -336,16 +351,16 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         Write-Host " * $($env:COMPUTERNAME) Failed to Match Virtual Switch Settings.  Expected:" -ForegroundColor Red
         Write-Host "   Name: 'ConvergedSwitch(mgmt_compute_storage)', `SwitchType: 'External', `NetAdapterInterfaceDescription: 'Teamed-Interface'.  `Exiting..." -ForegroundColor Red
         $gvsw | Format-Table Name, SwitchType, NetAdapterInterfaceDescription, NetAdapterInterfaceDescriptions | Out-String|ForEach-Object {Write-Host $_}
-        Return New-Object PsObject -property @{Completed=$False}
+        Return New-Object PsObject -property @{completed=$False}
     }
-    Write-Host "$($env:COMPUTERNAME) Verifying SET Switch Load Balancing Algorithm." -ForegroundColor Yellow
+    Write-Host "  * $($env:COMPUTERNAME) Verifying SET Switch Load Balancing Algorithm." -ForegroundColor Cyan
     $gvsw = Get-VMSwitch | Get-VMSwitchTeam
     if ($gvsw | Where-Object {$_.Name -eq "ConvergedSwitch(mgmt_compute_storage)" -and $_.LoadBalancingAlgorithm -eq "HyperVPort"}) {
         Write-Host " * $($env:COMPUTERNAME) Matched SET Switch Load Balancing Algorithm." -ForegroundColor Green
     } else {
         Write-Host " * $($env:COMPUTERNAME) Failed to Match SET Switch Load Balancing Algorithm.  Expected: `Name: 'ConvergedSwitch(mgmt_compute_storage)', `LoadBalancingAlgorithm: 'HyperVPort'.  `Exiting..." -ForegroundColor Red
         $gvsw | Format-List | Out-String|ForEach-Object {Write-Host $_}
-        Return New-Object PsObject -property @{Completed=$False}
+        Return New-Object PsObject -property @{completed=$False}
     }
     Write-Host "$($env:COMPUTERNAME) Completed Network ATC Intent Status Configuration." -ForegroundColor Yellow
     # CONFIRM ITEMS
@@ -354,102 +369,109 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     # $jdata.storage_vlans[1].gateway
     # Two Default Routes or One
     Write-Host "$($env:COMPUTERNAME) Beginning Configuring default route for Management NIC " -ForegroundColor Yellow
-    $mgmt_route_count = 0
+    $gateway_a = $jdata.storage_vlans[0].gateway
+    $gateway_b = $jdata.storage_vlans[1].gateway
     $g_mgmt_route = Get-NetRoute | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0"}
-    if ($g_mgmt_route | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $jdata.storage_vlans[0].gateway -and $_.Metric -eq 10}) {
-        $mgmt_route_count++ | Out-Null
+    if ($g_mgmt_route | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $gateway_a -and $_.Metric -eq 10}) {
+        New-NetRoute -DestinationPrefix 0.0.0.0/0 -InterfaceAlias "vManagement(mgmt_compute_storage)” -NextHop $gateway_a -RouteMetric 10
     }
-    if ($g_mgmt_route | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $jdata.storage_vlans[1].gateway -and $_.Metric -eq 10}) {
-        $mgmt_route_count++ | Out-Null
-    }
-    if (!($mgmt_route_count -eq 2)) {
-        $null = New-NetRoute -DestinationPrefix 0.0.0.0/0 -InterfaceAlias "vManagement(mgmt_compute_storage)” -NextHop $jdata.storage_vlans[0].gateway -RouteMetric 10
-        $null = New-NetRoute -DestinationPrefix 0.0.0.0/0 -InterfaceAlias "vManagement(mgmt_compute_storage)” -NextHop $jdata.storage_vlans[1].gateway -RouteMetric 10
+    if ($g_mgmt_route | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $gateway_b -and $_.Metric -eq 10}) {
+        New-NetRoute -DestinationPrefix 0.0.0.0/0 -InterfaceAlias "vManagement(mgmt_compute_storage)” -NextHop $gateway_b -RouteMetric 10
     }
     $mgmt_route_count = 0
     $g_mgmt_route = Get-NetRoute | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0"}
-    if ($g_mgmt_route | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $jdata.storage_vlans[0].gateway -and $_.Metric -eq 10}) {
+    if ($g_mgmt_route | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $gateway_a -and $_.Metric -eq 10}) {
         $mgmt_route_count++ | Out-Null
     }
-    if ($g_mgmt_route | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $jdata.storage_vlans[1].gateway -and $_.Metric -eq 10}) {
+    if ($g_mgmt_route | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0" -and $_.Gateway -eq $gateway_b -and $_.Metric -eq 10}) {
         $mgmt_route_count++ | Out-Null
     }
     if ($mgmt_route_count -eq 2) {
         Write-Host " * $($env:COMPUTERNAME) Verified Default Route for Management NIC." -ForegroundColor Green
     } else {
         Write-Host " * $($env:COMPUTERNAME) Failed to Match Default Route for Management NIC.  Expected:" -ForegroundColor Red
-        Write-Host "   -DestinationPrefix: 0.0.0.0/0, with Gateway: $($jdata.storage_vlans[0].gateway), Metric: '10'" -ForegroundColor Red
-        Write-Host "   -DestinationPrefix: 0.0.0.0/0, with Gateway: $($jdata.storage_vlans[1].gateway), Metric: '10'" -ForegroundColor Red
+        Write-Host "   -DestinationPrefix: 0.0.0.0/0, with Gateway: $gateway_a, Metric: '10'" -ForegroundColor Red
+        Write-Host "   -DestinationPrefix: 0.0.0.0/0, with Gateway: $gateway_b, Metric: '10'" -ForegroundColor Red
         $g_mgmt_route | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0"} | Out-String|ForEach-Object {Write-Host $_}
-        Return New-Object PsObject -property @{Completed=$False}
+        Return New-Object PsObject -property @{completed=$False}
     }
     Write-Host "$($env:COMPUTERNAME) Completed Configuring default route for Management NIC " -ForegroundColor Yellow
-    Return New-Object PsObject -property @{Completed=$True}
+    Return New-Object PsObject -property @{completed=$True}
 }
-Exit
 #==============================================
 # Setup Environment for Next Loop
 #==============================================
-#$session_results | Format-Table | Out-String|ForEach-Object {Write-Host $_}
 $nodes = [System.Collections.ArrayList]@()
 foreach ($result in $session_results) {
-    if ($result.Completed -eq $True) { $nodes.Add($result.PSComputerName)}
+    if ($result.completed -eq $True) { $nodes.Add($result.PSComputerName)}
 }
 Get-PSSession | Remove-PSSession | Out-Null
+Remove-Variable session_results
 #==============================================
 # Confirm All Nodes Completed
 #==============================================
-if (!$nodes.Length -eq $original_nodes.Length) { Exit 1 }
-$x = $jdata.storage_vlans[0].ip_address -split "/"
-$y = $x -split "."
-$PrefixLengthA = $x[1]
-$IPStorageNetA = "$($y[0]).$($y[1]).$($y[2])"
-$IPHostAddrA = $y[3]
+if (!$nodes.Length -eq $jdata.node_list.Length) {
+    Write-Host "One or More Nodes Failed on Previous Task." -ForegroundColor Red
+    Write-Host " * Original Node List: $($jdata.node_list)" -ForegroundColor Red
+    Write-Host " * Completed Node List: $nodes" -ForegroundColor Red
+    Write-Host "Please Review the Log Data.  Exiting..." -ForegroundColor Red
+    Stop-Transcript
+    Exit 1
+}
+$x = $jdata.storage_vlans[0].ip_address -split "."
+$prefix_a  = ($jdata.storage_vlans[0].gateway -split ".")[1]
+$network_a = "$($x[0]).$($x[1]).$($x[2])."
+$host_ip_a = $x[3]
 $x = $jdata.storage_vlans[1].ip_address -split "/"
-$y = $x -split "."
-$PrefixLengthB = $x[1]
-$IPStorageNetB = "$($y[0]).$($y[1]).$($y[2])"
-$IPHostAddrB = $y[3]
-$sessions = Get-PSSession
-$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+$prefix_b  = ($jdata.storage_vlans[1].gateway -split ".")[1]
+$network_b = "$($x[0]).$($x[1]).$($x[2])."
+$host_ip_b = $x[3]
+$nodes = @()
 foreach ($node in $jdata.node_list) {
+    $ip_address_a = $network_a+$host_ip_a.ToString()
+    $ip_address_b = $network_b+$host_ip_b.ToString()
     $session = New-CimSession -ComputerName $node -Credential $credential
     $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias vSMB*
-    if (!($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.IPAddress -eq ($IPStorageNetA+$IPHostAddrA.ToString()) -and $_.PrefixLength -eq $PrefixLengthA})) {
-        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -IPAddress ($IPStorageNetA+$IPHostAddrA.ToString()) -PrefixLength $PrefixLengthA
+    if (!($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.IPAddress -eq $ip_address_a -and $_.PrefixLength -eq $prefix_a})) {
+        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -IPAddress $ip_address_a -PrefixLength $prefix_a
     }
-    if (!($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.IPAddress -eq ($IPStorageNetB+$IPHostAddrB.ToString()) -and $_.PrefixLength -eq $PrefixLengthB})) {
-        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -IPAddress ($IPStorageNetB+$IPHostAddrB.ToString()) -PrefixLength $PrefixLengthB
+    if (!($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.IPAddress -eq $ip_address_b -and $_.PrefixLength -eq $prefix_b})) {
+        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -IPAddress $ip_address_b -PrefixLength $prefix_b
     }
     $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias vSMB*
-    if ($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.IPAddress -eq ($IPStorageNetA+$IPHostAddrA.ToString()) -and $_.PrefixLength -eq $PrefixLengthA}) {
+    if ($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.IPAddress -eq $ip_address_a -and $_.PrefixLength -eq $prefix_a}) {
         Write-Host " * $($env:COMPUTERNAME) Matched vSMB(mgmt_compute_storage#SlotID 2 Port 1)." -ForegroundColor Green
     } else {
-        Write-Host " * $($env:COMPUTERNAME) Failed to Match vSMB(mgmt_compute_storage#SlotID 2 Port 1).  Expected: `Name: 'ConvergedSwitch(mgmt_compute_storage)', `LoadBalancingAlgorithm: 'HyperVPort'.  `Exiting..." -ForegroundColor Red
+        Write-Host " * $($env:COMPUTERNAME) Failed to Match vSMB(mgmt_compute_storage#SlotID 2 Port 1).  Expected: " -ForegroundColor Red
+        Write-Host "   Name: 'vSMB(mgmt_compute_storage#SlotID 2 Port 1)' `   IP Address: $ip_address_a`   Prefix: $prefix_a   `Exiting..." -ForegroundColor Red
         $gnic | Format-Table | Out-String|ForEach-Object {Write-Host $_}
-        Return New-Object PsObject -property @{Completed=$False}
+        Exit 1
     }
-    if ($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.IPAddress -eq ($IPStorageNetB+$IPHostAddrB.ToString()) -and $_.PrefixLength -eq $PrefixLengthB}) {
-        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -IPAddress ($IPStorageNetB+$IPHostAddrB.ToString()) -PrefixLength $PrefixLengthB
+    if ($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.IPAddress -eq $ip_address_b -and $_.PrefixLength -eq $prefix_b}) {
+        Write-Host " * $($env:COMPUTERNAME) Matched vSMB(mgmt_compute_storage#SlotID 2 Port 2)." -ForegroundColor Green
+        $node.Add($node)
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Failed to Match vSMB(mgmt_compute_storage#SlotID 2 Port 2).  Expected: " -ForegroundColor Red
+        Write-Host "   Name: 'vSMB(mgmt_compute_storage#SlotID 2 Port 2)' `   IP Address: $ip_address_b`   Prefix: $prefix_b   `Exiting..." -ForegroundColor Red
+        $gnic | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+        Exit 1
     }
-    $IPHostAddrA++
-    $IPHostAddrB++
-    New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -IPAddress ($IPStorageNetB+$IPHostAddr.ToString()) -PrefixLength 24
-    Return New-Object PsObject -property @{Completed=$True}
+    $host_ip_a++
+    $host_ip_b++
 }
 Get-CimSession | Remove-CimSession
 Remove-Variable session
 #==============================================
-# Setup Environment for Next Loop
-#==============================================
-$nodes = [System.Collections.ArrayList]@()
-foreach ($result in $session_results) {
-    if ($result.Completed -eq $True) { $nodes.Add($result.PSComputerName)}
-}
-#==============================================
 # Confirm All Nodes Completed
 #==============================================
-if (!$nodes.Length -eq $jdata.node_list.Length) { Exit 1 }
+if (!$nodes.Length -eq $jdata.node_list.Length) {
+    Write-Host "One or More Nodes Failed on Previous Task." -ForegroundColor Red
+    Write-Host " * Original Node List: $($jdata.node_list)" -ForegroundColor Red
+    Write-Host " * Completed Node List: $nodes" -ForegroundColor Red
+    Write-Host "Please Review the Log Data.  Exiting..." -ForegroundColor Red
+    Stop-Transcript
+    Exit 1
+}
 #==============================================
 # Log Into Nodes and Run Next Section
 #==============================================
@@ -460,20 +482,57 @@ foreach ($node in $jdata.node_list) {
 $sessions = Get-PSSession
 $sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
 $session_results = Invoke-Command $sessions -ScriptBlock {
-    Write-Host "Verifying Storage NIC IP Address " -ForegroundColor Yellow
-    Get-NetIPConfiguration -InterfaceAlias vSMB* | Format-List InterfaceAlias, IPv4Address, IPv4DefaultGateway
-    Write-Host "Removing DNS Restistration from Storage NICs " -ForegroundColor Yellow
-    Set-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -RegisterThisConnectionsAddress:$False
-    Set-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -RegisterThisConnectionsAddress:$False
-    $g_dnsclient = Get-DnsClient -InterfaceAlias vSMB*
-    
-    Get-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)"| Format-Table InterfaceAlias,RegisterThisConnectionsAddress
-    Get-DnsClient -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)"| Format-Table InterfaceAlias,RegisterThisConnectionsAddress
-    Write-Host "Configure vSwitch to pass 802.1p priority marking " -ForegroundColor Yellow
-    Set-VMNetworkAdapter -Name  “vManagement(mgmt_compute_storage)" -ManagementOS -IeeePriorityTag On
-    Get-VMNetworkAdapter -ManagementOS | Format-Table Name,IeeePriorityTag
-    Write-Host "Verify vNIC VLANs Configuration " -ForegroundColor Yellow
-    Get-VMNetworkAdapter -ManagementOS | Get-VMNetworkAdapterIsolation | Format-Table IsolationMode, DefaultIsolationID, ParentAdapter -AutoSize
+    Write-Host "$($env:COMPUTERNAME) Begin Removing DNS Registration from Storage vNICs." -ForegroundColor Yellow
+    $int_aliases = @("vSMB(mgmt_compute_storage#SlotID 2 Port 1)", "vSMB(mgmt_compute_storage#SlotID 2 Port 2)")
+    $gdnsclient = Get-DnsClient -InterfaceAlias vSMB*
+    foreach ($int_alias in $int_aliases) {
+        if (!($gdnsclient | Where-Object {$_.InterfaceAlias -eq $int_alias -and $_.RegisterThisConnectionsAddress -eq $False})) {
+            Set-DnsClient -InterfaceAlias $int_alias -RegisterThisConnectionsAddress:$False
+        }
+    }
+    $gdnsclient = Get-DnsClient -InterfaceAlias vSMB*
+    foreach ($int_alias in $int_aliases) {
+        if ($gdnsclient | Where-Object {$_.InterfaceAlias -eq $int_alias -and $_.RegisterThisConnectionsAddress -eq $False}) {
+            Write-Host " * $($env:COMPUTERNAME) Completed DNS Registration Removal from Storage vNIC: $int_alias." -ForegroundColor Cyan
+        } else {
+            Write-Host " * $($env:COMPUTERNAME) Failed to remove DNS Registration from Storage vNIC: $int_alias." -ForegroundColor Red
+            $gdnsclient | Where-Object {$_.InterfaceAlias -eq $int_alias} | Format-Table InterfaceAlias,RegisterThisConnectionsAddress | Out-String|ForEach-Object {Write-Host $_}
+            Return New-Object PsObject -property @{completed=$False}
+        }
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Removing DNS Registration from Storage vNICs." -ForegroundColor Yellow
+    ##########
+    Write-Host "$($env:COMPUTERNAME) Begin Configuring vSwitch to pass 802.1p priority marking." -ForegroundColor Yellow
+    $gtest = Get-VMNetworkAdapter -ManagementOS
+    if (!($gtest | Where-Object {$_.Name -eq “vManagement(mgmt_compute_storage)" -and $_.IeeePriorityTag -eq "On"})) {
+        Set-VMNetworkAdapter -Name  “vManagement(mgmt_compute_storage)" -ManagementOS -IeeePriorityTag On
+    }
+    $gtest = Get-VMNetworkAdapter -ManagementOS
+    if ($gtest | Where-Object {$_.Name -eq “vManagement(mgmt_compute_storage)" -and $_.IeeePriorityTag -eq "On"}) {
+        Write-Host " * $($env:COMPUTERNAME) Completed Configuring vSwitch to pass 802.1p priority marking." -ForegroundColor Cyan
+    } else {
+        Write-Host " * $($env:COMPUTERNAME) Failed to Configure vSwitch to pass 802.1p priority marking." -ForegroundColor Red
+        $gtest | Where-Object {$_.Name -eq “vManagement(mgmt_compute_storage)"} | Format-Table Name,IeeePriorityTag | Out-String|ForEach-Object {Write-Host $_}
+        Return New-Object PsObject -property @{completed=$False}
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Configuring vSwitch to pass 802.1p priority marking." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Begin Validating vNIC VLANs Configuration." -ForegroundColor Yellow
+    $gtest = Get-VMNetworkAdapter -ManagementOS | Get-VMNetworkAdapterIsolation
+    $icount = 0
+    foreach ($int_alias in $int_aliases) {
+        $int_short = ($int_alias.Replace("vSMB(", "")).Replace(")", "")
+        $vlan_id = $Using.jdata.stroage_vlans[$icount].vlan_id
+        if ($gtest | Where-Object {$_.ParentAdapter -match $int_short -and $_.DefaultIsolationID -eq $vlan_id}) {
+            Write-Host " * $($env:COMPUTERNAME) Validated $int_alias VLAN ID: $vlan_id." -ForegroundColor Cyan
+        } else {
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match $int_alias VLAN ID: $vlan_id." -ForegroundColor Red
+            $gtest | Where-Object {$_.ParentAdapter -match $int_short} | Format-Table IsolationMode, DefaultIsolationID, ParentAdapter -AutoSize | Out-String|ForEach-Object {Write-Host $_}
+            Return New-Object PsObject -property @{completed=$False}
+        }
+        icount++ | Out-Null
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Validating vNIC VLANs Configuration." -ForegroundColor Yellow
+
     Write-Host "Verifying NIC status " -ForegroundColor Yellow
     Get-NetAdapter | Sort-Object Name | Format-Table Name,InterfaceDescription,Status,MTUSize,LinkSpeed
     Write-Host "Verifying RDMA and RoCEv2 status on physical NICS " -ForegroundColor Yellow
@@ -511,47 +570,22 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
 
 $CandidateClusterNode = $jdata.node_list[0]
 Invoke-Command $CandidateClusterNode -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     $null = Enable-WSManCredSSP -Role Server -Force
 }
 Invoke-Command $CandidateClusterNode -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
-    $nodes = ("AzS-HCI1-N1", "AzS-HCI1-N2", "AzS-HCI1-N3", "AzS-HCI1-N4")
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    $nodes = $Using:jdata.node_list
     Write-Host " Validating Cluster Nodes..." -ForegroundColor Yellow
     Test-Cluster -Node $nodes -Include "System Configuration",Networking,Inventory, “Storage Spaces Direct”
-    Write-Host " Disabling CredSSP" -ForegroundColor Yellow
-    Disable-WSManCredSSP -Role Server
-    Write-Host " Verifying that CredSSP are disabled on target server..." -ForegroundColor Yellow
-    Get-WSManCredSSP
-}
-Invoke-Command $CandidateClusterNode -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
-    Write-Host " Enabling CredSSP" -ForegroundColor Yellow
-    Enable-WSManCredSSP -Role Server -Force | Out-Null
-}
-Invoke-Command $CandidateClusterNode -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
-    $nodes = $Using.jdata.node_list
     Write-Host " Creating the cluster..." -ForegroundColor Yellow
-    $cluster = “AzS-HCI-M6-C1”
+
     New-Cluster -Name $cluster -Node $nodes -StaticAddress 192.168.126.25 -NoStorage
     Get-Cluster | Format-Table Name, SharedVolumesRoot
-    Write-Host " Disabling CredSSP" -ForegroundColor Yellow
-    Disable-WSManCredSSP -Role Server
-    Write-Host " Verifying that CredSSP are disabled on target server..." -ForegroundColor Yellow
-    Get-WSManCredSSP
-}
-Invoke-Command  $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
-    Write-Host " Enabling CredSSP" -ForegroundColor Yellow
-    Enable-WSManCredSSP -Role Server -Force | Out-Null
-}
-Invoke-Command  $cluster -Credential $credential -authentication Credssp -scriptblock {
-    $cluster = “AzS-HCI-M6-C1”
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Checking cluster nodes..." -ForegroundColor Yellow
-    Get-ClusterNode -Cluster $cluster | Format-Table Name, State, Type
+    Get-ClusterNode -Cluster $Using:cluster | Format-Table Name, State, Type
     Write-Host " Disabling CredSSP" -ForegroundColor Yellow
     Disable-WSManCredSSP -Role Server
     Write-Host " Verifying that CredSSP are disabled on target server..." -ForegroundColor Yellow
@@ -560,7 +594,7 @@ Invoke-Command  $cluster -Credential $credential -authentication Credssp -script
 $nodes = (Get-ClusterNode -Cluster $cluster).Name
 foreach ($node in $nodes) {
     Invoke-Command $node -scriptblock {
-        write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+        Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
         Write-Host " Identifying and Removing Standalone Network ATC Intent." -ForegroundColor Yellow
         $intent = Get-NetIntent | Where-Object {$_.Scope -Like 'Host' -and $_.IntentName -EQ 'mgmt_compute_storage'}
         Write-Host "Removing Standalone Network ATC Intent $intent" -ForegroundColor Yellow
@@ -568,12 +602,12 @@ foreach ($node in $nodes) {
     }
 }
 Invoke-Command  $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Create and Deploy Clustered Network ATC Intent " -ForegroundColor Yellow
     #$clusterName = Get-cluster
     $QoSOverride = New-NetIntentQoSPolicyOverRides
@@ -587,18 +621,8 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     $AdapterOverride
     $storageOverride
     Add-NetIntent -AdapterName "SlotID 2 Port 1", "SlotID 2 Port 2" -Management -Compute -Storage -StorageVlans 107, 207 -QoSPolicyOverrides $QoSOverride -AdapterPropertyOverrides $AdapterOverride -StorageOverrides $storageoverride -Name mgmt_compute_storage
-    Write-Host " Disabling CredSSP" -ForegroundColor Yellow
-    Disable-WSManCredSSP -Role Server
-    Write-Host " Verifying that CredSSP are disabled on target server..." -ForegroundColor Yellow
-    Get-WSManCredSSP
-}
-Invoke-Command  $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
-    Write-Host " Enabling CredSSP" -ForegroundColor Yellow
-    Enable-WSManCredSSP -Role Server -Force | Out-Null
-}
-Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host "Verify Clustered Network ATC Intent Status" -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name
     Get-NetIntent -ClusterName $clusterName| Select-Object IntentName,scope
@@ -611,7 +635,7 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
 $nodes = (Get-ClusterNode -Cluster $cluster).Name
 foreach ($node in $nodes) {
     Invoke-Command $node -Credential $credential -scriptblock {
-        write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+        Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
         Write-Host " Enabling CredSSP" -ForegroundColor Yellow
         Enable-WSManCredSSP -Role Server -Force | Out-Null
         Write-Host "Verifying NIC Port Status " -ForegroundColor Yellow
@@ -623,12 +647,12 @@ foreach ($node in $nodes) {
     }
 }
 Invoke-Command $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Checking cluster networks " -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name
     Get-ClusterNetwork -Cluster $clusterName | Format-Table name,address,state,role -autosize
@@ -638,12 +662,12 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     Get-WSManCredSSP
 }
 Invoke-Command $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Verifying cluster network interfaces " -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name
     Get-ClusterNetworkInterface -Cluster $clusterName | Sort-Object Name | Format-Table Network, Name
@@ -653,12 +677,12 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     Get-WSManCredSSP
 }
 Invoke-Command  $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Checking Management cluster network settings " -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name
     Get-ClusterNetwork -Cluster $clusterName -Name “mgmt_compute_storage(Management)” | Format-Table *
@@ -668,13 +692,13 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     Get-WSManCredSSP
 }
 Invoke-Command $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Verifying Management network exclusion from Live Migration Network list " -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name
     Get-ClusterResourceType -Cluster $clusterName -Name "Virtual Machine" | Get-ClusterParameter -Name MigrationExcludeNetworks | Format-Table *
@@ -686,7 +710,7 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
 $nodes = (Get-ClusterNode -Cluster $cluster).Name
 foreach ($node in $nodes) {
     Invoke-Command $node -scriptblock {
-        write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+        Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
         Write-Host "Configuring Live Migration to use SMB protocol" -ForegroundColor Yellow
         Set-VMHost -VirtualMachineMigrationPerformanceOption SMB
         Get-VMHost | Format-Table VirtualMachineMigrationPerformanceOption
@@ -695,7 +719,7 @@ foreach ($node in $nodes) {
 $nodes = (Get-ClusterNode -Cluster $cluster).Name
 foreach ($node in $nodes) {
     Invoke-Command $node -scriptblock {
-        write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+        Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
         Write-Host "Configuring Live Migration Bandwidth Limit: 3625MB" -ForegroundColor Yellow
         Set-SMBBandwidthLimit -Category LiveMigration -BytesPerSecond 3625MB
         Get-SMBBandwidthLimit -Category LiveMigration
@@ -705,7 +729,7 @@ $nodes = (Get-ClusterNode -Cluster $cluster).Name
 foreach ($node in $nodes) {
     Invoke-Command $node -scriptblock {
         $MgmtBandwidthLimit = "10000000"
-        write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+        Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
         Write-Host "Configuring management vNIC maximum bandwidth Limit: $MgmtBandwidthLimit" -ForegroundColor Yellow
         Set-VMNetworkAdapter -ManagementOS -Name "vManagement(mgmt_compute_storage)" -MaximumBandwidth $MgmtBandwidthLimit
         Write-Host "Verifying management vNIC maximum bandwidth Limit" -ForegroundColor Yellow
@@ -738,12 +762,12 @@ Invoke-Command -ComputerName $FSW -ScriptBlock {
 }
 Get-ClusterResource -Cluster $cluster -Name "File Share Witness" | Get-ClusterParameter -Name SharePath
 Invoke-Command $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Configuring Cluster-Aware Updating ... " -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name
     Add-CauClusterRole -ClusterName $clusterName -DaysOfWeek Tuesday,Saturday -IntervalWeeks 3 -MaxFailedNodes 1 -MaxRetriesPerNode 2 -EnableFirewallRules -Force
@@ -755,13 +779,13 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     Get-WSManCredSSP
 }
 Invoke-Command $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     $clusterName = (Get-cluster).Name
     Write-Host " Configuring Kernel Soft Reboot  for Cluster Aware Updating ... " -ForegroundColor Yellow
     Get-Cluster -Name $clusterName | Set-ClusterParameter -Name CauEnableSoftReboot -Value 1 -Create
@@ -773,12 +797,12 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     Get-WSManCredSSP
 }
 Invoke-Command $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     #$clusterName = (Get-cluster).Name
     Write-Host " Enabling Storage Spaces Direct " -ForegroundColor Yellow
     Enable-ClusterStorageSpacesDirect -Confirm:$false
@@ -788,13 +812,13 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     Get-WSManCredSSP
 }
 Invoke-Command $cluster -Credential $credential -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     #$clusterName = (Get-cluster).Name
     Write-Host " Verifying Storage Pools " -ForegroundColor Yellow
     Get-StoragePool | Format-Table friendlyname, OperationalStatus, HealthStatus, IsPrimordial, IsReadonly
@@ -808,13 +832,12 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     Get-WSManCredSSP
 }
 Invoke-Command $cluster -Credential $credential -scriptblock {
-    write-host "Cluster Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Cluster Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
 }
 Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
-    write-host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
-    #$clusterName = (Get-cluster).Name
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Creating Virtual Disk " -ForegroundColor Yellow
     New-Volume -StoragePoolFriendlyName “S2D*” -FriendlyName VDisk01 -FileSystem CSVFS_ReFS -ResiliencySettingName Mirror -Size 4TB
     Write-Host " Disabling CredSSP" -ForegroundColor Yellow
@@ -855,10 +878,10 @@ Invoke-Command $cluster -Credential $credential -scriptblock {
             Write-Host "   MaximumIops: $($qos.max)" -ForegroundColor Red
             Write-Host "   PolicyType: Dedicated" -ForegroundColor Red
             Get-StorageQoSPolicy -Name $qos.name | Format-Table Name,Status, MinimumIops,MaximumIops,MaximumIOBandwidth,PolicyID
-            Return New-Object PsObject -property @{Completed=$False}
+            Return New-Object PsObject -property @{completed=$False}
         }
     }
     Write-Host "$($Using:Cluster) Completed Configuration of Storage Polices." -ForegroundColor Yellow
-    Return New-Object PsObject -property @{Completed=$True}
+    Return New-Object PsObject -property @{completed=$True}
 }
 Exit 0

@@ -5,12 +5,14 @@
     "storage_vlans": [
         {
             "gateway": "198.18.107.254",
-            "ip_address": "198.18.107.21/24",
+            "ip_address": "198.18.107.21",
+            "prefix": "24",
             "vlan_id": 107
         },
         {
             "gateway": "198.18.207.254",
-            "ip_address": "198.18.207.21/24",
+            "ip_address": "198.18.207.21",
+            "prefix": "24",
             "vlan_id": 207
         }
     ],
