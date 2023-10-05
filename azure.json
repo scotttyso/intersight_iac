@@ -1,5 +1,11 @@
 {
     "cluster": "AzS-HCI-M6-C1",
+    "file_share_witness": {
+        "domain": "RICH",
+        "host": "fsw01.rich.ciscolabs.com",
+        "share_name": "FSW-AzS-HCI-M6-C1",
+        "share_path": "C:\\FileShareWitness"
+    },
     "link_speed": "10 Gpbs",
     "node_list": ["azurehci-01.rich.ciscolabs.com", "azurehci-02.rich.ciscolabs.com"],
     "storage_vlans": [
