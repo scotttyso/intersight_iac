@@ -21,7 +21,7 @@ param (
 #=====================================================
 # Start Log and Configure PowerCLI
 #=====================================================
-#Start-Transcript -Path ".\Logs\$(get-date -f "yyyy-MM-dd_HH-mm-ss")_$($env:USER).log" -Append -Confirm:$false
+Start-Transcript -Path ".\Logs\$(get-date -f "yyyy-MM-dd_HH-mm-ss")_$($env:USER).log" -Append -Confirm:$false
 Get-PSSession | Remove-PSSession | Out-Null
 
 #=====================================================
