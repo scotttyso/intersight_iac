@@ -146,6 +146,7 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     }
     Return New-Object PsObject -property @{completed=$True;reboot=$reboot}
 }
+Exit
 #=============================================================================
 # Setup Environment for Next Loop
 #=============================================================================
