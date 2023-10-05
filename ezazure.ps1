@@ -54,7 +54,7 @@ $username   = $jdata.username
 $password   = ConvertTo-SecureString $env:windows_administrator_password -AsPlainText -Force;
 $credential = New-Object System.Management.Automation.PSCredential ($username,$password);
 Enable-WSManCredSSP -Role "Client" -DelegateComputer $jdata.node_list -Force | Out-Null
-
+Exit
 #=============================================================================
 # Login to AzureStack HCI Node List
 #=============================================================================
