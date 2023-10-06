@@ -55,19 +55,6 @@ $credential = New-Object System.Management.Automation.PSCredential ($username,$p
 $client_list = [object[]] @()
 $gwsman = Get-WSManCredSSP
 #=============================================================================
-# Enable WSManCredSSP Client on Local Machine
-#=============================================================================
-foreach ($node in $jdata.node_list) {
-    $reg = [regex] "The machine is configured to.+$($node)"
-    if ($gwsman -match $reg) { $client_list += $node }
-}
-if (!($jdata.node_list.Length -eq $client_list.Length)) {
-    Write-Host "Enabling WSManCredSSP for Client List: $($jdata.node_list)" -ForegroundColor Yellow
-    Enable-WSManCredSSP -Role "Client" -DelegateComputer $jdata.node_list -Force | Out-Null
-} else {
-    Write-Host "WSManCredSSP Already Enabled for Client List: $($jdata.node_list)" -ForegroundColor Yellow
-}
-#=============================================================================
 # Function: Node Length Check and Reboot Check
 #=============================================================================
 Function NodeAndRebootCheck {
@@ -121,6 +108,19 @@ Function LoginNodeList {
     }
 }
 #=============================================================================
+# Enable WSManCredSSP Client on Local Machine
+#=============================================================================
+foreach ($node in $jdata.node_list) {
+    $reg = [regex] "The machine is configured to.+$($node)"
+    if ($gwsman -match $reg) { $client_list += $node }
+}
+if (!($jdata.node_list.Length -eq $client_list.Length)) {
+    Write-Host "Enabling WSManCredSSP for Client List: $($jdata.node_list)" -ForegroundColor Yellow
+    Enable-WSManCredSSP -Role "Client" -DelegateComputer $jdata.node_list -Force | Out-Null
+} else {
+    Write-Host "WSManCredSSP Already Enabled for Client List: $($jdata.node_list)" -ForegroundColor Yellow
+}
+#=============================================================================
 # Configure Time Zone, Firewall Rules, and Installed Features
 #=============================================================================
 LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
@@ -129,17 +129,21 @@ $sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
 $session_results = Invoke-Command $sessions -ScriptBlock {
     $jdata = $Using:jdata
     ##########
-    Write-Host "$($env:COMPUTERNAME) Beginning time zone '$($jdata.timezone)' Configuration." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Beginning Time Zone: '$($jdata.timezone)' Configuration." -ForegroundColor Yellow
     $tz = Get-TimeZone
-    if (!($tz.Id -eq $jdata.timezone)) {Set-Timezone $jdata.timezone}
-    $tz = Get-TimeZone
-    if ($tz.Id -eq $jdata.timezone) {
-        Write-Host " * $($env:COMPUTERNAME) Successfully Set Timezone to '$($jdata.timezone)'." -ForegroundColor Green
+    if (!($tz.Id -eq $jdata.timezone)) {
+        Set-Timezone $jdata.timezone
+        $tz = Get-TimeZone
+        if ($tz.Id -eq $jdata.timezone) {
+            Write-Host " * $($env:COMPUTERNAME) Successfully Set Time Zone to: '$($jdata.timezone)'." -ForegroundColor Green
+        } else {
+            Write-Host " * $($env:COMPUTERNAME) Failed to Set Time Zone to: '$($jdata.timezone)'.  Exiting..." -ForegroundColor Red
+            Return New-Object PsObject -property @{completed=$False}
+        }
     } else {
-        Write-Host " * $($env:COMPUTERNAME) Failed to Set Timezone to '$($jdata.timezone)'.  Exiting..." -ForegroundColor Red
-        Return New-Object PsObject -property @{completed=$False}
+        Write-Host " * $($env:COMPUTERNAME) Timezone already set to: '$($jdata.timezone)'." -ForegroundColor Cyan
     }
-    Write-Host "$($env:COMPUTERNAME) Compeleted time zone '$($jdata.timezone)' Configuration." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Compeleted Time Zone: '$($jdata.timezone)' Configuration." -ForegroundColor Yellow
     ##########
     Write-Host "$($env:COMPUTERNAME) Beginning Remote Desktop Network Firewall Rule(s) Configuration." -ForegroundColor Yellow
     $network_firewall = Get-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -197,23 +201,24 @@ if ($nrc.reboot_count -gt 0) {
 LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
 $sessions = Get-PSSession
 $session_results = Invoke-Command $sessions -Script {
+    $reboot = $False
     Write-Host "$($env:COMPUTERNAME) Beginning Check for NuGet and PSWindowsUpdate." -ForegroundColor Yellow
     $fng = Find-Package -Name NuGet
     if (!($fng | Where-Object {$_.Version -gt 2.8.5.200})) {
         Write-Host " * $($env:COMPUTERNAME) Installing NuGet Version 2.8.5.201." -ForegroundColor Green
         Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
-    } else {
-        Write-Host " * $($env:COMPUTERNAME) NuGet Version 2.8.5.201+ Already Installed." -ForegroundColor Cyan
-    }
+        $fng = Find-Package -Name NuGet
+        if (!($fng | Where-Object {$_.Version -gt 2.8.5.200})) {
+            Write-Host "Failed to Install NuGet Version 2.8.5.201 or Greater." -ForegroundColor Red
+            Return New-Object PsObject -property @{completed=$False;reboot=$reboot}
+        }
+    } else { Write-Host " * $($env:COMPUTERNAME) NuGet Version 2.8.5.201+ Already Installed." -ForegroundColor Cyan }
     Write-Host "$($env:COMPUTERNAME) Completed Check for NuGet and PSWindowsUpdate." -ForegroundColor Yellow
     if (!(Get-Module -ListAvailable -Name PSWindowsUpdate)) {
         Write-Host " * $($env:COMPUTERNAME) Installing PSWindowsUpdate." -ForegroundColor Green
         Install-Module PSWindowsUpdate -Confirm:$False -Force
-    } else {
-        Write-Host " * $($env:COMPUTERNAME) PSWindowsUpdate Already Installed." -ForegroundColor Cyan
-    }
+    } else { Write-Host " * $($env:COMPUTERNAME) PSWindowsUpdate Already Installed." -ForegroundColor Cyan }
     Import-Module PSWindowsUpdate
-    $reboot = $False
     Write-Host "$($env:COMPUTERNAME) Beginning Check for Windows Updates." -ForegroundColor Yellow
     $gwu = Get-WUList -MicrosoftUpdate
     $gwu | Format-Table | Out-String|ForEach-Object {Write-Host $_}
@@ -245,14 +250,12 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     Function RegistryKey {
         Param([string]$registry_path, [object]$key)
         $tp = Test-Path -path $registry_path
-        if (!($tp)) {
-            New-Item $registry_path
-        }
+        if (!($tp)) { New-Item $registry_path }
         $reg = Get-ItemProperty -Path $registry_path
         if ($null -eq $reg.($key.name)) {
             New-Itemproperty -Path $registry_path -Name $key.name -Value $key.value -PropertyType $key.type | Out-Null
         } elseif (!($reg.($key.name) -eq $key.value)) {
-            Write-Host "Update"
+            Write-Host " * $($env:COMPUTERNAME) Updating Key: '$($key.name)' Value: '$($key.value)'" -ForegroundColor Green
             $reg | Set-ItemProperty -Name $key.name -Value $key.value | Out-Null
         }
         $reg = Get-ItemProperty -Path $registry_path
@@ -276,14 +279,6 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         }
     }
     Write-Host "$($env:COMPUTERNAME) Completed Check for Windows Features..." -ForegroundColor Yellow
-    ##########
-    Write-Host "$($env:COMPUTERNAME) Beginning Secure Boot State Check." -ForegroundColor Yellow
-    $sb = Confirm-SecureBootUEFI
-    if (!($sb -eq $true)) {
-        Write-Host "$($env:COMPUTERNAME) Secure Boot State is not Enabled.  Exiting..." -ForegroundColor Red
-        Return New-Object PsObject -property @{completed=$False}
-    }
-    Write-Host "$($env:COMPUTERNAME) Completed Secure Boot State Check." -ForegroundColor Yellow
     ##########
     Write-Host "$($env:COMPUTERNAME) Beginning Remote Desktop Access Configuration." -ForegroundColor Yellow
     $registry_path = "HKLM:\System\CurrentControlSet\Control\Terminal Server"
@@ -315,7 +310,16 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     $regkey = RegistryKey $registry_path $key
     if (!($regkey.Completed -eq $True)) { Return New-Object PsObject -property @{completed=$False} }
     Write-Host "$($env:COMPUTERNAME) Completed Windows Secure Core Configuration." -ForegroundColor Yellow
+    ##########
+    Write-Host "$($env:COMPUTERNAME) Begin Validating Secure-Core Configuration." -ForegroundColor Yellow
+    $sb = Confirm-SecureBootUEFI
+    if (!($sb -eq $true)) {
+        Write-Host "$($env:COMPUTERNAME) Secure Boot State is not Enabled.  Exiting..." -ForegroundColor Red
+        Return New-Object PsObject -property @{completed=$False}
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Validating Secure-Core Configuration." -ForegroundColor Yellow
     ###
+    Invoke-WebRequest -URI "https://raw.githubusercontent.com/scotttyso/intersight_iac/master/"
     # MSINFo32.EXE on page 78
     Write-Host "$($env:COMPUTERNAME) Beginning Retrieval of physical NIC port names." -ForegroundColor Yellow
     $adapter_list = [System.Collections.ArrayList]@("SlotID 2 Port 1", "SlotID 2 Port 2")
@@ -889,14 +893,14 @@ $nrc = NodeAndRebootCheck -session_results $session_results -node_list [object[]
 LoginNodeList -credential $credential -cssp $False -node_list $node_list
 $sessions = Get-PSSession
 $session_results = Invoke-Command $sessions -scriptblock {
-    Write-Host "$($env:COMPUTERNAME) Disabling CredSSP." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Beginning Disable Check of CredSSP." -ForegroundColor Yellow
     Disable-WSManCredSSP -Role Server | Out-Null
     $gwsman = Get-WSManCredSSP
     if (!($gwsman -match "This computer is not configured to receive credentials from a remote client computer")) {
         Write-Host "$($env:COMPUTERNAME) Failed to Disable WSMan Credentials." -ForegroundColor Red
         Return New-Object PsObject -property @{completed=$False}
     }
-    Write-Host " Verifying that CredSSP are disabled on target server..." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Completed Disable Check of CredSSP." -ForegroundColor Yellow
     Return New-Object PsObject -property @{completed=$True}
 }
 #=============================================================================
