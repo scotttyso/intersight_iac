@@ -25,7 +25,6 @@ or implied.
 
 # JUMP HOST REQUIREMENTS
 # Add-WindowsFeature -Name rsat-hyper-v-tools, rsat-adds-tools, failover-clustering, rsat-feature-tools-bitlocker-bdeaducext, gpmc -IncludeManagementTools
-# 
 
 #=============================================================================
 # JSON File is a Required Parameter
@@ -53,10 +52,47 @@ $link_speed = $jdata.link_speed
 $username   = $jdata.username
 $password   = ConvertTo-SecureString $env:windows_administrator_password -AsPlainText -Force;
 $credential = New-Object System.Management.Automation.PSCredential ($username,$password);
-Enable-WSManCredSSP -Role "Client" -DelegateComputer $jdata.node_list -Force | Out-Null
-Exit
+$client_list = [object[]] @()
+$gwsman = Get-WSManCredSSP
 #=============================================================================
-# Login to AzureStack HCI Node List
+# Enable WSManCredSSP Client on Local Machine
+#=============================================================================
+foreach ($node in $jdata.node_list) {
+    $reg = [regex] "The machine is configured to.+$($node)"
+    if ($gwsman -match $reg) { $client_list += $node }
+}
+if (!($jdata.node_list.Length -eq $client_list.Length)) {
+    Write-Host "Enabling WSManCredSSP for Client List: $($jdata.node_list)" -ForegroundColor Yellow
+    Enable-WSManCredSSP -Role "Client" -DelegateComputer $jdata.node_list -Force | Out-Null
+} else {
+    Write-Host "WSManCredSSP Already Enabled for Client List: $($jdata.node_list)" -ForegroundColor Yellow
+}
+#=============================================================================
+# Function: Node Length Check and Reboot Check
+#=============================================================================
+Function NodeAndRebootCheck {
+    Param([psobject]$session_results, [array]$node_list)
+    #$session_results | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+    $nodes = [object[]] @()
+    $reboot_count = 0
+    foreach ($result in $session_results) {
+        if ($result.completed -eq $True) { $nodes += $result.PSComputerName}
+        if ($result.reboot -eq $True) { $reboot_count++ | Out-Null }
+    }
+    Get-PSSession | Remove-PSSession | Out-Null
+        if (!($nodes.Length -eq $node_list)) {
+        Write-Host "One or More Nodes Failed on Previous Task." -ForegroundColor Red
+        Write-Host " * Original Node List: $node_list" -ForegroundColor Red
+        Write-Host " * Completed Node List: $nodes" -ForegroundColor Red
+        Write-Host "Please Review the Log Data.  Exiting..." -ForegroundColor Red
+        Disable-WSManCredSSP -Role "Client" | Out-Null
+        Stop-Transcript
+        Exit 1
+    }
+    Return New-Object PsObject -property @{computer_names=$nodes;reboot_count=$reboot_count}
+}
+#=============================================================================
+# Function: Login to AzureStack HCI Node List
 #=============================================================================
 Function LoginNodeList {
     Param([pscredential]$credential, [string]$cssp, [array]$node_list)
@@ -146,33 +182,12 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     }
     Return New-Object PsObject -property @{completed=$True;reboot=$reboot}
 }
-Exit
 #=============================================================================
-# Setup Environment for Next Loop
+# Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
 #=============================================================================
-#$session_results | Format-Table | Out-String|ForEach-Object {Write-Host $_}
-$nodes = [object[]] @()
-$reboot_count = 0
-foreach ($result in $session_results) {
-    if ($result.completed -eq $True) { $nodes += $result.PSComputerName}
-    if ($result.reboot -eq $True) { $reboot_count++ | Out-Null }
-}
 Get-PSSession | Remove-PSSession | Out-Null
-#=============================================================================
-# Confirm All Nodes Completed
-#=============================================================================
-if (!$nodes.Length -eq $jdata.node_list.Length) {
-    Write-Host "One or More Nodes Failed on Previous Task." -ForegroundColor Red
-    Write-Host " * Original Node List: $($jdata.node_list)" -ForegroundColor Red
-    Write-Host " * Completed Node List: $nodes" -ForegroundColor Red
-    Write-Host "Please Review the Log Data.  Exiting..." -ForegroundColor Red
-    Stop-Transcript
-    Exit 1
-}
-#=============================================================================
-# Sleep 10 Minutes if reboot_count gt 0
-#=============================================================================
-if ($reboot_count -gt 0) {
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+if ($nrc.reboot_count -gt 0) {
     Write-Host "Sleeping for 10 Minutes to Wait for Server Reboots." -ForegroundColor Yellow
     Start-Sleep -Seconds 600
 }
@@ -181,7 +196,6 @@ if ($reboot_count -gt 0) {
 #=============================================================================
 LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
 $sessions = Get-PSSession
-$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
 $session_results = Invoke-Command $sessions -Script {
     Write-Host "$($env:COMPUTERNAME) Beginning Check for NuGet and PSWindowsUpdate." -ForegroundColor Yellow
     $fng = Find-Package -Name NuGet
@@ -214,30 +228,11 @@ $session_results = Invoke-Command $sessions -Script {
     Return New-Object PsObject -property @{completed=$True;reboot=$reboot}
 }
 #=============================================================================
-# Setup Environment for Next Loop
+# Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
 #=============================================================================
-$nodes = [System.Collections.ArrayList]@()
-$reboot_count = 0
-foreach ($result in $session_results) {
-    if ($result.completed -eq $True) { $nodes.Add($result.PSComputerName)}
-    if ($result.reboot -eq $True) { $reboot_count++ | Out-Null }
-}
 Get-PSSession | Remove-PSSession | Out-Null
-#=============================================================================
-# Confirm All Nodes Completed
-#=============================================================================
-if (!$nodes.Length -eq $jdata.node_list.Length) {
-    Write-Host "One or More Nodes Failed on Previous Task." -ForegroundColor Red
-    Write-Host " * Original Node List: $($jdata.node_list)" -ForegroundColor Red
-    Write-Host " * Completed Node List: $nodes" -ForegroundColor Red
-    Write-Host "Please Review the Log Data.  Exiting..." -ForegroundColor Red
-    Stop-Transcript
-    Exit 1
-}
-#=============================================================================
-# Sleep 10 Minutes if reboot_count gt 0
-#=============================================================================
-if ($reboot_count -gt 0) {
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+if ($nrc.reboot_count -gt 0) {
     Write-Host "Sleeping for 10 Minutes to Wait for Server Reboots." -ForegroundColor Yellow
     Start-Sleep -Seconds 600
 }
@@ -246,7 +241,6 @@ if ($reboot_count -gt 0) {
 #=============================================================================
 LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
 $sessions = Get-PSSession
-$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
 $session_results = Invoke-Command $sessions -ScriptBlock {
     Function RegistryKey {
         Param([string]$registry_path, [object]$key)
@@ -441,26 +435,14 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     Write-Host "$($env:COMPUTERNAME) Completed Configuring default route for Management NIC " -ForegroundColor Yellow
     Return New-Object PsObject -property @{completed=$True}
 }
-#==============================================
-# Setup Environment for Next Loop
-#==============================================
-$nodes = [System.Collections.ArrayList]@()
-foreach ($result in $session_results) {
-    if ($result.completed -eq $True) { $nodes.Add($result.PSComputerName)}
-}
+#=============================================================================
+# Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
+#=============================================================================
 Get-PSSession | Remove-PSSession | Out-Null
-Remove-Variable session_results
-#==============================================
-# Confirm All Nodes Completed
-#==============================================
-if (!$nodes.Length -eq $jdata.node_list.Length) {
-    Write-Host "One or More Nodes Failed on Previous Task." -ForegroundColor Red
-    Write-Host " * Original Node List: $($jdata.node_list)" -ForegroundColor Red
-    Write-Host " * Completed Node List: $nodes" -ForegroundColor Red
-    Write-Host "Please Review the Log Data.  Exiting..." -ForegroundColor Red
-    Stop-Transcript
-    Exit 1
-}
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+#=============================================================================
+# Configure vSMB Networks
+#=============================================================================
 $x = $jdata.storage_vlans[0].ip_address -split "."
 $prefix_a  = ($jdata.storage_vlans[0].gateway -split ".")[1]
 $network_a = "$($x[0]).$($x[1]).$($x[2])."
@@ -469,10 +451,10 @@ $x = $jdata.storage_vlans[1].ip_address -split "/"
 $prefix_b  = ($jdata.storage_vlans[1].gateway -split ".")[1]
 $network_b = "$($x[0]).$($x[1]).$($x[2])."
 $host_ip_b = $x[3]
-$nodes = @()
+$nodes = [object[]] @()
 foreach ($node in $jdata.node_list) {
-    $ip_address_a = $network_a+$host_ip_a.ToString()
-    $ip_address_b = $network_b+$host_ip_b.ToString()
+    $ip_address_a = $network_a+($host_ip_a + $jdata.node_list.IndexOf($node)).ToString()
+    $ip_address_b = $network_b+($host_ip_b + $jdata.node_list.IndexOf($node)).ToString()
     $session = New-CimSession -ComputerName $node -Credential $credential
     $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias vSMB*
     if (!($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.IPAddress -eq $ip_address_a -and $_.PrefixLength -eq $prefix_a})) {
@@ -499,34 +481,35 @@ foreach ($node in $jdata.node_list) {
         $gnic | Format-Table | Out-String|ForEach-Object {Write-Host $_}
         Exit 1
     }
-    $host_ip_a++
-    $host_ip_b++
+    $nodes += $node
 }
 Get-CimSession | Remove-CimSession
 Remove-Variable session
 #==============================================
 # Confirm All Nodes Completed
 #==============================================
-if (!$nodes.Length -eq $jdata.node_list.Length) {
+if (!($nodes.Length -eq $jdata.node_list.Length)) {
     Write-Host "One or More Nodes Failed on Previous Task." -ForegroundColor Red
     Write-Host " * Original Node List: $($jdata.node_list)" -ForegroundColor Red
     Write-Host " * Completed Node List: $nodes" -ForegroundColor Red
     Write-Host "Please Review the Log Data.  Exiting..." -ForegroundColor Red
+    Disable-WSManCredSSP -Role "Client" | Out-Null
     Stop-Transcript
     Exit 1
 }
 #==============================================
 # Log Into Nodes and Run Next Section
 #==============================================
-foreach ($node in $jdata.node_list) {
-    Write-Host "Logging into Host $($node)" -ForegroundColor Yellow
-    New-PSSession -ComputerName $node -Credential $credential
-}
+LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
 $sessions = Get-PSSession
-$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
 $session_results = Invoke-Command $sessions -ScriptBlock {
     Write-Host "$($env:COMPUTERNAME) Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
+    $gwsman = Get-WSManCredSSP
+    if (!($gwsman -match "This computer is configured to receive credentials from a remote client computer")) {
+        Write-Host "$($env:COMPUTERNAME) Failed to Enable WSMan Credentials." -ForegroundColor Red
+        Return New-Object PsObject -property @{completed=$False}
+    }
     Write-Host "$($env:COMPUTERNAME) Begin Removing DNS Registration from Storage vNICs." -ForegroundColor Yellow
     $int_aliases = @("vSMB(mgmt_compute_storage#SlotID 2 Port 1)", "vSMB(mgmt_compute_storage#SlotID 2 Port 2)")
     $gdnsclient = Get-DnsClient -InterfaceAlias vSMB*
@@ -612,32 +595,60 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     Get-Disk | Where-Object {Number -Ne $Null -and IsBoot -Ne $True -and IsSystem -Ne $True -and PartitionStyle -Eq RAW} | Group-Object -NoElement -Property FriendlyName | Format-Table
     #Get-Disk | Where-Object Number -Ne $Null | Where-Object IsBoot -Ne $True | Where-Object IsSystem -Ne $True | Where-Object PartitionStyle -Eq RAW | Group-Object -NoElement -Property FriendlyName | Format-Table
 }
-
-$CandidateClusterNode = $jdata.node_list[0]
-Invoke-Command $CandidateClusterNode -Credential $credential -authentication Credssp -scriptblock {
+#=============================================================================
+# Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+#=============================================================================
+# Customize the AzureStack HCI OS Environment
+#=============================================================================
+$CandidateClusterNode = [object[]] @($jdata.node_list[0])
+LoginNodeList -credential $credential -cssp $True -node_list $CandidateClusterNode
+$sessions = Get-PSSession
+$session_results = Invoke-Command $sessions -scriptblock {
     Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     $nodes = $Using:jdata.node_list
     Write-Host " Validating Cluster Nodes..." -ForegroundColor Yellow
     Test-Cluster -Node $nodes -Include "System Configuration",Networking,Inventory, “Storage Spaces Direct”
     Write-Host " Creating the cluster..." -ForegroundColor Yellow
-
-    New-Cluster -Name $cluster -Node $nodes -StaticAddress 192.168.126.25 -NoStorage
+    New-Cluster -Name $cluster -Node $nodes -StaticAddress $Using:jdata.cluster_address -NoStorage
     Get-Cluster | Format-Table Name, SharedVolumesRoot
     Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Checking cluster nodes..." -ForegroundColor Yellow
     Get-ClusterNode -Cluster $Using:cluster | Format-Table Name, State, Type
+    Return New-Object PsObject -property @{completed=$True}
 }
-$nodes = (Get-ClusterNode -Cluster $cluster).Name
-foreach ($node in $nodes) {
-    Invoke-Command $node -scriptblock {
-        Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
-        Write-Host " Identifying and Removing Standalone Network ATC Intent." -ForegroundColor Yellow
-        $intent = Get-NetIntent | Where-Object {$_.Scope -Like 'Host' -and $_.IntentName -EQ 'mgmt_compute_storage'}
-        Write-Host "Removing Standalone Network ATC Intent $intent" -ForegroundColor Yellow
-        Remove-NetIntent -Name $intent.IntentName
-    }
+#=============================================================================
+# Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $CandidateClusterNode
+#=============================================================================
+# Customize the AzureStack HCI OS Environment
+#=============================================================================
+$node_list = (Get-ClusterNode -Cluster $cluster).Name
+LoginNodeList -credential $credential -cssp $False -node_list $node_list
+$sessions = Get-PSSession
+$session_results = Invoke-Command $node -scriptblock {
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host " Identifying and Removing Standalone Network ATC Intent." -ForegroundColor Yellow
+    $intent = Get-NetIntent | Where-Object {$_.Scope -Like 'Host' -and $_.IntentName -EQ 'mgmt_compute_storage'}
+    Write-Host "Removing Standalone Network ATC Intent $intent" -ForegroundColor Yellow
+    Remove-NetIntent -Name $intent.IntentName
+    Return New-Object PsObject -property @{completed=$True}
 }
-Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
+#=============================================================================
+# Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+#=============================================================================
+# Customize the AzureStack HCI OS Environment
+#=============================================================================
+LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
+
+$session_results = Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
     Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Create and Deploy Clustered Network ATC Intent " -ForegroundColor Yellow
     #$clusterName = Get-cluster
@@ -658,16 +669,37 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     $clusterName = (Get-cluster).Name
     Get-NetIntent -ClusterName $clusterName| Select-Object IntentName,scope
     Get-NetIntentStatus -ClusterName $clusterName | Select-Object Host, IntentName, ConfigurationStatus, ProvisioningStatus
+    Return New-Object PsObject -property @{completed=$True}
 }
-$nodes = (Get-ClusterNode -Cluster $cluster).Name
+#=============================================================================
+# Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+#=============================================================================
+# Customize the AzureStack HCI OS Environment
+#=============================================================================
+LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
+
 foreach ($node in $nodes) {
     Invoke-Command $node -Credential $credential -scriptblock {
         Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
         Write-Host "Verifying NIC Port Status " -ForegroundColor Yellow
         Get-netadapter | Format-Table Name, InterfaceDescription, Status, MTUSize, MacAddress, LinkSpeed
+        Return New-Object PsObject -property @{completed=$True}
     }
 }
-Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
+#=============================================================================
+# Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+#=============================================================================
+# Customize the AzureStack HCI OS Environment
+#=============================================================================
+LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
+
+$session_results = Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
     Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Checking cluster networks " -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name
@@ -685,63 +717,140 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
     Write-Host " Verifying Management network exclusion from Live Migration Network list " -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name
     Get-ClusterResourceType -Cluster $clusterName -Name "Virtual Machine" | Get-ClusterParameter -Name MigrationExcludeNetworks | Format-Table *
+    Return New-Object PsObject -property @{completed=$True}
 }
-$node_list = [System.Collections.ArrayList]@()
 $nodes = (Get-ClusterNode -Cluster $cluster).Name
-foreach ($node in $nodes) {
-    $result = Invoke-Command $node -scriptblock {
-        Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
-        Write-Host "Configuring Live Migration to use SMB protocol" -ForegroundColor Yellow
-        Set-VMHost -VirtualMachineMigrationPerformanceOption SMB
-        Get-VMHost | Format-Table VirtualMachineMigrationPerformanceOption
+#=============================================================================
+# Configure Live Migration Network Services
+#=============================================================================
+LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
+$sessions = Get-PSSession
+$session_results = Invoke-Command $sessions -scriptblock {
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "Configuring Live Migration to use SMB protocol" -ForegroundColor Yellow
+    Set-VMHost -VirtualMachineMigrationPerformanceOption SMB
+    Get-VMHost | Format-Table VirtualMachineMigrationPerformanceOption
 
-        Write-Host "Configuring Live Migration Bandwidth Limit: 3625MB" -ForegroundColor Yellow
-        Set-SMBBandwidthLimit -Category LiveMigration -BytesPerSecond 3625MB
-        Get-SMBBandwidthLimit -Category LiveMigration
+    Write-Host "Configuring Live Migration Bandwidth Limit: 3625MB" -ForegroundColor Yellow
+    Set-SMBBandwidthLimit -Category LiveMigration -BytesPerSecond 3625MB
+    Get-SMBBandwidthLimit -Category LiveMigration
 
-        $MgmtBandwidthLimit = "10000000"
-        Write-Host "Configuring management vNIC maximum bandwidth Limit: $MgmtBandwidthLimit" -ForegroundColor Yellow
-        Set-VMNetworkAdapter -ManagementOS -Name "vManagement(mgmt_compute_storage)" -MaximumBandwidth $MgmtBandwidthLimit
-        Write-Host "Verifying management vNIC maximum bandwidth Limit" -ForegroundColor Yellow
-        (Get-VMNetworkAdapter -ManagementOS -Name "vManagement(mgmt_compute_storage)").BandwidthSetting | Format-Table ParentAdapter, MaximumBandwidth
-        Return New-Object PsObject -property @{completed=$True} 
-    }
-    if ($result.completed -eq $True) {$node_list.Add($result.PSComputerName)}
+    $MgmtBandwidthLimit = "10000000"
+    Write-Host "Configuring management vNIC maximum bandwidth Limit: $MgmtBandwidthLimit" -ForegroundColor Yellow
+    Set-VMNetworkAdapter -ManagementOS -Name "vManagement(mgmt_compute_storage)" -MaximumBandwidth $MgmtBandwidthLimit
+    Write-Host "Verifying management vNIC maximum bandwidth Limit" -ForegroundColor Yellow
+    (Get-VMNetworkAdapter -ManagementOS -Name "vManagement(mgmt_compute_storage)").BandwidthSetting | Format-Table ParentAdapter, MaximumBandwidth
+    Return New-Object PsObject -property @{completed=$True} 
 }
-Invoke-Command -ComputerName $jdata.file_share_witness.host -ScriptBlock {
-    $jdata      = $Using:jdata
-    $witness    = $jdata.file_share_witness.host
-    $share_name = $jdata.file_share_witness.share_name
-    $share_path = "$($jdata.file_share_witness.share_path)\$share_name"
-    #Create Directory on File Share Witness
-    Write-Host "$($witness): Begin Creating directory on File Share Witness" -ForegroundColor Yellow
-    $test_dir = Test-Path -PathType Container $share_path
-    if (!($test_dir)) {
-        New-Item -ItemType Directory -Force $share_path | Out-Null
+#=============================================================================
+# Setup Environment for Next Loop
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+#=============================================================================
+# Configure File Share Witness if Domain Based
+#=============================================================================
+if ($jdata.file_share_witness.type -eq "domain") {
+    $node_list = [object[]] @($jdata.file_share_witness.host)
+    LoginNodeList -credential $credential -cssp $False -node_list $node_list
+    $sessions = Get-PSSession
+    $session_results = Invoke-Command $sessions -ScriptBlock {
+        $jdata      = $Using:jdata
+        $domain     = $jdata.file_share_witness.domain
+        $witness    = $jdata.file_share_witness.host
+        $share_name = $jdata.file_share_witness.share_name
+        $share_path = "$($jdata.file_share_witness.share_path)\$share_name"
+        #Create Directory on File Share Witness
+        Write-Host "$($witness): Begin Creating directory on File Share Witness." -ForegroundColor Yellow
+        $test_dir = Test-Path -PathType Container $share_path
+        if (!($test_dir)) { New-Item -ItemType Directory -Force $share_path | Out-Null }
+        $test_dir = Test-Path -PathType Container $share_path
+        if (!($test_dir)) {
+            Write-Host "Failed Creating Directory $($share_path).  Exiting..." -ForegroundColor Red
+            Return New-Object PsObject -property @{completed=$False}
+        }
+        Write-Host "$($witness): Completed Creating directory on File Share Witness." -ForegroundColor Yellow
+        Write-Host "$($witness): Begin Configuring File Share on File Share Witness" -ForegroundColor Yellow
+        $access_list  = @()
+        foreach ($computer in $Using:nrc.computer_names) { $access_list.Add("$domain\$($computer)$") }
+        $access_list.Add(“$domain\Domain Admins")
+        $gsmb = Get-SmbShare -Name $share_name
+        $share_assigned = $True
+        foreach ($access in $access_list) { if (!($gsmb | Where-Object {$_.AccountName -eq $access})) { $share_assigned = $False }}
+        if ($share_assigned -eq $False) {
+            Write-Host "$($witness): Adding File Share $share_name on File Share." -ForegroundColor Green
+            $gsmb = New-SmbShare -Name $share_name -Path $share_path -FullAccess $access_list | Out-Null
+        } else { $gsmb = Get-SmbShare -Name $share_name }
+        $share_assigned = $True
+        foreach ($access in $access_list) { if (!($gsmb | Where-Object {$_.AccountName -eq $access})) { $share_assigned = $False }}
+        if ($share_assigned -eq $False) {
+            Write-Host "$($witness): Failed to Configure File Share: $share_name." -ForegroundColor Red
+            Return New-Object PsObject -property @{completed=$False}
+        }
+        Write-Host "$($witness): Completed Configuring File Share on File Share Witness" -ForegroundColor Yellow
+        #NOT SURE ON THIS
+        #Verify file share permissions on the file share witness
+        #Write-Host "Verifing file share permissions on the file share witness"
+        #Get-SmbShareAccess -Name $share_name | Format-Table -AutoSize
+        #Set file level permissions on the file share directory that match the file share permissions
+        Write-Host "$($witness): Begin Setting file level permissions on $share_name." -ForegroundColor Yellow
+        $gsmb = Get-SmbShare -Name $share_name
+        $share_access = $True
+        foreach ($access in $access_list) { if (!($gsmb | Where-Object {$_.Access -match "$($access).+Allow.+FullControl"})) { $share_access = $False }}
+        if ($share_access -eq $False) {
+            Write-Host "$($witness): Adding File Share: '$share_name' Access Settings." -ForegroundColor Green
+            $gsmb = Set-SmbPathAcl -ShareName $share_name | Out-Null
+        } else { $gsmb = Set-SmbPathAcl -ShareName $share_name }
+        $share_access = $True
+        foreach ($access in $access_list) { if (!($gsmb | Where-Object {$_.Access -match "$($access).+Allow.+FullControl"})) { $share_access = $False }}
+        if ($share_access -eq $False) {
+            Write-Host "$($witness): Failed to Configure File Share: '$share_name' Access Settings." -ForegroundColor Red
+            Return New-Object PsObject -property @{completed=$False}
+        }
+        Write-Host "$($witness): Completed Setting file level permissions on $share_name." -ForegroundColor Yellow
+        Return New-Object PsObject -property @{completed=$True}
     }
-    $test_dir = Test-Path -PathType Container $share_path
-    if (!($test_dir)) {
-        Write-Host "Failed Creating Directory $($share_path).  Exiting..." -ForegroundColor Red
-        Return New-Object PsObject -property @{completed=$False} 
+    #=============================================================================
+    # Setup Environment for Next Loop
+    #=============================================================================
+    Get-PSSession | Remove-PSSession | Out-Null
+    $nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+    #=============================================================================
+    # Configure Cluster Quorum Witness File Share
+    #=============================================================================
+    LoginNodeList -credential $credential -cssp $False -node_list [object[]] @($cluster)
+    $sessions = Get-PSSession
+    $session_results = Invoke-Command $sessions -scriptblock {
+        $jdata      = $Using:jdata
+        $witness    = $jdata.file_share_witness.host
+        $share_name = $jdata.file_share_witness.share_name
+        Write-Host "$($cluster): Begin Setting Cluster Witness File Share: '\\$witness\$share_name'." -ForegroundColor Yellow
+        $gcq = Get-ClusterQuorum
+        if (!($gcq | Where-Object {$_.FileShareWitness -eq "\\$witness\$share_name" })) {
+            Write-Host "$($cluster): Adding Cluster Quorum Witness File Share: '\\$witness\$share_name'." -ForegroundColor Green
+            Set-ClusterQuorum -Cluster $Cluster -FileShareWitness "\\$witness\$share_name"
+        } else { Write-Host "$($cluster): Cluster Quorum Witness File Share: '\\$witness\$share_name' already configured." -ForegroundColor Cyan }
+        $gcq = Get-ClusterQuorum
+        if (!($gcq | Where-Object {$_.FileShareWitness -eq "\\$witness\$share_name" })) {
+            Write-Host "$($cluster): Failed to Set Cluster Quorum Witness File Share: '\\$witness\$share_name'." -ForegroundColor Red
+            Return New-Object PsObject -property @{completed=$False}
+        }
+        Write-Host "$($cluster): Completed Setting Cluster Witness File Share: '\\$witness\$share_name'." -ForegroundColor Yellow
+        Return New-Object PsObject -property @{completed=$True}
     }
-    #Create file share on the file share witness
-    Write-Host "Creating file share on file share witness"
-    new-smbshare -Name $share_name -Path $share_path -FullAccess “ucs-spaces.lab\Domain Admins", "ucs-spaces.lab\AzS-HCI-M6-C1$", "ucs-spaces.lab\AzS-HCI1-N1$”, "ucs-spaces.lab\AzS-HCI1-N2$”, "ucs-spaces.lab\AzS-HCI1-N3$”, "ucs-spaces.lab\AzS-HCI1-N4$”
-    #Verify file share on file share witness
-    Write-Host "Verifying file share on file share witness"
-    Get-SmbShare -Name $share_name | Format-Table name,path -AutoSize
-    #Verify file share permissions on the file share witness
-    Write-Host "Verifing file share permissions on the file share witness"
-    Get-SmbShareAccess -Name $share_name | Format-Table -AutoSize
-    #Set file level permissions on the file share directory that match the file share permissions
-    Write-Host "Setting file level permissions on the file share directory that match the file share permissions"
-    Set-SmbPathAcl -ShareName $share_name
-    #Verify file level permissions on the file share
-    Write-Host "Verifying file level permissions on the file share"
-    Get-Acl -Path $SharePath | Format-List
+    #=============================================================================
+    # Setup Environment for Next Loop
+    #=============================================================================
+    Get-PSSession | Remove-PSSession | Out-Null
+    $nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
 }
-Get-ClusterResource -Cluster $cluster -Name "File Share Witness" | Get-ClusterParameter -Name SharePath
-Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptblock {
+#=============================================================================
+# Configure AzureStack Cluster Wide Settings
+#=============================================================================
+LoginNodeList -credential $credential -cssp $True -node_list [object[]] @($cluster)
+$sessions = Get-PSSession
+$session_results = Invoke-Command $sessions -scriptblock {
+    Get-ClusterResource -Cluster $cluster -Name "File Share Witness" | Get-ClusterParameter -Name SharePath
     Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Configuring Cluster-Aware Updating ... " -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name
@@ -766,22 +875,42 @@ Invoke-Command $cluster -Credential $credential -authentication Credssp -scriptb
 
     Write-Host " Creating Virtual Disk " -ForegroundColor Yellow
     New-Volume -StoragePoolFriendlyName “S2D*” -FriendlyName VDisk01 -FileSystem CSVFS_ReFS -ResiliencySettingName Mirror -Size 4TB
+    #Get-VirtualDisk
+    #Get-ClusterSharedVolume | Format-Table Name,SharedVolumeInfo,OwnerNode
 }
-
-foreach ($node in $nodes) {
-    Invoke-Command $node -Credential $credential -scriptblock {
-        Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
-         Write-Host " Disabling CredSSP" -ForegroundColor Yellow
-        Disable-WSManCredSSP -Role Server
-        Write-Host " Verifying that CredSSP are disabled on target server..." -ForegroundColor Yellow
-        Get-WSManCredSSP
+#=============================================================================
+# Setup Environment for Next Loop
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list [object[]] @($cluster)
+#=============================================================================
+# Disable CredSSP on Hosts
+#=============================================================================
+LoginNodeList -credential $credential -cssp $False -node_list $node_list
+$sessions = Get-PSSession
+$session_results = Invoke-Command $sessions -scriptblock {
+    Write-Host "$($env:COMPUTERNAME) Disabling CredSSP." -ForegroundColor Yellow
+    Disable-WSManCredSSP -Role Server | Out-Null
+    $gwsman = Get-WSManCredSSP
+    if (!($gwsman -match "This computer is not configured to receive credentials from a remote client computer")) {
+        Write-Host "$($env:COMPUTERNAME) Failed to Disable WSMan Credentials." -ForegroundColor Red
+        Return New-Object PsObject -property @{completed=$False}
     }
+    Write-Host " Verifying that CredSSP are disabled on target server..." -ForegroundColor Yellow
+    Return New-Object PsObject -property @{completed=$True}
 }
-
-Invoke-Command $cluster -scriptblock {Get-VirtualDisk}
-Invoke-Command $cluster -scriptblock {Get-ClusterSharedVolume | Format-Table Name,SharedVolumeInfo,OwnerNode}
-Invoke-Command $cluster -Credential $credential -scriptblock {
-    Write-Host "$($Using:Cluster) Beginning Configuration of Storage Polices." -ForegroundColor Yellow
+#=============================================================================
+# Setup Environment for Next Loop
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $node_list
+#=============================================================================
+# Configure Storage QoS Policies
+#=============================================================================
+LoginNodeList -credential $credential -cssp $False -node_list [object[]] @($cluster)
+$sessions = Get-PSSession
+$session_results = Invoke-Command $sessions -scriptblock {
+    Write-Host "$($Using:cluster) Beginning Configuration of Storage Polices." -ForegroundColor Yellow
     $storage_qos = [System.Collections.ArrayList]@(
         @{name="Copper"  ;min=50; max=100};
         @{name="Bronze"  ;min=100;max=250};
@@ -817,4 +946,11 @@ Invoke-Command $cluster -Credential $credential -scriptblock {
     Write-Host "$($Using:Cluster) Completed Configuration of Storage Polices." -ForegroundColor Yellow
     Return New-Object PsObject -property @{completed=$True}
 }
+#=============================================================================
+# Cleanup Environment to Close Script
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list [object[]] @($cluster)
+Stop-Transcript
+Disable-WSManCredSSP -Role "Client" | Out-Null
 Exit 0
