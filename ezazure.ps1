@@ -20,7 +20,7 @@ or implied.
     JSON Input File containing Cluster Parameters.   
 
 .EXAMPLE
-    domain-profile.ps1 -j azure.json
+    ezazure.ps1 -j azure.json
 #>
 
 # JUMP HOST REQUIREMENTS
