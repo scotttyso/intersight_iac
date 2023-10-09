@@ -317,10 +317,22 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         Write-Host "$($env:COMPUTERNAME) Secure Boot State is not Enabled.  Exiting..." -ForegroundColor Red
         Return New-Object PsObject -property @{completed=$False}
     }
-    Write-Host "$($env:COMPUTERNAME) Completed Validating Secure-Core Configuration." -ForegroundColor Yellow
-    ###
-    Invoke-WebRequest -URI "https://raw.githubusercontent.com/scotttyso/intersight_iac/master/"
+    if (!([System.IO.File]::Exists("$PSScriptRoot/KernelDmaProtection.ps1"))) {
+        Invoke-WebRequest -URI "https://raw.githubusercontent.com/scotttyso/intersight_iac/master/examples/azurestack_hci/KernelDmaProtection.ps1"
+    }
+    $dma_protection = "$PSScriptRoot/KernelDmaProtection.ps1"
+    if (!($dma_protection -eq $True)) {
+        Write-Host " * $($env:COMPUTERNAME) Failed.  Kernel DMA Protection is not Enabled."  -ForegroundColor Red
+        Write-Host "   Manually Check Output of 'msinfo32.exe' for 'Kernel DMA Protection' State: 'On'." -ForegroundColor Red
+        Return New-Object PsObject -property @{completed=$False}
+    }
+    Remove-Item "$PSScriptRoot/KernelDmaProtection.ps1" | Out-Null
+    ##########
     # MSINFo32.EXE on page 78
+    # https://www.tenforums.com/tutorials/68926-verify-if-device-guard-enabled-disabled-windows-10-a.html
+    # Need to finish the Virtualization BAsed Security Checks
+    Write-Host "$($env:COMPUTERNAME) Completed Validating Secure-Core Configuration." -ForegroundColor Yellow
+    ##########
     Write-Host "$($env:COMPUTERNAME) Beginning Retrieval of physical NIC port names." -ForegroundColor Yellow
     $adapter_list = [System.Collections.ArrayList]@("SlotID 2 Port 1", "SlotID 2 Port 2")
     $gna = Get-NetAdapter
