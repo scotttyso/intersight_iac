@@ -9,6 +9,8 @@
         "type": "domain"
     },
     "link_speed": "10 Gpbs",
+    "mtu_physical": "9160",
+    "mtu_virtual": "9000",
     "node_list": ["azurehci-01.rich.ciscolabs.com", "azurehci-02.rich.ciscolabs.com"],
     "storage_vlans": [
         {

@@ -330,18 +330,17 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     ##########
     # MSINFo32.EXE on page 78
     # https://www.tenforums.com/tutorials/68926-verify-if-device-guard-enabled-disabled-windows-10-a.html
-    # Need to finish the Virtualization BAsed Security Checks
+    # Need to finish the Virtualization Based Security Checks
     Write-Host "$($env:COMPUTERNAME) Completed Validating Secure-Core Configuration." -ForegroundColor Yellow
     ##########
     Write-Host "$($env:COMPUTERNAME) Beginning Retrieval of physical NIC port names." -ForegroundColor Yellow
-    $adapter_list = [System.Collections.ArrayList]@("SlotID 2 Port 1", "SlotID 2 Port 2")
-    $gna = Get-NetAdapter
-    foreach ($adapter in $adapter_list) {
-        if ($gna | Where-Object {$_.Name -eq $adapter -and $_.Status -eq "Up" -and $_.LinkSpeed -eq $Using:link_speed}) {
-            Write-Host " * $($env:COMPUTERNAME) Matched NetAdapter $adapter." -ForegroundColor Green
+    $gna = Get-NetAdapter -Name "SlotID*"
+    foreach ($adapter in $gna) {
+        if ($adapter.Status -eq "Up" -and $adapter.LinkSpeed -eq $Using:link_speed) {
+            Write-Host " * $($env:COMPUTERNAME) Matched NetAdapter $($adapter.Name)." -ForegroundColor Green
         } else {
-            Write-Host " * $($env:COMPUTERNAME) Failed to Match NetAdapter '$adapter' with Status: 'Up', LinkSpeed: '$($Using:link_speed)'.  Exiting..." -ForegroundColor Red
-            $gna | Format-Table Name, InterfaceDescription, Status, MacAddress, LinkSpeed | Out-String|ForEach-Object {Write-Host $_}
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match NetAdapter '$($adapter.Name)' with Status: 'Up', LinkSpeed: '$($Using:link_speed)'.  Exiting..." -ForegroundColor Red
+            $adapter | Format-Table Name, InterfaceDescription, Status, MacAddress, LinkSpeed | Out-String|ForEach-Object {Write-Host $_}
             Return New-Object PsObject -property @{completed=$False}
         }
     }
@@ -380,11 +379,11 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         Return New-Object PsObject -property @{completed=$False}
     }
     Write-Host "$($env:COMPUTERNAME) Verifying Management vNIC in parent partition." -ForegroundColor Yellow
-    $gna = Get-NetAdapter
+    $gna = Get-NetAdapter -Name "*mgmt_compute_storage*"
     $gna_count = 0
-    $vnames = @("vManagement(mgmt_compute_storage)", "vSMB(mgmt_compute_storage#SlotID 2 Port 1)", "vSMB(mgmt_compute_storage#SlotID 2 Port 2)")
+    $vnames = Get-NetAdapter -Name "*mgmt_compute_storage*" | Select-Object Name
     foreach ($vname in $vnames) {
-        if ($gna | Where-Object {$_.Name -eq $vname -and $_.Status -eq "Up" -and $_.LinkSpeed -eq $Using:link_speed}) { $gna_count++ | Out-Null }
+        if ($gna | Where-Object {$_.Name -eq $vname.Name -and $_.Status -eq "Up" -and $_.LinkSpeed -eq $Using:link_speed}) { $gna_count++ | Out-Null }
     }
     if ($gna_count -eq 3) {
         Write-Host " * $($env:COMPUTERNAME) Verified Virtual NIC Creation." -ForegroundColor Green
@@ -421,7 +420,7 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     # $jdata.storage_vlans[0].gateway
     # $jdata.storage_vlans[1].gateway
     # Two Default Routes or One
-    Write-Host "$($env:COMPUTERNAME) Beginning Configuring default route for Management NIC " -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Beginning Configuring default route for Management NIC." -ForegroundColor Yellow
     $gateway_a = $jdata.storage_vlans[0].gateway
     $gateway_b = $jdata.storage_vlans[1].gateway
     $g_mgmt_route = Get-NetRoute | Where-Object {$_.DestinationPrefix -eq "0.0.0.0/0"}
@@ -472,28 +471,29 @@ foreach ($node in $jdata.node_list) {
     $ip_address_a = $network_a+($host_ip_a + $jdata.node_list.IndexOf($node)).ToString()
     $ip_address_b = $network_b+($host_ip_b + $jdata.node_list.IndexOf($node)).ToString()
     $session = New-CimSession -ComputerName $node -Credential $credential
-    $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias vSMB*
-    if (!($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.IPAddress -eq $ip_address_a -and $_.PrefixLength -eq $prefix_a})) {
-        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -IPAddress $ip_address_a -PrefixLength $prefix_a
+    $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias "vSMB*Port 1)"
+    if (!($gnic | Where-Object {$_.IPAddress -eq $ip_address_a -and $_.PrefixLength -eq $prefix_a})) {
+        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB*Port 1)" -IPAddress $ip_address_a -PrefixLength $prefix_a
     }
-    if (!($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.IPAddress -eq $ip_address_b -and $_.PrefixLength -eq $prefix_b})) {
-        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -IPAddress $ip_address_b -PrefixLength $prefix_b
-    }
-    $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias vSMB*
-    if ($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 1)" -and $_.IPAddress -eq $ip_address_a -and $_.PrefixLength -eq $prefix_a}) {
-        Write-Host " * $($env:COMPUTERNAME) Matched vSMB(mgmt_compute_storage#SlotID 2 Port 1)." -ForegroundColor Green
+    $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias "vSMB*Port 1)"
+    if ($gnic | Where-Object {$_.IPAddress -eq $ip_address_a -and $_.PrefixLength -eq $prefix_a}) {
+        Write-Host " * $($env:COMPUTERNAME) Matched $($gnic.InterfaceAlias)." -ForegroundColor Green
     } else {
-        Write-Host " * $($env:COMPUTERNAME) Failed to Match vSMB(mgmt_compute_storage#SlotID 2 Port 1).  Expected: " -ForegroundColor Red
-        Write-Host "   Name: 'vSMB(mgmt_compute_storage#SlotID 2 Port 1)' `   IP Address: $ip_address_a`   Prefix: $prefix_a   `Exiting..." -ForegroundColor Red
+        Write-Host " * $($env:COMPUTERNAME) Failed to Match $($gnic.InterfaceAlias).  Expected: " -ForegroundColor Red
+        Write-Host "   IP Address: $ip_address_a`   Prefix: $prefix_a   `Exiting..." -ForegroundColor Red
         $gnic | Format-Table | Out-String|ForEach-Object {Write-Host $_}
         Exit 1
     }
-    if ($gnic | Where-Object {$_.InterfaceAlias -eq "vSMB(mgmt_compute_storage#SlotID 2 Port 2)" -and $_.IPAddress -eq $ip_address_b -and $_.PrefixLength -eq $prefix_b}) {
-        Write-Host " * $($env:COMPUTERNAME) Matched vSMB(mgmt_compute_storage#SlotID 2 Port 2)." -ForegroundColor Green
-        $node.Add($node)
+    $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias "vSMB*Port 2)"
+    if (!($gnic | Where-Object {$_.IPAddress -eq $ip_address_b -and $_.PrefixLength -eq $prefix_b})) {
+        New-NetIPAddress -CimSession $session -InterfaceAlias "vSMB*Port 1)" -IPAddress $ip_address_b -PrefixLength $prefix_b
+    }
+    $gnic = Get-NetIPConfiguration -CimSession $session -InterfaceAlias "vSMB*Port 2)"
+    if ($gnic | Where-Object {$_.IPAddress -eq $ip_address_b -and $_.PrefixLength -eq $prefix_b}) {
+        Write-Host " * $($env:COMPUTERNAME) Matched $($gnic.InterfaceAlias)." -ForegroundColor Green
     } else {
-        Write-Host " * $($env:COMPUTERNAME) Failed to Match vSMB(mgmt_compute_storage#SlotID 2 Port 2).  Expected: " -ForegroundColor Red
-        Write-Host "   Name: 'vSMB(mgmt_compute_storage#SlotID 2 Port 2)' `   IP Address: $ip_address_b`   Prefix: $prefix_b   `Exiting..." -ForegroundColor Red
+        Write-Host " * $($env:COMPUTERNAME) Failed to Match $($gnic.InterfaceAlias).  Expected: " -ForegroundColor Red
+        Write-Host "   IP Address: $ip_address_b`   Prefix: $prefix_b   `Exiting..." -ForegroundColor Red
         $gnic | Format-Table | Out-String|ForEach-Object {Write-Host $_}
         Exit 1
     }
@@ -519,6 +519,7 @@ if (!($nodes.Length -eq $jdata.node_list.Length)) {
 LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
 $sessions = Get-PSSession
 $session_results = Invoke-Command $sessions -ScriptBlock {
+    $jdata = $Using:jdata
     Write-Host "$($env:COMPUTERNAME) Enabling CredSSP" -ForegroundColor Yellow
     Enable-WSManCredSSP -Role Server -Force | Out-Null
     $gwsman = Get-WSManCredSSP
@@ -527,70 +528,139 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         Return New-Object PsObject -property @{completed=$False}
     }
     Write-Host "$($env:COMPUTERNAME) Begin Removing DNS Registration from Storage vNICs." -ForegroundColor Yellow
-    $int_aliases = @("vSMB(mgmt_compute_storage#SlotID 2 Port 1)", "vSMB(mgmt_compute_storage#SlotID 2 Port 2)")
-    $gdnsclient = Get-DnsClient -InterfaceAlias vSMB*
-    foreach ($int_alias in $int_aliases) {
-        if (!($gdnsclient | Where-Object {$_.InterfaceAlias -eq $int_alias -and $_.RegisterThisConnectionsAddress -eq $False})) {
-            Set-DnsClient -InterfaceAlias $int_alias -RegisterThisConnectionsAddress:$False
-        }
+    $gdnsclient = Get-DnsClient -InterfaceAlias "vSMB*"
+    foreach ($adapter in $gdnsclient) {
+        if (!($adapter.RegisterThisConnectionsAddress -eq $False)) { $adapter | Set-DnsClient -RegisterThisConnectionsAddress:$False }
     }
-    $gdnsclient = Get-DnsClient -InterfaceAlias vSMB*
-    foreach ($int_alias in $int_aliases) {
-        if ($gdnsclient | Where-Object {$_.InterfaceAlias -eq $int_alias -and $_.RegisterThisConnectionsAddress -eq $False}) {
-            Write-Host " * $($env:COMPUTERNAME) Completed DNS Registration Removal from Storage vNIC: $int_alias." -ForegroundColor Cyan
+    $gdnsclient = Get-DnsClient -InterfaceAlias "vSMB*"
+    foreach ($adapter in $gdnsclient) {
+        if ($adapter.RegisterThisConnectionsAddress -eq $False) {
+            Write-Host " * $($env:COMPUTERNAME) Completed DNS Registration Removal from Storage vNIC: $($adapter.InterfaceAlias)." -ForegroundColor Cyan
         } else {
-            Write-Host " * $($env:COMPUTERNAME) Failed to remove DNS Registration from Storage vNIC: $int_alias." -ForegroundColor Red
-            $gdnsclient | Where-Object {$_.InterfaceAlias -eq $int_alias} | Format-Table InterfaceAlias,RegisterThisConnectionsAddress | Out-String|ForEach-Object {Write-Host $_}
+            Write-Host " * $($env:COMPUTERNAME) Failed to remove DNS Registration from Storage vNIC: $($adapter.InterfaceAlias)." -ForegroundColor Red
+            $adapter | Format-Table InterfaceAlias,RegisterThisConnectionsAddress | Out-String|ForEach-Object {Write-Host $_}
             Return New-Object PsObject -property @{completed=$False}
         }
     }
     Write-Host "$($env:COMPUTERNAME) Completed Removing DNS Registration from Storage vNICs." -ForegroundColor Yellow
     ##########
     Write-Host "$($env:COMPUTERNAME) Begin Configuring vSwitch to pass 802.1p priority marking." -ForegroundColor Yellow
-    $gtest = Get-VMNetworkAdapter -ManagementOS
-    if (!($gtest | Where-Object {$_.Name -eq “vManagement(mgmt_compute_storage)" -and $_.IeeePriorityTag -eq "On"})) {
+    $gvma = Get-VMNetworkAdapter -ManagementOS -Name "vManagement(mgmt_compute_storage)"
+    if (!($gvma | Where-Object {$_.IeeePriorityTag -eq "On"})) {
         Set-VMNetworkAdapter -Name  “vManagement(mgmt_compute_storage)" -ManagementOS -IeeePriorityTag On
     }
-    $gtest = Get-VMNetworkAdapter -ManagementOS
-    if ($gtest | Where-Object {$_.Name -eq “vManagement(mgmt_compute_storage)" -and $_.IeeePriorityTag -eq "On"}) {
+    $gvma = Get-VMNetworkAdapter -ManagementOS -Name "vManagement(mgmt_compute_storage)"
+    if ($gvma | Where-Object {$_.Name -eq “vManagement(mgmt_compute_storage)" -and $_.IeeePriorityTag -eq "On"}) {
         Write-Host " * $($env:COMPUTERNAME) Completed Configuring vSwitch to pass 802.1p priority marking." -ForegroundColor Cyan
     } else {
         Write-Host " * $($env:COMPUTERNAME) Failed to Configure vSwitch to pass 802.1p priority marking." -ForegroundColor Red
-        $gtest | Where-Object {$_.Name -eq “vManagement(mgmt_compute_storage)"} | Format-Table Name,IeeePriorityTag | Out-String|ForEach-Object {Write-Host $_}
+        $gvma | Format-Table Name,IeeePriorityTag | Out-String|ForEach-Object {Write-Host $_}
         Return New-Object PsObject -property @{completed=$False}
     }
     Write-Host "$($env:COMPUTERNAME) Completed Configuring vSwitch to pass 802.1p priority marking." -ForegroundColor Yellow
     Write-Host "$($env:COMPUTERNAME) Begin Validating vNIC VLANs Configuration." -ForegroundColor Yellow
-    $gtest = Get-VMNetworkAdapter -ManagementOS | Get-VMNetworkAdapterIsolation
-    $icount = 0
-    foreach ($int_alias in $int_aliases) {
-        $int_short = ($int_alias.Replace("vSMB(", "")).Replace(")", "")
-        $vlan_id = $Using.jdata.stroage_vlans[$icount].vlan_id
-        if ($gtest | Where-Object {$_.ParentAdapter -match $int_short -and $_.DefaultIsolationID -eq $vlan_id}) {
-            Write-Host " * $($env:COMPUTERNAME) Validated $int_alias VLAN ID: $vlan_id." -ForegroundColor Cyan
+    $gvma = Get-VMNetworkAdapter -ManagementOS -Name "vSMB*" | Get-VMNetworkAdapterIsolation
+    foreach ($adapter in $gvma) {
+        if ($adapter.Name -match ".*Port 1") { $icount = 0 } else { $icount = 1 }
+        $vlan_id = $Using.jdata.storage_vlans[$icount].vlan_id
+        if ($adapter.DefaultIsolationID -eq $vlan_id) {
+            Write-Host " * $($env:COMPUTERNAME) Validated $($adapter.ParentAdapter) VLAN ID: $vlan_id." -ForegroundColor Cyan
         } else {
-            Write-Host " * $($env:COMPUTERNAME) Failed to Match $int_alias VLAN ID: $vlan_id." -ForegroundColor Red
-            $gtest | Where-Object {$_.ParentAdapter -match $int_short} | Format-Table IsolationMode, DefaultIsolationID, ParentAdapter -AutoSize | Out-String|ForEach-Object {Write-Host $_}
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match $($adapter.ParentAdapter) VLAN ID: $vlan_id." -ForegroundColor Red
+            $adapter | Format-Table IsolationMode, DefaultIsolationID, ParentAdapter -AutoSize | Out-String|ForEach-Object {Write-Host $_}
             Return New-Object PsObject -property @{completed=$False}
         }
-        icount++ | Out-Null
     }
     Write-Host "$($env:COMPUTERNAME) Completed Validating vNIC VLANs Configuration." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Begin Validating vNIC Status." -ForegroundColor Yellow
+    $gna = Get-NetAdapter
+    foreach ($adapter in $gna) {
+        if ($adapter.Name -match "^SlotID") { $mtu = $jdata.mtu_physical } else { $mtu = $jdata.mtu_virtual }
+        if ($adapter.Status -eq "Up" -and $adapter.MTUSize -eq $mtu -and $adapter.LinkSpeed -eq $Using:link_speed) {
+            Write-Host " * $($env:COMPUTERNAME) Validated $($adapter.Name)." -ForegroundColor Cyan
+        } else {
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match $($adapter.Name).  Expected:" -ForegroundColor Red
+            Write-Host "   Status: Up`   MTUSize: $($mtu)`   LinkSpeed: $($Using:link_speed)"
+            $adapter | Format-Table Name,InterfaceDescription,Status,MTUSize,LinkSpeed -AutoSize | Out-String|ForEach-Object {Write-Host $_}
+            Return New-Object PsObject -property @{completed=$False}
+        }
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Validating vNIC Status." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Begin Validating RDMA and RoCEv2 Status on Physical NICs." -ForegroundColor Yellow
+    $gtest = Get-NetAdapterAdvancedProperty -InterfaceDescription "SlotID*" -DisplayName "NetworkDirect*"
+    $display = @(@("NetworkDirect Functionality", "Enabled"), @("NetworkDirect Technology", "RoCEv2"))
+    foreach ($x in @(1, 2)) {
+        foreach ($y in $display) {
+            if ($gtest | Where-Object {$_.Name -match ".*Port $x" -and $_.DisplayName -eq $y[0] -and $_.DisplayValue -eq $y[1]}) {
+                Write-Host " * $($env:COMPUTERNAME) Validated $($x)`   DisplayName: $($y[0])`   DisplayValue: $($y[1])." -ForegroundColor Cyan
+            } else {
+                Write-Host " * $($env:COMPUTERNAME) Failed to Match Port $x.  Expected:" -ForegroundColor Red
+                Write-Host "   DisplayName: $($y[0])`   DisplayValue: $($y[1])"
+                $gtest | Where-Object {$_.Name -match ".*Port $x" -and $_.DisplayName -eq $y[0]} | Format-Table Name, InterfaceDescription,DisplayName,DisplayValue -AutoSize | Out-String|ForEach-Object {Write-Host $_}
+                Return New-Object PsObject -property @{completed=$False}
+            }
+        }
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Validating RDMA and RoCEv2 Status on Physical NICs." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Begin Validating RDMA is enabled on the Storage vNICs." -ForegroundColor Yellow
+    $gna_rdma = Get-NetAdapterRdma
+    foreach ($adapter in $gna_rdma) {
+        if ($adapter.Name -match "SlotID") { $x = @($True, $True, $True, $True)
+        } elseif ($adapter.Name -match "vManagement") { $x = @($False, $False, "NA", "NA")
+        } else {$x = @($True, $True, "NA", "NA") }
+        if ($adapter.Enabled -eq $x[0] -and $adapter.Operational -eq $x[1] -and $adapter.PFC -eq $x[2] -and $adapter.ETS -eq $x[3]) {
+            Write-Host " * $($env:COMPUTERNAME) Validated $($adapter.Name)." -ForegroundColor Cyan
+        } else {
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match $($adapter.Name).  Expected:" -ForegroundColor Red
+            Write-Host "   Enabled: $($x[0])`   Operational: $($x[1])`   PFC: $($x[2])\  ETC: $($x[3])"
+            $adapter | Format-Table -AutoSize | Out-String|ForEach-Object {Write-Host $_}
+            Return New-Object PsObject -property @{completed=$False}
+        }
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Validating RDMA is enabled on the Storage vNICs." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Begin Mapping of each storage vNIC to the respective fabric." -ForegroundColor Yellow
+    $gvma = Get-VMNetworkAdapterTeamMapping -ManagementOS
+    foreach ($adapter in $gvma) {
+        if ($adapter.ParentAdapter -match $adapter.NetAdapterName) {
+            Write-Host " * $($env:COMPUTERNAME) Validated $($adapter.NetAdapterName)." -ForegroundColor Cyan
+        } else {
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match $($adapter.NetAdapterName).  Expected AdapterName in ParentAdapter." -ForegroundColor Red
+            $adapter | Format-Table ComputerName,NetAdapterName,ParentAdapter -AutoSize | Out-String|ForEach-Object {Write-Host $_}
+            Return New-Object PsObject -property @{completed=$False}
+        }
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Mapping of each storage vNIC to the respective fabric." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Begin Validating Traffic Class Configuration." -ForegroundColor Yellow
+    $gnqos = Get-NetQosTrafficClass
+    foreach ($qos in $gnqos) {
+        if ($qos.Name -eq "SMB_Direct") { $x = @(50, "4")
+        } elseif ($qos.Name -eq "Cluster") { $x = @(1, "5")
+        } else { $x = @(49, "0-3,6-7") }
+        if ($qos.Bandwidth -eq $x[1] -and $qos.Priority.toString() -eq $x[1]) {
+            Write-Host " * $($env:COMPUTERNAME) Validated $($qos.Name)." -ForegroundColor Cyan
+        } else {
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match $($qos.Name).  Expected:`   Bandwidth: $(x[0])`   Priority: $(x[1])" -ForegroundColor Red
+            $qos | Format-Table -AutoSize | Out-String|ForEach-Object {Write-Host $_}
+            Return New-Object PsObject -property @{completed=$False}
+        }
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Validating Traffic Class Configuration." -ForegroundColor Yellow
+    Write-Host "$($env:COMPUTERNAME) Begin Validating that DCBX is set to Not Willing mode." -ForegroundColor Yellow
+    $gna = Get-netadapter -Name "SlotID*" | Get-NetQosDcbxSetting
+    foreach ($adapter in $gna) {
+        if ($adapter.Name -eq "SMB_Direct") { $x = @(50, "4")
+        } elseif ($qos.Name -eq "Cluster") { $x = @(1, "5")
+        } else { $x = @(49, "0-3,6-7") }
+        if ($adapter.Willing -eq $False) {
+            Write-Host " * $($env:COMPUTERNAME) Validated $($adapter.InterfaceAlias)." -ForegroundColor Cyan
+        } else {
+            Write-Host " * $($env:COMPUTERNAME) Failed to Match $($adapter.InterfaceAlias).  Expected:`   Willing: False" -ForegroundColor Red
+            $adapter | Format-Table InterfaceAlias, PolicySet, Willing -AutoSize | Out-String|ForEach-Object {Write-Host $_}
+            Return New-Object PsObject -property @{completed=$False}
+        }
+    }
+    Write-Host "$($env:COMPUTERNAME) Completed Validating that DCBX is set to Not Willing mode." -ForegroundColor Yellow
 
-    Write-Host "Verifying NIC status " -ForegroundColor Yellow
-    Get-NetAdapter | Sort-Object Name | Format-Table Name,InterfaceDescription,Status,MTUSize,LinkSpeed
-    Write-Host "Verifying RDMA and RoCEv2 status on physical NICS " -ForegroundColor Yellow
-    Get-NetAdapterAdvancedProperty -InterfaceDescription "Mellanox ConnectX*" -DisplayName "NetworkDirect*" | Format-Table Name, InterfaceDescription,DisplayName,DisplayValue
-    Write-Host "Verifying that RDMA is enabled on the Storage vNICs" -ForegroundColor Yellow
-    Get-NetAdapterRdma | Format-Table
-    Write-Host "Verify Mapping of each storage vNIC to the respective fabric " -ForegroundColor Yellow
-    Get-VMNetworkAdapterTeamMapping -ManagementOS | Format-Table ComputerName,NetAdapterName,ParentAdapter
-    Write-Host "Verify Storage vNIC RDMA operational status " -ForegroundColor Yellow
-    Get-SmbClientNetworkInterface | Format-Table FriendlyName, RDMACapable
-    Write-Host " Verifing Traffic Class Configuration " -ForegroundColor Yellow
-    Get-NetQosTrafficClass | Format-Table -AutoSize
-    Write-Host "Verifying that DCBX is set to Not Willing mode" -ForegroundColor Yellow
-    Get-netadapter | Get-NetQosDcbxSetting | Format-Table InterfaceAlias, PolicySet, Willing
     ### Storage Spaces Direct
     Write-Host "Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
     Write-Host "Cleaning Storage Drives...."
