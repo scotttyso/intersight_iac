@@ -674,8 +674,8 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     $jdata = $Using:jdata
     $cluster_check = Get-Cluster -Domain $jdata.domain | Get-ClusterNode | Where-Object { $_.Name -eq $env:COMPUTERNAME }
     if ($cluster_check) { 
-        $s2d = Get-ClusterStorageSpacesDirect -node $env:COMPUTERNAME
-        if ($s2d -eq "Enabled") { $node_cluster_check = $True }
+        $s2d_check = Get-ClusterStorageSpacesDirect -node $env:COMPUTERNAME
+        if ($s2d_check.State -eq "Enabled") { $node_cluster_check = $True }
     }
     if ($clean_disks -or $node_cluster_check -eq $False) {
         #Remove Exisiting virtual disks and storage pools
