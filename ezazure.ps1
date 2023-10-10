@@ -669,7 +669,8 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         }
     }
     Write-Host "$($env:COMPUTERNAME) Completed Validating that DCBX is set to Not Willing mode." -ForegroundColor Yellow
-    if ($clean_disks -or $cluster_check -eq $False) {
+    $node_check = Get-ClusterStorageSpacesDirect
+    if ($clean_disks -or !($node_check.State -eq "Enabled")) {
         Write-Host "$($env:COMPUTERNAME) Begin Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
         Write-Host "$($env:COMPUTERNAME) Cleaning Storage Drives...." -ForegroundColor Green
         #Remove Exisiting virtual disks and storage pools
@@ -688,7 +689,13 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         #Inventory Storage Disks
         Get-Disk | Where-Object {Number -Ne $Null -and IsBoot -Ne $True -and IsSystem -Ne $True -and PartitionStyle -Eq RAW} | Group-Object -NoElement -Property FriendlyName | Format-Table
         Write-Host "$($env:COMPUTERNAME) Completed Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
+    } elseif ($node_check.State -eq "Enabled") {
+        Write-Host "$($env:COMPUTERNAME) Already Configured for Storage Spaces Direct." -ForegroundColor Cyan
+    } else {
+        Write-Host "$($env:COMPUTERNAME) Failed in Validating Storage Disk State." -ForegroundColor Red
+        Return New-Object PsObject -property @{completed=$False}
     }
+    Return New-Object PsObject -property @{completed=$True}
 }
 #=============================================================================
 # Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
