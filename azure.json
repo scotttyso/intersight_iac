@@ -1,6 +1,7 @@
 {
     "cluster": "AzS-HCI-M6-C1",
     "cluster_address": "192.168.126.25",
+    "domain": "RICH",
     "file_share_witness": {
         "domain": "RICH",
         "host": "fsw01.rich.ciscolabs.com",

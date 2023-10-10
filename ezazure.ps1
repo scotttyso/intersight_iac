@@ -669,11 +669,17 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         }
     }
     Write-Host "$($env:COMPUTERNAME) Completed Validating that DCBX is set to Not Willing mode." -ForegroundColor Yellow
-    $node_check = Get-ClusterStorageSpacesDirect
-    if ($clean_disks -or !($node_check.State -eq "Enabled")) {
-        Write-Host "$($env:COMPUTERNAME) Begin Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
-        Write-Host "$($env:COMPUTERNAME) Cleaning Storage Drives...." -ForegroundColor Green
+    Write-Host "$($env:COMPUTERNAME) Begin Preparing disks for Storage Spaces Direct." -ForegroundColor Yellow
+    $node_cluster_check = $False
+    $jdata = $Using:jdata
+    $cluster_check = Get-Cluster -Domain $jdata.domain | Get-ClusterNode | Where-Object { $_.Name -eq $env:COMPUTERNAME }
+    if ($cluster_check) { 
+        $s2d = Get-ClusterStorageSpacesDirect -node $env:COMPUTERNAME
+        if ($s2d -eq "Enabled") { $node_cluster_check = $True }
+    }
+    if ($clean_disks -or $node_cluster_check -eq $False) {
         #Remove Exisiting virtual disks and storage pools
+        Write-Host "$($env:COMPUTERNAME) Cleaning Storage Drives...." -ForegroundColor Green
         Update-StorageProviderCache
         Get-StoragePool | Where-Object IsPrimordial -eq $False | Set-StoragePool -IsReadOnly:$False -ErrorAction SilentlyContinue | Out-Null
         Get-StoragePool | Where-Object IsPrimordial -eq $False | Get-VirtualDisk | Remove-VirtualDisk -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
@@ -689,10 +695,11 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         #Inventory Storage Disks
         Get-Disk | Where-Object {Number -Ne $Null -and IsBoot -Ne $True -and IsSystem -Ne $True -and PartitionStyle -Eq RAW} | Group-Object -NoElement -Property FriendlyName | Format-Table
         Write-Host "$($env:COMPUTERNAME) Completed Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
-    } elseif ($node_check.State -eq "Enabled") {
+    } elseif ($node_cluster_check.State -eq "Enabled") {
         Write-Host "$($env:COMPUTERNAME) Already Configured for Storage Spaces Direct." -ForegroundColor Cyan
+        Write-Host "$($env:COMPUTERNAME) Completed Preparing disks for Storage Spaces Direct." -ForegroundColor Yellow
     } else {
-        Write-Host "$($env:COMPUTERNAME) Failed in Validating Storage Disk State." -ForegroundColor Red
+        Write-Host "$($env:COMPUTERNAME) Failed in Validating Storage Disk State to prepare for Storage Spaces Direct." -ForegroundColor Red
         Return New-Object PsObject -property @{completed=$False}
     }
     Return New-Object PsObject -property @{completed=$True}
