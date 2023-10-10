@@ -31,6 +31,7 @@ or implied.
 # Pull in JSON Content
 #=============================================================================
 param (
+    [switch]$clean_disks,
     [switch]$force,
     [string]$j=$(throw "-j <json_file> is required.")
 )
@@ -54,6 +55,7 @@ $password   = ConvertTo-SecureString $env:windows_administrator_password -AsPlai
 $credential = New-Object System.Management.Automation.PSCredential ($username,$password);
 $client_list = [object[]] @()
 $gwsman = Get-WSManCredSSP
+
 #=============================================================================
 # Function: Node Length Check and Reboot Check
 #=============================================================================
@@ -106,6 +108,13 @@ Function LoginNodeList {
             Exit 1
         }
     }
+}
+#=============================================================================
+# Validate Running with Administrator Privileges
+#=============================================================================
+if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+    Write-Host "Script must run with elevated Administrator permissions...Exiting" -Foreground Red
+    Exit 1
 }
 #=============================================================================
 # Enable WSManCredSSP Client on Local Machine
@@ -660,26 +669,26 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         }
     }
     Write-Host "$($env:COMPUTERNAME) Completed Validating that DCBX is set to Not Willing mode." -ForegroundColor Yellow
-
-    ### Storage Spaces Direct
-    Write-Host "Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
-    Write-Host "Cleaning Storage Drives...."
-    #Remove Exisiting virtual disks and storage pools
-    Update-StorageProviderCache
-    Get-StoragePool | Where-Object IsPrimordial -eq $False | Set-StoragePool -IsReadOnly:$False -ErrorAction SilentlyContinue
-    Get-StoragePool | Where-Object IsPrimordial -eq $False | Get-VirtualDisk | Remove-VirtualDisk -Confirm:$False -ErrorAction SilentlyContinue
-    Get-StoragePool | Where-Object IsPrimordial -eq $False | Remove-StoragePool -Confirm:$False -ErrorAction SilentlyContinue
-    Get-PhysicalDisk | Reset-PhysicalDisk -ErrorAction SilentlyContinue
-    Get-Disk | Where-Object Number -ne $null | Where-Object IsBoot -ne $True | Where-Object IsSystem -ne $True | Where-Object PartitionStyle -ne RAW | ForEach-Object {
-        $_ | Set-Disk -isoffline:$False
-        $_ | Set-Disk -isreadonly:$False
-        $_ | Clear-Disk -RemoveData -RemoveOEM -Confirm:$False
-        $_ | Set-Disk -isreadonly:$True
-        $_ | Set-Disk -isoffline:$True
+    if ($clean_disks -or $cluster_check -eq $False) {
+        Write-Host "$($env:COMPUTERNAME) Begin Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
+        Write-Host "$($env:COMPUTERNAME) Cleaning Storage Drives...." -ForegroundColor Green
+        #Remove Exisiting virtual disks and storage pools
+        Update-StorageProviderCache
+        Get-StoragePool | Where-Object IsPrimordial -eq $False | Set-StoragePool -IsReadOnly:$False -ErrorAction SilentlyContinue | Out-Null
+        Get-StoragePool | Where-Object IsPrimordial -eq $False | Get-VirtualDisk | Remove-VirtualDisk -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
+        Get-StoragePool | Where-Object IsPrimordial -eq $False | Remove-StoragePool -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
+        Get-PhysicalDisk | Reset-PhysicalDisk -ErrorAction SilentlyContinue | Out-Null
+        Get-Disk | Where-Object Number -ne $null | Where-Object IsBoot -ne $True | Where-Object IsSystem -ne $True | Where-Object PartitionStyle -ne RAW | ForEach-Object {
+            $_ | Set-Disk -isoffline:$False
+            $_ | Set-Disk -isreadonly:$False
+            $_ | Clear-Disk -RemoveData -RemoveOEM -Confirm:$False
+            $_ | Set-Disk -isreadonly:$True
+            $_ | Set-Disk -isoffline:$True
+        }
+        #Inventory Storage Disks
+        Get-Disk | Where-Object {Number -Ne $Null -and IsBoot -Ne $True -and IsSystem -Ne $True -and PartitionStyle -Eq RAW} | Group-Object -NoElement -Property FriendlyName | Format-Table
+        Write-Host "$($env:COMPUTERNAME) Completed Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
     }
-    #Inventory Storage Disks
-    Get-Disk | Where-Object {Number -Ne $Null -and IsBoot -Ne $True -and IsSystem -Ne $True -and PartitionStyle -Eq RAW} | Group-Object -NoElement -Property FriendlyName | Format-Table
-    #Get-Disk | Where-Object Number -Ne $Null | Where-Object IsBoot -Ne $True | Where-Object IsSystem -Ne $True | Where-Object PartitionStyle -Eq RAW | Group-Object -NoElement -Property FriendlyName | Format-Table
 }
 #=============================================================================
 # Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
