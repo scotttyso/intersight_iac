@@ -1,7 +1,14 @@
 {
+    "active_directory": {
+        "admin": "RICH\\tyscott",
+        "domain": "RICH",
+        "fqdn": "rich.ciscolabs.com",
+        "ou": "ou=AzS-HCI-M6-C1,DC=rich,DC=ciscolabs,DC=com",
+        "naming_prefix": "hci",
+        "server": "ad1.rich.ciscolabs.com"
+    },
     "cluster": "AzS-HCI-M6-C1",
     "cluster_address": "192.168.126.25",
-    "domain": "RICH",
     "file_share_witness": {
         "domain": "RICH",
         "host": "fsw01.rich.ciscolabs.com",

@@ -1983,7 +1983,7 @@ def bulk_post_request(kwargs):
     kwargs.apiBody = {'Requests':[]}
     for e in kwargs.post_list:
         kwargs.apiBody['Requests'].append(
-            {'Body':e, 'ClassId':'bulk.RestSubRequest', 'ObjectType':'bulk.RestSubRequest', 'Verb':'POST', 'Uri':f'/v1/{kwargs.uri}'})
+            {'Body':e, 'ClassId':'bulk.RestSubRequest', 'ObjectType':'bulk.RestSubRequest', 'Uri':f'/v1/{kwargs.uri}', 'Verb':'POST'})
     kwargs.method = 'post'
     kwargs.qtype  = 'bulk_request'
     kwargs.uri    = 'bulk/Requests'

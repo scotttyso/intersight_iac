@@ -55,6 +55,13 @@ $password   = ConvertTo-SecureString $env:windows_administrator_password -AsPlai
 $credential = New-Object System.Management.Automation.PSCredential ($username,$password);
 $client_list = [object[]] @()
 $gwsman = Get-WSManCredSSP
+if ($jdata.proxy) {
+    if ($jdata.proxy.username) {
+        $proxy_user  = $jdata.proxy.username
+        $proxy_pass  = ConvertTo-SecureString $env:proxy_password -AsPlainText -Force;
+        $proxy_creds = New-Object System.Management.Automation.PSCredential ($proxy_user,$proxy_pass);
+    }
+}
 
 #=============================================================================
 # Function: Node Length Check and Reboot Check
@@ -116,6 +123,28 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Write-Host "Script must run with elevated Administrator permissions...Exiting" -Foreground Red
     Exit 1
 }
+#=============================================================================
+# Install AzureStackHCI EnvironmentChecker
+#=============================================================================
+if ($jdata.proxy) {
+    
+}
+#$proxy = ([System.Net.WebRequest]::GetSystemWebproxy()).IsBypassed("https://portal.azure.com")
+if (!(Get-Module -ListAvailable -Name PowerShellGet)) {
+    Write-Host " * $($env:COMPUTERNAME) Installing PowerShellGet." -ForegroundColor Green
+    Install-Module PowerShellGet -Confirm:$False -Force
+} else { Write-Host " * $($env:COMPUTERNAME) PowerShellGet Already Installed." -ForegroundColor Cyan }
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+if (!(Get-Module -ListAvailable -Name AzStackHci.EnvironmentChecker)) {
+    Write-Host " * $($env:COMPUTERNAME) Installing AzStackHci.EnvironmentChecker." -ForegroundColor Green
+    Install-Module AzStackHci.EnvironmentChecker -Confirm:$False -Force
+} else { Write-Host " * $($env:COMPUTERNAME) AzStackHci.EnvironmentChecker Already Installed." -ForegroundColor Cyan }
+if (!(Get-Module -ListAvailable -Name AsHciADArtifactsPreCreationTool)) {
+    Write-Host " * $($env:COMPUTERNAME) Installing AsHciADArtifactsPreCreationTool." -ForegroundColor Green
+    Install-Module AsHciADArtifactsPreCreationTool -Confirm:$False -Force
+} else { Write-Host " * $($env:COMPUTERNAME) AsHciADArtifactsPreCreationTool Already Installed." -ForegroundColor Cyan }
+
+
 #=============================================================================
 # Enable WSManCredSSP Client on Local Machine
 #=============================================================================
@@ -672,13 +701,12 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
     Write-Host "$($env:COMPUTERNAME) Begin Preparing disks for Storage Spaces Direct." -ForegroundColor Yellow
     $node_cluster_check = $False
     $jdata = $Using:jdata
-    $cluster_check = Get-Cluster -Domain $jdata.domain | Get-ClusterNode | Where-Object { $_.Name -eq $env:COMPUTERNAME }
+    $cluster_check = Get-Cluster -Domain $jdata.active_directory.domain | Get-ClusterNode | Where-Object { $_.Name -eq $env:COMPUTERNAME }
     if ($cluster_check) { 
         $s2d_check = Get-ClusterStorageSpacesDirect -node $env:COMPUTERNAME
         if ($s2d_check.State -eq "Enabled") { $node_cluster_check = $True }
     }
     if ($clean_disks -or $node_cluster_check -eq $False) {
-        #Remove Exisiting virtual disks and storage pools
         Write-Host "$($env:COMPUTERNAME) Cleaning Storage Drives...." -ForegroundColor Green
         Update-StorageProviderCache
         Get-StoragePool | Where-Object IsPrimordial -eq $False | Set-StoragePool -IsReadOnly:$False -ErrorAction SilentlyContinue | Out-Null
@@ -695,7 +723,7 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         #Inventory Storage Disks
         Get-Disk | Where-Object {Number -Ne $Null -and IsBoot -Ne $True -and IsSystem -Ne $True -and PartitionStyle -Eq RAW} | Group-Object -NoElement -Property FriendlyName | Format-Table
         Write-Host "$($env:COMPUTERNAME) Completed Preparing disk for Storage Spaces Direct" -ForegroundColor Yellow
-    } elseif ($node_cluster_check.State -eq "Enabled") {
+    } elseif ($node_cluster_check -eq $True) {
         Write-Host "$($env:COMPUTERNAME) Already Configured for Storage Spaces Direct." -ForegroundColor Cyan
         Write-Host "$($env:COMPUTERNAME) Completed Preparing disks for Storage Spaces Direct." -ForegroundColor Yellow
     } else {
@@ -710,6 +738,111 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
 Get-PSSession | Remove-PSSession | Out-Null
 $nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
 #=============================================================================
+# Test AzureStackHCI Connectivity Readiness
+#=============================================================================
+LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
+$sessions = Get-PSSession | Where-Object {$_.Transport -eq "WSMan"}
+$sessions | Format-Table | Out-String|ForEach-Object {Write-Host $_}
+if ($jdata.proxy) { $session_results = Invoke-AzStackHciConnectivityValidation -PassThru -PsSession $sessions
+} else {
+    if ($proxy_creds) {
+        $session_results = Invoke-AzStackHciConnectivityValidation -PassThru -PsSession $sessions -Proxy $jdata.proxy.host -ProxyCredential $proxy_creds
+    } else { $session_results = Invoke-AzStackHciConnectivityValidation -PassThru -PsSession $sessions -Proxy $jdata.proxy.host }
+}
+$test_success = $True
+foreach ($result in $session_results) {
+    foreach($data in $result.AdditionalData) {
+        if ($data.PSComputerName) { $cluster_host = $data.PSComputerName
+        } else {$cluster_host = $data.Source }
+        if ($result.Status -eq "Succeeded") {
+            Write-Host "$cluster_host Result: $($result.Status) Test: $($result.Name)" -ForegroundColor Green
+        } else {
+            Write-Host "$cluster_host Result: $($result.Status) Test: $($result.Name)" -ForegroundColor Red
+            Write-Host "Test Description: $($result.Description)" -ForegroundColor Cyan
+            Write-Host "Test Additional Data: $($result.AdditionalData)" -ForegroundColor Cyan
+            Write-Host "Recommended Steps to Remediate: $($result.Remediation)" -ForegroundColor Cyan
+            Write-Host "For Further Assistance from Microsoft Refer to the following URL:" -ForegroundColor Yellow
+            Write-Host "https://learn.microsoft.com/en-us/azure-stack/hci/manage/troubleshoot-environment-validation-issues" -ForegroundColor Yellow
+            $test_success = $False
+        }
+    }
+}
+if ($test_success -eq $False) {
+    Write-Host "Closing Environment...Exiting Script." -ForegroundColor Yellow
+    Stop-Transcript
+    Exit 1
+}
+#=============================================================================
+# Test AzureStackHCI Hardware Readiness
+#=============================================================================
+if ($jdata.proxy) { $session_results = Invoke-AzStackHciHardwareValidation -PassThru -PsSession $sessions
+} else {
+    if ($proxy_creds) {
+        $session_results = Invoke-AzStackHciHardwareValidation -PassThru -PsSession $sessions -Proxy $jdata.proxy.host -ProxyCredential $proxy_creds
+    } else { $session_results = Invoke-AzStackHciHardwareValidation-PassThru -PsSession $sessions -Proxy $jdata.proxy.host }
+}
+$test_success = $True
+foreach ($result in $session_results) {
+    $cluster_host = $result.TargetResourceID
+    if ($result.Status -eq "Succeeded") {
+        Write-Host "$cluster_host Result: $($result.Status) Test: $($result.Name)" -ForegroundColor Green
+    } else {
+        Write-Host "$cluster_host Result: $($result.Status) Test: $($result.Name)" -ForegroundColor Red
+        Write-Host "Test Description: $($result.Description)" -ForegroundColor Cyan
+        Write-Host "Test Additional Data: $($result.AdditionalData)" -ForegroundColor Cyan
+        Write-Host "Recommended Steps to Remediate: $($result.Remediation)" -ForegroundColor Cyan
+        Write-Host "For Further Assistance from Microsoft Refer to the following URL:" -ForegroundColor Yellow
+        Write-Host "https://learn.microsoft.com/en-us/azure-stack/hci/manage/troubleshoot-environment-validation-issues"-ForegroundColor Yellow
+        $test_success = $False
+    }
+}
+if ($test_success -eq $False) {
+    Write-Host "Closing Environment...Exiting Script." -ForegroundColor Yellow
+    Stop-Transcript
+    Exit 1
+}
+#=============================================================================
+# Test AzureStackHCI Active Directory Readiness
+#=============================================================================
+$ad_user = $jdata.active_directory.admin
+$ad_pass = ConvertTo-SecureString $env:windows_administrator_password -AsPlainText -Force;
+$adcreds = New-Object System.Management.Automation.PSCredential ($ad_user,$ad_pass)
+$ad =  $jdata.active_directory
+$params = @(
+    ADOUPath = $ad.ou
+    DomainFQDN = $ad.fqdn
+    NamingPrefix = $ad.naming_prefix
+    ActiveDirectoryServer = $ad.server
+    ActiveDirectoryCredentials = $adcreds
+    ClusterName = $jdata.cluster
+)
+$ad_test = AsHciADArtifactsPreCreationTool -AsHciDeploymentUserCredential $adcreds -AsHciOUName $ad.ou -AsHciPhysicalNodeList $jdata.node_list -DomainFQDN $ad.fqdn -AsHciClusterName $jdata.cluster -AsHciDeploymentPrefix $ad.name_prefix
+if ($ad_test -eq $True) { Invoke-AzStackHciExternalActiveDirectoryValidation @params }
+#=============================================================================
+# Customize the AzureStack HCI OS Environment
+#=============================================================================
+$CandidateClusterNode = [object[]] @($jdata.node_list[0])
+LoginNodeList -credential $credential -cssp $True -node_list $CandidateClusterNode
+$sessions = Get-PSSession
+$session_results = Invoke-Command $sessions -scriptblock {
+    Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
+    Write-Host "$($env:COMPUTERNAME) Beginning the Test Cluster Script..." -ForegroundColor Yellow
+    #$tcluster = Test-Cluster -Node $Using:jdata.node_list -Include "System Configuration", "Networking", "Inventory", “Storage Spaces Direct”
+    Write-Host "PLEASE TAKE THE TIME TO REVIEW THE RESULTS of the TEST CLUSTER SCRIPT In the Following Location:" -ForegroundColor Cyan
+    Write-Host "Computer $($env:COMPUTERNAME) " -ForegroundColor Cyan
+    Write-Host "Computer $($env:COMPUTERNAME) " -ForegroundColor Cyan
+    Return New-Object PsObject -property @{completed=$True}
+}
+#=============================================================================
+# Setup Environment for Next Loop; Sleep 10 Minutes if reboot_count gt 0
+#=============================================================================
+Get-PSSession | Remove-PSSession | Out-Null
+$nrc = NodeAndRebootCheck -session_results $session_results -node_list $jdata.node_list
+Stop-Transcript
+Exit 0
+
+
+#=============================================================================
 # Customize the AzureStack HCI OS Environment
 #=============================================================================
 $CandidateClusterNode = [object[]] @($jdata.node_list[0])
@@ -721,7 +854,7 @@ $session_results = Invoke-Command $sessions -scriptblock {
     Write-Host " Validating Cluster Nodes..." -ForegroundColor Yellow
     Test-Cluster -Node $nodes -Include "System Configuration",Networking,Inventory, “Storage Spaces Direct”
     Write-Host " Creating the cluster..." -ForegroundColor Yellow
-    New-Cluster -Name $cluster -Node $nodes -StaticAddress $Using:jdata.cluster_address -NoStorage
+    New-Cluster -Name $Using:cluster -Node $Using:jdata.node_list -StaticAddress $Using:jdata.cluster_address -NoStorage
     Get-Cluster | Format-Table Name, SharedVolumesRoot
     Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Checking cluster nodes..." -ForegroundColor Yellow
@@ -739,7 +872,7 @@ $nrc = NodeAndRebootCheck -session_results $session_results -node_list $Candidat
 $node_list = (Get-ClusterNode -Cluster $cluster).Name
 LoginNodeList -credential $credential -cssp $False -node_list $node_list
 $sessions = Get-PSSession
-$session_results = Invoke-Command $node -scriptblock {
+$session_results = Invoke-Command $sessions -scriptblock {
     Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Identifying and Removing Standalone Network ATC Intent." -ForegroundColor Yellow
     $intent = Get-NetIntent | Where-Object {$_.Scope -Like 'Host' -and $_.IntentName -EQ 'mgmt_compute_storage'}
