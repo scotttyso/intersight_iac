@@ -37,7 +37,7 @@ try:
     from dotmap import DotMap
     from json_ref_dict import materialize, RefDict
     from pathlib import Path
-    import argparse, codecs, json, logging, os, platform
+    import argparse, codecs, logging, os, platform, yaml
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -155,18 +155,18 @@ def main():
     # Build Deployment Library
     #==============================================
     kwargs = isight.api('organization').all_organizations(kwargs)
-    if not kwargs.args.json_file == None:
-        if not os.path.isfile(kwargs.args.json_file):
+    if not kwargs.args.yaml_file == None:
+        if not os.path.isfile(kwargs.args.yaml_file):
             prRed(f'\n-------------------------------------------------------------------------------------------\n')
             prRed(f'  !!ERROR!!')
-            prRed(f'  Did not find the file {kwargs.args.json_file}.')
+            prRed(f'  Did not find the file {kwargs.args.yaml_file}.')
             prRed(f'  Please Validate that you have specified the correct file and path.')
             prRed(f'\n-------------------------------------------------------------------------------------------\n')
-            exit()
+            sys.exit(1)
         else:
-            def try_utf8(json_file):
+            def try_utf8(yaml_file):
                 try:
-                    f = codecs.open(json_file, encoding='utf-8', errors='strict')
+                    f = codecs.open(yaml_file, encoding='utf-8', errors='strict')
                     for line in f: pass
                     pcolor.Green("Valid utf-8")
                     return 'Good'
@@ -174,15 +174,15 @@ def main():
                     pcolor.Green("invalid utf-8")
                     return None
             if 'hcl_inventory' in kwargs.args.process:
-                if try_utf8(kwargs.args.json_file) is None: json_open = open(kwargs.args.json_file, 'r', encoding='utf-16')
-                else: json_open = open(kwargs.args.json_file, 'r')
-            else: json_open = open(kwargs.args.json_file, 'r')
-            kwargs.json_data = DotMap(json.load(json_open))
+                if try_utf8(kwargs.args.yaml_file) is None: yaml_file = open(kwargs.args.yaml_file, 'r', encoding='utf-16')
+                else: yaml_file = open(kwargs.args.yaml_file, 'r')
+            else: yaml_file = open(kwargs.args.yaml_file, 'r')
+            kwargs.json_data = DotMap(yaml.load(yaml_file))
         if kwargs.args.process == 'hcl_inventory':
             json_data = []
             for e in kwargs.json_data:
                 if 'Cisco' in e.Hostname.Manufacturer: json_data.append(e)
-        kwargs.json_data = DotMap(json_data)
+        kwargs.json_data = json_data
     
     if   kwargs.args.process == 'add_policies':  day2tools.intersight_api('add_policies').add_policies(kwargs)
     elif kwargs.args.process == 'add_vlan':      day2tools.intersight_api('add_vlans').add_vlans(kwargs)

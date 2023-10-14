@@ -139,10 +139,6 @@ if (!(Get-Module -ListAvailable -Name AzStackHci.EnvironmentChecker)) {
     Write-Host " * $($env:COMPUTERNAME) Installing AzStackHci.EnvironmentChecker." -ForegroundColor Green
     Install-Module AzStackHci.EnvironmentChecker -Confirm:$False -Force
 } else { Write-Host " * $($env:COMPUTERNAME) AzStackHci.EnvironmentChecker Already Installed." -ForegroundColor Cyan }
-if (!(Get-Module -ListAvailable -Name AsHciADArtifactsPreCreationTool)) {
-    Write-Host " * $($env:COMPUTERNAME) Installing AsHciADArtifactsPreCreationTool." -ForegroundColor Green
-    Install-Module AsHciADArtifactsPreCreationTool -Confirm:$False -Force
-} else { Write-Host " * $($env:COMPUTERNAME) AsHciADArtifactsPreCreationTool Already Installed." -ForegroundColor Cyan }
 
 
 #=============================================================================
@@ -355,16 +351,17 @@ $session_results = Invoke-Command $sessions -ScriptBlock {
         Write-Host "$($env:COMPUTERNAME) Secure Boot State is not Enabled.  Exiting..." -ForegroundColor Red
         Return New-Object PsObject -property @{completed=$False}
     }
-    if (!([System.IO.File]::Exists("$PSScriptRoot/KernelDmaProtection.ps1"))) {
-        Invoke-WebRequest -URI "https://raw.githubusercontent.com/scotttyso/intersight_iac/master/examples/azurestack_hci/KernelDmaProtection.ps1"
+    $file = "./KernelDmaProtection.ps1"
+    if (!([System.IO.File]::Exists("$file"))) {
+        Invoke-WebRequest -URI "https://raw.githubusercontent.com/scotttyso/intersight_iac/master/examples/azurestack_hci/$file" -OutFile "$file"
     }
-    $dma_protection = "$PSScriptRoot/KernelDmaProtection.ps1"
+    $dma_protection = "$file"
     if (!($dma_protection -eq $True)) {
         Write-Host " * $($env:COMPUTERNAME) Failed.  Kernel DMA Protection is not Enabled."  -ForegroundColor Red
         Write-Host "   Manually Check Output of 'msinfo32.exe' for 'Kernel DMA Protection' State: 'On'." -ForegroundColor Red
         Return New-Object PsObject -property @{completed=$False}
     }
-    Remove-Item "$PSScriptRoot/KernelDmaProtection.ps1" | Out-Null
+    Remove-Item "$file" | Out-Null
     ##########
     # MSINFo32.EXE on page 78
     # https://www.tenforums.com/tutorials/68926-verify-if-device-guard-enabled-disabled-windows-10-a.html
@@ -804,20 +801,18 @@ if ($test_success -eq $False) {
 #=============================================================================
 # Test AzureStackHCI Active Directory Readiness
 #=============================================================================
+$file = "AsHciADArtifactsPreCreationTool.ps1"
+if (!([System.IO.File]::Exists("./$file"))) {
+    Invoke-WebRequest -URI "https://raw.githubusercontent.com/scotttyso/intersight_iac/master/examples/azurestack_hci/$file" -OutFile ".\$file"
+}
 $ad_user = $jdata.active_directory.admin
 $ad_pass = ConvertTo-SecureString $env:windows_administrator_password -AsPlainText -Force;
 $adcreds = New-Object System.Management.Automation.PSCredential ($ad_user,$ad_pass)
-$ad =  $jdata.active_directory
-$params = @(
-    ADOUPath = $ad.ou
-    DomainFQDN = $ad.fqdn
-    NamingPrefix = $ad.naming_prefix
-    ActiveDirectoryServer = $ad.server
-    ActiveDirectoryCredentials = $adcreds
-    ClusterName = $jdata.cluster
-)
-$ad_test = AsHciADArtifactsPreCreationTool -AsHciDeploymentUserCredential $adcreds -AsHciOUName $ad.ou -AsHciPhysicalNodeList $jdata.node_list -DomainFQDN $ad.fqdn -AsHciClusterName $jdata.cluster -AsHciDeploymentPrefix $ad.name_prefix
-if ($ad_test -eq $True) { Invoke-AzStackHciExternalActiveDirectoryValidation @params }
+$ad =  $jdata.active_directory 
+$ad_check = Invoke-AzStackHciExternalActiveDirectoryValidation -PassThru -ActiveDirectoryServer $ad.server -ActiveDirectoryCredentials $adcreds -ADOUPath $ad.ou -ClusterName $jdata.cluster -DomainFQDN $ad.fqdn -NamingPrefix $ad.naming_prefix -PhysicalMachineNames $jdata.node_list
+
+Add-KdsRootKey -EffectiveTime ((get-date).addhours(-10))
+& ".\$file" -AsHciClusterName $jdata.cluster -AsHciDeploymentPrefix $ad.naming_prefix -AsHciDeploymentUserCredential $adcreds -AsHciOUName $ad.ou -AsHciPhysicalNodeList $jdata.node_list -DomainFQDN $ad.fqdn
 #=============================================================================
 # Customize the AzureStack HCI OS Environment
 #=============================================================================
@@ -1089,10 +1084,11 @@ if ($jdata.file_share_witness.type -eq "domain") {
 #=============================================================================
 # Configure AzureStack Cluster Wide Settings
 #=============================================================================
+#!#!#!#!#!#
 LoginNodeList -credential $credential -cssp $True -node_list [object[]] @($cluster)
 $sessions = Get-PSSession
 $session_results = Invoke-Command $sessions -scriptblock {
-    Get-ClusterResource -Cluster $cluster -Name "File Share Witness" | Get-ClusterParameter -Name SharePath
+    Get-ClusterResource -Cluster $Using:cluster -Name "File Share Witness" | Get-ClusterParameter -Name SharePath
     Write-Host "Host Name:" $env:COMPUTERNAME -ForegroundColor Green
     Write-Host " Configuring Cluster-Aware Updating ... " -ForegroundColor Yellow
     $clusterName = (Get-cluster).Name

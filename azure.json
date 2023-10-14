@@ -1,6 +1,6 @@
 {
     "active_directory": {
-        "admin": "RICH\\tyscott",
+        "admin": "tyscott",
         "domain": "RICH",
         "fqdn": "rich.ciscolabs.com",
         "ou": "ou=AzS-HCI-M6-C1,DC=rich,DC=ciscolabs,DC=com",
