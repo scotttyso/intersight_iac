@@ -810,7 +810,7 @@ $ad_pass = ConvertTo-SecureString $env:windows_administrator_password -AsPlainTe
 $adcreds = New-Object System.Management.Automation.PSCredential ($ad_user,$ad_pass)
 $ad =  $jdata.active_directory 
 $ad_check = Invoke-AzStackHciExternalActiveDirectoryValidation -PassThru -ActiveDirectoryServer $ad.server -ActiveDirectoryCredentials $adcreds -ADOUPath $ad.ou -ClusterName $jdata.cluster -DomainFQDN $ad.fqdn -NamingPrefix $ad.naming_prefix -PhysicalMachineNames $jdata.node_list
-
+if ($ad_check -eq $True) { Write-Host "True" }
 Add-KdsRootKey -EffectiveTime ((get-date).addhours(-10))
 & ".\$file" -AsHciClusterName $jdata.cluster -AsHciDeploymentPrefix $ad.naming_prefix -AsHciDeploymentUserCredential $adcreds -AsHciOUName $ad.ou -AsHciPhysicalNodeList $jdata.node_list -DomainFQDN $ad.fqdn
 #=============================================================================
@@ -960,6 +960,7 @@ $nodes = (Get-ClusterNode -Cluster $cluster).Name
 #=============================================================================
 # Configure Live Migration Network Services
 #=============================================================================
+#!#!#!#!#
 LoginNodeList -credential $credential -cssp $False -node_list $jdata.node_list
 $sessions = Get-PSSession
 $session_results = Invoke-Command $sessions -scriptblock {
