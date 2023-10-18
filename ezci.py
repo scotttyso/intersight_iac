@@ -237,7 +237,7 @@ def main():
         # Create YAML Files
         #==============================================
         orgs = list(kwargs.imm_dict.orgs.keys())
-        ezfunctions.create_yaml(orgs, kwargs)
+        if len(kwargs.imm_dict.orgs) > 0: ezfunctions.create_yaml(orgs, kwargs)
         for org in orgs:
             #==============================================
             # Policies

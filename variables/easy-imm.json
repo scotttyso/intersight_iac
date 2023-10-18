@@ -6476,7 +6476,9 @@
                         "title": "azurestack",
                         "enum": [
                             "adapter_configuration",
+                            "certificate_management",
                             "device_connector",
+                            "drive_security",
                             "ethernet_adapter",
                             "ethernet_network_control",
                             "ethernet_network",
@@ -6485,6 +6487,7 @@
                             "fibre_channel_adapter",
                             "fibre_channel_network",
                             "fibre_channel_qos",
+                            "ipmi_over_lan",
                             "iscsi_adapter",
                             "iscsi_boot",
                             "iscsi_static_target",

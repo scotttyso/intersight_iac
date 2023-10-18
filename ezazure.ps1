@@ -27,6 +27,18 @@ or implied.
 # Add-WindowsFeature -Name rsat-hyper-v-tools, rsat-adds-tools, failover-clustering, rsat-feature-tools-bitlocker-bdeaducext, gpmc -IncludeManagementTools
 
 #=============================================================================
+# Active Directory RegEx
+#=============================================================================
+# https://learn.microsoft.com/en-us/azure-stack/hci/deploy/deployment-tool-checklist
+# https://learn.microsoft.com/en-us/azure-stack/hci/deploy/deployment-tool-active-directory
+# Active Directory SamAccountName
+# ^(?![\.-])(?:[a-zA-Z0-9-.](?!\.$)){1,21}$
+# Active Directory Object prefix
+# Subscription ID Regex
+# 53614803-d327-4397-bf55-8dedcc24be0d
+# ^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$
+
+#=============================================================================
 # JSON File is a Required Parameter
 # Pull in JSON Content
 #=============================================================================
@@ -51,7 +63,7 @@ $jdata      = Get-Content -Path $j | ConvertFrom-Json
 $cluster    = $jdata.cluster
 $link_speed = $jdata.link_speed
 $username   = $jdata.username
-$password   = ConvertTo-SecureString $env:windows_administrator_password -AsPlainText -Force;
+$password   = ConvertTo-SecureString $env:domain_administrator_password -AsPlainText -Force;
 $credential = New-Object System.Management.Automation.PSCredential ($username,$password);
 $client_list = [object[]] @()
 $gwsman = Get-WSManCredSSP

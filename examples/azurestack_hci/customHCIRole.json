@@ -1,0 +1,60 @@
+{
+    "id": "/subscriptions/<Azure subscription ID>",
+    "properties": {
+        "roleName": "Azure Stack HCI 23H2 validator and registration role",
+        "description": "Custom Azure role to allow subscription-level access to register Azure Stack HCI",
+        "assignableScopes": [
+            "/subscriptions/<Azure subscription ID>"
+        ],
+        "permissions": [
+            {
+                "Actions": [
+                    "Microsoft.Resources/subscriptions/resourceGroups/read",
+                    "Microsoft.Resources/subscriptions/resourceGroups/write",
+                    "Microsoft.Resources/subscriptions/resourceGroups/delete",
+                    "Microsoft.AzureStackHCI/register/action",
+                    "Microsoft.AzureStackHCI/Unregister/Action",
+                    "Microsoft.AzureStackHCI/clusters/*",
+                    "Microsoft.Authorization/roleAssignments/write",
+                    "Microsoft.Authorization/roleAssignments/read",
+                    "Microsoft.HybridCompute/register/action",
+                    "Microsoft.GuestConfiguration/register/action",
+                    "Microsoft.HybridConnectivity/register/action",
+                    "Microsoft.HybridCompute/machines/extensions/write",
+                    "Microsoft.HybridCompute/machines/extensions/read",
+                    "Microsoft.HybridCompute/machines/extensions/delete",
+                    "Microsoft.HybridCompute/machines/read",
+                    "Microsoft.HybridCompute/machines/write",
+                    "Microsoft.HybridCompute/machines/delete",
+                    "Microsoft.HybridCompute/privateLinkScopes/read",
+                    "Microsoft.GuestConfiguration/guestConfigurationAssignments/read",
+                    "Microsoft.ResourceConnector/register/action",
+                    "Microsoft.ResourceConnector/appliances/read",
+                    "Microsoft.ResourceConnector/appliances/write",
+                    "Microsoft.ResourceConnector/appliances/delete",
+                    "Microsoft.ResourceConnector/locations/operationresults/read",
+                    "Microsoft.ResourceConnector/locations/operationsstatus/read",
+                    "Microsoft.ResourceConnector/appliances/listClusterUserCredential/action",
+                    "Microsoft.ResourceConnector/operations/read",
+                    "Microsoft.Kubernetes/register/action",
+                    "Microsoft.KubernetesConfiguration/register/action",
+                    "Microsoft.ExtendedLocation/register/action",
+                    "Microsoft.HybridContainerService/register/action",
+                    "Microsoft.KubernetesConfiguration/extensions/write",
+                    "Microsoft.KubernetesConfiguration/extensions/read",
+                    "Microsoft.KubernetesConfiguration/extensions/delete",
+                    "Microsoft.KubernetesConfiguration/extensions/operations/read",
+                    "Microsoft.KubernetesConfiguration/namespaces/read",
+                    "Microsoft.KubernetesConfiguration/operations/read",
+                    "Microsoft.ExtendedLocation/customLocations/deploy/action",
+                    "Microsoft.ExtendedLocation/customLocations/read",
+                    "Microsoft.ExtendedLocation/customLocations/write",
+                    "Microsoft.ExtendedLocation/customLocations/delete"
+                ],
+                "notActions": [],
+                "dataActions": [],
+                "notDataActions": []
+            }
+        ]
+    }
+}

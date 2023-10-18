@@ -307,9 +307,13 @@ class imm(object):
             #=====================================================
             # Build Server Dictionaries - Standalone
             #=====================================================
-            kwargs.sensitive_var = 'local_user_password'
-            kwargs  = ezfunctions.sensitive_var_value(kwargs)
-            password=kwargs.var_value
+            print(kwargs.imm_dict)
+            exit()
+            if kwargs.imm.cimc_default == False:
+                kwargs.sensitive_var = 'local_user_password'
+                kwargs  = ezfunctions.sensitive_var_value(kwargs)
+                password=kwargs.var_value
+            else: password='Password'
             kwargs.yaml.device_list = [DotMap(
                 device_type   = 'imc',
                 devices       = kwargs.imm.cimc,
@@ -2138,9 +2142,12 @@ class wizard(object):
                 if v.intersight_type == 'policy' and 'Standalone' in v.target_platforms and not '.' in k:
                     policy_list.append(k)
             pop_list = kwargs.ezdata.converged_pop_list.properties.azurestack.enum
-            for i in pop_list: policy_list.remove(i)
+            for i in pop_list:
+                if i in policy_list: policy_list.remove(i)
             kwargs = imm('compute_environment').compute_environment(kwargs)
             for i in policy_list: kwargs = eval(f'imm(i).{i}(kwargs)')
+            print(json.dumps(kwargs.imm_dict.orgs, indent=4))
+            exit()
         else:
             for k, v in kwargs.ezdata.items():
                 if v.intersight_type == 'policy' and ('chassis' in v.target_platforms or 'FIAttached' in v.target_platforms
@@ -2253,18 +2260,11 @@ class wizard(object):
             item = DotMap(item)
             kwargs.orgs.append(item.organization)
             kwargs.org            = item.organization
-            kwargs.virtualization = item.virtualization
-            ecount = 0
-            for e in kwargs.virtualization:
-                kwargs.virtualization[ecount].syslog_server = item.policies.syslog.servers[0]
-                ecount += 1
             if kwargs.args.deployment_type == 'azurestack':
-                kwargs.imm.cimc     = item.cimc
-                kwargs.imm.firmware = item.firmware
-                kwargs.imm.policies = item.policies
-                kwargs.imm.profiles = item.profiles
-                kwargs.imm.tags     = kwargs.ezdata.tags
-                kwargs.imm.username = item.username
+                kwargs.imm.cimc_default= item.cimc_default
+                kwargs.imm.firmware    = item.firmware
+                kwargs.imm.policies    = item.policies
+                kwargs.imm.tags        = kwargs.ezdata.tags
                 for p in item.profiles:
                     dlength = len(p.network.data.split('/'))
                     dsplit  = p.network.data.split('/')
@@ -2297,6 +2297,9 @@ class wizard(object):
                             mgmt_port    = f"{msplit[0]}/{int(msplit[1]+z)}",
                             network_port = nport)
             else:
+                kwargs.virtualization = item.virtualization
+                for e in range(0,len(list(kwargs.virtualization.keys()))+1):
+                    kwargs.virtualization[e].syslog_server = item.policies.syslog.servers[0]
                 if len(str(item.pools.prefix)) == 1: item.pools.prefix = f'0{item.pools.prefix}'
                 for i in item.domains:
                     i = DotMap(i)

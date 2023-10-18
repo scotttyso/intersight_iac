@@ -1,0 +1,90 @@
+---
+protocols:
+  dhcp_servers:
+    - 10.101.128.15
+    - 10.101.128.16
+  dns_domains:
+    - rich.ciscolabs.com
+  dns_servers:
+    - 10.101.128.15
+    - 10.101.128.16
+  timezone: America/New_York
+  ntp_servers:
+    - 10.101.128.15
+    - 10.101.128.16
+azurestack:
+  - active_directory:
+      domain: rich.ciscolabs.com
+      administrator: tyscott
+    azurestack_admin: hciadmin
+    clusters:
+      - members:
+          - cimc: 198.18.1.1
+            hostname: rich01
+            management: 198.18.2.1
+          - cimc: 198.18.1.2
+            hostname: rich02
+            management: 198.18.2.2
+          - cimc: 198.18.1.3
+            hostname: rich03
+            management: 198.18.2.3
+          - cimc: 198.18.1.4
+            hostname: rich04
+            management: 198.18.2.4
+        name: RICH-CL01
+        subscription: 53614803-d327-4397-bf55-8dedcc24be0d
+    object_prefix: AZS
+    ou: AzureStack
+intersight:
+  cimc_default: False
+  organization: default
+  firmware: 5.1(0.230054)
+  policies:
+    prefix: ''
+    local_user: admin
+    snmp:
+      contact: rich-lab@cisco.com
+      location: Richfield SE Lab - Room 142 Rack C
+      username: snmpadmin
+      servers:
+        - 10.101.128.24
+        - 10.101.128.25
+    syslog:
+      servers:
+        - 10.101.128.24
+        - 10.101.128.25
+nxos_configure: false
+nxos: []
+vlans:
+  - vlan_type: ooband
+    vlan_id: 1000
+    name: OOB-MGMT
+    network: 192.168.64.1/23
+    configure_l2: false
+    configure_l3: false
+    switch_type: ooband
+  - vlan_type: inband
+    vlan_id: 1001
+    name: IB-MGMT
+    network: 198.18.1.1/24
+    configure_l2: false
+    configure_l3: false
+    switch_type: network
+  - vlan_type: storage
+    vlan_id: 711
+    name: Storage711
+    network: 198.18.11.254/24
+    configure_l2: false
+    configure_l3: false
+    switch_type: network
+    ranges:
+      server: 198.18.11.1-50
+  - vlan_type: storage
+    vlan_id: 712
+    name: Storage712
+    network: 198.18.12.254/24
+    configure_l2: false
+    configure_l3: false
+    switch_type: network
+    ranges:
+      server: 198.18.12.1-50
