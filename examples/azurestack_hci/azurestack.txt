@@ -1,0 +1,127 @@
+New-Item -Path HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard -Force
+New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard -Name EnableVirtualizationBasedSecurity -Value 1 -PropertyType DWord -Force
+
+New-VMSwitch -SwitchName "AzureStack" -SwitchType Internal
+Get-NetAdapter
+From the output of the Get-NetAdapter cmdlet, find the adapter that includes the virtual switch name you created in the earlier step. Make a note of the ifIndex corresponding to the virtual switch. In the above example, the ifIndex is 20.
+
+New-NetIPAddress -IPAddress 192.168.0.1 -PrefixLength 24 -InterfaceIndex 31
+
+New-NetNat -Name AzureStack -InternalIPInterfaceAddressPrefix 192.168.0.0/24
+
+new-VHD -Path K:\AzureStack-HCI01\disk1.vhdx -SizeBytes 127GB 
+new-VHD -Path K:\AzureStack-HCI02\disk1.vhdx -SizeBytes 127GB
+
+New-Vm -Name AzureStack-HCI01 -MemoryStartupBytes 64GB -VHDPath K:\AzureStack-HCI01\disk1.vhdx -Generation 2 -Path K:\AzureStack-HCI01
+New-Vm -Name AzureStack-HCI02 -MemoryStartupBytes 64GB -VHDPath K:\AzureStack-HCI02\disk1.vhdx -Generation 2 -Path K:\AzureStack-HCI02
+
+Add-VmNetworkAdapter -VmName AzureStack-HCI01
+Add-VmNetworkAdapter -VmName AzureStack-HCI02
+
+Get-VmNetworkAdapter -VmName AzureStack-HCI01|Connect-VmNetworkAdapter -SwitchName AzureStack
+Get-VmNetworkAdapter -VmName AzureStack-HCI02|Connect-VmNetworkAdapter -SwitchName AzureStack
+Get-VmNetworkAdapter -VmName AzureStack-HCI01|Set-VmNetworkAdapter -MacAddressSpoofing On
+Get-VmNetworkAdapter -VmName AzureStack-HCI02|Set-VmNetworkAdapter -MacAddressSpoofing On
+Get-VmNetworkAdapter -VmName AzureStack-HCI01|Set-VmNetworkAdapterVlan -Trunk -NativeVlanId 0 -AllowedVlanIdList 0-1000
+Get-VmNetworkAdapter -VmName AzureStack-HCI02|Set-VmNetworkAdapterVlan -Trunk -NativeVlanId 0 -AllowedVlanIdList 0-1000
+
+Enable-VmTpm -VmName AzureStack-HCI01
+Enable-VmTpm -VmName AzureStack-HCI02
+If the above step fails, you must enable TPM using Hyper-V Manager as follows:
+
+a. In Hyper-V Manager, select the VM, right-click, and from the context menu, select Settings.
+
+b. Go to Hardware > Security and then select the Enable Trusted Platform Module option:
+
+Set-VmProcessor -VmName AzureStack-HCI01 -Count 8
+Set-VmProcessor -VmName AzureStack-HCI02 -Count 8
+
+new-VHD -Path K:\AzureStack-HCI01\data.vhdx -SizeBytes 127GB
+new-VHD -Path K:\AzureStack-HCI01\s2d1.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI01\s2d2.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI01\s2d3.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI01\s2d4.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI01\s2d5.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI01\s2d6.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI02\s2d1.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI02\s2d2.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI02\s2d3.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI02\s2d4.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI02\s2d5.vhdx -SizeBytes 1024GB
+new-VHD -Path K:\AzureStack-HCI02\s2d6.vhdx -SizeBytes 1024GB
+
+
+Add-VMHardDiskDrive -VmName AzureStack-HCI01 -Path K:\AzureStack-HCI01\data.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI01 -Path K:\AzureStack-HCI01\s2d1.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI01 -Path K:\AzureStack-HCI01\s2d2.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI01 -Path K:\AzureStack-HCI01\s2d3.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI01 -Path K:\AzureStack-HCI01\s2d4.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI01 -Path K:\AzureStack-HCI01\s2d5.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI01 -Path K:\AzureStack-HCI01\s2d6.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI02 -Path K:\AzureStack-HCI02\s2d1.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI02 -Path K:\AzureStack-HCI02\s2d2.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI02 -Path K:\AzureStack-HCI02\s2d3.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI02 -Path K:\AzureStack-HCI02\s2d4.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI02 -Path K:\AzureStack-HCI02\s2d5.vhdx
+Add-VMHardDiskDrive -VmName AzureStack-HCI02 -Path K:\AzureStack-HCI02\s2d6.vhdx
+
+Get-VMIntegrationService -VmName AzureStack-HCI01 |Where-Object {$_.name -like "T*"}|Disable-VMIntegrationService
+Get-VMIntegrationService -VmName AzureStack-HCI02 |Where-Object {$_.name -like "T*"}|Disable-VMIntegrationService
+
+Set-VmProcessor -VmName AzureStack-HCI01 -ExposeVirtualizationExtensions $true
+Set-VmProcessor -VmName AzureStack-HCI02 -ExposeVirtualizationExtensions $true
+
+####
+
+Add-NetNatStaticMapping -NatName AzureStack -ExternalIPAddress 0.0.0.0 -InternalIPAddress 192.168.0.92 -Protocol TCP -ExternalPort 53389 -InternalPort 3389
+Add-NetNatStaticMapping -NatName AzureStack -ExternalIPAddress 0.0.0.0 -InternalIPAddress 192.168.0.92 -Protocol TCP -ExternalPort 5443 -InternalPort 443
+Add-NetNatStaticMapping -NatName AzureStack -ExternalIPAddress 0.0.0.0 -InternalIPAddress 192.168.0.93 -Protocol TCP -ExternalPort 63389 -InternalPort 3389
+Add-NetNatStaticMapping -NatName AzureStack -ExternalIPAddress 0.0.0.0 -InternalIPAddress 192.168.0.93 -Protocol TCP -ExternalPort 6443 -InternalPort 443
+
+Start-Vm AzureStack-HCI01
+Start-Vm AzureStack-HCI02
+
+Set-disk 1 -isOffline $false
+Set-Disk 1 -isReadOnly $false
+Initialize-Disk 1 -PartitionStyle GPT
+New-Partition -DiskNumber 1 -UseMaximumSize
+Get-Partition -DiskNumber 1 -PartitionNumber 2 | Format-Volume -FileSystem NTFS
+Get-Partition -DiskNumber 1 -PartitionNumber 2 | Set-Partition -NewDriveLetter D
+
+certreq -accept .\hsg-signing.cer
+$certificatePassword = Read-Host -AsSecureString -Prompt 'Enter a password for the PFX file'
+
+Get-ChildItem -Path Cert:\LocalMachine\My\E54F2F9967219748E0E832E38D381DEC0A5789C6 |
+    Export-PfxCertificate -FilePath C:\encryption.pfx -Password $certificatePassword
+
+$signingCertPass = Read-Host -AsSecureString -Prompt "Signing certificate password"
+$encryptionCertPass = Read-Host -AsSecureString -Prompt "Encryption certificate password"
+
+https://learn.microsoft.com/en-us/windows-server/security/guarded-fabric-shielded-vm/guarded-fabric-install-hgs-in-a-bastion-forest
+# Check if the KDS root key has been set up
+if (-not (Get-KdsRootKey)) {
+    # Adds a KDS root key effective immediately (ignores normal 10 hour waiting period)
+    Add-KdsRootKey -EffectiveTime ((Get-Date).AddHours(-10))
+}
+
+# Create a security group for HGS nodes
+# $hgsNodes = Get-ADGroup -Filter "Name -eq 'HgsServers'"
+$hgsNodes = New-ADGroup -Name 'HgsServers' -GroupScope DomainLocal -PassThru
+
+# Add your HGS nodes to this group
+# If your HGS server object is under an organizational unit, provide the full distinguished name instead of "HGS01"
+$caccount = Get-ADComputer -Identity "r142c-2-8"
+Add-ADGroupMember -Identity $hgsNodes -Members $caccount.DistinguishedName
+
+# Create the gMSA
+New-ADServiceAccount -Name 'HGSgMSA' -DnsHostName 'HGSgMSA.rich.ciscolabs.com' -PrincipalsAllowedToRetrieveManagedPassword $hgsNodes
+
+# Add your HGS nodes to this group
+# If your HGS server object is under an organizational unit, provide the full distinguished name instead of "HGS01"
+Add-ADGroupMember -Identity $hgsNodes -Members $caccount.DistinguishedName
+
+
+Install-ADServiceAccount -Identity 'HGSgMSA'
+Initialize-HgsServer -HgsServiceName 'RICHHgsDNN' -SigningCertificatePath '.\signing.pfx' -SigningCertificatePassword $certificatePassword -EncryptionCertificatePath '.\encryption.pfx' -EncryptionCertificatePassword $certificatePassword -TrustTpm
+Initialize-HgsServer -UseExistingDomain -ServiceAccount 'HGSgMSA' -JeaReviewersGroup 'HgsJeaReviewers' -JeaAdministratorsGroup 'HgsJeaAdmins' -HgsServiceName 'HgsService' -SigningCertificatePath '.\signing.pfx' -SigningCertificatePassword $certificatePassword -EncryptionCertificatePath '.\encryption.pfx' -EncryptionCertificatePassword $certificatePassword -TrustTpm
+
