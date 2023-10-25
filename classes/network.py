@@ -75,28 +75,19 @@ class nxos(object):
         #=====================================================
         for x in range(0,len(nxmap)):
             cmds = []
-            if sw_type == 'network':
-                cmds = deepcopy(base_commands)
+            if sw_type == 'network': cmds = deepcopy(base_commands)
 
             #================================
-            # Append VPC Configuration
+            # Append VPC/VLAN Configuration
             #================================
-            if nxmap[x].get('vpc'):
-                cmds.extend(vpc_config(x, nxmap, kwargs))
-
-            #================================
-            # Append VLAN Configuration
-            #================================
-            if sw_type == 'network':
-                cmds.extend(vlan_config(x, nxmap, kwargs))
+            if nxmap[x].get('vpc'): cmds.extend(vpc_config(x, nxmap, kwargs))
+            if sw_type == 'network': cmds.extend(vlan_config(x, nxmap, kwargs))
 
             #================================
             # Configure Interfaces
             #================================
-            if kwargs.deployment_type == 'azurestack':
-                cmds.extend(add_interfaces_standalone(x, nxmap, kwargs))
-            else:
-                cmds.extend(add_interfaces(x, nxmap, kwargs))
+            if kwargs.deployment_type == 'azurestack': cmds.extend(add_interfaces_standalone(x, nxmap, kwargs))
+            else: cmds.extend(add_interfaces(x, nxmap, kwargs))
             cmds.append('end')
 
             #================================
@@ -294,10 +285,7 @@ def base_configuration(kwargs):
         f"ip domain-name {kwargs.dns_domains[0]}",
         f"ip domain-lookup",
         f"ntp master 3"]
-    if kwargs.deployment_type == 'azurestack':
-        cmds.extend([
-            "feature bgp",
-            "feature dhcp"])
+    if kwargs.deployment_type == 'azurestack': cmds.extend(["feature bgp", "feature dhcp"])
     return cmds
 
 #=====================================================

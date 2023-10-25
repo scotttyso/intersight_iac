@@ -16504,7 +16504,9 @@
                 "intersight_uri": "thermal/Policies",
                 "ObjectType": "thermal.Policy",
                 "target_platforms": [
-                    "chassis"
+                    "chassis",
+                    "FIAttached",
+                    "Standalone"
                 ],
                 "title": "thermal - Thermal - Intersight Uri: thermal/Policies",
                 "x-allOf-name": "thermal.Policy",

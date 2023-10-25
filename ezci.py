@@ -147,8 +147,8 @@ def main():
     #==============================================
     # Send Notification Message
     #==============================================
-    pcolor.LightGray(f'\n{"-"*91}\n\n  Begin Deployment for {kwargs.deployment_type}.')
-    pcolor.LightGray(f'  * Deployment Step is {kwargs.args.deployment_step}.\n\n{"-"*91}\n')
+    pcolor.Green(f'\n{"-"*91}\n\n  Begin Deployment for {kwargs.deployment_type}.')
+    pcolor.Green(f'  * Deployment Step is {kwargs.args.deployment_step}.\n\n{"-"*91}\n')
     #================================================
     # Import Stored Parameters and Add to kwargs
     #================================================
@@ -227,7 +227,7 @@ def main():
         # Configure Storage Appliances
         #==============================================
         if kwargs.args.deployment_type == 'flashstack': kwargs = ci.wizard('build').build_pure_storage(kwargs)
-        elif kwargs.args.deployment_type == 'flexpod':  kwargs = ci.wizard('build').build_netapp(kwargs)
+        #elif kwargs.args.deployment_type == 'flexpod':  kwargs = ci.wizard('build').build_netapp(kwargs)
         #==============================================
         # Configure Domain
         #==============================================
@@ -239,6 +239,7 @@ def main():
         orgs = list(kwargs.imm_dict.orgs.keys())
         if len(kwargs.imm_dict.orgs) > 0: ezfunctions.create_yaml(orgs, kwargs)
         for org in orgs:
+            kwargs.org = org
             #==============================================
             # Policies
             #==============================================
@@ -247,6 +248,7 @@ def main():
                     if kwargs.imm_dict.orgs[org]['policies'].get(ptype):
                         kwargs = eval(f"isight.imm(ptype).policies(kwargs)")
         for org in orgs:
+            kwargs.org = org
             #==============================================
             # Deploy Domain
             #==============================================
@@ -344,7 +346,7 @@ def main():
             if vmware == True:
                 kwargs = vsphere.api('esx').esx(kwargs)
                 kwargs = vsphere.api('powercli').powercli(kwargs)
-    pcolor.LightGray(f'\n{"-"*91}\n\n  !!! Proceedures Complete !!!\n  Closing Environment and Exiting Script...\n\n{"-"*91}\n')
+    pcolor.Green(f'\n{"-"*91}\n\n  !!! Proceedures Complete !!!\n  Closing Environment and Exiting Script...\n\n{"-"*91}\n')
     sys.exit(0)
 
 if __name__ == '__main__':

@@ -215,11 +215,12 @@ class imm(object):
                     vics.append(DotMap(vic_gen= vic_generation, vic_slot=vic_slot))
 
             sg = re.search('-(M[\\d])', i.Model).group(1)
-            if type(vics[0].vic_slot) == str: vs1= (vics[0].vic_slot).lower()
-            else: vs1= vics[0].vic_slot
-            if len(vics) == 2:
-                if type(vics[1].vic_slot) == str: vs2= (vics[1].vic_slot).lower()
-                else: vs2= vics[1].vic_slot
+            if len(vics) > 0:
+                if type(vics[0].vic_slot) == str: vs1= (vics[0].vic_slot).lower()
+                else: vs1= vics[0].vic_slot
+                if len(vics) == 2:
+                    if type(vics[1].vic_slot) == str: vs2= (vics[1].vic_slot).lower()
+                    else: vs2= vics[1].vic_slot
             if len(tpmd) > 0:
                 tpm = 'tpm'
                 if len(vics) == 2:
@@ -307,8 +308,6 @@ class imm(object):
             #=====================================================
             # Build Server Dictionaries - Standalone
             #=====================================================
-            print(kwargs.imm_dict)
-            exit()
             if kwargs.imm.cimc_default == False:
                 kwargs.sensitive_var = 'local_user_password'
                 kwargs  = ezfunctions.sensitive_var_value(kwargs)
@@ -1442,8 +1441,7 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         power_list = []
-        for i in kwargs.chassis:
-            power_list.append(i)
+        for i in kwargs.chassis: power_list.append(i)
         power_list.append('server')
         for i in power_list:
             polVars = dict(
@@ -1837,6 +1835,8 @@ class imm(object):
         # Build Dictionary
         template_types = []
         server_profiles = []
+        print(kwargs.servers)
+        exit()
         for k, v in kwargs.servers.items(): server_profiles.append(v.template)
         server_profiles = list(numpy.unique(numpy.array(server_profiles)))
         if 'fcp' in kwargs.protocols: template_types.append('fcp')
@@ -2265,41 +2265,40 @@ class wizard(object):
                 kwargs.imm.firmware    = item.firmware
                 kwargs.imm.policies    = item.policies
                 kwargs.imm.tags        = kwargs.ezdata.tags
-                for p in item.profiles:
-                    dlength = len(p.network.data.split('/'))
-                    dsplit  = p.network.data.split('/')
-                    msplit  = p.network.management.split('/')
-                    if dlength == 3:
-                        bk    = int((item.breakout.split('-')[1]).replace('x', ''))
-                        sport = int(dsplit[1])
-                        bport = int(dsplit[2])
-                        if not bport<=bk:
-                            prRed('!!! ERROR !!!')
-                            prRed(f'Breakout Port Format Must be in the format eth1/X/[1-{bk}]')
-                            prRed(f'"{p.data}" is not correct')
-                            sys.exit(1)
-                        zcount= sport-1
-                    #==================================
-                    # Build Profile Network Dictionary
-                    #==================================
-                    suffix = int(p.suffix_digits)
-                    pprefix= p.profile_start[:-(suffix)]
-                    pstart = int(p.profile_start[-(suffix):])
-                    for z in range(0,len(item.cimc)):
-                        name   = f"{pprefix}{str(pstart+z).zfill(suffix)}"
-                        if dlength == 3:
-                            bport = bport+z-(zcount*bk)
-                            nport = f"{dsplit[0]}/{sport}/{bport}"
-                            if bport == bk: bport=1; sport = sport+1; zcount = zcount+1
-                        else: nport = f"{dsplit[0]}/{int(dsplit[1]+z)}"
-                        kwargs.network.imm[name] = DotMap(
-                            data_port    = ['A', 'B'],
-                            mgmt_port    = f"{msplit[0]}/{int(msplit[1]+z)}",
-                            network_port = nport)
+                #for p in item.profiles:
+                #    dlength = len(p.network.data.split('/'))
+                #    dsplit  = p.network.data.split('/')
+                #    msplit  = p.network.management.split('/')
+                #    if dlength == 3:
+                #        bk    = int((item.breakout.split('-')[1]).replace('x', ''))
+                #        sport = int(dsplit[1])
+                #        bport = int(dsplit[2])
+                #        if not bport<=bk:
+                #            prRed('!!! ERROR !!!')
+                #            prRed(f'Breakout Port Format Must be in the format eth1/X/[1-{bk}]')
+                #            prRed(f'"{p.data}" is not correct')
+                #            sys.exit(1)
+                #        zcount= sport-1
+                #    #==================================
+                #    # Build Profile Network Dictionary
+                #    #==================================
+                #    suffix = int(p.suffix_digits)
+                #    pprefix= p.profile_start[:-(suffix)]
+                #    pstart = int(p.profile_start[-(suffix):])
+                #    for z in range(0,len(item.cimc)):
+                #        name   = f"{pprefix}{str(pstart+z).zfill(suffix)}"
+                #        if dlength == 3:
+                #            bport = bport+z-(zcount*bk)
+                #            nport = f"{dsplit[0]}/{sport}/{bport}"
+                #            if bport == bk: bport=1; sport = sport+1; zcount = zcount+1
+                #        else: nport = f"{dsplit[0]}/{int(dsplit[1]+z)}"
+                #        kwargs.network.imm[name] = DotMap(
+                #            data_port    = ['A', 'B'],
+                #            mgmt_port    = f"{msplit[0]}/{int(msplit[1]+z)}",
+                #            network_port = nport)
             else:
                 kwargs.virtualization = item.virtualization
-                for e in range(0,len(list(kwargs.virtualization.keys()))+1):
-                    kwargs.virtualization[e].syslog_server = item.policies.syslog.servers[0]
+                for e in range(0,len(kwargs.virtualization)): kwargs.virtualization[e].syslog_server = item.policies.syslog.servers[0]
                 if len(str(item.pools.prefix)) == 1: item.pools.prefix = f'0{item.pools.prefix}'
                 for i in item.domains:
                     i = DotMap(i)
