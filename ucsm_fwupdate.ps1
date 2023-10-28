@@ -671,6 +671,9 @@ Try {
                     $server = Get-EsxCli -VMHost $vhost
                     Write-Log "Host $vhost ConnectionState is '$($server.ConnectionState)'" -ForegroundColor Cyan
                     Write-Log ""
+                    Write-Log "Rebooting: '$vhost'." -ForegroundColor Cyan
+                    Write-Log ""
+                    Restart-VMHost -VMHost $vhost -RunAsync -Confirm:$False | Out-Null
                     ${ServerProfileFwList} = @((${ServerProfileList} | Where-Object {$_.name -eq $vhost}).dn)
                     Wait-UcsServersActivation
                     #if ($ydata.upgrade.vum_update -eq $true) {
