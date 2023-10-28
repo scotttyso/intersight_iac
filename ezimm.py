@@ -10,7 +10,7 @@ It uses argparse to take in the following CLI arguments:
     j or json_file:             IMM Transition JSON export to convert to HCL.
     l or load-config            Flag to Load Previously Saved YAML Configuration Files.
     k or intersight-secret-key: Name of the file containing The Intersight secret key for the HTTP signature scheme.
-    t or deploy-type:           Deployment Type.  Values are: Intersight or Terraform
+    t or deployment-method:     Deployment Method.  Values are: Intersight or Terraform
     v or api-key-v3:            Flag for API Key Version 3.
 """
 #=============================================================================
@@ -69,9 +69,9 @@ def cli_arguments():
         '-l', '--load-config', action='store_true',
         help='Skip Wizard and Just Load Configuration Files.')
     Parser.add_argument(
-        '-t', '--deploy-type', default=None,
-        help = 'Deployment Type values are: \
-            1.  Intersight \
+        '-t', '--deployment-method', default=None,
+        help = 'Deployment Method values are: \
+            1.  Python \
             2.  Terraform')
     Parser.add_argument( '-v', '--api-key-v3', action='store_true', help='Flag for API Key Version 3.' )
     kwargs = DotMap()
@@ -325,59 +325,76 @@ def create_terraform_workspaces(orgs, kwargs):
 #=================================================================
 def main_menu(kwargs):
     pcolor.Cyan(f'\n{"-"*91}\n\n  Starting the Easy IMM Configuration Wizard!\n\n{"-"*91}\n')
+    kwargs = questions.previous_configuration(kwargs)
     kwargs.main_menu_list = []
     kwargs = questions.main_menu_deployment_type(kwargs)
-    if not re.search('Exit|Deploy', kwargs.deployment_type):
-        #==============================================
-        # Prompt User with Questions
-        #==============================================
-        kwargs = questions.previous_configuration(kwargs)
-        if len(kwargs.imm_dict.orgs.keys()) == 0:
-            kwargs = questions.organization(kwargs)
-            kwargs.imm_dict.orgs[kwargs.org] = DotMap()
-        else:
-            kwargs.org = 'default'
-            if kwargs.imm_dict.orgs[kwargs.org].get('wizard'):
-                for k,v in kwargs.imm_dict.orgs[kwargs.org].wizard.items(): kwargs[k] = v
+    def running_thru_orgs(kwargs):
+        if kwargs.deployment_type == 'Individual':
+            kwargs.imm_dict.orgs[kwargs.org].wizard.build_type = 'Interactive'
+        if kwargs.deployment_type == 'Profile':
+            kwargs.imm_dict.orgs[kwargs.org].wizard.build_type = 'Machine'
         if not kwargs.imm_dict.orgs[kwargs.org].wizard.build_type:
             kwargs = questions.main_menu_build_type(kwargs)
-        if not kwargs.imm_dict.orgs[kwargs.org].wizard.deploy_type:
-            kwargs = questions.main_menu_deploy_type(kwargs)
+        if not kwargs.imm_dict.orgs[kwargs.org].wizard.deployment_method:
+            kwargs = questions.main_menu_deployment_method(kwargs)
         if re.search('Individual|Profile', kwargs.deployment_type):
             if not kwargs.imm_dict.orgs[kwargs.org].wizard.target_platform:
                 kwargs = questions.target_platform(kwargs)
-        elif re.search('FIAttached|Standalone', kwargs.deployment_type): kwargs.target_platform = kwargs.deployment_type
-        if not kwargs.imm_dict.orgs[kwargs.org].wizard.operating_systems:
-            kwargs = questions.main_menu_operating_systems(kwargs)
-        if not kwargs.imm_dict.orgs[kwargs.org].wizard.assignment_method:
-            kwargs = questions.main_menu_assignment_method(kwargs)
-        if kwargs.build_type == 'Machine':
-            if not kwargs.imm_dict.orgs[kwargs.org].wizard.discovery:
-                kwargs = questions.main_menu_discovery(kwargs)
-        if not kwargs.imm_dict.orgs[kwargs.org].policies.name_prefix:
-            kwargs = questions.main_menu_name_prefix(kwargs)
-            kwargs = questions.main_menu_name_suffix(kwargs)
-            for p in ['pools', 'policies']:
-                kwargs.imm_dict.orgs[kwargs.org][p].name_prefix.default = kwargs.name_prefix
-                kwargs.imm_dict.orgs[kwargs.org][p].name_suffix.default = kwargs.name_suffix
+        elif re.search('FIAttached|Standalone', kwargs.deployment_type):
+            kwargs.target_platform = kwargs.deployment_type
+            if not kwargs.imm_dict.orgs[kwargs.org].wizard.operating_systems:
+                kwargs = questions.main_menu_operating_systems(kwargs)
+            if not kwargs.imm_dict.orgs[kwargs.org].wizard.assignment_method:
+                kwargs = questions.main_menu_assignment_method(kwargs)
+            if kwargs.imm_dict.orgs[kwargs.org].wizard.build_type == 'Machine':
+                if not kwargs.imm_dict.orgs[kwargs.org].wizard.discovery:
+                    kwargs = questions.main_menu_discovery(kwargs)
+        if not 'name_prefix' in list(kwargs.imm_dict.orgs[kwargs.org].wizard.keys()): kwargs = questions.main_menu_name_prefix(kwargs)
+        if not 'name_suffix' in list(kwargs.imm_dict.orgs[kwargs.org].wizard.keys()): kwargs = questions.main_menu_name_suffix(kwargs)
+        for p in ['pools', 'policies']:
+            kwargs.imm_dict.orgs[kwargs.org][p].name_prefix.default = kwargs.name_prefix
+            kwargs.imm_dict.orgs[kwargs.org][p].name_suffix.default = kwargs.name_suffix
+        #==============================================
+        # Create YAML Files
+        #==============================================
+        ezfunctions.create_wizard_yaml(kwargs)
         #==============================================
         # Build Pool/Policy/Profile List
         #==============================================
         kwargs = build_policy_list(kwargs)
         if 'Individual' in kwargs.deployment_type:
             kwargs = questions.main_menu_individual_types(kwargs)
-        if re.search('FIAttached', kwargs.deployment_type):
-            kwargs.ptypes = ['Pools', 'Policies', 'Profiles']
-        if 'Pools' in kwargs.ptypes: kwargs.main_menu_list.extend(kwargs.pool_list)
-        if 'Policies' in kwargs.ptypes: kwargs.main_menu_list.extend(kwargs.policy_list)
-        if 'Profiles' in kwargs.ptypes:
-            if kwargs.target_platform == 'Standalone': kwargs.main_menu_list.extend(['server', 'server_template'])
-            else: kwargs.main_menu_list.extend(['chassis', 'domain', 'server', 'server_template'])
-        if not 'Resource' in kwargs.assignment_method:
-            if 'resource' in kwargs.main_menu_list: kwargs.main_menu_list.remove('resource')
-        else: print(kwargs.assignment_method); exit()
-        if 'Individual' in kwargs.deployment_type:
             kwargs = questions.main_menu_individual(kwargs)
+        elif re.search('FIAttached', kwargs.deployment_type):
+            kwargs.ptypes = ['Pools', 'Policies', 'Profiles']
+            if 'Pools' in kwargs.ptypes: kwargs.main_menu_list.extend(kwargs.pool_list)
+            if 'Policies' in kwargs.ptypes: kwargs.main_menu_list.extend(kwargs.policy_list)
+            if 'Profiles' in kwargs.ptypes:
+                if kwargs.target_platform == 'Standalone': kwargs.main_menu_list.extend(['server', 'server_template'])
+                else: kwargs.main_menu_list.extend(['chassis', 'domain', 'server', 'server_template'])
+        if not 'Resource' in kwargs.imm_dict.orgs[kwargs.org].wizard.assignment_method:
+            if 'resource' in kwargs.main_menu_list: kwargs.main_menu_list.remove('resource')
+        else: print(kwargs.imm_dict.orgs[kwargs.org].wizard.assignment_method); exit()
+        return kwargs
+    if not re.search('Exit|Deploy', kwargs.deployment_type):
+        #==============================================
+        # Prompt User with Questions
+        #==============================================
+        if len(kwargs.imm_dict.orgs.keys()) == 0:
+            kwargs = questions.organization(kwargs)
+            kwargs.imm_dict.orgs[kwargs.org] = DotMap()
+            kwargs = running_thru_orgs(kwargs)
+        else:
+            kwargs = questions.organization(kwargs)
+            orgs = list(kwargs.imm_dict.orgs.keys())
+            if kwargs.org in orgs:
+                for org in orgs:
+                    kwargs.org = org
+                    if kwargs.imm_dict.orgs[kwargs.org].get('wizard'):
+                        for k,v in kwargs.imm_dict.orgs[kwargs.org].wizard.items(): kwargs[k] = v
+                    kwargs = running_thru_orgs(kwargs)
+            else: kwargs = running_thru_orgs(kwargs)
+
     return kwargs
 
 #=================================================================
@@ -394,6 +411,7 @@ def process_wizard(kwargs):
         #==============================================
         if p in kwargs.pool_list or p in kwargs.policy_list or p in profile_list:
             print(f'running {p}')
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             kwargs = build.build_imm(p).ezimm(kwargs)
     return kwargs
 
@@ -468,7 +486,7 @@ def main():
             prRed(f'  Please Validate that you have specified the correct file and path.\n\n{"-"*91}\n')
             sys.exit(1)
         else:
-            kwargs.deploy_type = 'Terraform'
+            kwargs.deployment_type = 'Terraform'
             json_file = kwargs.args.json_file
             json_open = open(json_file, 'r')
             kwargs.json_data = DotMap(json.load(json_open))
@@ -504,14 +522,14 @@ def main():
     exit()
     ezfunctions.create_yaml(orgs, kwargs)
     if len(kwargs.imm_dict.orgs.keys()) > 0:
-        if kwargs.deploy_type == 'Terraform':
+        if kwargs.deployment_type == 'Terraform':
             #==============================================
             # Create Terraform Config and Workspaces
             #==============================================
             ezfunctions.merge_easy_imm_repository(kwargs)
             kwargs = ezfunctions.terraform_provider_config(kwargs)
             kwargs = create_terraform_workspaces(orgs, kwargs)
-        elif kwargs.deploy_type == 'Python':
+        elif kwargs.deployment_type == 'Python':
             #==============================================
             # Pools
             #==============================================

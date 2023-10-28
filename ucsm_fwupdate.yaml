@@ -1,0 +1,17 @@
+---
+ucs_manager: 64.100.14.38
+upgrade:
+  fabric_interconnect: true
+  fw_version: 4.3(2b)
+  image_directory: "./QA/IMAGES"
+  servers: true
+  vum_update: true
+vcenter:
+  clusters:
+    - name: DC-CCIE
+      hosts:
+        - r142a-1-7.rich.ciscolabs.com
+        - r142a-1-8.rich.ciscolabs.com
+      simultanious_count: 1
+  hostname: vcenter.rich.ciscolabs.com
+  license: standard

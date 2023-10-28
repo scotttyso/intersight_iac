@@ -97,7 +97,7 @@ def main_menu_assignment_method(kwargs):
         title        = 'Deployment Type',
         type         = 'string'
     )
-    kwargs.assignment_method = ezfunctions.variablePrompt(kwargs)
+    kwargs.imm_dict.orgs[kwargs.org].wizard.assignment_method = ezfunctions.variablePrompt(kwargs)
     return kwargs
 
 #=================================================================
@@ -110,7 +110,7 @@ def main_menu_discovery(kwargs):
         title        = 'Discovery Status',
         type         = 'boolean'
     )
-    kwargs.discovery = ezfunctions.variablePrompt(kwargs)
+    kwargs.imm_dict.orgs[kwargs.org].wizard.discovery = ezfunctions.variablePrompt(kwargs)
     return kwargs
 
 #=================================================================
@@ -128,16 +128,16 @@ def main_menu_build_type(kwargs):
         title        = 'Automation Type',
         type         = 'string'
     )
-    kwargs.build_type = ezfunctions.variablePrompt(kwargs)
+    kwargs.imm_dict.orgs[kwargs.org].wizard.build_type = ezfunctions.variablePrompt(kwargs)
     return kwargs
 
 #=================================================================
 # Function: Prompt User for Deployment Type: Python/Terraform
 #=================================================================
-def main_menu_deploy_type(kwargs):
-    deploy_type = kwargs.args.deploy_type
-    if deploy_type == None: deploy_type = ''
-    if re.search('Intersight|Terraform', deploy_type): kwargs.deploy_type = deploy_type
+def main_menu_deployment_method(kwargs):
+    deployment_method = kwargs.args.deployment_method
+    if deployment_method == None: deployment_method = ''
+    if re.search('Python|Terraform', deployment_method): kwargs.imm_dict.orgs[kwargs.org].wizard.deployment_method = deployment_method
     else:
         description = 'Choose the Automation Language You want to use to deploy to Intersight.\n'\
         '* Python: This Wizard will Create the YAML Files and Deploy to Intersight.\n'\
@@ -149,7 +149,7 @@ def main_menu_deploy_type(kwargs):
             title        = 'Automation Type',
             type         = 'string'
         )
-    kwargs.deploy_type = ezfunctions.variablePrompt(kwargs)
+    kwargs.imm_dict.orgs[kwargs.org].wizard.deployment_method = ezfunctions.variablePrompt(kwargs)
     return kwargs
 
 #=================================================================
@@ -179,20 +179,24 @@ def main_menu_deployment_type(kwargs):
 # Function: Prompt User for Pools/Policies/Profiles to Create
 #=================================================================
 def main_menu_individual(kwargs):
-    ptypes = ', '.join(kwargs.ptypes)
-    if 'Pools' in kwargs.ptypes: default = 'ip'
-    elif 'Policies' in kwargs.ptypes: default = 'bios'
-    elif 'Profiles' in kwargs.ptypes: default = 'server_template'
-    kwargs.jdata = DotMap(
-        enum         = kwargs.main_menu_list,
-        default      = default,
-        description  = f'Select the {ptypes} to Apply to the Environment:',
-        multi_select = True,
-        sort         = False,
-        title        = ptypes,
-        type         = 'string'
-    )
-    kwargs.main_menu_list = ezfunctions.variablePrompt(kwargs)
+    kwargs.main_menu_list = []
+    for e in kwargs.ptypes:
+        if 'Pools' in e: default = 'ip'; main_menu_list = kwargs.pool_list
+        elif 'Policies' in e: default = 'bios'; main_menu_list = kwargs.policy_list
+        elif 'Profiles' in e:
+            default = 'server_template'
+            if kwargs.target_platform == 'Standalone': main_menu_list = ['server', 'server_template']
+            else: main_menu_list = ['chassis', 'domain', 'server', 'server_template']
+        kwargs.jdata = DotMap(
+            enum         = main_menu_list,
+            default      = default,
+            description  = f'Select the {e} to Apply to the Environment:',
+            multi_select = True,
+            sort         = False,
+            title        = e,
+            type         = 'string'
+        )
+        kwargs.main_menu_list.extend(ezfunctions.variablePrompt(kwargs))
     return kwargs
 
 #=================================================================
@@ -228,7 +232,7 @@ def main_menu_name_prefix(kwargs):
             title       = 'Name Prefix',
             type        = 'string'
         )
-        kwargs.name_prefix = ezfunctions.variablePrompt(kwargs)
+        kwargs.imm_dict.orgs[kwargs.org].wizard.name_prefix = ezfunctions.variablePrompt(kwargs)
     return kwargs
 
 #=================================================================
@@ -248,7 +252,7 @@ def main_menu_name_suffix(kwargs):
             title       = 'Name Suffix',
             type        = 'string'
         )
-        kwargs.name_suffix = ezfunctions.variablePrompt(kwargs)
+        kwargs.imm_dict.orgs[kwargs.org].wizard.name_suffix = ezfunctions.variablePrompt(kwargs)
     return kwargs
 
 #=================================================================
@@ -265,41 +269,40 @@ def main_menu_operating_systems(kwargs):
         title        = 'Operating System(s)',
         type         = 'string'
     )
-    if kwargs.deployment_type == 'Profile': kwargs.jdata.multi_select == False
-    kwargs.operating_systems = ezfunctions.variablePrompt(kwargs)
+    if kwargs.imm_dict.orgs[kwargs.org].wizard.deployment_type == 'Profile': kwargs.jdata.multi_select == False
+    kwargs.imm_dict.orgs[kwargs.org].wizard.operating_systems = ezfunctions.variablePrompt(kwargs)
     return kwargs
 
 #=================================================================
 # Function: Prompt User for Intersight Organization
 #=================================================================
 def organization(kwargs):
-    if len(kwargs.imm_dict.orgs.keys()) == 0:
-        kwargs = isight.api('organization').all_organizations(kwargs)
-        org_list = sorted(list(kwargs.org_moids.keys()), key=str.casefold)
-        org_list.append('Create New')
+    kwargs = isight.api('organization').all_organizations(kwargs)
+    org_list = sorted(list(kwargs.org_moids.keys()), key=str.casefold)
+    org_list.append('Create New')
+    kwargs.jdata = DotMap(
+        enum        = org_list,
+        default     = 'default',
+        description = 'Select an Existing Organization or `Create New`, for the organization to apply these changes within.',
+        sort        = False,
+        title       = 'Intersight Organization',
+        type        = 'string')
+    kwargs.org = ezfunctions.variablePrompt(kwargs)
+    if kwargs.org == 'Create New':
         kwargs.jdata = DotMap(
-            enum        = org_list,
-            default     = 'default',
-            description = 'Select an Existing Organization or `Create New`',
-            sort        = False,
+            description = 'Name for the Organization',
             title       = 'Intersight Organization',
             type        = 'string')
         kwargs.org = ezfunctions.variablePrompt(kwargs)
-        if kwargs.org == 'Create New':
-            kwargs.jdata = DotMap(
-                description = 'Name for the Organization',
-                title       = 'Intersight Organization',
-                type        = 'string')
-            kwargs.org = ezfunctions.variablePrompt(kwargs)
-            kwargs.apiBody = { "Name":f'{kwargs.org}', "ObjectType":"resource.Group" }
-            kwargs.method = 'post'
-            kwargs = isight.api(kwargs.qtype).calls(kwargs)
-            rg_moid = kwargs.pmoid
-            kwargs.apiBody = {
-                "Name":kwargs.org, "ObjectType":"organization.Organization",
-                "ResourceGroups":[{"Moid": rg_moid, "ObjectType":"resource.Group"}]}
-            kwargs = isight.api(kwargs.qtype).calls(kwargs)
-            kwargs.org_moids[kwargs.org] = DotMap(moid = kwargs.pmoid)
+        kwargs.api_body = { "Name":f'{kwargs.org}', "ObjectType":"resource.Group" }
+        kwargs.method = 'post'
+        kwargs = isight.api(kwargs.qtype).calls(kwargs)
+        rg_moid = kwargs.pmoid
+        kwargs.api_body = {
+            "Name":kwargs.org, "ObjectType":"organization.Organization",
+            "ResourceGroups":[{"Moid": rg_moid, "ObjectType":"resource.Group"}]}
+        kwargs = isight.api(kwargs.qtype).calls(kwargs)
+        kwargs.org_moids[kwargs.org] = DotMap(moid = kwargs.pmoid)
     return kwargs
 
 #=================================================================
@@ -307,20 +310,21 @@ def organization(kwargs):
 #=================================================================
 def previous_configuration(kwargs):
     dir_check = False; load_config = False
-    for e in os.listdir(kwargs.args.dir):
-        if re.search('^policies|pools|profiles|templates$', e): dir_check = True
-    if dir_check == True and kwargs.args.load_config == False:
-        kwargs.jdata = DotMap(
-            default     = True,
-            description = f'Import Configuration found in `{kwargs.args.dir}`',
-            title       = 'Load Existing Configuration(s)',
-            type        = 'boolean'
-        )
-        load_config = ezfunctions.variablePrompt(kwargs)
-        kwargs.args.load_config = True
-    elif kwargs.args.load_config == True: load_config = True
-    if load_config == True and kwargs.args.load_config == True:
-        kwargs = DotMap(ezfunctions.load_previous_configurations(kwargs))
+    if os.path.exists(kwargs.args.dir):
+        for e in os.listdir(kwargs.args.dir):
+            if re.search('^policies|pools|profiles|templates|wizard$', e): dir_check = True
+        if dir_check == True and kwargs.args.load_config == False:
+            kwargs.jdata = DotMap(
+                default     = True,
+                description = f'Import Configuration found in `{kwargs.args.dir}`',
+                title       = 'Load Existing Configuration(s)',
+                type        = 'boolean'
+            )
+            load_config = ezfunctions.variablePrompt(kwargs)
+            kwargs.args.load_config = True
+        elif kwargs.args.load_config == True: load_config = True
+        if load_config == True and kwargs.args.load_config == True:
+            kwargs = DotMap(ezfunctions.load_previous_configurations(kwargs))
     return kwargs
 
 #=================================================================
@@ -405,5 +409,6 @@ def target_platform(kwargs):
         title        = 'Type of Servers',
         type         = 'string'
     )
-    kwargs.target_platform = ezfunctions.variablePrompt(kwargs)
+    kwargs.imm_dict.orgs[kwargs.org].wizard.target_platform = ezfunctions.variablePrompt(kwargs)
+    kwargs.target_platform = kwargs.imm_dict.orgs[kwargs.org].wizard.target_platform
     return kwargs

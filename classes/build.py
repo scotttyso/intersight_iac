@@ -38,13 +38,12 @@ class build_imm(object):
         if kwargs.configure_more == True:
             idict = DotMap()
             kwargs.loop_count = 0
-            print('made it to here')
             if kwargs.build_type == 'Machine': config_object = True
             else: config_object = questions.prompt_user_to_configure(self.type, ptype, kwargs)
             while config_object == True:
                 for k, v in idata.items():
                     if re.search('boolean|integer|string', v.type):
-                        idict.update[k] = questions.prompt_user_item(k, v, kwargs)
+                        idict[k] = questions.prompt_user_item(k, v, kwargs)
                     elif v.type == 'array':
                         idict[k] = []
                         kwargs.inner_count = 0
@@ -75,6 +74,5 @@ class build_imm(object):
                 if accept == True: idict[k] = edict
                 if additional == False: config_object = False
                 kwargs.loop_count += 1
-        exit()
         return kwargs
 

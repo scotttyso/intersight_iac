@@ -143,7 +143,7 @@ class intersight_api(object):
                 pcolor.Cyan(f'\n{"-"*91}\n')
                 pcolor.Cyan(f'  VLAN `{e.vlan_id}` is not in VLAN Policy: `{vpolicy}` in Organization: `{org}`.  Adding VLAN...')
                 pcolor.Cyan(f'\n{"-"*91}\n')
-                kwargs.apiBody = {
+                kwargs.api_body = {
                     'EthNetworkPolicy':{'Moid':kwargs.vlans[vpolicy].moid,'ObjectType':'fabric.EthNetworkPolicy'},
                     'MulticastPolicy':{'Moid':mcast_moid,'ObjectType':'fabric.MulticastPolicy'},
                     'Name':e.name, 'ObjectType': 'fabric.Vlan', 'VlanId':e.vlan_id}
@@ -161,7 +161,7 @@ class intersight_api(object):
                     indx = [x for x, i in enumerate(eng_results) if e in i.Name][0]
                     allowed_vlans = ezfunctions.vlan_list_full(eng_results[indx].VlanSettings.AllowedVlans)
                     allowed_vlans = ezfunctions.vlan_list_format(list(numpy.unique(numpy.array(allowed_vlans + vlan_ids))))
-                    kwargs.apiBody= {'Name':e,'VlanSettings':{'AllowedVlans':allowed_vlans}}
+                    kwargs.api_body= {'Name':e,'VlanSettings':{'AllowedVlans':allowed_vlans}}
                     kwargs.method = 'patch'
                     kwargs.pmoid  = eng_results[indx].Moid
                     kwargs        = isight.api(kwargs.qtype).calls(kwargs)
@@ -196,7 +196,7 @@ class intersight_api(object):
                         pcolor.Cyan(f'\n{"-"*91}')
                     else:
                         pcolor.Cyan(f'\n{"-"*91}\n  Ethernet Network Group `{e.name}` does not exist.  Creating...\n{"-"*91}\n')
-                        kwargs.apiBody = {
+                        kwargs.api_body = {
                             'Description': f'{e.name} Ethernet Network Group', 'Name': e.name,
                             'ObjectType':'fabric.EthNetworkGroupPolicy', 'Tags':tags,
                             'Organization': {'Moid':kwargs.org_moids[org].moid,'ObjectType':'organization.Organization'},
@@ -227,7 +227,7 @@ class intersight_api(object):
                     lan_moid = lan_policies[e.name].moid
                 else:
                     pcolor.Cyan(f'\n{"-"*91}\n\n  LAN Policy `{e.name}` does not exist.  Creating...\n\n{"-"*91}\n')
-                    kwargs.apiBody = {
+                    kwargs.api_body = {
                         'Name': str(e.name),
                         'ObjectType': 'vnic.LanConnectivityPolicy',
                         'Organization': {'Moid': kwargs.org_moids[org].moid, 'ObjectType': 'organization.Organization'},
@@ -255,7 +255,7 @@ class intersight_api(object):
                         if len(ydata.post.lan_connectivity.vnics) > 1: failover = False
                         else: failover = True
                         eng = i.ethernet_network_group.replace('{{vlan_id}}', str(e.vlan_id))
-                        kwargs.apiBody = {
+                        kwargs.api_body = {
                             'Cdn': {'ObjectType': 'vnic.Cdn', 'Source': 'vnic', 'Value': i.name },
                             'EthAdapterPolicy': {'Moid': pdata['ethernet_adapter'][i.ethernet_adapter].moid,
                                                 'ObjectType': 'vnic.EthAdapterPolicy'},
@@ -771,7 +771,7 @@ def update_profile(org, target, target_platform, yaml_arg, ydata, kwargs):
         #======================================================
         # Patch the Profile with new Policy Bucket.
         #======================================================
-        kwargs.apiBody = {"Name":profiles[i].name,"PolicyBucket":pbucket}
+        kwargs.api_body = {"Name":profiles[i].name,"PolicyBucket":pbucket}
         kwargs.method = 'patch'
         kwargs.pmoid  = profiles[i].moid
         if re.search('FIAttached|Standalone', target_platform):

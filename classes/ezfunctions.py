@@ -146,20 +146,20 @@ def create_yaml(orgs, kwargs):
                             if kwargs.imm_dict.orgs[org][item].get(x):
                                 idict[org][item][x] = deepcopy(kwargs.imm_dict.orgs[org][item][x])
                             if not len(idict[org][item][x]) > 0: idict[org][item].pop(x)
-                if len(idict[org][item]) > 0:
-                    idict = json.dumps(idict.toDict())
-                    idict = json.loads(idict)
-                    for x in ezdata[i].enum:
-                        if kwargs.imm_dict.orgs[org][item].get(x):
-                            if type(idict[org][item][x]) == list:
-                                if idict[org][item][x][0].get('name'):
-                                    idict[org][item][x] = list({v['name']:v for v in idict[org][item][x]}.values())
-                                elif idict[org][item][x][0].get('names'):
-                                    idict[org][item][x] = list({v['names'][0]:v for v in idict[org][item][x]}.values())
-                    if re.search('policies|pools|profiles|templates', dest_dir): dest_file = f"{i}.ezi.yaml"
-                    else: dest_file = f"{i}.yaml"
-                    title1 = f"{str.title(item)} -> {i}"
-                    write_file(dest_dir, dest_file, idict, title1)
+                    if len(idict[org][item]) > 0:
+                        idict = json.dumps(idict.toDict())
+                        idict = json.loads(idict)
+                        for x in ezdata[i].enum:
+                            if kwargs.imm_dict.orgs[org][item].get(x):
+                                if type(idict[org][item][x]) == list:
+                                    if idict[org][item][x][0].get('name'):
+                                        idict[org][item][x] = list({v['name']:v for v in idict[org][item][x]}.values())
+                                    elif idict[org][item][x][0].get('names'):
+                                        idict[org][item][x] = list({v['names'][0]:v for v in idict[org][item][x]}.values())
+                        if re.search('policies|pools|profiles|templates', dest_dir): dest_file = f"{i}.ezi.yaml"
+                        else: dest_file = f"{i}.yaml"
+                        title1 = f"{str.title(item)} -> {i}"
+                        write_file(dest_dir, dest_file, idict, title1)
         else:
             if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
             for i in ezdata[item].enum:
@@ -203,6 +203,44 @@ def create_yaml(orgs, kwargs):
                                     else: dest_file = f"{i}.yaml"
                                     title1 = f"{str.title(item.replace('_', ' '))} -> {str.title(i.replace('_', ' '))}"
                                     write_file(dest_dir, dest_file, idict, title1)
+                        
+#==========================================================
+# Function for Processing Wizard Data and Creating YAML Files
+#==========================================================
+def create_wizard_yaml(kwargs):
+    org = kwargs.org
+    def write_file(dest_dir, dest_file, dict, title1):
+        if not os.path.exists(os.path.join(dest_dir, dest_file)):
+            create_file = f'type nul >> {os.path.join(dest_dir, dest_file)}'
+            os.system(create_file)
+        wr_file = open(os.path.join(dest_dir, dest_file), 'w')
+        wr_file.write('---\n')
+        wr_file = open(os.path.join(dest_dir, dest_file), 'a')
+        dash_length = '='*(len(title1) + 20)
+        wr_file.write(f'#{dash_length}\n')
+        wr_file.write(f'#   {title1} - Variables\n')
+        wr_file.write(f'#{dash_length}\n')
+        wr_file.write(yaml.dump(dict, Dumper=MyDumper, default_flow_style=False))
+        wr_file.close()
+    dest_dir = os.path.join(kwargs.args.dir, 'wizard')
+    if not os.path.isdir(dest_dir): os.makedirs(dest_dir)
+    idict = deepcopy(DotMap())
+    item = 'wizard'
+    if kwargs.imm_dict.orgs[org].get(item):
+        if len(kwargs.imm_dict.orgs[org][item]) > 0:
+            itemDict = deepcopy(kwargs.imm_dict.orgs[org][item].toDict())
+            idict[org][item] = itemDict
+            idict = json.dumps(idict.toDict())
+            idict = json.loads(idict)
+            if type(idict[org][item]) == list: idict[org][item] = list({v['name']:v for v in value}.values())
+            else:
+                newdict = deepcopy(idict)
+                for key, value in newdict[org][item].items():
+                    if type(value) == str: idict[org][item][key] = value
+                    else: idict[org][item][key] = list({v['name']:v for v in value}.values())
+            dest_file = f"{org}_{item}.yaml"
+            title1 = str.title(item.replace('_', ' '))
+            write_file(dest_dir, dest_file, idict, title1)
                         
 #======================================================
 # Function - Prompt User with question
@@ -472,20 +510,22 @@ def load_previous_configurations(kwargs):
             elif i == 'policies': dir_check += 1
             elif i == 'pools':    dir_check += 1
             elif i == 'profiles': dir_check += 1
-    if dir_check > 1:
+            elif i == 'wizard': dir_check += 1
+    if dir_check > 0:
         for item in vclasses:
             dest_dir = ezvars[item].directory
             if os.path.isdir(os.path.join(kwargs.args.dir, dest_dir)):
                 dir_list = os.listdir(os.path.join(kwargs.args.dir, dest_dir))
                 for i in dir_list:
                     if os.path.isfile(os.path.join(kwargs.args.dir, dest_dir, i)):
-                        yfile = open(os.path.join(kwargs.args.dir, dest_dir, i), 'r')
-                        data = yaml.safe_load(yfile)
-                        for key, value in data.items():
-                            if not kwargs.imm_dict.orgs.get(key): kwargs.imm_dict.orgs[key] = {}
-                            for k, v in value.items():
-                                if not kwargs.imm_dict.orgs[key].get(k): kwargs.imm_dict.orgs[key][k] = {}
-                                kwargs.imm_dict.orgs[key][k].update(deepcopy(v))
+                        if re.search('.*yaml$', i):
+                            yfile = open(os.path.join(kwargs.args.dir, dest_dir, i), 'r')
+                            data = yaml.safe_load(yfile)
+                            for key, value in data.items():
+                                if not kwargs.imm_dict.orgs.get(key): kwargs.imm_dict.orgs[key] = {}
+                                for k, v in value.items():
+                                    if not kwargs.imm_dict.orgs[key].get(k): kwargs.imm_dict.orgs[key][k] = {}
+                                    kwargs.imm_dict.orgs[key][k].update(deepcopy(v))
     # Return kwargs
     return kwargs
 
@@ -648,10 +688,10 @@ def print_with_textwrap(description):
     if '\n' in description:
         new_descr = description.split('\n')
         for line in new_descr:
-            if '* ' in line: pcolor.LightGray(textwrap.fill(f'{line}',width=98, subsequent_indent='    '))
-            elif '  - ' in line: pcolor.LightGray(textwrap.fill(f'{line}',width=98, subsequent_indent='      '))
-            else: pcolor.LightGray(textwrap.fill(f'{line}',98))
-    else: pcolor.LightGray(textwrap.fill(f'{description}',98))
+            if '* ' in line: pcolor.LightGray(textwrap.fill(f'{line}',width=104, subsequent_indent='    '))
+            elif '  - ' in line: pcolor.LightGray(textwrap.fill(f'{line}',width=104, subsequent_indent='      '))
+            else: pcolor.LightGray(textwrap.fill(f'{line}',104, subsequent_indent=' '))
+    else: pcolor.LightGray(textwrap.fill(f'{description}',104, subsequent_indent=' '))
     pcolor.LightPurple(f'\n{"-"*108}\n')
 
 #======================================================
@@ -1302,9 +1342,9 @@ def variableFromList(kwargs):
         if '\n' in description:
             description = description.split('\n')
             for line in description:
-                if '*' in line: pcolor.LightGray(textwrap.fill(f'{line}',width=108, subsequent_indent='   '))
-                else: pcolor.LightGray(textwrap.fill(f'{line}',88))
-        else: pcolor.LightGray(textwrap.fill(f'{description}',88))
+                if '*' in line: pcolor.LightGray(textwrap.fill(f' {line}',width=104, subsequent_indent='    '))
+                else: pcolor.LightGray(textwrap.fill(f'{line}',104, subsequent_indent=' '))
+        else: pcolor.LightGray(textwrap.fill(f'{description}',104, subsequent_indent=' '))
         if kwargs.jdata.get('multi_select') == True:
             pcolor.Yellow(
                 '\n     Note: Answer can be:\n       * Single: 1 or 5\n       * Multiple: `1,2,3` or `1-3,5-6` in example')
