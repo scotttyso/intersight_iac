@@ -13,5 +13,6 @@ vcenter:
         - r142a-1-7.rich.ciscolabs.com
         - r142a-1-8.rich.ciscolabs.com
       simultanious_count: 1
+  simultanious_clusters: false
   hostname: vcenter.rich.ciscolabs.com
   license: standard
