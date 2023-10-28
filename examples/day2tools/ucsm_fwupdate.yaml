@@ -5,7 +5,7 @@ upgrade:
   fw_version: 4.3(2b)
   image_directory: "./QA/IMAGES"
   servers: true
-  vum_update: true
+  vum_update: false
 vcenter:
   clusters:
     - name: DC-CCIE

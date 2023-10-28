@@ -25,9 +25,17 @@ Start-Transcript -Path ".\Logs\$(get-date -f "yyyy-MM-dd_HH-mm-ss")_$($env:USER)
 #=====================================================
 # Login to Pure Array and get ApiVersion
 #=====================================================
+${env_vars} = Get-Childitem -Path Env:* | Sort-Object Name
+if ((${env_vars} | Where-Object {$_.Name -eq "OS"}).Value -eq "Windows_NT") {
+    $homePath = (${env_vars} | Where-Object {$_.Name -eq "HOMEPATH"}).Value
+    $pathSep  = "\"
+} else {
+    $homePath = (${env_vars} | Where-Object {$_.Name -eq "HOME"}).Value
+    $pathSep  = "/"
+}
 try {
-    if (Test-Path -Path ${env:HOME}\pfapowercli.Cred) {
-        $credential = Import-CliXml -Path "${env:HOME}\pfapowercli.Cred"
+    if (Test-Path -Path $homePath + $pathSep + "pfapowercli.Cred") {
+        $credential = Import-CliXml -Path $homePath + $pathSep + "pfapowercli.Cred"
         $api_version = Connect-Pfa2Array -Endpoint $e -Credential $credential -IgnoreCertificateError
     } else {
         $password = ConvertTo-SecureString $env:pure_storage_password -AsPlainText -Force

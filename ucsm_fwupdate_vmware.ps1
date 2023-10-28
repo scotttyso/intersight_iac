@@ -6,40 +6,34 @@
 .DESCRIPTION
                 This script logs into Cisco.com, download firmware bundles to a local working directory, upload bundles to the target UCS domain and walk through all steps of the upgrade
 
-.PARAMETERSET
-                hfp: To upgrade all components infra as well as servers
-                infraOnly: To upgrade only infra component
-
 .EXAMPLE
-                ucsm_fwupdate.ps1 -y ucsm_fwupdate.yaml
-                Upgrades all components of UCS
-                -ucs -- UCS Manager IP -- Example: "1.2.3.4"
-                -version -- UCS Manager version to upgrade
-                -imagedir -- Path to download firmware bundle
-                -hfp -- Firmware Host Pack. Values can be "all" or "default"
-                All parameters are mandatory
-                The prompts that will always be presented to the user will be for Username and Password for UCS and for cisco software image download
-
-
-.EXAMPLE
-                UCSMFirmwareUpdate.ps1 -ucs xx.xx.xx.xx -version 'x.x(xx)' -imagedir c:\work\images -infraOnly
-                Upgrade Infrastructure only portion of UCSM
-                -infraOnly -- Optional SwitchParameter when specified upgrades Infrastructure only
+                ucsm_fwupdate_vmware.ps1 -y ucsm_fwupdate.yaml
+                Example YAML INPUT File:
+                ---
+                ucs_manager: myucs.example.com
+                upgrade:
+                  fabric_interconnect: true
+                  fw_version: 4.3(2b)
+                  image_directory: "IMAGES"
+                  servers: true
+                vcenter:
+                  clusters:
+                    - name: EXAMPLE_CLUSTER
+                      hosts:
+                        - server1.example.com
+                        - server2.example.com
+                  hostname: vcenter.example.com
 
 .NOTES
-                Author: Eric Williams
-                Email: ericwill@cisco.com
+                Author: Eric Williams & Tyson Scott
+                Email: ericwill@cisco.com, tyscott@cisco.com
                 Company: Cisco Systems, Inc.
-                Version: v1.1
-                Date: 06/05/2014
+                Versions: v1.1, v2.0
+                Date: 06/05/2014, 10/28/2023
                 Disclaimer: Code provided as-is.  No warranty implied or included.  This code is for example use only and not for production
 
 .INPUTS
-                UCSM IP Address
-                UCS Manager version to upgrade
-                Directory path to download firmware image bundles
-                Switch Parameter to upgrade infrastructure only portion
-                HFP Parameter specifies which HFP to be upgraded
+                YAML_FILE
 
 .OUTPUTS
                 None
@@ -87,9 +81,9 @@ function Write-ErrorLog {
 
     "Error: $(Get-Date -Format g):" | Out-File $Global:LogFile -Append
     $Message | Out-File $LogFile -Append
-    Write-Error $Message -ForegroundColor Red
+    Write-Error $Message
     Disconnect-Ucs -ErrorAction Ignore | Out-Null
-    Disconnect-VIServer -ErrorAction Ignore | Out-Null
+    Disconnect-VIServer -ErrorAction Ignore -Confirm:$False | Out-Null
     Exit 1
 }
 
@@ -118,7 +112,6 @@ function Connect-vCenter {
         return $vcenterConn
     }
 }
-
 function WaitUcsManagerActivation {
     $count = 0
     $ucsConnection = $null
@@ -319,7 +312,7 @@ foreach ($module in $module_names) {
 }
 if (!(Test-Path -path $y)) {
     Write-Host "!!!! Error !!!!" -ForegroundColor Red
-    Write-Host "yaml_file: $y, does not exist.  Validate File and Path are Correct" -ForegroundColor Red
+    Write-Host "yaml_file: $y, does not exist.  Validate File and Path are Correct." -ForegroundColor Red
     Exit 1
 }
 $ydata = Get-Content -Path $y | ConvertFrom-Yaml
@@ -337,20 +330,24 @@ Try {
     ${Error}.Clear()
     # Get Home Path
     ${env_vars} = Get-Childitem -Path Env:* | Sort-Object Name
-    $os = (${env_vars} | Where-Object {$_.Name -eq "OS"}).Value
     if ((${env_vars} | Where-Object {$_.Name -eq "OS"}).Value -eq "Windows_NT") {
         $homePath = (${env_vars} | Where-Object {$_.Name -eq "HOMEPATH"}).Value
-    } else { $homePath = (${env_vars} | Where-Object {$_.Name -eq "HOME"}).Value }
+        $pathSep  = "\"
+    } else {
+        $homePath = (${env_vars} | Where-Object {$_.Name -eq "HOME"}).Value
+        $pathSep  = "/"
+    }
     # Obtain UCS Manager Credentials
-    if (Test-Path -Path "$homePath\ucsmpowercli.Cred") {
+    $credPath = $homePath + $pathSep + "ucsmpowercli.Cred"
+    if (Test-Path -Path $credPath) {
         Write-Log "Found Existing Credentials for UCS Manager."
         Write-Log ""
-        ${ucsCred} = Import-CliXml -Path "$homePath\ucsmpowercli.Cred"
+        ${ucsCred} = Import-CliXml -Path $credPath
     } else {
         Write-Log "Enter Credentials of UCS Manager to be upgraded to version: '$($version)'"
         Write-Log ""
         ${ucsCred} = Get-Credential -Message "Enter Credentials of UCS Manager to be upgraded"
-        ${ucsCred} | Export-CliXml -Path "$homePath\ucsmpowercli.Cred"
+        ${ucsCred} | Export-CliXml -Path $credPath
     }
     Write-Log "Logging into UCS Domain: '$(${ucs})'"
     Write-Log ""
@@ -374,7 +371,7 @@ Try {
     } elseif ($fi.Model -cmatch "^UCS-FI-(?<modelNum>63\d\d).*$") { $FI6300 = $true
     }
 
-    $version = $ydata.upgrade.fw_version
+    ${version} = $ydata.upgrade.fw_version
     ${infraVersionA} = ${version} + 'A'
     ${infraVersionB} = ${version} + 'B'
     ${infraVersionC} = ${version} + 'C'
@@ -396,10 +393,8 @@ Try {
     Write-Log "Starting Firmware download process to local directory: ${imageDir}"
     Write-Log ""
 
-    if ($os -eq "Windows_NT") { $path_sep = "\"
-    } else { $path_sep = "/"}
     foreach(${eachBundle} in ${bundle}) {
-        ${fileName} = ${imageDir} +  $path_sep + ${eachBundle}
+        ${fileName} = ${imageDir} +  $pathSep + ${eachBundle}
          if( Test-Path -Path ${fileName}) {
               Write-Log "Image File : '${eachBundle}' already exist in local directory: '${imageDir}'"
          } else {
@@ -408,16 +403,17 @@ Try {
     }
 
     if(${ccoImageList} -ne ${null}) {
+        $credPath = $homePath + $pathSep + "ccopowercli.Cred"
         # Obtain CCO Credentials
-        if (Test-Path -Path "$homePath\ccopowercli.Cred") {
+        if (Test-Path -Path $credPath) {
             Write-Log "Found Existing Credentials for Cisco.com (CCO) Credentials."
             Write-Log ""
-            ${ccoCred} = Import-CliXml -Path "$homePath\ccopowercli.Cred"
+            ${ccoCred} = Import-CliXml -Path $credPath
         } else {
             Write-Log "Enter Cisco.com (CCO) Credentials"
             Write-Log ""
             ${ccoCred} = Get-Credential -Message "Enter Cisco.com (CCO) Credentials"
-            ${ccoCred} | Export-CliXml -Path "$homePath\ccopowercli.Cred"
+            ${ccoCred} | Export-CliXml -Path $credPath
         }
         foreach(${eachbundle} in ${ccoImageList}) {
             [array]${ccoImage} += Get-UcsSoftwareImageList -AllReleases -Credential ${ccoCred} -ErrorAction Stop | Where-Object { $_.ImageName -match ${eachbundle}}
@@ -442,12 +438,12 @@ Try {
         if (${deleted} -or !${firmwarePackage}) {
             $Error.Clear()
             # If Image does not exist on FI, uplaod
-            $fileName = ${imageDir} +  "\" + ${image}
+            $fileName = ${imageDir} +  $pathSep + ${image}
             if((Get-UcsFirmwareDownloader -FileName ${image} -TransferState failed).count -ne 0) {
                 Write-ErrorLog "Image: '$($image)' already exists under Download Tasks in failed state. Exiting..."
             }
             Write-Log "Uploading image file: '$($image)' to UCS Domain: '$($ucs)'"
-            Send-UcsFirmware -LiteralPath $fileName | Watch-Ucs -Property TransferState -SuccessValue downloaded -FailureValue failed -PollSec 30 -TimeoutSec 600 -ErrorAction SilentlyContinue | Out-Null
+            Send-UcsFirmware -LiteralPath $fileName | Watch-Ucs -Property TransferState -SuccessValue downloaded -FailureValue failed -PollSec 30 -TimeoutSec 1200 -ErrorAction SilentlyContinue | Out-Null
             if ($Error -ne "") {
                 Write-ErrorLog "Error uploading image: '$($image)' to UCS Domain: '$($ucs)'. Please check Download Tasks for details."
             }
@@ -470,8 +466,8 @@ Try {
     # both the Fabric Interconnects.
     $activatedVersion = Get-UcsMgmtController -Subject system | Get-UcsFirmwareRunning -Type system | Select-Object Version
 
-    if ($activatedVersion.Version -ne $version -and $ydata.upgrade.fabric_interconnect -eq $true) {
-        Write-Log "Triggering the auto install of the infrastructure firmware  to $aSeriesBundle"
+    if ($activatedVersion.Version -ne ${version} -and $ydata.upgrade.fabric_interconnect -eq $true) {
+        Write-Log "Triggering the auto install of the infrastructure firmware to $aSeriesBundle"
         try {
             Start-UcsTransaction | Out-Null
             Get-UcsOrg -Level root | Get-UcsFirmwareInfraPack -Name "default" -LimitScope | Set-UcsFirmwareInfraPack -ForceDeploy "yes" -InfraBundleVersion ${infraVersionA} -Force | Out-Null
@@ -493,7 +489,7 @@ Try {
         #---->
         $activatedVersion = Get-UcsMgmtController -Subject system | Get-UcsFirmwareRunning -Type system | Select-Object Version
 
-        if ($activatedVersion.Version -eq $version) {
+        if ($activatedVersion.Version -eq ${version}) {
             Write-Log "UCS Manager is activated to the $activatedVersion successfully"
         } else {
             Write-Log "Activation has failed so terminating the update process"
@@ -547,18 +543,20 @@ Try {
         $ExecutionContext.SessionState.PSVariable.Set("DefaultUcs", $ucsConnection)
         # Obtain vCenter Credentials
         ${vcenter} = $ydata.vcenter.hostname
-        if (Test-Path -Path "$homePath\vcenterpowercli.Cred") {
+        $credPath = $homePath + $pathSep + "vcenterpowercli.Cred"
+        if (Test-Path -Path $credPath) {
             Write-Log "Found Existing Credentials for vCenter '$(${vcenter})'."
             Write-Log ""
-            ${vcenterCred} = Import-CliXml -Path "$homePath\vcenterpowercli.Cred"
+            ${vcenterCred} = Import-CliXml -Path $credPath
         } else {
             Write-Log "Enter Credentials of vCenter: '$(${vcenter})'"
             Write-Log ""
             ${vcenterCred} = Get-Credential -Message "Enter Credentials for vCenter '$(${vcenter})'."
-            ${vcenterCred} | Export-CliXml -Path "$homePath\vcenterpowercli.Cred"
+            ${vcenterCred} | Export-CliXml -Path $credPath
         }
         Write-Log "Logging into vCenter: '$(${vcenter})'"
         Write-Log ""
+        Disconnect-VIServer -ErrorAction Ignore -Confirm:$false | Out-Null
         $vcenterConn = Connect-vCenter
         $ucs_servers = Get-UcsServer
         $fwPackList = @()
@@ -568,26 +566,29 @@ Try {
         foreach ($cluster in $ydata.vcenter.clusters) {
             foreach ($vhost in $cluster.hosts) {
                 try {
-                    write-host "ESX host is $vhost"
+                    Write-Log "ESX host is $vhost"
                     $server = Get-EsxCli -VMHost $vhost
                     $serial = $server.hardware.platform.get().SerialNumber
-                    $server_profile = ($ucs_servers | Where-Object {$_.Serial -eq $serial}).AssignedToDn
-                    $sDict = New-Object PsObject -property @{name = $vhost; dn = ($ucs_servers | Where-Object {$_.Serial -eq $serial}).Dn}
+                    $sdata  = $ucs_servers | Where-Object {$_.Serial -eq $serial}
+                    $server_profile   = $sdata.AssignedToDn
+                    $running_software = (($sdata | Get-UcsFirmwareStatus).PackageVersion -Split ",")[0]
+                    $sDict = New-Object PsObject -property @{Name = $vhost; Physical = $sdata.Dn; Profile = $sdata.AssignedToDn; Software = $running_software }
                     ${ServerProfileList} += $sDict
                     $sprofile = Get-UcsServiceProfile -Dn $server_profile
                     $template = $False
-                    if (!($null -eq $sprofile.OperSrcTemplName)) {
+                    if (!('' -eq $sprofile.OperSrcTemplName)) {
                         $stemplate = Get-UcsServiceProfile -Dn $sprofile.OperSrcTemplName
                         if ($stemplate.Type -eq "updating-template") { $template = $True
                         } else {
-                            Write-Log "Service Profile $($server_profile) is Attached to $($stemplate.Dn)" -ForegroundColor Red
-                            Write-Log "But the Template is not not an 'updating-template'" -ForegroundColor Red
+                            Write-Log "Service Profile $($server_profile) is Attached to $($stemplate.Dn)"
+                            Write-Log "But the Template is not not an 'updating-template'"
                             Write-Log "Disconnect the Service Profile $($server_profile) from the Template."
+                            $error_count += 1
                             Break
                         }
                     }
                     if ($template -eq $True) {
-                        if (!($null -eq $stemplate.OperMaintPolicyName)) {
+                        if (!('' -eq $stemplate.OperMaintPolicyName)) {
                             if (!($stemplate.OperMaintPolicyName -in $mntPolicyList)) {
                                 $mntPolicyList += $stemplate.OperMaintPolicyName
                                 $mPolicy = Get-UcsMaintenancePolicy -Dn $stemplate.OperMaintPolicyName
@@ -596,12 +597,12 @@ Try {
                                 }
                             }
                         } else {
-                            Write-Log "$($stemplate.Dn) is not attached to a Host Firmware Policy." -ForegroundColor Red
+                            Write-Log "$($stemplate.Dn) is not attached to a Host Firmware Policy."
                             $error_count += 1
                             Break
                         }
                     } else {
-                        if (!($null -eq $sprofile.OperMaintPolicyName)) {
+                        if (!('' -eq $sprofile.OperMaintPolicyName)) {
                             if (!($sprofile.OperMaintPolicyName -in $mntPolicyList)) {
                                 $mntPolicyList += $sprofile.OperMaintPolicyName
                                 $mPolicy = Get-UcsMaintenancePolicy -Dn $sprofile.OperMaintPolicyName
@@ -610,7 +611,7 @@ Try {
                                 }
                             }
                         } else {
-                            Write-Log "$($sprofile.Dn) is not attached to a Host Firmware Policy." -ForegroundColor Red
+                            Write-Log "$($sprofile.Dn) is not attached to a Host Firmware Policy."
                             $error_count += 1
                             Break
                         }
@@ -619,7 +620,7 @@ Try {
                         if (!($null -eq $stemplate.OperHostFwPolicyName)) {
                             if (!($stemplate.OperHostFwPolicyName -in $fwPackList)) { $fwPackList += $stemplate.OperHostFwPolicyName }
                         } else {
-                            Write-Log "$($stemplate.Dn) is not attached to a Host Firmware Policy." -ForegroundColor Red
+                            Write-Log "$($stemplate.Dn) is not attached to a Host Firmware Policy."
                             $error_count += 1
                             Break
                         }
@@ -627,18 +628,16 @@ Try {
                         if (!($null -eq $sprofile.OperHostFwPolicyName)) {
                             if (!($sprofile.OperHostFwPolicyName -in $fwPackList)) { $fwPackList += $sprofile.OperHostFwPolicyName }
                         } else {
-                            Write-Log "$($sprofile.Dn) is not attached to a Host Firmware Policy." -ForegroundColor Red
+                            Write-Log "$($sprofile.Dn) is not attached to a Host Firmware Policy."
                             $error_count += 1
                             Break
                         }
                     }
-                    Write-Host $server_profile
                 } catch {
-                    Write-Error "Failed modifying Host Firmware Package Version=${version}" -ForegroundColor Red
+                    Write-Error "Failed modifying Host Firmware Package Version=${version}"
                     Write-Log ${Error}
                     Disconnect-Ucs -ErrorAction Ignore | Out-Null
                     Disconnect-VIServer -ErrorAction Ignore -Confirm:$false | Out-Null
-                    # Write-ErrorLog
                     Exit 1
                 }
             }
@@ -646,42 +645,60 @@ Try {
         if ($error_count -eq 0) {
             $fwCompHostPacks = $fwPackList | ForEach-Object {Get-UcsFirmwareComputeHostPack -Dn $_ -PolicyOwner local}
             $fwCompHostPacks | Set-UcsFirmwareComputeHostPack -BladeBundleVersion ${infraVersionB} -RackBundleVersion ${infraVersionC} -Force -ErrorAction Stop | Out-Null
+            #$fwCompHostPacks | Format-Table | Out-String|ForEach-Object {Write-Host $_}
         } else {
-            Write-Error "Failed modifying Host Firmware Package Version=${version}" -ForegroundColor Red
-            Write-Log "Failed modifying Host Firmware Package Version=${version}" -ForegroundColor Red
+            Write-Error "Failed modifying Host Firmware Package Version=${version}"
+            Write-Log "Failed modifying Host Firmware Package Version=${version}"
             Disconnect-Ucs -ErrorAction Ignore | Out-Null
             Disconnect-VIServer -ErrorAction Ignore -Confirm:$false | Out-Null
             # Write-ErrorLog
             Exit 1
         }
+        #${ServerProfileList} | Format-Table | Out-String|ForEach-Object {Write-Host $_}
         foreach ($cluster in $ydata.vcenter.clusters) {
             #$cluster_compliance = Get-Compliance -Entity $cluster.name
             foreach ($vhost in $cluster.hosts) {
                 try {
-                    Write-Log "ESX host is $vhost"
-                    $server = Get-EsxCli -VMHost $vhost
-                    if (!($server.ConnectionState -eq "Maintenance")) {
-                        $server | Set-VMHost -State Maintenance -RunAsync -Confirm:$false | Out-Null
-                        if ($ydata.vcenter.license -eq "standard") {
-                            #$cluster_hosts = Get-Cluster -Name DC-CCIE | Get-VMHost
-                            Write-Host "Standard VMware License"
+                    $hostData = ${ServerProfileList} | Where-Object {$_.Name -eq $vhost}
+                    if ($hostData.Physical -match "sys/rack") { $hVersion = ${infraVersionC}
+                    } else { $hVersion = ${infraVersionB} }
+                    $hostFw = $hostData.Software
+                    $fwMatch = $False
+                    if ($hostFw -eq $hVersion) { $fwMatch = $True }
+                    if ($fwMatch -eq $False -or $ydata.upgrade.vum_update -eq $True ) {
+                        Write-Log "ESX host is $vhost"
+                        $server = Get-VMHost -VMHost $vhost
+                        if (!($server.ConnectionState -eq "Maintenance")) {
+                            $server | Set-VMHost -State Maintenance -RunAsync -Confirm:$false | Out-Null
+                            if ($ydata.vcenter.license -eq "standard") {
+                                #$cluster_hosts = Get-Cluster -Name DC-CCIE | Get-VMHost
+                                Write-Host "Standard VMware License"
+                            }
                         }
+                        #if ($ydata.upgrade.vum_update -eq $true) {
+                        #    $server | Test-Compliance -Entity $vhost | Out-Null
+                        #    $compliance = Get-Compliance -Entity $vhost
+                        #}
+                        $server = Get-VMHost -VMHost $vhost
+                        Write-Log "Host '$vhost' ConnectionState is '$($server.ConnectionState)'"
+                        Write-Log ""
+                        Write-Log "Rebooting: '$vhost'."
+                        Write-Log ""
+                        Restart-VMHost -VMHost $vhost -RunAsync -Confirm:$False | Out-Null
+                        ${ServerProfileFwList} = @($hostData.Physical)
+                        Wait-UcsServersActivation
+                        if (!($server.ConnectionState -eq "Connected")) {
+                            $server | Set-VMHost -State Connected -RunAsync -Confirm:$false | Out-Null
+                        }
+                    } elseif ($fwMatch -eq $True) {
+                        Write-Log "Host '$vhost' is Already Running Version: '$hVersion'."
                     }
-                    "$(($ucs_servers | Where-Object {$_.Serial -eq $serial}).Dn)/fw-status"
-                    $server = Get-EsxCli -VMHost $vhost
-                    Write-Log "Host $vhost ConnectionState is '$($server.ConnectionState)'" -ForegroundColor Cyan
-                    Write-Log ""
-                    Write-Log "Rebooting: '$vhost'." -ForegroundColor Cyan
-                    Write-Log ""
-                    Restart-VMHost -VMHost $vhost -RunAsync -Confirm:$False | Out-Null
-                    ${ServerProfileFwList} = @((${ServerProfileList} | Where-Object {$_.name -eq $vhost}).dn)
-                    Wait-UcsServersActivation
-                    #if ($ydata.upgrade.vum_update -eq $true) {
-                    #    $server | Test-Compliance -Entity $vhost | Out-Null
-                    #    $compliance = Get-Compliance -Entity $vhost
-                    #}
                 } catch {
-
+                    Write-Error "Failed Preparing '$vhost' for Firmware Upgrade through vCenter."
+                    Write-Log ${Error}
+                    Disconnect-Ucs -ErrorAction Ignore | Out-Null
+                    Disconnect-VIServer -ErrorAction Ignore -Confirm:$false | Out-Null
+                    Exit 1
                 }
             }
         }
@@ -697,13 +714,13 @@ Catch {
         Write-Log " In order to download software, you must accept the EULA. You will receive an email within 24 hours which will have details on accepting EULA.`
         Once you accept the EULA by following the instructions mentioned in the email, re-run this script to proceed."
         Disconnect-Ucs -ErrorAction Ignore | Out-Null
-        Disconnect-VIServer -ErrorAction Ignore | Out-Null
+        Disconnect-VIServer -ErrorAction Ignore -Confirm:$False | Out-Null
         Exit 1
     } else {
         Write-Log "Error occurred in script:"
         Write-Log ${Error}
         Disconnect-Ucs -ErrorAction Ignore | Out-Null
-        Disconnect-VIServer -ErrorAction Ignore | Out-Null
+        Disconnect-VIServer -ErrorAction Ignore -Confirm:$False | Out-Null
         Exit 1
     }
 }

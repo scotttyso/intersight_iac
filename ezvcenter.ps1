@@ -38,12 +38,24 @@ Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Confirm:$false
 #=====================================================
 # Obtain Username and Password
 #=====================================================
-#if (Test-Path -Path ${env:HOME}\powercli.Cred) {
-#    $credential = Import-CliXml -Path "${env:HOME}\powercli.Cred"
+# Get Home Path
+#${env_vars} = Get-Childitem -Path Env:* | Sort-Object Name
+#if ((${env_vars} | Where-Object {$_.Name -eq "OS"}).Value -eq "Windows_NT") {
+#    $homePath = (${env_vars} | Where-Object {$_.Name -eq "HOMEPATH"}).Value
+#    $pathSep  = "\"
+#} else {
+#    $homePath = (${env_vars} | Where-Object {$_.Name -eq "HOME"}).Value
+#    $pathSep  = "/"
 #}
-#else {
-#    $credential = Get-Credential
-#    $credential | Export-CliXml -Path "${env:HOME}\powercli.Cred"
+#if (Test-Path -Path $homePath + $pathSep + "vcenterpowercli.Cred") {
+#    Write-Host "Found Existing Credentials for vCenter '$(${vcenter})'."
+#    Write-Host ""
+#    ${vcenterCred} = Import-CliXml -Path $homePath + $pathSep + "vcenterpowercli.Cred"
+#} else {
+#    Write-Host "Enter Credentials of vCenter: '$(${vcenter})'"
+#    Write-Host ""
+#    ${vcenterCred} = Get-Credential -Message "Enter Credentials for vCenter '$(${vcenter})'."
+#    ${vcenterCred} | Export-CliXml -Path $homePath + $pathSep + "vcenterpowercli.Cred"
 #}
 
 #=====================================================
