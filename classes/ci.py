@@ -309,17 +309,23 @@ class imm(object):
             # Build Server Dictionaries - Standalone
             #=====================================================
             if kwargs.imm.cimc_default == False:
-                kwargs.sensitive_var = 'local_user_password'
+                kwargs.sensitive_var = 'local_user_password_1'
                 kwargs  = ezfunctions.sensitive_var_value(kwargs)
                 password=kwargs.var_value
             else: password='Password'
+            devices = []
+            print(kwargs.imm_dict.wizard.azurestack)
+            for item in kwargs.imm_dict.wizard.azurestack:
+                for i in item.clusters:
+                    for e in i.members: devices.append(e.cimc)
             kwargs.yaml.device_list = [DotMap(
                 device_type   = 'imc',
-                devices       = kwargs.imm.cimc,
+                devices       = devices,
                 password      = password,
-                resource_group=kwargs.org,
+                resource_group= kwargs.org,
                 username      = kwargs.imm.username
             )]
+            kwargs.password = password
             kwargs = claim_device.claim_targets(kwargs)
             serial_numbers = []
             for k,v in kwargs.result.items(): serial_numbers.append(v.serial)
@@ -2144,6 +2150,7 @@ class wizard(object):
             pop_list = kwargs.ezdata.converged_pop_list.properties.azurestack.enum
             for i in pop_list:
                 if i in policy_list: policy_list.remove(i)
+            print(policy_list)
             kwargs = imm('compute_environment').compute_environment(kwargs)
             for i in policy_list: kwargs = eval(f'imm(i).{i}(kwargs)')
             print(json.dumps(kwargs.imm_dict.orgs, indent=4))

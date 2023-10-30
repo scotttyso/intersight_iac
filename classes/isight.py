@@ -779,7 +779,7 @@ class imm(object):
         #=====================================================
         # Loop Through Reservations if > 0
         #=====================================================
-        if len(reservations) > 0: kwargs = imm.identity_reservations(ptitle, reservations, kwargs)
+        if len(reservations) > 0: kwargs = imm.identity_reservations(self, ptitle, reservations, kwargs)
         #=====================================================
         # Send End Notification and return kwargs
         #=====================================================

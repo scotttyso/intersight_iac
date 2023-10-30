@@ -1,0 +1,79 @@
+---
+dns_servers:
+  - 10.101.128.15
+  - 10.101.128.16
+ucs_manager: 64.100.14.38
+upgrade:
+  fabric_interconnect: true
+  fw_version: 4.3(2b)
+  image_directory: "./QA/IMAGES"
+  servers: true
+domain:
+  hostname: 64.100.14.38
+  name_prefix: ''
+  organization: RICH # If using root org set this as ''
+  pool_identifier: BD
+  profiles:
+    name_prefix: r142a-
+    suffix_length: 1
+    suffix_start: 5
+    servers:
+      - ip: 192.168.64.205
+        serial: WMP251300NF
+      - ip: 192.168.64.206
+        serial: WMP251300N8
+      - ip: 192.168.64.207
+        serial: WMP251300NA
+      - ip: 192.168.64.208
+        serial: WMP251300M7
+  vlans:
+    - type: management
+      name: 10.101.125.0-Mgmt
+      vlan_id: 125
+    - type: ooband
+      gateway: 192.168.64.1
+      name: 192.168.64.0-Ooband
+      netmask: 255.255.254.0
+      pool: 192.168.64.200-192.168.64.231
+      vlan_id: 64
+    - type: migration
+      name: 10.101.126.0-Migration
+      vlan_id: 126
+    - type: storage
+      name: 10.101.127.0-Storage
+      vlan_id: 127
+    - type: virtual_machine
+      name: 198.18.1.0-Stretched
+      vlan_id: 1001
+    - type: virtual_machine
+      name: 198.18.2.0-Stretched
+      vlan_id: 1002
+  vsans:
+    - 100
+    - 200
+  template:
+    jumbo: true
+    name: NTNX-SP-template
+    vnics:
+      - data_types:
+          - management
+        name: mgmt
+      - data_types:
+          - migration
+        name: migration
+      - data_types:
+          - storage
+        name: storage
+      - data_types:
+          - virtual_machine
+        name: data
+vcenter:
+  clusters:
+    - name: DC-CCIE
+      hosts:
+        - r142a-1-7.rich.ciscolabs.com
+        - r142a-1-8.rich.ciscolabs.com
+      simultaneous_count: 1
+  simultaneous_clusters: false
+  hostname: vcenter.rich.ciscolabs.com
+  license: standard

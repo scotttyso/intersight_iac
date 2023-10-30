@@ -398,6 +398,50 @@ def main_menu(kwargs):
     return kwargs
 
 #=================================================================
+# Function: Deploy Configuration in YAML Files
+#=================================================================
+def process_deploy_to_intersight(kwargs):
+    orgs = kwargs.orgs
+    #==============================================
+    # Pools
+    #==============================================
+    #pool_list = []
+    #for k, v in kwargs.ezdata.items():
+    #    if v.intersight_type == 'pool' and not '.' in k: pool_list.append(k)
+    #for org in orgs:
+    #    print()
+    #    kwargs.org = org
+    #    if kwargs.imm_dict.orgs[org].get('pools'):
+    #        for ptype in kwargs.imm_dict.orgs[org]['pools']:
+    #            if ptype in pool_list:  kwargs = eval(f"isight.imm(ptype).pools(kwargs)")
+    #==============================================
+    # Policies
+    #==============================================
+    policy_list = []
+    for k, v in kwargs.ezdata.items():
+        if v.intersight_type == 'policy' and not '.' in k: policy_list.append(k)
+    print(policy_list)
+    for org in orgs:
+        kwargs.org = org
+        print(kwargs.imm_dict.orgs[org].policies)
+        if kwargs.imm_dict.orgs[org].get('policies'):
+            for ptype in kwargs.imm_dict.orgs[org]['policies']:
+                if ptype in policy_list:  kwargs = eval(f"isight.imm(ptype).policies(kwargs)")
+    exit()
+    #==============================================
+    # Profiles and Server Identities
+    #==============================================
+    for org in orgs:
+        kwargs.org = org
+        if kwargs.imm_dict.orgs[org].get('templates'):
+            if kwargs.imm_dict.orgs[org]['templates'].get('server'): kwargs = eval(f"isight.imm('server_template').profiles(kwargs)")
+        if kwargs.imm_dict.orgs[org].get('profiles'):
+            profile_list = ['domain', 'chassis', 'server']
+            for i in profile_list:
+                if kwargs.imm_dict.orgs[org]['profiles'].get(i): kwargs = eval(f"isight.imm(i).profiles(kwargs)")
+    return kwargs
+
+#=================================================================
 # Function: Wizard
 #=================================================================
 def process_wizard(kwargs):
@@ -516,6 +560,9 @@ def main():
         if not re.search('Exit|Deploy', kwargs.deployment_type):
             kwargs = process_wizard(kwargs)
         kwargs.orgs = list(kwargs.imm_dict.orgs.keys())
+        if re.search('Deploy', kwargs.deployment_type):
+            kwargs = isight.api('organization').organizations(kwargs)
+            kwargs = process_deploy_to_intersight(kwargs)
     #==============================================
     # Create YAML Files
     #==============================================
