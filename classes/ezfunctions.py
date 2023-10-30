@@ -521,11 +521,12 @@ def load_previous_configurations(kwargs):
                         if re.search('.*yaml$', i):
                             yfile = open(os.path.join(kwargs.args.dir, dest_dir, i), 'r')
                             data = yaml.safe_load(yfile)
-                            for key, value in data.items():
-                                if not kwargs.imm_dict.orgs.get(key): kwargs.imm_dict.orgs[key] = {}
-                                for k, v in value.items():
-                                    if not kwargs.imm_dict.orgs[key].get(k): kwargs.imm_dict.orgs[key][k] = {}
-                                    kwargs.imm_dict.orgs[key][k].update(deepcopy(v))
+                            if not data == None:
+                                for key, value in data.items():
+                                    if not kwargs.imm_dict.orgs.get(key): kwargs.imm_dict.orgs[key] = {}
+                                    for k, v in value.items():
+                                        if not kwargs.imm_dict.orgs[key].get(k): kwargs.imm_dict.orgs[key][k] = {}
+                                        kwargs.imm_dict.orgs[key][k].update(deepcopy(v))
     # Return kwargs
     return kwargs
 
