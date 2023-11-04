@@ -17,7 +17,7 @@ except ImportError as e:
     sys.exit(1)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 serial_regex = re.compile('^[A-Z]{3}[2-3][\\d]([0][1-9]|[1-4][0-9]|[5][0-3])[\\dA-Z]{4}$')
-part1 = 'bios|boot_order|(ethernet|fibre_channel)_adapter|firmware|imc_access|ipmi_over_lan|iscsi_(boot|static_target)'
+part1 = 'adapter_configuration|bios|boot_order|(ethernet|fibre_channel)_adapter|firmware|imc_access|ipmi_over_lan|iscsi_(boot|static_target)'
 part2 = '(l|s)an_connectivity|local_user|network_connectivity|snmp|storage|syslog|system_qos'
 policy_specific_regex = re.compile(f'^{part1}|{part2}$')
 
@@ -60,134 +60,179 @@ class api(object):
         #=====================================================
         # Setup API Parameters
         #=====================================================
-        if 'get' == kwargs.method:
-            if not kwargs.get('api_filter'):
-                if re.search('(vlans|vsans|port.port_)', kwargs.qtype): names = ", ".join(map(str, kwargs.names))
-                else: names = "', '".join(kwargs.names).strip("', '")
-                if re.search('(organization|resource_group)', kwargs.qtype): api_filter = f"Name in ('{names}')"
-                else: api_filter = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
-                if 'asset_target' == kwargs.qtype:         api_filter = f"TargetId in ('{names}')"
-                elif 'connectivity.vhbas' in kwargs.qtype: api_filter = f"Name in ('{names}') and SanConnectivityPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'connectivity.vnics' in kwargs.qtype: api_filter = f"Name in ('{names}') and LanConnectivityPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'hcl_status' == kwargs.qtype:         api_filter = f"ManagedObject.Moid in ('{names}')"
-                elif 'iam_role' == kwargs.qtype:           api_filter = f"Name in ('{names}') and Type eq 'IMC'"
-                elif 'port.port_channel_' in kwargs.qtype: api_filter = f"PcId in ({names}) and PortPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'port.port_modes' == kwargs.qtype:    api_filter = f"PortIdStart in ({names}) and PortPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'port.port_role_' in kwargs.qtype:    api_filter = f"PortId in ({names}) and PortPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'registered_device' == kwargs.qtype:  api_filter = f"Moid in ('{names}')"
-                elif 'reservations' in kwargs.qtype:       api_filter = f"Identity in ('{names}') and Pool.Moid eq '{kwargs.pmoid}'"
-                elif 'serial_number' == kwargs.qtype:      api_filter = f"Serial in ('{names}')"
-                elif 'switch' == kwargs.qtype:             api_filter = f"Name in ('{names}') and SwitchClusterProfile.Moid eq '{kwargs.pmoid}'"
-                elif 'user_role' == kwargs.qtype:          api_filter = f"EndPointUser.Moid in ('{names}') and EndPointUserPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'vlan.vlans' == kwargs.qtype:         api_filter = f"VlanId in ({names}) and EthNetworkPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'vsan.vsans' == kwargs.qtype:         api_filter = f"VsanId in ({names}) and FcNetworkPolicy.Moid eq '{kwargs.pmoid}'"
-                elif 'wwnn_pool_leases' == kwargs.qtype:   api_filter = f"PoolPurpose eq 'WWNN' and AssignedToEntity.Moid in ('{names}')"
-                elif 'wwpn_pool_leases' == kwargs.qtype:   api_filter = f"PoolPurpose eq 'WWPN' and AssignedToEntity.Moid in ('{names}')"
-                elif re.search('ww(n|p)n', kwargs.qtype):  api_filter = api_filter + f" and PoolPurpose eq '{kwargs.qtype.upper()}'"
-                if kwargs.top1000 == True and len(kwargs.api_filter) > 0: api_args = f'?$filter={kwargs.api_filter}&$top=1000'
-                elif kwargs.top1000 == True: api_args = '?$top=1000'
-                elif api_filter == '': ''
-                else: api_args = f'?$filter={api_filter}'
-            elif kwargs.api_filter == 'ignore': api_args=''
-            else: api_args = f'?$filter={kwargs.api_filter}'
-        else: api_args = ''
-
-        #=====================================================
-        # Perform the apiCall
-        #=====================================================
-        api_auth=kwargs.api_auth
-        moid    = kwargs.pmoid
-        payload = kwargs.api_body
-        retries = 3
-        uri     = kwargs.uri
-        url     = kwargs.args.url
-        for i in range(retries):
-            try:
-                def send_error():
-                    prRed(json.dumps(kwargs.api_body, indent=4))
-                    prRed(kwargs.api_body)
-                    prRed(f'!!! ERROR !!!')
-                    if kwargs.method == 'get_by_moid': prRed(f'  URL: {url}/api/v1/{uri}/{moid}')
-                    elif kwargs.method ==    'delete': prRed(f'  URL: {url}/api/v1/{uri}/{moid}')
-                    elif kwargs.method ==       'get': prRed(f'  URL: {url}/api/v1/{uri}{api_args}')
-                    elif kwargs.method ==     'patch': prRed(f'  URL: {url}/api/v1/{uri}/{moid}')
-                    elif kwargs.method ==      'post': prRed(f'  URL: {url}/api/v1/{uri}')
-                    prRed(f'  Running Process: {kwargs.method} {kwargs.qtype}')
-                    prRed(f'    Error status is {status}')
-                    for k, v in (response.json()).items(): prRed(f"    {k} is '{v}'")
-                    sys.exit(1)
-                if 'get_by_moid' in kwargs.method: response =  requests.get(f'{url}/api/v1/{uri}/{moid}', auth=api_auth)
-                elif 'delete' in kwargs.method:    response =requests.delete(f'{url}/api/v1/{uri}/{moid}', auth=api_auth)
-                elif 'get' in kwargs.method:       response =  requests.get(f'{url}/api/v1/{uri}{api_args}', auth=api_auth)
-                elif 'patch' in kwargs.method:     response =requests.patch(f'{url}/api/v1/{uri}/{moid}', auth=api_auth, json=payload)
-                elif 'post' in kwargs.method:      response = requests.post(f'{url}/api/v1/{uri}', auth=api_auth, json=payload)
-                status = response
-                if re.search('40[0|3]', str(status)):
-                    retry_action = False
-                    send_error()
-                    for k, v in (response.json()).items():
-                        if 'user_action_is_not_allowed' in v: retry_action = True
-                        elif 'policy_attached_to_multiple_profiles_cannot_be_edited' in v: retry_action = True
-                    if i < retries -1 and retry_action == True:
-                        pcolor.Purple('     **NOTICE** Profile in Validating State.  Sleeping for 45 Seconds and Retrying.')
-                        time.sleep(45)
-                        continue
-                    else: send_error()
-                elif not re.search('(20[0-9])', str(status)): send_error()
-                api_results = DotMap(response.json())
-            except requests.HTTPError as e:
-                if re.search('Your token has expired', str(e)) or re.search('Not Found', str(e)):
-                    kwargs.results = False
-                    return kwargs
-                elif re.search('user_action_is_not_allowed', str(e)):
-                    if i < retries -1: time.sleep(45); continue
-                    else: raise
-                elif re.search('There is an upgrade already running', str(e)):
-                    kwargs.running = True
-                    return kwargs
+        def api_calls(kwargs):
+            #=====================================================
+            # Perform the apiCall
+            #=====================================================
+            api_args= kwargs.api_args
+            api_auth= kwargs.api_auth
+            moid    = kwargs.pmoid
+            payload = kwargs.api_body
+            retries = 3
+            uri     = kwargs.uri
+            url     = kwargs.args.url
+            for i in range(retries):
+                try:
+                    def send_error():
+                        prRed(json.dumps(kwargs.api_body, indent=4))
+                        prRed(kwargs.api_body)
+                        prRed(f'!!! ERROR !!!')
+                        if kwargs.method == 'get_by_moid': prRed(f'  URL: {url}/api/v1/{uri}/{moid}')
+                        elif kwargs.method ==    'delete': prRed(f'  URL: {url}/api/v1/{uri}/{moid}')
+                        elif kwargs.method ==       'get': prRed(f'  URL: {url}/api/v1/{uri}{api_args}')
+                        elif kwargs.method ==     'patch': prRed(f'  URL: {url}/api/v1/{uri}/{moid}')
+                        elif kwargs.method ==      'post': prRed(f'  URL: {url}/api/v1/{uri}')
+                        prRed(f'  Running Process: {kwargs.method} {kwargs.qtype}')
+                        prRed(f'    Error status is {status}')
+                        for k, v in (response.json()).items(): prRed(f"    {k} is '{v}'")
+                        sys.exit(1)
+                    if 'get_by_moid' in kwargs.method: response =  requests.get(f'{url}/api/v1/{uri}/{moid}', auth=api_auth)
+                    elif 'delete' in kwargs.method:    response =requests.delete(f'{url}/api/v1/{uri}/{moid}', auth=api_auth)
+                    elif 'get' in kwargs.method:       response =  requests.get(f'{url}/api/v1/{uri}{api_args}', auth=api_auth)
+                    elif 'patch' in kwargs.method:     response =requests.patch(f'{url}/api/v1/{uri}/{moid}', auth=api_auth, json=payload)
+                    elif 'post' in kwargs.method:      response = requests.post(f'{url}/api/v1/{uri}', auth=api_auth, json=payload)
+                    status = response
+                    if re.search('40[0|3]', str(status)):
+                        retry_action = False
+                        send_error()
+                        for k, v in (response.json()).items():
+                            if 'user_action_is_not_allowed' in v: retry_action = True
+                            elif 'policy_attached_to_multiple_profiles_cannot_be_edited' in v: retry_action = True
+                        if i < retries -1 and retry_action == True:
+                            pcolor.Purple('     **NOTICE** Profile in Validating State.  Sleeping for 45 Seconds and Retrying.')
+                            time.sleep(45)
+                            continue
+                        else: send_error()
+                    elif not re.search('(20[0-9])', str(status)): send_error()
+                except requests.HTTPError as e:
+                    if re.search('Your token has expired', str(e)) or re.search('Not Found', str(e)):
+                        kwargs.results = False
+                        return kwargs
+                    elif re.search('user_action_is_not_allowed', str(e)):
+                        if i < retries -1: time.sleep(45); continue
+                        else: raise
+                    elif re.search('There is an upgrade already running', str(e)):
+                        kwargs.running = True
+                        return kwargs
+                    else:
+                        prRed(f"Exception when calling {kwargs.uri}: {e}\n")
+                        sys.exit(1)
+                break
+            #=====================================================
+            # Print Debug Information if Turned on
+            #=====================================================
+            api_results = DotMap(response.json())
+            if int(debug_level) >= 1: pcolor.Cyan(response)
+            if int(debug_level)>= 5:
+                if kwargs.method == 'get_by_moid': pcolor.Cyan(f'  URL: {url}/api/v1/{uri}/{moid}')
+                elif kwargs.method ==       'get': pcolor.Cyan(f'  URL: {url}/api/v1/{uri}{api_args}')
+                elif kwargs.method ==     'patch': pcolor.Cyan(f'  URL: {url}/api/v1/{uri}/{moid}')
+                elif kwargs.method ==      'post': pcolor.Cyan(f'  URL: {url}/api/v1/{uri}')
+            if int(debug_level) >= 6: pcolor.Cyan(api_results)
+            if int(debug_level) == 7:
+                pcolor.Cyan(json.dumps(payload, indent=4))
+                pcolor.Cyan(payload)
+            #=====================================================
+            # Gather Results from the apiCall
+            #=====================================================
+            if api_results.get('Results'): kwargs.results = api_results.Results
+            else: kwargs.results = api_results
+            if 'post' in kwargs.method:
+                if re.search('bulk.(MoCloner|Request)', api_results.ObjectType):
+                    kwargs.pmoids = build_pmoid_dictionary(api_results, kwargs)
                 else:
-                    prRed(f"Exception when calling {kwargs.uri}: {e}\n")
-                    sys.exit(1)
-            break
-        #=====================================================
-        # Print Debug Information if Turned on
-        #=====================================================
-        api_results = DotMap(response.json())
-        if int(debug_level) >= 1: pcolor.Cyan(response)
-        if int(debug_level)>= 5:
-            if kwargs.method == 'get_by_moid': pcolor.Cyan(f'  URL: {url}/api/v1/{uri}/{moid}')
-            elif kwargs.method ==       'get': pcolor.Cyan(f'  URL: {url}/api/v1/{uri}{api_args}')
-            elif kwargs.method ==     'patch': pcolor.Cyan(f'  URL: {url}/api/v1/{uri}/{moid}')
-            elif kwargs.method ==      'post': pcolor.Cyan(f'  URL: {url}/api/v1/{uri}')
-        if int(debug_level) >= 6: pcolor.Cyan(api_results)
-        if int(debug_level) == 7:
-            pcolor.Cyan(json.dumps(payload, indent=4))
-            pcolor.Cyan(payload)
-        #=====================================================
-        # Gather Results from the apiCall
-        #=====================================================
-        if api_results.get('Results'): kwargs.results = api_results.Results
-        else: kwargs.results = api_results
-        if 'post' in kwargs.method:
-            if re.search('bulk.(MoCloner|Request)', api_results.ObjectType):
-                kwargs.pmoids = build_pmoid_dictionary(api_results, kwargs)
-            else:
-                kwargs.pmoid = api_results.Moid
-                if kwargs.api_body.get('Name'): kwargs.pmoids[kwargs.api_body['Name']] = kwargs.pmoid
-        elif 'inventory' in kwargs.uri: icount = 0
-        else:
-            if not kwargs.get('build_skip'): kwargs.pmoids = build_pmoid_dictionary(api_results, kwargs)
-        #=====================================================
-        # Print Progress Notifications
-        #=====================================================
-        if re.search('(patch|post)', kwargs.method):
-            if re.search('bulk.(MoCloner|Request)', api_results.ObjectType):
-                for e in api_results.Results:
-                    kwargs.api_results = e.Body
+                    kwargs.pmoid = api_results.Moid
+                    if kwargs.api_body.get('Name'): kwargs.pmoids[kwargs.api_body['Name']] = kwargs.pmoid
+            elif 'inventory' in kwargs.uri: icount = 0
+            elif not kwargs.get('build_skip'): kwargs.pmoids = build_pmoid_dictionary(api_results, kwargs)
+            #=====================================================
+            # Print Progress Notifications
+            #=====================================================
+            if re.search('(patch|post)', kwargs.method):
+                if re.search('bulk.(MoCloner|Request)', api_results.ObjectType):
+                    for e in api_results.Results:
+                        kwargs.api_results = e.Body
+                        if 'bulk.Request' in api_results.ObjectType:
+                            if e.Body.get('Name'): name_key = 'Name'
+                            elif e.Body.get('PcId'): name_key = 'PcId'
+                            elif e.Body.get('PortId'): name_key = 'PortId'
+                            elif e.Body.get('PortIdStart'): name_key = 'PortIdStart'
+                            elif e.Body.get('VlanId'): name_key = 'VlanId'
+                            elif e.Body.get('VsanId'): name_key = 'VsanId'
+                            elif e.Body.ObjectType == 'iam.EndPointUserRole': icount = 0
+                            else:
+                                pcolor.Red(json.dumps(e.Body, indent=4))
+                                pcolor.Red('Missing name_key.  isight.py line 164')
+                                sys.exit(1)
+                            if not e.Body['ObjectType'] == 'iam.EndPointUserRole':
+                                indx = next((index for (index, d) in enumerate(kwargs.api_body['Requests']) if d['Body'][name_key] == e.Body[name_key]), None)
+                                kwargs.method = (kwargs.api_body['Requests'][indx]['Verb']).lower()
+                        validating.completed_item(self.type, kwargs)
+                else:
+                    kwargs.api_results = api_results
                     validating.completed_item(self.type, kwargs)
+            return kwargs
+        #=====================================================
+        # Pagenation for Get > 1000
+        #=====================================================
+        if kwargs.method == 'get':
+            def build_api_args(kwargs):
+                if not kwargs.get('api_filter'):
+                    if re.search('(vlans|vsans|port.port_)', kwargs.qtype): names = ", ".join(map(str, kwargs.names))
+                    else: names = "', '".join(kwargs.names).strip("', '")
+                    if re.search('(organization|resource_group)', kwargs.qtype): api_filter = f"Name in ('{names}')"
+                    else: api_filter = f"Name in ('{names}') and Organization.Moid eq '{org_moid}'"
+                    if 'asset_target' == kwargs.qtype:          api_filter = f"TargetId in ('{names}')"
+                    elif 'connectivity.vhbas' in kwargs.qtype:  api_filter = f"Name in ('{names}') and SanConnectivityPolicy.Moid eq '{kwargs.pmoid}'"
+                    elif 'connectivity.vnics' in kwargs.qtype:  api_filter = f"Name in ('{names}') and LanConnectivityPolicy.Moid eq '{kwargs.pmoid}'"
+                    elif 'hcl_status' == kwargs.qtype:          api_filter = f"ManagedObject.Moid in ('{names}')"
+                    elif 'iam_role' == kwargs.qtype:            api_filter = f"Name in ('{names}') and Type eq 'IMC'"
+                    elif 'port.port_channel_' in kwargs.qtype:  api_filter = f"PcId in ({names}) and PortPolicy.Moid eq '{kwargs.pmoid}'"
+                    elif 'port.port_modes' == kwargs.qtype:     api_filter = f"PortIdStart in ({names}) and PortPolicy.Moid eq '{kwargs.pmoid}'"
+                    elif 'port.port_role_' in kwargs.qtype:     api_filter = f"PortId in ({names}) and PortPolicy.Moid eq '{kwargs.pmoid}'"
+                    elif 'registered_device' == kwargs.qtype:   api_filter = f"Moid in ('{names}')"
+                    elif 'reservations' in kwargs.qtype:        api_filter = f"Identity in ('{names}') and Pool.Moid eq '{kwargs.pmoid}'"
+                    elif 'serial_number' == kwargs.qtype:       api_filter = f"Serial in ('{names}')"
+                    elif 'storage.drive_groups' == kwargs.qtype:api_filter = f"Name in ('{names}') and StoragePolicy.Moid eq '{kwargs.pmoid}'"
+                    elif 'switch' == kwargs.qtype:              api_filter = f"Name in ('{names}') and SwitchClusterProfile.Moid eq '{kwargs.pmoid}'"
+                    elif 'user_role' == kwargs.qtype:           api_filter = f"EndPointUser.Moid in ('{names}') and EndPointUserPolicy.Moid eq '{kwargs.pmoid}'"
+                    elif 'vlan.vlans' == kwargs.qtype:          api_filter = f"VlanId in ({names}) and EthNetworkPolicy.Moid eq '{kwargs.pmoid}'"
+                    elif 'vsan.vsans' == kwargs.qtype:          api_filter = f"VsanId in ({names}) and FcNetworkPolicy.Moid eq '{kwargs.pmoid}'"
+                    elif 'wwnn_pool_leases' == kwargs.qtype:    api_filter = f"PoolPurpose eq 'WWNN' and AssignedToEntity.Moid in ('{names}')"
+                    elif 'wwpn_pool_leases' == kwargs.qtype:    api_filter = f"PoolPurpose eq 'WWPN' and AssignedToEntity.Moid in ('{names}')"
+                    elif re.search('ww(n|p)n', kwargs.qtype):   api_filter = api_filter + f" and PoolPurpose eq '{kwargs.qtype.upper()}'"
+                    if kwargs.top1000 == True and len(kwargs.api_filter) > 0: api_args = f'?$filter={kwargs.api_filter}&$top=1000'
+                    elif len(kwargs.names) > 99: api_args = f'?$filter={api_filter}&$top=1000'
+                    elif kwargs.top1000 == True: api_args = '?$top=1000'
+                    elif api_filter == '': ''
+                    else: api_args = f'?$filter={api_filter}'
+                elif kwargs.api_filter == 'ignore': api_args=''
+                else: api_args = f'?$filter={kwargs.api_filter}'
+                return api_args
+
+            if len(kwargs.names) > 1000:
+                chunked_list = list(); chunk_size = 1000
+                for i in range(0, len(kwargs.names), chunk_size):
+                    chunked_list.append(kwargs.names[i:i+chunk_size])
+                results = []
+                moid_dict = {}
+                parent_moid = kwargs.pmoid
+                for i in chunked_list:
+                    kwargs.names = i
+                    kwargs.api_args = build_api_args(kwargs)
+                    if re.search('leases|port.port|reservations|user_role|vhbas|vlans|vsans|vnics', kwargs.qtype):
+                        kwargs.pmoid = parent_moid
+                    kwargs = api_calls(kwargs)
+                    results.append(kwargs.results)
+                    moid_dict = dict(moid_dict, **kwargs.pmoids.toDict())
+                kwargs.pmoids = DotMap(moid_dict)
+                kwargs.results = results
             else:
-                kwargs.api_results = api_results
-                validating.completed_item(self.type, kwargs)
+                kwargs.api_args = build_api_args(kwargs)
+                kwargs = api_calls(kwargs)
+        else:
+            kwargs.api_args = ''
+            kwargs = api_calls(kwargs)
         #=====================================================
         # Return kwargs
         #=====================================================
@@ -256,6 +301,22 @@ class imm(object):
     #=======================================================
     # BIOS Policy Modification
     #=======================================================
+    def adapter_configuration(self, api_body, item, kwargs):
+        item = item; kwargs = kwargs
+        if api_body.get('Settings'):
+            for xx in range(0, len(api_body['Settings'])):
+                fec_mode = api_body['Settings'][xx]['DceInterfaceSettings']['FecMode']
+                api_body['Settings'][xx]['DceInterfaceSettings'] = []
+                for x in range(0,4):
+                    idict = {'FecMode': '', 'InterfaceId': x, 'ObjectType': 'adapter.DceInterfaceSettings'}
+                    if len(fec_mode) - 1 >= x: idict['FecMode'] = fec_mode[x]
+                    else: idict['FecMode'] = fec_mode[0]
+                    api_body['Settings'][xx]['DceInterfaceSettings'].append(idict)
+        return api_body
+
+    #=======================================================
+    # BIOS Policy Modification
+    #=======================================================
     def bios(self, api_body, item, kwargs):
         if api_body.get('bios_template'):
             btemplate = kwargs.ezdata['bios.template'].properties
@@ -298,11 +359,12 @@ class imm(object):
                 # Get Storage Policies
                 #=====================================================
                 names = []
-                for e in i.drive_groups: names.append(i.name)
+                for e in i.drive_groups: names.append(e.name)
                 kwargs.parent_name = i.name
-                kwargs.parent_type = 'Storage Policy'
+                kwargs.parent_type = 'storage'
                 kwargs.parent_moid = kwargs.isight[kwargs.org].policy['storage'][i.name]
-                kwargs.pmoid = kwargs.parent_moid
+                kwargs.pmoid       = kwargs.parent_moid
+                kwargs.qtype       = self.type
                 kwargs = api_get(True, names, self.type, kwargs)
                 dg_results = kwargs.results
                 #=====================================================
@@ -467,6 +529,15 @@ class imm(object):
     #=======================================================
     def iscsi_boot(self, api_body, item, kwargs):
         item = item
+        if api_body.get('IscsiAdapterPolicy'):
+            names = []
+            if '/' in api_body['IscsiAdapterPolicy']['Moid']: org, policy = api_body['IscsiAdapterPolicy']['Moid'].split('/')
+            else: org = kwargs.org; policy = api_body['IscsiAdapterPolicy']['Moid']
+            if not kwargs.isight[org].policy['iscsi_adapter'].get(policy): kwargs = api_get(False, [item.iscsi_adapter_policy], 'iscsi_adapter', kwargs)
+            if not kwargs.isight[org].policy['iscsi_adapter'].get(policy):
+                validating.error_policy_doesnt_exist('iscsi_adapter', api_body['IscsiAdapterPolicy']['Moid'], self.type, 'policy', api_body['Name'])
+            api_body['IscsiAdapterPolicy']['Moid'] = kwargs.isight[org].policy['iscsi_adapter'][policy]
+
         if api_body.get('InitiatorStaticIpV4Config'):
             api_body['InitiatorStaticIpV4Address'] = api_body['InitiatorStaticIpV4Config']['IpAddress']
             api_body['InitiatorStaticIpV4Config'].pop('IpAddress')
@@ -477,6 +548,7 @@ class imm(object):
                 api_body['MutualChap'] = api_body['Chap']; api_body.pop('Chap')
                 api_body['MutualChap']['Password'] = kwargs.var_value
             else: api_body['Chap']['Password'] = kwargs.var_value
+        if api_body['authentication']: api_body.pop('authentication')
         #=====================================================
         # Attach Pools/Policies to the API Body
         #=====================================================
@@ -668,8 +740,8 @@ class imm(object):
                 api_body['pmoid']  = kwargs.isight[kwargs.org].policy[self.type][api_body['Name']]
                 if patch_policy == True:
                     kwargs.bulk_list.append(deepcopy(api_body))
-                    kwargs.pmoids[api_body['Name']].moid = kwargs.pmoid
-                else: pcolor.Cyan(f"      * Skipping {ptitle} Policy: `{api_body['Name']}`.  Intersight Matches Configuration.  Moid: {kwargs.pmoid}")
+                    kwargs.pmoids[api_body['Name']].moid = api_body['pmoid']
+                else: pcolor.Cyan(f"      * Skipping {ptitle} Policy: `{api_body['Name']}`.  Intersight Matches Configuration.  Moid: {api_body['pmoid']}")
             else: kwargs.bulk_list.append(deepcopy(api_body))
             return kwargs
         #=====================================================
@@ -759,6 +831,24 @@ class imm(object):
                 reservations[api_body['Name']].reservations= api_body['reservations']
                 reservations[api_body['Name']].object_type = kwargs.ezdata[self.type].ObjectType
                 api_body.pop('reservations')
+            #=====================================================
+            # If Resource Pool Build Selector
+            #=====================================================
+            if api_body.get('serial_number_list'):
+                kwargs.method = 'get'
+                kwargs.names  = api_body['serial_number_list']
+                kwargs.qtype  = 'serial_number'
+                kwargs.uri    = kwargs.ezdata[self.type].intersight_uri_serial
+                kwargs        = api(kwargs.qtype).calls(kwargs)
+                smoids        = kwargs.pmoids
+                selector = "','".join([smoids[e].moid for e in list(smoids.keys())]); selector = f"'{selector}'"
+                stype = f"{smoids[api_body['serial_number_list'][0]].object_type.split('.')[1]}s"
+                mmode = smoids[api_body['serial_number_list'][0]].management_mode
+                api_body['Selectors'] = [{
+                    'ObjectType': 'resource.Selector',
+                    'Selector': f"/api/v1/compute/{stype}?$filter=(Moid in ({selector})) and (ManagementMode eq '{mmode}')"
+                }]
+                api_body.pop('serial_number_list')
             #=====================================================
             # If Modified Patch the Pool via the Intersight API
             #=====================================================
@@ -1369,14 +1459,17 @@ class imm(object):
         elif api_body.get('configure_recommended_classes') == None and (api_body.get('Classes') == None or len(api_body.get('Classes')) == 0):
             api_body['Classes'] = kwargs.ezdata['system_qos.classes_default'].classes
         if api_body.get('jumbo_mtu'):
-            if api_body['jumbo_mtu'] == False:
-                for x in range(api_body['Classes']):
-                    if not api_body['Classes'][x]['Name'] == 'FC': api_body['Classes'][x]['Mtu'] = 1500
+            for x in range(0, len(api_body['Classes'])):
+                if api_body['Classes'][x].get('Priority'):
+                    api_body['Classes'][x]['Name'] = api_body['Classes'][x]['Priority']; api_body['Classes'][x].pop('Priority')
+                if api_body['jumbo_mtu'] == True: api_body['Classes'][x]['Mtu'] = 9000
+                else: api_body['Classes'][x]['Mtu'] = 9000
+                if api_body['Classes'][x]['Name'] == 'FC': api_body['Classes'][x]['Mtu'] = 2240
             api_body.pop('jumbo_mtu')
         classes = deepcopy(api_body['Classes']); api_body['Classes'] = []
         for e in classes:
-            if type(e) == dict: api_body['Classes'].append(e)
-            else: api_body['Classes'].append(e.toDict())
+            if not type(e) == dict: e.toDict()
+            api_body['Classes'].append(e)
         return api_body
 
     #=====================================================
@@ -1658,7 +1751,7 @@ class imm(object):
                     #=====================================================
                     if kwargs.isight[kwargs.org].policy[self.type].get(i.names[x]):
                         indx = next((index for (index, d) in enumerate(vnic_results) if d['Name'] == i.names[x]), None)
-                        patch_vsan = compare_body_result(kwargs.api_body, vnic_results[indx])
+                        patch_vsan = compare_body_result(api_body, vnic_results[indx])
                         api_body['pmoid'] = kwargs.isight[kwargs.org].policy[self.type][i.names[x]]
                         if patch_vsan == True: kwargs.bulk_list.append(deepcopy(api_body))
                         else:
@@ -1818,13 +1911,16 @@ def build_api_body(api_body, idata, item, ptype, kwargs):
                         idict = {'ObjectType':idata[k]['items'].ObjectType}
                         for a, b in idata[k]['items'].properties.items():
                             if re.search('boolean|string|integer', b.type):
-                                if a in e: idict.update({b.intersight_api:e[a]})
+                                if a in e and '$ref:' in b.intersight_api:
+                                    x = b.intersight_api.split(':')
+                                    if not idict.get(x[1]): idict.update({x[1]:{x[3]:e[a], 'ObjectType':x[2]}})
+                                elif a in e: idict.update({b.intersight_api:e[a]})
                             elif b.type == 'object' and a in e:
                                 idict.update({b.intersight_api:{'ObjectType':b.ObjectType}})
                                 for c, d in b.properties.items():
                                     if e[a].get(c): idict[b.intersight_api].update({d.intersight_api:e[a][c]})
                             elif b.type == 'array' and a in e:
-                                if not re.search('(l|s)an_connectivity|firmware|port', kwargs.type):
+                                if not re.search('(l|s)an_connectivity|firmware|port|storage', kwargs.type):
                                     pcolor.Cyan(f'\n++{"-"*91}\n\n')
                                     pcolor.Cyan(f'{k}\n{a}\n{b}\n{e[c]}')
                                     prRed(f'!!! ERROR !!! undefined mapping for array in array: `{d.type}`')
@@ -1919,6 +2015,7 @@ def build_pmoid_dictionary(api_results, kwargs):
             else: apiDict[iname].moid = i.Moid
             if i.get('IpV4Config'): apiDict[iname].ipv4_config = i.IpV4Config
             if i.get('IpV6Config'): apiDict[iname].ipv6_config = i.IpV6Config
+            if i.get('ManagementMode'): apiDict[iname].management_mode = i.ManagementMode
             if i.get('Model'):
                 apiDict[iname].model = i.Model
                 apiDict[iname].object_type = i.ObjectType
@@ -1948,25 +2045,36 @@ def bulk_request(kwargs):
         kwargs        = api(kwargs.qtype).calls(kwargs)
         return kwargs
 
-    kwargs.api_body = {'Requests':[]}
+    def loop_thru_lists(kwargs):
+        if len(kwargs.api_body['Requests']) > 99:
+            requests_list = deepcopy(kwargs.api_body['Requests'])
+            chunked_list = list(); chunk_size = 100
+            for i in range(0, len(requests_list), chunk_size):
+                chunked_list.append(requests_list[i:i+chunk_size])
+            for i in chunked_list:
+                kwargs.api_body['Requests'] = i
+                kwargs = post_to_api(kwargs)
+        else: kwargs = post_to_api(kwargs)
+        return kwargs
+
+    patch_list = []
+    post_list  = []
     for e in kwargs.bulk_list:
         if e.get('pmoid'):
-            kwargs.api_body['Requests'].append({
-                'Body':e, 'ClassId':'bulk.RestSubRequest', 'ObjectType':'bulk.RestSubRequest', 'TargetMoid': e['pmoid'],
-                'Uri':f'/v1/{kwargs.uri}', 'Verb':'PATCH'})
+            tmoid = e['pmoid']
             e.pop('pmoid')
+            patch_list.append({
+                'Body':e, 'ClassId':'bulk.RestSubRequest', 'ObjectType':'bulk.RestSubRequest', 'TargetMoid': tmoid,
+                'Uri':f'/v1/{kwargs.uri}', 'Verb':'PATCH'})
         else:
-            kwargs.api_body['Requests'].append({
+            post_list.append({
                 'Body':e, 'ClassId':'bulk.RestSubRequest', 'ObjectType':'bulk.RestSubRequest', 'Uri':f'/v1/{kwargs.uri}', 'Verb':'POST'})
-    if len(kwargs.api_body['Requests']) > 99:
-        requests_list = deepcopy(kwargs.api_body['Requests'])
-        chunked_list = list(); chunk_size = 100
-        for i in range(0, len(requests_list), chunk_size):
-            chunked_list.append(requests_list[i:i+chunk_size])
-        for i in chunked_list:
-            kwargs.api_body['Requests'] = i
-            kwargs = post_to_api(kwargs)
-    else: kwargs = post_to_api(kwargs)
+    if len(patch_list) > 0:
+        kwargs.api_body = {'Requests':patch_list}
+        kwargs = loop_thru_lists(kwargs)
+    if len(post_list) > 0:
+        kwargs.api_body = {'Requests':post_list}
+        kwargs = loop_thru_lists(kwargs)
     return kwargs
 
 #=====================================================
@@ -2005,17 +2113,32 @@ def compare_body_result(api_body, result):
     for k, v in api_body.items():
         if type(v) == dict:
             for a,b in v.items():
-                if not result[k][a] == b: patch_return = True
+                if type(b) == list:
+                    count = 0
+                    for e in b:
+                        if type(e) == dict:
+                            for c,d in e.items():
+                                if not result[k][a][count][c] == d: patch_return = True
+                        else:
+                            if not result[k][a][count] == e: patch_return = True
+                elif not result[k][a] == b: patch_return = True
         elif type(v) == list:
             count = 0
             for e in v:
                 if type(e) == dict:
-                    for a, b in e.items():
+                    for a,b in e.items():
                         if type(b) == dict:
-                            for c, d in b.items():
+                            for c,d in b.items():
                                 if not result[k][count][a][c] == d: patch_return = True
+                        elif type(b) == list:
+                            scount = 0
+                            for s in b:
+                                if type(s) == dict:
+                                    for g,h in s.items():
+                                        if not result[k][count][a][scount][g] == h: patch_return = True
+                                scount += 1
                         else:
-                            if 'Password' in a: skip = 1
+                            if 'Password' in a: count = count
                             elif not result[k][count][a] == b: patch_return = True
                 elif type(e) == list:
                     prRed(e)

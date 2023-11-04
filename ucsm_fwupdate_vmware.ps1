@@ -112,6 +112,7 @@ function Connect-vCenter {
         return $vcenterConn
     }
 }
+
 function WaitUcsManagerActivation {
     $count = 0
     $ucsConnection = $null
@@ -219,6 +220,7 @@ function Wait-UcsServersActivation {
     }
     return $true
 }
+
 function AckUcsFIRebootEvent {
     $count = 0
     while ($null -eq $fwAck) {
@@ -390,40 +392,24 @@ Try {
     ${cSeriesBundle} = "ucs-k9-bundle-c-series." + ${versionBundle} + "C.bin"
     ${bundle} = @(${aSeriesBundle},${bSeriesBundle},${cSeriesBundle})
 
-    Write-Log "Starting Firmware download process to local directory: ${imageDir}"
+    Write-Log "Starting Firmware Check for Local Directory: ${imageDir}"
     Write-Log ""
-
+    $image_count = 0
     foreach(${eachBundle} in ${bundle}) {
         ${fileName} = ${imageDir} +  $pathSep + ${eachBundle}
-         if( Test-Path -Path ${fileName}) {
-              Write-Log "Image File : '${eachBundle}' already exist in local directory: '${imageDir}'"
-         } else {
-              ${ccoImageList} += ${eachBundle}
-         }
-    }
-
-    if(${ccoImageList} -ne ${null}) {
-        $credPath = $homePath + $pathSep + "ccopowercli.Cred"
-        # Obtain CCO Credentials
-        if (Test-Path -Path $credPath) {
-            Write-Log "Found Existing Credentials for Cisco.com (CCO) Credentials."
-            Write-Log ""
-            ${ccoCred} = Import-CliXml -Path $credPath
+        if( Test-Path -Path ${fileName}) {
+            Write-Log "Image File : '${eachBundle}' already exist in local directory: '${imageDir}'"
         } else {
-            Write-Log "Enter Cisco.com (CCO) Credentials"
-            Write-Log ""
-            ${ccoCred} = Get-Credential -Message "Enter Cisco.com (CCO) Credentials"
-            ${ccoCred} | Export-CliXml -Path $credPath
+            if ($image_count -eq 0) {
+                Write-Host "CCO Image Download Depricated due to loss of support of ADS v3.0 with CCO." -ForegroundColor Red
+                Write-Host "It is no Longer Supported as of February 2022." -ForegroundColor Red
+            }
+            Write-Host "Please Download $(${eachBundle}) and put in Local Directory: '$(${imageDir})'" -ForegroundColor Red
+            $image_count ++
         }
-        foreach(${eachbundle} in ${ccoImageList}) {
-            [array]${ccoImage} += Get-UcsSoftwareImageList -AllReleases -Credential ${ccoCred} -ErrorAction Stop | Where-Object { $_.ImageName -match ${eachbundle}}
-            Write-Log "Preparing to download UCS Manager version '$($version)' bundle file: '$($eachbundle)'"
-        }
-        ${Error}.Clear()
-        Write-Log  "Downloading UCS Manager version: '$($version)' bundles to local directory: $($imageDir)"
-        ${ccoImage} | Get-UcsSoftwareImage -Path ${imageDir} -ErrorAction Stop
     }
-    Write-Log "Firmware download process completed to local directory: ${imageDir}"
+    if ($image_count -gt 0) { Exit 1 }
+    Write-Log "Firmware Check completed for Local Directory: ${imageDir}"
     Write-Log ""
 
     foreach (${image} in ${bundle}) {

@@ -180,7 +180,8 @@ def create_yaml(orgs, kwargs):
                                             idict[org][item][key] = list({v['name']:v for v in value}.values())
                                     else:
                                         for key, value in newdict[org][item].items():
-                                            idict[org][item][key] = list({v['name']:v for v in value}.values())
+                                            if not 'name' in value: idict[org][item][key] = value
+                                            else: idict[org][item][key] = list({v['name']:v for v in value}.values())
                                 if re.search('policies|pools|profiles|templates', dest_dir): dest_file = f"{i}.ezi.yaml"
                                 else: dest_file = f"{i}.yaml"
                                 title1 = str.title(item.replace('_', ' '))

@@ -217,7 +217,7 @@ def create_terraform_workspaces(orgs, kwargs):
             polVars.workspace_id = tf.terraform_cloud().tfcWorkspace(polVars, kwargs)
             vars = ['apikey.Intersight API Key', 'secretkey.Intersight Secret Key' ]
             for var in vars:
-                print(f"* Adding {var.split('.')[1]} to {polVars.workspaceName}")
+                pcolor.Green(f"* Adding {var.split('.')[1]} to {polVars.workspaceName}")
                 kwargs['Variable'] = var.split('.')[0]
                 if 'secret' in var:
                     kwargs['Multi_Line_Input'] = True
@@ -374,7 +374,7 @@ def main_menu(kwargs):
                 else: kwargs.main_menu_list.extend(['chassis', 'domain', 'server', 'server_template'])
         if not 'Resource' in kwargs.imm_dict.orgs[kwargs.org].wizard.assignment_method:
             if 'resource' in kwargs.main_menu_list: kwargs.main_menu_list.remove('resource')
-        else: print(kwargs.imm_dict.orgs[kwargs.org].wizard.assignment_method); exit()
+        else: pcolor.Red(kwargs.imm_dict.orgs[kwargs.org].wizard.assignment_method); sys.exit(1)
         return kwargs
     if not re.search('Exit|Deploy', kwargs.deployment_type):
         #==============================================
@@ -397,49 +397,6 @@ def main_menu(kwargs):
 
     return kwargs
 
-#=================================================================
-# Function: Deploy Configuration in YAML Files
-#=================================================================
-def process_deploy_to_intersight(kwargs):
-    orgs = kwargs.orgs
-    #==============================================
-    # Pools
-    #==============================================
-    #pool_list = []
-    #for k, v in kwargs.ezdata.items():
-    #    if v.intersight_type == 'pool' and not '.' in k: pool_list.append(k)
-    #for org in orgs:
-    #    print()
-    #    kwargs.org = org
-    #    if kwargs.imm_dict.orgs[org].get('pools'):
-    #        for ptype in kwargs.imm_dict.orgs[org]['pools']:
-    #            if ptype in pool_list:  kwargs = eval(f"isight.imm(ptype).pools(kwargs)")
-    #==============================================
-    # Policies
-    #==============================================
-    policy_list = []
-    for k, v in kwargs.ezdata.items():
-        if v.intersight_type == 'policy' and not '.' in k: policy_list.append(k)
-    print(policy_list)
-    for org in orgs:
-        kwargs.org = org
-        print(kwargs.imm_dict.orgs[org].policies)
-        if kwargs.imm_dict.orgs[org].get('policies'):
-            for ptype in kwargs.imm_dict.orgs[org]['policies']:
-                if ptype in policy_list:  kwargs = eval(f"isight.imm(ptype).policies(kwargs)")
-    exit()
-    #==============================================
-    # Profiles and Server Identities
-    #==============================================
-    for org in orgs:
-        kwargs.org = org
-        if kwargs.imm_dict.orgs[org].get('templates'):
-            if kwargs.imm_dict.orgs[org]['templates'].get('server'): kwargs = eval(f"isight.imm('server_template').profiles(kwargs)")
-        if kwargs.imm_dict.orgs[org].get('profiles'):
-            profile_list = ['domain', 'chassis', 'server']
-            for i in profile_list:
-                if kwargs.imm_dict.orgs[org]['profiles'].get(i): kwargs = eval(f"isight.imm(i).profiles(kwargs)")
-    return kwargs
 
 #=================================================================
 # Function: Wizard
@@ -454,8 +411,6 @@ def process_wizard(kwargs):
         # Intersight Pools/Policies
         #==============================================
         if p in kwargs.pool_list or p in kwargs.policy_list or p in profile_list:
-            print(f'running {p}')
-            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             kwargs = build.build_imm(p).ezimm(kwargs)
     return kwargs
 
@@ -560,49 +515,56 @@ def main():
         if not re.search('Exit|Deploy', kwargs.deployment_type):
             kwargs = process_wizard(kwargs)
         kwargs.orgs = list(kwargs.imm_dict.orgs.keys())
-        if re.search('Deploy', kwargs.deployment_type):
-            kwargs = isight.api('organization').organizations(kwargs)
-            kwargs = process_deploy_to_intersight(kwargs)
+        if re.search('Deploy', kwargs.deployment_type): kwargs.args.deployment_method = 'Python'
     #==============================================
     # Create YAML Files
     #==============================================
-    exit()
+    orgs = kwargs.orgs
     ezfunctions.create_yaml(orgs, kwargs)
     if len(kwargs.imm_dict.orgs.keys()) > 0:
-        if kwargs.deployment_type == 'Terraform':
+        kwargs = isight.api('organization').organizations(kwargs)
+        if kwargs.args.deployment_method == 'Terraform':
             #==============================================
             # Create Terraform Config and Workspaces
             #==============================================
             ezfunctions.merge_easy_imm_repository(kwargs)
             kwargs = ezfunctions.terraform_provider_config(kwargs)
             kwargs = create_terraform_workspaces(orgs, kwargs)
-        elif kwargs.deployment_type == 'Python':
+        elif kwargs.args.deployment_method == 'Python':
             #==============================================
             # Pools
             #==============================================
-            for org in kwargs.orgs:
+            pool_list = []
+            for k, v in kwargs.ezdata.items():
+                if v.intersight_type == 'pool' and not '.' in k: pool_list.append(k)
+            for org in orgs:
+                kwargs.org = org
                 if kwargs.imm_dict.orgs[org].get('pools'):
-                    for ptype in kwargs.imm_dict.orgs[org]['pools']:
-                        kwargs = eval(f"isight.imm(pool_type).{ptype}(pargs, kwargs)")
+                    for ptype in pool_list:
+                        if ptype in kwargs.imm_dict.orgs[org]['pools']:  kwargs = eval(f"isight.imm(ptype).pools(kwargs)")
             #==============================================
             # Policies
             #==============================================
-            for org in kwargs.orgs:
-                policies_in_order = OrderedDict(sorted(kwargs.imm_dict.orgs[org]['policies'].items()))
+            policy_list = []
+            for k, v in kwargs.ezdata.items():
+                if v.intersight_type == 'policy' and not '.' in k: policy_list.append(k)
+            for org in orgs:
+                kwargs.org = org
                 if kwargs.imm_dict.orgs[org].get('policies'):
-                    for ptype in policies_in_order:
-                        kwargs = eval(f"isight.imm(ptype).policies(pargs, kwargs)")
+                    for ptype in policy_list:
+                        if ptype in kwargs.imm_dict.orgs[org]['policies']:  kwargs = eval(f"isight.imm(ptype).policies(kwargs)")
             #==============================================
             # Profiles
             #==============================================
-            for org in kwargs.orgs:
+            for org in orgs:
+                kwargs.org = org
                 if kwargs.imm_dict.orgs[org].get('templates'):
-                    if kwargs.imm_dict.orgs[org]['templates'].get('server'):
-                        kwargs = eval(f"isight.imm('server_template').profiles(pargs, kwargs)")
+                    if kwargs.imm_dict.orgs[org]['templates'].get('server'): kwargs = eval(f"isight.imm('server_template').profiles(kwargs)")
                 if kwargs.imm_dict.orgs[org].get('profiles'):
-                    for ptype in ['domain', 'chassis', 'server']:
-                        if kwargs.imm_dict.orgs[org]['profiles'].get(ptype):
-                            kwargs = eval(f"isight.imm(ptype).profiles(pargs, kwargs)")
+                    profile_list = ['domain', 'chassis', 'server']
+                    for i in profile_list:
+                        if kwargs.imm_dict.orgs[org]['profiles'].get(i): kwargs = eval(f"isight.imm(i).profiles(kwargs)")
+
     pcolor.Cyan(f'\n{"-"*91}\n\n  !!! Proceedures Complete !!!\n  Closing Environment and Exiting Script...\n\n{"-"*91}\n')
     sys.exit(0)
 
