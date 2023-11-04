@@ -170,6 +170,8 @@ def main():
     # - intersight_fqdn
     # - intersight_secret_key
     #==============================================
+    if re.search('azurestack|flashstack|flexpod', kwargs.args.deployment_type):
+        kwargs.args.intersight_secret_key = f"{kwargs.args.dir}{os.sep}intersight_api_key.key"
     kwargs         = ezfunctions.intersight_config(kwargs)
     kwargs.args.url= 'https://%s' % (kwargs.args.intersight_fqdn)
     #==============================================
