@@ -141,12 +141,10 @@ def claim_targets(kwargs):
                 result[device.hostname].serial = device_id
 
         if re.search(r'\(([0-9a-z\'\,]+)\)', resource_groups[i.resource_group].selectors[0].Selector):
-            device_registrations= re.search(
-                r'\(([0-9a-z\'\,]+)\)', resource_groups[i.resource_group].selectors[0].Selector).group(1)
+            device_registrations= re.search(r'\(([0-9a-z\'\,]+)\)', resource_groups[i.resource_group].selectors[0].Selector).group(1)
         else: device_registrations= ''
-        result[s]['Resource Group'] = i.resource_group
         for s in i.devices:
-            # 5f4bc8d86f72612d3035521a
+            result[s]['Resource Group'] = i.resource_group
             if not result[s].reg_moid in device_registrations:
                 if len(device_registrations) > 0:
                     appended_targets = device_registrations + "," + f"'{result[s].reg_moid}'"
@@ -154,16 +152,17 @@ def claim_targets(kwargs):
                 result[s]['Resource Updated'] = True
             else: result[s]['Resource Updated'] = False
 
-        kwargs.api_body = { "Selectors":[{
-            "ClassId": "resource.Selector",
-            "ObjectType": "resource.Selector",
-            "Selector": "/api/v1/asset/DeviceRegistrations?$filter=Moid in("f"{appended_targets})"
-        }] }
-        kwargs.method= 'patch'
-        kwargs.pmoid = resource_groups[i.resource_group].moid
-        kwargs.qtype = 'resource_group'
-        kwargs.uri   = 'resource/Groups'
-        kwargs       = isight.api(kwargs.qtype).calls(kwargs)
+        if not kwargs.org == 'default':
+            kwargs.api_body = { "Selectors":[{
+                "ClassId": "resource.Selector",
+                "ObjectType": "resource.Selector",
+                "Selector": "/api/v1/asset/DeviceRegistrations?$filter=Moid in("f"{appended_targets})"
+            }] }
+            kwargs.method= 'patch'
+            kwargs.pmoid = resource_groups[i.resource_group].moid
+            kwargs.qtype = 'resource_group'
+            kwargs.uri   = 'resource/Groups'
+            kwargs       = isight.api(kwargs.qtype).calls(kwargs)
 
     pcolor.Cyan(f'\n{"-" * 60}')
     for key, value in result.items():
@@ -173,7 +172,7 @@ def claim_targets(kwargs):
                 msg_split.sort()
                 for msg in msg_split:
                     if not msg == '': pcolor.Cyan(msg)
-            else: pcolor.Cyan(k, ':', v)
+            else: pcolor.Cyan(f"{k}: {v}")
     pcolor.Cyan(f'\n{"-" * 60}')
 
     # logout of any sessions active after exception handling

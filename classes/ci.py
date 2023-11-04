@@ -2274,6 +2274,7 @@ class wizard(object):
                 kwargs.imm.firmware    = item.firmware
                 kwargs.imm.policies    = item.policies
                 kwargs.imm.tags        = kwargs.ezdata.tags
+                kwargs.imm.username    = item.policies.local_user
                 #for p in item.profiles:
                 #    dlength = len(p.network.data.split('/'))
                 #    dsplit  = p.network.data.split('/')

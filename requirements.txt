@@ -13,7 +13,7 @@ numpy
 openpyxl
 ordered_set
 phonenumbers
-PyCrypto
+pycryptodome
 pyexpect
 pytz
 pyvmomi

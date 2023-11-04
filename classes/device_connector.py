@@ -226,11 +226,17 @@ class imc_device_connector(device_connector, object):
         utils_extension = ''
         if system_type == 'Darwin': system_type = 'Mac'
         elif system_type == 'Windows': utils_extension = '.exe'
+        print('here')
+        print(self.device.script_path)
+        print(system_type)
+        print(utils_extension)
         utils_exe = f"{self.device.script_path}/get_data/{system_type}/GetData{utils_extension}"
-
+        exit()
         try:
             user = self.device.username
-            passphrase = subprocess.check_output([utils_exe, self.device.username])
+            print(user)
+            exit()
+            passphrase = subprocess.check_output([utils_exe, user])
             utils_password = get_data.E(passphrase, password)
             imc_login_str = f"user={URL.quote_plus(user)}&password={URL.quote_plus(utils_password.rstrip())}"
             imc_login_uri = f"https://{self.device.hostname}/data/login"
