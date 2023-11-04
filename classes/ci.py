@@ -321,10 +321,12 @@ class imm(object):
             kwargs.yaml.device_list = [DotMap(
                 device_type   = 'imc',
                 devices       = devices,
+                op_system     = kwargs.op_system,
                 password      = password,
                 resource_group= kwargs.org,
                 username      = kwargs.imm.username
             )]
+            kwargs.username = kwargs.imm.username
             kwargs.password = password
             kwargs = claim_device.claim_targets(kwargs)
             serial_numbers = []

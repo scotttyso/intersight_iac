@@ -219,7 +219,7 @@ class imc_device_connector(device_connector, object):
         # imports for utility use are directly below so they are not required in non IMC environments
         # --------------------------------
         import urllib.parse as URL
-        from pkgutil import get_data
+        import get_data
         import six
         password = six.b(self.device.password)
         system_type = self.device.op_system

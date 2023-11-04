@@ -35,6 +35,7 @@ def claim_targets(kwargs):
             device = DotMap(
                 device_type   = i.device_type,
                 hostname      = e,
+                op_system     = i.op_system,
                 password      = kwargs.password,
                 resource_group= i.resource_group,
                 script_path   = kwargs.script_path,
