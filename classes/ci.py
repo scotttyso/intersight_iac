@@ -236,7 +236,7 @@ class imm(object):
                 chassis_id         = i.ChassisId,
                 chassis_moid       = i.Parent.Moid,
                 cpu                = cv,
-                domain             = kwargs.domain.name,
+                domain             = '',
                 firmware           = i.Firmware,
                 gen                = sg,
                 moid               = i.Moid,
@@ -250,12 +250,13 @@ class imm(object):
                 tpm                = tpm,
                 vics               = vics
             )
+            if len(kwargs.domain) > 0: kwargs.servers[i.Serial].domain = kwargs.domain.name
             if i.SourceObjectType == 'compute.RackUnit': kwargs.servers[i.Serial].pop('chassis_moid')
             return kwargs
         #=====================================================
         # Build Domain Dictionaries
         #=====================================================
-        if kwargs.domain:
+        if len(kwargs.domain) > 0:
             kwargs.chassis= DotMap([])
             kwargs.method = 'get'
             kwargs.names  = [kwargs.domain.serial_numbers[0]]
@@ -301,7 +302,6 @@ class imm(object):
                 kwargs = server_dictionary(i, kwargs)
                 pcolor.Cyan(f'     Completed Server Inventory for Server: {i.Serial}')
             pcolor.Cyan('')
-
         else:
             #=====================================================
             # Build Server Dictionaries - Standalone
