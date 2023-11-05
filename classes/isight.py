@@ -2010,12 +2010,14 @@ def build_pmoid_dictionary(api_results, kwargs):
             elif i.get('Version'): iname = i.Version
             elif i.get('ControllerId'): iname = i.ControllerId
             elif i.get('Identity'): iname = i.Identity
+            elif i.get('PciSlot'): iname = str(i.PciSlot)
             if i.get('PcId') or i.get('PortId') or i.get('PortIdStart'):
                 apiDict[i.PortPolicy.Moid][iname].moid = i.Moid
             else: apiDict[iname].moid = i.Moid
             if i.get('IpV4Config'): apiDict[iname].ipv4_config = i.IpV4Config
             if i.get('IpV6Config'): apiDict[iname].ipv6_config = i.IpV6Config
             if i.get('ManagementMode'): apiDict[iname].management_mode = i.ManagementMode
+            if i.get('MgmtIpAddress'): apiDict[iname].management_ip_address = i.MgmtIpAddress
             if i.get('Model'):
                 apiDict[iname].model = i.Model
                 apiDict[iname].object_type = i.ObjectType
