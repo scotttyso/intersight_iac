@@ -5934,7 +5934,7 @@
                         "ProcessorC6report": "disabled",
                         "PstateCoordType": "HW ALL",
                         "PwrPerfTuning": "os",
-                        "QpiLinkFrequency": "Auto",
+                        "QpiLinkFrequency": "auto",
                         "Snc": "disabled",
                         "StreamerPrefetch": "enabled",
                         "UfsDisable": "enabled",

@@ -2136,8 +2136,6 @@ class wizard(object):
         profiles_list = ['templates', 'chassis', 'server']
         if kwargs.args.deployment_type == 'azurestack': profiles_list.remove('chassis')
         for p in profiles_list: kwargs = eval(f'imm(p).{p}(kwargs)')
-        print(json.dumps(kwargs.imm_dict.orgs, indent=4))
-        exit()
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
