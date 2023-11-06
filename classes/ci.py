@@ -2099,6 +2099,8 @@ class wizard(object):
                 if i in policy_list: policy_list.remove(i)
             kwargs = imm('compute_environment').compute_environment(kwargs)
             for i in policy_list: kwargs = eval(f'imm(i).{i}(kwargs)')
+            print(json.dumps(kwargs.imm_dict.orgs, indent=4))
+            exit()
         else:
             for k, v in kwargs.ezdata.items():
                 if v.intersight_type == 'policy' and ('chassis' in v.target_platforms or 'FIAttached' in v.target_platforms
