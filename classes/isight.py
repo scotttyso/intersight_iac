@@ -2191,9 +2191,6 @@ def compare_body_result(api_body, result):
                                         elif not result[k][count][a][scount][g] == h: patch_return = True
                                 scount += 1
                         else:
-                            print(result[k])
-                            print(b)
-
                             if 'Password' in a: count = count
                             elif len(result[k]) - 1 < count: patch_return = True
                             elif not result[k][count][a] == b: patch_return = True
