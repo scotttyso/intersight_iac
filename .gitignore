@@ -6,11 +6,12 @@
 **/.secret
 **/terraform.tfvars
 **/.terraform.lock.hcl
+**/__init__.py
 
 # Local Python Directories
 **/Testing*/*
 **/QA/*
 **/Logs/*
 **/PROD/*
-__pycache__/
+**/__pycache__/
 **/.DS_Store/*
