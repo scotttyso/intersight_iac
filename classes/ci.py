@@ -1827,7 +1827,7 @@ class imm(object):
                 serial_over_lan_policy  = 'sol',
                 snmp_policy             = 'snmp',
                 syslog_policy           = 'syslog',
-                thermal                 = 'server',
+                thermal_policy          = 'server',
                 uuid_pool               = 'uuid',
                 virtual_kvm_policy      = 'vkvm',
                 virtual_media_policy    = 'vmedia',
