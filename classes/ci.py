@@ -234,22 +234,23 @@ class imm(object):
                     template = f"{sg}-{cv}-{ctype}-{boot_type}-vic-{vics[0].vic_gen}-{vs1}-{vs2}"
                 else: template = f"{sg}-{cv}-{ctype}-{boot_type}-vic-{vics[0].vic_gen}-{vs1}"
             kwargs.servers[i.Serial] = DotMap(
-                chassis_id         = i.ChassisId,
-                chassis_moid       = i.Parent.Moid,
-                cpu                = cv,
-                domain             = '',
-                firmware           = i.Firmware,
-                gen                = sg,
-                moid               = i.Moid,
-                model              = i.Model,
-                object_type        = i.SourceObjectType,
-                serial             = i.Serial,
-                server_id          = i.ServerId,
-                slot               = i.SlotId,
-                storage_controllers= storage_controllers,
-                template           = template,
-                tpm                = tpm,
-                vics               = vics
+                chassis_id            = i.ChassisId,
+                chassis_moid          = i.Parent.Moid,
+                cpu                   = cv,
+                domain                = '',
+                firmware              = i.Firmware,
+                gen                   = sg,
+                management_ip_address = i.MgmtIpAddress,
+                moid                  = i.Moid,
+                model                 = i.Model,
+                object_type           = i.SourceObjectType,
+                serial                = i.Serial,
+                server_id             = i.ServerId,
+                slot                  = i.SlotId,
+                storage_controllers   = storage_controllers,
+                template              = template,
+                tpm                   = tpm,
+                vics                  = vics
             )
             if len(kwargs.domain) > 0: kwargs.servers[i.Serial].domain = kwargs.domain.name
             if i.SourceObjectType == 'compute.RackUnit': kwargs.servers[i.Serial].pop('chassis_moid')
@@ -1627,7 +1628,8 @@ class imm(object):
                     kwargs.server_profiles[name] = v
                     kwargs.server_profiles[name].boot_volume = kwargs.imm.policies.boot_volume
                     kwargs.server_profiles[name].os_type = os_type
-                    kwargs = server_profile_networks(name, p, kwargs)
+                    if not os_type == 'AzureStack':
+                        kwargs = server_profile_networks(name, p, kwargs)
             polVars['targets']  = sorted(polVars['targets'], key=lambda item: item['name'])
             kwargs.class_path= f'profiles,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
@@ -1836,7 +1838,7 @@ class imm(object):
             if kwargs.args.deployment_type == 'azurestack':
                 pop_list = ['imc_access_policy', 'lan_connectivity_policy']
                 for e in pop_list: polVars.pop(e)
-                polVars.extend(dict(
+                polVars = dict(polVars, **dict(
                     network_connectivity_policy= 'dns',
                     ntp_policy                 = 'ntp',
                     ssh_policy                 = 'ssh',
@@ -1921,8 +1923,8 @@ class imm(object):
         descr = (self.type.replace('_', ' ')).title()
         # Build Dictionary
         polVars = dict(
-            description         = 'vmedia {descr} Policy',
-            name                = 'vmedia',
+            description = f'vmedia {descr} Policy',
+            name        = 'vmedia',
         )
 
         # Add Policy Variables to imm_dict
@@ -2099,8 +2101,6 @@ class wizard(object):
                 if i in policy_list: policy_list.remove(i)
             kwargs = imm('compute_environment').compute_environment(kwargs)
             for i in policy_list: kwargs = eval(f'imm(i).{i}(kwargs)')
-            print(json.dumps(kwargs.imm_dict.orgs, indent=4))
-            exit()
         else:
             for k, v in kwargs.ezdata.items():
                 if v.intersight_type == 'policy' and ('chassis' in v.target_platforms or 'FIAttached' in v.target_platforms
@@ -2136,6 +2136,8 @@ class wizard(object):
         profiles_list = ['templates', 'chassis', 'server']
         if kwargs.args.deployment_type == 'azurestack': profiles_list.remove('chassis')
         for p in profiles_list: kwargs = eval(f'imm(p).{p}(kwargs)')
+        print(json.dumps(kwargs.imm_dict.orgs, indent=4))
+        exit()
         #=====================================================
         # Return kwargs and kwargs
         #=====================================================
