@@ -75,7 +75,7 @@
                         "intersight_api": "Name",
                         "minLength": 1,
                         "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]{1,64}$",
+                        "pattern": "^([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "name"
                     },
                     "tags" : {
@@ -120,7 +120,7 @@
                         "intersight_api": "Name",
                         "minLength": 1,
                         "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]{1,64}$",
+                        "pattern": "^([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "name"
                     },
                     "tags" : {
@@ -155,7 +155,7 @@
                         "intersight_api": "Name",
                         "minLength": 1,
                         "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]{1,64}$",
+                        "pattern": "^([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "name"
                     },
                     "tags" : {
@@ -5910,7 +5910,7 @@
                         "CmciEnable": "enabled",
                         "ConfigTdpLevel": "Normal",
                         "CoreMultiProcessing": "all",
-                        "CpuEnergyPerformance": "balanced performance",
+                        "CpuEnergyPerformance": "balanced-performance",
                         "CpuPerformance": "custom",
                         "EnergyEfficientTurbo": "disabled",
                         "EnhancedIntelSpeedStepTech": "enabled",
@@ -5949,13 +5949,13 @@
                         "EnableTme": "enabled",
                         "EpochUpdate": "Manual User Defined Owner EPOCHs",
                         "SgxAutoRegistrationAgent": "disabled",
-                        "SgxEpoch0": 0,
-                        "SgxEpoch1": 0,
+                        "SgxEpoch0": "0",
+                        "SgxEpoch1": "0",
                         "SgxFactoryReset": "disabled",
-                        "SgxLePubKeyHash0": 0,
-                        "SgxLePubKeyHash1": 0,
-                        "SgxLePubKeyHash2": 0,
-                        "SgxLePubKeyHash3": 0,
+                        "SgxLePubKeyHash0": "0",
+                        "SgxLePubKeyHash1": "0",
+                        "SgxLePubKeyHash2": "0",
+                        "SgxLePubKeyHash3": "0",
                         "SgxLeWr": "enabled",
                         "SgxPackageInfoInBandAccess": "disabled",
                         "SgxQos": "enabled",
@@ -6408,7 +6408,7 @@
                                 "intersight_api": "$pbucket:access.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "imc_access_policy"
                             },
                             "power_policy": {
@@ -6418,7 +6418,7 @@
                                 "intersight_api": "$pbucket:power.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "imc_access_policy"
                             },
                             "snmp_policy": {
@@ -6428,7 +6428,7 @@
                                 "intersight_api": "$pbucket:snmp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "snmp_policy"
                             },
                             "targets": {
@@ -6446,7 +6446,7 @@
                                 "intersight_api": "$pbucket:thermal.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "imc_access_policy"
                             }
                         }
@@ -6623,7 +6623,7 @@
                                 "intersight_api": "$pbucket:networkconfig.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "network_connectivity_policy"
                             },
                             "ntp_policy": {
@@ -6633,7 +6633,7 @@
                                 "intersight_api": "$pbucket:ntp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ntp_policy"
                             },
                             "port_policies": {
@@ -6647,7 +6647,7 @@
                                     "intersight_api": "$pbucket:fabric.PortPolicy:Moid",
                                     "minLength": 1,
                                     "maxLength": 129,
-                                    "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                    "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                     "title": "port_policy"
                                 },
                                 "title": "port_policies - A List of one or two Port Policies."
@@ -6667,7 +6667,7 @@
                                 "intersight_api": "$pbucket:snmp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "snmp_policy"
                             },
                             "syslog_policy": {
@@ -6677,7 +6677,7 @@
                                 "intersight_api": "$pbucket:syslog.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "syslog_policy"
                             },
                             "switch_control_policy": {
@@ -6687,7 +6687,7 @@
                                 "intersight_api": "$pbucket:fabric.SwitchControlPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "switch_control_policy"
                             },
                             "system_qos_policy": {
@@ -6697,7 +6697,7 @@
                                 "intersight_api": "$pbucket:fabric.SystemQosPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "switch_control_policy"
                             },
                             "vlan_policies": {
@@ -6711,7 +6711,7 @@
                                     "intersight_api": "$pbucket:fabric.EthNetworkPolicy:Moid",
                                     "minLength": 1,
                                     "maxLength": 129,
-                                    "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                    "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                     "title": "vlan_policy"
                                 },
                                 "ObjectType": "fabric.EthNetworkPolicy",
@@ -6728,7 +6728,7 @@
                                     "intersight_api": "$pbucket:fabric.FcNetworkPolicy:Moid",
                                     "minLength": 1,
                                     "maxLength": 129,
-                                    "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                    "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                     "title": "vsan_policy"
                                 },
                                 "ObjectType": "fabric.FcNetworkPolicy",
@@ -8704,7 +8704,7 @@
                                 "intersight_api": "$ref:InbandIpPool:ippool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "inband_ip_pool"
                             },
                             "inband_vlan_id": {
@@ -8737,7 +8737,7 @@
                                 "intersight_api": "$ref:OutOfBandIpPool:ippool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "out_of_band_ip_pool"
                             }
                         }
@@ -9341,7 +9341,7 @@
                                 "intersight_api": "$ref:InitiatorIpPool:ippool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "initiator_ip_pool"
                             },
                             "initiator_ip_source": {
@@ -9366,7 +9366,7 @@
                                 "intersight_api": "$ref:IscsiAdapterPolicy:vnic.IscsiAdapterPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "iscsi_adapter_policy"
                             },
                             "password": {
@@ -9385,7 +9385,7 @@
                                 "intersight_api": "$ref:PrimaryTargetPolicy:vnic.IscsiStaticTargetPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "primary_target_policy"
                             },
                             "secondary_target_policy": {
@@ -9396,7 +9396,7 @@
                                 "minLength": 1,
                                 "maxLength": 129,
                                 "optional": true,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "secondary_target_policy"
                             },
                             "target_source_type": {
@@ -9606,7 +9606,7 @@
                                 "intersight_api": "$ref:IqnPool:iqnpool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "iqn_pool"
                             },
                             "iqn_static_identifier": {
@@ -9710,7 +9710,7 @@
                         "intersight_api": "$ref:EthAdapterPolicy:vnic.EthAdapterPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_adapter_policy"
                     },
                     "ethernet_network_control_policy": {
@@ -9720,7 +9720,7 @@
                         "intersight_api": "$ref:FabricEthNetworkControlPolicy:fabric.EthNetworkControlPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_network_control_policy"
                     },
                     "ethernet_network_group_policies": {
@@ -9734,7 +9734,7 @@
                             "intersight_api": "$ref:FabricEthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                             "minLength": 1,
                             "maxLength": 129,
-                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                            "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                             "title": "ethernet_network_group_policy"
                         },
                         "ObjectType": "fabric.EthNetworkGroupPolicy",
@@ -9747,7 +9747,7 @@
                         "intersight_api": "$ref:EthNetworkPolicy:vnic.EthNetworkPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_network_policy"
                     },
                     "ethernet_qos_policy": {
@@ -9757,7 +9757,7 @@
                         "intersight_api": "$ref:EthQosPolicy:vnic.EthQosPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_qos_policy"
                     },
                     "iscsi_boot_policies": {
@@ -9771,7 +9771,7 @@
                             "intersight_api": "$ref:IscsiBootPolicy:vnic.IscsiBootPolicy:Moid",
                             "minLength": 1,
                             "maxLength": 129,
-                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                            "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                             "title": "iscsi_boot_policy"
                         },
                         "ObjectType": "vnic.IscsiBootPolicy",
@@ -9799,7 +9799,7 @@
                             "intersight_api": "$ref:MacPool:macpool.Pool:Moid",
                             "minLength": 1,
                             "maxLength": 129,
-                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                            "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                             "title": "mac_pool"
                         },
                         "ObjectType": "macpool.Pool",
@@ -9980,7 +9980,7 @@
                         "intersight_api": "$ref:UsnicAdapterPolicy:fabric.EthAdapterPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "usnic_adapter_policy"
                     }
                 }
@@ -10042,7 +10042,7 @@
                         "intersight_api": "$ref:VmmqAdapterPolicy:fabric.EthAdapterPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "vmmq_adapter_policy"
                     }
                 }
@@ -12653,7 +12653,7 @@
                         "intersight_api": "$ref:EthNetworkControlPolicy:fabric.EthNetworkControlPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_network_control_policy"
                     },
                     "ethernet_network_group_policy": {
@@ -12663,7 +12663,7 @@
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_network_group_policy"
                     },
                     "interfaces": {
@@ -12682,7 +12682,7 @@
                         "intersight_api": "$ref:LinkAggregationPolicy:fabric.LinkAggregationPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "link_aggregation_policy"
                     },
                     "mode": {
@@ -12764,7 +12764,7 @@
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_network_group_policy"
                     },
                     "interfaces": {
@@ -12783,7 +12783,7 @@
                         "intersight_api": "$ref:FlowControlPolicy:fabric.FlowControlPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "flow_control_policy"
                     },
                     "link_aggregation_policy": {
@@ -12793,7 +12793,7 @@
                         "intersight_api": "$ref:LinkAggregationPolicy:fabric.LinkAggregationPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "link_aggregation_policy"
                     },
                     "link_control_policy": {
@@ -12803,7 +12803,7 @@
                         "intersight_api": "$ref:LinkControlPolicy:fabric.LinkControlPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "link_control_policy"
                     },
                     "pc_ids": {
@@ -12936,7 +12936,7 @@
                         "intersight_api": "$ref:LinkAggregationPolicy:fabric.LinkAggregationPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "link_aggregation_policy"
                     },
                     "link_control_policy": {
@@ -12946,7 +12946,7 @@
                         "intersight_api": "$ref:LinkControlPolicy:fabric.LinkControlPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "link_control_policy"
                     },
                     "pc_ids": {
@@ -13106,7 +13106,7 @@
                         "intersight_api": "$ref:EthNetworkControlPolicy:fabric.EthNetworkControlPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_network_control_policy"
                     },
                     "ethernet_network_group_policy": {
@@ -13116,7 +13116,7 @@
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_network_group_policy"
                     },
                     "fec": {
@@ -13222,7 +13222,7 @@
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_network_group_policy"
                     },
                     "fec": {
@@ -13244,7 +13244,7 @@
                         "intersight_api": "$ref:FlowControlPolicy:fabric.FlowControlPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "flow_control_policy"
                     },
                     "link_control_policy": {
@@ -13254,7 +13254,7 @@
                         "intersight_api": "$ref:LinkControlPolicy:fabric.LinkControlPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "link_control_policy"
                     },
                     "port_list": {
@@ -13460,7 +13460,7 @@
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "ethernet_network_group_policy"
                     },
                     "fec": {
@@ -13482,7 +13482,7 @@
                         "intersight_api": "$ref:LinkControlPolicy:fabric.LinkControlPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "link_control_policy"
                     },
                     "port_list": {
@@ -13848,7 +13848,7 @@
                                 "intersight_api": "$ref:WwnnPool:fcpool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "wwnn_pool"
                             },
                             "wwnn_static_address": {
@@ -13892,7 +13892,7 @@
                             "intersight_api": "$ref:FcZonePolicies:fabric.FcZonePolicy:Moid",
                             "minLength": 1,
                             "maxLength": 129,
-                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                            "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                             "title": "fc_zone_policy"
                         },
                         "title": "fc_zone_policies - Fc Zone Policies - Intersight Uri: fabric/FcZonePolicy"
@@ -13904,7 +13904,7 @@
                         "intersight_api": "$ref:FcAdapterPolicy:vnic.FcAdapterPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "fibre_channel_adapter_policy"
                     },
                     "fibre_channel_network_policies": {
@@ -13918,7 +13918,7 @@
                             "intersight_api": "$ref:FcNetworkPolicy:vnic.FcNetworkPolicy:Moid",
                             "minLength": 1,
                             "maxLength": 129,
-                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                            "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                             "title": "fibre_channel_network_policy"
                         },
                         "ObjectType": "fabric.EthNetworkGroupPolicy",
@@ -13931,7 +13931,7 @@
                         "intersight_api": "$ref:FcQosPolicy:vnic.FcQosPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "fibre_channel_qos_policy"
                     },
                     "names": {
@@ -13996,7 +13996,7 @@
                             "intersight_api": "$ref:WwpnPool:fcpool.Pool:Moid",
                             "minLength": 1,
                             "maxLength": 129,
-                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                            "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                             "title": "wwpn_pool"
                         },
                         "ObjectType": "fcpool.Pool",
@@ -14397,7 +14397,7 @@
                                 "intersight_api": "$pbucket:adapter.ConfigPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "adapter_configuration_policy"
                             },
                             "bios_policy": {
@@ -14407,7 +14407,7 @@
                                 "intersight_api": "$pbucket:bios.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "bios_policy"
                             },
                             "boot_order_policy": {
@@ -14417,7 +14417,7 @@
                                 "intersight_api": "$pbucket:boot.PrecisionPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "boot_order_policy"
                             },
                             "certificate_management_policy": {
@@ -14427,7 +14427,7 @@
                                 "intersight_api": "$pbucket:certificatemanagement.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "certificate_management_policy"
                             },
                             "create_from_template": {
@@ -14444,7 +14444,7 @@
                                 "intersight_api": "$pbucket:deviceconnector.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "device_connector_policy"
                             },
                             "drive_security_policy": {
@@ -14454,7 +14454,7 @@
                                 "intersight_api": "$pbucket:storage.DriveSecurityPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "drive_security_policy"
                             },
                             "domain_name": {
@@ -14464,7 +14464,7 @@
                                 "intersight_api": "domain_name",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "domain_name"
                             },
                             "firmware_policy": {
@@ -14474,7 +14474,7 @@
                                 "intersight_api": "$pbucket:firmware.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "firmware_policy"
                             },
                             "imc_access_policy": {
@@ -14484,7 +14484,7 @@
                                 "intersight_api": "$pbucket:server.Profile:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "imc_access_policy"
                             },
                             "ipmi_over_lan_policy": {
@@ -14494,7 +14494,7 @@
                                 "intersight_api": "$pbucket:ipmioverlan.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ipmi_over_lan_policy"
                             },
                             "lan_connectivity_policy": {
@@ -14504,7 +14504,7 @@
                                 "intersight_api": "$pbucket:vnic.EthNetworkPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "lan_connectivity_policy"
                             },
                             "ldap_policy": {
@@ -14514,7 +14514,7 @@
                                 "intersight_api": "$pbucket:iam.LdapPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ldap_policy"
                             },
                             "local_user_policy": {
@@ -14524,7 +14524,7 @@
                                 "intersight_api": "$pbucket:iam.EndPointUserPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "local_user_policy"
                             },
                             "network_connectivity_policy": {
@@ -14534,7 +14534,7 @@
                                 "intersight_api": "$pbucket:networkconfig.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "network_connectivity_policy"
                             },
                             "ntp_policy": {
@@ -14544,7 +14544,7 @@
                                 "intersight_api": "$pbucket:ntp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ntp_policy"
                             },
                             "persistent_memory_policy": {
@@ -14554,7 +14554,7 @@
                                 "intersight_api": "$pbucket:memory.PersistentMemoryPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "persistent_memory_policy"
                             },
                             "power_policy": {
@@ -14564,7 +14564,7 @@
                                 "intersight_api": "$pbucket:power.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "power_policy"
                             },
                             "resource_pool": {
@@ -14574,7 +14574,7 @@
                                 "intersight_api": "$pbucket:resourcepool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "resource_pool"
                             },
                             "san_connectivity_policy": {
@@ -14584,7 +14584,7 @@
                                 "intersight_api": "$pbucket:vnic.SanConnectivityPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "san_connectivity_policy"
                             },
                             "serial_over_lan_policy": {
@@ -14594,7 +14594,7 @@
                                 "intersight_api": "$pbucket:sol.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "serial_over_lan_policy"
                             },
                             "sd_card_policy": {
@@ -14604,7 +14604,7 @@
                                 "intersight_api": "$pbucket:sdcard.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "sd_card_policy"
                             },
                             "smtp_policy": {
@@ -14614,7 +14614,7 @@
                                 "intersight_api": "$pbucket:smtp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "smtp_policy"
                             },
                             "snmp_policy": {
@@ -14624,7 +14624,7 @@
                                 "intersight_api": "$pbucket:snmp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "snmp_policy"
                             },
                             "ssh_policy": {
@@ -14634,7 +14634,7 @@
                                 "intersight_api": "$pbucket:ssh.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ssh_policy"
                             },
                             "storage": {
@@ -14644,7 +14644,7 @@
                                 "intersight_api": "$pbucket:storage.StoragePolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "storage"
                             },
                             "syslog_policy": {
@@ -14654,7 +14654,7 @@
                                 "intersight_api": "$pbucket:syslog.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "syslog_policy"
                             },
                             "target_platform": {
@@ -14676,6 +14676,16 @@
                                 },
                                 "title": "targets - Server Targets"
                             },
+                            "thermal_policy": {
+                                "type": "string",
+                                "default": "default",
+                                "description": "The Name of the Thermal Policy to Assign to the Profile(s).",
+                                "intersight_api": "$pbucket:thermal.Policy:Moid",
+                                "minLength": 1,
+                                "maxLength": 129,
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
+                                "title": "thermal_policy"
+                            },
                             "ucs_server_template": {
                                 "type": "string",
                                 "default": "default",
@@ -14683,7 +14693,7 @@
                                 "intersight_api": "ucs_server_template",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ucs_server_template"
                             },
                             "uuid_pool": {
@@ -14693,7 +14703,7 @@
                                 "intersight_api": "$ref:UuidPool:uuidpool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "uuid_pool"
                             },
                             "virtual_kvm_policy": {
@@ -14703,7 +14713,7 @@
                                 "intersight_api": "$pbucket:kvm.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "virtual_kvm_policy"
                             },
                             "virtual_media_policy": {
@@ -14713,7 +14723,7 @@
                                 "intersight_api": "$pbucket:vmedia.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "virtual_media_policy"
                             }
                         }
@@ -16209,7 +16219,7 @@
                                 "intersight_api": "$pbucket:adapter.ConfigPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "adapter_configuration_policy"
                             },
                             "bios_policy": {
@@ -16219,7 +16229,7 @@
                                 "intersight_api": "$pbucket:bios.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "bios_policy"
                             },
                             "boot_order_policy": {
@@ -16229,7 +16239,7 @@
                                 "intersight_api": "$pbucket:boot.PrecisionPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "boot_order_policy"
                             },
                             "certificate_management_policy": {
@@ -16239,7 +16249,7 @@
                                 "intersight_api": "$pbucket:certificatemanagement.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "certificate_management_policy"
                             },
                             "create_template": {
@@ -16256,7 +16266,7 @@
                                 "intersight_api": "$pbucket:deviceconnector.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "device_connector_policy"
                             },
                             "drive_security_policy": {
@@ -16266,7 +16276,7 @@
                                 "intersight_api": "$pbucket:storage.DriveSecurityPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "drive_security_policy"
                             },
                             "firmware_policy": {
@@ -16276,7 +16286,7 @@
                                 "intersight_api": "$pbucket:firmware.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "firmware_policy"
                             },
                             "imc_access_policy": {
@@ -16286,7 +16296,7 @@
                                 "intersight_api": "$pbucket:access.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "imc_access_policy"
                             },
                             "ipmi_over_lan_policy": {
@@ -16296,7 +16306,7 @@
                                 "intersight_api": "$pbucket:ipmioverlan.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ipmi_over_lan_policy"
                             },
                             "lan_connectivity_policy": {
@@ -16306,7 +16316,7 @@
                                 "intersight_api": "$pbucket:vnic.LanConnectivityPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "lan_connectivity_policy"
                             },
                             "ldap_policy": {
@@ -16316,7 +16326,7 @@
                                 "intersight_api": "$pbucket:iam.LdapPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ldap_policy"
                             },
                             "local_user_policy": {
@@ -16326,7 +16336,7 @@
                                 "intersight_api": "$pbucket:iam.EndPointUserPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "local_user_policy"
                             },
                             "network_connectivity_policy": {
@@ -16336,7 +16346,7 @@
                                 "intersight_api": "$pbucket:networkconfig.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "network_connectivity_policy"
                             },
                             "ntp_policy": {
@@ -16346,7 +16356,7 @@
                                 "intersight_api": "$pbucket:ntp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ntp_policy"
                             },
                             "persistent_memory_policy": {
@@ -16356,7 +16366,7 @@
                                 "intersight_api": "$pbucket:memory.PersistentMemoryPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "persistent_memory_policy"
                             },
                             "power_policy": {
@@ -16366,7 +16376,7 @@
                                 "intersight_api": "$pbucket:power.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "power_policy"
                             },
                             "san_connectivity_policy": {
@@ -16376,7 +16386,7 @@
                                 "intersight_api": "$pbucket:vnic.SanConnectivityPolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "san_connectivity_policy"
                             },
                             "serial_over_lan_policy": {
@@ -16386,7 +16396,7 @@
                                 "intersight_api": "$pbucket:sol.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "serial_over_lan_policy"
                             },
                             "sd_card_policy": {
@@ -16396,7 +16406,7 @@
                                 "intersight_api": "$pbucket:sdcard.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "sd_card_policy"
                             },
                             "smtp_policy": {
@@ -16406,7 +16416,7 @@
                                 "intersight_api": "$pbucket:smtp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "smtp_policy"
                             },
                             "snmp_policy": {
@@ -16416,7 +16426,7 @@
                                 "intersight_api": "$pbucket:snmp.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "snmp_policy"
                             },
                             "ssh_policy": {
@@ -16426,7 +16436,7 @@
                                 "intersight_api": "$pbucket:ssh.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "ssh_policy"
                             },
                             "storage_policy": {
@@ -16436,7 +16446,7 @@
                                 "intersight_api": "$pbucket:storage.StoragePolicy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "storage_policy"
                             },
                             "syslog_policy": {
@@ -16446,7 +16456,7 @@
                                 "intersight_api": "$pbucket:syslog.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "syslog_policy"
                             },
                             "target_platform": {
@@ -16460,6 +16470,16 @@
                                 ],
                                 "title": "target_platform"
                             },
+                            "thermal_policy": {
+                                "type": "string",
+                                "default": "default",
+                                "description": "The Name of the Thermal Policy to Assign to the Profile(s).",
+                                "intersight_api": "$pbucket:thermal.Policy:Moid",
+                                "minLength": 1,
+                                "maxLength": 129,
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
+                                "title": "thermal_policy"
+                            },
                             "uuid_pool": {
                                 "type": "string",
                                 "default": "default",
@@ -16467,7 +16487,7 @@
                                 "intersight_api": "$ref:UuidPool:uuidpool.Pool:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "uuid_pool"
                             },
                             "virtual_kvm_policy": {
@@ -16477,7 +16497,7 @@
                                 "intersight_api": "$pbucket:kvm.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "virtual_kvm_policy"
                             },
                             "virtual_media_policy": {
@@ -16487,7 +16507,7 @@
                                 "intersight_api": "$pbucket:vmedia.Policy:Moid",
                                 "minLength": 1,
                                 "maxLength": 129,
-                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                                "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                                 "title": "virtual_media_policy"
                             }
                         }
@@ -16966,7 +16986,7 @@
                         "intersight_api": "$ref:MulticastPolicy:fabric.MulticastPolicy:Moid",
                         "minLength": 1,
                         "maxLength": 129,
-                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
+                        "pattern": "^(([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]\\/)?([a-zA-Z0-9][a-zA-Z0-9_\\.:-]{0,62})?[a-zA-Z0-9]$",
                         "title": "multicast_policy"
                     },
                     "name": {

@@ -198,9 +198,9 @@ def main():
     # Build Deployment Library
     #==============================================
     kwargs = ci.wizard('dns_ntp').dns_ntp(kwargs)
+    kwargs = ci.wizard('vlans').vlans(kwargs)
     kwargs = ci.wizard('imm').imm(kwargs)
     kwargs = isight.api('organization').organizations(kwargs)
-    kwargs = ci.wizard('vlans').vlans(kwargs)
     if re.search('(flashstack|flexpod)', kwargs.args.deployment_type):
         if kwargs.args.deployment_type == 'flexpod':  run_type = 'netapp'
         elif kwargs.args.deployment_type == 'flashstack': run_type = 'pure_storage'

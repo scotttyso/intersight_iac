@@ -1710,7 +1710,7 @@ class imm(object):
         polVars = dict(
             description             = f'M2-Raid {descr} Policy',
             name                    = 'M2-Raid',
-            m2_raid_configuration   = [{'slot':'MSTOR-RAID-1'}],
+            m2_raid_configuration   = {'slot':'MSTOR-RAID-1'},
             use_jbod_for_vd_creation= True,
         )
         # Add Policy Variables to imm_dict
@@ -2224,6 +2224,7 @@ class wizard(object):
                 kwargs.imm.profiles = []
                 if re.search('azurestack', kwargs.args.deployment_type):
                     for item in kwargs.imm_dict.wizard.azurestack:
+                        icount = 0
                         for i in item.clusters:
                             for e in i.members:
                                 kwargs.imm.profiles.append(DotMap(
@@ -2233,8 +2234,9 @@ class wizard(object):
                                     os_type        = 'Windows',
                                     profile_start  = e.hostname,
                                     suffix_digits  = 1,
-                                    inband_start   = e.management
+                                    inband_start   = kwargs.inband.server[icount]
                                 ))
+                                icount += 1
                     kwargs.imm.policies.boot_volume = 'm2'
             else:
                 kwargs.virtualization = item.virtualization
