@@ -2167,10 +2167,10 @@ def compare_body_result(api_body, result):
                     for e in b:
                         if type(e) == dict:
                             for c,d in e.items():
-                                if len(result[k][a]) < count: patch_return = True
+                                if len(result[k][a]) - 1 < count: patch_return = True
                                 elif not result[k][a][count][c] == d: patch_return = True
                         else:
-                            if len(result[k][a]) < count: patch_return = True
+                            if len(result[k][a]) - 1 < count: patch_return = True
                             elif not result[k][a][count] == e: patch_return = True
                 elif not result[k][a] == b: patch_return = True
         elif type(v) == list:
@@ -2180,26 +2180,29 @@ def compare_body_result(api_body, result):
                     for a,b in e.items():
                         if type(b) == dict:
                             for c,d in b.items():
-                                if len(result[k]) < count: patch_return = True
+                                if len(result[k]) - 1 < count: patch_return = True
                                 elif not result[k][count][a][c] == d: patch_return = True
                         elif type(b) == list:
                             scount = 0
                             for s in b:
                                 if type(s) == dict:
                                     for g,h in s.items():
-                                        if len(result[k]) < count: patch_return = True
+                                        if len(result[k]) - 1 < count: patch_return = True
                                         elif not result[k][count][a][scount][g] == h: patch_return = True
                                 scount += 1
                         else:
+                            print(result[k])
+                            print(b)
+
                             if 'Password' in a: count = count
-                            elif len(result[k]) < count: patch_return = True
+                            elif len(result[k]) - 1 < count: patch_return = True
                             elif not result[k][count][a] == b: patch_return = True
                 elif type(e) == list:
                     prRed(e)
                     prRed('compare_body_result; not accounted for')
                     sys.exit(1)
                 else:
-                    if len(result[k]) < count: patch_return = True
+                    if len(result[k]) - 1 < count: patch_return = True
                     elif not result[k][count] == e: patch_return = True
                 count += 1
         else:
