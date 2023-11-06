@@ -353,6 +353,7 @@ class imm(object):
     def drive_groups(self, kwargs):
         ezdata = kwargs.ezdata[self.type]
         kwargs.bulk_list = []
+        np, ns = ezfunctions.name_prefix_suffix('storage', kwargs)
         for i in kwargs.policies:
             if i.get('drive_groups'):
                 #=====================================================
@@ -360,9 +361,9 @@ class imm(object):
                 #=====================================================
                 names = []
                 for e in i.drive_groups: names.append(e.name)
-                kwargs.parent_name = i.name
+                kwargs.parent_name = f'{np}{i.name}{ns}'
                 kwargs.parent_type = 'storage'
-                kwargs.parent_moid = kwargs.isight[kwargs.org].policy['storage'][i.name]
+                kwargs.parent_moid = kwargs.isight[kwargs.org].policy['storage'][kwargs.parent_name]
                 kwargs.pmoid       = kwargs.parent_moid
                 kwargs.qtype       = self.type
                 kwargs = api_get(True, names, self.type, kwargs)
@@ -493,17 +494,26 @@ class imm(object):
         # Attach Pools to the API Body
         #=====================================================
         names = []; ptype = ['InbandIpPool', 'OutOfBandIpPool']
+        np, ns = ezfunctions.name_prefix_suffix('ip', kwargs)
         for i in ptype:
             if api_body.get(i):
-                names.append(api_body[i]['Moid'])
+                if '/' in api_body[i]['Moid']: org, pool = api_body[i]['Moid'].split('/')
+                else: org = kwargs.org; pool = api_body[i]['Moid']
+                pool = f"{np}{pool}{ns}"
+                if '/' in api_body[i]['Moid']: new_pool = f'{org}/{pool}'
+                else: new_pool = pool
+                names.append(new_pool)
                 api_body['ConfigurationType'][f'Configure{i.split("Ip")[0]}'] = True
         if len(names) > 0: kwargs = api_get(False, names, 'ip', kwargs)
         for i in ptype:
             if api_body.get(i):
                 if '/' in api_body[i]['Moid']: org, pool = api_body[i]['Moid'].split('/')
                 else: org = kwargs.org; pool = api_body[i]['Moid']
+                pool = f"{np}{pool}{ns}"
                 if not kwargs.isight[org].pool['ip'].get(pool):
-                    validating.error_policy_doesnt_exist(i, api_body[i]['Moid'], self.type, 'policy', api_body['Name'])
+                    if '/' in api_body[i]['Moid']: new_pool = f'{org}/{pool}'
+                    else: new_pool = pool
+                    validating.error_policy_doesnt_exist(i, new_pool, self.type, 'policy', api_body['Name'])
                 org_moid = kwargs.org_moids[org].moid
                 indx = next((index for (index, d) in enumerate(kwargs.results) if d.Name == pool and d.Organization.Moid == org_moid), None)
                 if len(kwargs.results[indx].IpV4Config.Gateway) > 0: api_body['AddressType']['EnableIpV4'] = True
@@ -590,15 +600,17 @@ class imm(object):
         #=====================================================
         ezdata = kwargs.ezdata[self.type]
         kwargs.group_post_list = []; kwargs.server_post_list = []; role_names = []; kwargs.cp = DotMap()
+        np, ns = ezfunctions.name_prefix_suffix('ldap', kwargs)
         for i in kwargs.policies:
             if i.get('ldap_groups'):
+                kwargs.parent_name = f'{np}{i.name}{ns}'
                 for e in i.ldap_groups: role_names.append(e.role)
-                kwargs.pmoid = kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][i.name]
+                kwargs.pmoid = kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][kwargs.parent_name]
                 names  = [e.name for e in i.ldap_groups]
                 kwargs = api_get(True, names, self.type, kwargs)
                 kwargs.cp[kwargs.pmoid].group_moids  = kwargs.pmoids
                 kwargs.cp[kwargs.pmoid].group_results= kwargs.results
-                kwargs.pmoid = kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][i.name]
+                kwargs.pmoid = kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][kwargs.parent_name]
             if i.get('ldap_servers'):
                 names  = [e.server for e in i.ldap_servers]
                 kwargs = api_get(True, names, 'ldap.ldap_servers', kwargs)
@@ -615,9 +627,9 @@ class imm(object):
         # Construct API Body LDAP Policies
         #=====================================================
         for i in kwargs.policies:
-            kwargs.parent_name = i.name
+            kwargs.parent_name = f'{np}{i.name}{ns}'
             kwargs.parent_type = 'LDAP Policy'
-            kwargs.parent_moid = kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][i.name]
+            kwargs.parent_moid = kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][kwargs.parent_name]
             for e in i.ldap_groups:
                 #=====================================================
                 # Create API Body for User Role
@@ -722,10 +734,11 @@ class imm(object):
         #=====================================================
         # Get Existing Policies
         #=====================================================
+        np, ns = ezfunctions.name_prefix_suffix(self.type, kwargs)
         names = []
         for i in policies:
-            if self.type == 'port': names.extend([i.names[x] for x in range(0,len(i.names))])
-            else: names.append(i['name'])
+            if self.type == 'port': names.extend([f'{np}{i.names[x]}{ns}' for x in range(0,len(i.names))])
+            else: names.append(f"{np}{i['name']}{ns}")
         kwargs = api_get(True, names, self.type, kwargs)
         kwargs.policy_results= kwargs.results
         #=====================================================
@@ -755,7 +768,7 @@ class imm(object):
                     #=====================================================
                     # Construct api_body Payload
                     #=====================================================
-                    api_body = {'Name':names[x],'ObjectType':kwargs.ezdata[self.type].ObjectType}
+                    api_body = {'Name':f'{np}{names[x]}{ns}','ObjectType':kwargs.ezdata[self.type].ObjectType}
                     api_body = build_api_body(api_body, idata, item, self.type, kwargs)
                     kwargs = policies_to_api(api_body, kwargs)
             else:
@@ -809,7 +822,8 @@ class imm(object):
         #=====================================================
         # Get Existing Pools
         #=====================================================
-        kwargs = api_get(True, [e.name for e in pools], self.type, kwargs)
+        np, ns = ezfunctions.name_prefix_suffix(self.type, kwargs)
+        kwargs = api_get(True, [f'{np}{e.name}{ns}' for e in pools], self.type, kwargs)
         kwargs.pool_results = kwargs.results
         #=====================================================
         # Loop through Items
@@ -883,14 +897,15 @@ class imm(object):
         #=====================================================
         # Loop Through Port Modes
         #=====================================================
+        np, ns = ezfunctions.name_prefix_suffix('port', kwargs)
         kwargs.bulk_list = []
         ezdata= kwargs.ezdata[self.type]
         p     = self.type.split('.')
         for item in kwargs.policies:
             if item.get(p[1]):
                 for x in range(0,len(item['names'])):
-                    kwargs.port_policy[item['names'][x]].names = []
-                    for e in item[p[1]]: kwargs.port_policy[item['names'][x]].names.append(e.port_list[0])
+                    kwargs.port_policy[f"{np}{item['names'][x]}{ns}"].names = []
+                    for e in item[p[1]]: kwargs.port_policy[f"{np}{item['names'][x]}{ns}"].names.append(e.port_list[0])
                 for i in list(kwargs.port_policy.keys()):
                     indx = next((index for (index, d) in enumerate(kwargs.policy_results) if d['Name'] == i), None)
                     kwargs.parent_moid = kwargs.policy_results[indx].Moid
@@ -994,8 +1009,12 @@ class imm(object):
                     ptype = (snakecase(p).replace('eth_', 'ethernet_')).replace('_policy', '')
                     if '/' in kwargs.api_body[p]['Moid']: org, policy = kwargs.api_body[p]['Moid'].split('/')
                     else: org = kwargs.org; policy = kwargs.api_body[p]['Moid']
+                    np, ns = ezfunctions.name_prefix_suffix(ptype, kwargs)
+                    policy = f"{np}{policy}{ns}"
+                    if '/' in kwargs.api_body[p]['Moid']: new_policy = f'{org}/{policy}'
+                    else: new_policy = policy
                     if not kwargs.isight[org].policy[ptype].get(policy):
-                        validating.error_policy_doesnt_exist(ptype, kwargs.api_body[p]['Moid'], f'port.{port_type}', 'policy', i.names[x])
+                        validating.error_policy_doesnt_exist(ptype, new_policy, f'port.{port_type}', 'policy', i.names[x])
                     kwargs.api_body[p]['Moid'] = kwargs.isight[org].policy[ptype][policy]
                     if 'Group' in p: kwargs.api_body[p] = [kwargs.api_body[p]]
             return kwargs
@@ -1033,10 +1052,14 @@ class imm(object):
         # Get Policies
         #=====================================================
         def policy_list(policy, ptype, kwargs):
-            orginal_policy = policy
+            original_policy = policy
             if '/' in policy: org, policy = policy.split('/')
             else: org = kwargs.org; policy = policy
-            if not kwargs.isight[org].policy[ptype].get(policy): kwargs.cp[ptype].names.append(orginal_policy)
+            np, ns = ezfunctions.name_prefix_suffix(ptype, kwargs)
+            policy = f"{np}{policy}{ns}"
+            if '/' in original_policy: new_policy = f'{org}/{policy}'
+            else: new_policy = policy
+            if not kwargs.isight[org].policy[ptype].get(policy): kwargs.cp[ptype].names.append(new_policy)
             return kwargs
         #=====================================================
         # Build Child Policy Map
@@ -1055,7 +1078,7 @@ class imm(object):
                             if re.search('^(ethernet|flow|link)_', k):
                                 ptype = (k.replace('_policies', '')).replace('_policy', '')
                                 if type(v) == list:
-                                    for e in v: kwargs = policy_list(e, ptype, kwargs)
+                                    for d in v: kwargs = policy_list(d, ptype, kwargs)
                                 else: kwargs = policy_list(v, ptype, kwargs)
         kwargs.ports = list(numpy.unique(numpy.array(kwargs.ports)))
         for e in list(kwargs.cp.keys()):
@@ -1524,10 +1547,11 @@ class imm(object):
             kwargs     = bulk_request(kwargs)
         kwargs.user_moids = dict(kwargs.user_moids, **kwargs.pmoids)
         kwargs.bulk_list = []
+        np, ns = ezfunctions.name_prefix_suffix('local_user', kwargs)
         for i in kwargs.policies:
-            kwargs.parent_name = i.name
+            kwargs.parent_name = f'{np}{i.name}{ns}'
             kwargs.parent_type = 'Local User Policy'
-            kwargs.parent_moid = kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][i.name]
+            kwargs.parent_moid = kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][kwargs.parent_name]
             if i.get('users'):
                 for e in i.users:
                     kwargs.sensitive_var = f"local_user_password_{e.password}"
@@ -1586,6 +1610,8 @@ class imm(object):
             if not api_body.get('AutoAllowOnUplinks'): api_body.update({'AutoAllowOnUplinks':False})
             if '/' in e.multicast_policy: org, policy = e.multicast_policy.split('/')
             else: org = kwargs.org; policy = e.multicast_policy
+            np, ns = ezfunctions.name_prefix_suffix('multicast', kwargs)
+            policy = f"{np}{policy}{ns}"
             if not kwargs.isight[org].policy['multicast'].get(policy):
                 validating.error_policy_doesnt_exist('multicast_policy', e.multicast_policy, self.type, 'Vlans', e.vlan_list)
             api_body['MulticastPolicy']['Moid'] = kwargs.isight[org].policy['multicast'][policy]
@@ -1619,20 +1645,25 @@ class imm(object):
                 for e in i.vlans:
                     if '/' in e.multicast_policy: org, policy = e.multicast_policy.split('/')
                     else: org = kwargs.org; policy = e.multicast_policy
-                    if not kwargs.isight[org].policy['multicast'].get(policy): mcast_names.append(e.multicast_policy)
+                    np, ns = ezfunctions.name_prefix_suffix('multicast', kwargs)
+                    policy = f"{np}{policy}{ns}"
+                    if not kwargs.isight[org].policy['multicast'].get(policy):
+                        if '/' in e.multicast_policy: policy = f'{org}/{policy}'
+                        mcast_names.append(policy)
         mcast_names= list(numpy.unique(numpy.array(mcast_names)))
         kwargs     = api_get(False, mcast_names, 'multicast', kwargs)
         #=====================================================
         # Loop Through VLAN Policies
         #=====================================================
         kwargs.bulk_list = []
+        np, ns = ezfunctions.name_prefix_suffix('vlan', kwargs)
         for i in kwargs.policies:
             vnames = []
-            kwargs.parent_name= i.name
+            kwargs.parent_name= f'{np}{i.name}{ns}'
             kwargs.parent_type= 'VLAN Policy'
-            kwargs.parent_moid= kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][i.name]
+            kwargs.parent_moid= kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][kwargs.parent_name]
             kwargs.pmoid      = kwargs.parent_moid
-            kwargs.vlan_policy= i.name
+            kwargs.vlan_policy= f'{np}{i.name}{ns}'
             if i.get('vlans'):
                 for e in i.vlans: vnames.extend(ezfunctions.vlan_list_full(e.vlan_list))
                 kwargs = api_get(True, vnames, self.type, kwargs)
@@ -1671,21 +1702,26 @@ class imm(object):
                             else: org = kwargs.org; policy = policy
                             if 'pool' in k: p = 'pool'
                             else: p = 'policy'
-                            if not kwargs.isight[org][p][ptype].get(policy): kwargs.cp[ptype].names.append(original_policy)
+                            np, ns = ezfunctions.name_prefix_suffix(ptype, kwargs)
+                            policy = f"{np}{policy}{ns}"
+                            if '/' in original_policy: new_policy = f'{org}/{policy}'
+                            else: new_policy = policy
+                            if not kwargs.isight[org][p][ptype].get(policy): kwargs.cp[ptype].names.append(new_policy)
                             return kwargs
                         if type(v) == list:
                             for e in v: kwargs = policy_list(k, e, ptype, kwargs)
                         else: kwargs = policy_list(k, v, ptype, kwargs)
         for e in list(kwargs.cp.keys()):
             if len(kwargs.cp[e].names) > 0:
-                names  = list(numpy.unique(numpy.array(kwargs.cp[e].names)))
+                names  = list(numpy.unique(numpy.array(names)))
                 kwargs = api_get(False, names, e, kwargs)
         #=====================================================
         # Create API Body for vNICs
         #=====================================================
         for item in kwargs.policies:
-            kwargs.parent_name= item.name
-            kwargs.parent_moid= kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][item.name]
+            np, ns = ezfunctions.name_prefix_suffix('lan_connectivity', kwargs)
+            kwargs.parent_name= f'{np}{item.name}{ns}'
+            kwargs.parent_moid= kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][kwargs.parent_name]
             kwargs.pmoid      = kwargs.parent_moid
             names   = []
             for i in item[vtype]: names.extend(i.names)
@@ -1710,8 +1746,12 @@ class imm(object):
                             else: org = kwargs.org; policy = pname
                             if 'pool' in k: p = 'pool'
                             else: p = 'policy'
+                            np, ns = ezfunctions.name_prefix_suffix(ptype, kwargs)
+                            policy = f"{np}{policy}{ns}"
                             if not kwargs.isight[org][p][ptype].get(policy):
-                                validating.error_policy_doesnt_exist(ptype, pname, self.type, 'policy', i.names[x])
+                                if '/' in pname: err_policy = f'{org}/{policy}'
+                                else: err_policy = policy
+                                validating.error_policy_doesnt_exist(ptype, err_policy, self.type, p, i.names[x])
                             api_body[ezdata.properties[k].intersight_api.split(':')[1]]['Moid'] = kwargs.isight[org][p][ptype][policy]
                     if 'vnics' in self.type:
                         if not api_body.get('Cdn'): api_body.update({'Cdn':{'Value':i.names[x],'Source':'vnic','ObjectType':'vnic.Cdn'}})
@@ -1721,8 +1761,12 @@ class imm(object):
                         def zone_update(pname, ptype, kwargs):
                             if '/' in pname: org, policy = pname.split('/')
                             else: org = kwargs.org; policy = pname
+                            np, ns = ezfunctions.name_prefix_suffix(ptype, kwargs)
+                            policy = f"{np}{policy}{ns}"
                             if not kwargs.isight[org].policy[ptype].get(policy):
-                                validating.error_policy_doesnt_exist(ptype, pname, self.type, 'policy', i.names[x])
+                                if '/' in pname: err_policy = f'{org}/{policy}'
+                                else: err_policy = policy
+                                validating.error_policy_doesnt_exist(ptype, err_policy, self.type, 'policy', i.names[x])
                             kwargs.zbody['Moid'] = kwargs.isight[org].policy[ptype][policy]
                             return kwargs.zbody
                         if i.get('fc_zone_policies'):
@@ -1797,11 +1841,12 @@ class imm(object):
         # Loop Through VSAN Policies
         #=====================================================
         kwargs.bulk_list = []
+        np, ns = ezfunctions.name_prefix_suffix('vsan', kwargs)
         for i in kwargs.policies:
             vnames = []
-            kwargs.parent_name= i.name
+            kwargs.parent_name= f'{np}{i.name}{ns}'
             kwargs.parent_type= 'VSAN Policy'
-            kwargs.parent_moid= kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][i.name]
+            kwargs.parent_moid= kwargs.isight[kwargs.org].policy[self.type.split('.')[0]][kwargs.parent_name]
             kwargs.pmoid      = kwargs.parent_moid
             if i.get('vsans'):
                 for e in i.vsans: vnames.append(e.vsan_id)
@@ -1877,6 +1922,7 @@ def assign_physical_device(api_body, kwargs):
 # Add Attributes to the api_body
 #=====================================================
 def build_api_body(api_body, idata, item, ptype, kwargs):
+    np, ns = ezfunctions.name_prefix_suffix(ptype, kwargs)
     for k, v in item.items():
         #print(json.dumps(idata, indent=4))
         #print(k, v)
@@ -1983,6 +2029,10 @@ def build_api_body(api_body, idata, item, ptype, kwargs):
     if api_body.get('Tags'): api_body['Tags'].append(kwargs.ez_tags.toDict())
     else: api_body.update({'Tags':[kwargs.ez_tags.toDict()]})
     api_body = dict(sorted(api_body.items()))
+    if api_body.get('Descr'):
+        if api_body['Name'] in api_body['Descr']: api_body['Descr'].replace(api_body['Name'], f"{np}{api_body['Name']}{ns}")
+    if not re.search('DriveGroups|EndPointUser|LdapGroups|vlan|vnic|vsan', api_body['ObjectType']):
+        if api_body.get('Name'): api_body['Name'] = f"{np}{api_body['Name']}{ns}"
     #print(json.dumps(api_body, indent=4))
     return api_body
 
