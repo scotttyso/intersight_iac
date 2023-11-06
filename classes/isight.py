@@ -1346,7 +1346,11 @@ class imm(object):
                         else: org = kwargs.org; policy = policy
                         if 'pool' in k: p = 'pool'
                         else: p = 'policy'
-                        if not kwargs.isight[org][p][ptype].get(policy): kwargs.cp[ptype].names.append(original_policy)
+                        np, ns = ezfunctions.name_prefix_suffix(ptype, kwargs)
+                        policy = f"{np}{policy}{ns}"
+                        if '/' in original_policy: new_policy = f'{org}/{policy}'
+                        else: new_policy = policy
+                        if not kwargs.isight[org][p][ptype].get(policy): kwargs.cp[ptype].names.append(new_policy)
                         return kwargs
                     if type(v) == list:
                         for e in v: kwargs = policy_list(k, e, ptype, kwargs)
@@ -1367,13 +1371,6 @@ class imm(object):
                     kwargs.org = e
                     kwargs.cp = DotMap()
                     for i in list(templates[e].keys()): kwargs = policy_search(i, kwargs)
-                    for c in list(kwargs.cp.keys()):
-                        #========================================
-                        # Get Policy Moids
-                        #========================================
-                        if len(kwargs.cp[c].names) > 0:
-                            names  = list(numpy.unique(numpy.array(kwargs.cp[e].names)))
-                            kwargs = api_get(False, names, e, kwargs)
                 kwargs.org = original_org
         #========================================
         # Get Serial Moids

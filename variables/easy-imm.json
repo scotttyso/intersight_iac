@@ -1,5 +1,5 @@
 {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$schema": "http://json-schema.org/draft/2020-12/schema#",
     "contact": {
         "name": "Easy IMM Schema",
         "url": "https://github.com/terraform-cisco-modules/easy-imm",
@@ -6101,7 +6101,7 @@
                         "intersight_api": "InterfaceName",
                         "minLength": 1,
                         "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "interface_name"
                     },
                     "interface_source": {
@@ -6257,7 +6257,7 @@
                         "intersight_api": "Name",
                         "minLength": 1,
                         "maxLength": 128,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "name"
                     },
                     "path": {
@@ -6407,8 +6407,8 @@
                                 "description": "The Name of the IMC Access Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$pbucket:access.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "imc_access_policy"
                             },
                             "power_policy": {
@@ -6417,8 +6417,8 @@
                                 "description": "The Name of the Power Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:power.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "imc_access_policy"
                             },
                             "snmp_policy": {
@@ -6427,8 +6427,8 @@
                                 "description": "The Name of the SNMP Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:snmp.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "snmp_policy"
                             },
                             "targets": {
@@ -6445,8 +6445,8 @@
                                 "description": "The Name of the Thermal Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:thermal.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "imc_access_policy"
                             }
                         }
@@ -6622,8 +6622,8 @@
                                 "description": "The Name of the Network Connectivity Policy to Assign to the Domain Profile.",
                                 "intersight_api": "$pbucket:networkconfig.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "network_connectivity_policy"
                             },
                             "ntp_policy": {
@@ -6632,8 +6632,8 @@
                                 "description": "The Name of the NTP Policy to Assign to the Domain Profile.",
                                 "intersight_api": "$pbucket:ntp.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ntp_policy"
                             },
                             "port_policies": {
@@ -6646,8 +6646,8 @@
                                     "description": "The Name of the Port Policy to Assign to the Domain Profile.",
                                     "intersight_api": "$pbucket:fabric.PortPolicy:Moid",
                                     "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                    "maxLength": 129,
+                                    "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                     "title": "port_policy"
                                 },
                                 "title": "port_policies - A List of one or two Port Policies."
@@ -6666,8 +6666,8 @@
                                 "description": "The Name of the SNMP Policy to Assign to the Domain Profile.",
                                 "intersight_api": "$pbucket:snmp.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "snmp_policy"
                             },
                             "syslog_policy": {
@@ -6676,8 +6676,8 @@
                                 "description": "The Name of the Syslog Policy to Assign to the Domain Profile.",
                                 "intersight_api": "$pbucket:syslog.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "syslog_policy"
                             },
                             "switch_control_policy": {
@@ -6686,8 +6686,8 @@
                                 "description": "The Name of the Switch Control Policy to Assign to the Domain Profile.",
                                 "intersight_api": "$pbucket:fabric.SwitchControlPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "switch_control_policy"
                             },
                             "system_qos_policy": {
@@ -6696,8 +6696,8 @@
                                 "description": "The Name of the Syslog Policy to Assign to the Domain Profile.",
                                 "intersight_api": "$pbucket:fabric.SystemQosPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "switch_control_policy"
                             },
                             "vlan_policies": {
@@ -6710,8 +6710,8 @@
                                     "description": "The Name of the VLAN Policy to Assign to the Domain Profile.",
                                     "intersight_api": "$pbucket:fabric.EthNetworkPolicy:Moid",
                                     "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                    "maxLength": 129,
+                                    "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                     "title": "vlan_policy"
                                 },
                                 "ObjectType": "fabric.EthNetworkPolicy",
@@ -6727,8 +6727,8 @@
                                     "description": "The Name of the VSAN Policy to Assign to the Domain Profile.",
                                     "intersight_api": "$pbucket:fabric.FcNetworkPolicy:Moid",
                                     "minLength": 1,
-                                    "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                    "maxLength": 129,
+                                    "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                     "title": "vsan_policy"
                                 },
                                 "ObjectType": "fabric.FcNetworkPolicy",
@@ -8703,8 +8703,8 @@
                                 "description": "Name of the IP Pool to use for Inband-Band Management.",
                                 "intersight_api": "$ref:InbandIpPool:ippool.Pool:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "inband_ip_pool"
                             },
                             "inband_vlan_id": {
@@ -8736,8 +8736,8 @@
                                 "description": "Name of the IP Pool to use for Out-of-Band Management.",
                                 "intersight_api": "$ref:OutOfBandIpPool:ippool.Pool:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "out_of_band_ip_pool"
                             }
                         }
@@ -9340,8 +9340,8 @@
                                 "description": "The Name of the iSCSI IP Pool.",
                                 "intersight_api": "$ref:InitiatorIpPool:ippool.Pool:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "initiator_ip_pool"
                             },
                             "initiator_ip_source": {
@@ -9365,8 +9365,8 @@
                                 "description": "The Name of the iSCSI Adapter Policy to Assign to the iSCSI Boot Policy.",
                                 "intersight_api": "$ref:IscsiAdapterPolicy:vnic.IscsiAdapterPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "iscsi_adapter_policy"
                             },
                             "password": {
@@ -9384,8 +9384,8 @@
                                 "description": "The Name of the iSCSI Static Target Policy to Assign to the iSCSI Boot Policy.",
                                 "intersight_api": "$ref:PrimaryTargetPolicy:vnic.IscsiStaticTargetPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "primary_target_policy"
                             },
                             "secondary_target_policy": {
@@ -9394,9 +9394,9 @@
                                 "description": "The Name of the iSCSI Static Target Policy to Assign to the iSCSI Boot Policy.",
                                 "intersight_api": "$ref:SecondaryTargetPolicy:vnic.IscsiStaticTargetPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
+                                "maxLength": 129,
                                 "optional": true,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "secondary_target_policy"
                             },
                             "target_source_type": {
@@ -9605,8 +9605,8 @@
                                 "description": "Default is IQN Pool to Assign to the Policy.",
                                 "intersight_api": "$ref:IqnPool:iqnpool.Pool:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "iqn_pool"
                             },
                             "iqn_static_identifier": {
@@ -9709,8 +9709,8 @@
                         "description": "The Name of the Ethernet Adapter Policy to Assign to the vNIC.",
                         "intersight_api": "$ref:EthAdapterPolicy:vnic.EthAdapterPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_adapter_policy"
                     },
                     "ethernet_network_control_policy": {
@@ -9719,8 +9719,8 @@
                         "description": "The Name of the Ethernet Network Control Policy to Assign to the vNIC.",
                         "intersight_api": "$ref:FabricEthNetworkControlPolicy:fabric.EthNetworkControlPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_network_control_policy"
                     },
                     "ethernet_network_group_policies": {
@@ -9733,8 +9733,8 @@
                             "description": "The Name of the Ethernet Network Group Policy to Assign.",
                             "intersight_api": "$ref:FabricEthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                             "minLength": 1,
-                            "maxLength": 64,
-                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "maxLength": 129,
+                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                             "title": "ethernet_network_group_policy"
                         },
                         "ObjectType": "fabric.EthNetworkGroupPolicy",
@@ -9746,8 +9746,8 @@
                         "description": "The Name of the Ethernet Network Policy to Assign to the vNIC.  This is for Standalone Only.",
                         "intersight_api": "$ref:EthNetworkPolicy:vnic.EthNetworkPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_network_policy"
                     },
                     "ethernet_qos_policy": {
@@ -9756,8 +9756,8 @@
                         "description": "The Name of the Ethernet QoS Policy to Assign to the vNIC.",
                         "intersight_api": "$ref:EthQosPolicy:vnic.EthQosPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_qos_policy"
                     },
                     "iscsi_boot_policies": {
@@ -9770,8 +9770,8 @@
                             "description": "The Name of the iSCSI Boot Policy to Assign to the vNIC.",
                             "intersight_api": "$ref:IscsiBootPolicy:vnic.IscsiBootPolicy:Moid",
                             "minLength": 1,
-                            "maxLength": 64,
-                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "maxLength": 129,
+                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                             "title": "iscsi_boot_policy"
                         },
                         "ObjectType": "vnic.IscsiBootPolicy",
@@ -9798,8 +9798,8 @@
                             "description": "Name of the MAC Pool.",
                             "intersight_api": "$ref:MacPool:macpool.Pool:Moid",
                             "minLength": 1,
-                            "maxLength": 64,
-                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "maxLength": 129,
+                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                             "title": "mac_pool"
                         },
                         "ObjectType": "macpool.Pool",
@@ -9814,8 +9814,8 @@
                             "default": "default",
                             "description": "The MAC address must be in hexadecimal format xx:xx:xx:xx:xx:xx.\nTo ensure uniqueness of MACs in the LAN fabric, you are strongly encouraged to use the\nfollowing MAC prefix 00:25:B5:xx:xx:xx.",
                             "intersight_api": "StaticMacAddress",
-                            "minLength": 1,
-                            "maxLength": 64,
+                            "minLength": 17,
+                            "maxLength": 17,
                             "pattern": "^([\\da-fA-F]{2}:){5}[\\da-fA-F]{2}$",
                             "title": "mac_address"
                         },
@@ -9832,7 +9832,7 @@
                             "intersight_api": "Name",
                             "minLength": 1,
                             "maxLength": 64,
-                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                             "title": "vnic_name"
                         },
                         "ObjectType": "Name",
@@ -9979,8 +9979,8 @@
                         "description": "Ethernet Adapter policy to be associated with the User Space vNICs. The Transmit Queue and Receive Queue resource value of VMMQ adapter policy should be greater than or equal to the configured number of sub vNICs.",
                         "intersight_api": "$ref:UsnicAdapterPolicy:fabric.EthAdapterPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "usnic_adapter_policy"
                     }
                 }
@@ -10041,8 +10041,8 @@
                         "description": "Ethernet Adapter policy to be associated with the VMQ vNICs. The Transmit Queue and Receive Queue resource value of VMMQ adapter policy should be greater than or equal to the configured number of sub vNICs.",
                         "intersight_api": "$ref:VmmqAdapterPolicy:fabric.EthAdapterPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "vmmq_adapter_policy"
                     }
                 }
@@ -10865,7 +10865,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "adapter_configuration"
                     },
                     "bios": {
@@ -10875,7 +10875,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "bios"
                     },
                     "boot_order": {
@@ -10885,7 +10885,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "boot_order"
                     },
                     "certificate_management": {
@@ -10895,7 +10895,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "certificate_management"
                     },
                     "chassis": {
@@ -10905,7 +10905,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "chassis"
                     },
                     "default": {
@@ -10925,7 +10925,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "device_connector"
                     },
                     "domain": {
@@ -10935,7 +10935,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "domain"
                     },
                     "drive_security": {
@@ -10945,7 +10945,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "drive_security"
                     },
                     "ethernet_adapter": {
@@ -10955,7 +10955,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "ethernet_adapter"
                     },
                     "ethernet_network": {
@@ -10965,7 +10965,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "ethernet_network"
                     },
                     "ethernet_network_control": {
@@ -10975,7 +10975,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "ethernet_network_control"
                     },
                     "ethernet_network_group": {
@@ -10985,7 +10985,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "ethernet_network_group"
                     },
                     "ethernet_qos": {
@@ -10995,7 +10995,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "ethernet_qos"
                     },
                     "fc_zone": {
@@ -11005,7 +11005,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "fc_zone"
                     },
                     "fibre_channel_adapter": {
@@ -11015,7 +11015,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "fibre_channel_adapter"
                     },
                     "fibre_channel_network": {
@@ -11025,7 +11025,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "fibre_channel_network"
                     },
                     "fibre_channel_qos": {
@@ -11035,7 +11035,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "fibre_channel_qos"
                     },
                     "firmware": {
@@ -11045,7 +11045,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "firmware"
                     },
                     "flow_control": {
@@ -11055,7 +11055,7 @@
                         "intersight_api": "FlowControl",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "flow_control"
                     },
                     "imc_access": {
@@ -11065,7 +11065,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "imc_access"
                     },
                     "ip": {
@@ -11085,7 +11085,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "ipmi_over_lan"
                     },
                     "iqn": {
@@ -11105,7 +11105,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "iscsi_adapter"
                     },
                     "iscsi_boot": {
@@ -11115,7 +11115,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "iscsi_boot"
                     },
                     "iscsi_static_target": {
@@ -11125,7 +11125,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "iscsi_static_target"
                     },
                     "lan_connectivity": {
@@ -11135,7 +11135,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "lan_connectivity"
                     },
                     "ldap": {
@@ -11145,7 +11145,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "ldap"
                     },
                     "link_aggregation": {
@@ -11155,7 +11155,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "link_aggregation"
                     },
                     "link_control": {
@@ -11165,7 +11165,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "link_control"
                     },
                     "local_user": {
@@ -11175,7 +11175,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "local_user"
                     },
                     "mac": {
@@ -11195,7 +11195,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "multicast"
                     },
                     "network_connectivity": {
@@ -11205,7 +11205,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "network_connectivity"
                     },
                     "ntp": {
@@ -11215,7 +11215,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "ntp"
                     },
                     "persistent_memory": {
@@ -11225,7 +11225,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "persistent_memory"
                     },
                     "port": {
@@ -11235,7 +11235,7 @@
                         "intersight_api": "Port",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "port"
                     },
                     "power": {
@@ -11245,7 +11245,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "power"
                     },
                     "resource": {
@@ -11265,7 +11265,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "san_connectivity"
                     },
                     "sd_card": {
@@ -11275,7 +11275,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "sd_card"
                     },
                     "serial_over_lan": {
@@ -11285,7 +11285,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "serial_over_lan"
                     },
                     "server": {
@@ -11295,7 +11295,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "server"
                     },
                     "smtp": {
@@ -11305,7 +11305,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "smtp"
                     },
                     "snmp": {
@@ -11315,7 +11315,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "snmp"
                     },
                     "ssh": {
@@ -11325,7 +11325,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "ssh"
                     },
                     "storage": {
@@ -11335,7 +11335,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "storage"
                     },
                     "switch_control": {
@@ -11345,7 +11345,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "switch_control"
                     },
                     "syslog": {
@@ -11355,7 +11355,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "syslog"
                     },
                     "system_qos": {
@@ -11365,7 +11365,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "system_qos"
                     },
                     "template": {
@@ -11375,7 +11375,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "template"
                     },
                     "thermal": {
@@ -11385,7 +11385,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "thermal"
                     },
                     "uuid": {
@@ -11405,7 +11405,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "virtual_kvm"
                     },
                     "virtual_media": {
@@ -11415,7 +11415,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "virtual_media"
                     },
                     "vlan": {
@@ -11425,7 +11425,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "vlan"
                     },
                     "vsan": {
@@ -11435,7 +11435,7 @@
                         "intersight_api": "not_applicable",
                         "minLength": 1,
                         "maxLength": 12,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "vsan"
                     },
                     "wwnn": {
@@ -12496,7 +12496,7 @@
                                     "intersight_api": "Name",
                                     "minLength": 1,
                                     "maxLength": 64,
-                                    "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                    "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                                     "title": "port_policy"
                                 },
                                 "ObjectType": "Name",
@@ -12652,8 +12652,8 @@
                         "description": "The Name of the Ethernet Network Control Policy to Assign to the vNIC.",
                         "intersight_api": "$ref:EthNetworkControlPolicy:fabric.EthNetworkControlPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_network_control_policy"
                     },
                     "ethernet_network_group_policy": {
@@ -12662,8 +12662,8 @@
                         "description": "The Name of the Ethernet Network Group Policy to Assign.",
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_network_group_policy"
                     },
                     "interfaces": {
@@ -12681,8 +12681,8 @@
                         "description": "Name of the Link Aggregation policy.",
                         "intersight_api": "$ref:LinkAggregationPolicy:fabric.LinkAggregationPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "link_aggregation_policy"
                     },
                     "mode": {
@@ -12763,8 +12763,8 @@
                         "description": "The Name of the Ethernet Network Group Policy to Assign.",
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_network_group_policy"
                     },
                     "interfaces": {
@@ -12782,8 +12782,8 @@
                         "description": "Name of the Flow Control policy.",
                         "intersight_api": "$ref:FlowControlPolicy:fabric.FlowControlPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "flow_control_policy"
                     },
                     "link_aggregation_policy": {
@@ -12792,8 +12792,8 @@
                         "description": "Name of the Link Aggregation policy.",
                         "intersight_api": "$ref:LinkAggregationPolicy:fabric.LinkAggregationPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "link_aggregation_policy"
                     },
                     "link_control_policy": {
@@ -12802,8 +12802,8 @@
                         "description": "Name of the Link Control policy.",
                         "intersight_api": "$ref:LinkControlPolicy:fabric.LinkControlPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "link_control_policy"
                     },
                     "pc_ids": {
@@ -12935,8 +12935,8 @@
                         "description": "Name of the Link Aggregation policy.",
                         "intersight_api": "$ref:LinkAggregationPolicy:fabric.LinkAggregationPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "link_aggregation_policy"
                     },
                     "link_control_policy": {
@@ -12945,8 +12945,8 @@
                         "description": "Name of the Link Control policy.",
                         "intersight_api": "$ref:LinkControlPolicy:fabric.LinkControlPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "link_control_policy"
                     },
                     "pc_ids": {
@@ -13105,8 +13105,8 @@
                         "description": "The Name of the Ethernet Network Control Policy to Assign to the vNIC.",
                         "intersight_api": "$ref:EthNetworkControlPolicy:fabric.EthNetworkControlPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_network_control_policy"
                     },
                     "ethernet_network_group_policy": {
@@ -13115,8 +13115,8 @@
                         "description": "The Name of the Ethernet Network Group Policy to Assign.",
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_network_group_policy"
                     },
                     "fec": {
@@ -13221,8 +13221,8 @@
                         "description": "The Name of the Ethernet Network Group Policy to Assign.",
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_network_group_policy"
                     },
                     "fec": {
@@ -13243,8 +13243,8 @@
                         "description": "Name of the Flow Control policy.",
                         "intersight_api": "$ref:FlowControlPolicy:fabric.FlowControlPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "flow_control_policy"
                     },
                     "link_control_policy": {
@@ -13253,8 +13253,8 @@
                         "description": "Name of the Link Control policy.",
                         "intersight_api": "$ref:LinkControlPolicy:fabric.LinkControlPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "link_control_policy"
                     },
                     "port_list": {
@@ -13459,8 +13459,8 @@
                         "description": "The Name of the Ethernet Network Group Policy to Assign.",
                         "intersight_api": "$ref:EthNetworkGroupPolicy:fabric.EthNetworkGroupPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "ethernet_network_group_policy"
                     },
                     "fec": {
@@ -13481,8 +13481,8 @@
                         "description": "Name of the Link Control policy.",
                         "intersight_api": "$ref:LinkControlPolicy:fabric.LinkControlPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "link_control_policy"
                     },
                     "port_list": {
@@ -13537,20 +13537,22 @@
                     "connected_device_type": {
                         "type": "string",
                         "default": "",
-                        "description": "",
+                        "description": "Device type for which preferred ID to be configured. If the actual connected device does not match the specified device type, the system ignores the 'PreferredDeviceId' property.\n  * `Auto` - Preferred Id will be ignored if specified with this type.\n  * `RackServer` - Connected device type is Rack Unit Server.\n  * `Chassis` - Connected device type is Chassis.",
                         "intersight_api": "PreferredDeviceType",
-                        "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "enum": [
+                            "Auto",
+                            "RackServer",
+                            "Chassis"
+                        ],
                         "title": "connected_device_type"
                     },
                     "device_number": {
                         "type": "integer",
                         "default": 1,
-                        "description": "",
+                        "description": "Preferred device ID to be configured by user for the connected device. This ID must be specified together with the 'PreferredDeviceType' property. This ID will only takes effect if the actual connected device matches the 'PreferredDeviceType'. If the preferred ID is not available, the ID is automatically allocated and assigned by the system. If different preferred IDs are specified for the ports connected to the same device, only the preferred ID (if specified) of the port that is discovered first will be considered.",
                         "intersight_api": "PreferredDeviceId",
                         "minimum": 1,
-                        "maximum": 64,
+                        "maximum": 160,
                         "title": "device_number"
                     },
                     "fec": {
@@ -13845,8 +13847,8 @@
                                 "description": "WWNN Pool to Assign to the Policy.",
                                 "intersight_api": "$ref:WwnnPool:fcpool.Pool:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "wwnn_pool"
                             },
                             "wwnn_static_address": {
@@ -13889,8 +13891,8 @@
                             "description": "The Name of the FC Zone Policy to Assign to the vHBA(s).  The Script will Split the List in Half and Assign each half to vHBA and Half to vHBA B.",
                             "intersight_api": "$ref:FcZonePolicies:fabric.FcZonePolicy:Moid",
                             "minLength": 1,
-                            "maxLength": 64,
-                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "maxLength": 129,
+                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                             "title": "fc_zone_policy"
                         },
                         "title": "fc_zone_policies - Fc Zone Policies - Intersight Uri: fabric/FcZonePolicy"
@@ -13901,8 +13903,8 @@
                         "description": "The Name of the Fibre Channel Adapter Policy to Assign to the vHBA(s).",
                         "intersight_api": "$ref:FcAdapterPolicy:vnic.FcAdapterPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "fibre_channel_adapter_policy"
                     },
                     "fibre_channel_network_policies": {
@@ -13915,8 +13917,8 @@
                             "description": "The Name of the Fibre Channel Network Policy to Assign to the vHBA(s).  The Script will Assign them in Order.  Should be a List of two Names.",
                             "intersight_api": "$ref:FcNetworkPolicy:vnic.FcNetworkPolicy:Moid",
                             "minLength": 1,
-                            "maxLength": 64,
-                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "maxLength": 129,
+                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                             "title": "fibre_channel_network_policy"
                         },
                         "ObjectType": "fabric.EthNetworkGroupPolicy",
@@ -13928,8 +13930,8 @@
                         "description": "The Name of the Fibre Channel QoS Policy to Assign to the vHBA(s).",
                         "intersight_api": "$ref:FcQosPolicy:vnic.FcQosPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "fibre_channel_qos_policy"
                     },
                     "names": {
@@ -13943,7 +13945,7 @@
                             "intersight_api": "Name",
                             "minLength": 1,
                             "maxLength": 64,
-                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                             "title": "name"
                         },
                         "ObjectType": "",
@@ -13993,8 +13995,8 @@
                             "description": "Name of the WWPN Pool.",
                             "intersight_api": "$ref:WwpnPool:fcpool.Pool:Moid",
                             "minLength": 1,
-                            "maxLength": 64,
-                            "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                            "maxLength": 129,
+                            "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                             "title": "wwpn_pool"
                         },
                         "ObjectType": "fcpool.Pool",
@@ -14010,7 +14012,7 @@
                             "description": "The WWPN address must be in hexadecimal format xx:xx:xx:xx:xx:xx:xx:xx.\nAllowed ranges are 20:00:00:00:00:00:00:00 to 20:FF:FF:FF:FF:FF:FF:FF or from 50:00:00:00:00:00:00:00 to 5F:FF:FF:FF:FF:FF:FF:FF.\nTo ensure uniqueness of WWN's in the SAN fabric, you are strongly encouraged to use the WWN prefix - 20:00:00:25:B5:xx:xx:xx.",
                             "intersight_api": "StaticWwpnAddress",
                             "minLength": 1,
-                            "maxLength": 64,
+                            "maxLength": 129,
                             "pattern": "((^20|5[0-9a-fA-F]{1}):([0-9a-fA-F]{2}:){6}([0-9a-fA-F]{2})$)",
                             "title": "wwpn_address"
                         },
@@ -14394,8 +14396,8 @@
                                 "description": "The Name of the Adapter Configuration Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:adapter.ConfigPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "adapter_configuration_policy"
                             },
                             "bios_policy": {
@@ -14404,8 +14406,8 @@
                                 "description": "The Name of the BIOS Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:bios.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "bios_policy"
                             },
                             "boot_order_policy": {
@@ -14414,8 +14416,8 @@
                                 "description": "The Name of the Boot Order Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:boot.PrecisionPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "boot_order_policy"
                             },
                             "certificate_management_policy": {
@@ -14424,8 +14426,8 @@
                                 "description": "The Name of the Certificate Management Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$pbucket:certificatemanagement.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "certificate_management_policy"
                             },
                             "create_from_template": {
@@ -14441,8 +14443,8 @@
                                 "description": "The Name of the Device Connector Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:deviceconnector.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "device_connector_policy"
                             },
                             "drive_security_policy": {
@@ -14451,8 +14453,8 @@
                                 "description": "The Name of the Drive Security Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:storage.DriveSecurityPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "drive_security_policy"
                             },
                             "domain_name": {
@@ -14461,8 +14463,8 @@
                                 "description": "If the Target Type is set to pre_assign, and you are doing chassis/slot assignment.  This is a required field.",
                                 "intersight_api": "domain_name",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "domain_name"
                             },
                             "firmware_policy": {
@@ -14471,8 +14473,8 @@
                                 "description": "The Name of the Firmware Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:firmware.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "firmware_policy"
                             },
                             "imc_access_policy": {
@@ -14481,8 +14483,8 @@
                                 "description": "The Name of the IMC Access Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$pbucket:server.Profile:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "imc_access_policy"
                             },
                             "ipmi_over_lan_policy": {
@@ -14491,8 +14493,8 @@
                                 "description": "The Name of the IPMI over LAN Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:ipmioverlan.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ipmi_over_lan_policy"
                             },
                             "lan_connectivity_policy": {
@@ -14501,8 +14503,8 @@
                                 "description": "The Name of the LAN Connectivity Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:vnic.EthNetworkPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "lan_connectivity_policy"
                             },
                             "ldap_policy": {
@@ -14511,8 +14513,8 @@
                                 "description": "The Name of the LDAP Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:iam.LdapPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ldap_policy"
                             },
                             "local_user_policy": {
@@ -14521,8 +14523,8 @@
                                 "description": "The Name of the Local User Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:iam.EndPointUserPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "local_user_policy"
                             },
                             "network_connectivity_policy": {
@@ -14531,8 +14533,8 @@
                                 "description": "The Name of the Network Connectivity Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:networkconfig.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "network_connectivity_policy"
                             },
                             "ntp_policy": {
@@ -14541,8 +14543,8 @@
                                 "description": "The Name of the NTP Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:ntp.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ntp_policy"
                             },
                             "persistent_memory_policy": {
@@ -14551,8 +14553,8 @@
                                 "description": "The Name of the Persistent Memory Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:memory.PersistentMemoryPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "persistent_memory_policy"
                             },
                             "power_policy": {
@@ -14561,8 +14563,8 @@
                                 "description": "The Name of the Power Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$pbucket:power.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "power_policy"
                             },
                             "resource_pool": {
@@ -14571,8 +14573,8 @@
                                 "description": "The Name of the Resource Pool to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$pbucket:resourcepool.Pool:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "resource_pool"
                             },
                             "san_connectivity_policy": {
@@ -14581,8 +14583,8 @@
                                 "description": "The Name of the SAN Connectivity Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:vnic.SanConnectivityPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "san_connectivity_policy"
                             },
                             "serial_over_lan_policy": {
@@ -14591,8 +14593,8 @@
                                 "description": "The Name of the Serial over LAN Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:sol.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "serial_over_lan_policy"
                             },
                             "sd_card_policy": {
@@ -14601,8 +14603,8 @@
                                 "description": "The Name of the SD Card Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:sdcard.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "sd_card_policy"
                             },
                             "smtp_policy": {
@@ -14611,8 +14613,8 @@
                                 "description": "The Name of the SMTP Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:smtp.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "smtp_policy"
                             },
                             "snmp_policy": {
@@ -14621,8 +14623,8 @@
                                 "description": "The Name of the SNMP Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:snmp.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "snmp_policy"
                             },
                             "ssh_policy": {
@@ -14631,8 +14633,8 @@
                                 "description": "The Name of the SSH Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:ssh.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ssh_policy"
                             },
                             "storage": {
@@ -14641,8 +14643,8 @@
                                 "description": "The Name of the Storage Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:storage.StoragePolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "storage"
                             },
                             "syslog_policy": {
@@ -14651,8 +14653,8 @@
                                 "description": "The Name of the Syslog Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:syslog.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "syslog_policy"
                             },
                             "target_platform": {
@@ -14680,8 +14682,8 @@
                                 "description": "The Name of the Server Profile Template to Create the Profile(s) from.",
                                 "intersight_api": "ucs_server_template",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ucs_server_template"
                             },
                             "uuid_pool": {
@@ -14690,8 +14692,8 @@
                                 "description": "The Name of the UUID Pool to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$ref:UuidPool:uuidpool.Pool:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "uuid_pool"
                             },
                             "virtual_kvm_policy": {
@@ -14700,8 +14702,8 @@
                                 "description": "The Name of the KVM Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:kvm.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "virtual_kvm_policy"
                             },
                             "virtual_media_policy": {
@@ -14710,8 +14712,8 @@
                                 "description": "The Name of the Virtual Media Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:vmedia.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "virtual_media_policy"
                             }
                         }
@@ -15498,7 +15500,7 @@
                         "intersight_api": "Name",
                         "minLength": 1,
                         "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "name"
                     },
                     "size": {
@@ -16206,8 +16208,8 @@
                                 "description": "The Name of the Adapter Configuration Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:adapter.ConfigPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "adapter_configuration_policy"
                             },
                             "bios_policy": {
@@ -16216,8 +16218,8 @@
                                 "description": "The Name of the BIOS Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:bios.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "bios_policy"
                             },
                             "boot_order_policy": {
@@ -16226,8 +16228,8 @@
                                 "description": "The Name of the Boot Order Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:boot.PrecisionPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "boot_order_policy"
                             },
                             "certificate_management_policy": {
@@ -16236,8 +16238,8 @@
                                 "description": "The Name of the Certificate Management Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$pbucket:certificatemanagement.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "certificate_management_policy"
                             },
                             "create_template": {
@@ -16253,8 +16255,8 @@
                                 "description": "The Name of the Device Connector Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:deviceconnector.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "device_connector_policy"
                             },
                             "drive_security_policy": {
@@ -16263,8 +16265,8 @@
                                 "description": "The Name of the Drive Security Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:storage.DriveSecurityPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "drive_security_policy"
                             },
                             "firmware_policy": {
@@ -16273,8 +16275,8 @@
                                 "description": "The Name of the Firmware Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:firmware.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "firmware_policy"
                             },
                             "imc_access_policy": {
@@ -16283,8 +16285,8 @@
                                 "description": "The Name of the IMC Access Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$pbucket:access.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "imc_access_policy"
                             },
                             "ipmi_over_lan_policy": {
@@ -16293,8 +16295,8 @@
                                 "description": "The Name of the IPMI over LAN Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:ipmioverlan.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ipmi_over_lan_policy"
                             },
                             "lan_connectivity_policy": {
@@ -16303,8 +16305,8 @@
                                 "description": "The Name of the LAN Connectivity Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:vnic.LanConnectivityPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "lan_connectivity_policy"
                             },
                             "ldap_policy": {
@@ -16313,8 +16315,8 @@
                                 "description": "The Name of the LDAP Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:iam.LdapPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ldap_policy"
                             },
                             "local_user_policy": {
@@ -16323,8 +16325,8 @@
                                 "description": "The Name of the Local User Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:iam.EndPointUserPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "local_user_policy"
                             },
                             "network_connectivity_policy": {
@@ -16333,8 +16335,8 @@
                                 "description": "The Name of the Network Connectivity Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:networkconfig.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "network_connectivity_policy"
                             },
                             "ntp_policy": {
@@ -16343,8 +16345,8 @@
                                 "description": "The Name of the NTP Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:ntp.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ntp_policy"
                             },
                             "persistent_memory_policy": {
@@ -16353,8 +16355,8 @@
                                 "description": "The Name of the Persistent Memory Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:memory.PersistentMemoryPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "persistent_memory_policy"
                             },
                             "power_policy": {
@@ -16363,8 +16365,8 @@
                                 "description": "The Name of the Power Policy to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$pbucket:power.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "power_policy"
                             },
                             "san_connectivity_policy": {
@@ -16373,8 +16375,8 @@
                                 "description": "The Name of the SAN Connectivity Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:vnic.SanConnectivityPolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "san_connectivity_policy"
                             },
                             "serial_over_lan_policy": {
@@ -16383,8 +16385,8 @@
                                 "description": "The Name of the Serial over LAN Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:sol.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "serial_over_lan_policy"
                             },
                             "sd_card_policy": {
@@ -16393,8 +16395,8 @@
                                 "description": "The Name of the SD Card Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:sdcard.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "sd_card_policy"
                             },
                             "smtp_policy": {
@@ -16403,8 +16405,8 @@
                                 "description": "The Name of the SMTP Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:smtp.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "smtp_policy"
                             },
                             "snmp_policy": {
@@ -16413,8 +16415,8 @@
                                 "description": "The Name of the SNMP Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:snmp.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "snmp_policy"
                             },
                             "ssh_policy": {
@@ -16423,8 +16425,8 @@
                                 "description": "The Name of the SSH Policy to Assign to the Profile(s).  This is only Applicable to Standalone Servers.",
                                 "intersight_api": "$pbucket:ssh.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "ssh_policy"
                             },
                             "storage_policy": {
@@ -16433,8 +16435,8 @@
                                 "description": "The Name of the Storage Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:storage.StoragePolicy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "storage_policy"
                             },
                             "syslog_policy": {
@@ -16443,8 +16445,8 @@
                                 "description": "The Name of the Syslog Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:syslog.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "syslog_policy"
                             },
                             "target_platform": {
@@ -16464,8 +16466,8 @@
                                 "description": "The Name of the UUID Pool to Assign to the Profile(s).  This is only Applicable to FIAttached Servers.",
                                 "intersight_api": "$ref:UuidPool:uuidpool.Pool:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "uuid_pool"
                             },
                             "virtual_kvm_policy": {
@@ -16474,8 +16476,8 @@
                                 "description": "The Name of the KVM Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:kvm.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "virtual_kvm_policy"
                             },
                             "virtual_media_policy": {
@@ -16484,8 +16486,8 @@
                                 "description": "The Name of the Virtual Media Policy to Assign to the Profile(s).",
                                 "intersight_api": "$pbucket:vmedia.Policy:Moid",
                                 "minLength": 1,
-                                "maxLength": 64,
-                                "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                                "maxLength": 129,
+                                "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                                 "title": "virtual_media_policy"
                             }
                         }
@@ -16842,7 +16844,7 @@
                         "description": "The remote file location path for the virtual media mapping. Accepted formats are:\n  * HDD for CIFS/NFS: hostname-or-IP/filePath/fileName.img\n  * CDD for CIFS/NFS: hostname-or-IP/filePath/fileName.iso\n  * HDD for HTTP/S: http[s]://hostname-or-IP/filePath/fileName.img\n  * CDD for HTTP/S: http[s]://hostname-or-IP/filePath/fileName.iso",
                         "intersight_api": "FileLocation",
                         "minLength": 1,
-                        "maxLength": 64,
+                        "maxLength": 512,
                         "pattern": "^(https?://(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|https?://(?:www\\.|(?!www))[a-zA-Z0-9]+\\.[^\\s]{2,}|www\\.[a-zA-Z0-9]+\\.[^\\s]{2,})$",
                         "title": "file_location"
                     },
@@ -16863,7 +16865,7 @@
                         "intersight_api": "VolumeName",
                         "minLength": 1,
                         "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "pattern": "^[a-zA-Z0-9_\\.:-]+$",
                         "title": "protocol"
                     },
                     "password": {
@@ -16894,8 +16896,8 @@
                         "description": "username for either CHAP or Mutual Chap Authentication",
                         "intersight_api": "Username",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 255,
+                        "pattern": "^[\\S]+$",
                         "title": "username"
                     }
                 }
@@ -16963,8 +16965,8 @@
                         "description": "Name of the Multicast Policy to assign to the VLAN.",
                         "intersight_api": "$ref:MulticastPolicy:fabric.MulticastPolicy:Moid",
                         "minLength": 1,
-                        "maxLength": 64,
-                        "pattern": "^[a-zA-Z0-9_\\. :-]+$",
+                        "maxLength": 129,
+                        "pattern": "^([a-zA-Z0-9_\\.:-]{1,64}\\/)?[a-zA-Z0-9_\\.:-]{1,64}$",
                         "title": "multicast_policy"
                     },
                     "name": {
