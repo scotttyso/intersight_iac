@@ -1708,8 +1708,8 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         polVars = dict(
-            description             = f'M2-Raid {descr} Policy',
-            name                    = 'M2-Raid',
+            description             = f'M2-raid {descr} Policy',
+            name                    = 'M2-raid',
             m2_raid_configuration   = {'slot':'MSTOR-RAID-1'},
             use_jbod_for_vd_creation= True,
         )
@@ -1836,13 +1836,16 @@ class imm(object):
             if 'fcp' in p: polVars.update({'san_connectivity_policy': scp})
             else: polVars.pop('san_connectivity_policy')
             if kwargs.args.deployment_type == 'azurestack':
-                pop_list = ['imc_access_policy', 'lan_connectivity_policy']
+                pop_list = ['imc_access_policy', 'lan_connectivity_policy', 'uuid_pool']
                 for e in pop_list: polVars.pop(e)
                 polVars = dict(polVars, **dict(
                     network_connectivity_policy= 'dns',
                     ntp_policy                 = 'ntp',
                     ssh_policy                 = 'ssh',
+                    storage_policy             = 'M2-raid',
+                    target_platform            = 'Standalone'
                 ))
+            polVars = dict(sorted(polVars.items()))
             # Add Policy Variables to imm_dict
             kwargs.class_path = f'{self.type},server'
             kwargs = ezfunctions.ez_append(polVars, kwargs)

@@ -6502,8 +6502,7 @@
                             "sd_card",
                             "server",
                             "server_profile_templates",
-                            "smtp",
-                            "syslog"
+                            "smtp"
                         ]
                     },
                     "domain": {
