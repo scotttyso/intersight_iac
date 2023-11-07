@@ -141,9 +141,10 @@ class device_connector(object):
 
     def management_interface(self, result):
         """Get Management Interface settings."""
-        result[self.device.hostname].dhcp_enable = 'yes'
-        result[self.device.hostname].dns_using_dhcp = 'yes'
-        result[self.device.hostname].v6_dhcp_enable = 'no'
+        result[self.device.hostname].enable_dhcp      = 'yes'
+        result[self.device.hostname].enable_dhcp_dns  = 'yes'
+        result[self.device.hostname].enable_ipv6      = 'no'
+        result[self.device.hostname].enable_ipv6_dhcp = 'no'
         for _ in range(4):
             xml_body = f"<configResolveClass cookie=\"{self.xml_cookie}\" inHierarchical=\"false\" classId=\"mgmtIf\"/>"
             resp = requests.post(url=self.xml_uri, verify=False, data=xml_body)
@@ -153,9 +154,10 @@ class device_connector(object):
                     for subchild in child:
                         xdict = subchild.attrib
                         if xdict.get('dhcpEnable'):
-                            result[self.device.hostname].dhcp_enable    = xdict['dhcpEnable']
-                            result[self.device.hostname].dns_using_dhcp = xdict['dnsUsingDhcp']
-                            result[self.device.hostname].v6_dhcp_enable = xdict['v6dhcpEnable']
+                            result[self.device.hostname].enable_dhcp      = xdict['dhcpEnable']
+                            result[self.device.hostname].enable_dhcp_dns  = xdict['dnsUsingDhcp']
+                            result[self.device.hostname].enable_ipv6      = xdict['v6extEnabled']
+                            result[self.device.hostname].enable_ipv6_dhcp = xdict['v6dhcpEnable']
                 break
         if not re.match(r'2..', str(resp.status_code)):
             result.ApiError = f"post {self.xml_uri} {resp.status_code} management interface."

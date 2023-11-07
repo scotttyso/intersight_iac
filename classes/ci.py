@@ -337,16 +337,14 @@ class imm(object):
             for i in kwargs.results:
                 pcolor.Cyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
                 kwargs = server_dictionary(i, kwargs)
-                indx = next((index for (index, d) in enumerate(kwargs.result) if d.serial == i.Serial), None)
                 print(kwargs.result)
                 print(kwargs.servers)
                 kwargs.servers[i.Serial] = DotMap(dict(kwargs.servers[i.Serial].toDict(), **dict(
-                    dhcp_enable    = kwargs.result[indx].dhcp_enable,
-                    dns_using_dhcp = kwargs.result[indx].dns_using_dhcp,
-                    v6_dhcp_enable = kwargs.result[indx].v6_dhcp_enable,
+                    dhcp_enable    = kwargs.result[i.Serial].dhcp_enable,
+                    dns_using_dhcp = kwargs.result[i.Serial].dns_using_dhcp,
+                    v6_dhcp_enable = kwargs.result[i.Serial].v6_dhcp_enable,
                 )))
                 pcolor.Cyan(f'     Completed Server Inventory for Server: {i.Serial}')
-                exit()
             pcolor.Cyan('')
         #=====================================================
         # Return kwargs and kwargs
@@ -1188,14 +1186,31 @@ class imm(object):
         # Build Dictionary
         descr = (self.type.replace('_', ' ')).title()
         if len(kwargs.dhcp_servers) > 0 and kwargs.deployment_type == 'azurestack':
+            enable_dhcp = True; enable_dhcp_dns = True; enable_ipv6 = False; enable_ipv6_dhcp = False
+            for e in list(kwargs.servers.keys())[0]:
+                if (e.get('enable_dhcp') is not None) and (e.enable_dhcp == 'no'): enable_dhcp = False
+                if (e.get('enable_dhcp_dns') is not None) and (e.enable_dhcp_dns == 'no'): enable_dhcp_dns = False
+                if (e.get('enable_ipv6') is not None) and (e.enable_ipv6 == 'yes'): enable_ipv6 = True
+                if (e.get('enable_ipv6_dhcp') is not None) and (e.enable_ipv6_dhcp == 'yes'): enable_ipv6_dhcp = True
             polVars = dict(
                 description              = f'dns {descr} Policy',
+                dns_servers_v4           = kwargs.dns_servers,
                 enable_dynamic_dns       = True,
-                #enable_ipv6              = True,
+                enable_ipv6              = False,
                 name                     = 'dns',
                 obtain_ipv4_dns_from_dhcp= True,
-                #obtain_ipv6_dns_from_dhcp= True,
+                obtain_ipv6_dns_from_dhcp= False,
             )
+            pop_list = []
+            if enable_dhcp == False: pop_list.append('enable_dynamic_dns'); pop_list.append('obtain_ipv4_dns_from_dhcp')
+            elif enable_dhcp_dns == False: pop_list.append('obtain_ipv4_dns_from_dhcp')
+            elif enable_dhcp_dns == True: pop_list.append('dns_servers_v4')
+            if enable_ipv6 == True:
+                polVars['enable_ipv6'] = True
+                if enable_ipv6_dhcp == True and enable_dhcp_dns == True: polVars['obtain_ipv6_dns_from_dhcp'] = True
+            else: polVars.extend(['enable_ipv6', 'obtain_ipv6_dns_from_dhcp'])
+            for i in pop_list:
+                if polVars.get(i): polVars.pop(i)
         else:
             polVars = dict(
                 description    = f'dns {descr} Policy',
