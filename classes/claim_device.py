@@ -144,6 +144,7 @@ def claim_targets(kwargs):
                 result[device.hostname].reg_moid = reg_moid
                 result[device.hostname].changed= False
                 result[device.hostname].serial = device_id
+            if ('dc_obj' in locals() or 'dc_obj' in globals()): dc_obj.logout()
 
         null_selector = False
         if re.search(r'ParentConnection eq null',  resource_groups[i.resource_group].selectors[0].Selector):
@@ -187,5 +188,4 @@ def claim_targets(kwargs):
     # logout of any sessions active after exception handling
     kwargs.result = result
     kwargs.return_code= return_code
-    if ('dc_obj' in locals() or 'dc_obj' in globals()): dc_obj.logout()
     return kwargs

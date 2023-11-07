@@ -1203,13 +1203,14 @@ class imm(object):
                 obtain_ipv6_dns_from_dhcp= False,
             )
             pop_list = []
-            if enable_dhcp == False: pop_list.append('enable_dynamic_dns'); pop_list.append('obtain_ipv4_dns_from_dhcp')
+            if enable_dhcp == False: pop_list.extend(['enable_dynamic_dns', 'obtain_ipv4_dns_from_dhcp'])
             elif enable_dhcp_dns == False: pop_list.append('obtain_ipv4_dns_from_dhcp')
             elif enable_dhcp_dns == True: pop_list.append('dns_servers_v4')
             if enable_ipv6 == True:
                 polVars['enable_ipv6'] = True
                 if enable_ipv6_dhcp == True and enable_dhcp_dns == True: polVars['obtain_ipv6_dns_from_dhcp'] = True
             else: pop_list.extend(['enable_ipv6', 'obtain_ipv6_dns_from_dhcp'])
+            print(pop_list)
             for i in pop_list:
                 if polVars.get(i): polVars.pop(i)
         else:
