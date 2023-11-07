@@ -337,12 +337,15 @@ class imm(object):
             for i in kwargs.results:
                 pcolor.Cyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
                 kwargs = server_dictionary(i, kwargs)
-                kwargs.servers[i.Serial] = DotMap(dict(kwargs.servers[i.Serial].toDict(), **dict(
-                    dhcp_enable    = kwargs.result[i.Serial].dhcp_enable,
-                    dns_using_dhcp = kwargs.result[i.Serial].dns_using_dhcp,
-                    v6_dhcp_enable = kwargs.result[i.Serial].v6_dhcp_enable,
-                )))
+                for k, v in kwargs.result.items():
+                    if v.serial == i.Serial:
+                        kwargs.servers[i.Serial] = DotMap(dict(kwargs.servers[i.Serial].toDict(), **dict(
+                            enable_dhcp = v.enable_dhcp, enable_dhcp_dns = v.enable_dhcp_dns,
+                            enable_ipv6 = v.enable_ipv6, enable_ipv6_dhcp = v.enable_ipv6_dhcp
+                        )))
                 pcolor.Cyan(f'     Completed Server Inventory for Server: {i.Serial}')
+            print(json.dumps(kwargs.servers, indent=4))
+            exit()
             pcolor.Cyan('')
         #=====================================================
         # Return kwargs and kwargs
@@ -1215,6 +1218,8 @@ class imm(object):
                 dns_servers_v4 = kwargs.dns_servers,
                 name           = 'dns',
             )
+        print(polVars)
+        exit()
         # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,network_connectivity'
         kwargs = ezfunctions.ez_append(polVars, kwargs)

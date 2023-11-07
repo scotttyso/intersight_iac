@@ -141,8 +141,8 @@ class device_connector(object):
 
     def management_interface(self, result):
         """Get Management Interface settings."""
-        result[self.device.hostname].enable_dhcp      = 'yes'
-        result[self.device.hostname].enable_dhcp_dns  = 'yes'
+        result[self.device.hostname].enable_dhcp      = 'no'
+        result[self.device.hostname].enable_dhcp_dns  = 'no'
         result[self.device.hostname].enable_ipv6      = 'no'
         result[self.device.hostname].enable_ipv6_dhcp = 'no'
         for _ in range(4):
