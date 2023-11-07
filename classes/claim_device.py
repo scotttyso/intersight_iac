@@ -185,6 +185,8 @@ def claim_targets(kwargs):
     pcolor.Cyan(f'{"-" * 60}')
 
     # logout of any sessions active after exception handling
+    if 'dc_obj' in locals(): print('found in locals')
+    if 'dc_obj' in globals(): print('found in globals')
     if ('dc_obj' in locals() or 'dc_obj' in globals()): dc_obj.logout()
     kwargs.result = result
     kwargs.return_code= return_code

@@ -337,8 +337,6 @@ class imm(object):
             for i in kwargs.results:
                 pcolor.Cyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
                 kwargs = server_dictionary(i, kwargs)
-                print(kwargs.result)
-                print(kwargs.servers)
                 kwargs.servers[i.Serial] = DotMap(dict(kwargs.servers[i.Serial].toDict(), **dict(
                     dhcp_enable    = kwargs.result[i.Serial].dhcp_enable,
                     dns_using_dhcp = kwargs.result[i.Serial].dns_using_dhcp,
@@ -1187,11 +1185,11 @@ class imm(object):
         descr = (self.type.replace('_', ' ')).title()
         if len(kwargs.dhcp_servers) > 0 and kwargs.deployment_type == 'azurestack':
             enable_dhcp = True; enable_dhcp_dns = True; enable_ipv6 = False; enable_ipv6_dhcp = False
-            for e in list(kwargs.servers.keys())[0]:
-                if (e.get('enable_dhcp') is not None) and (e.enable_dhcp == 'no'): enable_dhcp = False
-                if (e.get('enable_dhcp_dns') is not None) and (e.enable_dhcp_dns == 'no'): enable_dhcp_dns = False
-                if (e.get('enable_ipv6') is not None) and (e.enable_ipv6 == 'yes'): enable_ipv6 = True
-                if (e.get('enable_ipv6_dhcp') is not None) and (e.enable_ipv6_dhcp == 'yes'): enable_ipv6_dhcp = True
+            e = kwargs.servers[list(kwargs.servers.keys())[0]]
+            if (e.get('enable_dhcp') is not None) and (e.enable_dhcp == 'no'): enable_dhcp = False
+            if (e.get('enable_dhcp_dns') is not None) and (e.enable_dhcp_dns == 'no'): enable_dhcp_dns = False
+            if (e.get('enable_ipv6') is not None) and (e.enable_ipv6 == 'yes'): enable_ipv6 = True
+            if (e.get('enable_ipv6_dhcp') is not None) and (e.enable_ipv6_dhcp == 'yes'): enable_ipv6_dhcp = True
             polVars = dict(
                 description              = f'dns {descr} Policy',
                 dns_servers_v4           = kwargs.dns_servers,
