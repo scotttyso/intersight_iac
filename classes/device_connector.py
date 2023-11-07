@@ -8,9 +8,10 @@ def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
 import sys
 try:
     from classes import pcolor
+    from dotmap import DotMap
     from time import sleep
     from xml.etree import ElementTree
-    import re, requests, subprocess, urllib3
+    import json, re, requests, subprocess, urllib3
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -21,22 +22,20 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 def requests_op(op, uri, header, ro_json, body):
     """perform op and retry on 5XX status errors"""
     for _ in range(10):
-        if op == 'get':
-            resp = requests.get(uri, verify=False, headers=header)
-        elif op == 'put':
-            resp = requests.put(uri, verify=False, headers=header, json=body)
+        if op == 'get': resp = requests.get(uri, verify=False, headers=header)
+        elif op == 'put': resp = requests.put(uri, verify=False, headers=header, json=body)
         else:
-            ro_json['ApiError'] = f"unsupported op {op}"
+            ro_json.ApiError = f"unsupported op {op}"
             break
 
         if re.match(r'2..', str(resp.status_code)):
             ro_json.pop('ApiError', None)
             if op == 'get':
-                if isinstance(resp.json(), list): ro_json = resp.json()[0]
-                else: ro_json['ApiError'] = f"{op} {uri} {resp.status_code}"
+                if isinstance(resp.json(), list): ro_json = DotMap(resp.json()[0])
+                else: ro_json.ApiError = f"{op} {uri} {resp.status_code}"
             break
         else:
-            ro_json['ApiError'] = "%s %s %s" % (op, uri, resp.status_code)
+            ro_json.ApiError = f"{op} {uri} {resp.status_code}"
             if re.match(r'5..', str(resp.status_code)): sleep(1); continue
             else: break
     return ro_json
@@ -50,24 +49,25 @@ class device_connector(object):
         self.logged_in = False
         self.auth_header = ''
         self.device = device
-        if self.device.device_type == 'ucspe':
-            self.connector_uri= f"http://{self.device.hostname}/connector"
-        else: self.connector_uri= f"https://{self.device.hostname}/connector"
-        self.systems_uri      = f"{self.connector_uri}/Systems"
+        if self.device.device_type == 'ucspe': hmethod = 'http'
+        else: hmethod = 'https'
+        self.connector_uri= f"{hmethod}://{self.device.hostname}/connector"
+        self.systems_uri  = f"{self.connector_uri}/Systems"
+        self.mgmt_if_uri  = f"{hmethod}://{self.device.hostname}/visore.html?f=class&q=mgmtIf"
 
     def get_status(self):
         """Check current connection status."""
-        ro_json = dict(AdminState=False)
+        ro_json = DotMap(AdminState=False)
         # get admin, connection, and claim state
         ro_json = requests_op(op='get', uri=self.systems_uri, header=self.auth_header, ro_json=ro_json, body={})
         return ro_json
 
     def configure_connector(self):
         """Check current Admin state and enable the Device Connector if not currently enabled."""
-        ro_json = dict(AdminState=False)
+        ro_json = DotMap(AdminState=False)
         for _ in range(4):
             ro_json = self.get_status()
-            if ro_json['AdminState']: break
+            if ro_json.AdminState: break
             else:
                 # enable the device connector
                 ro_json = requests_op(
@@ -82,13 +82,11 @@ class device_connector(object):
             # device read_only setting is a bool (True/False)
             ro_json = requests_op(
                 op='put', uri=self.systems_uri, header=self.auth_header, ro_json=ro_json,
-                body={'ReadOnlyMode': self.device['read_only']})
-            if ro_json.get('ApiError'):
-                break
+                body={'ReadOnlyMode': self.device.read_only})
+            if ro_json.get('ApiError'): break
             # confirm setting has been applied
             ro_json = self.get_status()
-            if ro_json['ReadOnlyMode'] == self.device.read_only:
-                break
+            if ro_json['ReadOnlyMode'] == self.device.read_only: break
         return ro_json
 
     def configure_proxy(self, ro_json, result):
@@ -111,16 +109,13 @@ class device_connector(object):
             for _ in range(4):
                 # check current setting
                 ro_json = requests_op(op='get', uri=proxy_uri, header=self.auth_header, ro_json=ro_json, body={})
-                if ro_json.get('ApiError'):
-                    break
-                if ro_json['ProxyHost'] == self.device.proxy_host and ro_json['ProxyPort'] == int(self.device.proxy_port):
-                    break
+                if ro_json.get('ApiError'): break
+                if ro_json.ProxyHost == self.device.proxy_host and ro_json.ProxyPort == int(self.device.proxy_port): break
                 else:
-                    result['msg'] += "  Setting proxy : %s %s" % (self.device.proxy_host, self.device.proxy_port)
+                    result[self.device.hostname].msg += f"#Setting proxy : {self.device.proxy_host} {self.device.proxy_port}\n"
                     ro_json = requests_op(op='put', uri=proxy_uri, header=self.auth_header, ro_json=ro_json, body=proxy_payload)
-                    if ro_json.get('ApiError'):
-                        break
-                    result['changed'] = True
+                    if ro_json.get('ApiError'): break
+                    result[self.device.hostname].changed = True
             if not ro_json.get('ApiError'):
                 # get updated status
                 ro_json = self.get_status()
@@ -132,21 +127,39 @@ class device_connector(object):
         device_id = ''
         claim_code = ''
         # get device id and claim code
-        id_uri = "%s/DeviceIdentifiers" % self.connector_uri
+        id_uri = f"{self.connector_uri}/DeviceIdentifiers"
         ro_json = requests_op(op='get', uri=id_uri, header=self.auth_header, ro_json=ro_json, body={})
         if not ro_json.get('ApiError'):
             device_id = ro_json['Id']
 
-            claim_uri = "%s/SecurityTokens" % self.connector_uri
+            claim_uri = f"{self.connector_uri}/SecurityTokens"
             ro_json = requests_op(op='get', uri=claim_uri, header=self.auth_header, ro_json=ro_json, body={})
-            if not ro_json.get('ApiError'):
-                claim_code = ro_json['Token']
-            else:
-                claim_resp['ApiError'] = ro_json['ApiError']
-        else:
-            claim_resp['ApiError'] = ro_json['ApiError']
+            if not ro_json.get('ApiError'): claim_code = ro_json['Token']
+            else: claim_resp['ApiError'] = ro_json['ApiError']
+        else: claim_resp['ApiError'] = ro_json['ApiError']
         return(claim_resp, device_id, claim_code)
 
+    def management_interface(self, result):
+        """Get Management Interface settings."""
+        result[self.device.hostname].dhcp_enable = 'yes'
+        result[self.device.hostname].dns_using_dhcp = 'yes'
+        result[self.device.hostname].v6_dhcp_enable = 'no'
+        for _ in range(4):
+            xml_body = f"<configResolveClass cookie=\"{self.xml_cookie}\" inHierarchical=\"false\" classId=\"mgmtIf\"/>"
+            resp = requests.post(url=self.xml_uri, verify=False, data=xml_body)
+            if re.match(r'2..', str(resp.status_code)):
+                xml_tree = ElementTree.fromstring(resp.content)
+                for child in xml_tree:
+                    for subchild in child:
+                        xdict = subchild.attrib
+                        if xdict.get('dhcpEnable'):
+                            result[self.device.hostname].dhcp_enable    = xdict['dhcpEnable']
+                            result[self.device.hostname].dns_using_dhcp = xdict['dnsUsingDhcp']
+                            result[self.device.hostname].v6_dhcp_enable = xdict['v6dhcpEnable']
+                break
+        if not re.match(r'2..', str(resp.status_code)):
+            result.ApiError = f"post {self.xml_uri} {resp.status_code} management interface."
+        return result
 
 class hx_device_connector(device_connector, object):
     """HyperFlex (HX) Device Connector subclass.
@@ -156,7 +169,7 @@ class hx_device_connector(device_connector, object):
         super(hx_device_connector, self).__init__(device)
         # create HX REST API session
         # --------------------------------
-        self.hx_rest_uri = "https://%s/aaa/v1/auth?grant_type=password" % self.device['hostname']
+        self.hx_rest_uri = f"https://{self.device.hostname}/aaa/v1/auth?grant_type=password"
         hx_rest_header = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         hx_rest_body = {
             'username': self.device.username,
@@ -167,9 +180,8 @@ class hx_device_connector(device_connector, object):
         }
         resp = requests.post(self.hx_rest_uri, verify=False, headers=hx_rest_header, json=hx_rest_body)
         if re.match(r'2..', str(resp.status_code)):
-            ro_json = resp.json()
-            hx_cookie_str = "test; tokenType=Basic; locale=en; refreshToken=%s; token=%s" % (
-                ro_json['refresh_token'], ro_json['access_token'])
+            ro_json = resp.json(); atoken = ro_json['access_token']; rtoken = ro_json['refresh_token']
+            hx_cookie_str = f"test; tokenType=Basic; locale=en; refreshToken={rtoken}; token={atoken}"
             self.auth_header = {'Cookie': hx_cookie_str}
             self.logged_in = True
 
@@ -188,23 +200,24 @@ class ucs_device_connector(device_connector, object):
         super(ucs_device_connector, self).__init__(device)
         # XML API login and create session cookie
         # --------------------------------
-        self.xml_uri = "https://%s/nuova" % self.device.hostname
-        xml_body = "<aaaLogin inName=\"%s\" inPassword=\"%s\" />" % (self.device.username, self.device.password)
+        self.xml_uri = f"https://{self.device.hostname}/nuova"
+        xml_body = f"<aaaLogin inName=\"{self.device.username}\" inPassword=\"{self.device.password}\"/>"
         resp = requests.post(self.xml_uri, verify=False, data=xml_body)
         if re.match(r'2..', str(resp.status_code)):
             xml_tree = ElementTree.fromstring(resp.content)
-            if not xml_tree.attrib.get('outCookie'):
-                return
+            if not xml_tree.attrib.get('outCookie'): return
             self.xml_cookie = xml_tree.attrib['outCookie']
-            self.auth_header = {'ucsmcookie': "ucsm-cookie=%s" % self.xml_cookie}
+            self.auth_header = {'ucsmcookie': f"ucsm-cookie={self.xml_cookie}"}
             self.logged_in = True
 
     def logout(self):
-        """Logout of UCSM API session if currently logged in."""
+        """Logout of IMC/UCSM API session if currently logged in."""
         if self.logged_in:
             # XML API logout
             # --------------------------------
-            xml_body = "<aaaLogout inCookie=\"%s\" />" % self.xml_cookie
+            if self.device.device_type == 'imc':
+                xml_body = f"<aaaLogout cookie=\"{self.xml_cookie}\" inCookie=\"{self.xml_cookie}\"></aaaLogout>"
+            else: xml_body = f"<aaaLogout inCookie=\"{self.xml_cookie}\"/>"
             requests.post(self.xml_uri, verify=False, data=xml_body)
             self.logged_in = False
 

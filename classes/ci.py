@@ -253,7 +253,7 @@ class imm(object):
                 vics                  = vics
             )
             if len(kwargs.domain) > 0: kwargs.servers[i.Serial].domain = kwargs.domain.name
-            if i.SourceObjectType == 'compute.RackUnit': kwargs.servers[i.Serial].pop('chassis_moid')
+            else: kwargs.servers[i.Serial].pop('chassis_moid')
             return kwargs
         #=====================================================
         # Build Domain Dictionaries
@@ -337,7 +337,16 @@ class imm(object):
             for i in kwargs.results:
                 pcolor.Cyan(f'   - Pulling Server Inventory for the Server: {i.Serial}')
                 kwargs = server_dictionary(i, kwargs)
+                indx = next((index for (index, d) in enumerate(kwargs.result) if d.serial == i.Serial), None)
+                print(kwargs.result)
+                print(kwargs.servers)
+                kwargs.servers[i.Serial] = DotMap(dict(kwargs.servers[i.Serial].toDict(), **dict(
+                    dhcp_enable    = kwargs.result[indx].dhcp_enable,
+                    dns_using_dhcp = kwargs.result[indx].dns_using_dhcp,
+                    v6_dhcp_enable = kwargs.result[indx].v6_dhcp_enable,
+                )))
                 pcolor.Cyan(f'     Completed Server Inventory for Server: {i.Serial}')
+                exit()
             pcolor.Cyan('')
         #=====================================================
         # Return kwargs and kwargs
