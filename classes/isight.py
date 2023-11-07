@@ -2264,11 +2264,11 @@ def deploy_domain_profiles(profiles, kwargs):
     if deploy_profiles == True: pcolor.LightPurple(f'\n{"-"*91}\n')
     return kwargs
 
+DotMap(Changes=['OperationalPolicies'], ClassId='policy.ConfigChange', Disruptions=['ActivationRequiresReboot', 'MgmtNetworkDisconnection'], ObjectType='policy.ConfigChange', PolicyDisruptions=[DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=['ActivationRequiresReboot'], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='boot.PrecisionPolicy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='snmp.Policy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='storage.StoragePolicy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=['ActivationRequiresReboot'], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='bios.Policy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='syslog.Policy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='kvm.Policy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=['MgmtNetworkDisconnection'], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='networkconfig.Policy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='ntp.Policy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='sol.Policy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='iam.EndPointUserPolicy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='thermal.Policy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='ssh.Policy', PolicyPendingAction='Deploy'), DotMap(ClassId='policy.ConfigChangeDisruptionDetailType', Disruptions=[], ObjectType='policy.ConfigChangeDisruptionDetailType', PolicyName='vmedia.Policy', PolicyPendingAction='Deploy')])
 #======================================================
 # Function - Deploy Chassis/Server Profile if Action is Deploy
 #======================================================
 def deploy_chassis_server_profiles(profiles, kwargs):
-    print('matched deploy')
     pending_changes = False
     kwargs.profile_update = DotMap()
     for item in profiles:
@@ -2283,8 +2283,8 @@ def deploy_chassis_server_profiles(profiles, kwargs):
         for e in list(kwargs.profile_update.keys()):
             indx = next((index for (index, d) in enumerate(profile_results) if d['Name'] == e), None)
             if len(profile_results[indx].ConfigChanges.Changes) > 0 or profile_results[indx].ConfigContext.ConfigState == 'Assigned':
-                if pending_changes == False: pending_changes = 'Deploy'
-                kwargs.profile_update[e].pending_changes = True
+                if pending_changes == False: pending_changes = True
+                kwargs.profile_update[e].pending_changes = 'Deploy'
             elif len(profile_results[indx].ConfigChanges.PolicyDisruptions) > 0:
                 if pending_changes == False: pending_changes = True
                 kwargs.profile_update[e].pending_changes = 'Activate'
@@ -2356,7 +2356,6 @@ def deploy_chassis_server_profiles(profiles, kwargs):
                                 deploy_complete = True
                             else:  pcolor.Cyan(f'      * Activiation Still Occuring on `{e}`.  Waiting 120 seconds.'); time.sleep(120)
             pcolor.LightPurple(f'\n{"-"*91}\n')
-    exit()
     return kwargs
 
 #======================================================
