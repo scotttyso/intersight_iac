@@ -1206,7 +1206,7 @@ class imm(object):
             if enable_ipv6 == True:
                 polVars['enable_ipv6'] = True
                 if enable_ipv6_dhcp == True and enable_dhcp_dns == True: polVars['obtain_ipv6_dns_from_dhcp'] = True
-            else: polVars.extend(['enable_ipv6', 'obtain_ipv6_dns_from_dhcp'])
+            else: pop_list.extend(['enable_ipv6', 'obtain_ipv6_dns_from_dhcp'])
             for i in pop_list:
                 if polVars.get(i): polVars.pop(i)
         else:
