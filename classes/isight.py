@@ -138,7 +138,10 @@ class api(object):
             if api_results.get('Results'): kwargs.results = api_results.Results
             else: kwargs.results = api_results
             if 'post' in kwargs.method:
-                if re.search('bulk.(MoCloner|Request)', api_results.ObjectType):
+                if api_results.get('Responses'):
+                    api_results['Results'] = deepcopy(api_results['Responses'])
+                    kwargs.pmoids = build_pmoid_dictionary(api_results, kwargs)
+                elif re.search('bulk.(MoCloner|Request)', api_results.ObjectType):
                     kwargs.pmoids = build_pmoid_dictionary(api_results, kwargs)
                 else:
                     kwargs.pmoid = api_results.Moid
@@ -149,7 +152,11 @@ class api(object):
             # Print Progress Notifications
             #=====================================================
             if re.search('(patch|post)', kwargs.method):
-                if re.search('bulk.(MoCloner|Request)', api_results.ObjectType):
+                if api_results.get('Responses'):
+                    for e in api_results.Responses:
+                        kwargs.api_results = e.Body
+                        validating.completed_item(self.type, kwargs)
+                elif re.search('bulk.Request', api_results.ObjectType):
                     for e in api_results.Results:
                         kwargs.api_results = e.Body
                         if 'bulk.Request' in api_results.ObjectType:
