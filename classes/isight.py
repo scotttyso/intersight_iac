@@ -94,7 +94,7 @@ class api(object):
                     status = response
                     if re.search('40[0|3]', str(status)):
                         retry_action = False
-                        send_error()
+                        #send_error()
                         for k, v in (response.json()).items():
                             if 'user_action_is_not_allowed' in v: retry_action = True
                             elif 'policy_attached_to_multiple_profiles_cannot_be_edited' in v: retry_action = True
