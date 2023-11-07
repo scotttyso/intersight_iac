@@ -2649,43 +2649,61 @@ class wizard(object):
         for k, v in kwargs.pmoids.items(): kwargs.server_profiles[k].moid = v.moid
         
         for k, v in kwargs.server_profiles.items():
-            kwargs.api_filter = f"Profile.Moid eq '{v.moid}'"
-            kwargs.method     = 'get'
-            kwargs.qtype      = 'vnics'
-            kwargs.uri        = 'vnic/EthIfs'
-            kwargs = isight.api(kwargs.qtype).calls(kwargs)
-            r = kwargs.results
-            mac_list = []
-            kwargs.server_profiles[k].macs = []
-            kwargs.eth_moids = []
-            for s in r:
-                s = DotMap(s)
-                kwargs.eth_moids.append(s.FabricEthNetworkGroupPolicy[0].Moid)
-                mac_list.append(dict(
-                    mac    = s.MacAddress,
-                    name   = s.Name,
-                    order  = s.Order,
-                    switch = s.Placement.SwitchId,
-                    vgroup = s.FabricEthNetworkGroupPolicy[0].Moid))
-            kwargs.server_profiles[k].macs = sorted(mac_list, key=lambda k: (k['order']))
-        
-            #=====================================================
-            # Get WWPN's for vHBAs and Add to Profile Map
-            #=====================================================
-            kwargs.api_filter = f"Profile.Moid eq '{v.moid}'"
-            kwargs.qtype      = 'vhbas'
-            kwargs.uri        = 'vnic/FcIfs'
-            kwargs = isight.api(kwargs.qtype).calls(kwargs)
-            r = kwargs.results
-            wwpn_list = []
-            for s in r:
-                s = DotMap(s)
-                wwpn_list.append(dict(
-                    switch = s.Placement.SwitchId,
-                    name   = s.Name,
-                    order  = s.Order,
-                    wwpn   = s.Wwpn))
-            kwargs.server_profiles[k].wwpns = (sorted(wwpn_list, key=lambda k: (k['order'])))
+            if kwargs.imm_dict.orgs[kwargs.org].policies.get('lan_connectivity'):
+                kwargs.api_filter = f"Profile.Moid eq '{v.moid}'"
+                kwargs.method     = 'get'
+                kwargs.qtype      = 'vnics'
+                kwargs.uri        = 'vnic/EthIfs'
+                kwargs = isight.api(kwargs.qtype).calls(kwargs)
+                r = kwargs.results
+                mac_list = []
+                kwargs.server_profiles[k].macs = []
+                kwargs.eth_moids = []
+                for s in r:
+                    s = DotMap(s)
+                    kwargs.eth_moids.append(s.FabricEthNetworkGroupPolicy[0].Moid)
+                    mac_list.append(dict(
+                        mac    = s.MacAddress,
+                        name   = s.Name,
+                        order  = s.Order,
+                        switch = s.Placement.SwitchId,
+                        vgroup = s.FabricEthNetworkGroupPolicy[0].Moid))
+                kwargs.server_profiles[k].macs = sorted(mac_list, key=lambda k: (k['order']))
+            else:
+                kwargs.method     = 'get'
+                kwargs.api_filter = f"Ancestors/any(t:t/Moid eq '{v.hardware_moid}')"
+                kwargs.qtype      = 'adapter'
+                kwargs.uri        = 'adapter/HostEthInterfaces'
+                kwargs = isight.api(kwargs.qtype).calls(kwargs)
+                r = kwargs.results
+                mac_list = []
+                host_nic_names = ['mgmt-a', 'mgmt-b']
+                kwargs.server_profiles[k].macs = []
+                for s in range(0, 2):
+                    s = DotMap(r[s])
+                    mac_list.append(dict(
+                        mac    = r[s].MacAddress,
+                        name   = host_nic_names[s],
+                        order  = s))
+
+            if kwargs.imm_dict.orgs[kwargs.org].policies.get('san_connectivity'):
+                #=====================================================
+                # Get WWPN's for vHBAs and Add to Profile Map
+                #=====================================================
+                kwargs.api_filter = f"Profile.Moid eq '{v.moid}'"
+                kwargs.qtype      = 'vhbas'
+                kwargs.uri        = 'vnic/FcIfs'
+                kwargs = isight.api(kwargs.qtype).calls(kwargs)
+                r = kwargs.results
+                wwpn_list = []
+                for s in r:
+                    s = DotMap(s)
+                    wwpn_list.append(dict(
+                        switch = s.Placement.SwitchId,
+                        name   = s.Name,
+                        order  = s.Order,
+                        wwpn   = s.Wwpn))
+                kwargs.server_profiles[k].wwpns = (sorted(wwpn_list, key=lambda k: (k['order'])))
         
             #=====================================================
             # Get IQN for Host and Add to Profile Map if iscsi
@@ -2702,27 +2720,28 @@ class wizard(object):
                 r = DotMap(kwargs.results)
                 kwargs.server_profiles[k].iqn = r.IqnId
         kwargs.server_profile = DotMap(kwargs.server_profiles)
-        #=====================================================
-        # Query API for Ethernet Network Policies and Add to Server Profile Dictionaries
-        #=====================================================
-        kwargs.eth_moids = numpy.unique(numpy.array(kwargs.eth_moids))
-        kwargs.method    = 'get_by_moid'
-        kwargs.qtype     = 'ethernet_network_group'
-        kwargs.uri       = 'fabric/EthNetworkGroupPolicies'
-        server_settings = deepcopy(kwargs.server_profiles)
-        for i in kwargs.eth_moids:
-            kwargs.pmoid = i
-            isight.api(kwargs.qtype).calls(kwargs)
-            results = DotMap(kwargs.results)
-            for k, v in server_settings.items():
-                for e in v.macs:
-                    if e.vgroup == results.Moid:
-                        vgroup = e.vgroup
-                        indx = [e for e, d in enumerate(v.macs) if vgroup in d.values()]
-                        for ix in indx:
-                            kwargs.server_profiles[k].macs[ix]['vlan_group']= results.Name
-                            kwargs.server_profiles[k].macs[ix]['allowed']   = results.VlanSettings.AllowedVlans
-                            kwargs.server_profiles[k].macs[ix]['native']    = results.VlanSettings.NativeVlan
+        if len(kwargs.domain) > 0:
+            #=====================================================
+            # Query API for Ethernet Network Policies and Add to Server Profile Dictionaries
+            #=====================================================
+            kwargs.eth_moids = numpy.unique(numpy.array(kwargs.eth_moids))
+            kwargs.method    = 'get_by_moid'
+            kwargs.qtype     = 'ethernet_network_group'
+            kwargs.uri       = 'fabric/EthNetworkGroupPolicies'
+            server_settings = deepcopy(kwargs.server_profiles)
+            for i in kwargs.eth_moids:
+                kwargs.pmoid = i
+                isight.api(kwargs.qtype).calls(kwargs)
+                results = DotMap(kwargs.results)
+                for k, v in server_settings.items():
+                    for e in v.macs:
+                        if e.vgroup == results.Moid:
+                            vgroup = e.vgroup
+                            indx = [e for e, d in enumerate(v.macs) if vgroup in d.values()]
+                            for ix in indx:
+                                kwargs.server_profiles[k].macs[ix]['vlan_group']= results.Name
+                                kwargs.server_profiles[k].macs[ix]['allowed']   = results.VlanSettings.AllowedVlans
+                                kwargs.server_profiles[k].macs[ix]['native']    = results.VlanSettings.NativeVlan
         #=====================================================
         # Run Lun Creation Class
         #=====================================================

@@ -297,6 +297,8 @@ def main():
                 profile_list = ['chassis', 'server']
                 for i in profile_list:
                     if kwargs.imm_dict.orgs[org]['profiles'].get(i): kwargs = eval(f"isight.imm(i).profiles(kwargs)")
+            print('got to identities')
+            exit()
             kwargs = ci.wizard('wizard').server_identities(kwargs)
         #==============================================
         # Create YAML Files

@@ -2268,6 +2268,7 @@ def deploy_domain_profiles(profiles, kwargs):
 # Function - Deploy Chassis/Server Profile if Action is Deploy
 #======================================================
 def deploy_chassis_server_profiles(profiles, kwargs):
+    print('matched deploy')
     pending_changes = False
     kwargs.profile_update = DotMap()
     for item in profiles:
@@ -2355,6 +2356,7 @@ def deploy_chassis_server_profiles(profiles, kwargs):
                                 deploy_complete = True
                             else:  pcolor.Cyan(f'      * Activiation Still Occuring on `{e}`.  Waiting 120 seconds.'); time.sleep(120)
             pcolor.LightPurple(f'\n{"-"*91}\n')
+    exit()
     return kwargs
 
 #======================================================
