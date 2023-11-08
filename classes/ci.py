@@ -36,8 +36,8 @@ class imm(object):
         for i in models:
             gen, cpu, tpm = i.split('-')
             if kwargs.args.deployment_type == 'azurestack':
-                if len(tpm) > 0: btemplates.append(f'{gen}-azure-{cpu}-tpm')
-                else: btemplates.append(f'{gen}-azure-{cpu}')
+                if len(tpm) > 0: btemplates.append(f'{gen}-{cpu}-azure-tpm')
+                else: btemplates.append(f'{gen}-{cpu}-azure')
             else:
                 if len(tpm) > 0: btemplates.append(f'{gen}-{cpu}-virtual-tpm')
                 else: btemplates.append(f'{gen}-{cpu}-virtual')
@@ -46,7 +46,7 @@ class imm(object):
             polVars = dict(
                 baud_rate           = '115200',
                 bios_template       = i,
-                console_redirection = f'serial-port-a',
+                console_redirection = f'com-0',
                 description         = f'{i} {descr} Policy',
                 name                = i,
                 serial_port_aenable = f'enabled',
@@ -221,8 +221,8 @@ class imm(object):
             elif kwargs.imm.policies.boot_volume == 'm2': boot_type = 'm2'
             elif kwargs.imm.policies.boot_volume == 'san': boot_type = 'fcp'
             if kwargs.args.deployment_type == 'azurestack':
-                if len(tpmd) > 0: tpm = 'tpm'; template = f"{sg}-azure-{cv}-{ctype}-{boot_type}-tpm"
-                else: tpm = ''; template = f"{sg}-azure-{cv}-{ctype}-{boot_type}"
+                if len(tpmd) > 0: tpm = 'tpm'; template = f"{sg}-{cv}-azure-{ctype}-{boot_type}-tpm"
+                else: tpm = ''; template = f"{sg}-{cv}-azure-{ctype}-{boot_type}"
             elif len(tpmd) > 0:
                 tpm = 'tpm'
                 if len(vics) == 2:
@@ -344,8 +344,6 @@ class imm(object):
                             enable_ipv6 = v.enable_ipv6, enable_ipv6_dhcp = v.enable_ipv6_dhcp
                         )))
                 pcolor.Cyan(f'     Completed Server Inventory for Server: {i.Serial}')
-            print(json.dumps(kwargs.servers, indent=4))
-            exit()
             pcolor.Cyan('')
         #=====================================================
         # Return kwargs and kwargs
@@ -1210,17 +1208,11 @@ class imm(object):
                 polVars['enable_ipv6'] = True
                 if enable_ipv6_dhcp == True and enable_dhcp_dns == True: polVars['obtain_ipv6_dns_from_dhcp'] = True
             else: pop_list.extend(['enable_ipv6', 'obtain_ipv6_dns_from_dhcp'])
-            print(pop_list)
-            for i in pop_list:
-                if polVars.get(i): polVars.pop(i)
+            for i in pop_list: polVars.pop(i)
         else:
-            polVars = dict(
-                description    = f'dns {descr} Policy',
-                dns_servers_v4 = kwargs.dns_servers,
-                name           = 'dns',
-            )
-        print(polVars)
-        exit()
+            polVars = dict(description    = f'dns {descr} Policy',
+                           dns_servers_v4 = kwargs.dns_servers,
+                           name           = 'dns')
         # Add Policy Variables to imm_dict
         kwargs.class_path = f'policies,network_connectivity'
         kwargs = ezfunctions.ez_append(polVars, kwargs)
@@ -1606,11 +1598,12 @@ class imm(object):
             polVars = dict(
                 action               = 'Deploy',
                 create_from_template = True,
+                target_platform      = 'FIAttached',
                 targets              = [],
                 ucs_server_template  = template
             )
             if len(kwargs.domain) > 0: idict = kwargs.domain
-            else: idict = kwargs.imm
+            else: idict = kwargs.imm; polVars['target_platform'] = 'Standalone'
             for k,v in kwargs.servers.items():
                 if template == v.template:
                     if v.object_type == 'compute.Blade':
@@ -1855,6 +1848,7 @@ class imm(object):
                 serial_over_lan_policy  = 'sol',
                 snmp_policy             = 'snmp',
                 syslog_policy           = 'syslog',
+                target_platform         = 'FIAttached',
                 thermal_policy          = 'server',
                 uuid_pool               = 'uuid',
                 virtual_kvm_policy      = 'vkvm',
@@ -1863,15 +1857,15 @@ class imm(object):
             if 'rack' in p: polVars.pop('power_policy')
             if 'fcp' in p: polVars.update({'san_connectivity_policy': scp})
             else: polVars.pop('san_connectivity_policy')
-            if kwargs.args.deployment_type == 'azurestack':
+            if len(kwargs.domain) == 0:
+                polVars['target_platform'] = 'Standalone'
                 pop_list = ['imc_access_policy', 'lan_connectivity_policy', 'uuid_pool']
                 for e in pop_list: polVars.pop(e)
                 polVars = dict(polVars, **dict(
                     network_connectivity_policy= 'dns',
                     ntp_policy                 = 'ntp',
                     ssh_policy                 = 'ssh',
-                    storage_policy             = 'M2-raid',
-                    target_platform            = 'Standalone'
+                    storage_policy             = 'M2-raid'
                 ))
             polVars = dict(sorted(polVars.items()))
             # Add Policy Variables to imm_dict
