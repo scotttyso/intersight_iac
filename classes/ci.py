@@ -4,10 +4,11 @@
 def prRed(skk): print("\033[91m {}\033[00m" .format(skk))
 import sys
 try:
+    from datetime import datetime, timedelta
     from classes import claim_device, ezfunctions, isight, netapp, pcolor, pure_storage, validating
     from copy import deepcopy
     from dotmap import DotMap
-    import ipaddress, json, numpy, re, requests, time, urllib3
+    import ipaddress, json, numpy, os, re, requests, time, urllib3
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
     prRed(f" Module {e.name} is required to run this script")
@@ -1649,8 +1650,8 @@ class imm(object):
                     kwargs.server_profiles[name] = v
                     kwargs.server_profiles[name].boot_volume = kwargs.imm.policies.boot_volume
                     kwargs.server_profiles[name].os_type = os_type
-                    if not os_type == 'AzureStack':
-                        kwargs = server_profile_networks(name, p, kwargs)
+                    #if not os_type == 'Windows':
+                    kwargs = server_profile_networks(name, p, kwargs)
             polVars['targets']  = sorted(polVars['targets'], key=lambda item: item['name'])
             kwargs.class_path= f'profiles,{self.type}'
             kwargs = ezfunctions.ez_append(polVars, kwargs)
@@ -2251,13 +2252,15 @@ class wizard(object):
                         for i in item.clusters:
                             for e in i.members:
                                 kwargs.imm.profiles.append(DotMap(
-                                    cimc           = e.cimc,
-                                    equipment_type = 'RackServer',
-                                    identifier     = 1,
-                                    os_type        = 'Windows',
-                                    profile_start  = e.hostname,
-                                    suffix_digits  = 1,
-                                    inband_start   = kwargs.inband.server[icount]
+                                    active_directory = item.active_directory,
+                                    azurestack_admin = item.azurestack_admin,
+                                    cimc             = e.cimc,
+                                    equipment_type   = 'RackServer',
+                                    identifier       = 1,
+                                    os_type          = 'Windows',
+                                    profile_start    = e.hostname,
+                                    suffix_digits    = 1,
+                                    inband_start     = kwargs.inband.server[icount]
                                 ))
                                 icount += 1
                     kwargs.imm.policies.boot_volume = 'm2'
@@ -2466,10 +2469,16 @@ class wizard(object):
             #==================================
             # Get ESXi Root Password
             #==================================
-            if v.os_type == 'AzureStack':
-                kwargs.sensitive_var = 'windows_admin_password'
-                kwargs = ezfunctions.sensitive_var_value(kwargs)
-                kwargs.windows_admin_password = kwargs.var_value
+            if v.os_type == 'Windows':
+                sensitive_list = ['domain_admin_password', 'windows_admin_password']
+                for i in sensitive_list:
+                    kwargs = ezfunctions.sensitive_var_value(kwargs)
+                    kwargs[i] = kwargs.var_value
+                kwargs.disable_daylight = (str(ezfunctions.disable_daylight_savings(kwargs.timezone))).lower()
+                windows_timezones = json.load(open(os.path.join(kwargs.script_path, f'variables{os.sep}windowsTimeZones.json'), 'r'))
+                windows_timezone = [k for k, v in windows_timezones.items() if v == kwargs.timezone]
+                if len(windows_timezone) == 1: kwargs.windows_timezone = windows_timezone[0]
+                else: pcolor.Red(f'Failed to Map `{kwargs.timezone}` to a Windows Timezone.'); sys.exit(1)
             elif v.os_type == 'VMware':
                 kwargs.sensitive_var = 'vmware_esxi_password'
                 kwargs = ezfunctions.sensitive_var_value(kwargs)
@@ -2541,7 +2550,7 @@ class wizard(object):
             for e in kwargs.results:
                 version = ''
                 moid = e.Moid; url = e.Source.LocationLink
-                if 'Azure' in url and v.os_type == 'AzureStack':
+                if 'Azure' in url and v.os_type == 'Windows':
                     x = (e.Version).split(' '); version = f'{x[0]}{x[2]}ConfigFile'
                 elif e.Vendor == v.os_type:
                     x = (e.Version).split(' '); version = f'{x[0]}{x[1]}ConfigFile'
@@ -2563,10 +2572,13 @@ class wizard(object):
                     kwargs.san_target = kwargs.imm_dict.orgs[kwargs.org].storage.appliances[0].wwpns.b[0].wwpn
                     kwargs.wwpn = 1
             if v.os_installed == False:
-                indx           = [e for e, d in enumerate(v.macs) if 'mgmt-a' in d.values()][0]
-                kwargs.mgmt_mac= v.macs[indx].mac
-                kwargs.fqdn    = k + '.' + kwargs.dns_domains[0]
-                kwargs.apiBody = os_installation_body(k, v, kwargs)
+                indx             = [e for e, d in enumerate(v.macs) if 'mgmt-a' in d.values()][0]
+                kwargs.mgmt_mac_a= v.macs[indx].mac
+                indx             = [e for e, d in enumerate(v.macs) if 'mgmt-b' in d.values()][0]
+                kwargs.mgmt_mac_b= v.macs[indx].mac
+                kwargs.fqdn      = k + '.' + kwargs.dns_domains[0]
+                if v.os_type == 'VMware': kwargs.api_body = vmware_installation_body(k, v, kwargs)
+                elif v.os_type == 'Windows': kwargs.api_body = windows_installation_body(k, v, kwargs)
                 kwargs.method  = 'post'
                 kwargs.qtype   = self.type
                 kwargs.uri     = 'os/Installs'
@@ -2574,13 +2586,13 @@ class wizard(object):
                     pcolor.Green(f"{'-'*91}\n"\
                             f"      * host {k}: initiator: {v.wwpns[kwargs.wwpn].wwpn}\n"\
                             f"         target: {kwargs.san_target}\n"\
-                            f"         mac: {kwargs.mgmt_mac}\n"\
+                            f"         mac: {kwargs.mgmt_mac_a}\n"\
                             f"{'-'*91}\n")
                 else:
                     pcolor.Green(f"{'-'*91}\n"\
                             f"      * host {k}:\n"\
                             f"         target: {v.boot_volume}\n"\
-                            f"         mac: {kwargs.mgmt_mac}\n"\
+                            f"         mac: {kwargs.mgmt_mac_a}\n"\
                             f"{'-'*91}\n")
                 kwargs = isight.api(self.type).calls(kwargs)
                 kwargs.server_profiles[k].os_install = DotMap(moid=kwargs.pmoid,workflow='')
@@ -2632,7 +2644,7 @@ class wizard(object):
                     if os_installed == False:
                         tag_body.append({'Key':'os_installed','Value':v.os_type})
                     tags = list({v['Key']:v for v in tags}.values())
-                    kwargs.apiBody={'Tags':tag_body}
+                    kwargs.api_body={'Tags':tag_body}
                     kwargs.method = 'patch'
                     kwargs.pmoid  = v.hardware_moid
                     kwargs.qtype  = 'update_tags'
@@ -2732,7 +2744,7 @@ class wizard(object):
             #=====================================================
             iscsi_true = False
             for i in kwargs.vlans:
-              if re.search('iscsi|nvme-tcp', i.vlan_type): iscsi_true = True
+              if re.search('iscsi', i.vlan_type): iscsi_true = True
             if iscsi_true == True:
                 kwargs.api_filter= f"AssignedToEntity.Moid eq '{v.moid}'"
                 kwargs.method    = 'get'
@@ -2835,10 +2847,97 @@ class wizard(object):
         return kwargs
 
 #=============================================================================
-# Function - Build apiBody for Operating System Installation
+# Function - OS Install Custom Template Parameters Map
 #=============================================================================
-def os_installation_body(k, v, kwargs):
-    apiBody = {
+def os_placeholders(name, value):
+    if 'secure' in name: secure = True
+    else: secure = False
+    if len(value) == 0: is_set = False
+    else: is_set = True
+    parameters = {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": True,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+                "ClassId": "workflow.DefaultValue",
+                "IsValueSet": False,
+                "ObjectType": "workflow.DefaultValue",
+                "Override": False,
+                "Value": None
+            },
+            "Description": "",
+            "DisplayMeta": {
+                "ClassId": "workflow.DisplayMeta",
+                "InventorySelector": True,
+                "ObjectType": "workflow.DisplayMeta",
+                "WidgetType": "None"
+            },
+            "InputParameters": None,
+            "Label": name,
+            "Name": name,
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+                "ClassId": "workflow.PrimitiveDataProperty",
+                "Constraints": {
+                    "ClassId": "workflow.Constraints",
+                    "EnumList": [],
+                    "Max": 0,
+                    "Min": 0,
+                    "ObjectType": "workflow.Constraints",
+                    "Regex": ""
+                },
+                "InventorySelector": [],
+                "ObjectType": "workflow.PrimitiveDataProperty",
+                "Secure": secure,
+                "Type": "string"
+            },
+            "Required": False
+        },
+        "Value": value
+    }
+    return parameters
+
+#=============================================================================
+# Function - Build api_body for OS Configuration Item
+#=============================================================================
+def os_configuration_file(kwargs):
+    file_content = ''
+    api_body = {
+        "Catalog": {"Moid": "5da9217ab96543090cb9f805", "ObjectType": "os.Catalog"},
+        "Description": "",
+        "Distributions": [{"Moid": "61346b476f72742d31e808c1", "ObjectType": "hcl.OperatingSystem"}],
+        "FileContent": file_content,
+        "Name": "AzureStackHCI_with_language.xml",
+        "ObjectType": "os.ConfigurationFile",
+        "Placeholders": [],
+        "Supported": False,
+        "Tags": kwargs.ez_tags
+    }
+    answers_dict = {
+        ".Domain": '',
+        ".DisableAutoDaylightTimeSet": '',
+        ".DomainAdminUser": '',
+        ".Gateway": '',
+        ".HostName": '',
+        ".IpAddress": '',
+        ".IpPrefix": '',
+        ".MacAddressNic1_dash_format": '',
+        ".MacAddressNic2_dash_format": '',
+        ".NameServer": '',
+        ".secure.AdministratorPassword": '',
+        ".secure.DomainAdminPassword": '',
+        ".TimeZone": '',
+    }
+    for k,v in answers_dict.items(): api_body["AdditionalParameters"].append(os_placeholders(k, v))
+    return api_body
+
+#=============================================================================
+# Function - Build api_body for Operating System Installation - VMware
+#=============================================================================
+def vmware_installation_body(k, v, kwargs):
+    api_body = {
         'Answers': {
             'Hostname': kwargs.fqdn,
             'IpConfigType': 'static',
@@ -2851,7 +2950,7 @@ def os_installation_body(k, v, kwargs):
                 'ObjectType': 'os.Ipv4Configuration'},
             "IsRootPasswordCrypted": False,
             'Nameserver': kwargs.dns_servers[0],
-            'NetworkDevice': kwargs.mgmt_mac,
+            'NetworkDevice': kwargs.mgmt_mac_a,
             'ObjectType': 'os.Answers',
             'RootPassword': kwargs.vmware_esxi_password,
             'Source': 'Template'},
@@ -2866,15 +2965,64 @@ def os_installation_body(k, v, kwargs):
         'OverrideSecureBoot': True,
         'Server': {'Moid': v.hardware_moid, 'ObjectType': v.object_type}}
     if v.boot_volume == 'san':
-        apiBody['InstallTarget'] = {
+        api_body['InstallTarget'] = {
             'InitiatorWwpn': v.wwpns[kwargs.wwpn].wwpn,
             'LunId': 0,
             'ObjectType': 'os.FibreChannelTarget',
             'TargetWwpn': kwargs.san_target}
     elif v.boot_volume == 'm2':
-        apiBody['InstallTarget'] = {
-            "Id": 0,
+        api_body['InstallTarget'] = {
+            "Id": '0',
             "Name": "MStorBootVd",
             "ObjectType": "os.VirtualDrive",
-            "StorageControllerSlotId": int(v.storage_controllers['UCS-M2-HWRAID'])}
-    return apiBody
+            "StorageControllerSlotId": "MSTOR-RAID"}
+    return api_body
+
+#=============================================================================
+# Function - Build api_body for Operating System Installation - Azure Stack
+#=============================================================================
+def windows_installation_body(k, v, kwargs):
+    api_body = {
+        "ObjectType": "bulk.RestSubRequest",
+        "Body": {
+            "Description": "",
+            "InstallMethod": "vMedia",
+            "Image": {"Moid": kwargs.os_sw_moid, "ObjectType": "softwarerepository.OperatingSystemFile"},
+            "OsduImage": {"Moid": kwargs.scu_moid, "ObjectType": "firmware.ServerConfigurationUtilityDistributable"},
+            "OperatingSystemParameters": {"Edition": "DatacenterCore", "ObjectType": "os.WindowsParameters"},
+            "OverrideSecureBoot": True,
+            "Organization": {"Moid": kwargs.org_moid, "ObjectType": "organization.Organization"},
+            "Answers": {"Source": "Template"},
+            "ConfigurationFile": {"Moid": kwargs.os_cfg_moid, "ObjectType": "os.ConfigurationFile"},
+            "AdditionalParameters": [],
+            "InstallTarget": {
+                "ObjectType": "os.VirtualDrive",
+                "Name": "MStorBootVd",
+                "StorageControllerSlotId": "MSTOR-RAID",
+                "Id": "0"
+            },
+            "Server": {'Moid': v.hardware_moid, 'ObjectType': v.object_type}
+        }
+    }
+    ip_network = ipaddress.IPv4Network(f'{v.inband.ip}/{v.inband.netmask}', strict=False)
+    ip_prefix  = str(ip_network.prefixlen)
+    mac_a = kwargs.mgmt_mac_a.replace(':', '-')
+    mac_b = kwargs.mgmt_mac_b.replace(':', '-')
+    answers_dict = {
+        ".Domain": v.active_directory.domain,
+        ".DisableAutoDaylightTimeSet": kwargs.disable_daylight,
+        ".DomainAdminUser": v.active_directory.administrator,
+        ".Gateway": v.inband.gateway,
+        ".HostName": k,
+        ".IpAddress": v.inband.ip,
+        ".IpPrefix": ip_prefix,
+        ".MacAddressNic1_dash_format": mac_a,
+        ".MacAddressNic2_dash_format": mac_b,
+        ".NameServer": kwargs.dns_servers[0],
+        ".secure.AdministratorPassword": kwargs.windows_admin_password,
+        ".secure.DomainAdminPassword": kwargs.domain_admin_password,
+        ".TimeZone": kwargs.windows_timezone,
+    }
+    for k,v in answers_dict.items(): api_body["AdditionalParameters"].append(os_placeholders(k, v))
+    return api_body
+

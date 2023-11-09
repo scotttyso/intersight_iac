@@ -6,10 +6,11 @@ import sys
 try:
     from classes import pcolor, validating
     from copy import deepcopy
+    from datetime import datetime, timedelta
     from dotmap import DotMap
     from git import cmd, Repo
     from openpyxl import load_workbook
-    import ipaddress, itertools, jinja2, json, os, pexpect, pkg_resources, re, requests
+    import ipaddress, itertools, jinja2, json, os, pexpect, pkg_resources, pytz, re, requests
     import shutil, subprocess, stdiomask, string, textwrap, validators, yaml
 except ImportError as e:
     prRed(f'!!! ERROR !!!\n{e.__class__.__name__}')
@@ -243,6 +244,22 @@ def create_wizard_yaml(kwargs):
             title1 = str.title(item.replace('_', ' '))
             write_file(dest_dir, dest_file, idict, title1)
                         
+#=====================================================
+# Determine if Timezone Uses Daylight Savings
+#=====================================================
+def disable_daylight_savings(zonename):
+    tz = pytz.timezone(zonename)
+    june = pytz.utc.localize(datetime(2023, 6, 2, 12, 1, tzinfo=None))
+    december = pytz.utc.localize(datetime(2023, 12, 2, 12, 1, tzinfo=None))
+    june_dst = june.astimezone(tz).dst() != timedelta(0)
+    dec_dst  = december.astimezone(tz).dst() != timedelta(0)
+    if june_dst == True and dec_dst == False: return False
+    elif june_dst == False and dec_dst == True: return False
+    elif june_dst == False and dec_dst == False: return True
+    else:
+        print(f'unknown Timezone Result for {zonename}')
+        sys.exit(1)
+
 #======================================================
 # Function - Prompt User with question
 #======================================================

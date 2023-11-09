@@ -1,0 +1,1445 @@
+[
+    {
+        "code": "af-ZA",
+        "language": "Afrikaans - South Africa",
+        "local": "United States - English (0436:00000409)"
+    },
+    {
+        "code": "sq-AL",
+        "language": "Albanian - Albania",
+        "local": "Albanian (041c:0000041c)"
+    },
+    {
+        "code": "gsw-FR",
+        "language": "Alsatian - France",
+        "local": "French (0484:0000040c)"
+    },
+    {
+        "code": "am-ET",
+        "language": "Amharic - Ethiopia",
+        "local": "Amharic Input Method (045e:{E429B25A-E5D3-4D1F-9BE3-0C608477E3A1}{8F96574E-C86C-4bd6-9666-3F7327D4CBE8})",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-DZ",
+        "language": "Arabic - Algeria",
+        "local": "Arabic (102) AZERTY (1401:00020401)",
+        "secondary_language": "fr-FR",
+        "secondary_local": "French (040c:0000040c)"
+    },
+    {
+        "code": "ar-BH",
+        "language": "Arabic - Bahrain",
+        "local": "Arabic (101) (3c01:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-EG",
+        "language": "Arabic - Egypt",
+        "local": "Arabic (101) (0c01:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-IQ",
+        "language": "Arabic - Iraq",
+        "local": "Arabic (101) (0801:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-JO",
+        "language": "Arabic - Jordan",
+        "local": "Arabic (101) (2c01:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-KW",
+        "language": "Arabic - Kuwait",
+        "local": "Arabic (101) (3401:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-LB",
+        "language": "Arabic - Lebanon",
+        "local": "Arabic (101) (3001:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-LY",
+        "language": "Arabic - Libya",
+        "local": "Arabic (101) (1001:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-MA",
+        "language": "Arabic - Morocco",
+        "local": "Arabic (102) AZERTY (1801:00020401)",
+        "secondary_language": "fr-FR",
+        "secondary_local": "French (040c:0000040c)"
+    },
+    {
+        "code": "ar-OM",
+        "language": "Arabic - Oman",
+        "local": "Arabic (101) (2001:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-QA",
+        "language": "Arabic - Qatar",
+        "local": "Arabic (101) (4001:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-SA",
+        "language": "Arabic - Saudi Arabia",
+        "local": "Arabic (101) (0401:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-SY",
+        "language": "Arabic - Syria",
+        "local": "Arabic (101) (2801:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-TN",
+        "language": "Arabic - Tunisia",
+        "local": "Arabic (102) AZERTY (1c01:00020401)",
+        "secondary_language": "fr-FR",
+        "secondary_local": "French (040c:0000040c)"
+    },
+    {
+        "code": "ar-AE",
+        "language": "Arabic - U.A.E.",
+        "local": "Arabic (101) (3801:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ar-YE",
+        "language": "Arabic - Yemen",
+        "local": "Arabic (101) (2401:00000401)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "hy-AM",
+        "language": "Armenian - Armenia",
+        "local": "Armenian Phonetic (042b:0002042b)",
+        "secondary_language": [
+            "hy-AM",
+            "ru-RU"
+        ],
+        "secondary_local": [
+            "Armenian Typewriter (042b:0003042b)",
+            "Russian (0419:00000419)"
+        ]
+    },
+    {
+        "code": "as-IN",
+        "language": "Assamese - India",
+        "local": "Assamese - Inscript (044d:0000044d)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "az-Cyrl-AZ",
+        "language": "Azerbaijani - Azerbaijan (Cyrillic)",
+        "local": "Azeri Cyrillic (082c:0000082c)",
+        "secondary_language": [
+            "en-US",
+            "az-Latn-AZ"
+        ],
+        "secondary_local": [
+            "United States - English (0409:00000409)",
+            "Azeri Latin (042c:0000042c)"
+        ]
+    },
+    {
+        "code": "az-Latn-AZ",
+        "language": "Azerbaijani - Azerbaijan (Latin)",
+        "local": "Azeri Latin (042c:0000042c)",
+        "secondary_language": [
+            "en-US",
+            "az-Cyrl-AZ"
+        ],
+        "secondary_local": [
+            "United States - English (0409:00000409)",
+            "Azeri Cyrillic (082c:0000082c)"
+        ]
+    },
+    {
+        "code": "bn-BD",
+        "language": "Bangla - Bangladesh",
+        "local": "Bengali (0845:00000445)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "bn-IN",
+        "language": "Bangla - India (Bengali Script)",
+        "local": "Bengali - INSCRIPT (0445:00020445)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ba-RU",
+        "language": "Bashkir - Russia",
+        "local": "Bashkir (046d:0000046d)",
+        "secondary_language": [
+            "ru-RU",
+            "en-US"
+        ],
+        "secondary_local": [
+            "Russian (0419:00000419)",
+            "United States - English (0409:00000409)"
+        ]
+    },
+    {
+        "code": "eu-ES",
+        "language": "Basque - Basque",
+        "local": "Spanish (042d:0000040a)"
+    },
+    {
+        "code": "be-BY",
+        "language": "Belarusian - Belarus",
+        "local": "Belarusian (0423:00000423)",
+        "secondary_language": [
+            "ru-RU",
+            "en-US"
+        ],
+        "secondary_local": [
+            "Russian (0419:00000419)",
+            "United States - English (0409:00000409)"
+        ]
+    },
+    {
+        "code": "bs-Cyrl-BA",
+        "language": "Bosnian - Bosnia and Herzegovina (Cyrillic)",
+        "local": "Bosnian (Cyrillic) (201a:0000201a)",
+        "secondary_language": "bs-Latn-BA",
+        "secondary_local": "Croatian (141a:0000041a)"
+    },
+    {
+        "code": "bs-Latn-BA",
+        "language": "Bosnian - Bosnia and Herzegovina (Latin)",
+        "local": "Croatian (141a:0000041a)"
+    },
+    {
+        "code": "br-FR",
+        "language": "Breton - France",
+        "local": "French (047e:0000040c)"
+    },
+    {
+        "code": "bg-BG",
+        "language": "Bulgarian - Bulgaria",
+        "local": "Bulgarian (0402:00030402)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - International (0409:00020409)"
+    },
+    {
+        "code": "my-MM",
+        "language": "Burmese - Myanmar",
+        "local": "Myanmar (0455:00010c00)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ca-ES",
+        "language": "Catalan - Catalan",
+        "local": "Spanish (0403:0000040a)"
+    },
+    {
+        "code": "fr-FR",
+        "language": "Central Atlas Tamazight (Latin) - Algeria",
+        "local": "French (040c:0000040c)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "tzm-Latn-DZ",
+        "language": "Central Atlas Tamazight (Latin) - Algeria",
+        "local": "Central Atlas Tamazight (085f:0000085f)"
+    },
+    {
+        "code": "tzm-Tfng-MA",
+        "language": "Central Atlas Tamazight (Tifinagh) - Morocco",
+        "local": "(105f:0000105f)",
+        "secondary_language": "fr-FR",
+        "secondary_local": "French (040c:0000040c)"
+    },
+    {
+        "code": "ku-Arab-IQ",
+        "language": "Central Kurdish (Iraq)",
+        "local": "(0492:00000492)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "chr-Cher-US",
+        "language": "Cherokee (Cherokee, United States)",
+        "local": "Cherokee Nation (045c:0000045c)",
+        "secondary_language": [
+            "chr-Cher-US",
+            "en-US"
+        ],
+        "secondary_local": [
+            "Cherokee Nation Phonetic (045c:0001045c)",
+            "United States - English (0409:00000409)"
+        ]
+    },
+    {
+        "code": "zh-TW",
+        "language": "Chinese - Hong Kong",
+        "local": "Chinese (Traditional) - Quick (0404:{531FDEBF-9B4C-4A43-A2AA-960E8FCDC732}{6024B45F-5C54-11D4-B921-0080C882687E})"
+    },
+    {
+        "code": "zh-TW",
+        "language": "Chinese - Macao",
+        "local": "Chinese (Traditional) - Quick (0404:{531FDEBF-9B4C-4A43-A2AA-960E8FCDC732}{6024B45F-5C54-11D4-B921-0080C882687E})"
+    },
+    {
+        "code": "zh-CN",
+        "language": "Chinese - PRC",
+        "local": "Microsoft Pinyin - Simple Fast (0804:{81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E}{FA550B04-5AD7-411f-A5AC-CA038EC515D7})"
+    },
+    {
+        "code": "zh-CN",
+        "language": "Chinese - Singapore",
+        "local": "Microsoft Pinyin - Simple Fast (0804:{81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E}{FA550B04-5AD7-411f-A5AC-CA038EC515D7})"
+    },
+    {
+        "code": "zh-TW",
+        "language": "Chinese - Taiwan",
+        "local": "Chinese (Traditional) - New Phonetic (0404:{B115690A-EA02-48D5-A231-E3578D2FDF80}{B2F9C502-1742-11D4-9790-0080C882687E})"
+    },
+    {
+        "code": "co-FR",
+        "language": "Corsican - France",
+        "local": "French (0483:0000040c)"
+    },
+    {
+        "code": "hr-BA",
+        "language": "Croatian - Bosnia and Herzegovina",
+        "local": "Croatian (101a:0000041a)"
+    },
+    {
+        "code": "hr-HR",
+        "language": "Croatian - Croatia",
+        "local": "Croatian (041a:0000041a)"
+    },
+    {
+        "code": "cs-CZ",
+        "language": "Czech - Czech Republic",
+        "local": "Czech (0405:00000405)"
+    },
+    {
+        "code": "da-DK",
+        "language": "Danish - Denmark",
+        "local": "Danish (0406:00000406)",
+        "secondary_language": "en-US",
+        "secondary_local": "Danish (0409:00000406)"
+    },
+    {
+        "code": "prs-AF",
+        "language": "Dari - Afghanistan",
+        "local": "Persian (Standard) (048c:00050429)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "dv-MV",
+        "language": "Divehi - Maldives",
+        "local": "Divehi Phonetic (0465:00000465)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "nl-BE",
+        "language": "Dutch - Belgium",
+        "local": "Belgian (Period) (0813:00000813)"
+    },
+    {
+        "code": "nl-NL",
+        "language": "Dutch - Netherlands",
+        "local": "United States - International (0413:00020409)"
+    },
+    {
+        "code": "en-AU",
+        "language": "English - Australia",
+        "local": "United States - English (0c09:00000409)"
+    },
+    {
+        "code": "en-BZ",
+        "language": "English - Belize",
+        "local": "United States - English (2809:00000409)"
+    },
+    {
+        "code": "en-CA",
+        "language": "English - Canada",
+        "local": "United States - English (1009:00000409)",
+        "secondary_language": "en-CA",
+        "secondary_local": "Canadian Multilingual Standard (1009:00011009)"
+    },
+    {
+        "code": "en-029",
+        "language": "English - Caribbean",
+        "local": "United States - English (2409:00000409)"
+    },
+    {
+        "code": "en-IN",
+        "language": "English - India",
+        "local": "India (4009:00004009)"
+    },
+    {
+        "code": "en-IE",
+        "language": "English - Ireland",
+        "local": "Irish (1809:00001809)"
+    },
+    {
+        "code": "en-JM",
+        "language": "English - Jamaica",
+        "local": "United States - English (2009:00000409)"
+    },
+    {
+        "code": "en-MY",
+        "language": "English - Malaysia",
+        "local": "United States - English (4409:00000409)"
+    },
+    {
+        "code": "en-NZ",
+        "language": "English - New Zealand",
+        "local": "United States - English (1409:00000409)"
+    },
+    {
+        "code": "en-PH",
+        "language": "English - Philippines",
+        "local": "United States - English (3409:00000409)"
+    },
+    {
+        "code": "en-SG",
+        "language": "English - Singapore",
+        "local": "United States - English (4809:00000409)"
+    },
+    {
+        "code": "en-ZA",
+        "language": "English - South Africa",
+        "local": "United States - English (1c09:00000409)"
+    },
+    {
+        "code": "en-TT",
+        "language": "English - Trinidad",
+        "local": "United States - English (2c09:00000409)"
+    },
+    {
+        "code": "en-GB",
+        "language": "English - United Kingdom",
+        "local": "United Kingdom (0809:00000809)"
+    },
+    {
+        "code": "en-US",
+        "language": "English - United States",
+        "local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "en-ZW",
+        "language": "English - Zimbabwe",
+        "local": "United States - English (3009:00000409)"
+    },
+    {
+        "code": "et-EE",
+        "language": "Estonian - Estonia",
+        "local": "Estonian (0425:00000425)"
+    },
+    {
+        "code": "fo-FO",
+        "language": "Faroese - Faroe Islands",
+        "local": "Danish (0438:00000406)"
+    },
+    {
+        "code": "fil-PH",
+        "language": "Filipino - Philippines",
+        "local": "United States - English (0464:00000409)"
+    },
+    {
+        "code": "fi-FI",
+        "language": "Finnish - Finland",
+        "local": "Finnish (040b:0000040b)"
+    },
+    {
+        "code": "fr-BE",
+        "language": "French - Belgium",
+        "local": "Belgian French (080c:0000080c)"
+    },
+    {
+        "code": "fr-CA",
+        "language": "French - Canada",
+        "local": "Canadian Multilingual Standard (0c0c:00011009)",
+        "secondary_language": "en-CA",
+        "secondary_local": "Canadian Multilingual Standard (1009:00011009)"
+    },
+    {
+        "code": "fr-FR",
+        "language": "French - France",
+        "local": "French (040c:0000040c)"
+    },
+    {
+        "code": "fr-LU",
+        "language": "French - Luxembourg",
+        "local": "Swiss French (140c:0000100C)",
+        "secondary_language": "fr-LU",
+        "secondary_local": "French (140c:0000040c)"
+    },
+    {
+        "code": "fr-MC",
+        "language": "French - Monaco",
+        "local": "French (180c:0000040c)"
+    },
+    {
+        "code": "fr-CH",
+        "language": "French - Switzerland",
+        "local": "Swiss French (100c:0000100c)",
+        "secondary_language": "de-CH",
+        "secondary_local": "Swiss German (0807:00000807)"
+    },
+    {
+        "code": "fy-NL",
+        "language": "Frisian - Netherlands",
+        "local": "United States - International (0462:00020409)"
+    },
+    {
+        "code": "ff-Latn-SN",
+        "language": "Fulah (Latin, Senegal)",
+        "local": "Wolof (0867:00000488)"
+    },
+    {
+        "code": "gl-ES",
+        "language": "Galician - Galician",
+        "local": "Spanish (0456:0000040a)"
+    },
+    {
+        "code": "ka-GE",
+        "language": "Georgian - Georgia",
+        "local": "Georgian (QWERTY) (0437:00010437)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "de-AT",
+        "language": "German - Austria",
+        "local": "German (0c07:00000407)",
+        "secondary_language": "de-AT",
+        "secondary_local": "German ()"
+    },
+    {
+        "code": "de-DE",
+        "language": "German - Germany",
+        "local": "German (0407:00000407)",
+        "secondary_language": "de-DE",
+        "secondary_local": "German ()"
+    },
+    {
+        "code": "de-LI",
+        "language": "German - Liechtenstein",
+        "local": "Swiss German (1407:00000807)"
+    },
+    {
+        "code": "de-LU",
+        "language": "German - Luxembourg",
+        "local": "German (1007:00000407)"
+    },
+    {
+        "code": "de-CH",
+        "language": "German - Switzerland",
+        "local": "Swiss German (0807:00000807)",
+        "secondary_language": "fr-CH",
+        "secondary_local": "Swiss French (100C:0000100C)"
+    },
+    {
+        "code": "el-GR",
+        "language": "Greek - Greece",
+        "local": "Greek (0408:00000408)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "kl-GL",
+        "language": "Greenlandic - Greenland",
+        "local": "Danish (046f:00000406)"
+    },
+    {
+        "code": "gn-PY",
+        "language": "Guarani - Paraguay",
+        "local": "Guarani (0474:00000474)"
+    },
+    {
+        "code": "gu-IN",
+        "language": "Gujarati - India (Gujarati Script)",
+        "local": "Gujarati (0447:00000447)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ha-Latn-NG",
+        "language": "Hausa (Latin) - Nigeria",
+        "local": "Hausa (0468:00000468)"
+    },
+    {
+        "code": "haw-US",
+        "language": "Hawaiian - United States",
+        "local": "(0475:00000475)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "he-IL",
+        "language": "Hebrew - Israel",
+        "local": "(040d:0002040d)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "hi-IN",
+        "language": "Hindi - India",
+        "local": "Hindi Traditional (0439:00010439)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "hu-HU",
+        "language": "Hungarian - Hungary",
+        "local": "Hungarian (040e:0000040e)"
+    },
+    {
+        "code": "is-IS",
+        "language": "Icelandic - Iceland",
+        "local": "Icelandic (040f:0000040f)"
+    },
+    {
+        "code": "ig-NG",
+        "language": "Igbo - Nigeria",
+        "local": "Igbo (0470:00000470)"
+    },
+    {
+        "code": "smn-FI",
+        "language": "Inari Sami - Finland",
+        "local": "Finnish with Sami (243b:0001083b)"
+    },
+    {
+        "code": "id-ID",
+        "language": "Indonesian - Indonesia",
+        "local": "United States - English (0421:00000409)"
+    },
+    {
+        "code": "iu-Latn-CA",
+        "language": "Inuktitut (Latin) - Canada",
+        "local": "Inuktitut - Latin (085d:0000085d)",
+        "secondary_language": "en-CA",
+        "secondary_local": "United States - English (1009:00000409)"
+    },
+    {
+        "code": "iu-Cans-CA",
+        "language": "Inuktitut (Syllabics) - Canada",
+        "local": "Inuktitut - Naqittaut (045d:0001045d)",
+        "secondary_language": "en-CA",
+        "secondary_local": "United States - English (1009:00000409)"
+    },
+    {
+        "code": "ga-IE",
+        "language": "Irish - Ireland",
+        "local": "Irish (083c:00001809)"
+    },
+    {
+        "code": "xh-ZA",
+        "language": "isiXhosa / Xhosa - South Africa",
+        "local": "United States - English (0434:00000409)"
+    },
+    {
+        "code": "zu-ZA",
+        "language": "isiZulu / Zulu - South Africa",
+        "local": "United States - English (0435:00000409)"
+    },
+    {
+        "code": "it-IT",
+        "language": "Italian - Italy",
+        "local": "Italian (0410:00000410)"
+    },
+    {
+        "code": "it-CH",
+        "language": "Italian - Switzerland",
+        "local": "Swiss French (0810:0000100c)",
+        "secondary_language": "it-CH",
+        "secondary_local": "Italian (0810:00000410)"
+    },
+    {
+        "code": "ja-JP",
+        "language": "Japanese - Japan",
+        "local": "Microsoft IME (0411:{03B5835F-F03C-411B-9CE2-AA23E1171E36}{A76C93D9-5523-4E90-AAFA-4DB112F9AC76})"
+    },
+    {
+        "code": "jv-Latn-ID",
+        "language": "Javanese (Latin) - Indonesia",
+        "local": "US (0c00:00000409)"
+    },
+    {
+        "code": "kn-IN",
+        "language": "Kannada - India (Kannada Script)",
+        "local": "Kannada (044b:0000044b)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "kk-KZ",
+        "language": "Kazakh - Kazakhstan",
+        "local": "Kazakh (043f:0000043f)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "km-KH",
+        "language": "Khmer - Cambodia",
+        "local": "Khmer (0453:00000453)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "qut-GT",
+        "language": "K'iche - Guatemala",
+        "local": "Latin American (0486:0000080a)"
+    },
+    {
+        "code": "rw-RW",
+        "language": "Kinyarwanda - Rwanda",
+        "local": "United States - English (0487:00000409)"
+    },
+    {
+        "code": "kok-IN",
+        "language": "Konkani - India",
+        "local": "Devanagari-INSCRIPT (0457:00000439)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ko-KR",
+        "language": "Korean(Extended Wansung) - Korea",
+        "local": "Microsoft IME (0412:{A028AE76-01B1-46C2-99C4-ACD9858AE02F}{B5FE1F02-D5F2-4445-9C03-C568F23C99A1})"
+    },
+    {
+        "code": "ky-KG",
+        "language": "Kyrgyz - Kyrgyzstan",
+        "local": "Kyrgyz Cyrillic (0440:00000440)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "lo-LA",
+        "language": "Lao - Lao PDR",
+        "local": "Lao (0454:00000454)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "lv-LV",
+        "language": "Latvian - Legacy",
+        "local": "Latvian (QWERTY) (0426:00010426)"
+    },
+    {
+        "code": "lv-LV",
+        "language": "Latvian - Standard",
+        "local": "Latvian (Standard) (0426:00020426)"
+    },
+    {
+        "code": "lt-LT",
+        "language": "Lithuanian - Lithuania",
+        "local": "Lithuanian (0427:00010427)"
+    },
+    {
+        "code": "dsb-DE",
+        "language": "Lower Sorbian - Germany",
+        "local": "Sorbian Standard (082e:0002042e)"
+    },
+    {
+        "code": "smj-NO",
+        "language": "Lule Sami - Norway",
+        "local": "Norwegian with Sami (103b:0000043b)"
+    },
+    {
+        "code": "smj-SE",
+        "language": "Lule Sami - Sweden",
+        "local": "Swedish with Sami (143b:0000083b)"
+    },
+    {
+        "code": "lb-LU",
+        "language": "Luxembourgish - Luxembourg",
+        "local": "Luxembourgish (046e:0000046e)"
+    },
+    {
+        "code": "mk-MK",
+        "language": "Macedonian - F.Y.R.O.M",
+        "local": "Macedonia (FYROM) - Standard (042f:0001042f)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ms-BN",
+        "language": "Malay - Brunei",
+        "local": "United States - English (083e:00000409)"
+    },
+    {
+        "code": "ms-MY",
+        "language": "Malay - Malaysia",
+        "local": "United States - English (043e:00000409)"
+    },
+    {
+        "code": "ml-IN",
+        "language": "Malayalam - India (Malayalam Script)",
+        "local": "Malayalam (044c:0000044c)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "mt-MT",
+        "language": "Maltese - Malta",
+        "local": "Maltese 47-Key (043a:0000043a)"
+    },
+    {
+        "code": "mi-NZ",
+        "language": "Maori - New Zealand",
+        "local": "Maori (0481:00000481)",
+        "secondary_language": "en-NZ",
+        "secondary_local": "United States - English (1409:00000409)"
+    },
+    {
+        "code": "arn-CL",
+        "language": "Mapudungun - Chile",
+        "local": "Latin American (047a:0000080a)"
+    },
+    {
+        "code": "mr-IN",
+        "language": "Marathi - India",
+        "local": "Marathi (044e:0000044e)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "moh-CA",
+        "language": "Mohawk - Mohawk",
+        "local": "United States - English (047c:00000409)"
+    },
+    {
+        "code": "mn-MN",
+        "language": "Mongolian (Cyrillic) - Mongolia",
+        "local": "Mongolian Cyrillic (0450:00000450)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "mn-Mong-MN",
+        "language": "Mongolian (Mongolian) - Mongolia",
+        "local": "Traditional Mongolian (Standard) (0c50:00010850)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "mn-Mong-CN",
+        "language": "Mongolian (Mongolian - PRC - Legacy)",
+        "local": "Mongolian (Mongolian Script) (0850:00000850)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "mn-Mong-CN",
+        "language": "Mongolian (Mongolian - PRC - Standard)",
+        "local": "Mongolian (Mongolian Script) (0850:00010850)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "nqo-GN",
+        "language": "N'ko - Guinea",
+        "local": "N'Ko (0c00:00090C00)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ne-NP",
+        "language": "Nepali - Nepal",
+        "local": "Nepali (0461:00000461)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "se-FI",
+        "language": "Northern Sami - Finland",
+        "local": "Finnish with Sami (0c3b:0001083b)"
+    },
+    {
+        "code": "se-NO",
+        "language": "Northern Sami - Norway",
+        "local": "Norwegian with Sami (043b:0000043b)"
+    },
+    {
+        "code": "se-SE",
+        "language": "Northern Sami - Sweden",
+        "local": "Swedish with Sami (083b:0000083b)"
+    },
+    {
+        "code": "nb-NO",
+        "language": "Norwegian - Norway (Bokm'l)",
+        "local": "Norwegian (0414:00000414)"
+    },
+    {
+        "code": "nn-NO",
+        "language": "Norwegian - Norway (Nynorsk)",
+        "local": "Norwegian (0814:00000414)"
+    },
+    {
+        "code": "oc-FR",
+        "language": "Occitan - France",
+        "local": "French (0482:0000040c)"
+    },
+    {
+        "code": "or-IN",
+        "language": "Odia - India (Odia Script)",
+        "local": "Oriya (0448:00000448)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ps-AF",
+        "language": "Pashto - Afghanistan",
+        "local": "Pashto (Afghanistan) (0463:00000463)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "fa-IR",
+        "language": "Persian",
+        "local": "Central Kurdish (0429:00000429)",
+        "secondary_language": [
+            "Fa-IR",
+            "en-US"
+        ],
+        "secondary_local": [
+            "Persian (Standard) (0429:00050429)",
+            "United States - English (0409:00000409)"
+        ]
+    },
+    {
+        "code": "pl-PL",
+        "language": "Polish - Poland",
+        "local": "Polish (Programmers) (0415:00000415)"
+    },
+    {
+        "code": "pt-BR",
+        "language": "Portuguese - Brazil",
+        "local": "Portuguese (Brazilian ABNT) (0416:00000416)"
+    },
+    {
+        "code": "pt-PT",
+        "language": "Portuguese - Portugal",
+        "local": "Portuguese (0816:00000816)"
+    },
+    {
+        "code": "pa-IN",
+        "language": "Punjabi - India (Gurmukhi Script)",
+        "local": "Punjabi (0446:00000446)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "pa-Arab-PK",
+        "language": "Punjabi (Islamic Republic of Pakistan)",
+        "local": "Urdu (0846:00000420)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "quz-BO",
+        "language": "Quechua - Bolivia",
+        "local": "Latin American (046b:0000080a)"
+    },
+    {
+        "code": "quz-EC",
+        "language": "Quechua - Ecuador",
+        "local": "Latin American (086b:0000080a)"
+    },
+    {
+        "code": "quz-PE",
+        "language": "Quechua - Peru",
+        "local": "Latin American (0c6b:0000080a)"
+    },
+    {
+        "code": "ro-RO",
+        "language": "Romanian - Romania",
+        "local": "Romanian (Standard) (0418:00010418)"
+    },
+    {
+        "code": "rm-CH",
+        "language": "Romansh - Switzerland",
+        "local": "Swiss German (0417:00000807)"
+    },
+    {
+        "code": "ru-RU",
+        "language": "Russian - Russia",
+        "local": "Russian (0419:00000419)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "sah-RU",
+        "language": "Sakha - Russia",
+        "local": "Sakha (0485:00000485)",
+        "secondary_language": [
+            "ru-RU",
+            "en-US"
+        ],
+        "secondary_local": [
+            "Russian (0419:00000419)",
+            "United States - English (0409:00000409)"
+        ]
+    },
+    {
+        "code": "sa-IN",
+        "language": "Sanskrit - India",
+        "local": "Devanagari-INSCRIPT (044f:00000439)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "gd-GB",
+        "language": "Scottish Gaelic - United Kingdom",
+        "local": "Gaelic (0491:00011809)"
+    },
+    {
+        "code": "sr-Cyrl-BA",
+        "language": "Serbian - Bosnia and Herzegovina (Cyrillic)",
+        "local": "Serbian (Cyrillic) (1c1a:00000c1a)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "sr-Latn-BA",
+        "language": "Serbian - Bosnia and Herzegovina (Latin)",
+        "local": "Serbian (Latin) (181a:0000081a)"
+    },
+    {
+        "code": "sr-Cyrl-ME",
+        "language": "Serbian - Montenegro (Cyrillic)",
+        "local": "Serbian (Cyrillic) (301a:00000c1a)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - International (0409:00020409)"
+    },
+    {
+        "code": "sr-Latn-ME",
+        "language": "Serbian - Montenegro (Latin)",
+        "local": "Serbian (Latin) (2c1a:0000081a)"
+    },
+    {
+        "code": "sr-Cyrl-RS",
+        "language": "Serbian - Serbia (Cyrillic)",
+        "local": "Serbian (Cyrillic) (281a:00000c1a)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - International (0409:00020409)"
+    },
+    {
+        "code": "sr-Latn-RS",
+        "language": "Serbian - Serbia (Latin)",
+        "local": "Serbian (Latin) (241a:0000081a)"
+    },
+    {
+        "code": "sr-Cyrl-CS",
+        "language": "Serbian - Serbia and Montenegro (Former) (Cyrillic)",
+        "local": "Serbian (Cyrillic) (0c1a:00000c1a)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "sr-Latn-CS",
+        "language": "Serbian - Serbia and Montenegro (Former) (Latin)",
+        "local": "Serbian (Latin) (081a:0000081a)"
+    },
+    {
+        "code": "nso-ZA",
+        "language": "Sesotho sa Leboa / Northern Sotho - South Africa",
+        "local": "Sesotho sa Leboa (046c:0000046c)"
+    },
+    {
+        "code": "tn-BW",
+        "language": "Setswana / Tswana - Botswana",
+        "local": "Setswana (0832:00000432)"
+    },
+    {
+        "code": "tn-ZA",
+        "language": "Setswana / Tswana - South Africa",
+        "local": "Setswana (0432:00000432)"
+    },
+    {
+        "code": "sn-Latn-ZW",
+        "language": "Shona - Zimbabwe",
+        "local": "US (0c00:00000409)"
+    },
+    {
+        "code": "sd-Arab-PK",
+        "language": "Sindhi (Islamic Republic of Pakistan)",
+        "local": "Urdu (0859:00000420)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "si-LK",
+        "language": "Sinhala - Sri Lanka",
+        "local": "Sinhala (045b:0000045b)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "sms-FI",
+        "language": "Skolt Sami - Finland",
+        "local": "Finnish with Sami (203b:0001083b)"
+    },
+    {
+        "code": "sk-SK",
+        "language": "Slovak - Slovakia",
+        "local": "Slovak (041b:0000041b)"
+    },
+    {
+        "code": "sl-SI",
+        "language": "Slovenian - Slovenia",
+        "local": "Slovenian (0424:00000424)"
+    },
+    {
+        "code": "sma-NO",
+        "language": "Southern Sami - Norway",
+        "local": "Norwegian with Sami (183b:0000043b)"
+    },
+    {
+        "code": "sma-SE",
+        "language": "Southern Sami - Sweden",
+        "local": "Swedish with Sami (1c3b:0000083b)"
+    },
+    {
+        "code": "es-AR",
+        "language": "Spanish - Argentina",
+        "local": "Latin American (2c0a:0000080a)"
+    },
+    {
+        "code": "es-VE",
+        "language": "Spanish - Bolivarian Republic of Venezuela",
+        "local": "Latin American (200a:0000080a)"
+    },
+    {
+        "code": "es-BO",
+        "language": "Spanish - Bolivia",
+        "local": "Latin American (400a:0000080a)"
+    },
+    {
+        "code": "es-CL",
+        "language": "Spanish - Chile",
+        "local": "Latin American (340a:0000080a)"
+    },
+    {
+        "code": "es-CO",
+        "language": "Spanish - Colombia",
+        "local": "Latin American (240a:0000080a)"
+    },
+    {
+        "code": "es-CR",
+        "language": "Spanish - Costa Rica",
+        "local": "Latin American (140a:0000080a)"
+    },
+    {
+        "code": "es-DO",
+        "language": "Spanish - Dominican Republic",
+        "local": "Latin American (1c0a:0000080a)"
+    },
+    {
+        "code": "es-EC",
+        "language": "Spanish - Ecuador",
+        "local": "Latin American (300a:0000080a)"
+    },
+    {
+        "code": "es-SV",
+        "language": "Spanish - El Salvador",
+        "local": "Latin American (440a:0000080a)"
+    },
+    {
+        "code": "es-GT",
+        "language": "Spanish - Guatemala",
+        "local": "Latin American (100a:0000080a)"
+    },
+    {
+        "code": "es-HN",
+        "language": "Spanish - Honduras",
+        "local": "Latin American (480a:0000080a)"
+    },
+    {
+        "code": "es-MX",
+        "language": "Spanish - Mexico",
+        "local": "Latin American (080a:0000080a)"
+    },
+    {
+        "code": "es-NI",
+        "language": "Spanish - Nicaragua",
+        "local": "Latin American (4c0a:0000080a)"
+    },
+    {
+        "code": "es-PA",
+        "language": "Spanish - Panama",
+        "local": "Latin American (180a:0000080a)"
+    },
+    {
+        "code": "es-PY",
+        "language": "Spanish - Paraguay",
+        "local": "Latin American (3c0a:0000080a)"
+    },
+    {
+        "code": "es-PE",
+        "language": "Spanish - Peru",
+        "local": "Latin American (280a:0000080a)"
+    },
+    {
+        "code": "es-PR",
+        "language": "Spanish - Puerto Rico",
+        "local": "Latin American (500a:0000080a)"
+    },
+    {
+        "code": "es-ES",
+        "language": "Spanish - Spain (International Sort)",
+        "local": "Spanish (0c0a:0000040a)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "es-ES_tradnl",
+        "language": "Spanish - Spain (Traditional Sort)",
+        "local": "Spanish (040a:0000040a)"
+    },
+    {
+        "code": "es-US",
+        "language": "Spanish - United States",
+        "local": "Latin American (540a:0000080a)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "es-UY",
+        "language": "Spanish - Uruguay",
+        "local": "Latin American (380a:0000080a)"
+    },
+    {
+        "code": "zgh-Tfng-MA",
+        "language": "Standard Moroccan Tamazight - Morocco",
+        "local": "Tifinagh (Basic) (0c00:0000105F)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "sw-KE",
+        "language": "Swahili - Kenya",
+        "local": "United States - English (0441:00000409)"
+    },
+    {
+        "code": "sv-FI",
+        "language": "Swedish - Finland",
+        "local": "Swedish (081d:0000041d)"
+    },
+    {
+        "code": "sv-SE",
+        "language": "Swedish - Sweden",
+        "local": "Swedish (041d:0000041d)"
+    },
+    {
+        "code": "syr-SY",
+        "language": "Syriac - Syria",
+        "local": "Syriac (045a:0000045a)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "tg-Cyrl-TJ",
+        "language": "Tajik - Tajikistan",
+        "local": "Tajik (0428:00000428)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ta-IN",
+        "language": "Tamil - India",
+        "local": "Tamil (0449:00000449)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ta-LK",
+        "language": "Tamil - Sri Lanka",
+        "local": "Tamil (0849:00000449)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "tt-RU",
+        "language": "Tatar - Russia (Legacy)",
+        "local": "Tatar (0444:00000444)",
+        "secondary_language": [
+            "ru-RU",
+            "en-US"
+        ],
+        "secondary_local": [
+            "Russian (0419:00000419)",
+            "United States - English (0409:00000409)"
+        ]
+    },
+    {
+        "code": "tt-RU",
+        "language": "Tatar - Russia (Standard)",
+        "local": "Tatar (0444:00010444)",
+        "secondary_language": [
+            "ru-RU",
+            "en-US"
+        ],
+        "secondary_local": [
+            "Russian (0419:00000419)",
+            "United States - English (0409:00000409)"
+        ]
+    },
+    {
+        "code": "te-IN",
+        "language": "Telugu - India (Telugu Script)",
+        "local": "Telugu (044a:0000044a)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "th-TH",
+        "language": "Thai - Thailand",
+        "local": "Thai Kedmanee (041e:0000041e)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "bo-CN",
+        "language": "Tibetan - PRC",
+        "local": "Tibetan (PRC) (0451:00010451)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ti-ET",
+        "language": "Tigrinya (Eritrea)",
+        "local": "Tigrinya Input Method (0473:{E429B25A-E5D3-4D1F-9BE3-0C608477E3A1}{3CAB88B7-CC3E-46A6-9765-B772AD7761FF})",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ti-ET",
+        "language": "Tigrinya (Ethiopia)",
+        "local": "Tigrinya Input Method (0473:{E429B25A-E5D3-4D1F-9BE3-0C608477E3A1}{3CAB88B7-CC3E-46A6-9765-B772AD7761FF})",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "tr-TR",
+        "language": "Turkish - Turkey",
+        "local": "Turkish Q (041f:0000041f)"
+    },
+    {
+        "code": "tk-TM",
+        "language": "Turkmen - Turkmenistan",
+        "local": "Turkmen (0442:00000442)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "uk-UA",
+        "language": "Ukrainian - Ukraine",
+        "local": "Ukrainian (Enhanced) (0422:00020422)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "hsb-DE",
+        "language": "Upper Sorbian - Germany",
+        "local": "Sorbian Standard (042e:0002042e)"
+    },
+    {
+        "code": "ur-IN",
+        "language": "Urdu - India",
+        "local": "Urdu (0820:00000420)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ur-PK",
+        "language": "Urdu (Islamic Republic of Pakistan)",
+        "local": "Urdu (0420:00000420)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "ug-CN",
+        "language": "Uyghur - PRC",
+        "local": "Uyghur (0480:00010480)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "uz-Cyrl-UZ",
+        "language": "Uzbek - Uzbekistan (Cyrillic)",
+        "local": "Uzbek Cyrillic (0843:00000843)",
+        "secondary_language": "uz-Latn-UZ",
+        "secondary_local": "United States - English (0443:00000409)"
+    },
+    {
+        "code": "uz-Latn-UZ",
+        "language": "Uzbek - Uzbekistan (Latin)",
+        "local": "United States - English (0443:00000409)"
+    },
+    {
+        "code": "ca-ES-valencia",
+        "language": "Valencian - Valencia",
+        "local": "Spanish (0803:0000040a)"
+    },
+    {
+        "code": "vi-VN",
+        "language": "Vietnamese - Vietnam",
+        "local": "Vietnamese (042a:0000042a)",
+        "secondary_language": "en-US",
+        "secondary_local": "United States - English (0409:00000409)"
+    },
+    {
+        "code": "cy-GB",
+        "language": "Welsh - United Kingdom",
+        "local": "United Kingdom Extended (0452:00000452)",
+        "secondary_language": "en-GB",
+        "secondary_local": "United Kingdom (0809:00000809)"
+    },
+    {
+        "code": "wo-SN",
+        "language": "Wolof - Senegal",
+        "local": "Wolof (0488:00000488)"
+    },
+    {
+        "code": "ii-CN",
+        "language": "Yi - PRC",
+        "local": "Yi Input Method(0478:{E429B25A-E5D3-4D1F-9BE3-0C608477E3A1}{409C8376-007B-4357-AE8E-26316EE3FB0D})",
+        "secondary_language": "zh-CN",
+        "secondary_local": "Microsoft Pinyin - Simple Fast (0804:{81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E}{FA550B04-5AD7-411f-A5AC-CA038EC515D7})"
+    },
+    {
+        "code": "yo-NG",
+        "language": "Yoruba - Nigeria",
+        "local": "Yoruba (046a:0000046a)"
+    }
+]

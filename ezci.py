@@ -286,7 +286,6 @@ def main():
                     kwargs = eval(f"isight.imm(ptype).policies(kwargs)")
         for org in orgs:
             kwargs.isight[org].policy = DotMap(dict(sorted(kwargs.isight[org].policy.toDict().items())))
-        #print(json.dumps(kwargs.isight, indent=4))
         #==============================================
         # Profiles and Server Identities
         #==============================================
@@ -297,8 +296,6 @@ def main():
                 profile_list = ['chassis', 'server']
                 for i in profile_list:
                     if kwargs.imm_dict.orgs[org]['profiles'].get(i): kwargs = eval(f"isight.imm(i).profiles(kwargs)")
-            print('got to identities')
-            exit()
             kwargs = ci.wizard('wizard').server_identities(kwargs)
         #==============================================
         # Create YAML Files
@@ -314,7 +311,7 @@ def main():
         orgs = list(kwargs.imm_dict.orgs.keys())
         for org in orgs:
             #=====================================================
-            # Load Variables and Login to ESXi Hosts
+            # Load Server Profile Variables
             #=====================================================
             for i in kwargs.imm_dict.orgs[kwargs.org].wizard.os_configuration:
                 for k, v in i.items(): kwargs.server_profiles[i.name][k] = v

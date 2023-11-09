@@ -1,0 +1,874 @@
+{
+    "AccountMoid": "5981bd053e95200001fd5632",
+    "Ancestors": [
+        {
+        "ClassId": "mo.MoRef",
+        "Moid": "5da9217ab96543090cb9f805",
+        "ObjectType": "os.Catalog",
+        "link": "https://www.intersight.com/api/v1/os/Catalogs/5da9217ab96543090cb9f805"
+        }
+    ],
+    "Catalog": {
+        "ClassId": "mo.MoRef",
+        "Moid": "5da9217ab96543090cb9f805",
+        "ObjectType": "os.Catalog",
+        "link": "https://www.intersight.com/api/v1/os/Catalogs/5da9217ab96543090cb9f805"
+    },
+    "ClassId": "os.ConfigurationFile",
+    "CreateTime": "2023-11-09T16:28:01.313Z",
+    "Description": "",
+    "Distributions": [
+        {
+        "ClassId": "mo.MoRef",
+        "Moid": "61346b476f72742d31e808c1",
+        "ObjectType": "hcl.OperatingSystem",
+        "link": "https://www.intersight.com/api/v1/hcl/OperatingSystems/61346b476f72742d31e808c1"
+        }
+    ],
+    "DomainGroupMoid": "5b2541887a7662743465ce9c",
+    "FileContent": "file_content",
+    "Internal": false,
+    "ModTime": "2023-11-09T16:28:01.315Z",
+    "Moid": "654d089075f8ea6d013d515e",
+    "Name": "AzureStackHCI_with_language.xml",
+    "ObjectType": "os.ConfigurationFile",
+    "Owners": [
+        "5981bd053e95200001fd5632"
+    ],
+    "Parent": {
+        "ClassId": "mo.MoRef",
+        "Moid": "5da9217ab96543090cb9f805",
+        "ObjectType": "os.Catalog",
+        "link": "https://www.intersight.com/api/v1/os/Catalogs/5da9217ab96543090cb9f805"
+    },
+    "PermissionResources": [
+        {
+        "ClassId": "mo.MoRef",
+        "Moid": "5ddea1e16972652d32b6493a",
+        "ObjectType": "organization.Organization",
+        "link": "https://www.intersight.com/api/v1/organization/Organizations/5ddea1e16972652d32b6493a"
+        }
+    ],
+    "Placeholders": [
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".InputLocale",
+            "Name": ".InputLocale",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".MacAddressNic1_dash_format",
+            "Name": ".MacAddressNic1_dash_format",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".IpAddress",
+            "Name": ".IpAddress",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".Domain",
+            "Name": ".Domain",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".UILanguage",
+            "Name": ".UILanguage",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".IpPrefix",
+            "Name": ".IpPrefix",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".TimeZone",
+            "Name": ".TimeZone",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".DomainAdminUser",
+            "Name": ".DomainAdminUser",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".DisableAutoDaylightTimeSet",
+            "Name": ".DisableAutoDaylightTimeSet",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".LayeredDriver",
+            "Name": ".LayeredDriver",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".UserLocale",
+            "Name": ".UserLocale",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".HostName",
+            "Name": ".HostName",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".Gateway",
+            "Name": ".Gateway",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".MacAddressNic2_dash_format",
+            "Name": ".MacAddressNic2_dash_format",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".secure.DomainAdminPassword",
+            "Name": ".secure.DomainAdminPassword",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": true,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".SystemLocale",
+            "Name": ".SystemLocale",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".UILanguageFallback",
+            "Name": ".UILanguageFallback",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".NameServer",
+            "Name": ".NameServer",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": false,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        },
+        {
+        "ClassId": "os.PlaceHolder",
+        "IsValueSet": false,
+        "ObjectType": "os.PlaceHolder",
+        "Type": {
+            "ClassId": "workflow.PrimitiveDataType",
+            "Default": {
+            "ClassId": "workflow.DefaultValue",
+            "IsValueSet": false,
+            "ObjectType": "workflow.DefaultValue",
+            "Override": false,
+            "Value": null
+            },
+            "Description": "",
+            "DisplayMeta": {
+            "ClassId": "workflow.DisplayMeta",
+            "InventorySelector": true,
+            "ObjectType": "workflow.DisplayMeta",
+            "WidgetType": "None"
+            },
+            "InputParameters": null,
+            "Label": ".secure.AdministratorPassword",
+            "Name": ".secure.AdministratorPassword",
+            "ObjectType": "workflow.PrimitiveDataType",
+            "Properties": {
+            "ClassId": "workflow.PrimitiveDataProperty",
+            "Constraints": {
+                "ClassId": "workflow.Constraints",
+                "EnumList": [],
+                "Max": 0,
+                "Min": 0,
+                "ObjectType": "workflow.Constraints",
+                "Regex": ""
+            },
+            "InventorySelector": [],
+            "ObjectType": "workflow.PrimitiveDataProperty",
+            "Secure": true,
+            "Type": "string"
+            },
+            "Required": false
+        },
+        "Value": ""
+        }
+    ],
+    "SharedScope": "",
+    "Supported": false,
+    "Tags": []
+    }

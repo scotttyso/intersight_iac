@@ -486,9 +486,7 @@ def main():
             sys.exit(1)
         else:
             kwargs.deployment_type = 'Terraform'
-            json_file = kwargs.args.json_file
-            json_open = open(json_file, 'r')
-            kwargs.json_data = DotMap(json.load(json_open))
+            kwargs.json_data = DotMap(json.load(open(kwargs.args.json_file, 'r')))
             device_type = kwargs.json_data.easyucs.metadata[0].device_type
             #==============================================
             # Validate the device_type in json file

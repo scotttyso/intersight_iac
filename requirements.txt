@@ -22,4 +22,5 @@ six
 stdiomask
 stringcase
 tabulate
+xml
 validators==0.11.0
