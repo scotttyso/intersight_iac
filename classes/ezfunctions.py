@@ -461,32 +461,33 @@ def intersight_config(kwargs):
     # Prompt User for Intersight SecretKey File
     #==============================================
     secret_path = kwargs.args.intersight_secret_key
-    secret_loop = False
-    while secret_loop == False:
-        valid = False
-        if secret_path == None:
-            varName = 'intersight_secret_key'
-            pcolor.Cyan(f'\n{"-"*91}\n\n  The Script did not find {varName} as an `environment` variable.')
-            pcolor.Cyan(f'  To not be prompted for the value of {varName} each time\n  add the following to your local environemnt:')
-            pcolor.Cyan(f"    - Linux: export {varName}='{varName}_value'")
-            pcolor.Cyan(f"    - Windows: $env:{varName}='{varName}_value'")
-            secret_path = ''
-        if '~' in secret_path: secret_path = os.path.expanduser(secret_path)
-        if not secret_path == '':
-            if not os.path.isfile(secret_path): prRed(f'\n{"-"*91}\n\n  !!!Error!!! intersight_secret_key not found.')
-            else:
-                secret_file = open(secret_path, 'r'); count = 0
-                if '-----BEGIN RSA PRIVATE KEY-----' in secret_file.read(): count += 1
-                secret_file.seek(0)
-                if '-----END RSA PRIVATE KEY-----' in secret_file.read(): count += 1
-                if count == 2: kwargs.args.api_key_file = secret_path; secret_loop = True; valid = True
-                else: prRed(f'\n{"-"*91}\n\n  !!!Error!!! intersight_secret_key does not seem to contain a Valid Secret Key.')
-        if not valid == True:
-            kwargs.jdata = DotMap(
-                type = "string", minLength = 2, maxLength = 1024, pattern = '.*', title = 'Intersight',
-                description= 'Intersight Secret Key File Location.',
-                default    = f'{kwargs.home}{os.sep}Downloads{os.sep}SecretKey.txt')
-            secret_path = variablePrompt(kwargs)
+    if not re.search('BEGIN RSA PRIVATE KEY.*END RSA PRIVATE KEY', secret_path):
+        secret_loop = False
+        while secret_loop == False:
+            valid = False
+            if secret_path == None:
+                varName = 'intersight_secret_key'
+                pcolor.Cyan(f'\n{"-"*91}\n\n  The Script did not find {varName} as an `environment` variable.')
+                pcolor.Cyan(f'  To not be prompted for the value of {varName} each time\n  add the following to your local environemnt:')
+                pcolor.Cyan(f"    - Linux: export {varName}='{varName}_value'")
+                pcolor.Cyan(f"    - Windows: $env:{varName}='{varName}_value'")
+                secret_path = ''
+            if '~' in secret_path: secret_path = os.path.expanduser(secret_path)
+            if not secret_path == '':
+                if not os.path.isfile(secret_path): prRed(f'\n{"-"*91}\n\n  !!!Error!!! intersight_secret_key not found.')
+                else:
+                    secret_file = open(secret_path, 'r'); count = 0
+                    if '-----BEGIN RSA PRIVATE KEY-----' in secret_file.read(): count += 1
+                    secret_file.seek(0)
+                    if '-----END RSA PRIVATE KEY-----' in secret_file.read(): count += 1
+                    if count == 2: kwargs.args.intersight_secret_key = secret_path; secret_loop = True; valid = True
+                    else: prRed(f'\n{"-"*91}\n\n  !!!Error!!! intersight_secret_key does not seem to contain a Valid Secret Key.')
+            if not valid == True:
+                kwargs.jdata = DotMap(
+                    type = "string", minLength = 2, maxLength = 1024, pattern = '.*', title = 'Intersight',
+                    description= 'Intersight Secret Key File Location.',
+                    default    = f'{kwargs.home}{os.sep}Downloads{os.sep}SecretKey.txt')
+                secret_path = variablePrompt(kwargs)
 
     #==============================================
     # Prompt User for Intersight FQDN

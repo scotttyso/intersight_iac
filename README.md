@@ -2,7 +2,12 @@
 
 [![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/scotttyso/intersight_iac)
 
-## Updates/News
+## Updates/News - Archiving Repository
+
+11-18-2023
+* Renaming repository to make it more relevant to all the use cases covered
+* New Repository [intersight-tools](https://github.com/scotttyso/intersight-tools)
+* Please start using new repository
 
 11-30-2022
 * Changing Script output from HCL to YAML
